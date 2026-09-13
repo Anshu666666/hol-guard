@@ -118,6 +118,12 @@ def _isolated_env(*, home: Path, python_path: Path) -> dict[str, str]:
     return env
 
 
+def _probe_python_path() -> Path:
+    # Keep the venv launcher so its site-packages remain active; resolving a
+    # symlink can escape the wheel-installed environment.
+    return Path(sys.executable)
+
+
 def _node_command() -> list[str]:
     node = shutil.which("node")
     if not node:
@@ -692,7 +698,7 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
     _installed_package_path(_REPO_ROOT)
     status, identity, capabilities = _probe_native_identity()
     node = _node_command()
-    python_path = Path(sys.executable).resolve()
+    python_path = _probe_python_path()
 
     root = Path(tempfile.mkdtemp(prefix="hg-pi-native-", dir=_short_temp_parent()))
     native_started = False

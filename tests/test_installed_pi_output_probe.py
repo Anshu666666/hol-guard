@@ -18,6 +18,7 @@ from ci.native_runtime.probe_installed_pi_output import (
     _cases,
     _is_source_checkout_package,
     _negative_cases,
+    _probe_python_path,
     _retain_cleanup_receipt,
     _run_probe,
     _text_digest,
@@ -52,6 +53,14 @@ def test_installed_origin_guard_rejects_checkout_package_only(tmp_path: Path) ->
 
     assert _is_source_checkout_package(checkout_package, repo_root)
     assert not _is_source_checkout_package(wheel_package, repo_root)
+
+
+def test_probe_keeps_venv_launcher_path_unresolved(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    launcher = tmp_path / "venv" / "bin" / ".." / "python"
+    monkeypatch.setattr(probe.sys, "executable", str(launcher))
+
+    assert _probe_python_path() == launcher
+    assert _probe_python_path() != launcher.resolve()
 
 
 def _patch_node_capability_probe(

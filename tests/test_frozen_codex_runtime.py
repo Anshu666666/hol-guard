@@ -20,6 +20,7 @@ from codex_plugin_scanner.guard.frozen_runtime_commands import (
     frozen_daemon_recovery_command,
     frozen_daemon_recovery_worker_command,
     frozen_daemon_serve_command,
+    frozen_windows_extension_control_commands,
 )
 
 
@@ -67,6 +68,35 @@ def test_source_runtime_does_not_install_frozen_contract() -> None:
     if frozen_codex_runtime.is_frozen_guard_runtime():
         pytest.skip("source-runtime assertion is not meaningful from a frozen test executable")
     assert frozen_codex_runtime.install_frozen_codex_runtime() is False
+
+
+def test_frozen_windows_extension_control_commands_quote_the_running_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable = tmp_path / "Guard's Runtime" / "hol-guard.exe"
+    executable.parent.mkdir()
+    executable.write_bytes(b"frozen-runtime")
+    monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.platform", "win32")
+    monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.frozen", True, raising=False)
+    monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.executable", str(executable))
+
+    commands = frozen_windows_extension_control_commands()
+
+    assert commands == {
+        "shell": "powershell",
+        "enroll": f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command controls enroll",
+        "recover_authority": f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command controls recover-authority",
+    }
+
+
+def test_frozen_windows_extension_control_commands_stay_absent_for_source_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.platform", "darwin")
+    monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.frozen", False, raising=False)
+
+    assert frozen_windows_extension_control_commands() is None
 
 
 def test_frozen_recovery_command_schedules_one_detached_worker(

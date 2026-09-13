@@ -139,11 +139,14 @@ def foreign_hook_compat_toml(vendors: tuple[str, ...] = FOREIGN_HOOK_COMPAT_VEND
 
 
 def _compat_table_span(text: str, vendor: str) -> tuple[int, int] | None:
-    match = re.search(rf"(?m)^\[compat\.{re.escape(vendor)}\]\s*$", text)
+    match = re.search(
+        rf"(?m)^[ \t]*\[compat\.{re.escape(vendor)}\][ \t]*(?:#.*)?$",
+        text,
+    )
     if match is None:
         return None
     rest = text[match.end() :]
-    nxt = re.search(r"(?m)^\[", rest)
+    nxt = re.search(r"(?m)^[ \t]*\[", rest)
     end = match.end() + (nxt.start() if nxt else len(rest))
     return match.start(), end
 

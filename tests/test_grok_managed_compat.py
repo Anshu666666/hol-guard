@@ -42,6 +42,13 @@ class TestGrokManagedCompat:
         assert "skills = true" in claude_block
         tomllib.loads(merged)
 
+    def test_prepare_managed_config_recognizes_commented_compat_headers(self) -> None:
+        existing = "[compat.claude] # imported\nskills = true\nhooks = true\n"
+        merged, prior = prepare_managed_config_text(existing, "guard hook --json")
+        assert merged.count("[compat.claude]") == 1
+        assert prior["claude"] == "true"
+        tomllib.loads(merged)
+
     def test_install_merges_preexisting_compat_tables(self, tmp_path: Path, monkeypatch) -> None:
         ctx = _ctx(tmp_path)
         managed = ctx.home_dir / ".grok" / "managed_config.toml"

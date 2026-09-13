@@ -12,6 +12,7 @@ from pathlib import Path
 from codex_plugin_scanner.guard.adapters import get_adapter
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.adapters.grok import GrokHarnessAdapter, _remove_managed_block
+from codex_plugin_scanner.guard.adapters.grok_config import build_managed_config_block
 from codex_plugin_scanner.guard.adapters.grok_hooks import (
     _dedupe_grok_block_reason,
     emit_grok_hook_response,
@@ -117,6 +118,9 @@ class TestGrokInstallUninstall:
         assert "Read(~/" not in managed_text
         assert "[[hooks.PreToolUse]]" in managed_text and "[[hooks.SessionStart]]" in managed_text
         assert '"--json"' in pretool_entries[0]["hooks"][0]["command"].replace(" ", "")
+        assert "[compat.claude]" in managed_text
+        assert "[compat.cursor]" in managed_text
+        assert managed_text.count("hooks = false") >= 2
 
     def test_repeated_install_is_idempotent(self, tmp_path: Path, monkeypatch) -> None:
         ctx = _ctx(tmp_path)
@@ -152,6 +156,13 @@ class TestGrokInstallUninstall:
         assert not (ctx.home_dir / ".grok" / "hooks" / "hol-guard-pretooluse.json").exists()
         managed_config = (ctx.home_dir / ".grok" / "managed_config.toml").read_text(encoding="utf-8")
         assert "BEGIN HOL GUARD MANAGED GROK" not in managed_config
+
+
+class TestGrokManagedCompat:
+    def test_managed_config_disables_foreign_hook_import(self) -> None:
+        text = build_managed_config_block("guard hook --json")
+        assert "[compat.claude]\nhooks = false" in text
+        assert "[compat.cursor]\nhooks = false" in text
 
 
 class TestGrokHookPayload:

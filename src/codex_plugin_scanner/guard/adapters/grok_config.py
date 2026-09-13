@@ -116,6 +116,27 @@ def _toml_inline_command_hook(hook_command: str, *, timeout: int) -> str:
     return '{ type = "command", command = ' + json.dumps(hook_command) + f", timeout = {timeout} }}"
 
 
+def foreign_hook_compat_toml() -> str:
+    """Disable Grok's vendor hook-file import.
+
+    Grok merges other products' hook settings by default. Those files often
+    split the interpreter from its arguments. Grok runs only the interpreter
+    and feeds the hook JSON on stdin, so Python treats the payload as source
+    and exits 1 with a traceback on every prompt and tool event. Guard keeps
+    Grok-native hooks in this managed block and the dedicated hook JSON files.
+    """
+
+    return "\n".join(
+        [
+            "[compat.claude]",
+            "hooks = false",
+            "",
+            "[compat.cursor]",
+            "hooks = false",
+        ]
+    )
+
+
 def build_managed_config_block(hook_command: str = "") -> str:
     deny_lines = ",\n".join(f'  "{rule}"' for rule in MANAGED_DENY_RULES)
     lines = [
@@ -125,6 +146,8 @@ def build_managed_config_block(hook_command: str = "") -> str:
         "deny = [",
         deny_lines,
         "]",
+        "",
+        foreign_hook_compat_toml(),
     ]
     if hook_command.strip():
         command_hook = _toml_inline_command_hook(hook_command, timeout=GROK_PRETOOL_HOOK_TIMEOUT_SECONDS)

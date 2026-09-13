@@ -250,9 +250,7 @@ def emit_grok_hook_response(
         approval_payload=live_payload,
         recording_only=recording_only,
     )
-    _last_grok_policy_action = (
-        "allow" if payload.get("decision") not in {"deny", "block"} else live_action
-    )
+    _last_grok_policy_action = "allow" if payload.get("decision") not in {"deny", "block"} else live_action
     stream = output_stream if output_stream is not None else sys.stdout
     stream.write(json.dumps(payload, separators=(",", ":")) + "\n")
     stream.flush()

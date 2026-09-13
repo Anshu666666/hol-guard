@@ -49,6 +49,13 @@ class TestGrokManagedCompat:
         assert prior["claude"] == "true"
         tomllib.loads(merged)
 
+    def test_prepare_managed_config_rewrites_indented_hooks_keys(self) -> None:
+        existing = "[compat.claude]\n  hooks = true\n"
+        merged, prior = prepare_managed_config_text(existing, "guard hook --json")
+        assert prior["claude"] == "true"
+        assert merged.count("[compat.claude]") == 1
+        tomllib.loads(merged)
+
     def test_install_merges_preexisting_compat_tables(self, tmp_path: Path, monkeypatch) -> None:
         ctx = _ctx(tmp_path)
         managed = ctx.home_dir / ".grok" / "managed_config.toml"

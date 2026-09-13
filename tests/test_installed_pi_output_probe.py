@@ -54,6 +54,78 @@ def test_installed_origin_guard_rejects_checkout_package_only(tmp_path: Path) ->
     assert not _is_source_checkout_package(wheel_package, repo_root)
 
 
+def _patch_node_capability_probe(
+    monkeypatch: pytest.MonkeyPatch,
+    returncodes: list[int],
+    markers: list[bytes] | None = None,
+) -> list[list[str]]:
+    attempts: list[list[str]] = []
+    markers = markers or [b"node-capability-probe"] * len(returncodes)
+    assert len(markers) == len(returncodes)
+    monkeypatch.setattr(probe.shutil, "which", lambda _: "/usr/bin/node")
+
+    def fake_run(argv: list[str], **kwargs: object) -> SimpleNamespace:
+        module = Path(argv[-1])
+        assert module.suffix == ".ts"
+        assert ": string" in module.read_text(encoding="utf-8")
+        assert kwargs["timeout"] == probe._NODE_PROBE_TIMEOUT
+        attempts.append(argv)
+        index = len(attempts) - 1
+        return SimpleNamespace(returncode=returncodes[index], stdout=markers[index])
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    return attempts
+
+
+def test_node_command_prefers_experimental_type_stripping(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = _patch_node_capability_probe(monkeypatch, [0])
+
+    assert probe._node_command() == ["/usr/bin/node", "--no-warnings", "--experimental-strip-types"]
+    assert len(attempts) == 1
+    assert "--experimental-strip-types" in attempts[0]
+    assert not Path(attempts[0][-1]).exists()
+
+
+def test_node_command_falls_back_to_stable_type_stripping(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = _patch_node_capability_probe(monkeypatch, [1, 0])
+
+    assert probe._node_command() == ["/usr/bin/node", "--no-warnings"]
+    assert len(attempts) == 2
+    assert "--experimental-strip-types" in attempts[0]
+    assert "--experimental-strip-types" not in attempts[1]
+    assert all(not Path(attempt[-1]).exists() for attempt in attempts)
+
+
+def test_node_command_falls_back_after_wrong_experimental_marker(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = _patch_node_capability_probe(monkeypatch, [0, 0], [b"wrong-marker", b"node-capability-probe"])
+
+    assert probe._node_command() == ["/usr/bin/node", "--no-warnings"]
+    assert len(attempts) == 2
+    assert "--experimental-strip-types" in attempts[0]
+    assert "--experimental-strip-types" not in attempts[1]
+    assert all(not Path(attempt[-1]).exists() for attempt in attempts)
+
+
+def test_node_command_rejects_unsupported_type_stripping(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = _patch_node_capability_probe(monkeypatch, [1, 1])
+
+    with pytest.raises(ProbeError, match="cannot execute erasable TypeScript"):
+        probe._node_command()
+
+    assert len(attempts) == 2
+    assert all(not Path(attempt[-1]).exists() for attempt in attempts)
+
+
+def test_node_command_rejects_wrong_markers_on_both_attempts(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = _patch_node_capability_probe(monkeypatch, [0, 0], [b"wrong-marker", b"also-wrong"])
+
+    with pytest.raises(ProbeError, match="cannot execute erasable TypeScript"):
+        probe._node_command()
+
+    assert len(attempts) == 2
+    assert all(not Path(attempt[-1]).exists() for attempt in attempts)
+
+
 def test_case_digest_preserves_crlf_unicode_and_ignores_metadata() -> None:
     case = _cases()[2]
     digest, chars, excerpt = _text_digest(case["content"])

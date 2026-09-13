@@ -25,6 +25,8 @@ from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TEXT_LIMIT = 12_000
+_NODE_PROBE_TIMEOUT = 5.0
+_NODE_PROBE_SOURCE = 'const typedValue: string = "node-capability-probe";\nprocess.stdout.write(typedValue);\n'
 _ENV_ALLOWLIST = {
     "COMSPEC",
     "LANG",
@@ -120,10 +122,25 @@ def _node_command() -> list[str]:
     node = shutil.which("node")
     if not node:
         raise ProbeError("Node is required for the generated Pi extension probe")
-    help_result = subprocess.run([node, "--help"], capture_output=True, text=True, check=False)
-    if help_result.returncode != 0 or "--experimental-strip-types" not in help_result.stdout:
-        raise ProbeError("Node with --experimental-strip-types is required")
-    return [node, "--no-warnings", "--experimental-strip-types"]
+    try:
+        with tempfile.TemporaryDirectory(prefix="hg-node-capability-", dir=_short_temp_parent()) as directory:
+            module = Path(directory) / "capability-probe.ts"
+            module.write_text(_NODE_PROBE_SOURCE, encoding="utf-8")
+            for flags in (("--experimental-strip-types",), ()):
+                try:
+                    result = subprocess.run(
+                        [node, *flags, str(module)],
+                        capture_output=True,
+                        check=False,
+                        timeout=_NODE_PROBE_TIMEOUT,
+                    )
+                except (OSError, subprocess.TimeoutExpired):
+                    continue
+                if result.returncode == 0 and result.stdout == b"node-capability-probe":
+                    return [node, "--no-warnings", *flags]
+    except OSError as exc:
+        raise ProbeError("Node TypeScript capability probe could not complete") from exc
+    raise ProbeError("Node cannot execute erasable TypeScript modules")
 
 
 def _cases() -> list[dict[str, Any]]:

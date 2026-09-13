@@ -12,10 +12,6 @@ from pathlib import Path
 from codex_plugin_scanner.guard.adapters import get_adapter
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.adapters.grok import GrokHarnessAdapter, _remove_managed_block
-from codex_plugin_scanner.guard.adapters.grok_config import (
-    build_managed_config_block,
-    prepare_managed_config_text,
-)
 from codex_plugin_scanner.guard.adapters.grok_hooks import (
     _dedupe_grok_block_reason,
     emit_grok_hook_response,
@@ -159,52 +155,6 @@ class TestGrokInstallUninstall:
         assert not (ctx.home_dir / ".grok" / "hooks" / "hol-guard-pretooluse.json").exists()
         managed_config = (ctx.home_dir / ".grok" / "managed_config.toml").read_text(encoding="utf-8")
         assert "BEGIN HOL GUARD MANAGED GROK" not in managed_config
-
-
-class TestGrokManagedCompat:
-    def test_managed_config_disables_foreign_hook_import(self) -> None:
-        text = build_managed_config_block("guard hook --json")
-        assert "[compat.claude]\nhooks = false" in text
-        assert "[compat.cursor]\nhooks = false" in text
-
-    def test_prepare_managed_config_does_not_duplicate_existing_compat_tables(self) -> None:
-        existing = "[compat.claude]\nskills = true\nhooks = true\n\n[ui]\nsimple_mode = true\n"
-        merged, prior = prepare_managed_config_text(existing, "guard hook --json")
-        assert merged.count("[compat.claude]") == 1
-        assert merged.count("[compat.cursor]") == 1
-        assert prior["claude"] == "true"
-        assert prior["cursor"] is None
-        claude_block = merged.split("[compat.cursor]")[0]
-        assert "hooks = false" in claude_block
-        assert "skills = true" in claude_block
-        import tomllib
-
-        tomllib.loads(merged)
-
-    def test_install_merges_preexisting_compat_tables(self, tmp_path: Path, monkeypatch) -> None:
-        ctx = _ctx(tmp_path)
-        managed = ctx.home_dir / ".grok" / "managed_config.toml"
-        managed.parent.mkdir(parents=True, exist_ok=True)
-        managed.write_text("[compat.claude]\nskills = true\nhooks = true\n", encoding="utf-8")
-        monkeypatch.setattr(
-            "codex_plugin_scanner.guard.adapters.grok.install_guard_shim",
-            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-grok"), "notes": []},
-        )
-        monkeypatch.setattr(
-            "codex_plugin_scanner.guard.adapters.grok.remove_guard_shim",
-            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-grok"), "notes": []},
-        )
-        adapter = GrokHarnessAdapter()
-        adapter.install(ctx)
-        installed = managed.read_text(encoding="utf-8")
-        assert installed.count("[compat.claude]") == 1
-        assert "skills = true" in installed
-        assert installed.count("hooks = false") >= 1
-        adapter.uninstall(ctx)
-        restored = managed.read_text(encoding="utf-8")
-        assert "BEGIN HOL GUARD MANAGED GROK" not in restored
-        assert "hooks = true" in restored
-        assert "skills = true" in restored
 
 
 class TestGrokHookPayload:

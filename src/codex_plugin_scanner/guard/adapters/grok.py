@@ -392,7 +392,11 @@ class GrokHarnessAdapter(HarnessAdapter):
         prompt_path.write_text(json.dumps(build_observe_hook_json(hook_command), indent=2) + "\n", encoding="utf-8")
 
         existing_text = managed_config_path.read_text(encoding="utf-8") if managed_config_path.is_file() else ""
-        merged_text, prior_compat_hooks = prepare_managed_config_text(existing_text, hook_command)
+        merged_text, prior_compat_hooks = prepare_managed_config_text(
+            existing_text,
+            hook_command,
+            saved_prior_hooks=_prior_compat_hooks_from_state(self._state_path(context)),
+        )
         managed_config_path.write_text(merged_text, encoding="utf-8")
 
         self._state_path(context).write_text(

@@ -57,10 +57,7 @@ def confirmed_containment_repair_signals(
         check_id
         for check_id in _CONTAINMENT_CHECK_IDS
         if check_id not in latest
-        or (
-            getattr(latest[check_id], "reason_code", None) != "unsupported_platform"
-            and check_id not in repaired
-        )
+        or (getattr(latest[check_id], "reason_code", None) != "unsupported_platform" and check_id not in repaired)
     ]
     return repaired, failed
 

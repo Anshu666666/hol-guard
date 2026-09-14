@@ -380,10 +380,11 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
   let targetedRepairHarnesses: string[] = [];
   if (repairState?.status === "error") {
     targetedRepairHarnesses = repairState.failedHarnesses ?? [];
-  } else if (!hasRepairableGaps) {
+  } else if (hasRepairableGaps) {
     targetedRepairHarnesses = repairHarnessList;
   }
-  const showTargetedRepairActions = targetedRepairHarnesses.length > 0 && Boolean(props.onRepairHarness);
+  const showTargetedRepairActions =
+    hasRepairableGaps && targetedRepairHarnesses.length > 0 && Boolean(props.onRepairHarness);
   let recoveryHeading = "Restore local protection";
   if (unsupportedOnly) {
     recoveryHeading = "Containment unavailable on this platform";

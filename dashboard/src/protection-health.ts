@@ -40,11 +40,17 @@ function copyForState(state: GuardProtectionState): { label: string; detail: str
   return { label: "Degraded", detail: "One or more required protection checks failed or remain unproven." };
 }
 
+function checkSatisfiesCore(check: GuardProtectionCheck | undefined): boolean {
+  return check?.status === "pass" || (check != null && isUnsupportedPlatformCheck(check));
+}
+
 function deriveState(checks: GuardProtectionCheck[]): GuardProtectionState {
-  const byId = new Map(checks.map((check) => [check.check_id, check.status]));
-  if (checks.some((check) => check.status === "fail")) return "degraded";
-  if (!CORE_CHECK_IDS.every((checkId) => byId.get(checkId) === "pass")) return "degraded";
-  return byId.get("decision_stream") === "pass" ? "protected" : "partial";
+  const byId = new Map(checks.map((check) => [check.check_id, check]));
+  if (checks.some((check) => check.status === "fail" && !isUnsupportedPlatformCheck(check))) {
+    return "degraded";
+  }
+  if (!CORE_CHECK_IDS.every((checkId) => checkSatisfiesCore(byId.get(checkId)))) return "degraded";
+  return byId.get("decision_stream")?.status === "pass" ? "protected" : "partial";
 }
 
 function normalizeCheck(value: unknown): GuardProtectionCheck | null {

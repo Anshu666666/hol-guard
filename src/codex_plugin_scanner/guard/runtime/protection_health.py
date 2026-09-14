@@ -58,13 +58,18 @@ class ProtectionSignal:
 UNKNOWN_SIGNAL: Final = ProtectionSignal(ProtectionCheckStatus.UNKNOWN, "proof_unavailable")
 
 
+def _is_unsupported_platform(signal: ProtectionSignal) -> bool:
+    return signal.reason_code == "unsupported_platform"
+
+
 def _state_for(signals: Sequence[ProtectionSignal]) -> ProtectionState:
-    if any(signal.status is ProtectionCheckStatus.FAIL for signal in signals):
+    if any(signal.status is ProtectionCheckStatus.FAIL and not _is_unsupported_platform(signal) for signal in signals):
         return ProtectionState.DEGRADED
     by_id: dict[str, ProtectionSignal] = dict(zip(PROTECTION_CHECK_IDS, signals, strict=True))
 
     def passes(check_id: str) -> bool:
-        return by_id[check_id].status is ProtectionCheckStatus.PASS
+        signal = by_id[check_id]
+        return signal.status is ProtectionCheckStatus.PASS or _is_unsupported_platform(signal)
 
     state = derive_protection_state(
         ProtectionHealth(

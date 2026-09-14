@@ -457,7 +457,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
           {repairState.message}
         </p>
       ) : null}
-      {repairState?.status === "error" && repairState.failedHarnesses?.length && props.onRepairHarness ? (
+      {hasRepairableGaps && repairState?.status === "error" && repairState.failedHarnesses?.length && props.onRepairHarness ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {Array.from(new Set(repairState.failedHarnesses)).map((harness) => (
             <TargetedRepairButton

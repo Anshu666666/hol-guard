@@ -414,7 +414,7 @@ function FleetProtectionRecovery(props) {
             ]
           }
         ) : null,
-        repairState?.status === "error" && repairState.failedHarnesses?.length && props.onRepairHarness ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex flex-wrap gap-2", children: Array.from(new Set(repairState.failedHarnesses)).map((harness) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+        hasRepairableGaps && repairState?.status === "error" && repairState.failedHarnesses?.length && props.onRepairHarness ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex flex-wrap gap-2", children: Array.from(new Set(repairState.failedHarnesses)).map((harness) => /* @__PURE__ */ jsxRuntimeExports.jsx(
           TargetedRepairButton,
           {
             harness,

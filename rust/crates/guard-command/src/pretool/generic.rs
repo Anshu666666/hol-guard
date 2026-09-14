@@ -59,9 +59,11 @@ fn is_package_tool(tool: &str) -> bool {
         tool,
         &[
             "npm",
+            "npx",
             "pnpm",
             "yarn",
             "bun",
+            "bunx",
             "pip",
             "pipx",
             "poetry",
@@ -222,6 +224,49 @@ fn package_command(command: &str) -> bool {
         .segments
         .iter()
         .any(|segment| segment.executable.as_deref().is_some_and(is_package_tool))
+}
+
+fn contained_node_handoff_manager_for_command(command: &str) -> Option<&'static str> {
+    let model = parse_command(&CommandModelRequestV1 {
+        command: command.to_owned(),
+        dialect: "posix".to_owned(),
+        transport: "shell_string".to_owned(),
+        extraction_provenance: "pre-tool-contained-node-handoff".to_owned(),
+    })
+    .ok()?;
+    if model.confidence != "exact" || model.path_overridden || model.segments.len() != 1 {
+        return None;
+    }
+    let segment = model.segments.first()?;
+    if !segment.environment_names.is_empty() || segment.pipeline_index != 0 {
+        return None;
+    }
+    let executable = segment.executable.as_deref()?;
+    if executable.contains(['/', '\\']) {
+        return None;
+    }
+    let manager = match executable {
+        "npx" => "npx",
+        "bunx" => "bunx",
+        _ => return None,
+    };
+    let mut index = 0usize;
+    while segment
+        .arguments
+        .get(index)
+        .is_some_and(|argument| matches!(argument.as_str(), "--no" | "--no-install"))
+    {
+        index += 1;
+    }
+    if segment.arguments.get(index).map(String::as_str) != Some("vitest") {
+        return None;
+    }
+    Some(manager)
+}
+
+pub fn contained_node_handoff_manager(payload: &Value) -> Option<&'static str> {
+    let signals = extract_generic_signals(payload).ok()?;
+    contained_node_handoff_manager_for_command(signals.command.as_deref()?)
 }
 
 fn infer_action_type(
@@ -410,4 +455,39 @@ fn evaluate_signals(harness: &str, event: &str, signals: GenericSignals) -> PreT
     }
     let (reason_code, reason) = review_reason(action_type);
     generic_result(action, "review", reason_code, reason)
+}
+
+#[cfg(test)]
+mod contained_node_handoff_tests {
+    use super::contained_node_handoff_manager_for_command;
+
+    #[test]
+    fn recognizes_only_single_exact_vitest_manager_commands() {
+        for (command, expected) in [
+            ("bunx vitest tests/unit.test.ts", Some("bunx")),
+            ("npx --no-install vitest tests/unit.test.ts", Some("npx")),
+            ("npx --no vitest tests/unit.test.ts", Some("npx")),
+        ] {
+            assert_eq!(
+                contained_node_handoff_manager_for_command(command),
+                expected,
+                "{command}"
+            );
+        }
+
+        for command in [
+            "bunx eslint src/index.ts",
+            "bunx vitest tests/a.test.ts && cat .env",
+            "bunx vitest tests/a.test.ts | tee /tmp/out",
+            "PATH=/tmp:$PATH bunx vitest tests/a.test.ts",
+            "/tmp/bunx vitest tests/a.test.ts",
+            "env bunx vitest tests/a.test.ts",
+        ] {
+            assert_eq!(
+                contained_node_handoff_manager_for_command(command),
+                None,
+                "{command}"
+            );
+        }
+    }
 }

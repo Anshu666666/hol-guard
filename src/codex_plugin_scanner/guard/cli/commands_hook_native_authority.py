@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sqlite3
 from contextlib import suppress
 from pathlib import Path
@@ -60,8 +61,10 @@ def try_native_hook_authority(
             wait_for_native_policy=False,
             publish_native_policy=False,
         )
+        native_payload = dict(payload)
+        native_payload["_hol_guard_transport"] = {"path": os.environ.get("PATH", "")}
         return worker.review_http_payload(
-            payload=payload,
+            payload=native_payload,
             params={},
             default_harness=harness,
             home_dir=home_dir,

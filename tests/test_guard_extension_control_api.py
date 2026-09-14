@@ -12,6 +12,7 @@ from typing import cast
 import pytest
 
 from codex_plugin_scanner.guard.daemon import extension_control_api as extension_control_api_module
+from codex_plugin_scanner.guard.daemon import managed_controls_api as managed_controls_api_module
 from codex_plugin_scanner.guard.daemon.extension_control_api import (
     ExtensionControlApiError,
     ExtensionControlApiService,
@@ -112,6 +113,26 @@ def test_catalog_and_effective_responses_are_bounded_public_dtos(tmp_path: Path)
         "layers": [],
         "failures": [],
     }
+
+
+def test_effective_response_projects_frozen_windows_terminal_commands(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    commands = {
+        "shell": "powershell",
+        "enroll": "& 'C:\\custom install\\hol-guard.exe' command controls enroll",
+        "recover_authority": "& 'C:\\custom install\\hol-guard.exe' command controls recover-authority",
+    }
+    monkeypatch.setattr(
+        managed_controls_api_module,
+        "frozen_windows_extension_control_commands",
+        lambda: commands,
+    )
+
+    effective = _service(GuardStore(tmp_path / "guard-home")).effective()
+
+    assert effective["terminal_commands"] == commands
 
 
 def test_degraded_acknowledgement_consumes_daemon_bound_approval_before_refresh(

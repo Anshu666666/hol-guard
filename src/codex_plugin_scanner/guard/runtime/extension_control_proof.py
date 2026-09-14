@@ -147,9 +147,62 @@ def _terminal_descriptors_share_session(control_descriptor: int, input_descripto
         return False
 
 
+def _windows_console_descriptor_is_interactive(descriptor: int) -> bool:
+    """Require a descriptor backed by a Windows console, not a redirected pipe."""
+
+    try:
+        import ctypes
+        import msvcrt
+        from ctypes import wintypes
+
+        win_dll = getattr(ctypes, "WinDLL", None)
+        if win_dll is None:
+            return False
+        handle = msvcrt.get_osfhandle(descriptor)
+        if handle == -1:
+            return False
+        kernel32 = win_dll("kernel32", use_last_error=True)
+        get_console_mode = kernel32.GetConsoleMode
+        get_console_mode.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+        get_console_mode.restype = wintypes.BOOL
+        mode = wintypes.DWORD()
+        return bool(get_console_mode(wintypes.HANDLE(handle), ctypes.byref(mode)))
+    except (AttributeError, ImportError, OSError, TypeError, ValueError):
+        return False
+
+
+def _require_windows_local_terminal_confirmation(enrollment: ExtensionControlEnrollment) -> None:
+    """Confirm through the current Windows console without accepting redirected input."""
+
+    try:
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            raise ExtensionControlProofError("extension control enrollment requires an interactive local terminal")
+        input_descriptor = sys.stdin.fileno()
+        output_descriptor = sys.stdout.fileno()
+    except (AttributeError, OSError, ValueError) as exc:
+        raise ExtensionControlProofError("extension control enrollment requires an interactive local terminal") from exc
+    if not (
+        _windows_console_descriptor_is_interactive(input_descriptor)
+        and _windows_console_descriptor_is_interactive(output_descriptor)
+    ):
+        raise ExtensionControlProofError("extension control enrollment requires an interactive local terminal")
+    expected = f"{_ENROLLMENT_CONFIRMATION_PREFIX} {enrollment.actor_id}"
+    try:
+        sys.stdout.write(f'Type "{expected}" to confirm first enrollment: ')
+        sys.stdout.flush()
+        entered = sys.stdin.readline().rstrip("\r\n")
+    except (EOFError, OSError, UnicodeError, ValueError) as exc:
+        raise ExtensionControlProofError("extension control enrollment requires an interactive local terminal") from exc
+    if not hmac.compare_digest(entered, expected):
+        raise ExtensionControlProofError("extension control enrollment confirmation did not match")
+
+
 def _require_local_terminal_confirmation(enrollment: ExtensionControlEnrollment) -> None:
     if any(os.environ.get(name) for name in _REMOTE_TERMINAL_ENVIRONMENT):
         raise ExtensionControlProofError("extension control enrollment requires a local terminal")
+    if os.name == "nt":
+        _require_windows_local_terminal_confirmation(enrollment)
+        return
     try:
         descriptor = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY | getattr(os, "O_CLOEXEC", 0))
     except OSError as exc:

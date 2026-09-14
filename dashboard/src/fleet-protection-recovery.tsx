@@ -100,6 +100,16 @@ const PROTECTION_CHECK_ACTIONS: Record<string, GapAction> = {
   },
 };
 
+export function isUnsupportedPlatformCheck(check: GuardProtectionCheck): boolean {
+  return check.reason_code === "unsupported_platform";
+}
+
+export function hasRepairableProtectionGap(checks: GuardProtectionCheck[]): boolean {
+  return checks.some(
+    (check) => check.status !== "pass" && !isUnsupportedPlatformCheck(check),
+  );
+}
+
 export function cloudPolicyRecoveryHint(input: CloudPolicyRecoveryInput): CloudPolicyRecoveryHint | null {
   const cloudFailed = input.cloudSyncState === "failed" || Boolean(input.cloudPolicySyncError);
   if (input.cloudState !== "local_only" && (!cloudFailed || !input.dashboardUrl)) return null;
@@ -117,6 +127,13 @@ function actionForCheck(
   check: GuardProtectionCheck,
   repairHarness?: string,
 ): GapAction {
+  if (isUnsupportedPlatformCheck(check)) {
+    return {
+      label: "Unsupported on this platform",
+      detail:
+        "Containment controls are unavailable on this platform. Guard remains fail-closed; no repair is available.",
+    };
+  }
   if (check.check_id === "harness_hooks" && repairHarness) {
     return {
       label: "App hooks",
@@ -139,6 +156,7 @@ function ProtectionGapItem({
   action: GapAction;
   check: GuardProtectionCheck;
 }) {
+  const unsupported = isUnsupportedPlatformCheck(check);
   return (
     <li className="flex items-start gap-2 border-t border-brand-attention/10 py-3 first:border-t-0">
       <div className="flex items-start gap-2 text-xs text-slate-600">
@@ -151,7 +169,7 @@ function ProtectionGapItem({
             {action.label}
           </strong>
           <span className="ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-            {check.status === "fail" ? "Failed" : "Unproven"}
+            {unsupported ? "Unsupported" : check.status === "fail" ? "Failed" : "Unproven"}
           </span>
           <span className="mt-0.5 block">{action.detail}</span>
         </span>
@@ -210,6 +228,8 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const cloudConnectControllerRef = useRef<AbortController | null>(null);
   const gaps = props.health.checks.filter((check) => check.status !== "pass");
+  const hasRepairableGaps = hasRepairableProtectionGap(gaps);
+  const unsupportedOnly = gaps.length > 0 && !hasRepairableGaps;
   const failCount = gaps.filter((check) => check.status === "fail").length;
   const unknownCount = gaps.length - failCount;
   const needsConnectedApp = remainingProtectionRepairParts(props.health).needsConnectedApp;
@@ -226,6 +246,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
   );
 
   const handleRepair = useCallback(async () => {
+    if (!hasRepairableGaps) return;
     setRepairState({
       status: "working",
       message: "Repairing app hooks, local runtime, local rule packs, and local integrity…",
@@ -247,7 +268,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
       });
       setDetailsOpen(true);
     }
-  }, [props.onRepairProtection, props.repairHarnesses]);
+  }, [hasRepairableGaps, props.onRepairProtection, props.repairHarnesses]);
   const connectHarness = props.connectHarness ?? defaultConnectHarness(props.repairHarness, props.repairHarnesses);
   const handleRepairClick = useCallback(() => {
     if (needsConnectedApp && props.onRepairHarness) {
@@ -369,23 +390,27 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
               aria-hidden="true"
             />
             <h2 className="text-sm font-semibold text-brand-dark">
-              Restore local protection
+              {unsupportedOnly ? "Containment unavailable on this platform" : "Restore local protection"}
             </h2>
           </div>
           <p className="mt-1 text-sm text-slate-600">
-            {recoverySummary(
-              failCount,
-              unknownCount,
-              needsConnectedApp,
-              gaps
-                .filter((check) => check.status === "fail")
-                .map((check) => actionForCheck(check, props.repairHarness).label),
-            )}
+            {unsupportedOnly
+              ? "Containment controls are unavailable on this platform. Guard remains fail-closed; no repair is available."
+              : recoverySummary(
+                  failCount,
+                  unknownCount,
+                  needsConnectedApp,
+                  gaps
+                    .filter((check) => check.status === "fail")
+                    .map((check) => actionForCheck(check, props.repairHarness).label),
+                )}
           </p>
         </div>
-        <ActionButton onClick={handleRepairClick} disabled={working}>
-          {repairButtonLabel(repairState, needsConnectedApp)}
-        </ActionButton>
+        {hasRepairableGaps ? (
+          <ActionButton onClick={handleRepairClick} disabled={working}>
+            {repairButtonLabel(repairState, needsConnectedApp)}
+          </ActionButton>
+        ) : null}
       </div>
       {cloudPolicyHint ? (
         <div className="mt-3 border-t border-slate-200 pt-3 text-sm text-slate-600">
@@ -418,7 +443,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
           )}
         </div>
       ) : null}
-      {repairState ? (
+      {repairState && hasRepairableGaps ? (
         <p
           className={`mt-3 flex items-start gap-2 text-sm ${repairState.status === "error" ? "text-red-600" : "text-slate-600"}`}
           aria-live="polite"
@@ -449,7 +474,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
         aria-expanded={detailsOpen}
         className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        View repair details
+        {hasRepairableGaps ? "View repair details" : "View protection details"}
         <HiMiniChevronDown
           className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
           aria-hidden="true"

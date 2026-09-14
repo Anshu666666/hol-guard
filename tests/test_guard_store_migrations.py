@@ -201,6 +201,59 @@ def test_system_keyring_reads_return_none_when_keyring_missing(monkeypatch):
     assert store.get_secret_with_timeout("anything", timeout_seconds=1.0) is None
 
 
+def test_windows_policy_integrity_keyring_session_failure_degrades_startup(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    module = _FakeSystemKeyringModule()
+
+    def _raise_no_logon_session(_service_name: str, _secret_id: str) -> str | None:
+        error = OSError(1312, "A specified logon session does not exist.")
+        error.__dict__["winerror"] = 1312
+        raise error
+
+    monkeypatch.setattr(guard_store_module.sys, "platform", "win32", raising=False)
+    monkeypatch.setattr(SystemKeyringSecretStore, "_load_keyring_module", staticmethod(lambda: module))
+    monkeypatch.setattr(module, "get_password", _raise_no_logon_session)
+
+    with caplog.at_level(logging.WARNING, logger="codex_plugin_scanner.guard.store"):
+        store = GuardStore(tmp_path / "guard-home")
+
+    state = store.get_cached_policy_integrity_state()
+
+    assert state["backend"] == "unavailable"
+    assert state["mode"] == "degraded"
+    assert state["degraded_reasons"] == [
+        "system_keyring_unavailable",
+        "policy_integrity_control_unavailable",
+    ]
+    assert not isinstance(store._policy_integrity_secret_store, EncryptedFileSecretStore)
+    assert "1312" not in caplog.text
+    assert "logon session" not in caplog.text
+
+
+def test_windows_policy_integrity_uses_accessible_system_keyring(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _FakeSystemKeyringModule()
+    monkeypatch.setattr(guard_store_module.sys, "platform", "win32", raising=False)
+    monkeypatch.setattr(SystemKeyringSecretStore, "_load_keyring_module", staticmethod(lambda: module))
+
+    store = GuardStore(
+        tmp_path / "guard-home",
+        prime_policy_integrity=False,
+    )
+
+    assert isinstance(store._policy_integrity_secret_store, SystemKeyringSecretStore)
+    state = store.setup_policy_integrity(now="2026-09-13T21:00:00Z", include_items=False)
+
+    assert state["backend"] == "system-keyring"
+    assert state["mode"] == "protected"
+    assert state["degraded_reasons"] == []
+
+
 def test_migrating_fallback_no_ui_uses_bounded_primary_read(tmp_path, monkeypatch):
     primary = SystemKeyringSecretStore(service_name="hol-guard.test")
     fallback = EncryptedFileSecretStore(tmp_path)

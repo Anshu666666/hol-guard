@@ -133,6 +133,14 @@ const PROTECTION_CHECK_ACTIONS = {
     detail: "Managed Guard files or hooks did not pass integrity checks."
   }
 };
+function isUnsupportedPlatformCheck(check) {
+  return check.reason_code === "unsupported_platform";
+}
+function hasRepairableProtectionGap(checks) {
+  return checks.some(
+    (check) => check.status !== "pass" && !isUnsupportedPlatformCheck(check)
+  );
+}
 function cloudPolicyRecoveryHint(input) {
   const cloudFailed = input.cloudSyncState === "failed" || Boolean(input.cloudPolicySyncError);
   if (input.cloudState !== "local_only" && (!cloudFailed || !input.dashboardUrl)) return null;
@@ -145,6 +153,12 @@ function cloudPolicyRecoveryHint(input) {
   };
 }
 function actionForCheck(check, repairHarness) {
+  if (isUnsupportedPlatformCheck(check)) {
+    return {
+      label: "Unsupported on this platform",
+      detail: "Containment controls are unavailable on this platform. Guard remains fail-closed; no repair is available."
+    };
+  }
   if (check.check_id === "harness_hooks" && repairHarness) {
     return {
       label: "App hooks",
@@ -161,6 +175,7 @@ function ProtectionGapItem({
   action,
   check
 }) {
+  const unsupported = isUnsupportedPlatformCheck(check);
   return /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "flex items-start gap-2 border-t border-brand-attention/10 py-3 first:border-t-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2 text-xs text-slate-600", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       HiMiniExclamationCircle,
@@ -171,7 +186,7 @@ function ProtectionGapItem({
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-brand-dark", children: action.label }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400", children: check.status === "fail" ? "Failed" : "Unproven" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400", children: unsupported ? "Unsupported" : check.status === "fail" ? "Failed" : "Unproven" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-0.5 block", children: action.detail })
     ] })
   ] }) });
@@ -204,6 +219,8 @@ function FleetProtectionRecovery(props) {
   const [detailsOpen, setDetailsOpen] = reactExports.useState(false);
   const cloudConnectControllerRef = reactExports.useRef(null);
   const gaps = props.health.checks.filter((check) => check.status !== "pass");
+  const hasRepairableGaps = hasRepairableProtectionGap(gaps);
+  const unsupportedOnly = gaps.length > 0 && !hasRepairableGaps;
   const failCount = gaps.filter((check) => check.status === "fail").length;
   const unknownCount = gaps.length - failCount;
   const needsConnectedApp = remainingProtectionRepairParts(props.health).needsConnectedApp;
@@ -218,6 +235,7 @@ function FleetProtectionRecovery(props) {
     []
   );
   const handleRepair = reactExports.useCallback(async () => {
+    if (!hasRepairableGaps) return;
     setRepairState({
       status: "working",
       message: "Repairing app hooks, local runtime, local rule packs, and local integrity…"
@@ -235,7 +253,7 @@ function FleetProtectionRecovery(props) {
       });
       setDetailsOpen(true);
     }
-  }, [props.onRepairProtection, props.repairHarnesses]);
+  }, [hasRepairableGaps, props.onRepairProtection, props.repairHarnesses]);
   const connectHarness = props.connectHarness ?? defaultConnectHarness(props.repairHarness, props.repairHarnesses);
   const handleRepairClick = reactExports.useCallback(() => {
     if (needsConnectedApp && props.onRepairHarness) {
@@ -351,16 +369,16 @@ function FleetProtectionRecovery(props) {
                   "aria-hidden": "true"
                 }
               ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold text-brand-dark", children: "Restore local protection" })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-semibold text-brand-dark", children: unsupportedOnly ? "Containment unavailable on this platform" : "Restore local protection" })
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: recoverySummary(
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: unsupportedOnly ? "Containment controls are unavailable on this platform. Guard remains fail-closed; no repair is available." : recoverySummary(
               failCount,
               unknownCount,
               needsConnectedApp,
               gaps.filter((check) => check.status === "fail").map((check) => actionForCheck(check, props.repairHarness).label)
             ) })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { onClick: handleRepairClick, disabled: working, children: repairButtonLabel(repairState, needsConnectedApp) })
+          hasRepairableGaps ? /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { onClick: handleRepairClick, disabled: working, children: repairButtonLabel(repairState, needsConnectedApp) }) : null
         ] }),
         cloudPolicyHint ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 border-t border-slate-200 pt-3 text-sm text-slate-600", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-medium text-brand-dark", children: cloudPolicyHint.title }),
@@ -379,7 +397,7 @@ function FleetProtectionRecovery(props) {
             cloudConnectState ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: cloudConnectMessageClassName, role: "status", children: cloudConnectState.message }) : null
           ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: cloudPolicyHint.href, variant: "outline", className: "mt-2", children: cloudPolicyHint.actionLabel })
         ] }) : null,
-        repairState ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        repairState && hasRepairableGaps ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "p",
           {
             className: `mt-3 flex items-start gap-2 text-sm ${repairState.status === "error" ? "text-red-600" : "text-slate-600"}`,
@@ -412,7 +430,7 @@ function FleetProtectionRecovery(props) {
             "aria-expanded": detailsOpen,
             className: "mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
             children: [
-              "View repair details",
+              hasRepairableGaps ? "View repair details" : "View protection details",
               /* @__PURE__ */ jsxRuntimeExports.jsx(
                 HiMiniChevronDown,
                 {

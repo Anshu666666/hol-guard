@@ -266,6 +266,7 @@ def _configure_guard_local_parsers(
         "command",
         help="Inspect commands and built-in command safety extensions without executing anything",
     )
+    _add_guard_common_args(command_parser)
     command_subparsers = command_parser.add_subparsers(dest="command_command", required=True, metavar="COMMAND")
     for command_name in ("test", "explain"):
         inspect_parser = command_subparsers.add_parser(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Protocol
 
 from ..frozen_runtime_commands import frozen_windows_extension_control_commands
@@ -15,6 +16,8 @@ from .extension_control_projection import build_effective_extension_control_proj
 
 
 class ManagedControlsStatusStore(Protocol):
+    guard_home: Path
+
     def managed_controls_public_status(self, *, catalog_digest: str) -> dict[str, object] | None: ...
 
     def list_policy_decisions(self, harness: str | None = None) -> list[dict[str, object]]: ...
@@ -71,7 +74,7 @@ def effective_controls_payload(
         ],
         "projection": build_effective_extension_control_projection(registry, snapshot),
     }
-    terminal_commands = frozen_windows_extension_control_commands()
+    terminal_commands = frozen_windows_extension_control_commands(store.guard_home)
     if terminal_commands is not None:
         payload["terminal_commands"] = terminal_commands
     _append_managed_controls_status(payload, store=store, catalog_digest=snapshot.catalog_digest)

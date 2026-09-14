@@ -237,6 +237,12 @@ assert(
     "Repair App hooks here. Guard repairs and rechecks every local protection layer in one pass.",
   "a single failed local check is named instead of a generic count",
 );
+const mixedProtectionSummary = recoverySummary(1, 0, false, ["App hooks"], 3);
+assert(
+  mixedProtectionSummary.includes("Containment remains unavailable on this platform") &&
+    mixedProtectionSummary.includes("full protection cannot be reached here"),
+  "mixed repair copy distinguishes supported repairs from permanently unsupported containment",
+);
 
 const degradedWithApps = resolveFleetHeroCopy("paired_active", 2, "degraded", urls);
 assert(degradedWithApps.status === "degraded", "active installs cannot imply protected fleet health");

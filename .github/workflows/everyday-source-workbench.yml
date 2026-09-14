@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  tools:
+  source:
     if: github.repository == 'hashgraph-online/hol-guard' && github.actor_id == '6068672'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -19,17 +19,10 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
           fetch-depth: 1
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: '0.9.26'
-          enable-cache: true
-      - name: Install the locked development environment
-        run: uv sync --frozen --extra dev --python 3.12
-      - name: Copy the formatter binary only
-        run: cp .venv/bin/ruff "$RUNNER_TEMP/ruff"
+      - run: git archive --format=tar.gz HEAD > "$RUNNER_TEMP/everyday-current.tar.gz"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: everyday-ruff-${{ github.sha }}
-          path: ${{ runner.temp }}/ruff
+          name: everyday-current-${{ github.sha }}
+          path: ${{ runner.temp }}/everyday-current.tar.gz
           if-no-files-found: error
           retention-days: 3

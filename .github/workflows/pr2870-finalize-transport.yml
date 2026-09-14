@@ -2,19 +2,15 @@ name: PR 2870 repair evidence
 
 on:
   push:
-    branches:
-      - fix/secret-read-floors-and-contained-vitest
-    paths:
-      - .github/workflows/pr2870-finalize-transport.yml
+    branches: [fix/secret-read-floors-and-contained-vitest]
+    paths: [.github/workflows/pr2870-finalize-transport.yml]
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   export:
     if: github.repository == 'hashgraph-online/hol-guard'
-    permissions:
-      contents: read
-      actions: read
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -29,57 +25,23 @@ jobs:
         with:
           version: '0.9.26'
           enable-cache: false
-      - name: Export current source and failed-job logs
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/pr2870-evidence"
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/pr2870-evidence/head.tar.gz"
-          git archive --format=tar.gz origin/main > "$RUNNER_TEMP/pr2870-evidence/main.tar.gz"
-          printf 'head=%s\nmain=%s\n' "$(git rev-parse HEAD)" "$(git rev-parse origin/main)" > "$RUNNER_TEMP/pr2870-evidence/refs.txt"
-          python - <<'PY'
-          import concurrent.futures
-          import json
-          import os
-          from pathlib import Path
-          from urllib.request import Request, urlopen
-
-          root = Path(os.environ['RUNNER_TEMP']) / 'pr2870-evidence'
-          api = 'https://api.github.com/repos/hashgraph-online/hol-guard/'
-          def get(path):
-              request = Request(api + path, headers={'Accept': 'application/vnd.github+json'})
-              request.add_unredirected_header('Authorization', 'Bearer ' + os.environ['GH_TOKEN'])
-              with urlopen(request, timeout=60) as response:
-                  return response.read()
-          jobs = []
-          for page in range(1, 20):
-              items = json.loads(get(f'actions/runs/34733995800/jobs?per_page=100&page={page}'))['jobs']
-              jobs.extend(items)
-              if len(items) < 100:
-                  break
-          else:
-              raise RuntimeError('pagination exceeded')
-          (root / 'jobs.json').write_text(json.dumps(jobs, indent=2))
-          failed = [job for job in jobs if job['conclusion'] == 'failure']
-          def log(job):
-              (root / (str(job['id']) + '.log')).write_bytes(get(f"actions/jobs/{job['id']}/logs"))
-          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-              list(executor.map(log, failed))
-          print(json.dumps([{'id': j['id'], 'name': j['name']} for j in failed]))
-          PY
-      - name: Export locked development dependencies for offline tests
+      - name: Export exact source snapshots and locked offline dependencies
         shell: bash
         run: |
           set -euo pipefail
-          uv export --frozen --extra dev --no-emit-project --no-hashes --format requirements-txt > "$RUNNER_TEMP/pr2870-evidence/requirements.txt"
-          python -m pip download --only-binary=:all: --dest "$RUNNER_TEMP/pr2870-evidence/wheels" -r "$RUNNER_TEMP/pr2870-evidence/requirements.txt"
-          python -m pip download --only-binary=:all: --dest "$RUNNER_TEMP/pr2870-evidence/wheels" 'hatchling<1.31' importlib-metadata
+          out="$RUNNER_TEMP/pr2870-evidence"
+          mkdir -p "$out/wheels"
+          main=57c99baac955152383f3c6a9606b0f046957b172
+          git archive --format=tar.gz HEAD > "$out/head.tar.gz"
+          git archive --format=tar.gz "$main" > "$out/main.tar.gz"
+          printf 'head=%s\nmain=%s\n' "$(git rev-parse HEAD)" "$main" > "$out/refs.txt"
+          uv export --frozen --extra dev --no-emit-project --no-hashes --format requirements-txt > "$out/requirements.txt"
+          python -m pip download --only-binary=:all: --dest "$out/wheels" -r "$out/requirements.txt"
+          python -m pip download --only-binary=:all: --dest "$out/wheels" 'hatchling<1.31' editables importlib-metadata
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: pr2870-locked-repair-evidence
+          name: pr2870-current-source-evidence
           path: ${{ runner.temp }}/pr2870-evidence
           if-no-files-found: error
           retention-days: 3

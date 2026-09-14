@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import cast
+from urllib.parse import urlparse
 
 import pytest
 
@@ -80,10 +81,13 @@ def test_daemon_auth_token_preserves_only_nonempty_private_text(
         ("[]", None),
         ('{"host":1,"port":4781}', None),
         ('{"host":"example.com","port":4781}', None),
+        ('{"host":"::2","port":4781}', None),
+        ('{"host":"[::1]","port":4781}', None),
         ('{"host":"127.0.0.1","port":"4781"}', None),
         ('{"host":"127.0.0.1","port":true}', None),
         ('{"host":"127.0.0.1","port":0}', None),
         ('{"host":"localhost","port":4781}', "http://localhost:4781/v1/hooks/grok"),
+        ('{"host":"::1","port":4781}', "http://[::1]:4781/v1/hooks/grok"),
     ],
 )
 def test_daemon_endpoint_accepts_only_valid_loopback_state(
@@ -94,6 +98,29 @@ def test_daemon_endpoint_accepts_only_valid_loopback_state(
 ) -> None:
     monkeypatch.setattr(daemon, "read_private_regular_text", lambda *_args, **_kwargs: state)
     assert daemon._daemon_hook_endpoint(tmp_path, "grok") == expected
+
+
+def test_ipv6_daemon_endpoint_is_parseable_and_accepted_by_transport() -> None:
+    endpoint = "http://[::1]:4781/v1/hooks/grok"
+    parsed = urlparse(endpoint)
+    assert (parsed.hostname, parsed.port) == ("::1", 4781)
+    daemon._assert_loopback_http_url(endpoint)
+
+    response = _Response(body=b'{"policy_action":"allow"}', final_url=endpoint)
+    result = daemon.try_daemon_hook(
+        guard_home=Path("/private/unused"),
+        harness="grok",
+        input_text='{"hook_event_name":"PreToolUse"}',
+        timeout_seconds=2,
+        _endpoint_loader=lambda *_args: endpoint,
+        _token_loader=lambda _path: "token",
+        _opener_builder=lambda: cast(urllib.request.OpenerDirector, _Opener(response)),
+    )
+
+    assert result is not None
+    stdout, stderr, code = result
+    assert json.loads(stdout)["decision"] == "allow"
+    assert (stderr, code) == ("", 0)
 
 
 class _Response:

@@ -77,7 +77,8 @@ def _daemon_hook_endpoint(guard_home: Path, harness: str) -> str | None:
         or not 1 <= port <= 65535
     ):
         return None
-    return f"http://{host}:{port}/v1/hooks/{harness}"
+    rendered_host = f"[{host}]" if host == "::1" else host
+    return f"http://{rendered_host}:{port}/v1/hooks/{harness}"
 
 
 def _native_hook_permission_decision(policy_action: str) -> str | None:
@@ -112,6 +113,101 @@ def _should_exit_block(harness: str, event_name: str, policy_action: str) -> boo
     return False
 
 
+def _consistent_native_response(
+    daemon_response: dict[str, object],
+    *,
+    harness: str,
+    event_name: str,
+) -> tuple[dict[str, object], str]:
+    """Align recognized native decisions without weakening review semantics."""
+
+    response = dict(daemon_response)
+    gating_event = event_name.replace("_", "").replace("-", "").lower() in {
+        "permissionrequest",
+        "pretoolcall",
+        "pretooluse",
+        "userpromptsubmit",
+    }
+    raw_policy = response.get("policy_action")
+    policy_action = raw_policy.strip() if isinstance(raw_policy, str) and is_guard_action(raw_policy.strip()) else None
+    if gating_event and "policy_action" in response and policy_action is None:
+        policy_action = "block"
+        response["policy_action"] = policy_action
+    explicit_restrictive_policy = policy_action in {
+        "block",
+        "require-reapproval",
+        "review",
+        "sandbox-required",
+    }
+    raw_top = response.get("decision")
+    top = raw_top.strip().lower() if isinstance(raw_top, str) else None
+    if top not in {"allow", "ask", "deny", "block"}:
+        top = None
+    if gating_event and "decision" in response and top is None:
+        top = "deny"
+        response["decision"] = top
+    raw_hook_specific = response.get("hookSpecificOutput")
+    hook_specific = dict(raw_hook_specific) if isinstance(raw_hook_specific, dict) else None
+    raw_nested = hook_specific.get("permissionDecision") if hook_specific is not None else None
+    nested = raw_nested.strip().lower() if isinstance(raw_nested, str) else None
+    if nested not in {"allow", "ask", "deny", "block"}:
+        nested = None
+    if gating_event and hook_specific is not None and "permissionDecision" in hook_specific and nested is None:
+        nested = "deny"
+        hook_specific["permissionDecision"] = nested
+
+    compact_event = event_name.replace("_", "").replace("-", "").lower()
+    canonical_harness = harness.strip().lower().replace("_", "-")
+    if explicit_restrictive_policy and compact_event == "userpromptsubmit" and top is None:
+        top = "block"
+        response["decision"] = top
+    elif explicit_restrictive_policy and compact_event in {"permissionrequest", "pretoolcall", "pretooluse"}:
+        if hook_specific is None and "hookSpecificOutput" in response:
+            hook_specific = {"hookEventName": event_name}
+        if hook_specific is not None and nested is None:
+            nested = "deny" if policy_action == "block" else "ask"
+            hook_specific["permissionDecision"] = nested
+        if canonical_harness in {"grok", "openclaw"} and top is None:
+            top = "deny"
+            response["decision"] = top
+
+    decisions = {decision for decision in (top, nested) if decision is not None}
+    has_deny = bool(decisions & {"deny", "block"})
+    has_ask = "ask" in decisions
+    if policy_action in {"allow", "warn"} and has_deny:
+        policy_action = "block"
+        response["policy_action"] = policy_action
+    elif policy_action in {"allow", "warn"} and has_ask:
+        policy_action = "review"
+        response["policy_action"] = policy_action
+
+    if policy_action == "block" or (policy_action is None and has_deny):
+        if top is not None:
+            response["decision"] = "block" if top == "block" else "deny"
+        if nested is not None and hook_specific is not None:
+            hook_specific["permissionDecision"] = "deny"
+    elif policy_action in {"review", "require-reapproval", "sandbox-required"} or (policy_action is None and has_ask):
+        if top is not None:
+            response["decision"] = "block" if top == "block" else "deny"
+        if nested == "allow" and hook_specific is not None:
+            hook_specific["permissionDecision"] = "ask"
+    elif policy_action in {"allow", "warn"}:
+        if top is not None:
+            response["decision"] = "allow"
+        if nested is not None and hook_specific is not None:
+            hook_specific["permissionDecision"] = "allow"
+
+    if hook_specific is not None:
+        response["hookSpecificOutput"] = hook_specific
+    if policy_action is not None:
+        return response, policy_action
+    if has_deny:
+        return response, "block"
+    if has_ask:
+        return response, "review"
+    return response, "allow"
+
+
 def _daemon_response_to_native(
     daemon_response: dict[str, object],
     *,
@@ -127,26 +223,17 @@ def _daemon_response_to_native(
             return "{}", "", 0
 
     if "hookSpecificOutput" in daemon_response or "decision" in daemon_response:
-        stdout = json.dumps(daemon_response, ensure_ascii=True, separators=(",", ":"))
-        hook_specific = daemon_response.get("hookSpecificOutput")
-        permission_decision = None
-        if isinstance(hook_specific, dict):
-            pd = hook_specific.get("permissionDecision")
-            if isinstance(pd, str):
-                permission_decision = pd
-        if permission_decision is None:
-            decision = daemon_response.get("decision")
-            if isinstance(decision, str) and decision in {"block", "deny"}:
-                permission_decision = "deny"
-        policy_action_for_exit = {
-            "allow": "allow",
-            "deny": "block",
-            "ask": "review",
-        }.get(permission_decision or "allow", "allow")
+        native_response, policy_action_for_exit = _consistent_native_response(
+            daemon_response,
+            harness=harness,
+            event_name=event_name,
+        )
+        stdout = json.dumps(native_response, ensure_ascii=True, separators=(",", ":"))
+        hook_specific = native_response.get("hookSpecificOutput")
         exit_code = 2 if _should_exit_block(harness, event_name, policy_action_for_exit) else 0
         stderr = ""
         if exit_code == 2 and canonical == "kimi":
-            reason = daemon_response.get("reason")
+            reason = native_response.get("reason")
             if (not isinstance(reason, str) or not reason) and isinstance(hook_specific, dict):
                 reason = hook_specific.get("permissionDecisionReason")
             if isinstance(reason, str) and reason:

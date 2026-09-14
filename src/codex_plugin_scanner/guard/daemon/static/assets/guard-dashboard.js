@@ -15635,7 +15635,7 @@ function protectionHealthFor(snapshot, harness = null) {
   return { harness: STABLE_ID$1.test(harness) && harness.length <= 64 ? harness : "unknown", ...fallback };
 }
 function isUnsupportedPlatformCheck(check) {
-  return check.reason_code === "unsupported_platform";
+  return isUnsupportedPlatformExemption(check);
 }
 function repairableProtectionGaps(checks) {
   return checks.filter(

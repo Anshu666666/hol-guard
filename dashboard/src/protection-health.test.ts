@@ -88,6 +88,10 @@ assert.equal(
   "degraded",
   "unsupported_platform does not mask non-containment failures",
 );
+assert(
+  hasRepairableProtectionGap(normalizeProtectionHealth(payload(spoofedHookFailure)).checks),
+  "non-containment failures remain repairable even if they reuse unsupported_platform",
+);
 const mixedContainment = unsupportedContainment.map((check) => (
   check.check_id === "harness_hooks"
     ? { check_id: check.check_id, status: "fail" as const, reason_code: "hook_verification_failed" }

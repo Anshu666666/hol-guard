@@ -254,7 +254,7 @@ export function protectionHealthFor(
 }
 
 export function isUnsupportedPlatformCheck(check: GuardProtectionCheck): boolean {
-  return check.reason_code === "unsupported_platform";
+  return isUnsupportedPlatformExemption(check);
 }
 
 export function repairableProtectionGaps(checks: GuardProtectionCheck[]): GuardProtectionCheck[] {

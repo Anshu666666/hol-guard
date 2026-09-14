@@ -376,7 +376,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
     });
   }, [repairHarnessList]);
 
-  if (gaps.length === 0 || unsupportedOnly) return null;
+  if (gaps.length === 0) return null;
   const working = repairState?.status === "working";
   const cloudConnectDisabled = ["working", "success"].includes(
     cloudConnectState?.status ?? "",

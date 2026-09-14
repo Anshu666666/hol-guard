@@ -40,13 +40,29 @@ function copyForState(state: GuardProtectionState): { label: string; detail: str
   return { label: "Degraded", detail: "One or more required protection checks failed or remain unproven." };
 }
 
+const UNSUPPORTED_PLATFORM_CHECK_IDS = new Set<string>([
+  "policy_engine",
+  "decision_plane_compatibility",
+  "containment_compatibility",
+  "sandbox",
+]);
+
+function isUnsupportedPlatformExemption(check: GuardProtectionCheck | undefined): boolean {
+  return (
+    check != null
+    && UNSUPPORTED_PLATFORM_CHECK_IDS.has(check.check_id)
+    && check.status === "fail"
+    && check.reason_code === "unsupported_platform"
+  );
+}
+
 function checkSatisfiesCore(check: GuardProtectionCheck | undefined): boolean {
-  return check?.status === "pass" || (check != null && isUnsupportedPlatformCheck(check));
+  return check?.status === "pass" || isUnsupportedPlatformExemption(check);
 }
 
 function deriveState(checks: GuardProtectionCheck[]): GuardProtectionState {
   const byId = new Map(checks.map((check) => [check.check_id, check]));
-  if (checks.some((check) => check.status === "fail" && !isUnsupportedPlatformCheck(check))) {
+  if (checks.some((check) => check.status === "fail" && !isUnsupportedPlatformExemption(check))) {
     return "degraded";
   }
   if (!CORE_CHECK_IDS.every((checkId) => checkSatisfiesCore(byId.get(checkId)))) return "degraded";

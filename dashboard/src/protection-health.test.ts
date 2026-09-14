@@ -77,6 +77,17 @@ assert(
   !hasRepairableProtectionGap(unsupportedContainmentHealth.checks),
   "unsupported-only containment gaps do not offer a futile aggregate repair",
 );
+const spoofedHookFailure = checks();
+spoofedHookFailure[PROTECTION_CHECK_IDS.indexOf("harness_hooks")] = {
+  check_id: "harness_hooks",
+  status: "fail",
+  reason_code: "unsupported_platform",
+};
+assert.equal(
+  normalizeProtectionHealth(payload(spoofedHookFailure)).state,
+  "degraded",
+  "unsupported_platform does not mask non-containment failures",
+);
 const mixedContainment = unsupportedContainment.map((check) => (
   check.check_id === "harness_hooks"
     ? { check_id: check.check_id, status: "fail" as const, reason_code: "hook_verification_failed" }

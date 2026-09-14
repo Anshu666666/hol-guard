@@ -210,6 +210,166 @@ def test_grok_daemon_review_translation_keeps_wait_metadata() -> None:
     assert payload["primary_approval_request_id"] == "req-1"
 
 
+@pytest.mark.parametrize(
+    "event_name",
+    [
+        "UserPromptSubmit",
+        "SessionStart",
+        "SessionEnd",
+        "SubagentStart",
+        "SubagentStop",
+        "PostToolUse",
+        "PermissionDenied",
+    ],
+)
+def test_grok_daemon_empty_observe_response_matches_native_success(event_name: str) -> None:
+    from codex_plugin_scanner.guard.adapters.grok_hooks import grok_hook_response_from_guard
+
+    native = grok_hook_response_from_guard(
+        policy_action="allow",
+        reason="",
+        event_name=event_name,
+    )
+    stdout, stderr, code = bounded_cli_hook_bridge._daemon_response_to_native(
+        native,
+        harness="grok",
+        event_name=event_name,
+    )
+
+    assert json.loads(stdout) == native == {}
+    assert stderr == ""
+    assert code == 0
+
+
+@pytest.mark.parametrize("use_daemon", [True, False])
+def test_grok_benign_prompt_succeeds_via_daemon_and_subprocess(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    use_daemon: bool,
+) -> None:
+    if use_daemon:
+
+        class Response:
+            status = 200
+
+            def __enter__(self) -> Response:
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def geturl(self) -> str:
+                return "http://127.0.0.1:7777/v1/hooks/grok"
+
+            def read(self, _limit: int) -> bytes:
+                return b"{}"
+
+        class Opener:
+            def open(self, _request: object, *, timeout: float) -> Response:
+                assert timeout > 0
+                return Response()
+
+        monkeypatch.setattr(
+            bounded_cli_hook_bridge,
+            "_daemon_hook_endpoint",
+            lambda _guard_home, _harness: "http://127.0.0.1:7777/v1/hooks/grok",
+        )
+        monkeypatch.setattr(bounded_cli_hook_bridge, "_read_daemon_auth_token", lambda _guard_home: "token")
+        monkeypatch.setattr(bounded_cli_hook_bridge, "_build_loopback_opener", lambda: Opener())
+    else:
+        monkeypatch.setattr(bounded_cli_hook_bridge, "_try_daemon_hook", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        bounded_cli_hook_bridge,
+        "run_isolated_hook_process",
+        _runner_result(BoundedHookProcessResult(0, "{}\n", False, False)),
+    )
+    output = io.StringIO()
+    with redirect_stdout(output):
+        returncode = bounded_cli_hook_bridge.run_bounded_cli_hook(
+            _config(tmp_path, harness="grok"),
+            input_text=json.dumps({"hook_event_name": "UserPromptSubmit", "prompt": "Summarize public documentation."}),
+        )
+
+    assert returncode == 0
+    assert json.loads(output.getvalue()) == {}
+
+
+def test_grok_daemon_prompt_native_block_is_preserved() -> None:
+    stdout, stderr, code = bounded_cli_hook_bridge._daemon_response_to_native(
+        {"decision": "block", "reason": "Prompt blocked by HOL Guard."},
+        harness="grok",
+        event_name="UserPromptSubmit",
+    )
+
+    assert json.loads(stdout) == {"decision": "block", "reason": "Prompt blocked by HOL Guard."}
+    assert stderr == ""
+    assert code == 2
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        {"unexpected": "nonempty"},
+        {"policy_action": "invalid", "reason": "malformed prompt policy"},
+    ],
+)
+def test_grok_daemon_nonempty_ambiguous_prompt_response_fails_closed(
+    response: dict[str, object],
+) -> None:
+    stdout, _stderr, code = bounded_cli_hook_bridge._daemon_response_to_native(
+        response,
+        harness="grok",
+        event_name="UserPromptSubmit",
+    )
+
+    payload = json.loads(stdout)
+    assert code == 2
+    assert payload["decision"] == "block"
+    assert payload["reason"]
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        {},
+        {"unexpected": "nonempty"},
+        {"policy_action": "invalid", "reason": "malformed policy"},
+    ],
+)
+def test_grok_daemon_ambiguous_pretool_response_fails_closed(response: dict[str, object]) -> None:
+    stdout, _stderr, code = bounded_cli_hook_bridge._daemon_response_to_native(
+        response,
+        harness="grok",
+        event_name="PreToolUse",
+    )
+
+    payload = json.loads(stdout)
+    assert code == 2
+    assert payload["decision"] == "deny"
+    assert payload["policy_action"] == "block"
+
+
+def test_grok_daemon_dangerous_pretool_block_keeps_reason() -> None:
+    stdout, _stderr, code = bounded_cli_hook_bridge._daemon_response_to_native(
+        {"policy_action": "block", "reason": "Credential file access is blocked."},
+        harness="grok",
+        event_name="PreToolUse",
+    )
+
+    payload = json.loads(stdout)
+    assert code == 2
+    assert payload == {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "Credential file access is blocked.",
+        },
+        "decision": "deny",
+        "policy_action": "block",
+        "reason": "Credential file access is blocked.",
+    }
+
+
 def test_grok_bridge_clamps_wait_to_remaining_seconds(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -460,7 +620,8 @@ def test_frozen_fallback_runs_supported_cli_subcommand_without_python_flags(
         "--guard-home",
         str(tmp_path / "guard-home"),
         "--harness",
-        "grok", "--json",
+        "grok",
+        "--json",
     ]
 
 
@@ -514,7 +675,8 @@ def test_live_frozen_runtime_ignores_forged_config_mode_and_executable(
         "--guard-home",
         str((tmp_path / "guard-home").resolve()),
         "--harness",
-        "grok", "--json",
+        "grok",
+        "--json",
     ]
 
 
@@ -567,7 +729,8 @@ def test_frozen_fallback_accepts_equivalent_noncanonical_guard_home(
         "--guard-home",
         str((tmp_path / "guard-home").resolve()),
         "--harness",
-        "grok", "--json",
+        "grok",
+        "--json",
     ]
 
 
@@ -599,7 +762,8 @@ def test_frozen_fallback_accepts_normalized_json_hook_contract(
         "--guard-home",
         str(tmp_path / "guard-home"),
         "--harness",
-        harness, "--json",
+        harness,
+        "--json",
     ]
 
 

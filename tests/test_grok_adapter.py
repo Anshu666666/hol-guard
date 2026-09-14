@@ -16,6 +16,7 @@ from codex_plugin_scanner.guard.adapters.grok_hooks import (
     _dedupe_grok_block_reason,
     emit_grok_hook_response,
     grok_hook_response_from_guard,
+    grok_hook_should_block,
     prepare_grok_hook_payload,
 )
 from codex_plugin_scanner.guard.inventory_contract import _agent_type, inventory_snapshot_from_detection
@@ -180,6 +181,11 @@ class TestGrokHookPayload:
 
 
 class TestGrokHookResponses:
+    def test_should_block_respects_guard_event_contract(self) -> None:
+        assert grok_hook_should_block(policy_action="block", event_name="UserPromptSubmit") is False
+        assert grok_hook_should_block(policy_action="block", event_name="PreToolUse") is True
+        assert grok_hook_should_block(policy_action="allow", event_name="PreToolUse") is False
+
     def test_allow_response(self) -> None:
         assert grok_hook_response_from_guard(policy_action="allow", reason="") == {"decision": "allow"}
 

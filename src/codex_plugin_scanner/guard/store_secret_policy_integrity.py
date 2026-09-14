@@ -429,8 +429,6 @@ class StoreSecretPolicyIntegrityMixin:
         secret_store = self._policy_integrity_secret_store
         if secret_store is None:
             return None, None
-        if self._policy_integrity_secret_store_is_unavailable(secret_store):
-            return None, None
         if self._should_skip_policy_integrity_keychain_access(secret_store):
             return None, None
         encoded_key = self._get_policy_integrity_secret_from_store(self._policy_integrity_key_ref)
@@ -498,8 +496,6 @@ class StoreSecretPolicyIntegrityMixin:
         secret_store = self._policy_integrity_secret_store
         if secret_store is None:
             return None
-        if self._policy_integrity_secret_store_is_unavailable(secret_store):
-            return None
         if self._should_skip_policy_integrity_keychain_access(secret_store):
             return None
         payload_json = self._get_policy_integrity_secret_from_store(self._policy_integrity_control_ref)
@@ -520,7 +516,7 @@ class StoreSecretPolicyIntegrityMixin:
 
     def _store_policy_integrity_control_state(self, payload: Mapping[str, object]) -> bool:
         secret_store = self._policy_integrity_secret_store
-        if secret_store is None or self._policy_integrity_secret_store_is_unavailable(secret_store):
+        if secret_store is None:
             return False
         normalized = self._normalize_policy_integrity_control_state(payload)
         if normalized is None:

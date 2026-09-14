@@ -15617,6 +15617,15 @@ function protectionHealthFor(snapshot, harness = null) {
   const fallback = healthFromChecks(fallbackChecks());
   return { harness: STABLE_ID$1.test(harness) && harness.length <= 64 ? harness : "unknown", ...fallback };
 }
+function isUnsupportedPlatformCheck(check) {
+  return check.reason_code === "unsupported_platform";
+}
+function repairableProtectionGaps(checks) {
+  return checks.filter((check) => check.status !== "pass" && !isUnsupportedPlatformCheck(check));
+}
+function hasRepairableProtectionGap(checks) {
+  return repairableProtectionGaps(checks).length > 0;
+}
 function remainingProtectionRepairParts(health) {
   const hooksCheck = health.checks.find((check) => check.check_id === "harness_hooks");
   return {
@@ -15638,6 +15647,10 @@ function remainingProtectionRepairMessage(health, displayName) {
     );
   }
   if (remainingParts.evidenceFailed) remainingMessages.push("Command evidence still needs repair.");
+  const unsupportedCount = health.checks.filter(isUnsupportedPlatformCheck).length;
+  if (unsupportedCount > 0) {
+    remainingMessages.push("Containment remains unavailable on this platform, so full protection cannot be reached here.");
+  }
   const remaining = remainingMessages.length > 0 ? remainingMessages.join(" ") : "A local protection check still needs attention.";
   return {
     failedHookHarnesses: remainingParts.failedHookHarnesses,
@@ -31372,6 +31385,12 @@ async function runAutomaticProtectionRepair(input) {
   if (remainingHealth.state === "protected") {
     return "Automatic repairs completed. Guard rechecked every protection layer below.";
   }
+  if (!hasRepairableProtectionGap(remainingHealth.checks)) {
+    if (remainingHealth.checks.some(isUnsupportedPlatformCheck)) {
+      return "Supported protection repairs completed. Containment remains unavailable on this platform; Guard remains fail-closed.";
+    }
+    return "Automatic repairs completed. Guard rechecked every repairable protection layer below.";
+  }
   const remaining = remainingProtectionRepairMessage(remainingHealth, input.displayName);
   throw new ProtectionRepairFlowError(
     remaining.message,
@@ -32398,6 +32417,8 @@ export {
   HiMiniArrowUp as ck,
   runAuditRemediation as cl,
   HiMiniSignal as cm,
+  hasRepairableProtectionGap as dA,
+  isUnsupportedPlatformCheck as dB,
   createCommandActivityClient as d,
   updateSettings as e,
   fetchCommandActivityApi as f,

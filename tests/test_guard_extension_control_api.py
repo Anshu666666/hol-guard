@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
+from unittest.mock import Mock
 
 import pytest
 
@@ -119,20 +120,26 @@ def test_effective_response_projects_frozen_windows_terminal_commands(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    store = GuardStore(tmp_path / "custom-guard-home")
     commands = {
         "shell": "powershell",
-        "enroll": "& 'C:\\custom install\\hol-guard.exe' command controls enroll",
-        "recover_authority": "& 'C:\\custom install\\hol-guard.exe' command controls recover-authority",
+        "enroll": "& 'C:\\custom install\\hol-guard.exe' command --guard-home 'C:\\custom guard' controls enroll",
+        "recover_authority": (
+            "& 'C:\\custom install\\hol-guard.exe' command --guard-home '"
+            "C:\\custom guard' controls recover-authority"
+        ),
     }
+    builder = Mock(return_value=commands)
     monkeypatch.setattr(
         managed_controls_api_module,
         "frozen_windows_extension_control_commands",
-        lambda: commands,
+        builder,
     )
 
-    effective = _service(GuardStore(tmp_path / "guard-home")).effective()
+    effective = _service(store).effective()
 
     assert effective["terminal_commands"] == commands
+    builder.assert_called_once_with(store.guard_home)
 
 
 def test_degraded_acknowledgement_consumes_daemon_bound_approval_before_refresh(

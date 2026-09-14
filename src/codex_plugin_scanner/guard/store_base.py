@@ -689,8 +689,11 @@ class SystemKeyringSecretStore:
             return
         self._windows_keyring_unavailable = True
         _store_logger.warning(
-            "Guard system keyring is unavailable in this Windows session; passive reads are degraded."
+            "Guard system keyring writes are unavailable in this Windows session; policy integrity is degraded."
         )
+
+    def _clear_windows_keyring_unavailable(self) -> None:
+        self._windows_keyring_unavailable = False
 
     def _is_unavailable(self) -> bool:
         return self._windows_keyring_unavailable
@@ -702,11 +705,16 @@ class SystemKeyringSecretStore:
                 "Guard system keyring backend is unavailable; the Python 'keyring' "
                 "package could not be imported. Reinstall hol-guard to restore it."
             )
-        keyring_module.set_password(self.service_name, secret_id, value)
+        try:
+            keyring_module.set_password(self.service_name, secret_id, value)
+        except Exception as error:
+            if not self._is_windows_keyring_session_unavailable(error):
+                raise
+            self._mark_windows_keyring_unavailable()
+            raise
+        self._clear_windows_keyring_unavailable()
 
     def get_secret(self, secret_id: str) -> str | None:
-        if self._windows_keyring_unavailable:
-            return None
         keyring_module = self._load_keyring_module_or_none()
         if keyring_module is None:
             return None
@@ -715,7 +723,6 @@ class SystemKeyringSecretStore:
         except Exception as error:
             if not self._is_windows_keyring_session_unavailable(error):
                 raise
-            self._mark_windows_keyring_unavailable()
             return None
         return value if isinstance(value, str) and value else None
 

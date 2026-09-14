@@ -29,6 +29,7 @@ from codex_plugin_scanner.guard.runtime.extension_control_proof import (
     _terminal_descriptors_share_session,
     _terminal_session_is_local,
     _windows_console_descriptor_is_interactive,
+    _windows_session_is_local,
     consume_extension_control_enrollment_proof,
     consume_extension_control_proof,
     issue_extension_control_enrollment_proof,
@@ -216,6 +217,122 @@ def test_windows_console_probe_fails_closed_on_api_error(monkeypatch: pytest.Mon
     assert _windows_console_descriptor_is_interactive(10) is False
 
 
+def test_windows_session_probe_accepts_native_local_console(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+
+    protocol = ctypes.c_ushort(0)
+    get_system_metrics = Mock(return_value=0)
+
+    def process_id_to_session_id(_process_id: object, session_id: object) -> int:
+        session_id._obj.value = 42  # type: ignore[attr-defined]
+        return 1
+
+    def query_session_information(
+        _server: object,
+        _session_id: object,
+        _info_class: object,
+        buffer: object,
+        bytes_returned: object,
+    ) -> int:
+        buffer._obj.value = ctypes.addressof(protocol)  # type: ignore[attr-defined]
+        bytes_returned._obj.value = ctypes.sizeof(protocol)  # type: ignore[attr-defined]
+        return 1
+
+    libraries = {
+        "user32": SimpleNamespace(GetSystemMetrics=get_system_metrics),
+        "kernel32": SimpleNamespace(ProcessIdToSessionId=process_id_to_session_id),
+        "wtsapi32": SimpleNamespace(
+            WTSQuerySessionInformationW=query_session_information,
+            WTSFreeMemory=Mock(),
+        ),
+    }
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.delenv("SESSIONNAME", raising=False)
+    monkeypatch.delenv("CLIENTNAME", raising=False)
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda name, **_kwargs: libraries[name],
+        raising=False,
+    )
+
+    assert _windows_session_is_local() is True
+    get_system_metrics.assert_called_once_with(0x1000)
+
+
+def test_windows_session_probe_rejects_remote_console_metric(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+
+    get_system_metrics = Mock(return_value=1)
+    win_dll = Mock(return_value=SimpleNamespace(GetSystemMetrics=get_system_metrics))
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.delenv("SESSIONNAME", raising=False)
+    monkeypatch.delenv("CLIENTNAME", raising=False)
+    monkeypatch.setattr(ctypes, "WinDLL", win_dll, raising=False)
+
+    assert _windows_session_is_local() is False
+    win_dll.assert_called_once_with("user32", use_last_error=True)
+
+
+def test_windows_session_probe_rejects_remote_session_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+
+    win_dll = Mock(side_effect=AssertionError("native APIs must not be needed for an explicit RDP signal"))
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.setenv("SESSIONNAME", "RDP-Tcp#7")
+    monkeypatch.setattr(ctypes, "WinDLL", win_dll, raising=False)
+
+    assert _windows_session_is_local() is False
+    win_dll.assert_not_called()
+
+
+def test_windows_session_probe_rejects_remote_wts_protocol(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+
+    protocol = ctypes.c_ushort(2)
+
+    def process_id_to_session_id(_process_id: object, session_id: object) -> int:
+        session_id._obj.value = 42  # type: ignore[attr-defined]
+        return 1
+
+    def query_session_information(
+        _server: object,
+        _session_id: object,
+        _info_class: object,
+        buffer: object,
+        bytes_returned: object,
+    ) -> int:
+        buffer._obj.value = ctypes.addressof(protocol)  # type: ignore[attr-defined]
+        bytes_returned._obj.value = ctypes.sizeof(protocol)  # type: ignore[attr-defined]
+        return 1
+
+    libraries = {
+        "user32": SimpleNamespace(GetSystemMetrics=Mock(return_value=0)),
+        "kernel32": SimpleNamespace(ProcessIdToSessionId=process_id_to_session_id),
+        "wtsapi32": SimpleNamespace(
+            WTSQuerySessionInformationW=query_session_information,
+            WTSFreeMemory=Mock(),
+        ),
+    }
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.delenv("SESSIONNAME", raising=False)
+    monkeypatch.delenv("CLIENTNAME", raising=False)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda name, **_kwargs: libraries[name], raising=False)
+
+    assert _windows_session_is_local() is False
+
+
+def test_windows_session_probe_rejects_native_api_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.delenv("SESSIONNAME", raising=False)
+    monkeypatch.delenv("CLIENTNAME", raising=False)
+    monkeypatch.setattr(ctypes, "WinDLL", Mock(side_effect=OSError("session API unavailable")), raising=False)
+
+    assert _windows_session_is_local() is False
+
+
 def test_windows_enrollment_uses_console_stdio_without_posix_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     class ConsoleStream(io.StringIO):
         def __init__(self, value: str, descriptor: int) -> None:
@@ -238,6 +355,10 @@ def test_windows_enrollment_uses_console_stdio_without_posix_flags(monkeypatch: 
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_console_descriptor_is_interactive",
         lambda descriptor: descriptor in {10, 11},
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_session_is_local",
+        lambda: True,
     )
 
     _require_local_terminal_confirmation(_enrollment())
@@ -270,6 +391,10 @@ def test_windows_enrollment_rejects_mismatched_confirmation(monkeypatch: pytest.
         "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_console_descriptor_is_interactive",
         lambda descriptor: descriptor in {10, 11},
     )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_session_is_local",
+        lambda: True,
+    )
 
     with pytest.raises(ExtensionControlProofError, match="confirmation did not match"):
         _require_local_terminal_confirmation(_enrollment())
@@ -297,6 +422,36 @@ def test_windows_enrollment_rejects_ssh_before_console_probe(monkeypatch: pytest
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_console_descriptor_is_interactive",
         lambda _descriptor: pytest.fail("console probe must not run for a remote terminal"),
+    )
+
+    with pytest.raises(ExtensionControlProofError, match="requires a local terminal"):
+        _require_local_terminal_confirmation(_enrollment())
+
+
+def test_windows_enrollment_rejects_remote_session_before_console_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    class ConsoleStream(io.StringIO):
+        def fileno(self) -> int:
+            return 10
+
+        def isatty(self) -> bool:
+            return True
+
+    monkeypatch.setattr("codex_plugin_scanner.guard.runtime.extension_control_proof.os.name", "nt")
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof.sys.stdin",
+        ConsoleStream(),
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof.sys.stdout",
+        ConsoleStream(),
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_session_is_local",
+        lambda: False,
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.runtime.extension_control_proof._windows_console_descriptor_is_interactive",
+        lambda _descriptor: pytest.fail("console probe must not run for a remote session"),
     )
 
     with pytest.raises(ExtensionControlProofError, match="requires a local terminal"):

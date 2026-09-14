@@ -10,6 +10,7 @@ from types import ModuleType
 
 import pytest
 
+from codex_plugin_scanner.cli import _build_parser
 from codex_plugin_scanner.guard import codex_hook_runtime_trust, frozen_codex_runtime
 from codex_plugin_scanner.guard import daemon as daemon_api
 from codex_plugin_scanner.guard.adapters import codex as codex_adapter
@@ -77,17 +78,28 @@ def test_frozen_windows_extension_control_commands_quote_the_running_executable(
     executable = tmp_path / "Guard's Runtime" / "hol-guard.exe"
     executable.parent.mkdir()
     executable.write_bytes(b"frozen-runtime")
+    guard_home = tmp_path / "custom Guard's Home"
     monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.platform", "win32")
     monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.frozen", True, raising=False)
     monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.executable", str(executable))
 
-    commands = frozen_windows_extension_control_commands()
+    commands = frozen_windows_extension_control_commands(guard_home)
 
     assert commands == {
         "shell": "powershell",
-        "enroll": f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command controls enroll",
-        "recover_authority": f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command controls recover-authority",
+        "enroll": (
+            f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command --guard-home "
+            f"'{str(guard_home).replace(chr(39), chr(39) * 2)}' controls enroll"
+        ),
+        "recover_authority": (
+            f"& '{str(executable).replace(chr(39), chr(39) * 2)}' command --guard-home "
+            f"'{str(guard_home).replace(chr(39), chr(39) * 2)}' controls recover-authority"
+        ),
     }
+
+    parser = _build_parser("hol-guard", program_mode="hol-guard")
+    parsed = parser.parse_args(["command", "--guard-home", str(guard_home), "controls", "enroll"])
+    assert parsed.guard_home == str(guard_home)
 
 
 def test_frozen_windows_extension_control_commands_stay_absent_for_source_runtime(
@@ -96,7 +108,7 @@ def test_frozen_windows_extension_control_commands_stay_absent_for_source_runtim
     monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.platform", "darwin")
     monkeypatch.setattr("codex_plugin_scanner.guard.frozen_runtime_commands.sys.frozen", False, raising=False)
 
-    assert frozen_windows_extension_control_commands() is None
+    assert frozen_windows_extension_control_commands(Path("/guard-home")) is None
 
 
 def test_frozen_recovery_command_schedules_one_detached_worker(

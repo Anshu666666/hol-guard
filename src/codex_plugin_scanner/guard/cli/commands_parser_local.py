@@ -289,7 +289,8 @@ def _configure_guard_local_parsers(
         help="Detect command ecosystems and preview recommended protection",
     )
     setup_parser.add_argument("--detect", action="store_true", required=True)
-    setup_parser.add_argument("--workspace", default=".")
+    # Do not overwrite a value supplied to the parent command parser.
+    setup_parser.add_argument("--workspace", default=argparse.SUPPRESS)
     setup_parser.add_argument("--json", action="store_true")
     controls_parser = command_subparsers.add_parser(
         "controls",

@@ -367,6 +367,14 @@ def _daemon_response_to_native(
     """
     canonical = harness.strip().lower().replace("_", "-")
 
+    # Guard's Grok observe-without-enforcement response is exactly `{}`.
+    # Keep missing policy fail-closed everywhere else, especially PreToolUse.
+    if canonical == "grok" and not daemon_response:
+        from .grok_hooks import is_grok_observe_only_event
+
+        if is_grok_observe_only_event(event_name):
+            return "{}", "", 0
+
     # Defensive: if the daemon already returned harness-native JSON, pass it through.
     # This handles the case where the daemon's hook_process_runner is running and
     # returns harness-native JSON via capture_hook_command.

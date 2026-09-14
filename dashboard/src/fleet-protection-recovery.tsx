@@ -153,6 +153,12 @@ function ProtectionGapItem({
   check: GuardProtectionCheck;
 }) {
   const unsupported = isUnsupportedPlatformCheck(check);
+  let statusLabel = "Unproven";
+  if (unsupported) {
+    statusLabel = "Unsupported";
+  } else if (check.status === "fail") {
+    statusLabel = "Failed";
+  }
   return (
     <li className="flex items-start gap-2 border-t border-brand-attention/10 py-3 first:border-t-0">
       <div className="flex items-start gap-2 text-xs text-slate-600">
@@ -165,7 +171,7 @@ function ProtectionGapItem({
             {action.label}
           </strong>
           <span className="ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-            {unsupported ? "Unsupported" : check.status === "fail" ? "Failed" : "Unproven"}
+            {statusLabel}
           </span>
           <span className="mt-0.5 block">{action.detail}</span>
         </span>
@@ -385,6 +391,7 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
   }
   const showTargetedRepairActions =
     hasRepairableGaps && targetedRepairHarnesses.length > 0 && Boolean(props.onRepairHarness);
+  const onRepairHarness = props.onRepairHarness;
   let recoveryHeading = "Restore local protection";
   if (unsupportedOnly) {
     recoveryHeading = "Containment unavailable on this platform";
@@ -473,13 +480,13 @@ export function FleetProtectionRecovery(props: FleetProtectionRecoveryProps) {
           {repairState.message}
         </p>
       ) : null}
-      {showTargetedRepairActions && props.onRepairHarness ? (
+      {showTargetedRepairActions && onRepairHarness ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {Array.from(new Set(targetedRepairHarnesses)).map((harness) => (
             <TargetedRepairButton
               key={harness}
               harness={harness}
-              onRepair={props.onRepairHarness}
+              onRepair={onRepairHarness}
             />
           ))}
         </div>

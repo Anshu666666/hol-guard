@@ -170,6 +170,12 @@ function ProtectionGapItem({
   check
 }) {
   const unsupported = isUnsupportedPlatformCheck(check);
+  let statusLabel = "Unproven";
+  if (unsupported) {
+    statusLabel = "Unsupported";
+  } else if (check.status === "fail") {
+    statusLabel = "Failed";
+  }
   return /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "flex items-start gap-2 border-t border-brand-attention/10 py-3 first:border-t-0", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2 text-xs text-slate-600", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       HiMiniExclamationCircle,
@@ -180,7 +186,7 @@ function ProtectionGapItem({
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "font-semibold text-brand-dark", children: action.label }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400", children: unsupported ? "Unsupported" : check.status === "fail" ? "Failed" : "Unproven" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400", children: statusLabel }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-0.5 block", children: action.detail })
     ] })
   ] }) });
@@ -357,6 +363,7 @@ function FleetProtectionRecovery(props) {
     targetedRepairHarnesses = repairHarnessList;
   }
   const showTargetedRepairActions = hasRepairableGaps && targetedRepairHarnesses.length > 0 && Boolean(props.onRepairHarness);
+  const onRepairHarness = props.onRepairHarness;
   let recoveryHeading = "Restore local protection";
   if (unsupportedOnly) {
     recoveryHeading = "Containment unavailable on this platform";
@@ -425,11 +432,11 @@ function FleetProtectionRecovery(props) {
             ]
           }
         ) : null,
-        showTargetedRepairActions && props.onRepairHarness ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex flex-wrap gap-2", children: Array.from(new Set(targetedRepairHarnesses)).map((harness) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+        showTargetedRepairActions && onRepairHarness ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex flex-wrap gap-2", children: Array.from(new Set(targetedRepairHarnesses)).map((harness) => /* @__PURE__ */ jsxRuntimeExports.jsx(
           TargetedRepairButton,
           {
             harness,
-            onRepair: props.onRepairHarness
+            onRepair: onRepairHarness
           },
           harness
         )) }) : null,

@@ -15468,11 +15468,16 @@ function copyForState(state) {
   }
   return { label: "Degraded", detail: "One or more required protection checks failed or remain unproven." };
 }
+function checkSatisfiesCore(check) {
+  return check?.status === "pass" || check != null && isUnsupportedPlatformCheck(check);
+}
 function deriveState(checks) {
-  const byId = new Map(checks.map((check) => [check.check_id, check.status]));
-  if (checks.some((check) => check.status === "fail")) return "degraded";
-  if (!CORE_CHECK_IDS.every((checkId) => byId.get(checkId) === "pass")) return "degraded";
-  return byId.get("decision_stream") === "pass" ? "protected" : "partial";
+  const byId = new Map(checks.map((check) => [check.check_id, check]));
+  if (checks.some((check) => check.status === "fail" && !isUnsupportedPlatformCheck(check))) {
+    return "degraded";
+  }
+  if (!CORE_CHECK_IDS.every((checkId) => checkSatisfiesCore(byId.get(checkId)))) return "degraded";
+  return byId.get("decision_stream")?.status === "pass" ? "protected" : "partial";
 }
 function normalizeCheck(value) {
   if (!isRecord$5(value)) return null;

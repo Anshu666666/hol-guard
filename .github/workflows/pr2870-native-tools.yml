@@ -26,29 +26,32 @@ jobs:
           import json
           import os
           from pathlib import Path
-          from urllib.request import Request, urlopen
+          from urllib.request import urlopen
 
           root = Path(os.environ['RUNNER_TEMP']) / 'pr2870-tools'
           records = []
-          for repo, tag, names in (
-              ('openai/codex', 'rust-v0.154.0', ('codex-x86_64-unknown-linux-musl.tar.gz',)),
-              ('openai/codex', 'rust-v0.154.0', ('bwrap-x86_64-unknown-linux-musl', 'bwrap-x86_64-unknown-linux-musl.tar.gz')),
-              ('oven-sh/bun', 'bun-v1.2.22', ('bun-linux-x64.zip',)),
+          for repo, tag, name, expected_sha256 in (
+              ('openai/codex', 'rust-v0.154.0', 'codex-x86_64-unknown-linux-musl.tar.gz', 'd7e18b2597ae8f242f5f31ee9e90deef48dbc9edd634d9868fb6435d08c07f02'),
+              ('openai/codex', 'rust-v0.154.0', 'bwrap-x86_64-unknown-linux-musl.tar.gz', '1e6a0f2802c4199f81e1d3d9a962d64dc274693d8391f02d1f4ab457e57c4c38'),
+              ('oven-sh/bun', 'bun-v1.2.22', 'bun-linux-x64.zip', '4c446af1a01d7b40e1e11baebc352f9b2bfd12887e51b97dd3b59879cee2743a'),
           ):
-              request = Request(f'https://api.github.com/repos/{repo}/releases/tags/{tag}', headers={'Accept': 'application/vnd.github+json'})
-              with urlopen(request, timeout=60) as response:
-                  release = json.load(response)
-              matches = [asset for asset in release['assets'] if asset['name'] in names]
-              if len(matches) != 1:
-                  raise RuntimeError(f'Expected one asset from {repo}@{tag}: {names}')
-              asset = matches[0]
-              with urlopen(asset['browser_download_url'], timeout=120) as response:
+              url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
+              with urlopen(url, timeout=120) as response:
                   content = response.read()
-              digest = 'sha256:' + hashlib.sha256(content).hexdigest()
-              if asset.get('digest') and asset['digest'] != digest:
-                  raise RuntimeError('Release asset digest mismatch')
-              (root / asset['name']).write_bytes(content)
-              records.append({'repo': repo, 'tag': tag, 'name': asset['name'], 'digest': digest, 'release_digest': asset.get('digest')})
+              actual_sha256 = hashlib.sha256(content).hexdigest()
+              if actual_sha256 != expected_sha256:
+                  raise RuntimeError(
+                      f'SHA-256 mismatch for {repo}@{tag}/{name}: '
+                      f'expected {expected_sha256}, got {actual_sha256}'
+                  )
+              (root / name).write_bytes(content)
+              records.append({
+                  'repo': repo,
+                  'tag': tag,
+                  'name': name,
+                  'sha256': actual_sha256,
+                  'expected_sha256': expected_sha256,
+              })
           (root / 'tool-identities.json').write_text(json.dumps(records, indent=2))
           print(json.dumps(records, indent=2))
           PY

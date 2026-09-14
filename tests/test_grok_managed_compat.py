@@ -1,4 +1,4 @@
-"""Grok managed-config compatibility merge tests."""
+"""Grok managed-config compatibility merge tests for foreign hook imports."""
 
 from __future__ import annotations
 

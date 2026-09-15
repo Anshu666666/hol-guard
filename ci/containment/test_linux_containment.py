@@ -97,13 +97,17 @@ test('contained runtime boundaries', async () => {
         .replace("HOST_PORT", str(port))
     )
     (workspace / "boundary.test.ts").write_text(script, encoding="utf-8")
-    args = ("vitest", "run", "boundary.test.ts", "--reporter=dot")
+    args = ("--no-install", "vitest", "run", "boundary.test.ts", "--reporter=dot")
     intent = parse_package_intent("npx " + " ".join(args), workspace=workspace)
     assert intent is not None and len(intent.local_executions) == 1
     evidence = build_local_node_runner_evidence("npx", args, intent.local_executions[0], workspace=workspace)
     assert evidence is not None and evidence.status == "complete"
     node = str(Path(shutil.which("node") or "node").resolve(strict=True))
-    request = _request(workspace.resolve(), (node, "node_modules/vitest/vitest.mjs", *args[1:]), include_inputs=True)
+    request = _request(
+        workspace.resolve(),
+        (node, "node_modules/vitest/vitest.mjs", *evidence.runner_args),
+        include_inputs=True,
+    )
     fingerprint = current_guard_daemon_runtime_fingerprint()
     health = probe_containment_health(daemon_fingerprint=fingerprint)
     assert health.probe_enforced, health.to_dict()

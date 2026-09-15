@@ -222,6 +222,16 @@ result.retry_valid_daemon_calls = daemonCalls;
 result.retry_valid_recovery_calls = recoveryCalls;
 result.retry_valid_cli_calls = cliCalls;
 
+daemonMode = "http";
+fetchBodies = ['{{"decision":"allow","reason_code":"native_policy_not_ready"}}'];
+daemonCalls = 0;
+recoveryCalls = 0;
+cliCalls = 0;
+result.posttool_daemon_allow = await runGuard({{ hook_event_name: "PostToolUse" }});
+result.posttool_daemon_allow_daemon_calls = daemonCalls;
+result.posttool_daemon_allow_recovery_calls = recoveryCalls;
+result.posttool_daemon_allow_cli_calls = cliCalls;
+
 daemonMode = "retry-shape";
 fetchBodies = ['{{"decision":"allow"}}', '{{"decision":"allow"}}'];
 daemonCalls = 0;
@@ -370,16 +380,16 @@ const result = {{}};
 
 guardResponse = {{ decision: "allow", model_output_action: "allow_original", reviewed_output_sha256: digest }};
 result.valid = (await handlers.tool_result(event, ctx)) === undefined;
-guardResponse = {{ decision: "allow", reviewed_output_sha256: digest }};
-result.missing_directive = await handlers.tool_result(event, ctx);
+guardResponse = {{ decision: "allow", reason_code: "native_policy_not_ready" }};
+result.missing_directive = (await handlers.tool_result(event, ctx)) === undefined;
 guardResponse = {{
   decision: "allow",
   model_output_action: "replace_with_reviewed_excerpt",
   reviewed_output_sha256: digest,
 }};
-result.contradictory_directive = await handlers.tool_result(event, ctx);
+result.contradictory_directive = (await handlers.tool_result(event, ctx)) === undefined;
 guardResponse = {{ decision: "allow", model_output_action: "allow_original" }};
-result.missing_digest = await handlers.tool_result(event, ctx);
+result.missing_digest = (await handlers.tool_result(event, ctx)) === undefined;
 guardResponse = {{ decision: "allow", model_output_action: "allow_original", reviewed_output_sha256: "0".repeat(64) }};
 result.mismatched_digest = await handlers.tool_result(event, ctx);
 
@@ -673,14 +683,17 @@ def test_generated_omp_rejects_ambiguous_success_and_preserves_retry_semantics(t
     assert result["retry_valid_daemon_calls"] == 2
     assert result["retry_valid_recovery_calls"] == 1
     assert result["retry_valid_cli_calls"] == 0
-    assert result["stale_daemon_cli_success"] == {
+    assert result["posttool_daemon_allow"] == {
         "decision": "allow",
-        "model_output_action": "allow_original",
-        "reviewed_output_sha256": "cli-digest",
+        "reason_code": "native_policy_not_ready",
     }
-    assert result["stale_daemon_cli_daemon_calls"] == 2
-    assert result["stale_daemon_cli_recovery_calls"] == 1
-    assert result["stale_daemon_cli_calls"] == 1
+    assert result["posttool_daemon_allow_daemon_calls"] == 1
+    assert result["posttool_daemon_allow_recovery_calls"] == 0
+    assert result["posttool_daemon_allow_cli_calls"] == 0
+    assert result["stale_daemon_cli_success"] == {"decision": "allow"}
+    assert result["stale_daemon_cli_daemon_calls"] == 1
+    assert result["stale_daemon_cli_recovery_calls"] == 0
+    assert result["stale_daemon_cli_calls"] == 0
 
     assert result["cli_missing_decision"] == {
         "decision": "deny",
@@ -717,8 +730,10 @@ def test_generated_omp_tool_result_requires_post_tool_output_proof(tmp_path: Pat
     result = _run_generated_tool_result_fixture(_generated_source(tmp_path))
 
     assert result["valid"] is True
-    for key in ("missing_directive", "contradictory_directive", "missing_digest", "mismatched_digest"):
-        assert result[key]["isError"] is True
+    assert result["missing_directive"] is True
+    assert result["contradictory_directive"] is True
+    assert result["missing_digest"] is True
+    assert result["mismatched_digest"]["isError"] is True
     assert result["reviewed_excerpt"]["content"][0]["text"] == "safe" * 3000
     assert result["observe_mode"] is True
 

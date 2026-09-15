@@ -387,18 +387,14 @@ def test_readiness_report_types_not_merged_and_no_mapping() -> None:
     client.file_payloads[(MERGE_SHA, "contributions/extensions/command.unmapped.json")] = {"schemaVersion": "v1"}
     report = MODULE.readiness_report(client, 31)
     assert report["prStatus"] == "eligible_for_notice"
-    assert report["entries"] == [
-        {"extensionId": "command.unmapped", "status": "no_mapping", "notifiedIds": []}
-    ]
+    assert report["entries"] == [{"extensionId": "command.unmapped", "status": "no_mapping", "notifiedIds": []}]
 
 
 def test_readiness_report_types_empty_mapping_as_no_mapping() -> None:
     client = FakeGitHub()
     configure_new_contribution(client, "command.empty-authority", [])
     report = MODULE.readiness_report(client, 32)
-    assert report["entries"] == [
-        {"extensionId": "command.empty-authority", "status": "no_mapping", "notifiedIds": []}
-    ]
+    assert report["entries"] == [{"extensionId": "command.empty-authority", "status": "no_mapping", "notifiedIds": []}]
 
 
 def test_readiness_report_reports_eligible_entry_and_portal_gate(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -563,14 +559,17 @@ def test_portal_readiness_maps_transport_failures_without_claiming_ready(monkeyp
 
 
 def test_readyness_reasons_constant_covers_the_reviewed_vocabulary() -> None:
-    assert frozenset(
-        {
-            "no_mapping",
-            "not_merged",
-            "source_not_current",
-            "portal_not_ready",
-            "already_notified",
-            "eligible_for_notice",
-            "provider_unavailable",
-        }
-    ) == MODULE.READYNESS_REASONS
+    assert (
+        frozenset(
+            {
+                "no_mapping",
+                "not_merged",
+                "source_not_current",
+                "portal_not_ready",
+                "already_notified",
+                "eligible_for_notice",
+                "provider_unavailable",
+            }
+        )
+        == MODULE.READYNESS_REASONS
+    )

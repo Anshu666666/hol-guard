@@ -582,9 +582,7 @@ def readiness_report(
     try:
         already = has_trusted_notice(client.comments(pr_number))
         records: list[ExtensionReadiness] = []
-        items, pr_reason = _plan_notice_items(
-            client, pr_number, allow_renames=allow_renames, records=records
-        )
+        items, pr_reason = _plan_notice_items(client, pr_number, allow_renames=allow_renames, records=records)
     except ClaimNoticeError as error:
         if "GitHub API" in str(error):
             return {
@@ -656,9 +654,7 @@ def process(
         if portal_status != "ok":
             # Fail closed: an unreachable or lagging portal projection must not
             # produce an invitation that promises an immediately available claim.
-            print(
-                f"PR #{pr_number}: portal readiness check failed ({portal_status}: {portal_detail}); skipping"
-            )
+            print(f"PR #{pr_number}: portal readiness check failed ({portal_status}: {portal_detail}); skipping")
             return 0
     items = collect_notice_items(client, pr_number, allow_renames=allow_renames)
     if not items:
@@ -688,7 +684,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--portal-readiness-url",
         default=os.environ.get(PORTAL_READINESS_URL_ENV, ""),
         help=(
-            "Optional portal projection endpoint returning JSON {\"ok\": true}. "
+            'Optional portal projection endpoint returning JSON {"ok": true}. '
             "Unreachable portals keep the run report portal_not_ready/provider_unavailable."
         ),
     )

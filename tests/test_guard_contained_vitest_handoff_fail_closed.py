@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from codex_plugin_scanner.guard import contained_node_execution
 from codex_plugin_scanner.guard.runtime.package_intent_common import LocalPackageExecutionEvidence, PackageIntent
 
 
-def _vitest_intent(workspace) -> PackageIntent:
+def _vitest_intent(workspace: Path) -> PackageIntent:
     execution = LocalPackageExecutionEvidence(
         manager_name="bunx",
         path_source="guard-shim",
@@ -38,8 +40,16 @@ def test_installed_package_shim_stops_vitest_when_runner_evidence_is_missing(tmp
     shim_directory = guard_home / "package-shims" / "bin"
     shim_directory.mkdir(parents=True)
 
-    monkeypatch.setattr(contained_node_execution, "parse_package_intent", lambda *args, **kwargs: _vitest_intent(workspace))
-    monkeypatch.setattr(contained_node_execution, "build_local_node_runner_evidence", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        contained_node_execution,
+        "parse_package_intent",
+        lambda *args, **kwargs: _vitest_intent(workspace),
+    )
+    monkeypatch.setattr(
+        contained_node_execution,
+        "build_local_node_runner_evidence",
+        lambda *args, **kwargs: None,
+    )
 
     with pytest.raises(SystemExit, match="refused uncontained Vitest execution"):
         contained_node_execution.try_execute_contained_node_command(
@@ -58,8 +68,16 @@ def test_non_shim_vitest_returns_to_review_when_runner_evidence_is_missing(tmp_p
     shim_directory = tmp_path / "bin"
     shim_directory.mkdir()
 
-    monkeypatch.setattr(contained_node_execution, "parse_package_intent", lambda *args, **kwargs: _vitest_intent(workspace))
-    monkeypatch.setattr(contained_node_execution, "build_local_node_runner_evidence", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        contained_node_execution,
+        "parse_package_intent",
+        lambda *args, **kwargs: _vitest_intent(workspace),
+    )
+    monkeypatch.setattr(
+        contained_node_execution,
+        "build_local_node_runner_evidence",
+        lambda *args, **kwargs: None,
+    )
 
     result = contained_node_execution.try_execute_contained_node_command(
         "bunx",

@@ -82,7 +82,6 @@ jobs:
                   with response:
                       destination.write_bytes(response.read())
                   return
-              # Never forward the GitHub bearer token to the cross-origin blob URL.
               with urlopen(Request(location, headers={"Accept": "application/zip"}), timeout=120) as response:
                   destination.write_bytes(response.read())
 
@@ -226,7 +225,6 @@ jobs:
           from codex_plugin_scanner.guard.codex_config import read_toml_payload, write_toml_payload
 
           home = Path(os.environ["HOME"])
-          guard_home = Path(os.environ["GUARD_HOME"])
           workspace = Path(os.environ["WORKSPACE"])
           output_path = Path(os.environ["RUNNER_TEMP"]) / "codex-integration-output.txt"
           request_log = Path(os.environ["RUNNER_TEMP"]) / "codex-provider-requests.jsonl"
@@ -324,7 +322,7 @@ jobs:
                   return
 
               def do_POST(self):
-                  nonlocal request_count
+                  global request_count
                   size = int(self.headers.get("content-length", "0"))
                   raw = self.rfile.read(size)
                   with request_log.open("ab") as handle:

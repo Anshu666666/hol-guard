@@ -22,6 +22,7 @@ from .upload_arguments import _contains_encoded_or_encrypted_shell_command
 
 _LOCAL_SCRIPT_ACTION_CLASS = "local script execution shell command"
 _LOCAL_SECRET_READ_ACTION_CLASS = "local secret read shell command"
+_READ_ONLY_SEARCH_COMMANDS = frozenset({"grep", "egrep", "fgrep", "rg"})
 
 
 def initial_shell_risk_match(
@@ -91,6 +92,24 @@ def initial_shell_risk_match(
     # classify the command. A pytest segment or an extension fallback must not
     # erase a separate, uninspected script launch from the same request.
     return False, deferred_review_match
+
+
+def _missing_workspace_read_only_search(cwd: Path | None, command: CanonicalCommand) -> bool:
+    """Do not relabel a pure search as script execution just because a synthetic cwd is absent.
+
+    Direct protected operands are classified before this helper. In production
+    the hook workspace exists; this branch only avoids turning the cwd model's
+    missing-directory uncertainty into a local-code-execution finding for a
+    single read-only grep/rg command.
+    """
+
+    if cwd is None or cwd.exists() or command.redirects or command.embedded_commands or len(command.segments) != 1:
+        return False
+    segment = command.segments[0]
+    executable = segment.executable
+    if executable is None or segment.environment_names or segment.pipeline_index != 0:
+        return False
+    return Path(executable).name.lower() in _READ_ONLY_SEARCH_COMMANDS
 
 
 def _direct_shell_risk_match(
@@ -169,6 +188,8 @@ def _direct_shell_risk_match(
             interpreter_executable_identities=interpreter_executable_identities,
         )
     if assessment.requires_review:
+        if _missing_workspace_read_only_search(cwd, canonical_command):
+            return None
         return ToolActionRequestMatch(
             tool_name=tool_name,
             normalized_tool_name=normalized_tool_name,

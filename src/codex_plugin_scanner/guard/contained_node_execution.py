@@ -116,7 +116,11 @@ def try_execute_contained_node_command(
         node_path = _resolve_node(environment.get("PATH", ""), shim_directory)
         node_digest = file_sha256(node_path)
     except (OSError, ValueError):
-        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "workspace or runtime identity could not be proven")
+        _fail_closed_vitest_handoff(
+            shim_directory,
+            evidence.runner,
+            "workspace or runtime identity could not be proven",
+        )
         return None
     if f"sha256:{executable_digest}" != evidence.executable_hash:
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner identity changed before execution")
@@ -132,7 +136,11 @@ def try_execute_contained_node_command(
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "workspace identity changed before execution")
         return None
     if any(path not in snapshot_digests for path in evidence.input_files):
-        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "requested test input was not in the protected snapshot")
+        _fail_closed_vitest_handoff(
+            shim_directory,
+            evidence.runner,
+            "requested test input was not in the protected snapshot",
+        )
         return None
     launch_digest = _binding_digest(
         {

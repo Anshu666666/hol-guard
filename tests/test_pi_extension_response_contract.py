@@ -385,9 +385,11 @@ result.missing_directive = (await handlers.tool_result(event, ctx)) === undefine
 guardResponse = {{
   decision: "allow",
   model_output_action: "replace_with_reviewed_excerpt",
-  reviewed_output_sha256: digest,
+  reviewed_excerpt: "reviewed-safe",
 }};
 result.contradictory_directive = await handlers.tool_result(event, ctx);
+guardResponse = {{ decision: "allow", model_output_action: "replace_with_reviewed_excerpt" }};
+result.missing_excerpt = await handlers.tool_result(event, ctx);
 guardResponse = {{ decision: "allow", model_output_action: "allow_original" }};
 result.missing_digest = await handlers.tool_result(event, ctx);
 guardResponse = {{ decision: "allow", model_output_action: "allow_original", reviewed_output_sha256: "0".repeat(64) }};
@@ -399,6 +401,7 @@ guardResponse = {{
   model_output_action: "replace_with_reviewed_excerpt",
   notice: "excerpt",
   reason: "reviewed excerpt",
+  reviewed_excerpt: "reviewed-long",
 }};
 result.reviewed_excerpt = await handlers.tool_result(longEvent, ctx);
 
@@ -731,11 +734,12 @@ def test_generated_omp_tool_result_preserves_daemon_allow_without_hash(tmp_path:
 
     assert result["valid"] is True
     assert result["missing_directive"] is True
-    assert result["contradictory_directive"]["content"][0]["text"] == "safe inline output"
+    assert result["contradictory_directive"]["content"][0]["text"] == "reviewed-safe"
     assert result["contradictory_directive"].get("isError") is not True
+    assert result["missing_excerpt"]["isError"] is True
     assert result["missing_digest"]["isError"] is True
     assert result["mismatched_digest"]["isError"] is True
-    assert result["reviewed_excerpt"]["content"][0]["text"] == "safe" * 3000
+    assert result["reviewed_excerpt"]["content"][0]["text"] == "reviewed-long"
     assert result["observe_mode"] is True
 
 
@@ -952,4 +956,4 @@ def test_generated_large_non_source_result_returns_reviewed_excerpt(tmp_path: Pa
     result = callback["result"]
     assert isinstance(result, dict)
     assert "isError" not in result
-    assert result["content"] == [{"type": "text", "text": large_text[:12000]}]
+    assert result["content"] == [{"type": "text", "text": response.reviewed_excerpt}]

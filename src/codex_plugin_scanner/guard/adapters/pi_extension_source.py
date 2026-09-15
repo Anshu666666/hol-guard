@@ -104,6 +104,7 @@ def managed_extension_source(
         "  resume_poll_path?: string;\n"
         '  model_output_action?: "allow_original" | "replace_with_reviewed_excerpt" | "block" | "not_applicable";\n'
         "  reviewed_output_sha256?: string;\n"
+        "  reviewed_excerpt?: string;\n"
         "  observed_policy_action?: string;\n"
         "  observed_review_failure?: boolean;\n"
         "  observe_mode?: boolean;\n"
@@ -625,7 +626,7 @@ def managed_extension_source(
         "      return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
         "    }\n"
         '    if (response.model_output_action === "replace_with_reviewed_excerpt") {\n'
-        "      const excerptText = typeof toolOutput === 'string' ? toolOutput : '';\n"
+        "      const excerptText = typeof response.reviewed_excerpt === 'string' ? response.reviewed_excerpt : '';\n"
         "      if (excerptText.length === 0) {\n"
         "        const reason = response.reason ||\n"
         '          "HOL Guard could not prove this tool output safe to preserve.";\n'
@@ -682,6 +683,7 @@ def legacy_managed_extension_source(
         ('  decision: "allow" | "deny";\n', "  decision?: string;\n"),
         ("  observed_review_failure?: boolean;\n", ""),
         ("  policy_action?: string;\n", ""),
+        ("  reviewed_excerpt?: string;\n", ""),
         (
             "function modelVisibleBlockedReason(reason: string, reasonCode?: string): string {\n"
             "  if (\n"
@@ -867,7 +869,8 @@ def legacy_managed_extension_source(
             "      return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
             "    }\n"
             '    if (response.model_output_action === "replace_with_reviewed_excerpt") {\n'
-            "      const excerptText = typeof toolOutput === 'string' ? toolOutput : '';\n"
+            "      const excerptText = typeof response.reviewed_excerpt === 'string' "
+            "? response.reviewed_excerpt : '';\n"
             "      if (excerptText.length === 0) {\n"
             "        const reason = response.reason ||\n"
             '          "HOL Guard could not prove this tool output safe to preserve.";\n'

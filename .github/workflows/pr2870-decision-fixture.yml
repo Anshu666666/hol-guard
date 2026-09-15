@@ -1,4 +1,4 @@
-name: PR 2870 decision fixture export
+name: PR 2870 decision fixture finalize
 
 on:
   pull_request:
@@ -6,16 +6,18 @@ on:
       - .github/workflows/pr2870-decision-fixture.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
+  finalize:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
@@ -24,14 +26,22 @@ jobs:
           version: "0.9.26"
           enable-cache: false
       - run: uv sync --frozen --extra dev --python 3.12
-      - name: Regenerate deterministic decision evidence
+      - name: Regenerate and verify deterministic decision evidence
         run: |
           set -euo pipefail
           uv run --no-sync python tests/guard_command_decision_diff.py --write
           uv run --no-sync python tests/guard_command_decision_diff.py --check
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pr2870-decision-diff-report
-          path: tests/fixtures/guard-command-corpus/decision-diff-report.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated fixture and remove this temporary workflow
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          BRANCH: fix/secret-read-floors-and-contained-vitest
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/fixtures/guard-command-corpus/decision-diff-report.json
+          git rm .github/workflows/pr2870-decision-fixture.yml
+          git diff --cached --check
+          git commit -m "test: refresh decision diff evidence"
+          git push origin "HEAD:$BRANCH"

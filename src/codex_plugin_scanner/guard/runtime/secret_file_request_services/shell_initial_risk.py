@@ -22,7 +22,7 @@ from .upload_arguments import _contains_encoded_or_encrypted_shell_command
 
 _LOCAL_SCRIPT_ACTION_CLASS = "local script execution shell command"
 _LOCAL_SECRET_READ_ACTION_CLASS = "local secret read shell command"
-_READ_ONLY_SEARCH_COMMANDS = frozenset({"grep", "egrep", "fgrep", "rg"})
+_READ_ONLY_SEARCH_COMMANDS = frozenset({"grep", "egrep", "fgrep", "rg", "ag", "ack"})
 
 
 def initial_shell_risk_match(
@@ -100,10 +100,10 @@ def _missing_workspace_read_only_search(cwd: Path | None, command: CanonicalComm
     Direct protected operands are classified before this helper. In production
     the hook workspace exists; this branch only avoids turning the cwd model's
     missing-directory uncertainty into a local-code-execution finding for a
-    single read-only grep/rg command.
+    single read-only search command.
     """
 
-    if cwd is None or cwd.exists() or command.redirects or command.embedded_commands or len(command.segments) != 1:
+    if (cwd is not None and cwd.exists()) or command.redirects or command.embedded_commands or len(command.segments) != 1:
         return False
     segment = command.segments[0]
     executable = segment.executable

@@ -100,13 +100,12 @@ def try_execute_contained_node_command(
     )
     if evidence is None:
         _fail_closed_vitest_handoff(shim_directory, execution.package_name, "runner evidence could not be built")
+    if evidence is None:
         return None
     if evidence.status != "complete" or evidence.direct_silent_verification:
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner evidence was incomplete")
-        return None
     if evidence.executable_path is None or evidence.executable_hash is None:
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner identity was incomplete")
-        return None
     executable = Path(evidence.executable_path)
     try:
         executable_relative = executable.relative_to(canonical_workspace).as_posix()
@@ -124,7 +123,6 @@ def try_execute_contained_node_command(
         return None
     if f"sha256:{executable_digest}" != evidence.executable_hash:
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner identity changed before execution")
-        return None
     snapshot_digests = {item.snapshot_path: f"sha256:{item.content_digest}" for item in inputs}
     expected_snapshot_digests = {
         "package.json": evidence.root_manifest_hash,
@@ -134,7 +132,6 @@ def try_execute_contained_node_command(
     }
     if any(snapshot_digests.get(path) != digest for path, digest in expected_snapshot_digests.items()):
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "workspace identity changed before execution")
-        return None
     if any(path not in snapshot_digests for path in evidence.input_files):
         _fail_closed_vitest_handoff(
             shim_directory,

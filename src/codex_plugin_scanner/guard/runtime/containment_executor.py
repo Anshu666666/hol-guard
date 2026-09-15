@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+from .containment_backend_status import bwrap_execution_completed
 from .containment_contract import (
     ContainmentAttestation,
     ContainmentBackend,
@@ -107,7 +108,7 @@ def execute_contained(
                 cwd = str(root)
                 home = "/guard/home"
                 temporary = "/guard/tmp"
-            exit_code, stdout, stderr, timed_out = _run_process(
+            exit_code, stdout, stderr, timed_out, execution_completed = _run_process(
                 argv,
                 cwd=cwd,
                 environment={
@@ -117,7 +118,18 @@ def execute_contained(
                 },
                 timeout_seconds=float(timeout_seconds),
                 temp_root=root,
+                backend=backend.kind,
             )
+            if not execution_completed:
+                return ContainmentExecutionResult(
+                    exit_code=None,
+                    stdout=stdout,
+                    stderr=stderr or "containment backend did not confirm execution",
+                    timed_out=timed_out,
+                    attestation=_failed_attestation(
+                        request, backend.kind, backend.digest, ContainmentFailure.APPLY_FAILED
+                    ),
+                )
             outputs = (
                 capture_declared_outputs(request, root / "workspace")
                 if exit_code == 0 and request.declared_outputs
@@ -297,18 +309,26 @@ def _run_process(
     environment: dict[str, str],
     timeout_seconds: float,
     temp_root: Path,
-) -> tuple[int | None, str, str, bool]:
+    backend: ContainmentBackend,
+) -> tuple[int | None, str, str, bool, bool]:
     stdout_path = temp_root / "stdout"
     stderr_path = temp_root / "stderr"
-    with stdout_path.open("xb") as stdout_file, stderr_path.open("xb") as stderr_file:
+    with (
+        stdout_path.open("xb") as stdout_file,
+        stderr_path.open("xb") as stderr_file,
+        tempfile.TemporaryFile(mode="w+b") as status_file,
+    ):
+        is_bwrap = backend is ContainmentBackend.LINUX_BWRAP
+        launch_argv = [argv[0], "--json-status-fd", str(status_file.fileno()), *argv[1:]] if is_bwrap else argv
         process = subprocess.Popen(
-            argv,
+            launch_argv,
             cwd=cwd,
             env=environment,
             stdin=subprocess.DEVNULL,
             stdout=stdout_file,
             stderr=stderr_file,
             start_new_session=True,
+            pass_fds=(status_file.fileno(),) if is_bwrap else (),
         )
         timed_out = False
         try:
@@ -320,11 +340,13 @@ def _run_process(
             exit_code = None
         else:
             _kill_process_group(process.pid)
+        execution_completed = not is_bwrap or bwrap_execution_completed(status_file, exit_code)
     return (
         exit_code,
         _read_bounded(stdout_path),
         _read_bounded(stderr_path),
         timed_out,
+        execution_completed,
     )
 
 

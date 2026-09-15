@@ -103,7 +103,12 @@ def _missing_workspace_read_only_search(cwd: Path | None, command: CanonicalComm
     single read-only search command.
     """
 
-    if (cwd is not None and cwd.exists()) or command.redirects or command.embedded_commands or len(command.segments) != 1:
+    if (
+        (cwd is not None and cwd.exists())
+        or command.redirects
+        or command.embedded_commands
+        or len(command.segments) != 1
+    ):
         return False
     segment = command.segments[0]
     executable = segment.executable

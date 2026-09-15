@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import http.client
 import json
-import os
 import secrets
 import time
 from collections.abc import Mapping
@@ -21,17 +20,6 @@ from .codex_daemon_hook_auth import (
 _DISCOVERY_PROTOCOL_VERSION = 1
 _MAX_DAEMON_RESPONSE_BYTES = 1_000_000
 _MINIMUM_OPERATION_SECONDS = 0.01
-
-
-def _with_transport_environment(data: str) -> str:
-    try:
-        payload = json.loads(data)
-    except json.JSONDecodeError:
-        return data
-    if not isinstance(payload, dict):
-        return data
-    payload["_hol_guard_transport"] = {"path": os.environ.get("PATH", "")}
-    return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
 
 
 class DaemonStateUnavailableError(OSError):
@@ -95,7 +83,7 @@ def authenticated_claude_hook_response(
         connection.request(
             "POST",
             hook_path,
-            body=_with_transport_environment(data).encode("utf-8"),
+            body=data.encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
                 "Connection": "close",

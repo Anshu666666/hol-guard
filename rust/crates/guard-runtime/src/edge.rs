@@ -314,43 +314,11 @@ fn evaluate_validated_envelope(
     }
     let (result, receipt) = match event_name.as_str() {
         "PreToolUse" => {
-            let mut native = guard_command::pretool::evaluate_pre_tool_envelope(
+            let native = guard_command::pretool::evaluate_pre_tool_envelope(
                 &harness,
                 &event_name,
                 &envelope.raw_payload,
             );
-            if native.minimum_action == "review"
-                && native.action.action_type == guard_contracts::PreToolActionTypeV1::Package
-                && native.action.operation == guard_contracts::PreToolOperationV1::Install
-            {
-                if let Some(manager) =
-                    guard_command::pretool::generic::contained_node_handoff_manager(
-                        &envelope.raw_payload,
-                    )
-                {
-                    let trusted = envelope
-                        .raw_payload
-                        .get("_hol_guard_transport_verified_shims")
-                        .and_then(Value::as_array)
-                        .is_some_and(|values| {
-                            values.len() <= 2
-                                && values.iter().all(|value| {
-                                    value
-                                        .as_str()
-                                        .is_some_and(|item| matches!(item, "npx" | "bunx"))
-                                })
-                                && values.iter().any(|value| value.as_str() == Some(manager))
-                        });
-                    if trusted {
-                        native.decision = "allow".to_owned();
-                        native.policy_action = "allow".to_owned();
-                        native.minimum_action = "allow".to_owned();
-                        native.reason_code = "native_contained_node_handoff".to_owned();
-                        native.reason = "HOL Guard verified this Vitest command will execute through its trusted package shim, which owns containment before any local test code runs.".to_owned();
-                        native.explicitly_benign = true;
-                    }
-                }
-            }
             let evaluated = if let Some(snapshot) = policy_snapshot {
                 crate::policy_enforcement::apply_pre_tool_policy(
                     snapshot,

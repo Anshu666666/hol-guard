@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
 from collections.abc import Mapping, Sequence
@@ -96,14 +95,6 @@ def _with_browser_wait_process(data: str, *, wait_timeout_seconds: float) -> str
     return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
 
 
-def _with_transport_environment(data: str) -> str:
-    payload = _json_object(data)
-    if payload is None:
-        return data
-    payload["_hol_guard_transport"] = {"path": os.environ.get("PATH", "")}
-    return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
-
-
 def _request_timeout(event_name: str, hook_timeouts: Mapping[str, int]) -> float:
     timeout = hook_timeouts.get(event_name, min(hook_timeouts.values(), default=10))
     return float(max(1, timeout - _HOOK_TIMEOUT_GRACE_SECONDS))
@@ -191,7 +182,6 @@ def _bound_hook_input(hook_timeouts: Mapping[str, int]) -> tuple[str, str, float
         if event_name == "PreToolUse"
         else raw_data
     )
-    data = _with_transport_environment(data)
     return event_name, data, timeout_seconds
 
 

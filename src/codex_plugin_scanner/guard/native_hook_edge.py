@@ -8,7 +8,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .adapters.base import HarnessContext
 from .native_decision_receipt import receipt_matches_edge
 from .native_resident_client import native_resident_client_request
 from .native_route_receipt import record_native_hook_result
@@ -17,7 +16,6 @@ from .native_runtime_resilience import (
     native_record_resident_failure,
     native_record_resident_success,
 )
-from .shims import package_shim_status
 
 _EDGE_FEATURE = "hook-envelope-v2"
 _CLIENT_FEATURE = "native-resident-client-v1"
@@ -25,15 +23,6 @@ _GENERIC_PRE_TOOL_SCHEMA = "guard-pre-tool-result.v1"
 _GENERIC_PRE_TOOL_ACTION_SCHEMA = "guard-pre-tool-action.v1"
 _MAX_REQUEST_BYTES = 6 * 1024 * 1024
 _MAX_RESULT_TEXT = 2_048
-_MAX_HANDOFF_PREFLIGHT_VALUES = 128
-_PRE_TOOL_EVENT_KEYS = {
-    "pretool",
-    "pretooluse",
-    "beforeshellexecution",
-    "beforereadfile",
-    "beforewritefile",
-    "beforemcpexecution",
-}
 _PRE_TOOL_ACTION_TYPES = {
     "command",
     "file_read",
@@ -76,76 +65,6 @@ _PRE_TOOL_ACTION_OPERATIONS = {
     "harness": {"start", "stop"},
     "unknown": {"unknown"},
 }
-
-
-def _payload_may_need_package_shim_verification(payload: Mapping[str, object]) -> bool:
-    """Cheaply gate filesystem-heavy shim verification to possible Vitest handoffs.
-
-    Missing a candidate is fail-closed: Rust simply retains its normal review
-    decision because no verified-shim evidence is attached.
-    """
-
-    pending: list[object] = [payload]
-    values_seen = 0
-    manager_seen = False
-    vitest_seen = False
-    while pending and values_seen < _MAX_HANDOFF_PREFLIGHT_VALUES:
-        value = pending.pop()
-        values_seen += 1
-        if isinstance(value, str):
-            lowered = value.lower()
-            manager_seen = manager_seen or "npx" in lowered or "bunx" in lowered
-            vitest_seen = vitest_seen or "vitest" in lowered
-            if manager_seen and vitest_seen:
-                return True
-            continue
-        if isinstance(value, Mapping):
-            pending.extend(value.values())
-        elif isinstance(value, (list, tuple)):
-            pending.extend(value)
-    return False
-
-
-def _trusted_package_shim_managers(
-    *,
-    guard_home: Path,
-    home_dir: Path,
-    cwd: Path | None,
-    transport_metadata: Mapping[str, object] | None,
-) -> list[str]:
-    """Return managers proven to resolve through an intact Guard shim.
-
-    The daemon process PATH is not evidence about the harness process. Only an
-    authenticated hook transport may provide the PATH used by the action.
-    """
-
-    path_env = transport_metadata.get("path") if transport_metadata is not None else None
-    if not isinstance(path_env, str) or not path_env:
-        return []
-    try:
-        status = package_shim_status(
-            HarnessContext(home_dir=home_dir, workspace_dir=cwd, guard_home=guard_home),
-            path_env=path_env,
-        )
-    except (OSError, RuntimeError, TypeError, ValueError):
-        return []
-    details = status.get("manager_details")
-    if not isinstance(details, list):
-        return []
-    trusted: list[str] = []
-    for detail in details:
-        if not isinstance(detail, Mapping):
-            continue
-        manager = detail.get("manager")
-        if (
-            manager in {"npx", "bunx"}
-            and detail.get("integrity") == "ok"
-            and detail.get("path_active") is True
-        ):
-            trusted.append(str(manager))
-    return sorted(set(trusted))
-
-
 _PRE_TOOL_RESULT_KEYS = {
     "schema",
     "version",
@@ -302,12 +221,6 @@ def _encode_hook_envelope(
     deadline_budget_ms: int,
     snapshot: Mapping[str, object],
 ) -> bytes | None:
-    source = {
-        "cwd": str(cwd) if cwd is not None else None,
-        "home_dir": str(home_dir),
-        "guard_home": str(guard_home),
-        "source_ref_external_allowed": source_ref_external_allowed,
-    }
     envelope = {
         "schema": "guard-hook-envelope.v2",
         "request_id": None,
@@ -325,7 +238,12 @@ def _encode_hook_envelope(
             "policy_digest": snapshot.get("policy_digest"),
             "runtime_identity": snapshot.get("runtime_identity"),
         },
-        "source": source,
+        "source": {
+            "cwd": str(cwd) if cwd is not None else None,
+            "home_dir": str(home_dir),
+            "guard_home": str(guard_home),
+            "source_ref_external_allowed": source_ref_external_allowed,
+        },
     }
     try:
         encoded = json.dumps(
@@ -353,25 +271,17 @@ def review_raw_hook_native(
     policy_snapshot: Mapping[str, object] | None = None,
 ) -> dict[str, Any] | None:
     """Return a typed Rust edge result, or fail closed without reinterpretation."""
-
     status = native_runtime_status()
     event_key = event.strip().lower().replace("_", "").replace("-", "")
-    transport_metadata = payload.get("_hol_guard_transport")
-    trusted_package_shim_managers: list[str] = []
-    if event_key in _PRE_TOOL_EVENT_KEYS and _payload_may_need_package_shim_verification(payload):
-        trusted_package_shim_managers = _trusted_package_shim_managers(
-            guard_home=guard_home,
-            home_dir=home_dir,
-            cwd=cwd,
-            transport_metadata=transport_metadata if isinstance(transport_metadata, Mapping) else None,
-        )
-    action_payload = dict(payload)
-    action_payload.pop("_hol_guard_transport", None)
-    action_payload.pop("_hol_guard_transport_verified_shims", None)
-    if trusted_package_shim_managers:
-        action_payload["_hol_guard_transport_verified_shims"] = trusted_package_shim_managers
     required_features = {_EDGE_FEATURE, _CLIENT_FEATURE}
-    if event_key in _PRE_TOOL_EVENT_KEYS:
+    if event_key in {
+        "pretool",
+        "pretooluse",
+        "beforeshellexecution",
+        "beforereadfile",
+        "beforewritefile",
+        "beforemcpexecution",
+    }:
         required_features.add("pre-tool-generic-authority-v1")
     if (
         status.mode not in {"auto", "force"}
@@ -391,7 +301,7 @@ def review_raw_hook_native(
     if isinstance(generation, bool) or not isinstance(generation, int) or generation <= 0:
         return record_native_hook_result("native_fail_safe", None)
     encoded = _encode_hook_envelope(
-        payload=action_payload,
+        payload=payload,
         harness=harness,
         event=event,
         guard_home=guard_home,

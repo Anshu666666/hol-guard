@@ -630,13 +630,15 @@ def managed_extension_source(
         "        const reason = response.reason ||\n"
         '          "HOL Guard could not prove this tool output safe to preserve.";\n'
         '        ctx.ui.notify(reason, "warning");\n'
-        "        return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
+        "        return blockedToolResult("
+        "modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
         "      }\n"
         "      const notice = response.reason ||\n"
         '        "HOL Guard returned a reviewed excerpt because this output could not be fully proven safe'
         ' within local limits.";\n'
         '      ctx.ui.notify(notice, "info");\n'
-        "      return reviewedToolResult([{ type: 'text', text: excerptText }], event.details, event.isError === true);\n"
+        "      return reviewedToolResult([{ type: 'text', text: excerptText }], "
+        "event.details, event.isError === true);\n"
         "    }\n"
         "    if (outputTruncated) {\n"
         "      const notice = response.reason ||\n"
@@ -870,13 +872,15 @@ def legacy_managed_extension_source(
             "        const reason = response.reason ||\n"
             '          "HOL Guard could not prove this tool output safe to preserve.";\n'
             '        ctx.ui.notify(reason, "warning");\n'
-            "        return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
+            "        return blockedToolResult("
+            "modelVisibleBlockedReason(reason, response.reason_code), event.details);\n"
             "      }\n"
             "      const notice = response.reason ||\n"
             '        "HOL Guard returned a reviewed excerpt because this output could not be fully proven safe'
             ' within local limits.";\n'
             '      ctx.ui.notify(notice, "info");\n'
-            "      return reviewedToolResult([{ type: 'text', text: excerptText }], event.details, event.isError === true);\n"
+            "      return reviewedToolResult([{ type: 'text', text: excerptText }], "
+            "event.details, event.isError === true);\n"
             "    }\n"
             "    if (outputTruncated) {\n"
             "      const notice = response.reason ||\n"

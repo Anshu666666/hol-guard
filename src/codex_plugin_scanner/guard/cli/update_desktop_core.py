@@ -81,6 +81,8 @@ def desktop_core_updates_supported() -> bool:
 
 def desktop_core_uses_alpha_channel(current_version: str, *, requested_alpha: bool) -> bool:
     _ = current_version
+    if platform_target() == "x86_64-unknown-linux-gnu":
+        return False
     return requested_alpha
 
 
@@ -157,7 +159,9 @@ def platform_target() -> str | None:
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "aarch64-apple-darwin"
     if system == "linux" and machine in {"x86_64", "amd64"}:
-        return "x86_64-unknown-linux-gnu"
+        libc, _libc_version = platform.libc_ver()
+        if libc.lower() == "glibc":
+            return "x86_64-unknown-linux-gnu"
     return None
 
 

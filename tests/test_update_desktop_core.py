@@ -61,7 +61,10 @@ def test_executable_is_desktop_core_for_app_bundle_and_managed_sidecar(tmp_path:
 def test_platform_target_supports_macos_arm64_and_linux_x64(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(update_desktop_core.sys, "platform", "linux")
     monkeypatch.setattr(update_desktop_core.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(update_desktop_core.platform, "libc_ver", lambda: ("glibc", "2.39"))
     assert update_desktop_core.platform_target() == "x86_64-unknown-linux-gnu"
+    monkeypatch.setattr(update_desktop_core.platform, "libc_ver", lambda: ("", ""))
+    assert update_desktop_core.platform_target() is None
     monkeypatch.setattr(update_desktop_core.sys, "platform", "win32")
     monkeypatch.setattr(update_desktop_core.platform, "machine", lambda: "amd64")
     assert update_desktop_core.platform_target() is None

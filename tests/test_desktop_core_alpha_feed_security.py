@@ -12,6 +12,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "desktop-core-alpha-feed.yml"
+LINUX_WORKFLOW = ROOT / ".github" / "workflows" / "desktop-core-linux-feed.yml"
 TOOL = ROOT / "scripts" / "release" / "desktop_core_alpha_feed.py"
 FROZEN_ENTRYPOINT = ROOT / "scripts" / "mdm" / "hol-guard-entry.py"
 
@@ -20,26 +21,32 @@ def workflow_text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
+def linux_workflow_text() -> str:
+    return LINUX_WORKFLOW.read_text(encoding="utf-8")
+
+
 def workflow() -> dict[object, object]:
     value = yaml.safe_load(workflow_text())
     assert isinstance(value, dict)
     return value
 
 
-def publish_job() -> dict[str, object]:
-    jobs = workflow()["jobs"]
+def linux_workflow() -> dict[object, object]:
+    value = yaml.safe_load(linux_workflow_text())
+    assert isinstance(value, dict)
+    return value
+
+
+def publish_job(job_name: str = "publish-macos-arm64", *, linux: bool = False) -> dict[str, object]:
+    jobs = (linux_workflow() if linux else workflow())["jobs"]
     assert isinstance(jobs, dict)
-    job = jobs["publish-macos-arm64"]
+    job = jobs[job_name]
     assert isinstance(job, dict)
     return job
 
 
 def linux_publish_job() -> dict[str, object]:
-    jobs = workflow()["jobs"]
-    assert isinstance(jobs, dict)
-    job = jobs["publish-linux-x64"]
-    assert isinstance(job, dict)
-    return job
+    return publish_job("publish-linux-x64", linux=True)
 
 
 def test_feed_is_stable_3_0_only_and_wakes_after_main_publisher() -> None:
@@ -251,12 +258,14 @@ def test_complete_feed_assets_are_attested_uploaded_and_reloaded() -> None:
 
 
 def test_linux_feed_publishes_digest_verified_gnu_sidecar() -> None:
-    text = workflow_text()
+    text = linux_workflow_text()
     job = linux_publish_job()
     steps = {step.get("name"): step for step in job["steps"]}
     build = steps["Build standalone Core executable"]
     build_run = build["run"]
     assert isinstance(build_run, str)
+    assert "publish-linux-x64" not in workflow()["jobs"]
+    assert linux_workflow_text().count("\n") <= 500
     assert job["runs-on"] == "ubuntu-24.04"
     assert job["env"]["RELEASE_TARGET"] == "x86_64-unknown-linux-gnu"
     assert job["env"]["NATIVE_RUNTIME_TARGET"] == "x86_64-unknown-linux-musl"
@@ -269,15 +278,15 @@ def test_linux_feed_publishes_digest_verified_gnu_sidecar() -> None:
     assert '--expected-target "$NATIVE_RUNTIME_TARGET"' in build_run
     assert "--codesign-identity" not in build_run
     assert "codesign " not in build_run
-    assert "notarytool" not in "".join(
-        step.get("run", "") if isinstance(step.get("run"), str) else "" for step in job["steps"]
-    )
-    assert "APPLE_CERTIFICATE" not in text.split("publish-linux-x64:")[1]
+    assert "notarytool" not in text
+    assert "APPLE_CERTIFICATE" not in text
     assert '--apple-signing-identity ""' in "".join(
         step.get("run", "") if isinstance(step.get("run"), str) else "" for step in job["steps"]
     )
     assert 'file "$BINARY" | grep -F "ELF 64-bit LSB" | grep -F "x86-64"' in text
     assert "hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}" in build_run
+    assert "mapfile " not in text
+    assert 'test "$GITHUB_REF" = "refs/heads/main"' in text
 
 
 def test_linux_marker_omits_apple_identity(tmp_path: Path) -> None:

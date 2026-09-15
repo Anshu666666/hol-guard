@@ -1,28 +1,23 @@
-name: Publish Desktop Core stable feed
+name: Publish Desktop Core Linux x64 feed
 on:
   pull_request:
     paths:
-      - .github/workflows/desktop-core-alpha-feed.yml
+      - .github/workflows/desktop-core-linux-feed.yml
       - tests/test_desktop_core_alpha_feed_security.py
-      - tests/test_desktop_core_alpha_feed_macos_signing.py
       - tests/test_stage_native_runtime_for_desktop_core.py
       - tests/test_verify_*.py
       - tests/test_seal_pyinstaller_native_manifest.py
       - scripts/release/desktop_core_alpha_feed.py
       - scripts/release/stage_native_runtime_for_desktop_core.py
       - scripts/release/seal_pyinstaller_native_manifest.py
-      - scripts/release/fix_pyinstaller_macos_exe_headers.py
-      - scripts/release/verify_pyinstaller_macos_signing.py
       - scripts/release/verify_*.py
   push:
     branches: [main]
     paths:
-      - .github/workflows/desktop-core-alpha-feed.yml
+      - .github/workflows/desktop-core-linux-feed.yml
       - scripts/release/desktop_core_alpha_feed.py
       - scripts/release/stage_native_runtime_for_desktop_core.py
       - scripts/release/seal_pyinstaller_native_manifest.py
-      - scripts/release/fix_pyinstaller_macos_exe_headers.py
-      - scripts/release/verify_pyinstaller_macos_signing.py
       - scripts/release/verify_*.py
   schedule:
     - cron: "17 * * * *"
@@ -60,22 +55,22 @@ jobs:
       - name: Install Actionlint
         run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
       - name: Validate workflow syntax
-        run: '"$(go env GOPATH)/bin/actionlint" .github/workflows/desktop-core-alpha-feed.yml'
-  publish-macos-arm64:
-    name: Publish signed macOS arm64 Core sidecar
+        run: '"$(go env GOPATH)/bin/actionlint" .github/workflows/desktop-core-linux-feed.yml'
+  publish-linux-x64:
+    name: Publish Linux x64 Core sidecar
     if: >-
       github.event_name != 'pull_request' &&
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     needs: validate
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
-    environment: core-alpha-desktop
     permissions:
       contents: write
       id-token: write
       attestations: write
     env:
-      RELEASE_TARGET: aarch64-apple-darwin
+      RELEASE_TARGET: x86_64-unknown-linux-gnu
+      NATIVE_RUNTIME_TARGET: x86_64-unknown-linux-musl
       MINIMUM_DESKTOP_VERSION: 0.1.0-beta.0
     steps:
       - name: Require trusted main workflow invocation
@@ -98,23 +93,7 @@ jobs:
           test "$(git rev-parse 'HEAD^{commit}')" = "$GITHUB_SHA"
           test -z "$(git status --porcelain)"
       - name: Verify runner architecture
-        run: test "$(uname -m)" = "arm64"
-      - name: Require Apple signing and notarization configuration
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          test -n "$APPLE_CERTIFICATE"
-          test -n "$APPLE_CERTIFICATE_PASSWORD"
-          test -n "$APPLE_SIGNING_IDENTITY"
-          test -n "$APPLE_ID"
-          test -n "$APPLE_PASSWORD"
-          test -n "$APPLE_TEAM_ID"
+        run: test "$(uname -m)" = "x86_64"
       - name: Discover newest published stable Core 3.x release
         id: release
         env:
@@ -161,7 +140,7 @@ jobs:
           git -C "$TRUST_REPO" merge-base --is-ancestor \
             "$SOURCE_SHA" "refs/remotes/origin/${RELEASE_BRANCH}"
           gh release download "$CORE_TAG" --repo "$GITHUB_REPOSITORY" \
-            --pattern "hol_guard-${CORE_VERSION}-*-macosx_*_arm64.whl" \
+            --pattern "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl" \
             --dir "$TRUST_ASSETS"
           gh release download "$CORE_TAG" --repo "$GITHUB_REPOSITORY" \
             --pattern "hol-guard-v${CORE_VERSION}.intoto.jsonl" --dir "$TRUST_ASSETS"
@@ -171,7 +150,7 @@ jobs:
             WHEEL="$candidate"
             WHEEL_COUNT=$((WHEEL_COUNT + 1))
           done < <(find "$TRUST_ASSETS" -maxdepth 1 -type f \
-            -name "hol_guard-${CORE_VERSION}-*-macosx_*_arm64.whl" -print)
+            -name "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl" -print)
           test "$WHEEL_COUNT" -eq 1
           test -f "$WHEEL"
           BUNDLE="$TRUST_ASSETS/hol-guard-v${CORE_VERSION}.intoto.jsonl"
@@ -184,8 +163,8 @@ jobs:
             --source-digest "$SOURCE_SHA" \
             --source-ref "refs/heads/${RELEASE_BRANCH}" \
             --deny-self-hosted-runners >/dev/null
-          cp "$WHEEL" "$RUNNER_TEMP/attested-macos-arm64.whl"
-          test -f "$RUNNER_TEMP/attested-macos-arm64.whl"
+          cp "$WHEEL" "$RUNNER_TEMP/attested-linux-x64.whl"
+          test -f "$RUNNER_TEMP/attested-linux-x64.whl"
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
       - name: Inspect immutable Core asset state
         if: steps.release.outputs.available == 'true'
@@ -252,8 +231,6 @@ jobs:
           CORE_VERSION: ${{ steps.release.outputs.version }}
           CORE_TAG: ${{ steps.release.outputs.tag }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
@@ -261,56 +238,17 @@ jobs:
           BASE="$RUNNER_TEMP/dist/hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}"
           for asset in "$BASE" "$BASE.json" "$BASE.attested.json"; do
             gh attestation verify "$asset" --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/desktop-core-alpha-feed.yml" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/desktop-core-linux-feed.yml" \
               --source-ref refs/heads/main --deny-self-hosted-runners >/dev/null
           done
           python3 -I scripts/release/desktop_core_alpha_feed.py validate-marker \
             --base "$BASE" --marker "$BASE.attested.json" --version "$CORE_VERSION" --source-commit "$SOURCE_SHA" \
-            --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --apple-signing-identity "$APPLE_SIGNING_IDENTITY" \
-            --apple-team-id "$APPLE_TEAM_ID"
-      - name: Import Apple signing identity
-        if: steps.release.outputs.available == 'true'
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          KEYCHAIN="$RUNNER_TEMP/core-update.keychain-db"
-          KEYCHAIN_PASSWORD=$(openssl rand -hex 24)
-          export APPLE_CERTIFICATE
-          python3 -I - <<'PY'
-          import base64
-          import os
-          from pathlib import Path
-          Path(os.environ["RUNNER_TEMP"], "certificate.p12").write_bytes(
-              base64.b64decode(os.environ["APPLE_CERTIFICATE"], validate=True)
-          )
-          PY
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign >/dev/null
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
-          security list-keychains -d user -s "$KEYCHAIN"
-          security find-identity -v -p codesigning "$KEYCHAIN" > "$RUNNER_TEMP/codesign-identities.txt"
-          python3 -I - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-          root = Path(os.environ["RUNNER_TEMP"])
-          identity_text = (root / "codesign-identities.txt").read_text(encoding="utf-8")
-          matches = re.findall(r'^\s*\d+\)\s+([0-9A-Fa-f]{40})\s+"[^"]+"\s*$', identity_text, flags=re.MULTILINE)
-          if len(matches) != 1:
-              raise SystemExit(f"Expected exactly one imported code-signing identity, found {len(matches)}")
-          (root / "apple-signing-fingerprint.txt").write_text(matches[0].upper() + "\n", encoding="ascii")
-          PY
+            --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --apple-signing-identity "" \
+            --apple-team-id ""
       - name: Build standalone Core executable
         if: steps.release.outputs.available == 'true' && steps.existing.outputs.mode == 'build'
         env:
           CORE_VERSION: ${{ steps.release.outputs.version }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         shell: bash
         run: |
           set -euo pipefail
@@ -336,22 +274,17 @@ jobs:
             --source-root "$SOURCE"
           mkdir -p "$RUNNER_TEMP/native-runtime"
           python3 -I scripts/release/stage_native_runtime_for_desktop_core.py \
-            --wheel "$RUNNER_TEMP/attested-macos-arm64.whl" \
+            --wheel "$RUNNER_TEMP/attested-linux-x64.whl" \
             --destination "$RUNNER_TEMP/native-runtime" \
             --expected-version "$CORE_VERSION" \
-            --expected-target "$RELEASE_TARGET"
+            --expected-target "$NATIVE_RUNTIME_TARGET"
           NATIVE_RUNTIME="$RUNNER_TEMP/native-runtime/hol-guard-runtime"
           NATIVE_MANIFEST="$RUNNER_TEMP/native-runtime/runtime-manifest.json"
           test -f "$NATIVE_RUNTIME"
           test -f "$NATIVE_MANIFEST"
-          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$NATIVE_RUNTIME"
-          codesign --verify --deep --strict --verbose=2 "$NATIVE_RUNTIME"
-          python3 -I scripts/release/stage_native_runtime_for_desktop_core.py \
-            --destination "$RUNNER_TEMP/native-runtime" \
-            --refresh-identity
           (
             cd "$SOURCE"
-            uv run --no-sync pyinstaller --codesign-identity "$APPLE_SIGNING_IDENTITY" \
+            uv run --no-sync pyinstaller \
               --clean --noconfirm --onefile --name hol-guard \
               --collect-submodules codex_plugin_scanner --collect-data codex_plugin_scanner \
               --add-data "$NATIVE_RUNTIME:codex_plugin_scanner/_native" \
@@ -362,17 +295,10 @@ jobs:
           BUILT="$DIST/hol-guard"
           ASSET="$DIST/hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}"
           chmod 0755 "$BUILT"
-          codesign --remove-signature "$BUILT"
           python3 -I scripts/release/seal_pyinstaller_native_manifest.py \
             --binary "$BUILT"
-          uv run --directory "$SOURCE" --no-sync python \
-            "$GITHUB_WORKSPACE/scripts/release/fix_pyinstaller_macos_exe_headers.py" \
-            --binary "$BUILT"
-          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$BUILT"
-          python3 -I scripts/release/verify_pyinstaller_macos_signing.py \
-            --binary "$BUILT" --team-id "$APPLE_TEAM_ID"
           python3 -I scripts/release/verify_pyinstaller_native_runtime.py \
-            --binary "$BUILT" --team-id "$APPLE_TEAM_ID"
+            --binary "$BUILT"
           test "$("$BUILT" --version | sed -E 's/^hol-guard[[:space:]]+//')" = "$CORE_VERSION"
           export HOL_GUARD_HOME="$RUNNER_TEMP/smoke-home"
           mkdir -p "$HOL_GUARD_HOME"
@@ -380,69 +306,19 @@ jobs:
           python3 -I scripts/release/desktop_core_alpha_feed.py verify-bootstrap \
             --payload "$RUNNER_TEMP/bootstrap.json" --version "$CORE_VERSION" --subject "Standalone Core"
           mv "$BUILT" "$ASSET"
-      - name: Sign and notarize new Core sidecar
-        if: steps.release.outputs.available == 'true' && steps.existing.outputs.mode == 'build'
-        env:
-          CORE_VERSION: ${{ steps.release.outputs.version }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          BINARY="$RUNNER_TEMP/dist/hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}"
-          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$BINARY"
-          codesign --verify --deep --strict --verbose=2 "$BINARY"
-          python3 -I scripts/release/verify_pyinstaller_macos_signing.py \
-            --binary "$BINARY" --team-id "$APPLE_TEAM_ID"
-          ditto -c -k --keepParent "$BINARY" "$RUNNER_TEMP/core-update-notary.zip"
-          xcrun notarytool submit "$RUNNER_TEMP/core-update-notary.zip" \
-            --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" \
-            --wait --output-format json > "$RUNNER_TEMP/notary-result.json"
-          jq -e '.status == "Accepted"' "$RUNNER_TEMP/notary-result.json" >/dev/null || {
-            cat "$RUNNER_TEMP/notary-result.json" >&2
-            exit 1
-          }
-      - name: Verify exact Apple identity, notarization, and Core contract
+      - name: Verify Linux Core contract
         if: steps.release.outputs.available == 'true'
         env:
           CORE_VERSION: ${{ steps.release.outputs.version }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          MODE: ${{ steps.existing.outputs.mode }}
         shell: bash
         run: |
           set -euo pipefail
           BINARY="$RUNNER_TEMP/dist/hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}"
           VERIFY="$RUNNER_TEMP/dist/hol-guard"
-          CERT_DIR="$RUNNER_TEMP/codesign-certs"
           chmod 0755 "$BINARY"
-          codesign --verify --deep --strict --verbose=2 "$BINARY"
-          codesign --display --verbose=4 "$BINARY" 2> "$RUNNER_TEMP/codesign.txt"
-          grep -Fx "TeamIdentifier=$APPLE_TEAM_ID" "$RUNNER_TEMP/codesign.txt"
-          rm -rf "$CERT_DIR"
-          mkdir -p "$CERT_DIR"
-          if ! (
-            cd "$CERT_DIR"
-            codesign --display --extract-certificates "$BINARY" >/dev/null 2> "$RUNNER_TEMP/codesign-certificates.txt"
-          ); then
-            cat "$RUNNER_TEMP/codesign-certificates.txt" >&2
-            exit 1
-          fi
-          test -s "$CERT_DIR/codesign0"
-          EXPECTED_FINGERPRINT=$(tr -d '\r\n' < "$RUNNER_TEMP/apple-signing-fingerprint.txt" | tr '[:lower:]' '[:upper:]')
-          ACTUAL_FINGERPRINT=$(openssl x509 -inform DER -in "$CERT_DIR/codesign0" -noout -fingerprint -sha1 \
-            | sed -E 's/^[^=]+=//; s/://g' | tr '[:lower:]' '[:upper:]')
-          test -n "$EXPECTED_FINGERPRINT"
-          test "$ACTUAL_FINGERPRINT" = "$EXPECTED_FINGERPRINT"
-          python3 -I scripts/release/verify_pyinstaller_macos_signing.py \
-            --binary "$BINARY" --team-id "$APPLE_TEAM_ID"
-          if [[ "$MODE" == "build" ]]; then
-            test -s "$RUNNER_TEMP/notary-result.json"
-            jq -e '.status == "Accepted" and (.id | type == "string" and length > 0)' \
-              "$RUNNER_TEMP/notary-result.json" >/dev/null
-          fi
-          file "$BINARY" | grep -F "Mach-O 64-bit executable arm64"
+          file "$BINARY" | grep -F "ELF 64-bit LSB" | grep -F "x86-64"
+          python3 -I scripts/release/verify_pyinstaller_native_runtime.py \
+            --binary "$BINARY"
           cp "$BINARY" "$VERIFY"
           chmod 0755 "$VERIFY"
           test "$("$VERIFY" --version | sed -E 's/^hol-guard[[:space:]]+//')" = "$CORE_VERSION"
@@ -477,21 +353,18 @@ jobs:
           CORE_TAG: ${{ steps.release.outputs.tag }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
           MODE: ${{ steps.existing.outputs.mode }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         shell: bash
         run: |
           set -euo pipefail
           BASE="$RUNNER_TEMP/dist/hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}"
           COMMON=(--base "$BASE" --marker "$BASE.attested.json" --version "$CORE_VERSION" --source-commit "$SOURCE_SHA" \
-            --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --apple-signing-identity "$APPLE_SIGNING_IDENTITY" \
-            --apple-team-id "$APPLE_TEAM_ID")
+            --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --apple-signing-identity "" --apple-team-id "")
           if [[ "$MODE" == "build" ]]; then
             python3 -I scripts/release/desktop_core_alpha_feed.py create-marker "${COMMON[@]}" --workflow-run "$GITHUB_RUN_ID"
           else
             python3 -I scripts/release/desktop_core_alpha_feed.py validate-marker "${COMMON[@]}"
           fi
-          python3 -I scripts/release/verify_desktop_core_attestation.py --binary "$BASE" --manifest "$BASE.json" --marker "$BASE.attested.json" --version "$CORE_VERSION" --source-commit "$SOURCE_SHA" --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --team-id "$APPLE_TEAM_ID" --output "$RUNNER_TEMP/desktop-core-evidence.json"
+          python3 -I scripts/release/verify_desktop_core_attestation.py --binary "$BASE" --manifest "$BASE.json" --marker "$BASE.attested.json" --version "$CORE_VERSION" --source-commit "$SOURCE_SHA" --source-tag "$CORE_TAG" --target "$RELEASE_TARGET" --team-id "" --output "$RUNNER_TEMP/desktop-core-evidence.json"
       - name: Attest complete hardened Core asset set
         if: steps.release.outputs.available == 'true' && steps.existing.outputs.mode == 'build'
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373
@@ -533,7 +406,7 @@ jobs:
             test -f "$PUBLISHED/$asset"
             gh attestation verify "$PUBLISHED/$asset" \
               --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/desktop-core-alpha-feed.yml" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/desktop-core-linux-feed.yml" \
               --source-ref refs/heads/main \
               --deny-self-hosted-runners >/dev/null
           done

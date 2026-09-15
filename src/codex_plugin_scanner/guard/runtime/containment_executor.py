@@ -26,6 +26,8 @@ _OUTPUT_LIMIT: Final = 64 * 1024
 _MAX_EXECUTABLE_BYTES: Final = 256 * 1024 * 1024
 _MAX_INPUT_BYTES: Final = 256 * 1024 * 1024
 _MAX_INPUT_FILES: Final = 20_000
+_LINUX_HOSTS: Final = "127.0.0.1 localhost\n::1 localhost ip6-localhost ip6-loopback\n"
+_LINUX_NSSWITCH: Final = "hosts: files\n"
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,7 +106,8 @@ def execute_contained(
                 temporary = str(root / "tmp")
             else:
                 _ = _pin_executable(request, root, backend=backend.kind)
-                argv = _linux_argv(backend.path, request, root)
+                linux_etc = _write_linux_name_service_files(root)
+                argv = _linux_argv(backend.path, request, root, linux_etc)
                 cwd = str(root)
                 home = "/guard/home"
                 temporary = "/guard/tmp"
@@ -376,10 +379,23 @@ def _macos_argv(
     return [backend_path, "-p", "\n".join(profile), pinned_executable, *request.argv[1:]]
 
 
+def _write_linux_name_service_files(temp_root: Path) -> Path:
+    linux_etc = temp_root / "linux-etc"
+    linux_etc.mkdir(mode=0o700)
+    hosts = linux_etc / "hosts"
+    nsswitch = linux_etc / "nsswitch.conf"
+    hosts.write_text(_LINUX_HOSTS, encoding="ascii")
+    nsswitch.write_text(_LINUX_NSSWITCH, encoding="ascii")
+    hosts.chmod(0o400)
+    nsswitch.chmod(0o400)
+    return linux_etc
+
+
 def _linux_argv(
     backend_path: str,
     request: ContainmentRequest,
     temp_root: Path,
+    linux_etc: Path,
 ) -> list[str]:
     argv = [
         backend_path,
@@ -395,6 +411,14 @@ def _linux_argv(
         "--bind",
         str(temp_root),
         "/guard",
+        "--dir",
+        "/etc",
+        "--ro-bind",
+        str(linux_etc / "hosts"),
+        "/etc/hosts",
+        "--ro-bind",
+        str(linux_etc / "nsswitch.conf"),
+        "/etc/nsswitch.conf",
     ]
     for path in ("/usr", "/bin", "/lib", "/lib64", "/sbin"):
         if Path(path).exists():

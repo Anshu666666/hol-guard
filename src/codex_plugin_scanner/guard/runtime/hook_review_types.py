@@ -89,8 +89,9 @@ class HookReviewResponse:
     matches the adapter's locally computed output hash.
 
     Pi and Oh My Pi also preserve non-truncated original output when the
-    daemon returns ``decision == "allow"`` without an output directive. A
-    mismatched ``allow_original`` digest is still a block.
+    daemon returns ``decision == "allow"`` without an output directive.
+    ``allow_original`` still requires a matching digest. ``replace_with_reviewed_excerpt``
+    must replace the raw result; a missing excerpt is a block.
     """
 
     decision: HookDecision

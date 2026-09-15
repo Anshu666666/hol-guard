@@ -499,7 +499,8 @@ class TestPiInstall:
         assert "const toolCallId = toolCallIdKey(event.toolCallId);" in text
         assert "function modelVisibleBlockedReason(reason: string, reasonCode?: string): string" in text
         assert "Do not retry the same tool call automatically" in text
-        assert 'if (reasonCode === "guard_cli_recovery_timeout")' in text
+        assert 'reasonCode === "guard_cli_recovery_timeout"' in text
+        assert 'reasonCode === "daemon_hook_deadline_exhausted"' in text
         assert "const modelReason = modelVisibleBlockedReason(reason, response.reason_code);" in text
         assert "if (toolCallId) blockedToolResults.set(toolCallId, modelReason);" in text
         assert "return blockedToolResult(modelReason, event.details);" in text

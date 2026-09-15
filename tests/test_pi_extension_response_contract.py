@@ -387,9 +387,9 @@ guardResponse = {{
   model_output_action: "replace_with_reviewed_excerpt",
   reviewed_output_sha256: digest,
 }};
-result.contradictory_directive = (await handlers.tool_result(event, ctx)) === undefined;
+result.contradictory_directive = await handlers.tool_result(event, ctx);
 guardResponse = {{ decision: "allow", model_output_action: "allow_original" }};
-result.missing_digest = (await handlers.tool_result(event, ctx)) === undefined;
+result.missing_digest = await handlers.tool_result(event, ctx);
 guardResponse = {{ decision: "allow", model_output_action: "allow_original", reviewed_output_sha256: "0".repeat(64) }};
 result.mismatched_digest = await handlers.tool_result(event, ctx);
 
@@ -731,8 +731,9 @@ def test_generated_omp_tool_result_preserves_daemon_allow_without_hash(tmp_path:
 
     assert result["valid"] is True
     assert result["missing_directive"] is True
-    assert result["contradictory_directive"] is True
-    assert result["missing_digest"] is True
+    assert result["contradictory_directive"]["content"][0]["text"] == "safe inline output"
+    assert result["contradictory_directive"].get("isError") is not True
+    assert result["missing_digest"]["isError"] is True
     assert result["mismatched_digest"]["isError"] is True
     assert result["reviewed_excerpt"]["content"][0]["text"] == "safe" * 3000
     assert result["observe_mode"] is True

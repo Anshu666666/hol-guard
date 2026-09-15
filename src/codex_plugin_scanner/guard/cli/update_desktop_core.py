@@ -76,7 +76,7 @@ def is_desktop_managed_runtime() -> bool:
 
 
 def desktop_core_updates_supported() -> bool:
-    return platform_target() == "aarch64-apple-darwin"
+    return platform_target() is not None
 
 
 def desktop_core_uses_alpha_channel(current_version: str, *, requested_alpha: bool) -> bool:
@@ -156,6 +156,8 @@ def platform_target() -> str | None:
     machine = platform.machine().lower()
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "aarch64-apple-darwin"
+    if system == "linux" and machine in {"x86_64", "amd64"}:
+        return "x86_64-unknown-linux-gnu"
     return None
 
 

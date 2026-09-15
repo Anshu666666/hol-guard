@@ -34,6 +34,14 @@ def publish_job() -> dict[str, object]:
     return job
 
 
+def linux_publish_job() -> dict[str, object]:
+    jobs = workflow()["jobs"]
+    assert isinstance(jobs, dict)
+    job = jobs["publish-linux-x64"]
+    assert isinstance(job, dict)
+    return job
+
+
 def test_feed_is_stable_3_0_only_and_wakes_after_main_publisher() -> None:
     text = workflow_text()
     namespace = runpy.run_path(str(TOOL))
@@ -190,9 +198,7 @@ def test_frozen_sidecar_stages_attested_native_runtime() -> None:
     seal = run.index("seal_pyinstaller_native_manifest.py")
     strip_sign = run.index('codesign --remove-signature "$BUILT"')
     repair_headers = run.index("fix_pyinstaller_macos_exe_headers.py")
-    outer_sign = run.index(
-        'codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$BUILT"'
-    )
+    outer_sign = run.index('codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$BUILT"')
     assert strip_sign < seal < repair_headers < outer_sign < signing_verify < native_verify
 
 
@@ -242,3 +248,63 @@ def test_complete_feed_assets_are_attested_uploaded_and_reloaded() -> None:
     assert 'for asset in "$BASE" "$BASE.json" "$BASE.attested.json"; do' in text
     assert 'PUBLISHED="$RUNNER_TEMP/published-assets"' in text
     assert 'gh attestation verify "$PUBLISHED/$asset"' in text
+
+
+def test_linux_feed_publishes_digest_verified_gnu_sidecar() -> None:
+    text = workflow_text()
+    job = linux_publish_job()
+    steps = {step.get("name"): step for step in job["steps"]}
+    build = steps["Build standalone Core executable"]
+    build_run = build["run"]
+    assert isinstance(build_run, str)
+    assert job["runs-on"] == "ubuntu-24.04"
+    assert job["env"]["RELEASE_TARGET"] == "x86_64-unknown-linux-gnu"
+    assert job["env"]["NATIVE_RUNTIME_TARGET"] == "x86_64-unknown-linux-musl"
+    assert job["permissions"] == {"contents": "write", "id-token": "write", "attestations": "write"}
+    assert 'test "$(uname -m)" = "x86_64"' in text
+    assert '--pattern "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl"' in text
+    assert '-name "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl"' in text
+    assert 'cp "$WHEEL" "$RUNNER_TEMP/attested-linux-x64.whl"' in text
+    assert '--wheel "$RUNNER_TEMP/attested-linux-x64.whl"' in build_run
+    assert '--expected-target "$NATIVE_RUNTIME_TARGET"' in build_run
+    assert "--codesign-identity" not in build_run
+    assert "codesign " not in build_run
+    assert "notarytool" not in "".join(
+        step.get("run", "") if isinstance(step.get("run"), str) else "" for step in job["steps"]
+    )
+    assert "APPLE_CERTIFICATE" not in text.split("publish-linux-x64:")[1]
+    assert '--apple-signing-identity ""' in "".join(
+        step.get("run", "") if isinstance(step.get("run"), str) else "" for step in job["steps"]
+    )
+    assert 'file "$BINARY" | grep -F "ELF 64-bit LSB" | grep -F "x86-64"' in text
+    assert "hol-guard-core-${CORE_VERSION}-${RELEASE_TARGET}" in build_run
+
+
+def test_linux_marker_omits_apple_identity(tmp_path: Path) -> None:
+    namespace = runpy.run_path(str(TOOL))
+    base = tmp_path / "core"
+    manifest = Path(f"{base}.json")
+    marker = Path(f"{base}.attested.json")
+    base.write_bytes(b"linux-binary")
+    common = dict(
+        version="3.0.7",
+        source_commit="a" * 40,
+        source_tag="v3.0.7",
+        target="x86_64-unknown-linux-gnu",
+        minimum_desktop_version="0.1.0-beta.0",
+    )
+    namespace["create_manifest"](base, manifest, **common)
+    marker_common = {key: common[key] for key in ("version", "source_commit", "source_tag", "target")}
+    marker_common.update(apple_signing_identity="", apple_team_id="")
+    namespace["create_marker"](base, marker, workflow_run="123", **marker_common)
+    namespace["validate_marker"](base, marker, **marker_common)
+    payload = json.loads(marker.read_text(encoding="utf-8"))
+    assert payload["appleSigningIdentity"] == ""
+    assert payload["appleTeamId"] == ""
+    with pytest.raises(SystemExit, match="must not include Apple identity"):
+        namespace["create_marker"](
+            base,
+            marker,
+            workflow_run="123",
+            **{**marker_common, "apple_team_id": "TEAMID"},
+        )

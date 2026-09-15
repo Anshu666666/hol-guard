@@ -75,6 +75,13 @@ def test_platform_target_supports_macos_arm64_and_linux_x64(monkeypatch: pytest.
     assert update_desktop_core.platform_target() == "aarch64-apple-darwin"
 
 
+def test_linux_desktop_core_updates_stay_on_stable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(update_desktop_core, "platform_target", lambda: "x86_64-unknown-linux-gnu")
+    assert update_desktop_core.desktop_core_uses_alpha_channel("3.0.1", requested_alpha=True) is False
+    monkeypatch.setattr(update_desktop_core, "platform_target", lambda: "aarch64-apple-darwin")
+    assert update_desktop_core.desktop_core_uses_alpha_channel("3.0.1", requested_alpha=True) is True
+
+
 def test_apply_desktop_core_update_installs_verified_sidecar(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -297,6 +304,10 @@ def test_desktop_cli_update_applies_signed_core_feed(
         lambda: True,
     )
     monkeypatch.setattr(
+        "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_uses_alpha_channel",
+        lambda _current, *, requested_alpha: requested_alpha,
+    )
+    monkeypatch.setattr(
         update_commands,
         "_version_check_payload",
         lambda current_version, **_kwargs: {
@@ -344,6 +355,10 @@ def test_desktop_cli_update_fails_when_latest_version_is_unavailable(
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_updates_supported",
         lambda: True,
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_uses_alpha_channel",
+        lambda _current, *, requested_alpha: requested_alpha,
     )
     monkeypatch.setattr(
         update_commands,
@@ -511,6 +526,10 @@ def test_desktop_status_does_not_advertise_newer_train(
         "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_updates_supported",
         lambda: True,
     )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_uses_alpha_channel",
+        lambda _current, *, requested_alpha: requested_alpha,
+    )
 
     payload = build_guard_update_status_payload()
 
@@ -532,6 +551,10 @@ def test_desktop_cli_update_does_not_apply_newer_train(
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_updates_supported",
         lambda: True,
+    )
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.cli.update_desktop_apply.desktop_core_uses_alpha_channel",
+        lambda _current, *, requested_alpha: requested_alpha,
     )
     monkeypatch.setattr(
         update_commands,

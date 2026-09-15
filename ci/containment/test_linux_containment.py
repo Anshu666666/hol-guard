@@ -47,7 +47,10 @@ def test_real_backend_preserves_child_exit_status(tmp_path: Path, status: int) -
 
 def test_exec_failure_cannot_mint_an_enforcement_attestation(tmp_path: Path) -> None:
     invalid = tmp_path / "invalid-executable"
-    invalid.write_bytes(b"not an executable image\n")
+    # A missing shebang interpreter is a true exec startup failure. Plain text
+    # without a shebang is intentionally eligible for POSIX /bin/sh fallback
+    # and therefore is not evidence that containment failed to start.
+    invalid.write_bytes(b"#!/definitely/missing/guard-interpreter\n")
     invalid.chmod(0o500)
     result = execute_contained(_request(tmp_path.resolve(), (str(invalid),)))
     assert not result.enforced
@@ -94,7 +97,7 @@ test('contained runtime boundaries', async () => {
         .replace("HOST_PORT", str(port))
     )
     (workspace / "boundary.test.ts").write_text(script, encoding="utf-8")
-    args = ("vitest", "run", "boundary.test.ts", "--maxWorkers=1", "--reporter=dot")
+    args = ("vitest", "run", "boundary.test.ts", "--reporter=dot")
     intent = parse_package_intent("npx " + " ".join(args), workspace=workspace)
     assert intent is not None and len(intent.local_executions) == 1
     evidence = build_local_node_runner_evidence("npx", args, intent.local_executions[0], workspace=workspace)

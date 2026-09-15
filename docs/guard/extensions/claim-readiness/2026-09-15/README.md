@@ -151,8 +151,9 @@ Its proposal is staged and ready either way.
   branch tip and invite only IDs still present: a since-removed identity is
   never re-invited; missing/invalid current listing → `source_not_current`.
 - Optional portal projection check: `--portal-readiness-url` (or
-  `GUARD_EXTENSION_PORTAL_READINESS_URL`) must return JSON `{"ok": true}`
-  exactly (a `{"ready": true}`-style body is **not** accepted).
+  `GUARD_EXTENSION_PORTAL_READINESS_URL`) must return a JSON object affirming
+  `"ok": true` (additional fields are allowed; a `{"ready": true}`-style body
+  without `ok` is **not** accepted).
   Unreachable → `provider_unavailable`; reachable but not affirming →
   `portal_not_ready`; the send path fails closed when configured and the
   portal is not ready. Unconfigured checks never claim ready.

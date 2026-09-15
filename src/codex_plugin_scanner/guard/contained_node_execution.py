@@ -99,6 +99,7 @@ def try_execute_contained_node_command(
         workspace=canonical_workspace,
     )
     if evidence is None:
+        _fail_closed_vitest_handoff(shim_directory, execution.package_name, "runner evidence could not be built")
         return None
     if evidence.status != "complete" or evidence.direct_silent_verification:
         _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner evidence was incomplete")

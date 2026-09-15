@@ -726,7 +726,7 @@ def test_generated_omp_rejects_ambiguous_success_and_preserves_retry_semantics(t
     assert result["cli_signal_allow"] == {"decision": "deny", "reason": "Blocked by HOL Guard."}
 
 
-def test_generated_omp_tool_result_requires_post_tool_output_proof(tmp_path: Path) -> None:
+def test_generated_omp_tool_result_preserves_daemon_allow_without_hash(tmp_path: Path) -> None:
     result = _run_generated_tool_result_fixture(_generated_source(tmp_path))
 
     assert result["valid"] is True

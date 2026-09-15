@@ -84,11 +84,13 @@ class HookReviewRequest:
 class HookReviewResponse:
     """The engine's decision and model-output directive for the adapter.
 
-    The adapter must only preserve original full output when *all* of
-    ``decision == "allow"``, ``model_output_action == "allow_original"``,
-    and ``reviewed_output_sha256`` matches the adapter's locally computed
-    output hash. Any other combination means the adapter must not return
-    raw content.
+    When ``model_output_action`` is ``allow_original``, the adapter may
+    preserve original full output only if ``reviewed_output_sha256``
+    matches the adapter's locally computed output hash.
+
+    Pi and Oh My Pi also preserve non-truncated original output when the
+    daemon returns ``decision == "allow"`` without an output directive. A
+    mismatched ``allow_original`` digest is still a block.
     """
 
     decision: HookDecision

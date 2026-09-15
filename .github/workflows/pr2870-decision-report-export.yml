@@ -6,27 +6,38 @@ on:
     paths: [.github/workflows/pr2870-decision-report-export.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
+    if: github.repository == 'hashgraph-online/hol-guard'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          persist-credentials: false
+          ref: fix/secret-read-floors-and-contained-vitest
+          fetch-depth: 0
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           version: "0.9.26"
-      - run: uv sync --frozen --extra dev --python 3.12
-      - run: uv run --no-sync python tests/guard_command_decision_diff.py --write
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pr2870-decision-report
-          path: tests/fixtures/guard-command-corpus/decision-diff-report.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Regenerate exact decision report
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          uv sync --frozen --extra dev --python 3.12
+          uv run --no-sync python tests/guard_command_decision_diff.py --write
+          uv run --no-sync python tests/guard_command_decision_diff.py --check
+      - name: Commit report and remove one-shot workflow
+        run: |
+          set -euo pipefail
+          git config user.name "kantorcodes"
+          git config user.email "6068672+kantorcodes@users.noreply.github.com"
+          git add tests/fixtures/guard-command-corpus/decision-diff-report.json
+          git rm .github/workflows/pr2870-decision-report-export.yml
+          git diff --cached --check
+          git commit -m "test(guard): refresh deterministic decision report"
+          git push origin HEAD:fix/secret-read-floors-and-contained-vitest

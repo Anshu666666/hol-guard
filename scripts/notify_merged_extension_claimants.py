@@ -553,7 +553,7 @@ def portal_readiness(url: str) -> tuple[str, str]:
         payload = json.loads(raw.decode("utf-8")) if raw else None
     except (UnicodeDecodeError, json.JSONDecodeError):
         return "portal_not_ready", "portal response is not valid JSON"
-    if isinstance(payload, dict) and (payload.get("ok") is True or payload.get("ready") is True):
+    if isinstance(payload, dict) and payload.get("ok") is True:
         return "ok", "portal reports ready"
     return "portal_not_ready", "portal did not affirm readiness"
 
@@ -609,9 +609,28 @@ def readiness_report(
                 "notifiedIds": list(item.notified_ids),
             }
         )
-    pr_status = "already_notified" if already else pr_reason
-    if pr_status == "eligible_for_notice" and portal_status == "provider_unavailable":
+    # The PR-level status must agree with the per-extension entries: it may
+    # only report ``eligible_for_notice`` when at least one entry is eligible
+    # and the portal check affirmed readiness (or was never configured for a
+    # PR that produced no entries at all).
+    if already:
+        pr_status = "already_notified"
+    elif portal_status == "provider_unavailable":
         pr_status = "provider_unavailable"
+    elif entries:
+        eligible = any(entry["status"] == "eligible_for_notice" for entry in entries)
+        if not eligible:
+            statuses = [str(entry["status"]) for entry in entries]
+            distinct = sorted(set(statuses))
+            pr_status = distinct[0] if len(distinct) == 1 else statuses[0]
+        elif portal_status != "ok":
+            pr_status = "portal_not_ready"
+        else:
+            pr_status = "eligible_for_notice"
+    else:
+        # No extension entries: the PR-level reason from the planner
+        # (not_merged / source_not_current / no_mapping) stands on its own.
+        pr_status = pr_reason
     return {
         "schemaVersion": "guard.extension-claim-notice-readiness.v1",
         "pr": pr_number,

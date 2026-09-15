@@ -64,7 +64,7 @@ nothing else moved).
 | `command.remote.essh` | `contributions/extensions/command.remote.essh.json` (`sha256:e7cea64f…`) | [#2674](https://github.com/hashgraph-online/hol-guard/pull/2674) | PR author = upstream author `matthart1983` (github.com/matthart1983/essh), public ID 13101478 | `["13101478"]` | same | same |
 | `command.repo2nb` | `contributions/extensions/command.repo2nb.json` (`sha256:27ea5b9d…`) | [#2757](https://github.com/hashgraph-online/hol-guard/pull/2757) | Upstream is an org (github.com/repo2nb, ID 319718265); org IDs cannot be claimants and membership was not verified. No individual evidence. | *(empty — no IDs proposed)* | `no_mapping`; sidecar adds presentation only and deliberately leaves the accepted set empty | Reviewed attribution decision (who, individually, may manage this profile) |
 | `command.skill-sunset` | `contributions/extensions/command.skill-sunset.json` (`sha256:fcd38eac…`) | [#2757](https://github.com/hashgraph-online/hol-guard/pull/2757) | Upstream author `ooocooc` (github.com/ooocooc/open-skill-sunset), public ID 49831444 | `["49831444"]` | same as live rows above | Protected review + merge of proposal |
-| `mcp.filesystem` | `contributions/mcp-servers/mcp.filesystem.json` (`sha256:76029271…`) | [#2783](https://github.com/hashgraph-online/hol-guard/pull/2783) | Upstream is the modelcontextprotocol org; coverage packaged by PR author `kantorcodes`, public ID 6068672 | `["6068672"]` | same as live rows above | Protected review + merge of proposal; confirm packager is the intended profile manager |
+| `mcp.filesystem` | `contributions/mcp-servers/mcp.filesystem.json` (`sha256:76029271…`) | [#2783](https://github.com/hashgraph-online/hol-guard/pull/2783) | Upstream is the modelcontextprotocol org; coverage packaged by PR author `kantorcodes`, public ID 6068672 | `["6068672"]` | same as live rows above | Protected review + merge; **explicit operator sign-off required** because the proposed claimant is the repository operator who packaged the coverage (a self-proposal), and org membership in modelcontextprotocol was not verified. If the reviewer declines, drop the ID from the sidecar — the entry then stays `no_mapping` and unclaimable |
 
 ## Incoming-PR proposals (staged, move after each PR merges)
 
@@ -143,12 +143,16 @@ Its proposal is staged and ready either way.
 `already_notified`, `eligible_for_notice`, `provider_unavailable`.
 
 - `--report` prints a read-only JSON readiness artifact (`--dry-run` still
-  rehearses the comment body without posting).
+  rehearses the comment body without posting). The PR-level `prStatus` always
+  agrees with the per-extension entries: it may say `eligible_for_notice` only
+  when at least one entry is eligible and the portal check passed; otherwise it
+  carries the blocking reason (`no_mapping`, `source_not_current`, …).
 - Delayed/backfilled notices re-read the canonical listing at the default
   branch tip and invite only IDs still present: a since-removed identity is
   never re-invited; missing/invalid current listing → `source_not_current`.
 - Optional portal projection check: `--portal-readiness-url` (or
-  `GUARD_EXTENSION_PORTAL_READINESS_URL`) must return JSON `{"ok": true}`.
+  `GUARD_EXTENSION_PORTAL_READINESS_URL`) must return JSON `{"ok": true}`
+  exactly (a `{"ready": true}`-style body is **not** accepted).
   Unreachable → `provider_unavailable`; reachable but not affirming →
   `portal_not_ready`; the send path fails closed when configured and the
   portal is not ready. Unconfigured checks never claim ready.

@@ -343,7 +343,7 @@ def test_delayed_backfill_skips_when_whole_accepted_set_was_withdrawn() -> None:
     assert MODULE.process(client, 22, MODULE.DEFAULT_STUDIO_URL) == 0
     assert client.posted == []
     report = MODULE.readiness_report(client, 22)
-    assert report["prStatus"] == "eligible_for_notice"
+    assert report["prStatus"] == "source_not_current"
     assert report["entries"] == [
         {"extensionId": "command.fully-revoked", "status": "source_not_current", "notifiedIds": []}
     ]
@@ -386,7 +386,7 @@ def test_readiness_report_types_not_merged_and_no_mapping() -> None:
     client.files = [{"status": "added", "filename": "contributions/extensions/command.unmapped.json"}]
     client.file_payloads[(MERGE_SHA, "contributions/extensions/command.unmapped.json")] = {"schemaVersion": "v1"}
     report = MODULE.readiness_report(client, 31)
-    assert report["prStatus"] == "eligible_for_notice"
+    assert report["prStatus"] == "no_mapping"
     assert report["entries"] == [{"extensionId": "command.unmapped", "status": "no_mapping", "notifiedIds": []}]
 
 
@@ -402,10 +402,11 @@ def test_readiness_report_reports_eligible_entry_and_portal_gate(monkeypatch: py
     configure_new_contribution(client, "command.ready", ["600"])
     client.logins = {"600": "ready-maintainer"}
 
-    # Portal endpoint unconfigured: an eligible entry must not claim ready.
+    # Portal endpoint unconfigured: neither the entry nor the PR may claim ready.
     report = MODULE.readiness_report(client, 33)
     assert report["portalStatus"] == "not_configured"
     assert report["entries"][0]["status"] == "portal_not_ready"
+    assert report["prStatus"] == "portal_not_ready"
 
     def ok(url: str) -> tuple[str, str]:
         return "ok", "portal reports ready"
@@ -413,6 +414,7 @@ def test_readiness_report_reports_eligible_entry_and_portal_gate(monkeypatch: py
     monkeypatch.setattr(MODULE, "portal_readiness", ok)
     report = MODULE.readiness_report(client, 33, portal_readiness_url="https://portal.example/ready")
     assert report["portalStatus"] == "ok"
+    assert report["prStatus"] == "eligible_for_notice"
     assert report["entries"][0]["status"] == "eligible_for_notice"
     assert report["entries"][0]["notifiedIds"] == ["600"]
 
@@ -434,6 +436,7 @@ def test_readiness_report_fails_closed_when_portal_is_unreachable(monkeypatch: p
 
     monkeypatch.setattr(MODULE, "portal_readiness", lagging)
     report = MODULE.readiness_report(client, 34, portal_readiness_url="https://portal.example/ready")
+    assert report["prStatus"] == "portal_not_ready"
     assert report["entries"][0]["status"] == "portal_not_ready"
 
 
@@ -527,11 +530,11 @@ def test_portal_readiness_maps_transport_failures_without_claiming_ready(monkeyp
     monkeypatch.setattr(MODULE.urllib.request, "urlopen", ok)
     assert MODULE.portal_readiness("https://portal.example/ready") == ("ok", "portal reports ready")
 
-    def ready_flag(req: object, timeout: float) -> Response:
+    def ready_only_flag(req: object, timeout: float) -> Response:
         return Response(b'{"ready": true, "entries": 69}')
 
-    monkeypatch.setattr(MODULE.urllib.request, "urlopen", ready_flag)
-    assert MODULE.portal_readiness("https://portal.example/ready")[0] == "ok"
+    monkeypatch.setattr(MODULE.urllib.request, "urlopen", ready_only_flag)
+    assert MODULE.portal_readiness("https://portal.example/ready")[0] == "portal_not_ready"
 
     def not_affirming(req: object, timeout: float) -> Response:
         return Response(b'{"ok": false}')

@@ -44,6 +44,23 @@ class ContainedNodeResult:
     operation_id: str
 
 
+def _package_shim_handoff_active(shim_directory: Path) -> bool:
+    """Return whether this call came from Guard's installed package-shim boundary."""
+
+    try:
+        canonical = shim_directory.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+    return canonical.name == "bin" and canonical.parent.name == "package-shims"
+
+
+def _fail_closed_vitest_handoff(shim_directory: Path, runner: str | None, reason: str) -> None:
+    """Stop an allowed native Vitest handoff instead of falling through uncontained."""
+
+    if runner == "vitest" and _package_shim_handoff_active(shim_directory):
+        raise SystemExit(f"HOL Guard refused uncontained Vitest execution: {reason}")
+
+
 def try_execute_contained_node_command(
     manager: str,
     argv: tuple[str, ...],
@@ -81,9 +98,13 @@ def try_execute_contained_node_command(
         execution,
         workspace=canonical_workspace,
     )
-    if evidence is None or evidence.status != "complete" or evidence.direct_silent_verification:
+    if evidence is None:
+        return None
+    if evidence.status != "complete" or evidence.direct_silent_verification:
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner evidence was incomplete")
         return None
     if evidence.executable_path is None or evidence.executable_hash is None:
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner identity was incomplete")
         return None
     executable = Path(evidence.executable_path)
     try:
@@ -94,8 +115,10 @@ def try_execute_contained_node_command(
         node_path = _resolve_node(environment.get("PATH", ""), shim_directory)
         node_digest = file_sha256(node_path)
     except (OSError, ValueError):
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "workspace or runtime identity could not be proven")
         return None
     if f"sha256:{executable_digest}" != evidence.executable_hash:
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "runner identity changed before execution")
         return None
     snapshot_digests = {item.snapshot_path: f"sha256:{item.content_digest}" for item in inputs}
     expected_snapshot_digests = {
@@ -105,8 +128,10 @@ def try_execute_contained_node_command(
         executable_relative: evidence.executable_hash,
     }
     if any(snapshot_digests.get(path) != digest for path, digest in expected_snapshot_digests.items()):
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "workspace identity changed before execution")
         return None
     if any(path not in snapshot_digests for path in evidence.input_files):
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "requested test input was not in the protected snapshot")
         return None
     launch_digest = _binding_digest(
         {
@@ -127,12 +152,15 @@ def try_execute_contained_node_command(
         executable_digest=node_digest,
         operation_id=evidence.operation_id,
     )
-    return _complete_contained_node_command(
+    result = _complete_contained_node_command(
         request,
         guard_home=guard_home,
         timeout_seconds=timeout_seconds,
         operation_id=evidence.operation_id,
     )
+    if result is None:
+        _fail_closed_vitest_handoff(shim_directory, evidence.runner, "sandbox startup or enforcement proof failed")
+    return result
 
 
 def _complete_contained_node_command(

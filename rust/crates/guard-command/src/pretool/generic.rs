@@ -329,8 +329,12 @@ fn contained_node_handoff_manager_for_command(command: &str) -> Option<&'static 
         return None;
     }
     let (manager, vitest_index) = match executable {
-        "npx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => ("npx", 1usize),
-        "bunx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => ("bunx", 1usize),
+        "npx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => {
+            ("npx", 1usize)
+        }
+        "bunx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => {
+            ("bunx", 1usize)
+        }
         "bunx" => ("bunx", 0usize),
         _ => return None,
     };

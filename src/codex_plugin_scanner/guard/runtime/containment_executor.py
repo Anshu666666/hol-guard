@@ -301,7 +301,7 @@ def _copy_verified_input(source: str, destination: Path) -> tuple[int, str]:
                 _ = target.write(chunk)
     finally:
         os.close(descriptor)
-    destination.chmod(0o400)
+    destination.chmod(0o500 if metadata.st_mode & 0o111 else 0o400)
     return copied, digest.hexdigest()
 
 

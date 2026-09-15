@@ -226,6 +226,89 @@ fn package_command(command: &str) -> bool {
         .any(|segment| segment.executable.as_deref().is_some_and(is_package_tool))
 }
 
+fn safe_vitest_handoff_input(value: &str) -> bool {
+    if value.is_empty()
+        || value.starts_with('/')
+        || value.starts_with('\\')
+        || value.contains('\\')
+        || value.as_bytes().get(1) == Some(&b':')
+    {
+        return false;
+    }
+    let mut protected = false;
+    for part in value.split('/') {
+        let lowered = part.to_ascii_lowercase();
+        if part.is_empty()
+            || matches!(part, "." | "..")
+            || lowered.starts_with(".env")
+            || matches!(lowered.as_str(), ".git" | ".guard")
+        {
+            protected = true;
+            break;
+        }
+    }
+    if protected {
+        return false;
+    }
+    let lowered = value.to_ascii_lowercase();
+    [
+        ".test.js",
+        ".test.jsx",
+        ".test.ts",
+        ".test.tsx",
+        ".spec.js",
+        ".spec.jsx",
+        ".spec.ts",
+        ".spec.tsx",
+    ]
+    .iter()
+    .any(|suffix| lowered.ends_with(suffix))
+}
+
+fn valid_vitest_handoff_tail(arguments: &[String], vitest_index: usize) -> bool {
+    if arguments.get(vitest_index).map(String::as_str) != Some("vitest")
+        || arguments.get(vitest_index + 1).map(String::as_str) != Some("run")
+    {
+        return false;
+    }
+    let mut index = vitest_index + 2;
+    let mut file_count = 0usize;
+    let mut no_coverage_seen = false;
+    let mut reporter_seen = false;
+    while index < arguments.len() {
+        let token = arguments[index].as_str();
+        if token == "--no-coverage" {
+            if no_coverage_seen {
+                return false;
+            }
+            no_coverage_seen = true;
+        } else if token == "--reporter" || token.starts_with("--reporter=") {
+            if reporter_seen {
+                return false;
+            }
+            reporter_seen = true;
+            let reporter = if token == "--reporter" {
+                index += 1;
+                match arguments.get(index) {
+                    Some(value) => value.as_str(),
+                    None => return false,
+                }
+            } else {
+                token.split_once('=').map(|(_, value)| value).unwrap_or("")
+            };
+            if !matches!(reporter, "default" | "dot" | "verbose" | "basic") {
+                return false;
+            }
+        } else if token.starts_with('-') || !safe_vitest_handoff_input(token) {
+            return false;
+        } else {
+            file_count += 1;
+        }
+        index += 1;
+    }
+    file_count > 0
+}
+
 fn contained_node_handoff_manager_for_command(command: &str) -> Option<&'static str> {
     let model = parse_command(&CommandModelRequestV1 {
         command: command.to_owned(),
@@ -245,23 +328,13 @@ fn contained_node_handoff_manager_for_command(command: &str) -> Option<&'static 
     if executable.contains(['/', '\\']) {
         return None;
     }
-    let manager = match executable {
-        "npx" => "npx",
-        "bunx" => "bunx",
+    let (manager, vitest_index) = match executable {
+        "npx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => ("npx", 1usize),
+        "bunx" if segment.arguments.first().map(String::as_str) == Some("--no-install") => ("bunx", 1usize),
+        "bunx" => ("bunx", 0usize),
         _ => return None,
     };
-    let mut index = 0usize;
-    while segment
-        .arguments
-        .get(index)
-        .is_some_and(|argument| matches!(argument.as_str(), "--no" | "--no-install"))
-    {
-        index += 1;
-    }
-    if segment.arguments.get(index).map(String::as_str) != Some("vitest") {
-        return None;
-    }
-    Some(manager)
+    valid_vitest_handoff_tail(&segment.arguments, vitest_index).then_some(manager)
 }
 
 pub fn contained_node_handoff_manager(payload: &Value) -> Option<&'static str> {
@@ -464,9 +537,18 @@ mod contained_node_handoff_tests {
     #[test]
     fn recognizes_only_single_exact_vitest_manager_commands() {
         for (command, expected) in [
-            ("bunx vitest tests/unit.test.ts", Some("bunx")),
-            ("npx --no-install vitest tests/unit.test.ts", Some("npx")),
-            ("npx --no vitest tests/unit.test.ts", Some("npx")),
+            (
+                "bunx vitest run tests/unit.test.ts --reporter=dot",
+                Some("bunx"),
+            ),
+            (
+                "bunx --no-install vitest run tests/unit.spec.ts --no-coverage",
+                Some("bunx"),
+            ),
+            (
+                "npx --no-install vitest run tests/unit.test.ts --reporter basic",
+                Some("npx"),
+            ),
         ] {
             assert_eq!(
                 contained_node_handoff_manager_for_command(command),
@@ -476,12 +558,21 @@ mod contained_node_handoff_tests {
         }
 
         for command in [
+            "npx vitest run tests/unit.test.ts",
+            "npx --no vitest run tests/unit.test.ts",
+            "npx --no-install vitest tests/unit.test.ts",
+            "bunx vitest run",
+            "bunx vitest run ../outside.test.ts",
+            "bunx vitest run /tmp/outside.test.ts",
+            "bunx vitest run .env.test.ts",
+            "bunx vitest run tests/unit.test.ts --reporter=json",
+            "bunx vitest run tests/unit.test.ts --coverage",
             "bunx eslint src/index.ts",
-            "bunx vitest tests/a.test.ts && cat .env",
-            "bunx vitest tests/a.test.ts | tee /tmp/out",
-            "PATH=/tmp:$PATH bunx vitest tests/a.test.ts",
-            "/tmp/bunx vitest tests/a.test.ts",
-            "env bunx vitest tests/a.test.ts",
+            "bunx vitest run tests/a.test.ts && cat .env",
+            "bunx vitest run tests/a.test.ts | tee /tmp/out",
+            "PATH=/tmp:$PATH bunx vitest run tests/a.test.ts",
+            "/tmp/bunx vitest run tests/a.test.ts",
+            "env bunx vitest run tests/a.test.ts",
         ] {
             assert_eq!(
                 contained_node_handoff_manager_for_command(command),

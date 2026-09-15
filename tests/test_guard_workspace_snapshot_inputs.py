@@ -33,6 +33,31 @@ def test_complete_snapshot_is_deterministic_and_omits_guard_state(tmp_path: Path
     assert paths == ("node_modules/runner/index.js", "package.json", "src/example.ts")
 
 
+def test_dependency_package_names_do_not_break_runtime_snapshot_closure(tmp_path: Path) -> None:
+    workspace = (tmp_path / "workspace").resolve()
+    _write(workspace / "node_modules" / "js-tokens" / "index.js")
+    _write(workspace / "node_modules" / "token-parser" / "tokens.js")
+
+    _digest, inputs = complete_workspace_snapshot(workspace, exclude_protected=True)
+
+    assert [item.snapshot_path for item in inputs] == [
+        "node_modules/js-tokens/index.js",
+        "node_modules/token-parser/tokens.js",
+    ]
+
+
+def test_dependency_tree_still_excludes_explicit_secret_paths(tmp_path: Path) -> None:
+    workspace = (tmp_path / "workspace").resolve()
+    _write(workspace / "node_modules" / "runner" / "index.js")
+    _write(workspace / "node_modules" / "runner" / ".env", "MUST_NOT_CROSS=synthetic\n")
+
+    _digest, inputs = complete_workspace_snapshot(workspace, exclude_protected=True)
+
+    assert [item.snapshot_path for item in inputs] == ["node_modules/runner/index.js"]
+    with pytest.raises(ValueError, match="protected workspace content"):
+        complete_workspace_snapshot(workspace)
+
+
 @pytest.mark.parametrize(
     "protected_path",
     (

@@ -1,0 +1,480 @@
+name: PR 2870 installed Codex integration
+
+on:
+  push:
+    branches: [fix/secret-read-floors-and-contained-vitest]
+    paths: [.github/workflows/pr2870-codex-integration.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  installed-codex:
+    if: github.repository == 'hashgraph-online/hol-guard'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Download matching native wheel and preserved locked tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr2870-artifacts"
+          python - <<'PY'
+          import json
+          import os
+          import time
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          token = os.environ["GH_TOKEN"]
+          root = Path(os.environ["RUNNER_TEMP"]) / "pr2870-artifacts"
+          api_root = f"https://api.github.com/repos/{repo}/"
+
+          def api_json(path: str):
+              request = Request(
+                  api_root + path,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urlopen(request, timeout=60) as response:
+                  return json.loads(response.read())
+
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def download_artifact(artifact_id: int, destination: Path):
+              request = Request(
+                  api_root + f"actions/artifacts/{artifact_id}/zip",
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              opener = build_opener(NoRedirect)
+              try:
+                  response = opener.open(request, timeout=60)
+              except HTTPError as exc:
+                  if exc.code not in {301, 302, 303, 307, 308}:
+                      raise
+                  location = exc.headers.get("Location")
+                  if not location:
+                      raise RuntimeError("artifact redirect did not include a location") from exc
+              else:
+                  with response:
+                      destination.write_bytes(response.read())
+                  return
+              # Never forward the GitHub bearer token to the cross-origin blob URL.
+              with urlopen(Request(location, headers={"Accept": "application/zip"}), timeout=120) as response:
+                  destination.write_bytes(response.read())
+
+          run = None
+          for _attempt in range(120):
+              payload = api_json(
+                  "actions/workflows/native-wheel-ci.yml/runs?event=pull_request&"
+                  "branch=fix%2Fsecret-read-floors-and-contained-vitest&per_page=50"
+              )
+              matches = [item for item in payload.get("workflow_runs", []) if item.get("head_sha") == sha]
+              if matches:
+                  candidate = max(matches, key=lambda item: int(item["id"]))
+                  if candidate.get("status") == "completed":
+                      if candidate.get("conclusion") != "success":
+                          raise SystemExit(
+                              f"matching Native wheel CI failed: {candidate.get('conclusion')} run={candidate['id']}"
+                          )
+                      run = candidate
+                      break
+              time.sleep(10)
+          if run is None:
+              raise SystemExit("matching Native wheel CI did not complete successfully")
+
+          artifacts = api_json(f"actions/runs/{run['id']}/artifacts?per_page=100").get("artifacts", [])
+          wheel_artifact = next(
+              (item for item in artifacts if item.get("name") == "hol-guard-native-wheel-linux-x64"),
+              None,
+          )
+          if wheel_artifact is None:
+              raise SystemExit("matching Linux native-wheel artifact is missing")
+          if wheel_artifact.get("workflow_run", {}).get("head_sha") not in {None, sha}:
+              raise SystemExit("native-wheel artifact head does not match integration head")
+
+          download_artifact(int(wheel_artifact["id"]), root / "current-wheel.zip")
+          download_artifact(10361416437, root / "locked-source.zip")
+          download_artifact(10331854920, root / "locked-tools.zip")
+          (root / "provenance.json").write_text(
+              json.dumps(
+                  {
+                      "head_sha": sha,
+                      "native_wheel_run_id": run["id"],
+                      "native_wheel_artifact_id": wheel_artifact["id"],
+                      "locked_source_artifact_id": 10361416437,
+                      "locked_tools_artifact_id": 10331854920,
+                  },
+                  indent=2,
+              )
+              + "\n"
+          )
+          PY
+          unzip -q "$RUNNER_TEMP/pr2870-artifacts/current-wheel.zip" -d "$RUNNER_TEMP/current-wheel"
+          unzip -q "$RUNNER_TEMP/pr2870-artifacts/locked-source.zip" -d "$RUNNER_TEMP/locked-source"
+          unzip -q "$RUNNER_TEMP/pr2870-artifacts/locked-tools.zip" -d "$RUNNER_TEMP/locked-tools"
+          cat "$RUNNER_TEMP/pr2870-artifacts/provenance.json"
+      - name: Install exact native wheel offline and preserved runtime tools
+        run: |
+          set -euo pipefail
+          wheel="$(find "$RUNNER_TEMP/current-wheel" -type f -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m venv "$RUNNER_TEMP/guard-venv"
+          "$RUNNER_TEMP/guard-venv/bin/pip" install --no-index --find-links="$RUNNER_TEMP/locked-source/wheels" "$wheel"
+          "$RUNNER_TEMP/guard-venv/bin/hol-guard" --version
+
+          mkdir -p "$RUNNER_TEMP/preserved-bin"
+          tar -xzf "$RUNNER_TEMP/locked-tools/codex-x86_64-unknown-linux-musl.tar.gz" -C "$RUNNER_TEMP/preserved-bin"
+          mv "$RUNNER_TEMP/preserved-bin/codex-x86_64-unknown-linux-musl" "$RUNNER_TEMP/preserved-bin/codex"
+          chmod 0755 "$RUNNER_TEMP/preserved-bin/codex"
+          "$RUNNER_TEMP/preserved-bin/codex" --version | tee "$RUNNER_TEMP/codex-version.txt"
+          grep -F 'codex-cli 0.154.0' "$RUNNER_TEMP/codex-version.txt"
+
+          tar -xzf "$RUNNER_TEMP/locked-tools/bwrap-x86_64-unknown-linux-musl.tar.gz" -C "$RUNNER_TEMP/preserved-bin"
+          sudo install -m 0755 "$RUNNER_TEMP/preserved-bin/bwrap-x86_64-unknown-linux-musl" /usr/bin/bwrap
+          if ! command -v apparmor_parser >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends apparmor
+          fi
+          sudo tee /etc/apparmor.d/hol-guard-bwrap >/dev/null <<'EOF'
+          abi <abi/4.0>,
+          include <tunables/global>
+          /usr/bin/bwrap flags=(unconfined) {
+            userns,
+          }
+          EOF
+          sudo apparmor_parser -r /etc/apparmor.d/hol-guard-bwrap
+          /usr/bin/bwrap --version
+      - name: Install Guard-owned shims and native Codex hooks
+        env:
+          HOME: ${{ runner.temp }}/pr2870-home
+          GUARD_HOME: ${{ runner.temp }}/pr2870-home/.hol-guard
+          WORKSPACE: ${{ runner.temp }}/pr2870-workspace
+          VENV: ${{ runner.temp }}/guard-venv
+          PRESERVED_BIN: ${{ runner.temp }}/preserved-bin
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME" "$GUARD_HOME" "$WORKSPACE"
+          tar -xzf "$RUNNER_TEMP/locked-tools/node-fixture.tar.gz" -C "$WORKSPACE"
+          export PATH="$PRESERVED_BIN:$VENV/bin:$PATH"
+          "$VENV/bin/python" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from codex_plugin_scanner.guard.adapters.base import HarnessContext
+          from codex_plugin_scanner.guard.shims import install_package_shims
+
+          context = HarnessContext(
+              home_dir=Path(os.environ["HOME"]),
+              workspace_dir=Path(os.environ["WORKSPACE"]),
+              guard_home=Path(os.environ["GUARD_HOME"]),
+              home_override_explicit=True,
+              workspace_override_explicit=True,
+          )
+          result = install_package_shims(context, managers=("npx",), path_env=os.environ["PATH"])
+          print(json.dumps(result, indent=2))
+          if "npx" not in result.get("installed_managers", []):
+              raise SystemExit("npx Guard package shim was not installed")
+          PY
+          "$VENV/bin/hol-guard" install codex --home "$HOME" --guard-home "$GUARD_HOME" --workspace "$WORKSPACE" --json \
+            | tee "$RUNNER_TEMP/codex-install.json"
+          test -f "$HOME/.codex/config.toml"
+          test -f "$GUARD_HOME/package-shims/bin/npx"
+      - name: Run real Codex tool call through native hook and contained Vitest
+        env:
+          HOME: ${{ runner.temp }}/pr2870-home
+          GUARD_HOME: ${{ runner.temp }}/pr2870-home/.hol-guard
+          WORKSPACE: ${{ runner.temp }}/pr2870-workspace
+          VENV: ${{ runner.temp }}/guard-venv
+          PRESERVED_BIN: ${{ runner.temp }}/preserved-bin
+          AWS_SECRET_ACCESS_KEY: synthetic-env-secret-sentinel
+        run: |
+          set -euo pipefail
+          export PATH="$GUARD_HOME/package-shims/bin:$PRESERVED_BIN:$VENV/bin:$PATH"
+          "$VENV/bin/python" - <<'PY'
+          import json
+          import os
+          import socket
+          import subprocess
+          import threading
+          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+          from pathlib import Path
+
+          from codex_plugin_scanner.guard.codex_config import read_toml_payload, write_toml_payload
+
+          home = Path(os.environ["HOME"])
+          guard_home = Path(os.environ["GUARD_HOME"])
+          workspace = Path(os.environ["WORKSPACE"])
+          output_path = Path(os.environ["RUNNER_TEMP"]) / "codex-integration-output.txt"
+          request_log = Path(os.environ["RUNNER_TEMP"]) / "codex-provider-requests.jsonl"
+          outside = Path(os.environ["RUNNER_TEMP"]) / "outside-secret.txt"
+          host_marker = Path(os.environ["RUNNER_TEMP"]) / "must-not-exist.txt"
+          outside.write_text("synthetic-file-secret-sentinel\n", encoding="utf-8")
+          (workspace / ".env").write_text("GUARD_CANARY=synthetic-dotenv-secret-sentinel\n", encoding="utf-8")
+
+          listener = socket.socket()
+          listener.bind(("127.0.0.1", 0))
+          listener.listen(1)
+          listener.settimeout(0.5)
+          host_port = listener.getsockname()[1]
+
+          test_source = """import { test, expect } from 'vitest';
+          import fs from 'node:fs';
+          import net from 'node:net';
+          test('installed Codex containment boundary', async () => {
+            expect(process.env.AWS_SECRET_ACCESS_KEY).toBeUndefined();
+            for (const path of ['.env', OUTSIDE]) {
+              expect(() => fs.readFileSync(path, 'utf8')).toThrow();
+            }
+            expect(() => fs.writeFileSync(HOST_MARKER, 'escaped')).toThrow();
+            fs.writeFileSync('ephemeral-result.txt', 'contained only');
+            await new Promise<void>((resolve, reject) => {
+              const socket = net.connect({host: '127.0.0.1', port: HOST_PORT});
+              socket.setTimeout(1000);
+              socket.on('connect', () => { socket.destroy(); reject(new Error('host network exposed')); });
+              socket.on('error', () => { socket.destroy(); resolve(); });
+              socket.on('timeout', () => { socket.destroy(); resolve(); });
+            });
+          });
+          """
+          test_source = (
+              test_source.replace("OUTSIDE", json.dumps(str(outside)))
+              .replace("HOST_MARKER", json.dumps(str(host_marker)))
+              .replace("HOST_PORT", str(host_port))
+          )
+          (workspace / "boundary.test.ts").write_text(test_source, encoding="utf-8")
+
+          command = "npx --no-install vitest run boundary.test.ts --reporter=dot"
+          request_count = 0
+
+          def response_object(response_id, output, *, status="completed"):
+              return {
+                  "id": response_id,
+                  "object": "response",
+                  "created_at": 0,
+                  "status": status,
+                  "background": False,
+                  "billing": {"payer": "developer"},
+                  "completed_at": 0 if status == "completed" else None,
+                  "error": None,
+                  "incomplete_details": None,
+                  "instructions": None,
+                  "max_output_chars": None,
+                  "max_output_tokens": None,
+                  "model": "fake-model",
+                  "output": output,
+                  "parallel_tool_calls": False,
+                  "previous_response_id": None,
+                  "prompt_cache_key": None,
+                  "prompt_cache_retention": None,
+                  "reasoning": {"effort": None, "summary": None},
+                  "safety_identifier": None,
+                  "service_tier": "default",
+                  "store": False,
+                  "temperature": None,
+                  "text": {"format": {"type": "text"}, "verbosity": "medium"},
+                  "tool_choice": "auto",
+                  "tools": [],
+                  "top_logprobs": 0,
+                  "top_p": None,
+                  "truncation": "disabled",
+                  "usage": {
+                      "input_tokens": 0,
+                      "input_tokens_details": None,
+                      "output_tokens": 0,
+                      "output_tokens_details": None,
+                      "total_tokens": 0,
+                  },
+                  "user": None,
+                  "metadata": {},
+              }
+
+          def emit(handler, name, payload):
+              body = (f"event: {name}\n" + "data: " + json.dumps(payload, separators=(",", ":")) + "\n\n").encode()
+              handler.wfile.write(body)
+              handler.wfile.flush()
+
+          class Handler(BaseHTTPRequestHandler):
+              protocol_version = "HTTP/1.1"
+
+              def log_message(self, *args):
+                  return
+
+              def do_POST(self):
+                  nonlocal request_count
+                  size = int(self.headers.get("content-length", "0"))
+                  raw = self.rfile.read(size)
+                  with request_log.open("ab") as handle:
+                      handle.write(raw + b"\n")
+                  request_count += 1
+                  response_id = f"resp_{request_count}"
+                  if request_count == 1:
+                      item = {
+                          "type": "function_call",
+                          "id": "fc_1",
+                          "call_id": "call_1",
+                          "name": "exec_command",
+                          "arguments": json.dumps(
+                              {"cmd": command, "login": False, "yield_time_ms": 30000},
+                              separators=(",", ":"),
+                          ),
+                          "status": "completed",
+                      }
+                  else:
+                      item = {
+                          "type": "message",
+                          "id": "msg_1",
+                          "status": "completed",
+                          "role": "assistant",
+                          "content": [
+                              {
+                                  "type": "output_text",
+                                  "text": "done",
+                                  "annotations": [],
+                                  "logprobs": [],
+                              }
+                          ],
+                      }
+                  response = response_object(response_id, [item])
+                  self.send_response(200)
+                  self.send_header("Content-Type", "text/event-stream")
+                  self.send_header("Cache-Control", "no-cache")
+                  self.send_header("Connection", "close")
+                  self.end_headers()
+                  emit(
+                      self,
+                      "response.created",
+                      {
+                          "type": "response.created",
+                          "response": {**response, "status": "in_progress", "output": [], "completed_at": None},
+                      },
+                  )
+                  emit(
+                      self,
+                      "response.output_item.done",
+                      {"type": "response.output_item.done", "output_index": 0, "item": item, "sequence_number": 1},
+                  )
+                  emit(
+                      self,
+                      "response.completed",
+                      {"type": "response.completed", "response": response, "sequence_number": 2},
+                  )
+
+          server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+          server_port = server.server_address[1]
+          server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+          server_thread.start()
+
+          config_path = home / ".codex" / "config.toml"
+          config = read_toml_payload(config_path)
+          config["model"] = "fake-model"
+          config["model_provider"] = "local"
+          config["approval_policy"] = "never"
+          config["sandbox_mode"] = "danger-full-access"
+          providers = config.get("model_providers")
+          if not isinstance(providers, dict):
+              providers = {}
+              config["model_providers"] = providers
+          providers["local"] = {
+              "name": "local",
+              "base_url": f"http://127.0.0.1:{server_port}/v1",
+              "wire_api": "responses",
+              "requires_openai_auth": False,
+          }
+          write_toml_payload(config_path, config)
+
+          env = os.environ.copy()
+          env["HOME"] = str(home)
+          env["CODEX_HOME"] = str(home / ".codex")
+          result = subprocess.run(
+              [
+                  str(Path(os.environ["PRESERVED_BIN"]) / "codex"),
+                  "exec",
+                  "--json",
+                  "--skip-git-repo-check",
+                  "--dangerously-bypass-hook-trust",
+                  "-C",
+                  str(workspace),
+                  "Run the requested test exactly.",
+              ],
+              stdin=subprocess.DEVNULL,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.STDOUT,
+              text=True,
+              env=env,
+              timeout=180,
+          )
+          output_path.write_text(result.stdout, encoding="utf-8")
+          server.shutdown()
+          server.server_close()
+          server_thread.join(timeout=5)
+
+          if result.returncode != 0:
+              raise SystemExit(f"Codex exited {result.returncode}:\n{result.stdout}")
+          log_text = request_log.read_text(encoding="utf-8")
+          if request_count < 2 or "function_call_output" not in log_text or "call_1" not in log_text:
+              raise SystemExit("Codex did not execute and return the requested real tool call")
+          combined = result.stdout + log_text
+          for secret in (
+              "synthetic-env-secret-sentinel",
+              "synthetic-file-secret-sentinel",
+              "synthetic-dotenv-secret-sentinel",
+          ):
+              if secret in combined:
+                  raise SystemExit("synthetic secret appeared in Codex/provider output")
+          if host_marker.exists():
+              raise SystemExit("contained Vitest wrote outside the private snapshot")
+          if (workspace / "ephemeral-result.txt").exists():
+              raise SystemExit("contained Vitest write escaped into the host workspace")
+          if outside.read_text(encoding="utf-8") != "synthetic-file-secret-sentinel\n":
+              raise SystemExit("outside synthetic secret file changed")
+          if not (workspace / ".env").is_file():
+              raise SystemExit("host .env fixture unexpectedly disappeared")
+          try:
+              connection, _address = listener.accept()
+          except TimeoutError:
+              pass
+          else:
+              connection.close()
+              raise SystemExit("contained Vitest reached the host loopback listener")
+          finally:
+              listener.close()
+
+          print(result.stdout)
+          print("Installed Codex containment integration passed")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr2870-installed-codex-evidence
+          path: |
+            ${{ runner.temp }}/pr2870-artifacts/provenance.json
+            ${{ runner.temp }}/codex-version.txt
+            ${{ runner.temp }}/codex-install.json
+            ${{ runner.temp }}/codex-integration-output.txt
+            ${{ runner.temp }}/codex-provider-requests.jsonl
+          if-no-files-found: warn
+          retention-days: 3

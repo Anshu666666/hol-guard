@@ -99,8 +99,10 @@ def _command_may_need_read_assessment(command_text: str, *, cwd: Path | None = N
             return True
         if _unresolved_local_script_launch(normalized):
             return True
-        if _cwd_shadowed_executable(normalized, cwd=cwd):
-            return True
+        # `cwd` is accepted so callers can pass the assessment workspace.
+        # Bare PATH names are not local scripts just because a same-named
+        # file exists there; Unix lookup uses PATH, not cwd.
+    _ = cwd
     return False
 
 
@@ -388,19 +390,26 @@ def _path_qualified(executable: str) -> bool:
 def _script_like_operand(operand: str) -> bool:
     """Return True for a relative or suffix-marked script, not a subcommand or system binary."""
 
-    return bool(operand) and operand != "-" and _unresolved_local_script_launch(operand)
+    if not operand or operand == "-":
+        return False
+    if operand.lower().endswith(_SCRIPT_SUFFIXES):
+        return True
+    return _unresolved_local_script_launch(operand)
 
 
 def _unresolved_local_script_launch(executable: str) -> bool:
-    """Flag relative or script-shaped launches when the path is outside read roots."""
+    """Flag relative or path-qualified script launches, not bare PATH command names."""
 
     if not executable:
         return False
-    if executable.lower().endswith(_SCRIPT_SUFFIXES):
-        return True
     if executable.startswith(("./", "../", ".\\", "..\\")):
         return True
-    return ("/" in executable or "\\" in executable) and not Path(executable).is_absolute()
+    has_separator = "/" in executable or "\\" in executable
+    if not has_separator:
+        return False
+    if not Path(executable).is_absolute():
+        return True
+    return executable.lower().endswith(_SCRIPT_SUFFIXES)
 
 
 def _cwd_shadowed_executable(executable: str, *, cwd: Path | None) -> bool:

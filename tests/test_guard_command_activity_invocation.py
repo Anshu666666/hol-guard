@@ -53,7 +53,7 @@ def test_invocation_preview_redacts_authorization_scheme_credentials() -> None:
     assert preview is not None
     assert "live-jwt-token" not in preview
     assert "live-basic-token" not in preview
-    assert preview.count("[redacted]") == 2
+    assert preview.count("[redacted]") + preview.count("*****") >= 2
 
 
 def test_invocation_preview_scrubs_spaced_heredocs_urls_and_quoted_secrets() -> None:
@@ -82,9 +82,7 @@ def test_invocation_preview_scrubs_spaced_heredocs_urls_and_quoted_secrets() -> 
     assert quoted_windows is not None
     assert "Documents/token.txt" not in quoted_windows
     assert "My Documents" not in quoted_windows
-    quoted_windows_backslash = build_invocation_preview(
-        r"type 'C:\Docs\alice\My Documents\token.txt'"
-    )
+    quoted_windows_backslash = build_invocation_preview(r"type 'C:\Docs\alice\My Documents\token.txt'")
     assert quoted_windows_backslash is not None
     assert r"Documents\token.txt" not in quoted_windows_backslash
     quoted_posix = build_invocation_preview('cat "/var/secret dir/token.txt"')

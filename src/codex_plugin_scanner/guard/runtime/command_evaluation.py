@@ -282,9 +282,7 @@ def evaluate_command(
         # Claimed workflow proof already covers exact GitHub CLI execution.
         # Keep secret-read floors; do not let a script-shaped interpreter
         # argv raise an independent local-code review on that same claim.
-        read_factors = tuple(
-            factor for factor in read_factors if factor.reason_code == "critical.local-secret-read"
-        )
+        read_factors = tuple(factor for factor in read_factors if factor.reason_code == "critical.local-secret-read")
     if read_factors:
         minimum_action = _stronger_floor(minimum_action, "review")
     baseline_critical_floor_factors = (*command_critical_floor_factors(command), *read_factors)
@@ -364,7 +362,14 @@ def evaluate_command(
             )
         )
     )
-    if control_resolution.blocked:
+    # Unavailable authority must not fail-open writes. Secret reads and unmatched
+    # tools still queue for review instead of becoming terminal blocks.
+    apply_control_fail_closed = control_resolution.blocked and (
+        minimum_action == "block"
+        or bool(workspace_write_candidates)
+        or any(redirect.operator in {">", ">>"} for redirect in command.redirects)
+    )
+    if apply_control_fail_closed:
         minimum_action = _stronger_floor(minimum_action, "block")
     decision_plane = evaluate_effect_decision(
         EffectDecisionRequest(
@@ -375,7 +380,7 @@ def evaluate_command(
                 *workspace_write_candidates,
                 *critical_floor_factors,
                 *read_factors,
-                *control_resolution.factors,
+                *(control_resolution.factors if apply_control_fail_closed else ()),
                 *explicit_permission_allow_factors,
             ),
             uncertainties=decision_uncertainties,

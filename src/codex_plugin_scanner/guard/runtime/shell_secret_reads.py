@@ -37,10 +37,10 @@ from ._shell_secret_read_support import (
     _python_executable,
     _python_module_launch,
     _script_operand,
-    _unresolved_local_script_launch,
     _segment_may_touch_local_data,
     _sensitive_path,
     _shell_command_string,
+    _unresolved_local_script_launch,
     _unwrap_execution_builtin,
     direct_secret_read_paths,
 )

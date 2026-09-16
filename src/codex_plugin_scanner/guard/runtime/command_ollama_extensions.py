@@ -64,7 +64,10 @@ OLLAMA_COMMAND_RULES = (
         risk_classes=("network_egress",),
         action_classes=("Ollama model publication command",),
         safer_alternatives=(
-            "Confirm the model name, owner prefix, registry destination, and intended publication scope before pushing.",
+            (
+                "Confirm the model name, owner prefix, registry destination, "
+                "and intended publication scope before pushing."
+            ),
         ),
         matcher=_OLLAMA_PUSH,
         default_mode="review",
@@ -101,7 +104,10 @@ OLLAMA_COMMAND_EXTENSION_SPECS = (
         ),
         risk_classes=("network_egress", "destructive_shell"),
         safer_alternatives=(
-            "Confirm the model name, owner prefix, registry destination, and intended publication scope before pushing.",
+            (
+                "Confirm the model name, owner prefix, registry destination, "
+                "and intended publication scope before pushing."
+            ),
             "Run ollama list first and confirm the exact local models before removing them.",
         ),
         reference_urls=(

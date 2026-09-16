@@ -134,6 +134,17 @@ def assess_shell_reads(
                 proven = low_risk_compound_developer_execution_context(text, home_dir=home_dir)
                 if proven is not None and proven.complete:
                     context = proven
+        if context.reason_code == SHELL_CWD_WORKSPACE_ESCAPE and current_cwd is not None:
+            # Read assessment needs the actual literal cwd, not authorization to
+            # execute there. Keep script inspection constrained to the original
+            # roots below; this evidence-only model cannot grant execution.
+            anchor = Path(current_cwd.anchor) if current_cwd.is_absolute() else None
+            if anchor is not None:
+                literal_context = model_shell_execution_context(
+                    text, cwd=current_cwd, workspace_root=anchor, home_dir=home_dir
+                )
+                if literal_context.complete:
+                    context = literal_context
         raw_model = parse_shell_command(text, cwd=current_cwd, home_dir=home_dir, normalize_wrappers=False)
         raw_segments = tuple(segment for segment in raw_model.segments if segment.execution_context.startswith("top:"))
         aligned = len(raw_segments) == len(context.segments)

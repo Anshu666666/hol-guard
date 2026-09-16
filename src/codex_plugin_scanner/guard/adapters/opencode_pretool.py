@@ -32,9 +32,8 @@ _INHERIT_ENV_KEYS = (
 )
 
 _PLUGIN_TEMPLATE = """// Managed by HOL Guard. Re-run `hol-guard install opencode` after moving Guard home.
-import { createHash } from "node:crypto";
 import { spawn as nodeSpawn } from "node:child_process";
-import { lstatSync, readFileSync, readlinkSync, realpathSync } from "node:fs";
+import { lstatSync, realpathSync } from "node:fs";
 
 const GUARD_HOME = __GUARD_HOME__;
 const GUARD_PYTHON = __GUARD_PYTHON__;
@@ -48,27 +47,6 @@ const GUARD_HOOK_TIMEOUT_MS = 30_000;
 const GUARD_WINDOWS_JOB_MARKER = "HOL_GUARD_WINDOWS_JOB_CONTAINED\\n";
 let fallbackInFlight = false;
 let fallbackContainmentFailed = false;
-
-type GuardFileMetadata = {
-  device: string;
-  inode: string;
-  mode: string;
-  size: string;
-  mtimeNs: string;
-};
-
-function metadataMatches(
-  actual: { dev: bigint; ino: bigint; mode: bigint; size: bigint; mtimeNs: bigint },
-  expected: GuardFileMetadata,
-): boolean {
-  return (
-    actual.dev.toString() === expected.device &&
-    actual.ino.toString() === expected.inode &&
-    actual.mode.toString() === expected.mode &&
-    actual.size.toString() === expected.size &&
-    actual.mtimeNs.toString() === expected.mtimeNs
-  );
-}
 
 const GUARD_RUNTIME_MISSING =
   "HOL Guard's OpenCode plugin cannot find the Guard runtime that generated it. " +
@@ -91,18 +69,6 @@ export function resolveGuardPythonTarget(): string {
     if (!targetStat.isFile() || realpathSync(resolved) !== resolved) {
       throw new Error("target is not a regular file");
     }
-    const linkTarget = invocationStat.isSymbolicLink() ? readlinkSync(GUARD_PYTHON.invocationPath) : null;
-    const digest = createHash("sha256").update(readFileSync(resolved)).digest("hex");
-    const identityMatches =
-      invocationType === GUARD_PYTHON.invocationType &&
-      metadataMatches(invocationStat, GUARD_PYTHON.invocationStat) &&
-      linkTarget === GUARD_PYTHON.invocationLinkTarget &&
-      resolved === GUARD_PYTHON.targetPath &&
-      metadataMatches(targetStat, GUARD_PYTHON.targetStat) &&
-      digest === GUARD_PYTHON.targetSha256;
-    if (identityMatches) {
-      return resolved;
-    }
     // Guard updates replace the interpreter in place. Keep reviewing with the
     // same launcher path instead of blocking every OpenCode shell tool.
     return resolved;
@@ -116,19 +82,18 @@ export function verifyGuardPythonIdentity(): void {
 }
 
 export function isGuardSelfRepairCommand(command: string): boolean {
-  const argv = command.trim().split(/\\s+/);
+  const normalized = command.trim();
+  if (/[&|;`$<>()\\n]/.test(normalized)) {
+    return false;
+  }
+  const argv = normalized.split(/\\s+/);
   const binary = argv[0] ?? "";
   const name = binary.replace(/\\\\/g, "/").split("/").pop() ?? "";
   if (name !== "hol-guard" && name !== "hol-guard.exe") {
     return false;
   }
   const rest = argv.slice(1).join(" ");
-  return (
-    rest === "update" ||
-    rest === "doctor" ||
-    rest === "start" ||
-    rest.startsWith("install opencode")
-  );
+  return rest === "update" || rest === "doctor" || rest === "start" || rest === "install opencode";
 }
 
 function hookProcessEnv(guardArgv: string[]) {
@@ -546,10 +511,10 @@ export const HolGuardPretoolPlugin = async ({
           deadlineMs,
         );
       } catch (error) {
-        if (isGuardSelfRepairCommand(command)) {
+        const detail = error instanceof Error ? error.message : String(error);
+        if (detail.includes(GUARD_RUNTIME_MISSING) && isGuardSelfRepairCommand(command)) {
           return;
         }
-        const detail = error instanceof Error ? error.message : String(error);
         throw new Error(
           `HOL Guard could not review this ${input.tool} command (${detail}). ` +
             "Run `hol-guard install opencode` in a host terminal outside OpenCode, then restart OpenCode.",

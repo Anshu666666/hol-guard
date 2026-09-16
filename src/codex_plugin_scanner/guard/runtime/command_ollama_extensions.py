@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .command_extension_matchers import executable_matcher, safe_flag_variant
 from .command_extension_specs import CommandExtensionSpec
-from .command_rules import AnyMatcher, CommandSafetyRule
+from .command_rules import AnyMatcher, CommandSafetyRule, CommandSafeVariant
 
 # CLI surface verified against ollama/ollama `cmd/cmd.go` `NewCLI()`:
 # `push MODEL` is ExactArgs(1) and documented as "Push a model to a registry";
@@ -39,7 +39,7 @@ _OLLAMA_RM = AnyMatcher(
 )
 
 
-def _help_variants(matcher: AnyMatcher, *, title: str) -> tuple:
+def _help_variants(matcher: AnyMatcher, *, title: str) -> tuple[CommandSafeVariant, ...]:
     return (
         safe_flag_variant(matcher, variant_id="help", title=title, flag="--help"),
         safe_flag_variant(matcher, variant_id="short-help", title=title, flag="-h"),

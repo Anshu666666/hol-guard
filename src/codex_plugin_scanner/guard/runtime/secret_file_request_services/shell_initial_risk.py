@@ -107,6 +107,7 @@ def _missing_workspace_read_only_search(cwd: Path | None, command: CanonicalComm
         (cwd is not None and cwd.exists())
         or command.redirects
         or command.embedded_commands
+        or command.wrapper_chain
         or len(command.segments) != 1
     ):
         return False

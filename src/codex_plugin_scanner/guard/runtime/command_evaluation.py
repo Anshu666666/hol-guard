@@ -26,6 +26,7 @@ from .command_extensions import (
 )
 from .command_model import CanonicalCommand, parse_shell_command
 from .command_rules import CommandRuleMatch, CommandRuleMode, CommandSafetyRule
+from .command_shell_read_factors import shell_read_floor_factors
 from .command_verified_read_candidates import verified_read_candidate_factor
 from .command_workspace_write_candidates import workspace_write_candidate_factors
 from .effect_contract import DecisionBasis, ProofRequirement, ProofRoute, UncertaintyKind
@@ -51,7 +52,6 @@ from .github_workflow_authorization import (
     GitHubWorkflowAuthorization,
     github_workflow_authorization_evidence,
 )
-from .shell_secret_reads import assess_shell_reads
 
 CommandDecisionFloor = Literal["allow", "monitor", "review", "block"]
 _FLOOR_RANK: dict[CommandDecisionFloor, int] = {"allow": 0, "monitor": 1, "review": 2, "block": 3}
@@ -282,21 +282,8 @@ def evaluate_command(
         workflow_authorization,
         command_identity=command.security_identity,
     )
-    read_assessment = assess_shell_reads(command_text, cwd=cwd, home_dir=home_dir)
-    read_factors: tuple[DecisionFactor, ...] = ()
-    if read_assessment.requires_review:
-        reason_code = (
-            "critical.local-secret-read" if read_assessment.sensitive_paths else "critical.local-script-execution"
-        )
-        read_factors = (
-            DecisionFactor(
-                source=DecisionFactorSource.POLICY,
-                reason_code=reason_code,
-                basis=DecisionBasis("require-reapproval", None),
-                operation_ref=f"operation:{command.security_identity.rsplit(':', 1)[-1]}",
-                producer_ref="runtime:shell-read-floors-v1",
-            ),
-        )
+    read_factors = shell_read_floor_factors(command_text, command.security_identity, cwd=cwd, home_dir=home_dir)
+    if read_factors:
         minimum_action = _stronger_floor(minimum_action, "review")
     baseline_critical_floor_factors = (*command_critical_floor_factors(command), *read_factors)
     explicitly_allowed_github_capabilities = frozenset(

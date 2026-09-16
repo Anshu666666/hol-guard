@@ -150,21 +150,7 @@ def parse_shell_command(
             confidence="uncertain",
             uncertainty_reason=f"unsupported_{dialect}_{transport}",
         )
-    if len(raw_text) > MAX_COMMAND_BYTES:
-        return CanonicalCommand(
-            raw_text=raw_text,
-            normalized_text=raw_text,
-            dialect=dialect,
-            transport=transport,
-            extraction_provenance=extraction_provenance,
-            wrapper_chain=(),
-            segments=(),
-            redirects=(),
-            embedded_commands=(),
-            confidence="uncertain",
-            uncertainty_reason="command_byte_limit_exceeded",
-        )
-    command_bytes = len(raw_text.encode("utf-8"))
+    command_bytes = len(raw_text) if len(raw_text) > MAX_COMMAND_BYTES else len(raw_text.encode("utf-8"))
     if command_bytes > MAX_COMMAND_BYTES:
         return CanonicalCommand(
             raw_text=raw_text,

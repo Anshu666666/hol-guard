@@ -73,7 +73,7 @@ def complete_workspace_snapshot(
             if any(part in _SKIPPED_STATE_NAMES for part in lowered_parts):
                 exclusions.append((relative.as_posix(), "protected-state"))
                 continue
-            if _is_protected(relative):
+            if _is_protected(relative, is_directory=entry.is_dir(follow_symlinks=False)):
                 if exclude_protected:
                     exclusions.append((relative.as_posix(), "protected-content"))
                     continue
@@ -201,16 +201,24 @@ def _snapshot_file_digest(path: Path, expected: os.stat_result) -> str:
         os.close(descriptor)
 
 
-def _is_protected(relative: Path) -> bool:
+def _is_protected(relative: Path, *, is_directory: bool = False) -> bool:
+    """Protect dependency content; exempt only generic words in package directory names."""
+
     if classify_secret_path(relative.as_posix()) is not None:
         return True
-    in_node_modules = False
-    for part in relative.parts:
+    package_directory_expected = False
+    parts = relative.parts
+    for index, part in enumerate(parts):
         if part.lower() == "node_modules":
-            in_node_modules = True
+            package_directory_expected = True
             continue
-        if _is_protected_part(part, include_generic_words=not in_node_modules):
+        directory_component = index < len(parts) - 1 or is_directory
+        package_directory = package_directory_expected and directory_component
+        if _is_protected_part(part, include_generic_words=not package_directory):
             return True
+        if package_directory_expected:
+            # A scope consumes a directory but not the following package name.
+            package_directory_expected = package_directory and part.startswith("@")
     return False
 
 

@@ -142,10 +142,12 @@ def _runtime_artifact_policy_action(config: GuardConfig, artifact: GuardArtifact
     if (
         guard_default_action == "require-reapproval"
         and artifact.metadata.get("reason_code") == "shell_local_script_execution_review"
+        and set(risk_classes).issubset({"execution"})
     ):
         # This detector establishes an approval floor, not a terminal execution block.
         # Explicit risk_actions were applied above; the built-in execution posture
-        # must not silently strengthen this specific review contract.
+        # must not silently strengthen this specific review contract. Other
+        # independent risks must still reach their normal policy resolution.
         return with_config_policy(guard_default_action)
     if guard_default_action == "sandbox-required" and pytest_restricted_sandbox:
         return with_config_policy(guard_default_action)

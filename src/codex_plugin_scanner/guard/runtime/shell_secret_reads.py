@@ -47,6 +47,7 @@ from .command_model import parse_shell_command
 from .data_flow import extract_heredocs
 from .home_path_text import expand_home, normalize_path
 from .shell_execution_context import model_shell_execution_context
+from .shell_read_literal_wrapper import literal_shell_read_payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +79,7 @@ def assess_shell_reads(
 ) -> ShellReadAssessment:
     """Assess direct and script-mediated reads without executing inspected code."""
 
+    command_text = literal_shell_read_payload(command_text)
     if not _command_may_need_read_assessment(command_text):
         return ShellReadAssessment((), (), False, False)
 

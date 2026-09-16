@@ -24,6 +24,7 @@ from ._shell_secret_read_support import (
     _MAX_TOTAL_BYTES,
     _SHELLS,
     _command_may_need_read_assessment,
+    _cwd_shadowed_executable,
     _direct_secret_read_paths_from_tokens,
     _failed_cd_short_circuit_state,
     _flow_operator_before,
@@ -33,10 +34,10 @@ from ._shell_secret_read_support import (
     _literal_read_paths,
     _local_executable_operand,
     _parse_execution_segment,
-    _path_qualified,
     _python_executable,
     _python_module_launch,
     _script_operand,
+    _unresolved_local_script_launch,
     _segment_may_touch_local_data,
     _sensitive_path,
     _shell_command_string,
@@ -80,7 +81,7 @@ def assess_shell_reads(
     """Assess direct and script-mediated reads without executing inspected code."""
 
     command_text = literal_shell_read_payload(command_text)
-    if not _command_may_need_read_assessment(command_text):
+    if not _command_may_need_read_assessment(command_text, cwd=cwd):
         return ShellReadAssessment((), (), False, False)
 
     from .secret_file_request_services.credential_exfiltration import _read_small_runtime_text_file
@@ -288,8 +289,11 @@ def assess_shell_reads(
                     home_dir=home_dir,
                     roots=roots,
                 )
-                if local_executable is None:
-                    if _path_qualified(executable):
+                if local_executable is None or not _unresolved_local_script_launch(executable):
+                    if local_executable is None and (
+                        _unresolved_local_script_launch(executable)
+                        or _cwd_shadowed_executable(executable, cwd=effective_cwd)
+                    ):
                         requested = True
                         incomplete = True
                     continue

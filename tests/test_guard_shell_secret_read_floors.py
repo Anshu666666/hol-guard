@@ -255,3 +255,19 @@ def test_path_object_construction_is_not_a_file_read(tmp_path: Path) -> None:
     assert not assess_shell_reads(command, cwd=tmp_path, home_dir=tmp_path).sensitive_paths
     command = "python3 -c 'from pathlib import Path; print(Path(\".env\").read_text())'"
     assert assess_shell_reads(command, cwd=tmp_path, home_dir=tmp_path).sensitive_paths
+
+
+def test_absolute_interpreter_subcommand_is_not_a_local_script(tmp_path: Path) -> None:
+    command = f"{Path('/usr/bin/python3')} issue lock 17 --repo example/repo"
+    result = assess_shell_reads(command, cwd=tmp_path, home_dir=tmp_path)
+    assert not result.requires_review
+    assert evaluate_command(command, cwd=tmp_path, home_dir=tmp_path).minimum_action != "block"
+
+
+def test_relative_script_launch_still_requires_review(tmp_path: Path) -> None:
+    script = tmp_path / "tools" / "run.py"
+    script.parent.mkdir()
+    script.write_text("print('ok')\n")
+    result = assess_shell_reads("python3 tools/run.py", cwd=tmp_path, home_dir=tmp_path)
+    assert result.requires_review
+    assert result.script_sources

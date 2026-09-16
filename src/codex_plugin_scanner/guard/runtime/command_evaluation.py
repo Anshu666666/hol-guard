@@ -210,11 +210,6 @@ def evaluate_command(
             | _direct_github_permission_ids(command)
         )
     )
-    authority_failure = (
-        runtime_snapshot.authority_failure
-        if runtime_snapshot is not None and (extension_ids or permission_ids)
-        else None
-    )
     control_resolution = resolve_extension_controls(
         control_layers,
         registry,
@@ -224,7 +219,7 @@ def evaluate_command(
         observations=tuple(
             f"{observation.extension.extension_id}:{observation.rule.rule_id}" for observation in observations
         ),
-        authority_failure=authority_failure,
+        authority_failure=runtime_snapshot.authority_failure if runtime_snapshot is not None else None,
     )
     explicitly_enabled_permissions = frozenset(control_resolution.explicitly_enabled_permission_ids)
     relaxable_enabled_permissions = (
@@ -283,6 +278,13 @@ def evaluate_command(
         command_identity=command.security_identity,
     )
     read_factors = shell_read_floor_factors(command_text, command.security_identity, cwd=cwd, home_dir=home_dir)
+    if authorization_evidence is not None:
+        # Claimed workflow proof already covers exact GitHub CLI execution.
+        # Keep secret-read floors; do not let a script-shaped interpreter
+        # argv raise an independent local-code review on that same claim.
+        read_factors = tuple(
+            factor for factor in read_factors if factor.reason_code == "critical.local-secret-read"
+        )
     if read_factors:
         minimum_action = _stronger_floor(minimum_action, "review")
     baseline_critical_floor_factors = (*command_critical_floor_factors(command), *read_factors)

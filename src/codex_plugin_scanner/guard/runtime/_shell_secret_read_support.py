@@ -62,7 +62,7 @@ def _python_executable(name: str) -> bool:
     return _PYTHON_EXECUTABLE.fullmatch(name) is not None
 
 
-def _command_may_need_read_assessment(command_text: str) -> bool:
+def _command_may_need_read_assessment(command_text: str, *, cwd: Path | None = None) -> bool:
     """Skip filesystem modeling when syntax cannot read files or launch local code."""
 
     try:
@@ -97,7 +97,9 @@ def _command_may_need_read_assessment(command_text: str) -> bool:
         name = "." if normalized == "." else Path(normalized).name.lower()
         if name in interesting or _python_executable(name):
             return True
-        if _path_qualified(normalized):
+        if _unresolved_local_script_launch(normalized):
+            return True
+        if _cwd_shadowed_executable(normalized, cwd=cwd):
             return True
     return False
 
@@ -306,7 +308,10 @@ def _script_operand(executable: str, args: tuple[str, ...]) -> tuple[str, bool] 
                 break
             index += 1
         if index < len(args) and args[index] != "-":
-            return args[index], is_shell
+            operand = args[index]
+            if is_shell or _script_like_operand(operand):
+                return operand, is_shell
+            return None
     if name == "bun" and args and args[0].endswith(_SCRIPT_SUFFIXES):
         return args[0], False
     if executable.endswith(_SCRIPT_SUFFIXES) and ("/" in executable or executable.startswith(".")):
@@ -378,6 +383,35 @@ def _interpreter_inline_launch(executable: str, args: tuple[str, ...]) -> bool:
 
 def _path_qualified(executable: str) -> bool:
     return bool(executable) and ("/" in executable or "\\" in executable or executable.startswith("."))
+
+
+def _script_like_operand(operand: str) -> bool:
+    """Return True for a relative or suffix-marked script, not a subcommand or system binary."""
+
+    return bool(operand) and operand != "-" and _unresolved_local_script_launch(operand)
+
+
+def _unresolved_local_script_launch(executable: str) -> bool:
+    """Flag relative or script-shaped launches when the path is outside read roots."""
+
+    if not executable:
+        return False
+    if executable.lower().endswith(_SCRIPT_SUFFIXES):
+        return True
+    if executable.startswith(("./", "../", ".\\", "..\\")):
+        return True
+    return ("/" in executable or "\\" in executable) and not Path(executable).is_absolute()
+
+
+def _cwd_shadowed_executable(executable: str, *, cwd: Path | None) -> bool:
+    """Return True when a bare command name exists as a file in the working directory."""
+
+    if cwd is None or not executable or _path_qualified(executable):
+        return False
+    try:
+        return (cwd / executable).is_file()
+    except OSError:
+        return True
 
 
 def _local_executable_operand(

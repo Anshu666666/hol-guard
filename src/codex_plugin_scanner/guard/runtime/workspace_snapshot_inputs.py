@@ -45,6 +45,7 @@ _PROTECTED_NAMES: Final = frozenset(
     }
 )
 _PROTECTED_SUFFIXES: Final = (".jks", ".key", ".keystore", ".p12", ".pem", ".pfx")
+_SOURCE_SUFFIXES: Final = (".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx")
 _PROTECTED_WORDS: Final = frozenset(
     {"credential", "credentials", "passwd", "password", "passwords", "secret", "secrets", "token", "tokens"}
 )
@@ -207,14 +208,19 @@ def _is_protected(relative: Path, *, is_directory: bool = False) -> bool:
     if classify_secret_path(relative.as_posix()) is not None:
         return True
     package_directory_expected = False
+    in_dependency_tree = False
     parts = relative.parts
     for index, part in enumerate(parts):
         if part.lower() == "node_modules":
             package_directory_expected = True
+            in_dependency_tree = True
             continue
         directory_component = index < len(parts) - 1 or is_directory
         package_directory = package_directory_expected and directory_component
-        if _is_protected_part(part, include_generic_words=not package_directory):
+        skip_generic_words = package_directory or (
+            in_dependency_tree and not directory_component and part.lower().endswith(_SOURCE_SUFFIXES)
+        )
+        if _is_protected_part(part, include_generic_words=not skip_generic_words):
             return True
         if package_directory_expected:
             # A scope consumes a directory but not the following package name.

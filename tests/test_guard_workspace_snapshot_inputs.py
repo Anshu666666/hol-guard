@@ -50,6 +50,7 @@ def test_dependency_tree_still_excludes_explicit_secret_paths(tmp_path: Path) ->
     workspace = (tmp_path / "workspace").resolve()
     _write(workspace / "node_modules" / "runner" / "index.js")
     _write(workspace / "node_modules" / "runner" / ".env", "MUST_NOT_CROSS=synthetic\n")
+    _write(workspace / "node_modules" / "runner" / "client-secret.json", "{}\n")
 
     _digest, inputs = complete_workspace_snapshot(workspace, exclude_protected=True)
 

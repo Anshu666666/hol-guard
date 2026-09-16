@@ -381,30 +381,36 @@ def evaluate_command(
     # Unavailable authority still fail-closes cataloged, destructive, or write
     # commands. Secret reads and unmatched PATH tools keep their review floor
     # instead of becoming terminal blocks just because enrollment is missing.
-    write_redirect = any(
-        redirect.operator.lstrip("0123456789") in {">", ">>", ">|"} for redirect in command.redirects
-    )
-    authority_unavailable_only = bool(control_resolution.failures) and all(
-        failure.code is ResolverFailureCode.AUTHORITY_UNAVAILABLE for failure in control_resolution.failures
-    )
-    unavailable_fail_closed_risks = {
-        *{risk for owned in owned_matches for risk in owned.match.rule.risk_classes},
-        *(
-            risk_classes_for_command_action(effective_compatibility_class)
-            if effective_compatibility_class is not None
-            else ()
-        ),
-    } & _UNAVAILABLE_AUTHORITY_FAIL_CLOSED_RISKS
-    apply_control_fail_closed = control_resolution.blocked and (
-        not authority_unavailable_only
-        or bool(extension_ids)
-        or bool(unavailable_fail_closed_risks)
-        or minimum_action == "block"
-        or bool(workspace_write_candidates)
-        or write_redirect
-    )
-    if apply_control_fail_closed:
-        minimum_action = _stronger_floor(minimum_action, "block")
+    apply_control_fail_closed = False
+    if control_resolution.blocked:
+        authority_unavailable_only = bool(control_resolution.failures) and all(
+            failure.code is ResolverFailureCode.AUTHORITY_UNAVAILABLE for failure in control_resolution.failures
+        )
+        write_redirect = any(
+            redirect.operator.lstrip("0123456789") in {">", ">>", ">|"} for redirect in command.redirects
+        )
+        apply_control_fail_closed = (
+            not authority_unavailable_only
+            or bool(extension_ids)
+            or minimum_action == "block"
+            or bool(workspace_write_candidates)
+            or write_redirect
+        )
+        if not apply_control_fail_closed:
+            for owned in owned_matches:
+                if _UNAVAILABLE_AUTHORITY_FAIL_CLOSED_RISKS.intersection(owned.match.rule.risk_classes):
+                    apply_control_fail_closed = True
+                    break
+        if (
+            not apply_control_fail_closed
+            and effective_compatibility_class is not None
+            and _UNAVAILABLE_AUTHORITY_FAIL_CLOSED_RISKS.intersection(
+                risk_classes_for_command_action(effective_compatibility_class)
+            )
+        ):
+            apply_control_fail_closed = True
+        if apply_control_fail_closed:
+            minimum_action = _stronger_floor(minimum_action, "block")
     decision_plane = evaluate_effect_decision(
         EffectDecisionRequest(
             factors=(

@@ -38,7 +38,12 @@ from .effect_decision import (
     PositiveProof,
     evaluate_effect_decision,
 )
-from .extension_control_contract import ControlResolution, ControlSurface, ExtensionControlLayer
+from .extension_control_contract import (
+    ControlResolution,
+    ControlSurface,
+    ExtensionControlLayer,
+    ResolverFailureCode,
+)
 from .extension_control_resolver import resolve_extension_controls
 from .extension_control_runtime import (
     ExtensionControlDecisionEvidence,
@@ -55,6 +60,17 @@ from .github_workflow_authorization import (
 
 CommandDecisionFloor = Literal["allow", "monitor", "review", "block"]
 _FLOOR_RANK: dict[CommandDecisionFloor, int] = {"allow": 0, "monitor": 1, "review": 2, "block": 3}
+_UNAVAILABLE_AUTHORITY_FAIL_CLOSED_RISKS = frozenset(
+    {
+        "destructive_shell",
+        "credential_exfiltration",
+        "data_flow_exfiltration",
+        "encoded_execution",
+        "encoded_exfiltration",
+        "guard_bypass",
+        "policy_bypass",
+    }
+)
 _SEVERITY_RANK = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 _MODE_FLOOR: dict[CommandRuleMode, CommandDecisionFloor] = {
     "disabled": "allow",
@@ -362,12 +378,30 @@ def evaluate_command(
             )
         )
     )
-    # Unavailable authority must not fail-open writes. Secret reads and unmatched
-    # tools still queue for review instead of becoming terminal blocks.
+    # Unavailable authority still fail-closes cataloged, destructive, or write
+    # commands. Secret reads and unmatched PATH tools keep their review floor
+    # instead of becoming terminal blocks just because enrollment is missing.
+    write_redirect = any(
+        redirect.operator.lstrip("0123456789") in {">", ">>", ">|"} for redirect in command.redirects
+    )
+    authority_unavailable_only = bool(control_resolution.failures) and all(
+        failure.code is ResolverFailureCode.AUTHORITY_UNAVAILABLE for failure in control_resolution.failures
+    )
+    unavailable_fail_closed_risks = {
+        *{risk for owned in owned_matches for risk in owned.match.rule.risk_classes},
+        *(
+            risk_classes_for_command_action(effective_compatibility_class)
+            if effective_compatibility_class is not None
+            else ()
+        ),
+    } & _UNAVAILABLE_AUTHORITY_FAIL_CLOSED_RISKS
     apply_control_fail_closed = control_resolution.blocked and (
-        minimum_action == "block"
+        not authority_unavailable_only
+        or bool(extension_ids)
+        or bool(unavailable_fail_closed_risks)
+        or minimum_action == "block"
         or bool(workspace_write_candidates)
-        or any(redirect.operator in {">", ">>"} for redirect in command.redirects)
+        or write_redirect
     )
     if apply_control_fail_closed:
         minimum_action = _stronger_floor(minimum_action, "block")

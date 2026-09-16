@@ -80,8 +80,13 @@ def assess_shell_reads(
 ) -> ShellReadAssessment:
     """Assess direct and script-mediated reads without executing inspected code."""
 
+    original_command_text = command_text
     command_text = literal_shell_read_payload(command_text)
-    if not _command_may_need_read_assessment(command_text, cwd=cwd):
+    if not _command_may_need_read_assessment(
+        command_text,
+        cwd=cwd,
+        cwd_shadow=command_text != original_command_text,
+    ):
         return ShellReadAssessment((), (), False, False)
 
     from .secret_file_request_services.credential_exfiltration import _read_small_runtime_text_file

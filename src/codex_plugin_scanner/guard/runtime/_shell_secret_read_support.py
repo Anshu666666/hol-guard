@@ -62,7 +62,12 @@ def _python_executable(name: str) -> bool:
     return _PYTHON_EXECUTABLE.fullmatch(name) is not None
 
 
-def _command_may_need_read_assessment(command_text: str, *, cwd: Path | None = None) -> bool:
+def _command_may_need_read_assessment(
+    command_text: str,
+    *,
+    cwd: Path | None = None,
+    cwd_shadow: bool = False,
+) -> bool:
     """Skip filesystem modeling when syntax cannot read files or launch local code."""
 
     try:
@@ -99,10 +104,11 @@ def _command_may_need_read_assessment(command_text: str, *, cwd: Path | None = N
             return True
         if _unresolved_local_script_launch(normalized):
             return True
-        # `cwd` is accepted so callers can pass the assessment workspace.
-        # Bare PATH names are not local scripts just because a same-named
-        # file exists there; Unix lookup uses PATH, not cwd.
-    _ = cwd
+        # Bare PATH names are not local scripts just because a same-named file
+        # exists in cwd. Unwrapped `bash -lc` payloads can still be shadowed
+        # because login shells may resolve through a cwd-augmented PATH.
+        if cwd_shadow and _cwd_shadowed_executable(normalized, cwd=cwd):
+            return True
     return False
 
 

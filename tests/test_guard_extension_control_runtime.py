@@ -276,8 +276,12 @@ def test_unavailable_authority_blocks_compatibility_destructive_shell() -> None:
     )
     with use_extension_control_snapshot(snapshot):
         evaluation = evaluate_command("echo MALICIOUS > dangerous-marker.json")
+        fd_evaluation = evaluate_command("echo MALICIOUS 2> dangerous-marker.json")
+        noclobber_evaluation = evaluate_command("echo MALICIOUS >| dangerous-marker.json")
 
     assert evaluation.decision_plane.action == "block"
+    assert fd_evaluation.decision_plane.action == "block"
+    assert noclobber_evaluation.decision_plane.action == "block"
     assert any(
         reason.reason_code == "control.resolver-failure" for reason in evaluation.decision_plane.controlling_reasons
     )

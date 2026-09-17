@@ -55,7 +55,6 @@ from ..package_firewall_entitlement import (
     build_oauth_package_firewall_entitlement,
     reconcile_connect_state_with_oauth_entitlement,
 )
-from ..policy_bundle_ack_contract import generic_ack_matches_bundle
 from ..policy_bundle_activation import activate_with_reason, persist_activation_rejection
 from ..policy_bundle_decisions import build_policy_bundle_decisions as _materialize_policy_bundle_decisions
 from ..policy_bundle_delivery import (
@@ -82,7 +81,6 @@ from ..policy_bundle_trusted_keys import (
 from ..policy_bundle_v2 import (
     POLICY_BUNDLE_V2_CONTRACT,
     validate_policy_bundle_v2_transition,
-    validated_policy_bundle_v2_acknowledgement,
 )
 from ..policy_canonical_rollout import (
     canonical_policy_enforcement_enabled as _canonical_policy_enforcement_enabled,
@@ -144,6 +142,7 @@ from .managed_controls_sync import (
     managed_controls_runtime_sync_posture as _managed_controls_runtime_sync_posture,
 )
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
+from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
 from .signals import RiskSignalV2
 from .supply_chain_bundle import (
@@ -2895,7 +2894,6 @@ def sync_receipts(
         if validated_policy_bundle is not None and not _daemon_version_supported(validated_policy_bundle):
             validated_policy_bundle = None
             policy_bundle_rejection_reason = "unsupported_daemon_version"
-        # Shared publication contract: v1 ``rolloutState`` and v2 ``payload.spec.rolloutState``.
         if validated_policy_bundle is not None and not policy_bundle_is_enforceable(validated_policy_bundle):
             validated_policy_bundle = None
             policy_bundle_rejection_reason = "inactive_rollout_state"
@@ -3050,7 +3048,6 @@ def sync_receipts(
             expected_workspace_id=store.get_cloud_workspace_id(),
         )
         if activation_bundle is not None and not policy_bundle_is_enforceable(activation_bundle):
-            # Cached current/LKG reads use the same publication-state gate as sync.
             activation_bundle = None
             activation_reason = "inactive_rollout_state"
         acceptance_checkpoint = store.get_sync_payload("policy_bundle_acceptance_checkpoint")
@@ -5853,44 +5850,9 @@ def _validated_policy_bundle_acknowledgement(
     device_id: str,
     device_name: str,
 ) -> dict[str, object] | None:
-    acknowledgement = store.get_sync_payload("policy_bundle_ack")
-    if not isinstance(acknowledgement, dict):
-        return None
-    if acknowledgement.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
-        validated, _error = validated_policy_bundle_v2_acknowledgement(acknowledgement)
-        if (
-            validated is not None
-            and "deliveryId" not in validated
-            and not generic_ack_matches_bundle(
-                validated,
-                validated_synced_policy_bundle(store),
-                device_id=device_id,
-            )
-        ):
-            return None
-        return validated
-
-    policy_bundle = validated_synced_policy_bundle(store)
-    if policy_bundle is None:
-        return None
-
-    bundle_hash = non_empty_string(policy_bundle.get("bundleHash"))
-    bundle_version = non_empty_string(policy_bundle.get("bundleVersion"))
-    if bundle_hash is None or bundle_version is None:
-        return None
-    if acknowledgement.get("bundleHash") != bundle_hash:
-        return None
-    if acknowledgement.get("bundleVersion") != bundle_version:
-        return None
-    if acknowledgement.get("deviceId") != device_id:
-        return None
-    if acknowledgement.get("deviceName") != device_name:
-        return None
-    if acknowledgement.get("status") != "synced":
-        return None
-    if _normalized_timestamp_string(acknowledgement.get("appliedAt")) is None:
-        return None
-    return acknowledgement
+    return validated_upload_policy_acknowledgement(
+        store, device_id=device_id, device_name=device_name, normalize_timestamp=_normalized_timestamp_string
+    )
 
 
 def _receipt_sync_context(

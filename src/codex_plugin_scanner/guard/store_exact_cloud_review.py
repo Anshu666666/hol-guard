@@ -350,7 +350,8 @@ def _changed_request_fields(
 ) -> list[str]:
     """Return field names only so stale-request diagnostics cannot leak values."""
 
-    keys = sorted(set(current) | set(expected))
+    # Read-time presentation metadata is not a persisted approval input.
+    keys = sorted((set(current) | set(expected)) - {"action_explanation"})
     return [
         key for key in keys if _request_snapshot({key: current.get(key)}) != _request_snapshot({key: expected.get(key)})
     ]

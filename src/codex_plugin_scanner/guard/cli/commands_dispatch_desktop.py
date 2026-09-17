@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 from ..dashboard_launcher import build_desktop_dashboard_session_url, desktop_bootstrap_is_preflight
 from .desktop_presentation import (
     presentation_projection as _presentation_projection,
+)
+from .desktop_presentation import (
     run_presentation_get_command,
     run_presentation_set_command,
     unsupported_presentation_projection,

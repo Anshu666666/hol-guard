@@ -6,6 +6,7 @@ parse shell syntax. Rich command semantics are layered on by the canonical comma
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from pathlib import PurePath, PureWindowsPath
 from typing import cast
@@ -24,6 +25,7 @@ from .action_explanation_contract import (
 # Schema v1 field limits the projection must enforce before final validation.
 TARGET_LABEL_MAX_LENGTH = 240
 COMMAND_DISPLAY_MAX_LENGTH = 4096
+_ACTION_IDENTITY_DOMAIN = b"hol-guard:action-explanation:v1\0"
 
 _KIND_BY_ACTION_TYPE = {
     "file_read": "file_read",
@@ -189,6 +191,7 @@ def project_action_explanation(
         confidence = "derived"
         uncertainty = []
 
+    opaque_identity = opaque_action_explanation_identity(action_identity)
     raw_command = _text(action_envelope.get("command"))
     command_redaction = redact_text(raw_command) if raw_command else None
     technical_available = bool(retained and exact_details_authorized and raw_command)
@@ -211,7 +214,7 @@ def project_action_explanation(
         "schema_version": ACTION_EXPLANATION_SCHEMA_VERSION,
         "explanation_version": ACTION_EXPLANATION_VERSION,
         "renderer_version": ACTION_EXPLANATION_RENDERER_VERSION,
-        "action_identity": _safe_text(action_identity, 512),
+        "action_identity": opaque_identity,
         "canonical_identity": None,
         "catalog_digest": None,
         "locale": "en-US",
@@ -267,7 +270,7 @@ def project_action_explanation(
             "parse_confidence": None,
             "proof_level": None,
             "receipt_id": _safe_optional(receipt_id, 256),
-            "action_id": _safe_text(action_identity, 512),
+            "action_id": opaque_identity,
         },
         "redaction": {
             "level": (
@@ -280,6 +283,16 @@ def project_action_explanation(
         },
     }
     return parse_action_explanation(cast(dict[str, object], payload))
+
+
+def opaque_action_explanation_identity(action_identity: str) -> str:
+    """Return a domain-separated identifier safe to expose outside Core internals."""
+
+    normalized = action_identity.strip()
+    if not normalized:
+        raise ValueError("Action identity is required.")
+    digest = hashlib.sha256(_ACTION_IDENTITY_DOMAIN + normalized.encode("utf-8")).hexdigest()
+    return f"act_{digest}"
 
 
 def _safe_target(envelope: Mapping[str, object], kind: str) -> tuple[str, str]:

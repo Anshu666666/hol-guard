@@ -153,6 +153,7 @@ def resolve_presentation_mode(
             explicit=False,
             writable=writable,
             revision=safe_revision,
+            diagnostic=local.diagnostic,
         )
     return ResolvedPresentationMode(
         value=local.value,

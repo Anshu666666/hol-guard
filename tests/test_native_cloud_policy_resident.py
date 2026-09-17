@@ -24,13 +24,14 @@ def test_first_action_after_publish_uses_the_signed_default(tmp_path: Path, vers
     store = GuardStore(tmp_path / "guard-home")
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    target = workspace / "notes.txt"
-    target.write_text("Synthetic acceptance fixture.\n", encoding="utf-8")
     publisher = NativePolicySnapshotPublisher(store=store)
 
     def evaluate() -> dict[str, object] | None:
         return review_raw_hook_native(
-            payload={"tool_name": "Read", "tool_input": {"file_path": str(target)}},
+            # The native command parser proves this command benign. Ordinary
+            # Read requests have an independent review floor and cannot serve
+            # as an allow baseline for testing a policy-only transition.
+            payload={"tool_name": "Bash", "tool_input": {"command": "printf synthetic-activation-fixture"}},
             harness="claude-code",
             event="PreToolUse",
             guard_home=store.guard_home,
@@ -47,7 +48,7 @@ def test_first_action_after_publish_uses_the_signed_default(tmp_path: Path, vers
         assert publisher.is_ready(), publisher.last_error
         before = evaluate()
         assert before is not None
-        assert before["result"]["decision"] == "allow"
+        assert before["result"]["decision"] == "allow", before["result"].get("reason_code")
         bundle, keyring = _signed_defaults_bundle(version, "block")
         _activate_defaults(store, bundle, keyring)
         assert not publisher.is_ready()

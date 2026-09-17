@@ -123,7 +123,7 @@ _CATALOG: Final[tuple[PolicyRuntimeErrorEntry, ...]] = (
 def policy_runtime_error_entry(code: str) -> PolicyRuntimeErrorEntry | None:
     for entry in _CATALOG:
         if entry["code"] == code:
-            return dict(entry)
+            return entry.copy()
     return None
 
 

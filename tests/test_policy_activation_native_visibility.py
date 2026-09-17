@@ -10,7 +10,7 @@ from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapsh
 from codex_plugin_scanner.guard.policy_activation_visibility import policy_activation_visibility
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.native_policy_snapshot_test_fixtures import _ack, _status
-from tests.test_policy_bundle_activation_atomicity import _activate_bundle, _signed_bundle
+from tests.test_native_cloud_policy_activation import _activate_defaults, _signed_defaults_bundle
 
 _BUNDLE_HASH = "sha256:" + "a" * 64
 _RESIDENT = {"policy_digest": "b" * 64, "generation": 3, "runtime_identity": "c" * 64, "mode": "enforce"}
@@ -94,8 +94,8 @@ def test_invalid_revisions_cannot_bind_by_accident(revision: object) -> None:
 
 def test_ready_production_publisher_does_not_prove_cloud_bundle_application(tmp_path: Path) -> None:
     store = GuardStore(tmp_path / "guard-home")
-    bundle = _signed_bundle(rollout_state="enforcing")
-    assert _activate_bundle(store, bundle, "2026-07-18T00:00:00Z") is not None
+    bundle, keyring = _signed_defaults_bundle(1, "block")
+    _activate_defaults(store, bundle, keyring)
 
     def client_request(**kwargs: object) -> bytes:
         payload = kwargs["payload"]

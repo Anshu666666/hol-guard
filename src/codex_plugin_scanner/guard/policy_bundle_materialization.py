@@ -117,9 +117,7 @@ def bind_policy_bundle_materialization(
         previous = verified_policy_materialization_time(
             existing, bundle=bundle, device_id=device_id, key=key, key_id=key_id
         )
-        if existing.get("bundleHash") == bundle.get("bundleHash"):
-            if previous is None:
-                raise PolicyBundleMaterializationError
+        if previous is not None:
             timestamp = previous
         elif (
             verified_policy_materialization_time(existing, bundle=existing, device_id=device_id, key=key, key_id=key_id)

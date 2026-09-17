@@ -1,0 +1,73 @@
+diff --git a/ci/native_runtime/probe_native_default_auto.py b/ci/native_runtime/probe_native_default_auto.py
+index 380c30c4c..8574da74d 100644
+--- a/ci/native_runtime/probe_native_default_auto.py
++++ b/ci/native_runtime/probe_native_default_auto.py
+@@ -277,11 +277,42 @@ def _exercise_mode_invariants(
+     return mode_invariants
+ 
+ 
++def _publisher_error_diagnostic(publisher: object) -> str | None:
++    """Retain fixed publication codes without exporting arbitrary error text."""
++
++    code = getattr(publisher, "last_error", None)
++    if code is None:
++        return None
++    allowed = {
++        "guardconfigsourceerror",
++        "oserror",
++        "runtimeerror",
++        "typeerror",
++        "valueerror",
++        "attributeerror",
++        "operationalerror",
++        "databaseerror",
++        "native_policy_snapshot_ack_invalid",
++        "native_policy_snapshot_ack_mismatch",
++        "native_policy_snapshot_expired",
++        "native_policy_snapshot_integrity_key_unavailable",
++        "native_policy_snapshot_native_disabled",
++        "native_policy_snapshot_protocol_unsupported",
++        "native_policy_snapshot_publish_failed",
++        "native_policy_snapshot_resident_changed",
++        "native_policy_snapshot_runtime_unavailable",
++        "native_policy_snapshot_workspace_capacity",
++    }
++    return code if type(code) is str and code in allowed else "other"
++
++
+ def _installed_hook_corpus(root: Path) -> dict[str, object]:
+     guard_home = root / "hook-home"
+     workspace = root / "hook-workspace"
+     guard_home.mkdir(mode=0o700)
+     workspace.mkdir(mode=0o700)
++    # This direct worker probe must perform the canonical admission used by ingress.
++    workspace = workspace.resolve()
+     store = GuardStore(guard_home)
+     daemon = GuardDaemonServer(
+         store,
+@@ -310,13 +341,18 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
+             deadline=readiness_started + readiness_budget_seconds,
+         )
+         readiness_elapsed = time.monotonic() - readiness_started
+-        _require(
+-            prepared_policy is not None and readiness_elapsed <= readiness_budget_seconds,
+-            {
+-                "elapsed_ms": round(readiness_elapsed * 1_000, 2),
+-                "policy_ready": prepared_policy is not None,
+-            },
+-        )
++        readiness_ok = prepared_policy is not None and readiness_elapsed <= readiness_budget_seconds
++        if not readiness_ok:
++            _require(
++                False,
++                {
++                    "elapsed_ms": round(readiness_elapsed * 1_000, 2),
++                    "policy_ready": prepared_policy is not None,
++                    "publisher_last_error": _publisher_error_diagnostic(
++                        daemon._server.hook_worker.policy_snapshot_publisher
++                    ),
++                },
++            )
+         _exercise_installed_routes(daemon, guard_home, workspace, routes, route_receipts, reason_codes)
+         worker_stats = wait_for_route_corpus(
+             daemon._server.hook_worker.metrics,

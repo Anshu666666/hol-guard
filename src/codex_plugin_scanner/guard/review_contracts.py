@@ -36,6 +36,7 @@ from .review_oauth_binding import (
     GuardReviewOAuthMetadata,
     guard_review_oauth_metadata,  # noqa: F401 - compatibility re-export
 )
+from .review_memory_targets import validate_exact_memory_target
 from .review_verification_keyring import REVIEW_VERIFICATION_KEYRING_SYNC_KEY
 from .stable_digest import sha256_content_digest
 from .stable_json import stable_json_serialize
@@ -546,6 +547,16 @@ def _policy_version_is_stale(current: str, previous: str) -> bool:
     return current <= previous
 
 
+def _validate_memory_rule_target_exact(
+    target: dict[str, object],
+    *,
+    oauth: GuardReviewOAuthMetadata,
+    rule: dict[str, object],
+) -> None:
+    project_identity = _non_empty_string(rule.get("projectIdentity"))
+    validate_exact_memory_target(target, oauth=oauth, project_identity=project_identity)
+
+
 def validate_decision_memory_bundle_target(
     *,
     bundle: dict[str, object],
@@ -570,10 +581,4 @@ def validate_decision_memory_bundle_target(
         target = rule.get("target")
         if not isinstance(target, dict):
             raise GuardReviewContractError("decision_memory_target_invalid")
-        machine_ids = target.get("machineIds")
-        if (
-            isinstance(machine_ids, list)
-            and machine_ids
-            and oauth.installation_id not in {str(item) for item in machine_ids}
-        ):
-            raise GuardReviewContractError("decision_memory_machine_mismatch")
+        _validate_memory_rule_target_exact(target, oauth=oauth, rule=rule)

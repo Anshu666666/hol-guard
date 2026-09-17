@@ -1036,6 +1036,8 @@ def test_local_runtime_session_advertises_enabled_policy_capabilities(
     ]
     assert session["yaml_import"] is True
     assert session["canonical_policy_enforcement"] is True
+    assert session["selected_enforcement_lane"] in {"canonical", "legacy"}
+    assert "advertised_canonical_capabilities" in session
 
 
 def test_local_runtime_session_applies_stable_policy_rollout_cohorts(

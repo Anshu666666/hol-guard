@@ -400,6 +400,10 @@ def _build_cloud_context(store: GuardStore) -> dict[str, object]:
         "cloud_policy_rollout_state": _optional_string(policy_bundle.get("rolloutState")),
         "cloud_policy_sync_error": cached_policy_bundle_error
         or _optional_string(policy_bundle_last_error.get("reason")),
+        "receipt_upload_status": _optional_string(sync_summary.get("receipt_upload_status")),
+        "policy_validation_status": _optional_string(sync_summary.get("policy_validation_status")),
+        "policy_application_status": _optional_string(sync_summary.get("policy_application_status")),
+        "policy_rejection_reason": _optional_string(sync_summary.get("policy_rejection_reason")),
         "alert_preferences_active": bool(alert_preferences),
         "watchlist_enabled": bool(alert_preferences.get("watchlistEnabled")),
         "team_alerts_enabled": bool(alert_preferences.get("teamAlertsEnabled")),

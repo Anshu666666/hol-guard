@@ -13,6 +13,7 @@ from ..review_contracts import (
     validated_decision_memory_bundle,
 )
 from ..review_memory_ack import build_decision_memory_ack
+from ..review_memory_targets import local_memory_match_fields, validate_exact_memory_target
 from ..store import GuardStore
 
 REVIEW_POLICY_MEMORY_OPERATION = "guard.review.syncPolicyMemory"
@@ -36,11 +37,28 @@ def execute_review_policy_memory(
         raise ValueError("missing_decision_memory_bundle")
     oauth = guard_review_oauth_metadata(store)
     bundle = validated_decision_memory_bundle(bundle_payload, store=store)
-    validate_decision_memory_bundle_target(
-        bundle=bundle,
-        oauth=oauth,
-        last_policy_version=_stored_policy_version(store),
-    )
+    try:
+        validate_decision_memory_bundle_target(
+            bundle=bundle,
+            oauth=oauth,
+            last_policy_version=_stored_policy_version(store),
+        )
+    except GuardReviewContractError:
+        ack = build_decision_memory_ack(
+            bundle=bundle,
+            oauth=oauth,
+            status="rejected",
+            applied_rule_count=0,
+            reason="decision_memory_target_rejected",
+            rejected_rule_ids=[],
+        )
+        store.set_sync_payload(_MEMORY_ACK_KEY, ack, generated_at)
+        return {
+            "bundleHash": _text(bundle.get("bundleHash")),
+            "bundleVersion": _text(bundle.get("bundleVersion")),
+            "decisionMemoryAck": ack,
+            "status": str(ack["status"]),
+        }
     rejected_rule_ids: list[str] = []
     validated_rules: list[tuple[str, PolicyDecision]] = []
     rules = bundle.get("memoryRules")
@@ -51,7 +69,7 @@ def execute_review_policy_memory(
         if rule_id is None:
             raise ValueError("invalid_decision_memory_rule")
         try:
-            decision = _decision_from_rule(bundle=bundle, rule=rule)
+            decision = _decision_from_rule(bundle=bundle, rule=rule, oauth=oauth)
         except GuardReviewContractError:
             rejected_rule_ids.append(rule_id)
             continue
@@ -91,10 +109,7 @@ def execute_review_policy_memory(
         rejected_rule_ids=rejected_rule_ids,
     )
     store.apply_review_policy_memory_state(
-        [
-            *_existing_non_memory_policies(store),
-            *[_decision_from_registry_entry(entry) for entry in registry.values()],
-        ],
+        [_decision_from_registry_entry(entry) for entry in registry.values()],
         registry=list(registry.values()),
         version={"policyVersion": _text(bundle.get("policyVersion"))},
         acknowledgement=ack,
@@ -132,34 +147,6 @@ def _stored_registry(store: GuardStore) -> dict[str, dict[str, object]]:
     return registry
 
 
-def _existing_non_memory_policies(store: GuardStore) -> list[PolicyDecision]:
-    decisions: list[PolicyDecision] = []
-    for item in store.list_policy_decisions():
-        if item.get("source") != "policy-bundle":
-            continue
-        scope = _text(item.get("scope"))
-        action = _text(item.get("action"))
-        harness = _text(item.get("harness"))
-        if scope is None or action is None or harness is None or not _is_scope(scope) or not is_guard_action(action):
-            continue
-        decisions.append(
-            PolicyDecision(
-                harness=harness,
-                scope=scope,
-                action=action,
-                artifact_id=_text(item.get("artifact_id")),
-                artifact_hash=_text(item.get("artifact_hash")),
-                workspace=_text(item.get("workspace")),
-                publisher=_text(item.get("publisher")),
-                reason=_text(item.get("reason")),
-                owner=_text(item.get("owner")),
-                source="policy-bundle",
-                expires_at=_text(item.get("expires_at")),
-            )
-        )
-    return decisions
-
-
 def _decision_from_registry_entry(entry: dict[str, object]) -> PolicyDecision:
     decision = entry.get("decision")
     if not isinstance(decision, dict):
@@ -184,30 +171,37 @@ def _decision_from_registry_entry(entry: dict[str, object]) -> PolicyDecision:
     )
 
 
-def _decision_from_rule(*, bundle: dict[str, object], rule: dict[str, object]) -> PolicyDecision:
+def _decision_from_rule(*, bundle: dict[str, object], rule: dict[str, object], oauth: object) -> PolicyDecision:
     harness = _text(rule.get("harnessId"))
     artifact_id = _text(rule.get("artifactId"))
     action = _text(rule.get("action"))
     scope_value = _text(rule.get("scope"))
     if harness is None or artifact_id is None or action is None or scope_value is None or not is_guard_action(action):
         raise GuardReviewContractError("invalid_decision_memory_rule")
-    if action == "allow" and scope_value not in {"artifact", "workspace"}:
+    if action == "allow" and scope_value not in {"artifact", "workspace", "project", "machine"}:
         raise GuardReviewContractError("decision_memory_allow_scope_unsupported")
-    scope = _local_scope(scope_value)
     target = rule.get("target")
     target_payload = target if isinstance(target, dict) else {}
-    workspace_ids = target_payload.get("workspaceIds")
-    workspace = _text(bundle.get("workspaceId"))
-    if scope == "workspace" and isinstance(workspace_ids, list):
-        workspace = next((item for value in workspace_ids if (item := _text(value)) is not None), workspace)
+    project_identity = _text(rule.get("projectIdentity"))
+    validate_exact_memory_target(
+        target_payload,
+        oauth=oauth,  # type: ignore[arg-type]
+        project_identity=project_identity,
+    )
+    workspace, publisher = local_memory_match_fields(
+        target_payload,
+        oauth=oauth,  # type: ignore[arg-type]
+        project_identity=project_identity,
+    )
+    scope = _local_scope(scope_value, publisher=publisher, workspace=workspace)
     return PolicyDecision(
         harness=harness,
         scope=scope,
         action=action,
         artifact_id=artifact_id,
         artifact_hash=_text(rule.get("artifactHash")),
-        workspace=workspace if scope == "workspace" else None,
-        publisher=None,
+        workspace=workspace,
+        publisher=publisher,
         reason=_text(rule.get("reason")) or "Guard Cloud signed decision memory sync",
         owner=None,
         source="cloud-signed-memory",
@@ -215,8 +209,12 @@ def _decision_from_rule(*, bundle: dict[str, object], rule: dict[str, object]) -
     )
 
 
-def _local_scope(scope: str) -> DecisionScope:
-    return "workspace" if scope in {"workspace", "team", "policy", "machine", "project"} else "artifact"
+def _local_scope(scope: str, *, publisher: str | None, workspace: str | None) -> DecisionScope:
+    if workspace is not None:
+        return "workspace"
+    if publisher is not None:
+        return "publisher"
+    return "artifact"
 
 
 def _is_scope(value: object) -> TypeGuard[DecisionScope]:

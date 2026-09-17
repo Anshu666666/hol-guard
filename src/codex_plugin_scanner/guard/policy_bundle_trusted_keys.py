@@ -11,6 +11,7 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
+from .policy_bundle_validity import comparison_unix_seconds
 from .runtime.supply_chain_bundle_base import SupplyChainBundleMalformedError, _parse_iso_timestamp
 from .stable_digest import sha256_content_digest
 
@@ -361,7 +362,7 @@ def signing_key_is_current(
 ) -> bool:
     if signing_key.state == "revoked" or (require_active and signing_key.state != "active"):
         return False
-    current_time = now if now is not None else time.time()
+    current_time = comparison_unix_seconds(now, default=time.time())
     if signing_key.valid_from is not None:
         try:
             valid_from = _parse_iso_timestamp(signing_key.valid_from, field_name="validFrom")
@@ -598,6 +599,7 @@ def validate_synced_policy_bundle(
             policy_bundle,
             trusted_verification_keys=trusted_keys,
             anchored_verification_keys=anchored_keys,
+            now=now,
         )
         if validated_bundle is not None and expected_workspace_id is not None:
             workspace_id = validated_bundle.get("workspaceId")

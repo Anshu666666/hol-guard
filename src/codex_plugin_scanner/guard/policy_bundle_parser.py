@@ -23,11 +23,17 @@ from .policy_bundle_trusted_keys import (
     policy_bundle_key_fingerprint,
     resolve_authorized_policy_bundle_signing_key,
 )
+from .policy_bundle_rollout import policy_bundle_is_enforceable as _policy_bundle_is_enforceable
 from .policy_bundle_v2 import (
     POLICY_BUNDLE_MAX_BYTES,
     POLICY_BUNDLE_MAX_COLLECTION_ITEMS,
     POLICY_BUNDLE_MAX_DEPTH,
     POLICY_BUNDLE_MAX_STRING_LENGTH,
+)
+from .policy_bundle_validity import (
+    comparison_unix_seconds,
+    expires_at_validity_error,
+    issued_at_validity_error,
 )
 from .stable_json import stable_json_serialize
 
@@ -55,7 +61,6 @@ _POLICY_BUNDLE_RULE_ACTIONS = frozenset({"allow", "block", "review", "ignore"})
 _POLICY_BUNDLE_ROLLOUT_STATES = frozenset(
     {"draft", "simulated", "pending_approval", "enforcing", "enforced", "rollback_available"}
 )
-_POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES = frozenset({"enforcing", "enforced", "rollback_available"})
 _POLICY_BUNDLE_BROWSER_SCOPE_KEYS = frozenset(
     {
         "browserIntent",
@@ -90,7 +95,6 @@ _POLICY_BUNDLE_RULE_MATCHER_FAMILIES = frozenset(
     {"file-read", "mcp", "mcp-tool", "package-request", "prompt", "prompt-env-read", "tool-action"}
 )
 _POLICY_BUNDLE_DEFAULT_ENVIRONMENTS = frozenset({"development"})
-_POLICY_BUNDLE_CLOCK_SKEW_SECONDS = 300
 _POLICY_BUNDLE_TRUST_REMEDIATION_REASONS = frozenset(
     {
         "missing_signature",
@@ -338,9 +342,7 @@ def policy_bundle_daemon_version_supported(policy_bundle: dict[str, object]) -> 
 def policy_bundle_is_enforceable(policy_bundle: dict[str, object]) -> bool:
     """Return whether an authenticated rollout is intended as live authority."""
 
-    if policy_bundle.get("contractVersion") == "guard-policy-bundle.v2":
-        return True
-    return policy_bundle.get("rolloutState") in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
+    return _policy_bundle_is_enforceable(policy_bundle)
 
 
 def policy_bundle_acceptance_checkpoint(policy_bundle: dict[str, object]) -> dict[str, object]:
@@ -575,11 +577,13 @@ def validated_policy_bundle_payload(
         return None, "invalid_expires_at"
     if expires_at_timestamp is not None and expires_at_timestamp <= issued_at_timestamp:
         return None, "invalid_expires_at"
-    current_time = now if now is not None else time.time()
-    if issued_at_timestamp > current_time + _POLICY_BUNDLE_CLOCK_SKEW_SECONDS:
-        return None, "bundle_not_yet_valid"
-    if expires_at_timestamp is not None and current_time > expires_at_timestamp:
-        return None, "bundle_expired"
+    current_time = comparison_unix_seconds(now, default=time.time())
+    issued_error = issued_at_validity_error(issued_at_timestamp, current_time=current_time)
+    if issued_error is not None:
+        return None, issued_error
+    expired_error = expires_at_validity_error(expires_at_timestamp, current_time=current_time)
+    if expired_error is not None:
+        return None, expired_error
     workspace_id = policy_bundle.get("workspaceId")
     normalized_workspace_id = _non_empty_string(workspace_id)
     if workspace_id is not None and normalized_workspace_id is None:

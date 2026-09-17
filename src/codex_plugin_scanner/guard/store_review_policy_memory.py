@@ -10,6 +10,7 @@ from typing import Protocol
 
 from .approval_gate import ApprovalGateGrant
 from .models import PolicyDecision
+from .policy_integrity import MEMORY_POLICY_SOURCES
 
 
 class _PolicyMemoryStore(Protocol):
@@ -28,6 +29,8 @@ class _PolicyMemoryStore(Protocol):
         self,
         connection: sqlite3.Connection,
         rows: Sequence[tuple[object, ...]],
+        *,
+        sources: Sequence[str] | None = None,
     ) -> None: ...
 
 
@@ -56,7 +59,11 @@ class StoreReviewPolicyMemoryMixin:
         }
         with self._connect() as connection:
             connection.execute("begin immediate")
-            self._replace_remote_policy_rows_locked(connection, rows)
+            self._replace_remote_policy_rows_locked(
+                connection,
+                rows,
+                sources=tuple(MEMORY_POLICY_SOURCES),
+            )
             connection.executemany(
                 """
                 insert into sync_state (state_key, payload_json, updated_at)

@@ -49,6 +49,7 @@ from .memory_pattern_fingerprint import (
     build_memory_pattern_fingerprint,
 )
 from .models import GUARD_ACTION_VALUES
+from .policy_integrity import BUNDLE_OWNED_POLICY_SOURCES
 from .runtime.approval_context import approval_context_tokens_validation_reason
 from .store_base import *
 from .store_event_receipts import _local_once_approval_is_reusable, _verify_local_once_approval
@@ -1340,10 +1341,14 @@ class StorePolicyMixin:
     def _replace_remote_policy_rows_locked(
         connection: sqlite3.Connection,
         rows: Sequence[tuple[object, ...]],
+        *,
+        sources: Sequence[str] | None = None,
     ) -> None:
+        selected = tuple(sorted(sources if sources is not None else BUNDLE_OWNED_POLICY_SOURCES))
+        placeholders = "(" + ",".join("?" for _ in selected) + ")"
         connection.execute(
-            f"delete from policy_decisions where source in {_REMOTE_POLICY_SOURCE_PLACEHOLDERS}",
-            _REMOTE_POLICY_SOURCE_PARAMS,
+            f"delete from policy_decisions where source in {placeholders}",
+            selected,
         )
         connection.executemany(
             """

@@ -83,6 +83,12 @@ from ..policy_bundle_v2 import (
     validate_policy_bundle_v2_transition,
     validated_policy_bundle_v2_acknowledgement,
 )
+from ..policy_canonical_rollout import (
+    POLICY_CANONICAL_ENFORCEMENT_ENV as _POLICY_CANONICAL_ENFORCEMENT_ENV,
+    canonical_policy_enforcement_enabled as _canonical_policy_enforcement_enabled,
+    canonical_policy_rollout_percentage as _canonical_policy_rollout_percentage,
+    canonical_runtime_posture,
+)
 from ..policy_document import GuardPolicyDocument
 from ..policy_document_io import PolicyCompilationError, compile_policy_document
 from ..redaction import redact_sensitive_text
@@ -150,7 +156,6 @@ _POLICY_DOCUMENT_VERSIONS = ("guard.hashgraphonline.com/v1alpha1",)
 _POLICY_BUNDLE_VERSIONS = ("guard-policy-bundle.v1", "guard-policy-bundle.v2")
 _POLICY_CONTRACTS = ("guard-policy-bundle/v1", "guard-policy-bundle/v2")
 _POLICY_YAML_IMPORT_ENV = "HOL_GUARD_POLICY_YAML_IMPORT"
-_POLICY_CANONICAL_ENFORCEMENT_ENV = "HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT"
 
 
 def _hol_guard_runtime_source_sha256(package_root: Path | None = None) -> str:
@@ -179,34 +184,6 @@ def _hol_guard_runtime_package_identity() -> tuple[str | None, str] | None:
 
 
 _LOADED_HOL_GUARD_RUNTIME_PACKAGE_IDENTITY = _hol_guard_runtime_package_identity()
-
-
-def _canonical_policy_rollout_percentage() -> int:
-    raw = os.environ.get(_POLICY_CANONICAL_ENFORCEMENT_ENV, "").strip().lower()
-    if raw in {"", "0", "false", "off", "legacy"}:
-        return 0
-    if raw in {"1", "true", "on", "canonical"}:
-        return 100
-    try:
-        percentage = int(raw)
-    except ValueError:
-        return 0
-    return percentage if 1 <= percentage <= 100 else 0
-
-
-def _canonical_policy_enforcement_enabled(
-    *,
-    device_id: str,
-    workspace_id: str | None,
-) -> bool:
-    percentage = _canonical_policy_rollout_percentage()
-    if percentage in {0, 100}:
-        return percentage == 100
-    cohort_key = f"{workspace_id or 'local'}:{device_id}".encode()
-    # This is an in-memory rollout bucket for opaque installation IDs, not a password verifier.
-    # codeql[py/weak-sensitive-data-hashing]
-    cohort = int.from_bytes(hashlib.sha256(cohort_key).digest()[:8], "big") % 100
-    return cohort < percentage
 
 
 def detect_harness(harness: str, context: HarnessContext) -> HarnessDetection:
@@ -3053,6 +3030,7 @@ def sync_receipts(
     cloud_exception_items: list[dict[str, object]] = []
     remote_policies_stored = 0
     remote_policy_sync_blocked = False
+    policy_application_committed = False
     if effective_policy_bundle is not None:
         activation_keyring = store.get_sync_payload("policy_bundle_keyring")
         if effective_policy_bundle is validated_policy_bundle and trusted_policy_bundle_keys:
@@ -3136,6 +3114,7 @@ def sync_receipts(
             validated_delivery=validated_policy_bundle_delivery,
             stored_acknowledgement=store.get_sync_payload("policy_bundle_ack"),
             synced_at=now,
+            applied=canonical_enforcement,
         )
         cloud_exception_items = _policy_bundle_cloud_exception_items(
             store,
@@ -3179,6 +3158,7 @@ def sync_receipts(
                 persist_activation_rejection(store, activation_last_error, now)
             else:
                 remote_policies_stored = len(remote_decisions)
+                policy_application_committed = True
                 if effective_policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
                     canonical_last_good = store.get_sync_payload("policy_bundle_canonical_last_good")
                     if isinstance(canonical_last_good, dict) and canonical_last_good.get(
@@ -3261,6 +3241,19 @@ def sync_receipts(
     summary: dict[str, object] = {
         "synced_at": payload.get("syncedAt"),
         "receipts_stored": receipts_stored_total,
+        "receipt_upload_status": "success",
+        "policy_validation_status": (
+            "accepted"
+            if validated_policy_bundle is not None
+            else ("rejected" if policy_bundle_field_provided else "omitted")
+        ),
+        "policy_application_status": (
+            "applied"
+            if policy_application_committed and validated_policy_bundle is not None
+            else ("retained" if not policy_bundle_field_provided or activation_last_error else "rejected")
+        ),
+        "policy_rejection_reason": activation_last_error.get("reason") if activation_last_error else None,
+        "advisories_stored": advisories_stored,
         "advisories_stored": advisories_stored,
         "exceptions_stored": len(deduped_exceptions),
         "cloud_exceptions_stored": len(cloud_exception_items),
@@ -3922,11 +3915,12 @@ def _local_guard_runtime_session(
         "policy_contracts": list(_POLICY_CONTRACTS),
         "yaml_import": os.environ.get(_POLICY_YAML_IMPORT_ENV) == "1",
     }
-    if _canonical_policy_enforcement_enabled(
-        device_id=device_id,
-        workspace_id=workspace_id,
-    ):
-        session["canonical_policy_enforcement"] = True
+    session.update(
+        canonical_runtime_posture(
+            device_id=device_id,
+            workspace_id=workspace_id,
+        )
+    )
     return session
 
 
@@ -6254,6 +6248,20 @@ def _cloud_runtime_session_payload(store: GuardStore, session: dict[str, object]
     payload["yamlImport"] = yaml_import
     if canonical_policy_enforcement:
         payload["canonicalPolicyEnforcement"] = True
+    lane = _optional_string(session.get("selected_enforcement_lane") or session.get("selectedEnforcementLane"))
+    if lane is not None:
+        payload["selectedEnforcementLane"] = lane
+    advertised = session.get("advertised_canonical_capabilities") or session.get("advertisedCanonicalCapabilities")
+    if isinstance(advertised, list):
+        payload["advertisedCanonicalCapabilities"] = advertised
+    effective_caps = session.get("effective_canonical_capabilities") or session.get("effectiveCanonicalCapabilities")
+    if isinstance(effective_caps, list):
+        payload["effectiveCanonicalCapabilities"] = effective_caps
+    reason = _optional_string(
+        session.get("canonical_incompatibility_reason") or session.get("canonicalIncompatibilityReason")
+    )
+    if reason is not None:
+        payload["canonicalIncompatibilityReason"] = reason
     payload.update(_managed_controls_runtime_sync_posture(store, generated_at=updated_at))
     return payload
 

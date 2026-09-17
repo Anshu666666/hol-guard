@@ -12,17 +12,21 @@ repeated confirmation; protected merge approval is a separate final requirement.
 ## Establish the exact state
 
 Read repository instructions, [RELEASE_REVIEW](RELEASE_REVIEW.md),
-[CURRENT_CONTRACT](CURRENT_CONTRACT.md), [FIRST_CI_EVIDENCE](FIRST_CI_EVIDENCE.md)
+[CURRENT_CONTRACT](CURRENT_CONTRACT.md), [SECOND_CI_EVIDENCE](SECOND_CI_EVIDENCE.md),
+[FIRST_CI_EVIDENCE](FIRST_CI_EVIDENCE.md)
 and the relevant workstream reports. [EXECUTION](EXECUTION.md) preserves older
 attempts; historical uses of “current” belong to their recorded source.
 
-This handoff's source cutoff is `c964a61a3a4c19d721358e69c400d6059dfd1156`, tree `96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1`, before the
+This handoff's source cutoff is `599509be545b9992076d7f9f71dd19ecfd34bbc2`, tree `55b05ef94f1f379fd0cf2762e3f1f394a2771b24`, before the
 handoff edits. The integration branch is `work/rsp-performance-finalization-32`.
 The isolated publication is [PR #2970](https://github.com/hashgraph-online/hol-guard/pull/2970),
 branch `codex/release-3.2-rust-finalization`, targeting `release/3.2`.
-Its last measured head is `107606388ad55f924a4e2924b4ff84e5fa08e6ff`, with
-39 terminal workflows: 33 successful and six failed. Refresh the live head and
-CI; never attribute those measurements to a later tree.
+Its latest measured publication is `24ba2d130a90f36b676139f03cabea98a2c3b00e`,
+with 39 terminal workflows: 32 successful and seven failed. Include the invalid
+qualification-YAML push run with zero jobs in that denominator. Main CI itself
+had 114 jobs: 110 passed, three skipped and one Sonar gate failed. Refresh the
+live head and CI; never attribute those measurements to a later tree. Preserve
+first-checkpoint `107606388...` and its 19 public reports unchanged.
 
 The frozen baseline remains `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package
 3.0.1. Release base was last checked at `4b89e0d2d496a85f04922b2e019a4aea15326bb9`;
@@ -41,52 +45,89 @@ artifact byte hashes in the first-CI evidence directory.
 
 ## Execute the next work in order
 
-1. Publish the reviewed source and reconciled documents to PR #2970. Inspect
-   the new main CI, secret scan, four-platform native-wheel and paired smoke
-   results. Integrated corrections cover runtime-keyword/parser/Mac fixtures,
-   authenticated expiry renewal, Windows CPU/RSS and immutable FFI definitions,
-   private POSIX interpreters, failure journaling and indexed pair orchestration.
-   A local correction is not a successful installed rerun.
-2. Diagnose the remaining 24-request locked-storage burst. The original combined
-   batch had 575 passes, seven skips and seven failures. Six PID-fixture failures
-   were repaired with a focused 61-pass/two-skip rerun; the HTTP response timeout
-   at 1.75 seconds remains unresolved. Retain the 1.6-second latency assertion
-   and original production deadlines. Capture the blocking boundary and fix its
-   cause; a passing isolated retry does not erase the original failed batch.
-3. Preserve the unresolved frozen Mac baseline. Earlier diagnostics show legacy
-   and reverse calls entered and timed out while numeric calls took 47–66 ms;
-   no OS query reached the local PTR responder. New registration/libSystem
-   diagnostics are integrated. Inspect their actual results before changing an
-   OS fixture. Do not patch the frozen wheel, substitute candidate semantics,
-   extend a deadline or qualify an incomplete pair. Continue the candidate only
-   after verified containment of the failed baseline worker.
-4. Complete the independently reviewed bounded experiments being prepared:
-   same-wheel optimized-Python versus explicit native Claude registration;
-   optimized package phase attribution; and stopped-artifact transition probes.
-   Check whether newer commits already integrate them. Keep native Claude off
-   by default until real lifecycle, binding, parity and benefit gates pass.
-   Stopped-process artifact replacement is narrower than live upgrade, signing,
-   frozen packaging or changed-program rollback.
-5. Run MCP v2 and the corrected package matrix. MCP v2 includes five independent
-   paired-run intervals, an attributed loopback service and warm resources
-   sampled before teardown. Package comparisons must use optimized Python as
-   the native comparator. Preserve baseline Composer failures and censored
-   cardinality cells. Attribute input/hash, decode/parse/model/index, matching
-   and finalization work without moving setup-only verification into the timed
-   production route. Instrumented phase runs are separate from headline timing.
-6. Once collection and scenario blockers are understood, execute full indexed
-   qualification using the `rust-performance-qualification` PR label or the
-   workflow's manual `qualification` mode. The fixed plan builds each platform
-   once, then runs five same-runner B/C pairs in alternating order. Do not change
-   sample counts, percentile estimators, independent-run requirements, worker
-   deadlines or product thresholds to get a green job. Successful collection,
-   accepted performance and program completion are separate results.
-7. Use actual comparable measurements to implement or defer the remaining
-   conditional Rust tranches. Finish signed/frozen artifacts, first hook after
-   update/rollback, mixed mutation/recovery/receipt evidence, independent review
-   and the concrete canary/rollback plan. Update every affected task with exact
-   source and evidence. Request required human approval only when the final
-   change and its outstanding protected action are concrete and reviewable.
+1. Reconcile the owned publication with this source and any later independently
+   reviewed fixes, then publish exact matching code and documents. Inspect actual
+   workflow admission first: `a886a89bc` repairs job-level `runner.temp` scopes
+   after the second qualification workflow ran zero jobs. `ca772a069` stamps the
+   pinned Gitleaks version without relaxing its check. Validation-only follow-up
+   `a86ee9736` fixes the MCP self-comparison and adds real signed-marker guard
+   regressions, with seven focused tests passing. Read the exact 42-finding
+   [Sonar disposition review](../security/sonar-release-32-review.md) before
+   applying individual false-positive dispositions through authenticated Sonar
+   access. They remain unapplied; do not alter fixture URLs/seeds, production
+   guards, exclusions or thresholds merely to silence them. Run fresh analysis
+   and the original full scans and gates.
+   A source correction does not change any historical workflow conclusion.
+2. Read the next four-platform native-wheel diagnostics before choosing a fix.
+   At `24ba`, Linux failed RSS warmup route proof; Mac ARM `cursor/5m` and Mac Intel
+   `pi/1m` each saw a native call without an admitted result. `7e2739fc4` now retains
+   bounded wave counters and before/after thread-local client failure context;
+   stale context is not proof of a new attempt. Windows's corrected binary-LF
+   and base-interpreter RSS fixture and `8bab03d5f` witnessed Job process chains
+   need actual Windows execution. Keep exact count, route, resource and deadline
+   assertions; none of those platform failures is an accepted sample.
+3. Investigate the remaining deferred-backfill failure, not the repaired storage
+   burst. The original 24-request burst now passes unchanged 1.75-second client,
+   1.6-second response and 0.5-second health assertions. `599509be5` prepares only
+   admitted oracle code/immutable manifest before readiness; current config,
+   authority, stores and approvals remain request-local. The subsequent broader
+   run retained 91 passes and one eight-second backfill capacity-wait failure.
+   An instrumented isolated pass did not explain it. Preserve all earlier outcomes
+   and original startup/review limits; RSP-134 remains a final-head gate.
+4. Execute the implemented, separate installed experiments. Enable the existing
+   `native-claude-launcher-experiment` same-repository PR label before the next
+   eligible publication. Compare actual optimized Python/native Pre/Post argv in
+   the same opt-in installed wheel, retaining registration, response, route and
+   artifact identities plus both uploads. Default 20 samples per arm/event are
+   exploratory; 2,000 per job across five jobs are needed even for the c1 sample
+   denominator. Production registration and default capability stay off. The
+   independent stopped-artifact transition job runs with the qualification label:
+   five phases, ten registered cases, exact indexed wheels, third environment and
+   candidate-locked dependencies. It has not executed. Do not present stopped
+   replacement as live update, signing, frozen packaging or downgrade support.
+5. Run the new package phase job and interpret second-checkpoint component data.
+   `4a1349d57` supplies eight candidate validation/attribution workers and a
+   separate baseline/candidate pair of explicit npm `*` requests through the real
+   resolver/protect route. The original 567-case manifest and production semantics
+   remain unchanged. Bare requests use the unchanged literal `latest` shortcut;
+   the None-version highest-risk kernel is another boundary. Keep the two
+   baseline Composer coverage failures and twelve 15-second whole-worker censored
+   cardinality attempts noncomparable. Instrumentation cannot supply headline
+   latency or a native benefit decision.
+6. Use the corrected, authenticated MCP v2 reconstruction as the optimized Python
+   source-component baseline: 30 workers, 240 sessions, 10,080 calls, intervals
+   per trace from five independent paired runs and 80 complete warm windows. The original
+   strict-finalizer failure stays failed; `1498e2264` repairs only two finite
+   resource fields. Keep ten incomplete lifecycle records and 16 missing samples
+   visible. Parent CPU is not whole-tree CPU, loopback service is not remote
+   latency, and synthetic approval delay is not human time. RSP-098/103 can close
+   this literal scope. Follow the measured [MCP selection decision](mcp-native-selection-decision.md):
+   RSP-104/105/107 are deferred for release 3.2, RSP-108 records the full-proxy
+   deferral, and RSP-106 remains unchanged. Tiny pure residuals relative to
+   store/composition/persistence and the unchanged 5.11 ms barrier support that
+   scope decision. No Rust candidate was measured; do not describe it as a failed
+   native benefit gate. Reopen only on the documented new residual/selection
+   evidence; installed/platform acceptance remains independent.
+7. Preserve the unresolved frozen Mac startup boundary. First-checkpoint reverse
+   lookups timed out while numeric lookup completed and the PTR fixture saw no
+   OS queries. The registration/libSystem/self-test observability is integrated,
+   but invalid second-checkpoint YAML produced no new paired resolver report.
+   Inspect actual next-run evidence before changing an OS fixture. Do not patch
+   the baseline wheel, substitute candidate behavior, change readiness targets
+   or extend deadlines. Continue the candidate only after verified containment.
+8. Complete the reviewed nonpriority-tail companion still under implementation:
+   sixteen routes and 320 full collection jobs are planned, not integrated at
+   this cutoff. Then execute the required full indexed qualification with
+   `rust-performance-qualification` or manual qualification mode. Preserve five
+   alternating same-runner pairs, 10,000 priority/1,000 other samples, 100 cold
+   starts/recoveries, resource minima, estimators and every failed offer. A
+   collection pass, a performance pass and program completion are different.
+9. Select or defer conditional Rust tranches only from measured comparisons
+   against optimized Python under the original criteria. Finish signed/frozen
+   artifacts, first hook after update/rollback, mixed mutation/recovery/receipt
+   evidence, independent review and the concrete canary/rollback plan. Update
+   all affected ledger entries with exact provenance. Final independent code-owner
+   approval remains a protected action; source contributors cannot supply it.
 
 ## Preserve the decision and trust contracts
 
@@ -165,6 +206,10 @@ files, 32 MiB per file and 128 MiB total. The fixed indexed plan fits those limi
 custom expanded plans require a fresh capacity check.
 
 Finish by refreshing the PRD addendum, all 144 ledger records and this prompt.
-The current 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED is an honest checkpoint,
-not an acceptable substitute for completion. Keep each unresolved dependency
-explicit. No agent may supply or impersonate independent code-owner approval.
+The current 74 DONE / 30 OPEN / 37 BLOCKED / 3 DEFERRED is an honest checkpoint,
+not an acceptable substitute for completion. RSP-007/015/047/098/103/140 close
+literal measurement/fixture/core/component/privacy criteria, and RSP-108 records
+a decision. The three measured MCP deferrals are not implementations. They do not
+close dependent installed benefit or RSP-134 exact-head validation. Keep each
+unresolved dependency explicit. No agent may supply or impersonate independent
+code-owner approval.

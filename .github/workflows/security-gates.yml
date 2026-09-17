@@ -88,7 +88,7 @@ jobs:
           python-version: "3.12"
       - name: Install Gitleaks
         run: |
-          GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.24.2
+          GOBIN="$RUNNER_TEMP/bin" go install -ldflags="-X github.com/zricethezav/gitleaks/v8/cmd.Version=8.24.2" github.com/zricethezav/gitleaks/v8@v8.24.2
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Verify exact public fixture exception
         run: python scripts/ci/check_gitleaks_fixture_allowlist.py --gitleaks gitleaks

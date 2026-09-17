@@ -9,6 +9,8 @@ on:
       - 'scripts/*native*.py'
       - 'scripts/native_slo*.py'
       - 'scripts/ci/*native*.py'
+      - 'scripts/ci/*transition*.py'
+      - 'tests/test_installed*transition*.py'
       - 'scripts/bench_guard*.py'
       - 'scripts/profile_guard*.py'
       - 'tests/*native*.py'
@@ -80,8 +82,6 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
-    env:
-      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
@@ -113,6 +113,7 @@ jobs:
         timeout-minutes: 75
         shell: bash
         env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
           QUALIFICATION_TARGET: ${{ matrix.target }}
           QUALIFICATION_PLATFORM: ${{ matrix.platform_tag }}
           QUALIFICATION_DEPLOYMENT: ${{ matrix.deployment_target }}
@@ -146,8 +147,6 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.pairs) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 200
-    env:
-      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         timeout-minutes: 5
@@ -172,6 +171,8 @@ jobs:
       - name: Verify and install both exact artifacts outside the checkout
         timeout-minutes: 20
         shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
         run: |
           uv sync --frozen --no-dev --project candidate-src
           uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action install \
@@ -180,6 +181,8 @@ jobs:
       - name: Collect one indexed baseline and candidate pair
         timeout-minutes: 125
         shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
         run: |
           uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action pair \
             --bundle wheel-bundle --environments "$RUNNER_TEMP/pair-environments" \
@@ -231,8 +234,6 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
-    env:
-      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
@@ -253,6 +254,8 @@ jobs:
       - name: Install verified bundle for independent installed lifecycle checks
         timeout-minutes: 20
         shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
         run: |
           uv sync --frozen --no-dev --project candidate-src
           uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action install \
@@ -261,6 +264,8 @@ jobs:
       - name: Installed Ollama and Builder controls
         timeout-minutes: 25
         shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
         run: |
           uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action ollama \
             --bundle wheel-bundle --environments "$RUNNER_TEMP/scenario-environments" \
@@ -273,6 +278,122 @@ jobs:
           path: scenario-evidence/aggregate/*.json
           if-no-files-found: error
           retention-days: 30
+
+  artifact-transitions:
+    needs: [plan, build]
+    if: >-
+      always() && !cancelled() && needs.plan.result == 'success' &&
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification')))
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        timeout-minutes: 3
+        with:
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        timeout-minutes: 3
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        timeout-minutes: 3
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        timeout-minutes: 5
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - name: Prepare isolated transition controller
+        timeout-minutes: 5
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/transition-controller-environment
+        run: uv sync --frozen --no-dev --project candidate-src
+      - name: Verify stopped artifact replacements in a separate installation
+        id: scenario
+        timeout-minutes: 65
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/transition-controller-environment
+        run: |
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/ci/installed_transition_ci.py \
+            --action run --bundle wheel-bundle --dependency-root candidate-src --output transition-evidence \
+            --source-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Seal completed failed or interrupted transition checkpoints
+        id: seal
+        if: always()
+        timeout-minutes: 10
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/transition-archive-environment
+        run: |
+          receipt="$GITHUB_WORKSPACE/transition-evidence/archive-receipt.json"
+          if ! (uv sync --frozen --no-dev --project candidate-src && \
+            uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/ci/installed_transition_ci.py \
+            --action archive --output transition-evidence \
+            --source-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --public-key candidate-src/docs/guard/rust-performance/qualification-recipient.pem); then
+            if [ ! -e "$receipt" ]; then
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py failure-receipt --receipt "$receipt" || true
+            fi
+            exit 1
+          fi
+      - name: Retain public transition scope and outcomes
+        id: public
+        if: always()
+        timeout-minutes: 4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: installed-transitions-public-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            transition-evidence/aggregate/*.json
+            transition-evidence/archive-receipt.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain only encrypted transition checkpoints
+        id: encrypted
+        if: always()
+        timeout-minutes: 4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: installed-transitions-private-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: transition-evidence/encrypted/*.hge
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require scenario and both retained evidence artifacts
+        if: always()
+        timeout-minutes: 3
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/transition-archive-environment
+          SCENARIO: ${{ steps.scenario.outcome }}
+          SEALED: ${{ steps.seal.outcome }}
+          PUBLIC: ${{ steps.public.outcome }}
+          ENCRYPTED: ${{ steps.encrypted.outcome }}
+          PUBLIC_ID: ${{ steps.public.outputs.artifact-id }}
+          ENCRYPTED_ID: ${{ steps.encrypted.outputs.artifact-id }}
+        run: |
+          test "$SCENARIO" = success
+          test "$SEALED" = success
+          test "$PUBLIC" = success
+          test "$ENCRYPTED" = success
+          [[ "$PUBLIC_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ENCRYPTED_ID" =~ ^[1-9][0-9]*$ ]]
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/ci/installed_transition_ci.py \
+            --action retention --output transition-evidence \
+            --source-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
 
   aggregate:
     needs: [plan, build, pairs]

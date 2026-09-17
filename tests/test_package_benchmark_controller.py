@@ -27,6 +27,7 @@ def valid_report(offered):
         "cpu_scope": "self_plus_waited_children",
         "worker_address_space_limit": 4 * 1024**3,
         "worker_file_size_limit": 64 * 1024**2,
+        "bundle_admission_verified_before_route": True,
         "semantic_sha256": "a" * 64,
         "evidence_sha256": "b" * 64,
         "protect_sha256": "c" * 64,
@@ -78,11 +79,15 @@ def setup_controller(tmp_path, monkeypatch, *, mode="ok", runs=1):
     calls = []
 
     def invoke(command, **kwargs):
-        assert kwargs["timeout_seconds"] == 15 and kwargs["output_limit"] == 64 * 1024
+        assert kwargs["timeout_seconds"] == args.timeout_seconds and kwargs["output_limit"] == 64 * 1024
         journal = Path(command[command.index("--journal") + 1])
         offered = json.loads(journal.read_text().splitlines()[0])
         calls.append(offered)
         report = valid_report(offered)
+        if args.measurement == "attribution":
+            from tests.test_package_benchmark_phases import synthetic_phases
+
+            report.update(phases=synthetic_phases(), operation_counts={})
         bad = len(calls) == 1
         if mode == "wrong-arm" and bad:
             report["source"] = {"commit": "wrong"}

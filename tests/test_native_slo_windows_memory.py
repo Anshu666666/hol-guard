@@ -161,16 +161,11 @@ def _ready(process):
     assert not thread.is_alive() and value == b"ready\n"
 
 
-@pytest.mark.skipif(os.name != "nt", reason="Actual Windows current working-set process-tree sampling")
-def test_real_windows_tree_includes_live_grandchild_and_rejects_exited_root():
-    from pathlib import Path
-
-    from codex_plugin_scanner.guard.codex_hook_windows_job import spawn_windows_hook_process
-
+def _memory_tree_program():
     leaf = (
         "import sys; allocation=bytearray(24*1024*1024); "
         "allocation[::4096]=b'x'*(len(allocation)//4096); "
-        "print('ready',flush=True); sys.stdin.buffer.read(1)"
+        "sys.stdout.buffer.write(b'ready\\n'); sys.stdout.buffer.flush(); sys.stdin.buffer.read(1)"
     )
 
     def wrapper(child):
@@ -179,15 +174,49 @@ import subprocess,sys
 child=subprocess.Popen([sys.executable,'-u','-c',{child!r}],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 try:
     assert child.stdout.readline()==b'ready\\n'
-    print('ready',flush=True)
+    sys.stdout.buffer.write(b'ready\\n')
+    sys.stdout.buffer.flush()
     sys.stdin.buffer.read(1)
 finally:
     child.communicate(b'x',timeout=10)
     assert child.returncode==0
 """
 
+    return wrapper(wrapper(leaf))
+
+
+def test_memory_tree_fixture_preserves_binary_readiness_and_clean_retirement():
+    from pathlib import Path
+
+    from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process
+
+    # Exercise the actual nested program on every host. Binary stream writes
+    # avoid Windows text-mode CRLF translation at both relay boundaries.
+    result = run_isolated_hook_process(
+        (sys._base_executable, "-u", "-c", _memory_tree_program()),
+        cwd=Path.cwd(),
+        environment=dict(os.environ),
+        input_text="x",
+        timeout_seconds=15,
+        output_limit=4096,
+    )
+    assert result.returncode == 0 and result.stdout == "ready\n" and not result.stderr
+    assert not result.timed_out and not result.containment_failed and not result.output_limit_exceeded
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Actual Windows current working-set process-tree sampling")
+def test_real_windows_tree_includes_live_grandchild_and_rejects_exited_root():
+    from pathlib import Path
+
+    from codex_plugin_scanner.guard.codex_hook_windows_job import spawn_windows_hook_process
+
+    # The fixture needs only the standard library. Starting the base executable
+    # gives exactly three interpreters rather than also starting the venv's
+    # Windows redirector at every generation. Production sampling still walks
+    # every actual descendant; its exact three-process assertion stays intact.
+    executable = Path(sys._base_executable).resolve(strict=True)
     process, job = spawn_windows_hook_process(
-        [sys.executable, "-u", "-c", wrapper(wrapper(leaf))],
+        [str(executable), "-u", "-c", _memory_tree_program()],
         cwd=Path.cwd(),
         environment=dict(os.environ),
         allow_breakaway=False,

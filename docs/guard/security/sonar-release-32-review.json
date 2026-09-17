@@ -1,0 +1,305 @@
+{
+  "schema": "hol-guard.sonar-release-review.v1",
+  "project": "hashgraph-online_hol-guard",
+  "pull_request": 2970,
+  "analyzed_commit": "24ba2d130a90f36b676139f03cabea98a2c3b00e",
+  "reviewed_source_commit": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
+  "analysis_date": "2026-09-17T13:46:02+0000",
+  "observed_quality_gate": "ERROR",
+  "remote_dispositions_applied": false,
+  "source_comparison": "All five reviewed files exactly match reconstructed Sonar analyzed source bytes; no whitespace normalization was needed.",
+  "source_sha256": {
+    "src/codex_plugin_scanner/guard/native_command_control_authority_store.py": "e1bd20fc6aed1326e26c58cf70c4cc1bcdc7ce4d434e68b306ffcfa706ba1292",
+    "src/codex_plugin_scanner/guard/daemon/bounded_http.py": "e2b7ee47fdbc87e38a101ec0740fb1dca1c39b831060818b55303add9b13ba7f",
+    "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+    "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py": "178da78d4a1f22796cf631ce17d6570e0e10c65d616e2f97ed6d496c5a88b700",
+    "rust/crates/guard-command/testdata/generate_specialized_fixtures.py": "87249e9f099bf5fc640f4db6e8efd7b120e85bf07bcc6d946abc27c8c6e6e679"
+  },
+  "fixed_in_source": {
+    "issue": "AaCvof9SGaZV1BelGvDn",
+    "rule": "python:S5863",
+    "component": "tests/test_mcp_rebaseline.py",
+    "change": "Replace self-comparison with pinned canonical wire hashes and lengths, changed-count sensitivity, and a distinct equivalent trace instance."
+  },
+  "groups": {
+    "authority-marker-guard": {
+      "rule": "pythonbugs:S2583",
+      "reason": "The optional value comes from a bounded owner-only marker-file read and authenticated decode. Missing, closed, changed effective digest, and changed authority key each require mutation; matching committed state returns the validated authority binding. Six regressions exercise real signed marker files through this function with a fixed test key provider, including invalid-MAC refusal. These conditions are not constants; removing them would permit stale or unmatched authority."
+    },
+    "network-risk-token": {
+      "rule": "python:S5332",
+      "reason": "The HTTP string is a literal token in an outbound-network risk detector. It is matched against tool-call text and does not create a network connection. Replacing it with HTTPS would remove recognition of cleartext HTTP inputs from the security classifier."
+    },
+    "loopback-server": {
+      "rule": "python:S5332",
+      "reason": "The flagged call binds the existing local daemon HTTP listener. GuardDaemonServer defaults to 127.0.0.1, and BoundedThreadingHTTPServer.verify_request rejects every non-loopback peer before request dispatch. The server_bind override avoids reverse-DNS metadata lookup and adds no external cleartext transport. Review applies only while the local-peer restriction and authenticated handler boundary remain intact."
+    },
+    "matcher-input-http": {
+      "rule": "python:S5332",
+      "reason": "These HTTP strings are inert command-parser fixture inputs, including invalid authorities, ports, IPv6, Unicode, control characters and quoting. add() constructs canonical command objects and invokes matcher.match; it does not execute curl or issue a request. HTTP and HTTPS behavior must both remain covered."
+    },
+    "matcher-input-prng": {
+      "rule": "python:S2245",
+      "reason": "Fixed random.Random seeds 32029 and 320109 generate finite deterministic parser argument samples. They generate no credential, nonce, key, security token or runtime identifier. The fixtures are serialized to checked-in JSON and --check requires exact reproducibility; replacing the generator with a CSPRNG would break this contract without improving security."
+    }
+  },
+  "findings": [
+    {
+      "issue": "AaCvofvXGaZV1BelGvDi",
+      "group": "network-risk-token",
+      "component": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+      "line": 1006
+    },
+    {
+      "issue": "AaCvofHNGaZV1BelGvDh",
+      "group": "loopback-server",
+      "component": "src/codex_plugin_scanner/guard/daemon/bounded_http.py",
+      "line": 198
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDo",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 279
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDp",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 280
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDq",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 284
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDr",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 285
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDs",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 286
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDt",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 288
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDu",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 290
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDv",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 291
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDw",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 292
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDx",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 293
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDy",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 294
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvDz",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 295
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD0",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 296
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD1",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 297
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD2",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 298
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD3",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 299
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD4",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 300
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD5",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 301
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD6",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 303
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD7",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 306
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD8",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 307
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD9",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 318
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD-",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 319
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvD_",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 323
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvEA",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 323
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvEB",
+      "group": "matcher-input-http",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 323
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvEC",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 341
+    },
+    {
+      "issue": "AaCvof-1GaZV1BelGvED",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "line": 341
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEE",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 170
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEF",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 170
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEG",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 202
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEH",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 202
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEI",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 274
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEJ",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 274
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEK",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 369
+    },
+    {
+      "issue": "AaCvof_EGaZV1BelGvEL",
+      "group": "matcher-input-prng",
+      "component": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "line": 369
+    },
+    {
+      "issue": "AaCvof1-GaZV1BelGvDm",
+      "group": "authority-marker-guard",
+      "component": "src/codex_plugin_scanner/guard/native_command_control_authority_store.py",
+      "line": 246
+    },
+    {
+      "issue": "AaCvof1-GaZV1BelGvDj",
+      "group": "authority-marker-guard",
+      "component": "src/codex_plugin_scanner/guard/native_command_control_authority_store.py",
+      "line": 247
+    },
+    {
+      "issue": "AaCvof1-GaZV1BelGvDk",
+      "group": "authority-marker-guard",
+      "component": "src/codex_plugin_scanner/guard/native_command_control_authority_store.py",
+      "line": 247
+    },
+    {
+      "issue": "AaCvof1-GaZV1BelGvDl",
+      "group": "authority-marker-guard",
+      "component": "src/codex_plugin_scanner/guard/native_command_control_authority_store.py",
+      "line": 247
+    }
+  ],
+  "validation": {
+    "corrected_assertion_and_authority_marker_tests": "7 passed",
+    "new_authority_test_types": "0 errors, 0 warnings",
+    "review_scope": "No remote issue disposition, exclusions, thresholds, fixture seed, fixture URL, or production behavior changed."
+  }
+}

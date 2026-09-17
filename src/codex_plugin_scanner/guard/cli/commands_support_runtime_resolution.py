@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 from ._commands_shared import *
 from .commands_parser_helpers import *
+from ..adapters.contracts import contract_for
 from ..runtime.approval_context import build_runtime_launch_identity
 from ..runtime.mcp_protection import McpServerIdentity, build_mcp_server_identity
 from ..synced_policy import synced_policy_payload as _synced_policy_payload
@@ -668,10 +669,8 @@ def _runtime_requested_path(artifact: GuardArtifact) -> str | None:
     return None
 
 def _canonical_harness_name(harness: str) -> str:
-    try:
-        return get_adapter(harness).harness
-    except ValueError:
-        return harness
+    contract = contract_for(harness)
+    return contract.harness if contract is not None else harness
 
 def _managed_install_for(store: GuardStore, harness: str) -> dict[str, object] | None:
     managed_install = store.get_managed_install(_canonical_harness_name(harness))

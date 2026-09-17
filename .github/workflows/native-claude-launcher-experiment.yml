@@ -1,0 +1,156 @@
+name: Installed Claude launcher opt-in experiment
+
+on:
+  pull_request:
+    branches: [main, release/3.2]
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - '.github/workflows/native-claude-launcher-experiment.yml'
+      - 'scripts/ci/*claude*pilot*.py'
+      - 'scripts/ci/prepare_native_claude_launcher.py'
+      - 'scripts/native_slo*.py'
+      - 'src/codex_plugin_scanner/guard/**'
+      - 'tests/test_installed_claude_pilot_experiment.py'
+      - 'rust/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: Samples per arm and event in each of five independent runs (1 to 2000)
+        required: true
+        default: 20
+        type: number
+
+permissions:
+  contents: read
+
+concurrency:
+  # Each offered run survives subsequent pushes and queued runs; samples are never cancelled for freshness.
+  group: claude-launcher-experiment-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  paired-launchers:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'native-claude-launcher-experiment') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'native-claude-launcher-experiment'))
+    name: Paired launchers (${{ matrix.platform.target }}, run ${{ matrix.run }})
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [0, 1, 2, 3, 4]
+        platform:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            tag: musllinux_1_2_x86_64
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            tag: macosx_11_0_x86_64
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            tag: macosx_11_0_arm64
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            tag: win_amd64
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      PILOT_ITERATIONS: ${{ github.event_name == 'pull_request' && 20 || inputs.iterations }}
+      PILOT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - run: uv sync --frozen --extra dev --python 3.12
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+      - name: Validate experiment contracts
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+        run: uv run --no-sync pytest tests/test_installed_claude_pilot_experiment.py -q
+      - name: Install Linux target linker
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --target "${{ matrix.platform.target }}"
+      - name: Build and install explicit experiment wheel
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+        run: >-
+          uv run --no-sync python scripts/ci/build_claude_pilot_wheel.py
+          --allow-dormant-pilot --target "${{ matrix.platform.target }}"
+          --platform-tag "${{ matrix.platform.tag }}" --destination pilot-build
+      - name: Compare installed Python and native registrations
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+        run: >-
+          uv run --no-sync python -I scripts/ci/measure_installed_claude_pilot.py
+          --allow-dormant-pilot --wheel pilot-build/native/*.whl
+          --build-sha "$PILOT_SOURCE_SHA" --iterations "$PILOT_ITERATIONS"
+          --run-index "${{ matrix.run }}" --output pilot-evidence
+      - name: Encrypt all retained synthetic observations
+        id: seal
+        if: always()
+        continue-on-error: true
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+        run: >-
+          uv run --frozen --extra dev --python 3.12 python scripts/native_slo_evidence_archive.py encrypt
+          --source pilot-evidence/private_samples --output pilot-private.enc
+          --public-key docs/guard/rust-performance/qualification-recipient.pem
+          --recipient-id d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+          --receipt pilot-archive-receipt.json --source-sha "$PILOT_SOURCE_SHA"
+          --target "${{ matrix.platform.target }}" --run-id "${{ github.run_id }}"
+          --run-attempt "${{ github.run_attempt }}"
+      - name: Retain bounded public aggregate
+        id: aggregate
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: claude-pilot-${{ matrix.platform.target }}-${{ matrix.run }}-aggregate
+          path: |
+            pilot-evidence/summary.json
+            pilot-archive-receipt.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain encrypted observations
+        id: encrypted
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: claude-pilot-${{ matrix.platform.target }}-${{ matrix.run }}-encrypted
+          path: pilot-private.enc
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Require complete retained experiment evidence
+        if: always()
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
+          SEAL_OUTCOME: ${{ steps.seal.outcome }}
+          AGGREGATE_OUTCOME: ${{ steps.aggregate.outcome }}
+          ENCRYPTED_OUTCOME: ${{ steps.encrypted.outcome }}
+          AGGREGATE_ID: ${{ steps.aggregate.outputs.artifact-id }}
+          ENCRYPTED_ID: ${{ steps.encrypted.outputs.artifact-id }}
+        run: |
+          test "$SEAL_OUTCOME" = success
+          test "$AGGREGATE_OUTCOME" = success
+          test "$ENCRYPTED_OUTCOME" = success
+          test -n "$AGGREGATE_ID"
+          test -n "$ENCRYPTED_ID"
+          uv run --no-sync python scripts/ci/native_claude_pilot_evidence.py --receipt pilot-archive-receipt.json --archive pilot-private.enc
+      # No release publication, production registration, or qualification claim.

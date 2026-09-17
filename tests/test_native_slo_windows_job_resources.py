@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import ctypes
 import json
+import math
 import os
 import queue
 import subprocess
 import sys
 import threading
+from itertools import pairwise
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
 
+import psutil
 import pytest
 
 from codex_plugin_scanner.guard.codex_hook_windows_job import WindowsHookJob, spawn_windows_hook_process
@@ -211,7 +214,7 @@ def test_bad_structure_size_is_rejected_before_any_api_call(bound, monkeypatch):
     assert not api.queries
 
 
-def _ready(process: subprocess.Popen[bytes]) -> dict[str, int]:
+def _ready(process: subprocess.Popen[bytes]) -> dict:
     result: queue.Queue[bytes] = queue.Queue(maxsize=1)
     assert process.stdout is not None
     thread = threading.Thread(target=lambda: result.put(process.stdout.readline(4096)), daemon=True)
@@ -222,40 +225,152 @@ def _ready(process: subprocess.Popen[bytes]) -> dict[str, int]:
     return json.loads(value)
 
 
+def _validate_chain(rows: list[dict], launcher_pid: int, parent_pid: int) -> set[int]:
+    assert 1 <= len(rows) <= 2
+    assert rows[-1]["pid"] == launcher_pid and rows[-1]["parent"] == parent_pid
+    for row in rows:
+        assert type(row["pid"]) is int and row["pid"] > 0
+        assert type(row["parent"]) is int and row["parent"] > 0
+        assert math.isfinite(row["created"]) and row["created"] > 0
+    for child, parent in pairwise(rows):
+        assert child["parent"] == parent["pid"]
+    identities = {row["pid"] for row in rows}
+    assert len(identities) == len(rows) and parent_pid not in identities
+    return identities
+
+
+def _assert_child_exited(row: dict) -> None:
+    try:
+        replacement = psutil.Process(row["pid"])
+        if replacement.create_time() == row["created"]:
+            # Windows keeps a terminated process object while Popen retains
+            # its handle. A zero-time wait proves exit without requiring PID
+            # disappearance; a live original child must fail this witness.
+            assert replacement.wait(timeout=0) == 0
+    except psutil.NoSuchProcess:
+        pass
+
+
+@pytest.mark.parametrize("state", ["exited", "live", "reused", "gone"])
+def test_child_exit_witness_handles_retained_windows_objects(monkeypatch, state):
+    waited = []
+
+    def wait(*, timeout):
+        waited.append(timeout)
+        if state == "live":
+            raise psutil.TimeoutExpired(timeout, pid=101)
+        return 0
+
+    def process(pid):
+        assert pid == 101
+        if state == "gone":
+            raise psutil.NoSuchProcess(pid)
+        return SimpleNamespace(create_time=lambda: 2.0 if state == "reused" else 1.0, wait=wait)
+
+    monkeypatch.setattr(psutil, "Process", process)
+    if state == "live":
+        with pytest.raises(psutil.TimeoutExpired):
+            _assert_child_exited({"pid": 101, "created": 1.0})
+    else:
+        _assert_child_exited({"pid": 101, "created": 1.0})
+    assert waited == ([0] if state in {"exited", "live"} else [])
+
+
+@pytest.mark.parametrize("redirected", [False, True])
+def test_witness_admits_only_exact_direct_or_redirector_ancestry(redirected):
+    rows = [{"pid": 101, "parent": 99, "created": 1.0}]
+    if redirected:
+        rows.insert(0, {"pid": 102, "parent": 101, "created": 2.0})
+    assert _validate_chain(rows, 101, 99) == ({101, 102} if redirected else {101})
+    with pytest.raises(AssertionError):
+        _validate_chain(rows, 101, 98)
+    if redirected:
+        rows[0]["parent"] = 98
+        with pytest.raises(AssertionError):
+            _validate_chain(rows, 101, 99)
+
+
+def test_witness_rejects_unexplained_third_process_and_generator_membership():
+    rows = [
+        {"pid": 103, "parent": 102, "created": 3.0},
+        {"pid": 102, "parent": 101, "created": 2.0},
+        {"pid": 101, "parent": 99, "created": 1.0},
+    ]
+    with pytest.raises(AssertionError):
+        _validate_chain(rows, 101, 99)
+    with pytest.raises(AssertionError):
+        _validate_chain([{"pid": 99, "parent": 99, "created": 1.0}], 99, 99)
+
+
+def test_witness_worker_reports_waited_child_and_retained_root(tmp_path):
+    """Exercise the witness protocol on this host; this is not a Windows job test."""
+    source = str(Path(__file__).resolve().parents[1] / "src")
+    worker = Path(__file__).resolve().parent / "fixtures/native_slo_windows_job_witness.py"
+    process = subprocess.Popen(
+        [sys.executable, "-u", str(worker), source, "direct"],
+        cwd=tmp_path,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        assert process.stdin is not None
+        process.stdin.write(f"{process.pid}\n".encode())
+        process.stdin.flush()
+        completed = _ready(process)
+        root_rows, child_rows = completed["root_chain"], completed["child_chain"]
+        _validate_chain(root_rows, process.pid, os.getpid())
+        _validate_chain(child_rows, completed["child_launcher_pid"], root_rows[0]["pid"])
+        assert completed["child_ticks"] > 0 and completed["root_ticks"] > 0
+        assert process.poll() is None
+        output, error = process.communicate(b"x", timeout=10)
+        assert process.returncode == 0 and not output and not error
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=10)
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows retained-job accounting")
 @pytest.mark.parametrize("nested", [False, True])
 def test_real_job_keeps_immediate_exited_child_cpu_before_first_poll(tmp_path, nested):
-    # No resource sampler runs until the short child has already exited. The
-    # nested case creates a genuine child job through the production launcher.
+    # No CPU reader runs until the complete child launch chain has exited.
+    # CPython's Windows venv redirector starts a real interpreter and waits:
+    # https://github.com/python/cpython/blob/3.12/PC/venvlauncher.c
+    # Witness its exact topology rather than assuming one PID per invocation.
     source = str(Path(__file__).resolve().parents[1] / "src")
-    child = "import time; sum(i*i for i in range(1000000)); print(time.process_time_ns()//100, flush=True)"
-    program = f"""
-import json, os, subprocess, sys, time
-sys.path.insert(0, {source!r})
-from pathlib import Path
-from codex_plugin_scanner.guard.codex_hook_windows_job import spawn_windows_hook_process
-command = [sys.executable, '-c', {child!r}]
-nested_job = None
-if {nested!r}:
-    child, nested_job = spawn_windows_hook_process(command, cwd=Path.cwd(), environment=dict(os.environ))
-    output, error = child.communicate(timeout=15)
-    assert child.returncode == 0 and not error
-    del child
-    nested_job.close()
-else:
-    output = subprocess.check_output(command, timeout=15)
-print(json.dumps({{'child_ticks': int(output), 'root_ticks': time.process_time_ns()//100}}), flush=True)
-sys.stdin.buffer.read(1)
-"""
+    worker = Path(__file__).resolve().parent / "fixtures/native_slo_windows_job_witness.py"
     process, job = spawn_windows_hook_process(
-        [sys.executable, "-u", "-c", program], cwd=tmp_path, environment=dict(os.environ), allow_breakaway=False
+        [sys.executable, "-u", str(worker), source, "nested" if nested else "direct"],
+        cwd=tmp_path,
+        environment=dict(os.environ),
+        allow_breakaway=False,
     )
     try:
+        assert process.stdin is not None
+        process.stdin.write(f"{process.pid}\n".encode())
+        process.stdin.flush()
         completed = _ready(process)
         assert completed["child_ticks"] > 0
+        root_rows, child_rows = completed["root_chain"], completed["child_chain"]
+        root_pids = _validate_chain(root_rows, process.pid, os.getpid())
+        child_pids = _validate_chain(child_rows, completed["child_launcher_pid"], root_rows[0]["pid"])
+        assert root_pids.isdisjoint(child_pids) and os.getpid() not in child_pids
+        root = psutil.Process(process.pid)
+        active = {item.pid: item for item in [root, *root.children(recursive=True)]}
+        assert set(active) == root_pids
+        for row in root_rows:
+            assert active[row["pid"]].create_time() == row["created"]
+            assert active[row["pid"]].ppid() == row["parent"]
+        for row in child_rows:
+            _assert_child_exited(row)
         reader = resources.WindowsJobCpuReader(job, process)
         snapshot = reader()
-        assert snapshot.total_processes == 2 and snapshot.active_processes == 1
+        assert snapshot.total_processes == len(root_pids) + len(child_pids)
+        assert snapshot.active_processes == len(root_pids)
         assert snapshot.total_ticks >= completed["root_ticks"] + completed["child_ticks"]
         assert reader().total_ticks >= snapshot.total_ticks
         output, error = process.communicate(b"x", timeout=10)

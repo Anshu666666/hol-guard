@@ -3,9 +3,9 @@
   "reviewed_date": "2026-09-17",
   "target_branch": "release/3.2",
   "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
-  "implementation_tree_before_documentation": "c964a61a3a4c19d721358e69c400d6059dfd1156",
+  "implementation_tree_before_documentation": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
   "qualification_complete": false,
-  "status_policy": "DONE means the stated task acceptance has source, specification or test evidence of the required kind; it does not promote its dependent installed qualification. OPEN includes implemented/tested work with remaining acceptance. BLOCKED means a missing prerequisite. DEFERRED requires a measured native go/no-go decision; an unbuilt optional Rust component is neither DONE nor DEFERRED. Original acceptance and dependency fields are unchanged.",
+  "status_policy": "DONE means the stated task acceptance has source, specification or test evidence of the required kind; it does not promote its dependent installed qualification. OPEN includes implemented/tested work with remaining acceptance. BLOCKED means a missing prerequisite. DEFERRED requires a measured native go/no-go decision; an unbuilt optional Rust component alone is neither DONE nor DEFERRED. Original acceptance and dependency fields are unchanged.",
   "tasks": [
     {
       "id": "RSP-001",
@@ -14,11 +14,12 @@
       "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
       "dependencies": [],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Current main 05fa4760df8401b9710bf098adb4fbb2dc4ff389 and release base 4b89e0d2 are recorded. Local source c964a61a3a4c19d721358e69c400d6059dfd1156, tree 96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1; published 107606 / tree a9998b9 remains the measured checkpoint. Exact first-CI artifact, runtime, rule and toolchain identities are retained, including native-wheel merge build a806a38. Newly corrected installed artifacts, post-sign and frozen identities, and final source-bound qualification remain required.",
+      "evidence_or_remaining_work": "Current main 05fa4760df8401b9710bf098adb4fbb2dc4ff389 and release base 4b89e0d2 are recorded. Integrated source 599509be545b9992076d7f9f71dd19ecfd34bbc2, tree 55b05ef94f1f379fd0cf2762e3f1f394a2771b24, is later than measured checkpoint 24ba2d130a90f36b676139f03cabea98a2c3b00e. Second-checkpoint component artifacts retain exact source/environment and archive identities. Native-wheel jobs identify PR merge b0939719b2576e778ddb9f0392aa3a0387a3c3c4; all four failed. Final corrected installed artifacts, post-sign/frozen identities and source-bound qualification remain required.",
       "evidence_refs": [
         "contract",
         "qualification",
-        "first_ci"
+        "first_ci",
+        "second_ci"
       ]
     },
     {
@@ -85,7 +86,7 @@
       "id": "RSP-006",
       "number": 6,
       "title": "Correct existing SLO descriptions",
-      "acceptance": "Document warm \u226420 ms OR \u22651.15x and cold \u2264150 ms AND \u22655x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
+      "acceptance": "Document warm ≤20 ms OR ≥1.15x and cold ≤150 ms AND ≥5x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
       "dependencies": [
         "RSP-003",
         "RSP-005"
@@ -105,8 +106,8 @@
       "dependencies": [
         "RSP-003"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "Actual registered Claude/Codex argv, process startup, stdin/stdout and exit probes are implemented. First native-wheel smoke records Linux Claude PostToolUse max/p95 of 344.126 ms and macOS ARM of 282.838 ms, with only two observations each; qualification_complete=false. This is a profiling lead, not a paired tail claim. Full installed priority/nonpriority route and platform evidence remains required.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "The original measurement-boundary criterion is met: installed probes start the actual registered executable/argv, include process startup and real stdin, and validate stdout and exit. Retained first-CI Linux and macOS ARM Claude PostToolUse smokes measured max/p95 344.126 ms and 282.838 ms with two observations each; the Windows baseline retained actual registered cases. These prove the installed boundary, not tail targets. Full route/platform qualification remains in RSP-136/137 and native-launcher benefit in RSP-082.",
       "evidence_refs": [
         "contract",
         "qualification",
@@ -170,11 +171,12 @@
         "RSP-009"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The actual Linux legacy soak of 100,000 requests and 250,000 receipts has zero errors and 3.9683% sampled RSS growth at build a806a38. Its driver, daemon and descendant scope and soak latency gate are separate from daemon-only qualification. Explicit Windows Job CPU and working-set/private-commit readers, late-unavailable checks and complete before-teardown MCP windows are implemented; final four-platform process-tree and saturation qualification remains.",
+      "evidence_or_remaining_work": "The first Linux legacy soak retained 100,000 requests, 250,000 receipts, zero errors and 3.9683% sampled RSS growth at build a806a38. Corrected second-CI MCP reports retain 80 complete warm process-resource windows; all ten lifecycle windows remain incomplete. Actual Windows FFI authority tests pass, but Windows Job CPU and RSS fixture failures require the reviewed process-chain and binary-readiness corrections to run in CI. Short-lived macOS child CPU and complete four-platform process-tree/saturation evidence remain open.",
       "evidence_refs": [
-        "contract",
         "qualification",
-        "first_ci"
+        "first_ci",
+        "second_ci",
+        "diagnostics"
       ]
     },
     {
@@ -232,11 +234,12 @@
       "dependencies": [
         "RSP-014"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "Frozen Watch/availability, permission, lifecycle, integrity and source-capability expectations remain distinct. First107606Windows baseline completed the implemented386-case normalized corpus and62registered cases, retaining unsupported source scopes and failing side scenarios. Every candidate stopped at the expiry fixture; corrected renewal preserves acknowledged command extensions, exact ACK and binding. Installed candidate reruns still required.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "Independent frozen corpus expectations capture protected/Watch transformations, native misses, ordinary availability, integrity/size failures, permission requests and lifecycle events. Registered launcher and malformed-input drivers preserve expected JSON and exit, including timeout/containment/overflow rejection. Claude exit-path, Codex bridge and Watch-contract probes explicitly distinguish unavailable continuation from native-evaluated allow. The fixture-freezing acceptance is met. Actual final candidate delivery across every platform remains RSP-136, not an unrecorded fixture requirement.",
       "evidence_refs": [
         "contract",
         "qualification",
+        "launcher_input",
         "first_ci"
       ]
     },
@@ -624,7 +627,7 @@
       "id": "RSP-041",
       "number": 41,
       "title": "Keep PreTool results typed through receipt creation",
-      "acceptance": "Remove repeated typed\u2192Value\u2192typed conversions while retaining result-matrix validation and serialized output compatibility.",
+      "acceptance": "Remove repeated typed→Value→typed conversions while retaining result-matrix validation and serialized output compatibility.",
       "dependencies": [
         "RSP-040"
       ],
@@ -721,10 +724,13 @@
         "RSP-043",
         "RSP-046"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "Core, command/helper differential, source mutation and authority/approval focused suites pass at their recorded commits. RSP-134 must rerun the appropriate combined suite on the exact integrated release head, including later transport/approval/qualification fixes.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "The changed core modules have recorded command/rule/helper differential, source-mutation, snapshot/approval and scanner adversarial validation. The native allocation report retains the 254-pass Rust workspace batch with seven explicit ignored cases, Clippy, independent golden/Unicode/limit vectors and investigated differences. This closes the original core-parity tranche. RSP-048 retains measured benefit; RSP-134 retains scope-appropriate validation of later integrated changes.",
       "evidence_refs": [
-        "program"
+        "program",
+        "allocations",
+        "matrix",
+        "control"
       ]
     },
     {
@@ -767,10 +773,11 @@
         "RSP-010"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "First CI retains 72 cardinality offers: 36 candidate workers completed, 24 baseline workers completed, and 12 baseline workers were censored at the 15-second whole-worker bound. All 24 complete pairs match semantic coverage. Format preflight has 20 completed candidate cells, 18 completed baseline cells and two baseline Composer count failures; five 1k-by-1k protect-route pairs complete. Unversioned cardinality remains bundle-kernel scope; complete full-route evidence and comparable missing high-cardinality evidence remain required.",
+      "evidence_or_remaining_work": "The second checkpoint repeats the fixed 72 cardinality offers: 36 candidate and 24 baseline workers complete, while 12 baseline workers are censored at the unchanged 15-second whole-worker bound. Format preflight completes all 20 candidate cells and 18 baseline cells; two baseline Composer count failures remain. Five exact 1,000-by-1,000 protect pairs complete. The new separate phase job adds explicit-* registry-route validation because bare latest takes a pre-existing literal shortcut. Instrumented phase runs and full-route explicit-* execution are not yet measured; censored workers do not supply evaluator lower bounds.",
       "evidence_refs": [
         "package",
-        "first_ci"
+        "package_phases",
+        "second_ci"
       ]
     },
     {
@@ -828,10 +835,11 @@
         "RSP-012"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Five actual local protect pairs measure optimized Python median wall time of 259.996 ms and CPU time of 242.241 ms, versus frozen-baseline values of 6,885.272 ms and 5,923.255 ms. The observed 95.9041% median CPU reduction is from Python optimization. Attribute residual current cost, then compare any native pilot against optimized Python using the PRD's 30% benefit gate and 5% other-metric safeguard. Neither an unbuilt native pilot nor a large frozen-baseline speedup closes the port decision.",
+      "evidence_or_remaining_work": "Five second-checkpoint local protect pairs record median wall 8,773.536 to 318.011 ms and process CPU 7,732.300 to 310.481 ms, with median paired reductions of 96.3751% and 95.9846%. These are optimized-Python improvements on their own environment cohort, not pooled with first-CI or native gains. The integrated calling-thread phase collector separates production parse/model/index/match/finalization work from setup RSA verification. Its real CI attribution and the native port/no-port decision remain open; any pilot must beat optimized Python under the unchanged 30%/5% criteria.",
       "evidence_refs": [
         "package",
-        "first_ci"
+        "package_phases",
+        "second_ci"
       ]
     },
     {
@@ -1109,10 +1117,11 @@
         "RSP-014"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Priority installed launcher matrix is being completed; route ranking must use those actual measurements.",
+      "evidence_or_remaining_work": "Actual installed measurements and a supported registration inventory exist. Complete a comparable route ranking, retaining unsupported frozen/platform scopes explicitly. This ranking needs defensible baseline observations; the separate full 10,000/1,000 tail qualification is not a prerequisite for merely recording the ranking.",
       "evidence_refs": [
         "surfaces",
-        "qualification"
+        "first_ci",
+        "launcher_experiment"
       ]
     },
     {
@@ -1125,8 +1134,9 @@
         "RSP-073"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Package-bound native launcher is conditional on RSP-073; existing signed/manifest-bound runtime distribution is the proposed reuse point.",
+      "evidence_or_remaining_work": "The dormant Claude launcher design specifies existing runtime distribution/identity reuse, absolute package-owned argv, stdin, stdout, exit and environment contracts. The installed experiment prepares an explicit same-wheel registration and verifies its package binding. The design work is complete; this task retains its unresolved RSP-024 review and RSP-073 route-selection dependencies.",
       "evidence_refs": [
+        "launcher_experiment",
         "surfaces",
         "qualification"
       ]
@@ -1141,8 +1151,9 @@
         "RSP-015"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "No new canonical native launcher is activated without route-specific installed benefit and delivery parity.",
+      "evidence_or_remaining_work": "A canonical Claude pre/post native launcher is implemented behind the explicit dormant source feature, with four-platform source correctness passing. The installed experiment is now executable with the native-claude-launcher-experiment label. Production activation stays off. Selection as the highest justified route, installed delivery/continuation parity and its prerequisite review remain unmet.",
       "evidence_refs": [
+        "launcher_experiment",
         "surfaces",
         "qualification"
       ]
@@ -1156,8 +1167,9 @@
         "RSP-075"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "New native registration/repair depends on a selected launcher implementation; existing registrations remain under contract tests.",
+      "evidence_or_remaining_work": "The experiment owns a private, package-bound registration for measurement; it does not implement production native registration, repair or uninstall. Idempotent production lifecycle and exact package ownership still depend on a selected launcher route.",
       "evidence_refs": [
+        "launcher_experiment",
         "surfaces",
         "qualification"
       ]
@@ -1171,10 +1183,10 @@
         "RSP-076"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "No-environment-origin installed launcher paths and the default-off dormant Claude pilot exist. Four-target pilot source-feature tests pass at 107606; real native registration, repair, package binding and installed paired benefit are not established. Ordinary installed Python launcher smoke is separate.",
+      "evidence_or_remaining_work": "The integrated installed Claude experiment clears development origin overrides, installs one feature-enabled wheel outside the source tree, and validates actual Python/native registered argv against that same package. Four-platform source-feature tests have passed; real experiment results are pending. Ordinary installed Python launcher smoke is separate. The acceptance here is actual origin/selection proof; paired speedup and final lifecycle have their own tasks.",
       "evidence_refs": [
+        "launcher_experiment",
         "surfaces",
-        "qualification",
         "first_ci"
       ]
     },
@@ -1187,7 +1199,7 @@
         "RSP-077"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Cursor/Copilot alias and response registration probes are implemented; current Copilot daemon response shape requires correction and actual platform evidence. A new native launcher remains conditional on the measured launcher selection gate; existing Python adapter tests do not count as that port.",
+      "evidence_or_remaining_work": "The Copilot response-shape correction is integrated, and Cursor/Copilot alias, registration and response probes exist. Native alias-heavy launcher execution, permission/unavailable delivery and actual platform parity remain required; current Python adapter tests do not count as the native port.",
       "evidence_refs": [
         "surfaces",
         "qualification"
@@ -1518,11 +1530,11 @@
         "RSP-097",
         "RSP-010"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "MCP v1 CI records 30 workers and 2,730 calls across five independent runs and seven identical source stdio traces. For the 1,000-entry plain catalog, warm p50/p95 changed from 57.583/83.897 ms to 32.253/33.421 ms; these are nearest-rank descriptive summaries without paired confidence intervals. Child and simulated human waits and the 5 ms quiet barrier are separate; there is no network trace. Version 2 adds actual bounded loopback roundtrip/service attribution and five paired run intervals; its real CI evidence is pending.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "The actual second-checkpoint stdio proxy completed 30 workers, 240 child sessions and 10,080 calls with zero call failures across identical traces. Instrumented phases distinguish startup, catalog hashing, classification, policy, serialization, the unchanged roughly 5.11 ms quiet barrier, child/service/network and simulated human wait. Eight per-trace comparisons retain intervals estimated from five independent paired runs per trace. The authenticated archive supports an offline corrected strict public projection; the original MCP workflow still failed finalization. This meets the source-component measurement criterion and makes no installed-tail or Rust-selection claim.",
       "evidence_refs": [
         "mcp",
-        "first_ci"
+        "second_ci"
       ]
     },
     {
@@ -1594,11 +1606,11 @@
         "RSP-101",
         "RSP-102"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "The actual optimized Python proxy was measured at 107606 before later risk prefilters. For the 1,000-entry catalog, mean parent CPU time changed from 51.886 ms to 24.455 ms. Startup-inclusive resource medians changed from 109.60 to 112.84 MiB RSS and 88.05 to 91.18 MiB private memory; these remain incomplete because final reads are missing and descriptor queries failed. Version 2 now binds 100-call resource sessions to 80 warm windows before child teardown; fresh source measurements and the native go/no-go decision remain outstanding.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "Second-checkpoint optimized-Python MCP measurements retain 80 complete warm resource windows with 134–331 observations each and exact parent/child identity. The 1,000-tool catalog candidate/baseline ratio is 0.5380 for warm p50 wall (95% CI 0.5288–0.5648) and 0.4468 for mean parent CPU (0.4380–0.4770). Actual loopback roundtrip/service wait remains separately measured; sampled warm RSS rises roughly 2.8–3.5 MiB by trace. All ten startup/churn resource windows remain incomplete. The source proxy-overhead/warm-memory rebaseline criterion is met; native kernel selection and full rewrite decisions remain separate.",
       "evidence_refs": [
         "mcp",
-        "first_ci"
+        "second_ci"
       ]
     },
     {
@@ -1610,10 +1622,12 @@
         "RSP-103",
         "RSP-024"
       ],
-      "status": "BLOCKED",
-      "evidence_or_remaining_work": "Native MCP facts contract remains conditional on measured kernel benefit; credentials and remote session orchestration stay outside the kernel.",
+      "status": "DEFERRED",
+      "evidence_or_remaining_work": "The source-linked MCP selection decision defers a new native facts boundary for release 3.2. Candidate diagnostic fingerprint/classification costs are small beside policy-store/composition and persistence work; the current measurements do not establish a material native opportunity under the unchanged end-to-end benefit requirement. No native facts API is claimed. Reopening selection requires bounded immutable facts, credentials/session separation and final review.",
       "evidence_refs": [
-        "mcp"
+        "mcp",
+        "mcp_decision",
+        "second_ci"
       ]
     },
     {
@@ -1624,10 +1638,11 @@
       "dependencies": [
         "RSP-104"
       ],
-      "status": "BLOCKED",
-      "evidence_or_remaining_work": "No native MCP kernel is activated before RSP-103/104 selection and full policy/claim parity.",
+      "status": "DEFERRED",
+      "evidence_or_remaining_work": "Measured MCP scope selection defers pure native kernels for release 3.2; no kernel is selected to implement. Optimized Python remains the production comparator and implementation. This is explicit conditional deferral, not implementation completion. A future selection reopens coarse-boundary, policy/claim composition, redaction and integration requirements unchanged.",
       "evidence_refs": [
-        "mcp"
+        "mcp_decision",
+        "second_ci"
       ]
     },
     {
@@ -1654,10 +1669,11 @@
         "RSP-106",
         "RSP-010"
       ],
-      "status": "BLOCKED",
-      "evidence_or_remaining_work": "Requires selected native kernel and real proxy-boundary comparison against optimized Python.",
+      "status": "DEFERRED",
+      "evidence_or_remaining_work": "No native MCP candidate is selected or measured in this release scope, so native-kernel qualification is explicitly deferred with RSP-104/105. No Rust benefit or catalog/approval/forwarding parity pass is inferred from Python improvements. Reopening selection requires an actual optimized-Python/native comparison and all original safeguards.",
       "evidence_refs": [
-        "mcp"
+        "mcp_decision",
+        "second_ci"
       ]
     },
     {
@@ -1668,10 +1684,11 @@
       "dependencies": [
         "RSP-107"
       ],
-      "status": "BLOCKED",
-      "evidence_or_remaining_work": "Full proxy rewrite has no measured justification. Separate ADR/protocol rollout required if future evidence selects it.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "Recorded the measured decision to retain optimized Python and defer a full Rust MCP proxy rewrite for release 3.2. The corrected 24ba residual attribution supplies the present rationale; it is not a formal native-speedup upper bound or proof of installed targets. A future rewrite needs evidence that optimized Python and appropriate coarse kernels cannot meet adopted goals, a separate ADR and full protocol rollout scope.",
       "evidence_refs": [
-        "mcp"
+        "mcp_decision",
+        "second_ci"
       ]
     },
     {
@@ -2003,7 +2020,7 @@
       "id": "RSP-129",
       "number": 129,
       "title": "Test mutation-to-enforcement freshness",
-      "acceptance": "Measure accepted change\u2192compile\u2192publish\u2192ACK\u2192first decision; cover lost watcher hints, restart, key change, expiry and rollout admission.",
+      "acceptance": "Measure accepted change→compile→publish→ACK→first decision; cover lost watcher hints, restart, key change, expiry and rollout admission.",
       "dependencies": [
         "RSP-128",
         "RSP-034"
@@ -2089,7 +2106,7 @@
         "RSP-133"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The first 107606 checkpoint has 39 workflows: 33 successful and six failed. Main quality, compatibility and scheduling-sensitive checks, source differential/adversarial/authority checks, and the four-target dormant pilot pass. Fixture/version, macOS secure-root, public-digest secret-scan and installed failures remain historical failures. Local targeted corrections and independently reviewed pair, MCP, Windows, resolver and retention changes pass their stated source suites. The root combined 36-module source batch recorded 575 passed, seven skipped and seven failed. Six failures came from a test fixture colliding with PID 10; c964a61a3 fixes that fixture, and the focused rerun recorded 61 passed and two skipped. The original locked-storage burst HTTP timeout remains unresolved; no deadlines changed. The authority gate passed for 131 changed files, and the I/O ownership gate passed with 437 reachable and 3,861 inventoried entries. These source suites overlap and must not be summed; they do not establish an installed qualification pass. Final-head CI remains required.",
+      "evidence_or_remaining_work": "At measured checkpoint 24ba, all 114 main-CI jobs resolved: 110 passed, three skipped and only the Sonar quality gate failed. The complete checkpoint has 32 successful and seven failed workflows, including actual native-wheel/resource failures and an invalid qualification YAML run. At source 599509be5, the root integration batch passed 119 tests covering transition CI/dependency/workflow, qualification workflow, evaluator bootstrap/import boundaries, compatibility deadlines/capacity identity and MCP public reports. Authority ownership passed for 66 changed files; I/O ownership passed with 435 reachable functions and 3,861 inventoried entries; all seven dynamic privacy probes passed. Reviewed diagnostic suites passed 68 tests; the Windows RSS suite passed 29 with one platform skip. The original 24-request locked-storage burst now passes without changing its limits. The evaluator owner retained a broader 91-pass/one-failure batch: deferred backfill missed its original eight-second readiness wait. An instrumented isolated rerun passed but did not establish that failure's cause. These overlapping source suites must not be summed. New installed CI remains required. Validation-only follow-up a86ee973647c742baa795e3871582eb53aff8f6f fixes one MCP self-comparison and adds six signed-marker guard regressions; seven focused tests pass. The exact 42-finding Sonar false-positive review retains source hashes and unapplied remote dispositions. Production code and detector rules/thresholds/fixtures are unchanged by that follow-up. Final integrated-source lint, relevant Rust/Python suites and required CI remain open.",
       "evidence_refs": [
         "qualification",
         "allocations",
@@ -2097,7 +2114,8 @@
         "launcher_input",
         "phases",
         "fixture",
-        "first_ci"
+        "second_ci",
+        "diagnostics"
       ]
     },
     {
@@ -2110,11 +2128,11 @@
         "RSP-081"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Both exact wheels and hash-locked dependency bundles now build once per platform; paired installers verify installed package, runtime, source, target, Python and dependency versions outside both checkouts. POSIX uses byte-identical private interpreters, preserving the frozen validator. First-wheel Linux and macOS ARM pass at merge build a806a38; macOS Intel recovery and Windows RSS fail. New final artifacts, all-platform execution, post-sign and frozen-sidecar manifests remain required.",
+      "evidence_or_remaining_work": "Immutable indexed bundles bind wheel/package/runtime/source/target/Python/dependency identities and install outside both checkouts. The stopped-transition CI adds an independent third environment with exact lock and installed-dependency admission. All four second-checkpoint native-wheel jobs failed; reviewed fixture/diagnostic corrections need actual reruns. Final exact artifacts, all-platform execution and post-sign/frozen-sidecar manifests remain required.",
       "evidence_refs": [
         "qualification",
-        "contract",
-        "first_ci"
+        "transitions",
+        "second_ci"
       ]
     },
     {
@@ -2127,14 +2145,13 @@
         "RSP-015"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "At integrated source c964a61a3a4c19d721358e69c400d6059dfd1156, the priority and fault corpus, nonpriority registered routes, mixed contention, approval, malformed-input and phase drivers are implemented. They include exact native Codex completion, pre-assertion daemon journals, capability-aware Windows source review and separate frozen-baseline unsupported-source evidence. At the first published PR #2970 checkpoint, 107606, native performance run 35220287310 failed all four smoke jobs. The Windows baseline completed one block with 386 normalized corpus observations and 62 registered launcher observations, but its additional scenarios still failed and unsupported source scopes remained explicit. Every candidate stopped at the expiry fixture publication-authentication assertion; Linux baseline interpreter admission and both macOS baseline reverse lookups also failed. The integrated expiry-publication, interpreter, resource and resolver-diagnostic corrections are source changes, not passing installed reruns. InitialHeaderReader and the common classification lock now cover initially partial headers plus watchdog and overload-eviction revalidation; the earlier 27da1a51b-only coverage limits are historical. Full installed candidate route, delivery, approval/continuation, source-reference, availability/fault, mixed-load and four-platform evidence remains required. Strict refusal and original deadline gates remain unchanged. Earlier attempts are retained in EXECUTION.md and prior ledger commits; no historical pass qualifies this corrected source.",
+      "evidence_or_remaining_work": "Priority/fault, nonpriority registration, malformed-input, native Codex continuation, source-reference and mixed-load drivers are implemented with native verdict/posture/availability/delivery kept separate. First-checkpoint Windows baseline retained 386 normalized and 62 registered observations; candidates stopped at expiry authentication, and unsupported source semantics remained explicit. At 24ba the qualification workflow failed YAML validation before any job, so none of its installed scenarios reran. The step-scoped environment correction is integrated. Second native-wheel Linux RSS warmup and macOS full-review witnesses retain real failures; bounded diagnostics now expose the original failed evidence without retry. Actual candidate all-route, approval/fault/source, mixed-load and four-platform evidence remains required.",
       "evidence_refs": [
         "qualification",
-        "surfaces",
-        "launcher_approval",
-        "launcher_input",
-        "phases",
-        "fixture"
+        "contract",
+        "second_ci",
+        "diagnostics",
+        "launcher_experiment"
       ]
     },
     {
@@ -2147,11 +2164,10 @@
         "RSP-010"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Five indexed pairs per platform run both arms on the same runner and preserve the original 2,000/200/20 block counts, five independent runs, estimator, exact numeric commitments and strict cohort checks. Two 60-minute worker bounds now fit a 125-minute collection step within a 200-minute job, with separate encryption and upload budgets. Only failing smoke evidence exists at 107606; final full performance qualification remains blocked.",
+      "evidence_or_remaining_work": "Indexed qualification preserves five independent same-runner pairs per platform, original 2,000/200/20 block counts, estimators, exact sealed numeric commitments and strict cohort checks. Both 60-minute workers fit a 125-minute collection step within a 200-minute job. The second checkpoint did not enter qualification jobs because workflow validation failed; that source error is corrected. A separate nonpriority registration-tail collection is still being implemented. Full matching-baseline/selected-candidate qualification remains blocked.",
       "evidence_refs": [
         "qualification",
-        "contract",
-        "first_ci"
+        "second_ci"
       ]
     },
     {
@@ -2181,10 +2197,10 @@
         "RSP-138"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Source attestation/floor recovery and J118 control-settings rollback exist. Need actual package/program upgrades/downgrades, post-sign byte changes, mixed in-flight generations, registered launcher restoration and first enforcing requests. Revision floors must never be lowered to manufacture a successful rollback.",
+      "evidence_or_remaining_work": "The stopped-artifact probe now implements baseline clean install, candidate upgrade, candidate reinstall, baseline rollback and candidate restore in an independent third environment. It binds exact package/runtime/registration/control identities, verifies two real native registered requests per phase and retains all earlier receipts. The new four-platform opt-in CI seals the exact validated checkpoint bytes and requires separate public/encrypted uploads. Source tests pass; installed transition results are pending. Stopped replacement does not satisfy mixed in-flight generations, live signing/program changes, final frozen artifacts or production native registration lifecycle.",
       "evidence_refs": [
-        "qualification",
-        "contract"
+        "transitions",
+        "qualification"
       ]
     },
     {
@@ -2196,13 +2212,14 @@
         "RSP-136",
         "RSP-138"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "Finite public reconstruction, common-versus-semantic identity, every offered/terminal attempt and exact encrypted numeric commitments are implemented. Authorized package format-preflight CI recovery verified 103 files, including 40 JSONL files, and permissions of 0700/0600. Private numeric checkpoints retain earlier observations after failure; availability continuations remain separate from native-evaluated allows. Final success/error/fault artifact privacy, v2 resource completeness and Windows/interrupted CI recovery remain open.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "Finite public reconstruction and privacy probes cover metrics, errors and receipts; native-evaluated outcomes remain separate from availability continuations. Actual authenticated package preflight recovery verified 103 files; second-checkpoint MCP recovery verified 182 files and produced a closed public projection while retaining incomplete metrics. Transition snapshot validation now checks the exact immutable bytes encrypted, so replacement cannot turn a mismatched checkpoint into a passing archive. Independent literal acceptance review found the required adversarial privacy and truthful-status probes complete. Final changed-export review, platform recovery and performance completeness remain separate release obligations; no secret/path/command export or false native allow is authorized.",
       "evidence_refs": [
         "qualification",
         "contract",
         "archive",
-        "first_ci"
+        "second_ci",
+        "transitions"
       ]
     },
     {
@@ -2233,10 +2250,10 @@
         "RSP-141"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Foundation PR #2951 retains its historical observation of 25 successful workflows and 33 resolved threads; independent approval of its latest push remains unestablished. The three resolved review threads on concurrent PR #2954 are historical and do not approve the isolated implementation in PR #2970. The last recorded PR #2970 checkpoint, 107606, has 39 workflows: 33 successful and six failed. Independent review of source components does not replace final-head required CI or independent latest-push approval. The corrected integrated source must receive those checks and approval before merge. Earlier 81ef6195c and 42579f046 workflow outcomes remain in EXECUTION.md and prior ledger commits; none establishes final qualification.",
+      "evidence_or_remaining_work": "Foundation PR #2951 retains historical 25 successful workflows and 33 resolved threads; this does not approve PR #2970. The exact second implementation checkpoint 24ba has 32 successful and seven failed workflows. Component source reviews are clear for the integrated fixes, but final required CI and independent latest-push code-owner approval remain outstanding. Concurrent PR #2954 has another writer; its historical thread resolutions neither authorize overwrite nor approve this isolated implementation.",
       "evidence_refs": [
         "qualification",
-        "contract"
+        "second_ci"
       ]
     },
     {
@@ -2270,82 +2287,91 @@
         "RSP-143"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The PRD addendum, current contract, all 144 immutable acceptance/dependency records, exact first-CI reports and executable takeaway are refreshed at source c964a61a3a4c19d721358e69c400d6059dfd1156. Status is 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED; the first published PR #2970 head, 107606, has 33 successful and six failed workflows. New corrected source, full qualification, native decisions, final review and demonstrated rollout/rollback remain unfinished. Historical evidence is retained through pinned commits and EXECUTION; no measured claim is promoted to later source.",
+      "evidence_or_remaining_work": "The PRD addendum, current contract, all 144 immutable records, two exact CI evidence checkpoints and executable takeaway are refreshed at source 599509be545b9992076d7f9f71dd19ecfd34bbc2. Status: 74 DONE / 30 OPEN / 37 BLOCKED / 3 DEFERRED. Measured 24ba retains 32 successful/seven failed workflows. Later reviewed fixes, new installed experiments and transition CI require execution; remaining native decisions, full qualification, final review and rollout/rollback stay open. Original and corrected MCP reports are distinct; no historical measurement is promoted to later source.",
       "evidence_refs": [
         "qualification",
         "contract",
-        "first_ci"
+        "first_ci",
+        "second_ci"
       ]
     }
   ],
-  "review_scope": "All 144 original IDs, numbers, titles, acceptance conditions and dependencies are unchanged. This checkpoint updates implementation and measured evidence without closing acceptance that still needs installed runs, native comparisons, artifact transitions or independent approval. Status remains 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED.",
+  "review_scope": "All 144 original IDs, numbers, titles, acceptance conditions and dependencies are unchanged. Literal acceptance audit closes RSP-007/015/047/098/103/140 with the appropriate boundary, fixture, core-parity, component measurement or privacy evidence; RSP-108 records the measured rewrite decision. RSP-104/105/107 are explicitly deferred by the source-linked MCP selection decision. Dependent installed performance, native selection, artifact lifecycle and independent approval remain separate. Status: 74 DONE / 30 OPEN / 37 BLOCKED / 3 DEFERRED.",
   "release_snapshot": {
-    "observation_basis": "GitHub API, exact job logs and independently checked retained public artifacts on 2026-09-17. FIRST_CI_EVIDENCE.md and its manifest bind all reported first-checkpoint measurements; the source corrections below are later.",
+    "observation_basis": "Exact GitHub API status, job logs and authenticated artifact-backed reports on 2026-09-17. FIRST_CI_EVIDENCE and SECOND_CI_EVIDENCE retain distinct source/environment cohorts; corrected public projection is explicitly offline.",
     "foundation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2951",
     "foundation_head": "e449594e86c717e66e14598a4130475de79c536f",
     "foundation_checks": "Historical observation: 25 successful workflows and 33 resolved threads. Independent latest-push approval remains unestablished; refresh before merge.",
     "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2970",
-    "implementation_remote_head": "107606388ad55f924a4e2924b4ff84e5fa08e6ff",
+    "implementation_remote_head": "24ba2d130a90f36b676139f03cabea98a2c3b00e",
     "implementation_branch": "codex/release-3.2-rust-finalization",
     "local_integration_branch": "work/rsp-performance-finalization-32",
     "concurrent_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
     "concurrent_pr_policy": "Another writer owns that branch; no whole-tree overwrite or unreviewed merge.",
-    "integrated_source_head": "c964a61a3a4c19d721358e69c400d6059dfd1156",
-    "integrated_git_tree": "96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1",
-    "integrated_publication_status": "Prepared local source checkpoint for the isolated PR #2970 branch. The last observed published head is 107606; inspect the live PR head and exact checks after publication. Its 33 successful and six failed workflows are historical relative to these corrections.",
+    "integrated_source_head": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
+    "integrated_git_tree": "55b05ef94f1f379fd0cf2762e3f1f394a2771b24",
+    "integrated_publication_status": "Prepared source checkpoint for PR #2970, later than measured head 24ba. Refresh live head/checks after exact-tree publication; no later-source execution is inferred.",
     "workflow_status_counts": {
-      "success": 33,
-      "failure": 6,
+      "success": 32,
+      "failure": 7,
       "active": 0
     },
     "launched_workflows": 39,
     "workflow_failures": [
       {
-        "scope": "security",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287255",
-        "observation": "Public source-digest false positive. Local exact fixture exception plus restoration of pinned Gitleaks global defaults passes the original published history range; new-head CI remains required."
-      },
-      {
         "scope": "main_ci",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287428",
-        "observation": "Three shards failed on runtime-keyword test doubles, storage/header fixture setup and a parser-version invalidation fixture. Local corrections retain original production contracts and deadlines. Quality, compatibility and scheduling-sensitive jobs passed."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228364797",
+        "observation": "114 jobs: 110 passed/three skipped/one Sonar quality-gate failure. Coverage 82.4% passed; reliability/security findings require adjudication or source correction."
       },
       {
-        "scope": "rust_daemon_edge",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287297",
-        "observation": "macOS secure-source tests treated the OS temporary-root alias as a supplied source symlink. Local canonical fixture-root correction preserves actual ancestor/leaf symlink refusals; real macOS rerun required."
+        "scope": "security",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228364982",
+        "observation": "Strict Gitleaks fixture verification failed before history scanning. Integrated ca772a069 stamps the pinned Go build version; policy, defaults, rule and scope stay unchanged."
       },
       {
-        "scope": "package_component",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287514",
-        "observation": "All 20 candidate format cells and 36 candidate cardinality cells complete. Two baseline Composer mismatches and 12 censored baseline cardinality workers keep comparability incomplete. Five actual local protect pairs complete; no native comparison."
-      },
-      {
-        "scope": "native_performance",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287310",
-        "observation": "Smoke: every candidate failed expiry-publication authentication; Linux baseline failed interpreter permission admission; Mac baselines timed out in reverse lookup; Windows retained one baseline block with incomplete side scenarios. Local fixture corrections are not a passing rerun."
+        "scope": "windows_resident",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228364933",
+        "observation": "Actual FFI authority suite passed 13 tests. Windows Job CPU fixture had 57 passes/two skips/two failures due virtual-environment process topology; reviewed exact-chain correction requires actual rerun."
       },
       {
         "scope": "native_wheel",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287375",
-        "observation": "Linux installed smoke and its 100,000-request / 250,000-receipt soak passed, as did macOS ARM. macOS Intel failed recovery sample 1; Windows RSS was unavailable. Local bounded recovery evidence and the full Windows working-set collector require installed reruns."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228365075",
+        "observation": "All four jobs failed: Windows binary-readiness RSS fixture; Linux native RSS warmup route proof; macOS ARM cursor/5m and Intel pi/1m full-review witnesses. Windows fixture fixes and bounded original-failure diagnostics are integrated; no passing rerun."
+      },
+      {
+        "scope": "package_component",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228365019",
+        "observation": "Candidate 20 format and 36 cardinality cells complete; baseline two Composer count failures and 12 censored cardinality workers remain. Five protect pairs complete; no native comparison."
+      },
+      {
+        "scope": "mcp_component",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228364816",
+        "observation": "All 30 workers/10,080 calls completed without call failures; original finalizer rejected two valid CPU-resource fields. Later strict projection repair reconstructs authenticated observations offline; original workflow remains failed."
+      },
+      {
+        "scope": "native_performance",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35228359387",
+        "observation": "Push-triggered workflow validation failed with zero jobs because runner.temp appeared in job-level environment. This failure is absent from the PR-only wrapper. Step-scoped source correction is integrated; no installed scenarios ran at this checkpoint."
       }
     ],
     "qualification_complete": false,
     "merge_or_release_complete": false,
-    "local_validation": "Independent source reviews are clear for indexed pairs, MCP v2, Windows RSS/FFI definitions, the interpreter fixture, resolver observability, the recovery envelope and Gitleaks default-policy repair. Source-scoped suites include 225 pair tests plus 58 final checks; 135 MCP tests; 98 resolver tests; 68 recovery/export tests; 17 interpreter tests; and 11 Windows FFI cases with two platform skips. The root combined 36-module source batch recorded 575 passed, seven skipped and seven failed. Six failures came from a test fixture colliding with PID 10; c964a61a3 fixes that fixture, and the focused rerun recorded 61 passed and two skipped. The original locked-storage burst HTTP timeout remains unresolved; no deadlines changed. The authority gate passed for 131 changed files, and the I/O ownership gate passed with 437 reachable and 3,861 inventoried entries. These source suites overlap and must not be summed; they do not establish an installed qualification pass.",
-    "historical_evidence": "FIRST_CI_EVIDENCE.md; evidence/first-ci-107606/manifest.json; EXECUTION.md; prior ledger at 107606; evidence/takeover-42579/manifest.json"
+    "local_validation": "At source 599509be5, the root integration batch passed 119 tests covering transition CI/dependency/workflow, qualification workflow, evaluator bootstrap/import boundaries, compatibility deadlines/capacity identity and MCP public reports. Authority ownership passed for 66 changed files; I/O ownership passed with 435 reachable functions and 3,861 inventoried entries; all seven dynamic privacy probes passed. Reviewed diagnostic suites passed 68 tests; the Windows RSS suite passed 29 with one platform skip. The original 24-request locked-storage burst now passes without changing its limits. The evaluator owner retained a broader 91-pass/one-failure batch: deferred backfill missed its original eight-second readiness wait. An instrumented isolated rerun passed but did not establish that failure's cause. These overlapping source suites must not be summed. New installed CI remains required. Validation-only follow-up a86ee973647c742baa795e3871582eb53aff8f6f fixes one MCP self-comparison and adds six signed-marker guard regressions; seven focused tests pass. The exact 42-finding Sonar false-positive review retains source hashes and unapplied remote dispositions. Production code and detector rules/thresholds/fixtures are unchanged by that follow-up.",
+    "historical_evidence": "FIRST_CI_EVIDENCE.md; evidence/first-ci-107606/manifest.json; SECOND_CI_EVIDENCE.md; evidence/second-ci-24ba/manifest.json; EXECUTION.md; prior ledger commits",
+    "validation_only_followups": [
+      "a86ee973647c742baa795e3871582eb53aff8f6f"
+    ]
   },
   "evidence_catalog": {
     "contract": {
       "path": "CURRENT_CONTRACT.md",
-      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
-      "scope_and_limit": "Production routes, authority, limits, approval API distinctions and timing boundaries; source contract, not installed performance."
+      "source_commit": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
+      "scope_and_limit": "Current source authority, production routes, distinct timing boundaries and delivery contracts; no installed qualification claim."
     },
     "qualification": {
       "path": "RELEASE_REVIEW.md",
-      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
-      "scope_and_limit": "Local corrected source is later than published 107606, which has 33 successful and six failed workflows. Indexed pairs retain fixed five-run sample minima and exact sealed numeric commitments; installed reruns and full qualification remain pending."
+      "source_commit": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
+      "scope_and_limit": "Integrated source is later than measured 24ba (32 successful/seven failed workflows). Required source/installed reruns, final native choices and independent approval remain open."
     },
     "identity": {
       "path": "../rsp-runtime-identity-performance.md",
@@ -2353,9 +2379,9 @@
       "scope_and_limit": "Linux live-process proof with full validation elsewhere; status component with same baseline Rust binary, source replacement tests and a bounded installed Linux status/stdio probe. No final J artifact or signing/hook qualification."
     },
     "package": {
-      "path": "../rsp-package-performance.md",
-      "source_commit": "640b47ae52dea98ad2d4f5dbfc36b86e91800d83; 0785b00e2",
-      "scope_and_limit": "The retained first CI has five real local protect pairs: median wall time changed from 6,885.272 ms to 259.996 ms and CPU time from 5,923.255 ms to 242.241 ms. All 36 candidate cardinality cells complete; 12 baseline workers were censored and two Composer preflight mismatches remain. Unversioned kernel and full-route scopes are distinct. Optimized-Python residual attribution and native comparison remain open."
+      "path": "SECOND_CI_EVIDENCE.md",
+      "source_commit": "24ba2d130a90f36b676139f03cabea98a2c3b00e",
+      "scope_and_limit": "Five real local protect pairs show median process CPU 7,732.300 to 310.481 ms after Python optimization. Fixed baseline Composer and cardinality failures remain noncomparable; no native comparison and no pooling with first CI."
     },
     "scanner": {
       "path": "../rsp-scanner-qualification.md",
@@ -2363,9 +2389,9 @@
       "scope_and_limit": "21 equivalent measured Linux source rows, five unavailable cache rows, five alternating samples per arm and rich full-source-CLI/HMAC/context witnesses. Only scanner/security source digests were independently reproduced; no full installed artifact identity or native comparison."
     },
     "mcp": {
-      "path": "mcp-proxy-rebaseline.md",
-      "source_commit": "107606388ad55f924a4e2924b4ff84e5fa08e6ff; 6fcb746da",
-      "scope_and_limit": "Version 1 source stdio CI records 30 workers and 2,730 calls, retaining local improvements and incomplete resource windows. The version 2 source collector adds eight traces and five paired run intervals: 30 workers, 240 sessions, 10,080 calls and 80 warm resource windows before teardown. Actual v2 CI and native selection remain pending. The 5 ms barrier is unchanged."
+      "path": "SECOND_CI_EVIDENCE.md",
+      "source_commit": "24ba2d130a90f36b676139f03cabea98a2c3b00e; 1498e2264",
+      "scope_and_limit": "Actual v2 source proxy: 30 workers/240 sessions/10,080 calls, five independent paired runs per trace, attributed loopback and 80 complete warm resource windows. Authenticated offline corrected projection uses later strict-schema repair; the original CI finalizer remains failed. Ten lifecycle windows remain incomplete."
     },
     "pool": {
       "path": "legacy-pool-and-inventory-audit.md",
@@ -2439,8 +2465,8 @@
     },
     "archive": {
       "path": "numeric-evidence-durability.md",
-      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
-      "scope_and_limit": "Private incremental journals retain interrupted values; exact indexed manifests validate raw counts, hashes and the bytes sealed. Actual package-format preflight archive recovery verified 103 files, including 40 JSONL files, and permissions of 0700/0600. Other component recovery and new interrupted Windows archival recovery remain open; missing data never become zero."
+      "source_commit": "599509be545b9992076d7f9f71dd19ecfd34bbc2",
+      "scope_and_limit": "Private numeric journals, exact sealed commitments, actual authenticated 103-file package and 182-file MCP recovery, and immutable transition snapshot validation. Missing data stays missing; private raw records and key are not published."
     },
     "codex": {
       "path": "../native-codex-browser-continuation.md",
@@ -2456,12 +2482,53 @@
       "path": "FIRST_CI_EVIDENCE.md",
       "source_commit": "107606388ad55f924a4e2924b4ff84e5fa08e6ff",
       "scope_and_limit": "19 exact retained public reports plus manifest. Optimized Python package/MCP component gains, incomplete resource/cardinality scopes, Linux soak and Mac/Windows failures remain source-specific. Native-wheel build is PR merge a806a38, not later source."
+    },
+    "package_phases": {
+      "path": "package-phase-attribution.md",
+      "source_commit": "4a1349d57",
+      "scope_and_limit": "Separate bounded calling-thread phase diagnostics and explicit-* registry route are implemented; real next-checkpoint attribution is pending. RSA setup verification stays outside original route timing."
+    },
+    "launcher_experiment": {
+      "path": "installed-claude-pilot-experiment.md",
+      "source_commit": "a416c1cbb; d7069e65b",
+      "scope_and_limit": "Explicit same-wheel Python/native Claude registered-launcher experiment, four platforms and five independent runs, exact sealed evidence. Production feature remains off; installed results and route selection pending."
+    },
+    "transitions": {
+      "path": "installed-artifact-transitions.md",
+      "source_commit": "d738b77f6; 108ad2e85; 6509b59c8",
+      "scope_and_limit": "Five-phase/ten-case stopped-artifact third-environment probe and independent four-platform CI. Exact encrypted checkpoint-snapshot admission and mandatory uploads pass source tests; no actual transition or live/signing/frozen qualification claimed."
+    },
+    "diagnostics": {
+      "path": "second-ci-failure-diagnostics.md",
+      "source_commit": "7e2739fc4; 8bab03d5f",
+      "scope_and_limit": "Bounded original capacity-wave and before/after thread-context diagnostics, Windows binary-LF RSS fixture and exact Job process topology. Source tests/review pass; actual installed causes and reruns remain required."
+    },
+    "evaluator": {
+      "path": "evaluator-bootstrap-correctness.md",
+      "source_commit": "d0069a1a9; 599509be5",
+      "scope_and_limit": "Original locked-storage burst passes unchanged limits. Admitted immutable code preparation and selective imports move before readiness; one broader deferred-backfill timing failure remains unexplained despite isolated diagnostic pass."
+    },
+    "second_ci": {
+      "path": "SECOND_CI_EVIDENCE.md",
+      "source_commit": "24ba2d130a90f36b676139f03cabea98a2c3b00e",
+      "scope_and_limit": "39 terminal workflows: 32 success/seven failure. Exact package/MCP public artifacts, original failed and offline corrected MCP projections, authenticated recovery commitments and global status manifest. No attribution to later source."
+    },
+    "mcp_decision": {
+      "path": "mcp-native-selection-decision.md",
+      "source_commit": "24ba2d130a90f36b676139f03cabea98a2c3b00e; 1498e2264",
+      "scope_and_limit": "Measured release 3.2 deferral of native MCP facts/kernels and a full proxy rewrite. Existing optimized Python remains; exact residual attribution supports present scope selection without claiming native benefit or installed target attainment. Explicit reopening conditions preserve all original requirements."
+    },
+    "sonar": {
+      "path": "../security/sonar-release-32-review.md",
+      "source_commit": "a86ee973647c742baa795e3871582eb53aff8f6f",
+      "scope_and_limit": "One defective test assertion corrected; six signed-marker regressions demonstrate distinct authority guard paths. Exact analyzed-source commitments justify 42 proposed individual false-positive dispositions, still unapplied. Fresh analysis and authenticated disposition remain required; no gate/rule/fixture weakening."
     }
   },
   "status_counts": {
-    "BLOCKED": 41,
-    "DONE": 67,
-    "OPEN": 36
+    "DONE": 74,
+    "OPEN": 30,
+    "BLOCKED": 37,
+    "DEFERRED": 3
   },
-  "implementation_git_tree": "96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1"
+  "implementation_git_tree": "55b05ef94f1f379fd0cf2762e3f1f394a2771b24"
 }

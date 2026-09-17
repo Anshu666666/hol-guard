@@ -43,7 +43,7 @@ def normalized(value: object) -> object:
 
 
 def expected_names(case: Case) -> set[str]:
-    if case.mode == "unresolved":
+    if case.mode in {"unresolved", "registry-resolved"}:
         return {package_name(i) for i in range(case.dependencies)}
     matches = 0 if case.mode == "absent" else min(case.dependencies, case.bundle_size - 1)
     return {"bench-anchor", *(package_name(i) for i in range(matches))}
@@ -91,7 +91,11 @@ def validate_evaluation(
         require(item.get("ecosystem") == fmt.ecosystem, "ecosystem")
         require(item.get("namespace") == ("bench" if fmt.ecosystem == "packagist" else None), "namespace")
         require(item.get("lockfileParseComplete") is not False, "completeness")
-        require(item.get("resolvedVersion") == (None if case.mode == "unresolved" else "1.0.0"), "resolved_version")
+        require(
+            item.get("resolvedVersion")
+            == (None if case.mode == "unresolved" else "2.0.0" if case.mode == "registry-resolved" else "1.0.0"),
+            "resolved_version",
+        )
         reasons = item.get("reasons")
         require(isinstance(reasons, (list, tuple)) and reasons, "package_reasons")
         require(
@@ -100,7 +104,13 @@ def validate_evaluation(
             ),
             "complete_reasons",
         )
-        if case.mode == "unresolved":
+        if case.mode == "registry-resolved":
+            require(item.get("direct") is True and item.get("requestedVersion") == "*", "registry_direct")
+            require(
+                item.get("riskScore") == 100 and {reason.get("code") for reason in reasons} == {"bundle_match"},
+                "registry_selected_version",
+            )
+        elif case.mode == "unresolved":
             require({reason.get("code") for reason in reasons} == {"cloud_auth_error"}, "unresolved_fallback")
             require(item.get("direct") is True, "unresolved_direct")
         elif item.get("name") != "bench-anchor":

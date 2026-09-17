@@ -1,12 +1,15 @@
 # Current decision and performance contract
 
-This contract describes local source `c964a61a3a4c19d721358e69c400d6059dfd1156`.
-It incorporates published PR #2970 head `107606388` and the subsequent reviewed
-measurement, Windows authority and fixture corrections. The last observed CI
-belongs to `107606388`, not this later source. Source support is distinct from
-installed activation and release qualification. [RELEASE_REVIEW.md](RELEASE_REVIEW.md)
-records exact current evidence; [EXECUTION.md](EXECUTION.md) retains older rounds.
-All original requirements remain in the [PRD](PRD.md) and [TODO](TODO.md).
+This contract describes source `599509be545b9992076d7f9f71dd19ecfd34bbc2`, tree
+`55b05ef94f1f379fd0cf2762e3f1f394a2771b24`, before these documentation edits.
+The latest measured publication is `24ba2d130a90f36b676139f03cabea98a2c3b00e`:
+39 terminal workflows, 32 successes and seven failures. The invalid qualification
+YAML executed no jobs. Later fixes and opt-in experiment wiring are source
+support, not installed activation or release qualification.
+[RELEASE_REVIEW.md](RELEASE_REVIEW.md) and [SECOND_CI_EVIDENCE.md](SECOND_CI_EVIDENCE.md)
+separate those scopes; [FIRST_CI_EVIDENCE.md](FIRST_CI_EVIDENCE.md) and
+[EXECUTION.md](EXECUTION.md) preserve earlier observations. Original requirements
+remain in the [PRD](PRD.md) and [TODO](TODO.md).
 
 ## Ownership and timing boundaries
 
@@ -32,6 +35,31 @@ resources are independent series. A warm helper is not a cold resident; a new
 launcher process with a warm daemon is not a full cold boot. The qualification
 driver reports independent daemon, helper/resident descendants and measurement
 driver costs so load generation does not masquerade as daemon CPU/memory.
+
+### Compatibility preparation and foreground work
+
+Capacity identity and CLI harness canonicalization use the existing static
+contract maps rather than loading every adapter implementation. Accepted aliases,
+unknown strings and capacity buckets keep their original semantics. Payload
+preparation imports only the selected harness preparer. Foreground load
+observations retain bounded queue state and wake the supervisor; process-tree
+resource probes and capacity changes execute there with unchanged limits and
+pressure policy.
+
+Explicit compatibility processing consumes its existing 1.45-second ordinary
+or 2.75-second post-hook cap from connection acceptance, respecting an earlier
+caller deadline. Authentication/admission do not create a fresh stage allowance.
+The existing outer connection budget also applies to challenge plus hook.
+
+Only an admitted Python-oracle surface prepares compatibility code, rendering
+and the immutable built-in manifest before evaluator readiness. Preparation has
+no guard-home/request input; store construction, configuration, current verified
+authority and approval/evaluation stay on the request path. Failed preparation
+cannot announce ready. Normal native operation does not gain a Python classifier
+or authority cache. Cold work before readiness must still fit existing startup
+budgets. The original storage burst now passes unchanged assertions, while one
+broader deferred-backfill capacity-wait failure remains unexplained; neither
+source observation establishes an installed SLO.
 
 ## Decision and delivered response
 
@@ -315,8 +343,9 @@ capacity is released once outside that lock.
 The scheduler notifies queued waiters only when dispatch changes work state.
 Permit release explicitly wakes byte reservations. Deadlines, fairness,
 predictive admission and capacity are unchanged. The confirmed unchanged-state
-notification cycle is fixed; the separate historical CI deadline failure still
-requires an installed/batch rerun.
+notification cycle is fixed. Later foreground import/resource-probe and evaluator
+preparation corrections have their own source evidence; final installed/fairness
+qualification and the unexplained broader backfill failure remain distinct.
 
 Concurrent response routes remain `pending_batch_validation` because shared
 counter deltas cannot identify a single overlapping request. An isolated wave
@@ -344,14 +373,23 @@ before consulting that capability. An old Windows artifact gets only its known
 refusal oracle, excluded from successful source-review timing. A capable Windows
 candidate gets the original full-content, malicious-content and digest oracles;
 a candidate refusal cannot select the old baseline exemption. The Windows wheel
-workflow now invokes installed SLO checks and retains failed reports. Cross-target
-compilation is not Windows execution, and neither proves an installed latency SLO.
+workflow invokes installed SLO checks and retains failed reports. At the second
+checkpoint it stopped before building the wheel on its RSS readiness fixture;
+binary LF and base-interpreter topology are corrected in source. Exact process,
+private-memory/working-set, thread and handle assertions remain. The separate
+Job CPU test now witnesses direct/venv-redirector chains and exited children
+before its first accounting query. Both actual Windows reruns remain necessary.
+Cross-target compilation is not Windows execution, and neither proves an installed
+latency SLO.
 
 Numeric daemon binding already delegates to `TCPServer.server_bind` and records
 its actual numeric host/port without reverse DNS (`9cca767fe`). Existing IPv4/IPv6
-metadata and real IPv4 binding tests pass. The frozen macOS baseline still hangs
-in `getfqdn`; its PTR fixture received zero queries. Candidate startup and OS
-resolver behavior require separate observed CI evidence.
+metadata and real IPv4 binding tests pass. The frozen macOS baseline's first-checkpoint `getfqdn` stall and zero PTR queries
+remain unresolved. Bounded registration, direct-libSystem and separate UDP
+self-test observability are integrated, but the second checkpoint's qualification
+YAML ran no jobs. Its native-wheel Mac failures instead concern source-review
+witnesses. Do not conflate these boundaries or claim a resolver fix from numeric
+candidate binding.
 
 ## Private qualification evidence
 
@@ -365,8 +403,11 @@ Windows publication retains its handle; Unix uses the documented OS-user
 filesystem boundary. Raw observations and the private recovery key stay out of Git.
 
 Local archive/recovery tests include exact interrupted JSONL and private Unix
-modes. Actual CI retention, download, recovery and Windows ACL behavior remain
-required. Public MCP evidence is reconstructed recursively from finite typed
+modes. The second-checkpoint MCP archive was actually authenticated and recovered:
+182 files, with the expected 0700 directories/0600 files and unchanged archive
+bounds. That Unix component proof does not establish every success/error/fault
+artifact's retention, interrupted Windows recovery or installed platform ACL
+behavior. The original failed public projection remains byte-for-byte historical. Public MCP evidence is reconstructed recursively from finite typed
 fields and exact attempt/phase conservation. Scanner cache errors expose fixed
 categories instead of OS messages. Historical scanner digests cover the specified
 12 scanner/security files, not the full CLI/harness/dependency environment.
@@ -387,14 +428,73 @@ source baselines meet RSP-062 and RSP-128 respectively. Native comparisons,
 installed load, full process-tree resources and rollout remain separate tasks.
 The archive profile retains failed observations and does not close RSP-070.
 
-The dormant Claude launcher pilot is integrated behind the default-off
-`native-claude-launcher-pilot` Cargo feature. Authenticated daemon responses retain
-supported denial bytes; unsupported response profiles return an explicit block,
-while actual availability failures keep the existing continuation policy.
-Authority and package files use retained read-only handles with their separate
-verification rules. The four peer findings are corrected. Source tests and
-explicit default/pilot executable checks pass on Linux; the four-platform feature
-workflow is wired and awaits execution. Registration, supported-domain parity,
-installed lifecycle/recovery, stalled-stdio containment and paired performance
-benefit remain separate acceptance gates. The [ledger](EXECUTION_LEDGER.md)
-retains every conditional go/no-go and installed release requirement.
+### Component measurement and pending installed scenarios
+
+Corrected offline projection of the second-checkpoint MCP archive preserves the
+failed GitHub finalizer and exposes the actual v2 observations: 30 workers,
+240 sessions, 10,080 calls and five independent pairs across eight traces.
+Its schema accepts only the actual Linux CPU scope and exact unavailable-count
+conservation. Eight paired plain comparisons use run-level bootstrap intervals;
+60 pooled warm calls per trace are not 60 independent runs. Parent-process plain
+CPU, diagnostic calling-thread phases, child-owned loopback TCP/service work,
+controlled approval delay and the unchanged 5 ms barrier remain separate.
+All 80 warm resource windows are complete; all ten startup/churn lifecycle records
+remain incomplete. Sampled peak memory is not an exact maximum. RSP-098/103 close
+this source-component measurement/rebaseline scope, not installed CLI, external
+network, cross-platform transport or complete lifecycle resources. The separate
+[MCP selection decision](mcp-native-selection-decision.md) uses the small remaining
+pure fingerprint/classification cost, larger store/composition/persistence spans
+and unchanged barrier to defer RSP-104/105/107 for release 3.2. RSP-108 records the
+full-proxy deferral; RSP-106 is untouched. No native candidate was measured and
+no native benefit gate failed. Reopening selection restores the original contract,
+implementation, parity and optimized-Python comparison requirements.
+
+Package attribution is implemented as eight candidate-only workers: two semantic
+validations and three profiled runs for each of the same two original inputs.
+Exclusive CPU rows are disjoint; inclusive rows overlap. Process-minus-profile
+CPU is retained signed and is not assigned to an invented phase. A separate
+baseline/candidate pair passes 100 explicit npm `*` requests through real registry
+resolution and the local protect route, substituting only fixed transport bytes.
+It must choose lower-risk 2.0.0 rather than the kernel's None-version highest-risk
+record. Bare requests retain the existing literal `latest` shortcut before
+registry resolution; that product behavior is unchanged and not covered by the
+new witness. The original 567 cases and ordinary route boundaries remain unchanged.
+Actual attribution CI, RSP-050/054 and any native package benefit remain pending.
+
+The dormant Claude launcher pilot remains behind the default-off
+`native-claude-launcher-pilot` Cargo feature. Supported authenticated denial bytes
+are retained; unsupported response profiles explicitly block, while actual
+availability failures preserve continuation semantics. Retained read-only package
+and authority handles have separate validation contracts. The first checkpoint's
+four-platform source-feature run passed; this is not installed activation.
+
+The separate installed experiment is now implemented. A same-repository PR must
+carry `native-claude-launcher-experiment`, or an operator must manually dispatch it.
+Each opt-in feature wheel supplies both optimized Python and native registered
+Pre/Post argv in one disposable fixture. Production registration is unchanged.
+Five independent jobs per target retain exact offered/terminal outcomes, full
+response equality, native route counts and both mandatory evidence artifacts.
+Default 20 observations per arm/event exercise the experiment; they cannot meet
+the 10,000-sample target. Native support/profile limits, lifecycle, c16, cold
+resident/recovery, signing and production ownership remain separate gates.
+Every result keeps `qualification_complete=false` and `production_selected=false`.
+
+Stopped artifact transitions are a different four-platform job, using the indexed
+run's original wheels in a third environment. Candidate-locked dependencies apply
+to both artifacts and must match the candidate bundle inventory and exact Python
+patch. Five stopped phases retain ten registered cases and current authority,
+registration and prior receipts; no revision reset or migration repair is allowed.
+The 180-second contained command caps and retirement flags are unchanged. A
+65-minute scenario step fits inside a 110-minute job, with separate archive/upload
+budgets. Plan, summary, bundle and checkpoint commitments are verified against the
+exact immutable bytes passed to encryption. Missing or changed evidence remains
+a failure even when its surviving bytes are encrypted. Both public and encrypted
+uploads are required. This implemented job has not executed; live replacement,
+version/native-program downgrade, signing and frozen packaging remain unqualified.
+
+The nonpriority-tail companion for sixteen routes and 320 full collection jobs
+is still under implementation at this source cutoff. It supplies no completed
+samples and does not reduce the required 1,000 observations per route/platform.
+The [ledger](EXECUTION_LEDGER.md) retains each conditional go/no-go and installed
+release requirement; RSP-134 final-head validation remains distinct from completed
+source-specific core parity and component measurements.

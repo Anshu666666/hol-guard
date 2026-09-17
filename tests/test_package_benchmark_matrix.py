@@ -118,7 +118,7 @@ def test_private_writer_preserves_prior_evidence_and_rejects_links(tmp_path):
         write_private(alias, {}, append=True)
 
 
-def worker_case(case, tmp_path, monkeypatch):
+def worker_case(case, tmp_path, monkeypatch, *, measurement="validation"):
     from scripts.package_benchmark_worker import run
 
     # Restore the worker's explicit no-network assignments when this in-process
@@ -137,7 +137,7 @@ def worker_case(case, tmp_path, monkeypatch):
             journal=tmp_path / "journal.jsonl",
             semantic=tmp_path / "semantic.json",
             temporary_root=tmp_path,
-            measurement="validation",
+            measurement=measurement,
         )
     )
 

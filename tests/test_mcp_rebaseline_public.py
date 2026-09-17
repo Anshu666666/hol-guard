@@ -8,9 +8,10 @@ import pytest
 from scripts import bench_mcp_rebaseline as driver
 from scripts import mcp_rebaseline_ci as ci
 from scripts.mcp_rebaseline_public import TOOL_CALLS, project
+from scripts.mcp_rebaseline_public_records import RESOURCE
 from scripts.mcp_rebaseline_statistics import paired_comparisons
 from scripts.mcp_rebaseline_trace import digest
-from tests.mcp_public_fixture import CANDIDATE, complete_report
+from tests.mcp_public_fixture import CANDIDATE, complete_report, resource_fixture
 
 SENTINEL = "PRIVATE_FIXTURE_SENTINEL"
 
@@ -18,6 +19,51 @@ SENTINEL = "PRIVATE_FIXTURE_SENTINEL"
 @pytest.fixture(scope="module")
 def frozen_report():
     return complete_report()
+
+
+def test_public_resource_matches_actual_linux_collector_schema(monkeypatch):
+    from scripts import native_slo_resources as resources
+
+    monkeypatch.setattr(resources, "_psutil", lambda: None)
+    sampler = resources.ResourceSampler(pid=1)
+    sampler.started = sampler.stopped = 1
+    # Startup/churn may have unavailable snapshots. Retain the actual report's
+    # counters without turning that lifecycle record into a complete warm one.
+    sampler.missing = 2
+    actual = sampler.report(attempted=0)
+    actual["scope"] = "mcp_proxy_worker_and_descendants"
+    public = RESOURCE(actual)
+    assert public == actual
+    assert public["cpu_accounting_scope"] == "observed_process_tree"
+    assert public["cpu_unavailable_samples"] == public["unavailable_samples"] == 2
+    assert public["cpu_seconds"] is None
+    assert public["sample_minimum_met"] is False
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("cpu_accounting_scope", SENTINEL),
+        ("cpu_accounting_scope", "explicit_fixture_job"),
+        ("cpu_unavailable_samples", -1),
+        ("cpu_unavailable_samples", True),
+        ("cpu_unavailable_samples", 1),
+        ("unreviewed_accounting_detail", SENTINEL),
+    ],
+)
+def test_public_resource_rejects_unknown_accounting_and_inconsistent_counts(field, value):
+    actual = resource_fixture()
+    actual[field] = value
+    with pytest.raises(ValueError, match="invalid public component evidence"):
+        RESOURCE(actual)
+
+
+@pytest.mark.parametrize("field", ["cpu_accounting_scope", "cpu_unavailable_samples"])
+def test_public_resource_requires_accounting_provenance(field):
+    actual = resource_fixture()
+    actual.pop(field)
+    with pytest.raises(ValueError, match="invalid public component evidence"):
+        RESOURCE(actual)
 
 
 @pytest.mark.parametrize(

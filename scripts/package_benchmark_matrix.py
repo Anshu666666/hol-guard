@@ -12,7 +12,14 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(_ROOT))
 
-from scripts.package_benchmark_corpus import BASELINE, digest, fixture, manifest, matrix  # noqa: E402
+from scripts.package_benchmark_corpus import (  # noqa: E402
+    BASELINE,
+    digest,
+    fixture,
+    manifest,
+    matrix,
+    supplemental_cases,
+)
 from scripts.package_benchmark_evidence import (  # noqa: E402
     compare_pair,
     environment_identity,
@@ -25,6 +32,7 @@ from scripts.package_benchmark_protocol import (  # noqa: E402
     MISMATCH_FIELDS,
     descriptive_summary,
     preset,
+    preset_arms,
     validate_worker_report,
 )
 
@@ -35,15 +43,33 @@ def _run(args: argparse.Namespace) -> dict[str, object]:
     os.umask(0o077)
     from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process
 
-    all_cases = {case.id: case for case in matrix()}
-    identifiers = sorted(all_cases) if args.all_cases else list(preset(args.preset)) if args.preset else args.case
+    all_cases = {case.id: case for case in (*matrix(), *supplemental_cases())}
+    identifiers = (
+        sorted(case.id for case in matrix())
+        if args.all_cases
+        else list(preset(args.preset))
+        if args.preset
+        else args.case
+    )
     if (
         not identifiers
         or len(set(identifiers)) != len(identifiers)
         or any(name not in all_cases for name in identifiers)
     ):
         raise ValueError("package_matrix_selection_invalid")
-    attempts = len(identifiers) * args.runs * args.samples * 2
+    if args.preset == "registry-resolved" and (
+        args.measurement != "validation" or args.runs != 1 or args.samples != 1 or args.timeout_seconds != 30
+    ):
+        raise ValueError("package_registry_plan_invalid")
+    arms = preset_arms(args.preset)
+    if len(arms) == 1 and (
+        args.samples != 1
+        or args.runs != (3 if args.preset == "phase-attribution" else 1)
+        or args.measurement != ("attribution" if args.preset == "phase-attribution" else "validation")
+        or args.timeout_seconds != 30
+    ):
+        raise ValueError("package_phase_plan_invalid")
+    attempts = len(identifiers) * args.runs * args.samples * len(arms)
     if not 1 <= args.runs <= 20 or not 1 <= args.samples <= 1000 or attempts > args.max_attempts:
         raise ValueError("package_matrix_attempt_budget_exceeded")
     if not 1 <= args.timeout_seconds <= 1800:
@@ -102,6 +128,8 @@ def _run(args: argparse.Namespace) -> dict[str, object]:
                     else ("candidate", "baseline")
                 )
                 for arm in order:
+                    if arm not in arms:
+                        continue
                     prefix = f"{identifier}.r{run_index:02d}.s{sample:04d}.{arm}"
                     journal = private / f"{prefix}.jsonl"
                     offered = {
@@ -197,14 +225,15 @@ def _run(args: argparse.Namespace) -> dict[str, object]:
                             {"status": "failed", "reason": "containment_failed", "failures": failures},
                         )
                         raise RuntimeError("package_matrix_containment_failed")
-                comparisons.append(
-                    {
-                        "case_id": identifier,
-                        "run": run_index,
-                        "sample": sample,
-                        **compare_pair(pair["baseline"], pair["candidate"]),
-                    }
-                )
+                if len(arms) == 2:
+                    comparisons.append(
+                        {
+                            "case_id": identifier,
+                            "run": run_index,
+                            "sample": sample,
+                            **compare_pair(pair["baseline"], pair["candidate"]),
+                        }
+                    )
     if {arm: source_identity(root) for arm, root in roots.items()} != identities:
         raise ValueError("package_matrix_source_identity_changed")
     report: dict[str, object] = {
@@ -260,7 +289,18 @@ def main() -> int:
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--case", action="append", default=[])
     selection.add_argument("--all-cases", action="store_true")
-    selection.add_argument("--preset", choices=("format-preflight", "cardinality", "unresolved", "hot-route"))
+    selection.add_argument(
+        "--preset",
+        choices=(
+            "format-preflight",
+            "cardinality",
+            "unresolved",
+            "hot-route",
+            "phase-validation",
+            "phase-attribution",
+            "registry-resolved",
+        ),
+    )
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--samples", type=int, default=1)
     parser.add_argument("--max-attempts", type=int, default=100)

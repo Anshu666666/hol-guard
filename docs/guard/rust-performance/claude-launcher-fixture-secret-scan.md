@@ -40,3 +40,21 @@ with zero errors (19 warnings). Scanning the actual introducing commit with the
 default rules reproduced exactly one finding; scanning that same historical
 commit with this exception returned zero. Independent source review found no
 security-scope blocker. No fixture bytes or existing ignore entries changed.
+
+## Go-installed detector version metadata
+
+The next actual Security Gates run at `24ba2d130` failed in the fixture
+regression before either history or working-tree scanning. The workflow uses
+`go install` at the pinned `v8.24.2` module, while the regression requires its
+`version` command to identify `8.24.2`. Upstream's tagged
+[`cmd/version.go`](https://github.com/gitleaks/gitleaks/blob/v8.24.2/cmd/version.go)
+initializes that value to `version is set by build process`; plain `go install`
+does not supply the release linker value. This explains the source-visible
+mismatch; the old CI log exposed only the fixed verification failure message.
+
+The installer now sets that one version symbol through `-ldflags -X` while
+retaining the same pinned module. The checker still rejects any version other
+than `8.24.2`. No detector rule, exception, global default, scan scope or failure
+gate changes. The real stamped local 8.24.2 binary passes all 15 positive,
+negative, cross-rule and history controls. Actual CI must verify the corrected
+Go installation and then execute the original complete scans.

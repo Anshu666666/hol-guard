@@ -46,6 +46,8 @@ jobs:
             timeout: 25
           - plan: diagnostic
             timeout: 30
+          - plan: phase-attribution
+            timeout: 10
     env:
       PACKAGE_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       PACKAGE_RECIPIENT_ID: d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
@@ -79,7 +81,8 @@ jobs:
         run: >-
           .venv/bin/python -m pytest -q -p tests.package_offline
           tests/test_package_benchmark_matrix.py tests/test_package_benchmark_controller.py
-          tests/test_package_rebaseline_ci.py
+          tests/test_package_rebaseline_ci.py tests/test_package_benchmark_phases.py
+          tests/test_package_benchmark_registry.py
       - name: Validate every supported format and both real source routes
         id: preflight
         if: matrix.plan == 'format-preflight'
@@ -124,6 +127,39 @@ jobs:
             --output "$GITHUB_WORKSPACE/package-evidence/private_samples/hot-route" \
             --preset hot-route --runs 5 --samples 1 --max-attempts 10 \
             --measurement timing --timeout-seconds 15
+      - name: Validate the unchanged two candidate residual workloads
+        id: phasevalidation
+        if: matrix.plan == 'phase-attribution'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/phase-validation" \
+            --preset phase-validation --runs 1 --samples 1 --max-attempts 2 \
+            --measurement validation --timeout-seconds 30
+      - name: Attribute current candidate costs in six separate instrumented workers
+        id: phaseattribution
+        if: always() && matrix.plan == 'phase-attribution' && steps.correctness.outcome == 'success'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/phase-attribution" \
+            --preset phase-attribution --runs 3 --samples 1 --max-attempts 6 \
+            --measurement attribution --timeout-seconds 30
+      - name: Validate unpinned ranges with frozen registry transport and real resolution
+        id: registryresolved
+        if: always() && matrix.plan == 'phase-attribution' && steps.correctness.outcome == 'success'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/registry-resolved" \
+            --preset registry-resolved --runs 1 --samples 1 --max-attempts 2 \
+            --measurement validation --timeout-seconds 30
       - name: Publish bounded status and stage all known private records
         if: always()
         env:
@@ -132,12 +168,19 @@ jobs:
           PACKAGE_CARDINALITY_OUTCOME: ${{ steps.cardinality.outcome }}
           PACKAGE_UNRESOLVED_OUTCOME: ${{ steps.unresolved.outcome }}
           PACKAGE_HOTROUTE_OUTCOME: ${{ steps.hotroute.outcome }}
+          PACKAGE_PHASEVALIDATION_OUTCOME: ${{ steps.phasevalidation.outcome }}
+          PACKAGE_PHASEATTRIBUTION_OUTCOME: ${{ steps.phaseattribution.outcome }}
+          PACKAGE_REGISTRYRESOLVED_OUTCOME: ${{ steps.registryresolved.outcome }}
         run: |
           outcomes=(--outcome "format-preflight=${PACKAGE_PREFLIGHT_OUTCOME:-skipped}")
           if [ "$PACKAGE_PLAN" = diagnostic ]; then
             outcomes=(--outcome "cardinality=${PACKAGE_CARDINALITY_OUTCOME:-skipped}" \
               --outcome "unresolved=${PACKAGE_UNRESOLVED_OUTCOME:-skipped}" \
               --outcome "hot-route=${PACKAGE_HOTROUTE_OUTCOME:-skipped}")
+          elif [ "$PACKAGE_PLAN" = phase-attribution ]; then
+            outcomes=(--outcome "phase-validation=${PACKAGE_PHASEVALIDATION_OUTCOME:-skipped}" \
+              --outcome "phase-attribution=${PACKAGE_PHASEATTRIBUTION_OUTCOME:-skipped}" \
+              --outcome "registry-resolved=${PACKAGE_REGISTRYRESOLVED_OUTCOME:-skipped}")
           fi
           python -I -S candidate-src/scripts/package_rebaseline_ci.py \
             --private "$GITHUB_WORKSPACE/package-evidence/private_samples" \
@@ -152,6 +195,8 @@ jobs:
           groups=(format-preflight)
           if [ "$PACKAGE_PLAN" = diagnostic ]; then
             groups=(cardinality-d100 cardinality-d1000 cardinality-d10000 unresolved hot-route)
+          elif [ "$PACKAGE_PLAN" = phase-attribution ]; then
+            groups=(phase-validation phase-attribution registry-resolved)
           fi
           status=0
           for group in "${groups[@]}"; do
@@ -182,6 +227,9 @@ jobs:
             package-evidence/public/archive-cardinality-d10000.json
             package-evidence/public/archive-unresolved.json
             package-evidence/public/archive-hot-route.json
+            package-evidence/public/archive-phase-validation.json
+            package-evidence/public/archive-phase-attribution.json
+            package-evidence/public/archive-registry-resolved.json
           if-no-files-found: warn
           retention-days: 30
       - name: Retain encrypted private observations
@@ -196,5 +244,8 @@ jobs:
             package-evidence/encrypted/cardinality-d10000.hge
             package-evidence/encrypted/unresolved.hge
             package-evidence/encrypted/hot-route.hge
+            package-evidence/encrypted/phase-validation.hge
+            package-evidence/encrypted/phase-attribution.hge
+            package-evidence/encrypted/registry-resolved.hge
           if-no-files-found: warn
           retention-days: 30

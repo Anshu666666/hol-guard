@@ -8,7 +8,9 @@ import statistics
 from collections.abc import Mapping, Sequence
 from typing import cast
 
-from scripts.package_benchmark_corpus import Case, matrix
+from scripts.package_benchmark_corpus import Case, matrix, supplemental_cases
+from scripts.package_benchmark_phases import validate_phases
+from scripts.package_benchmark_registry import validate_registry
 
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
 IDENTITY_FIELDS = (
@@ -29,6 +31,7 @@ _COMMON = {
     "native_activation_authorized",
     "worker_address_space_limit",
     "worker_file_size_limit",
+    "bundle_admission_verified_before_route",
     "semantic_sha256",
     "complete",
 }
@@ -48,6 +51,8 @@ _OPTIONAL = {
     "wall_ms",
     "cpu_ms",
     "operation_counts",
+    "phases",
+    "registry_transport",
 }
 MISMATCH_FIELDS = frozenset(
     {
@@ -94,11 +99,17 @@ MISMATCH_FIELDS = frozenset(
         "source_changed",
         "parser_coverage",
         "source_identity_changed",
+        "registry_calls",
+        "registry_deadline",
+        "registry_direct",
+        "registry_selected_version",
     }
 )
 
 
 def preset(name: str) -> tuple[str, ...]:
+    if name == "registry-resolved":
+        return tuple(case.id for case in supplemental_cases())
     if name == "format-preflight":
         return tuple(
             case.id
@@ -119,7 +130,16 @@ def preset(name: str) -> tuple[str, ...]:
         return (Case("npm", 100, 100, "unresolved", "evaluator").id,)
     if name == "hot-route":
         return (Case("npm", 1000, 1000, "exact", "protect_dry_run").id,)
+    if name in {"phase-validation", "phase-attribution"}:
+        return (
+            Case("npm", 1000, 1000, "exact", "protect_dry_run").id,
+            Case("npm", 10000, 10000, "exact", "evaluator").id,
+        )
     raise ValueError("package_matrix_preset_invalid")
+
+
+def preset_arms(name: str | None) -> tuple[str, ...]:
+    return ("candidate",) if name in {"phase-validation", "phase-attribution"} else ("baseline", "candidate")
 
 
 def validate_worker_report(value: object, offered: Mapping[str, object]) -> dict[str, object]:
@@ -136,6 +156,7 @@ def validate_worker_report(value: object, offered: Mapping[str, object]) -> dict
         or value["cpu_scope"] != "self_plus_waited_children"
         or value["worker_address_space_limit"] != 4 * 1024**3
         or value["worker_file_size_limit"] != 64 * 1024**2
+        or value["bundle_admission_verified_before_route"] is not True
     ):
         raise ValueError("package_matrix_worker_state_invalid")
     for key in ("semantic_sha256", "evidence_sha256", "protect_sha256", "entry_sha256", "input_sha256"):
@@ -166,10 +187,23 @@ def validate_worker_report(value: object, offered: Mapping[str, object]) -> dict
         if identifier.startswith("bundle_kernel.")
         else {"packages", "evidence_rows", "decision", "evidence_sha256", "protect_sha256"}
     )
-    if not identifier.startswith("bundle_kernel.") and ".unresolved." not in identifier:
+    if not identifier.startswith("bundle_kernel.") and not any(
+        mode in identifier for mode in (".unresolved.", ".registry-resolved.")
+    ):
         required |= {"parser_version", "entry_sha256", "input_sha256", "input_bytes", "entries"}
+    if ".registry-resolved." in identifier:
+        required.add("registry_transport")
+        if value["measurement"] != "validation":
+            raise ValueError("package_registry_validation_only")
+        validate_registry(value.get("registry_transport"))
+    elif "registry_transport" in value:
+        raise ValueError("package_registry_unexpected")
     if value["measurement"] == "attribution":
-        required.add("operation_counts")
+        required.update(("operation_counts", "phases"))
+    if "phases" in value:
+        if value["measurement"] != "attribution":
+            raise ValueError("package_matrix_worker_unexpected_phases")
+        validate_phases(value["phases"])
     if not required <= set(value):
         raise ValueError("package_matrix_worker_coverage_invalid")
     if "operation_counts" in value:

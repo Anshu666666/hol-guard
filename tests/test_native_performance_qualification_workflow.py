@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fnmatch
+import re
 from pathlib import Path
 
 import yaml
@@ -118,7 +119,15 @@ def test_windows_bundle_admission_uses_separate_locked_controller_not_measured_e
     jobs = workflow()["jobs"]
     for name in ("build", "pairs", "candidate-scenarios"):
         job = jobs[name]
-        assert job["env"]["UV_PROJECT_ENVIRONMENT"] == "${{ runner.temp }}/qualification-controller-environment"
+        controller_steps = [step for step in job["steps"] if "uv run " in step.get("run", "")]
+        assert len(controller_steps) == {"build": 1, "pairs": 3, "candidate-scenarios": 2}[name]
+        for controller_step in controller_steps:
+            environment = (
+                "qualification-archive-environment"
+                if controller_step.get("id") == "private-evidence"
+                else "qualification-controller-environment"
+            )
+            assert controller_step["env"]["UV_PROJECT_ENVIRONMENT"] == "${{ runner.temp }}/" + environment
         step = next(
             step
             for step in job["steps"]
@@ -127,3 +136,17 @@ def test_windows_bundle_admission_uses_separate_locked_controller_not_measured_e
         assert "uv sync --frozen --no-dev --project candidate-src" in step["run"]
         assert "uv run --frozen --no-sync --project candidate-src" in step["run"]
         assert "--environments" not in step["run"] or "qualification-controller-environment" not in step["run"]
+
+
+def test_runner_context_is_only_evaluated_after_a_runner_is_available():
+    # GitHub permits runner in steps.env, but not workflow env or jobs.<id>.env:
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability
+    value = workflow()
+    before_runner = [("workflow", value.get("env", {}))]
+    before_runner.extend((name, job.get("env", {})) for name, job in value["jobs"].items())
+    for scope, variables in before_runner:
+        for name, value in variables.items():
+            expressions = re.findall(r"\$\{\{(.*?)\}\}", str(value), flags=re.DOTALL)
+            assert not any(re.search(r"\brunner\s*(?:\.|\[)", expression) for expression in expressions), (
+                f"{scope}.env.{name} uses runner before GitHub allocates a runner"
+            )

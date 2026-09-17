@@ -30,23 +30,30 @@ series. The [current contract](CURRENT_CONTRACT.md) defines their exact scope.
 
 ## Conversion decisions and next evidence
 
-The [first finalization CI report](FIRST_CI_EVIDENCE.md) retains source-specific
-measurements. It is evidence for prioritization, not a passing release.
+This addendum reflects source `599509be545b9992076d7f9f71dd19ecfd34bbc2`, tree
+`55b05ef94f1f379fd0cf2762e3f1f394a2771b24`, before these documentation edits.
+The [second finalization CI report](SECOND_CI_EVIDENCE.md) retains measurements
+at `24ba2d130...`: 39 terminal workflows, 32 successful and seven failed, including
+an invalid qualification workflow that ran no jobs. Its corrected offline MCP
+projection does not change the failed original finalizer. The [first checkpoint](FIRST_CI_EVIDENCE.md)
+remains separate historical evidence. Neither checkpoint qualifies the release.
 
 | Area | Implemented behavior or measured observation | Release decision and acceptance still needed |
 | --- | --- | --- |
 | Existing Rust decision core | Typed results, canonical identity reuse, immutable compiled policy/command state and bounded output work are integrated. | Preserve semantic/adversarial parity; qualify actual installed CPU and latency benefit. No additional semantic fallback. |
 | Runtime identity and posture | Verified live-process identity reuse and acknowledged Watch posture remove demonstrated duplicate work within their supported scopes. | Run mutation, replacement, recovery and posture transitions on final installed artifacts. Unsupported platforms retain complete validation. |
-| Native launcher | Dormant Claude source-feature correctness passed on all four targets. Current Python launcher smoke still measured roughly 283–344 ms with only two observations per target. | Prepare an explicit feature-enabled comparison against optimized Python in the same installed wheel. Require real registration, parity, package binding and sufficient paired samples before activation. |
-| Package parsing/evaluation | Five actual local protect pairs at 1,000 dependencies/bundle entries show median CPU 5,923.255 → 242.241 ms after Python optimization. | Attribute the remaining optimized cost. A Rust parser/evaluator must beat optimized Python on a real route and meet format, malformed-input and coverage requirements. Censored baseline cells remain incomplete evidence. |
+| Native launcher | Four-target dormant source correctness passed at the first checkpoint. The same-wheel optimized-Python/native installed experiment is now implemented and explicitly opt-in; first-checkpoint Python smokes had only two samples per target. | Execute the `native-claude-launcher-experiment` workflow on the next eligible labeled PR. Require real registration, parity, package binding, lifecycle and sufficient paired samples before activation; production remains off. |
+| Package parsing/evaluation | Second-checkpoint five-pair local protect medians at D=B=1,000 are 8,773.536 → 318.011 ms wall and 7,732.300 → 310.481 ms CPU. Eight candidate attribution/validation workers and a separate explicit-`*` resolver pair are implemented for next CI. | Attribute optimized residual cost without changing the real route. A Rust parser/evaluator must beat optimized Python and meet original format, malformed-input and coverage requirements. Two baseline Composer failures and 12 censored cardinality workers remain noncomparable. |
 | Offline scanner/archive work | Source/CLI baselines and a separate hostile-archive experiment exist; timeouts and incomplete cache scopes remain recorded. | Select ports using the required full-route finding-heavy and adversarial evidence. A kernel experiment or source-only clean-file result cannot activate a native scanner/worker. |
-| MCP proxy | The first stdio component run reduced the 1,000-tool catalog's mean parent CPU from 51.886 to 24.455 ms per call. | Remeasure later prefilters with paired run-level intervals, separate network/service wait and complete warm resource windows. Select only demonstrated pure-kernel opportunities; a complete proxy rewrite is not selected. |
+| MCP proxy | Corrected second-checkpoint v2 evidence contains five independent run pairs, 10,080 calls, separate loopback/service/approval waits and 80 complete warm resource windows. Large-catalog wall/parent-CPU ratios are 0.5380/0.4468; smallest-catalog intervals cross one and sampled peak memory increases. | RSP-098/103 source-component acceptance is complete. The measured release decision defers native kernels (RSP-104/105/107) and records the full-proxy deferral (RSP-108). Tiny pure residuals, store/composition/persistence work and the unchanged barrier justify scope deferral; no Rust candidate or native benefit failure was measured. Installed/platform/lifecycle acceptance remains separate. |
 | Hook transport/ingress | Bounded framing, scheduler/header ownership and persistent native helper contracts are implemented. | Attribute discovery/connect/authentication cost and prove the selected connection or ingress change against the existing path. Preserve Unix and Windows ownership/replacement guarantees. |
 | Evidence/inventory | Foreground submission, durable journals, batching and SQL freshness work are implemented. Linux legacy soak completed 100,000 requests and 250,000 receipts. | Qualify the distinct mixed offered-load/mutation/recovery workload and receipt durability. Select a native spool/compiler only if residual cost meets the PRD criterion. |
 
-No unbuilt conditional component is marked DONE or DEFERRED. A deferred port
-needs the measured go/no-go record specified in its original task. Source tests
-can close a source criterion; they cannot close a dependent installed gate.
+An unbuilt implementation is not marked DONE. A conditional port may be
+DEFERRED only with the measured go/no-go record specified in its original task.
+The [MCP selection decision](mcp-native-selection-decision.md) records that
+bounded choice and the evidence needed to reopen it. Source tests can close a
+source criterion; they cannot close a dependent installed gate.
 
 ## Requirements that apply to every selected change
 
@@ -93,7 +100,10 @@ The original PRD is normative where a row below abbreviates it.
 Full indexed qualification uses five same-runner pairs on each of Linux x64,
 macOS Intel, macOS ARM and Windows x64. Each worker receives the original
 five-run plan: 2,000 priority, 200 other and 20 cold/recovery observations per
-block. Both 60-minute workers fit a 125-minute collection step; encryption and
+block. Actual registered priority/nonpriority routes retain their own denominators;
+the separate 16-route/320-job nonpriority-tail companion is still being implemented
+at this source cutoff and cannot yet supply the other-route requirement. Both
+60-minute workers fit a 125-minute collection step; encryption and
 upload have separate budgets within the 200-minute pair job. This repairs
 orchestration capacity without changing a product deadline or sample minimum.
 The [indexed-pair contract](indexed-pair-qualification.md) specifies exact
@@ -105,14 +115,25 @@ latency allowance for the installed-priority thresholds above.
 
 ## Delivery order and exit criteria
 
-First publish the reconciled source and pass actual repaired smoke/component
-runs. Diagnose remaining failure boundaries without discarding offers or
+First publish the reconciled source and obtain actual execution of the repaired
+qualification YAML, Security/version fixture, Windows resource witnesses and
+new Linux/Mac failure diagnostics. The original storage burst now passes its
+unchanged limits; investigate the separate unexplained deferred-backfill failure
+from the 91-pass/one-failure broader evaluator run. Run package attribution,
+the explicitly labeled installed Claude experiment and the independent stopped
+artifact-transition scenario; all are implemented, not yet observed in CI.
+Diagnose remaining failure boundaries without discarding offers or
 weakening fixture/production trust. Then run full indexed qualification and the
 bounded optimized-Python/native experiments that justify remaining ports.
 Integrate only supported, independently reviewed routes. Finally verify exact
 signed/frozen artifacts, updates, rollback and the concrete canary/rollback plan.
 
-The current ledger is **67 DONE, 36 OPEN and 41 BLOCKED, with zero DEFERRED**.
+The current ledger is **74 DONE, 30 OPEN, 37 BLOCKED and 3 DEFERRED**.
+RSP-007/015/047/098/103/140 close their literal measurement, fixture, core-suite,
+component and evidence/privacy criteria;
+they do not close RSP-134 final-head validation or dependent installed benefit.
+The transition scenario's five stopped phases and ten registered cases remain
+separate from live updates, signing, frozen packaging and downgrade support.
 The [release review](RELEASE_REVIEW.md) and [machine ledger](execution-ledger.json)
 identify what the latest source implements and what evidence remains. Final
 independent code-owner approval is a protected-branch requirement. No merge,

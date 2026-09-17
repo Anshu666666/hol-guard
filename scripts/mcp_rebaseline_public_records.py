@@ -104,7 +104,7 @@ def growth(value: Any) -> int | float:
     return value
 
 
-RESOURCE = fields(
+_RESOURCE_FIELDS = fields(
     {
         "scope": choice("mcp_proxy_worker_and_descendants"),
         "collector": choice("psutil_with_linux_proc_cpu", "psutil_observed_descendants"),
@@ -122,10 +122,24 @@ RESOURCE = fields(
         "cpu_ms_per_attempt": optional(number),
         "cpu_includes_reaped_descendants": boolean,
         "short_exited_descendants_cpu_complete": boolean,
+        "cpu_accounting_scope": choice("observed_process_tree"),
+        "cpu_unavailable_samples": integer,
         "includes_load_generator": choice(False),
         "fixture_control_overhead_included": choice(True),
     }
 )
+
+
+def resource(value: Any) -> dict[str, Any]:
+    """Admit the fixed Linux tree collector, including unavailable CPU reads."""
+    result = _RESOURCE_FIELDS(value)
+    # MCP's Linux component does not supply a Windows job CPU reader. Both
+    # counters therefore describe the same unavailable process-tree snapshots.
+    require(result["cpu_unavailable_samples"] == result["unavailable_samples"])
+    return result
+
+
+RESOURCE = resource
 WARM_FAILURE = optional(
     choice(
         "observer_aborted",

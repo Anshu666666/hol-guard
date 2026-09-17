@@ -36,6 +36,8 @@ def resource_fixture():
         "cpu_ms_per_attempt": 1,
         "cpu_includes_reaped_descendants": True,
         "short_exited_descendants_cpu_complete": True,
+        "cpu_accounting_scope": "observed_process_tree",
+        "cpu_unavailable_samples": 0,
         "includes_load_generator": False,
         "fixture_control_overhead_included": True,
     }

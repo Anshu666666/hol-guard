@@ -10,6 +10,7 @@ from typing import Protocol
 from scripts.bench_guard_native_installed_slo_runtime import _require
 from scripts.native_slo_adapter import Observation, process_rss_bytes
 from scripts.native_slo_baseline import steady_state_rss_baseline as _steady_state_rss_baseline
+from scripts.native_slo_capacity_failure import CapacityWarmupFailureError
 from scripts.native_slo_capacity_routes import CapacityRouteEvidence, capacity_route_evidence
 from scripts.native_slo_session import AdapterSession
 
@@ -133,7 +134,8 @@ def _prewarm_ready_hook_workers(
     executor: ThreadPoolExecutor,
 ) -> tuple[list[Observation], int]:
     observations, errors, evidence = _run_capacity_wave(session, routes, concurrency, executor)
-    _require(evidence.qualifies(expected=concurrency, allow_overload=False), "RSS warmup route proof failed")
+    if not evidence.qualifies(expected=concurrency, allow_overload=False):
+        raise CapacityWarmupFailureError(evidence, concurrency)
     stats = session.daemon._server.hook_process_runner.stats()
     _require(
         stats["target"] == concurrency

@@ -135,12 +135,19 @@ class Case:
             or self.bundle_size not in CARDINALITIES
         ):
             raise ValueError("package_matrix_case_invalid")
-        if self.mode not in (*MODES, "unresolved", "unversioned"):
+        if self.mode not in (*MODES, "unresolved", "unversioned", "registry-resolved"):
             raise ValueError("package_matrix_mode_invalid")
         if self.route not in (*ROUTES, "bundle_kernel"):
             raise ValueError("package_matrix_route_invalid")
         if (self.mode == "unversioned") != (self.route == "bundle_kernel"):
             raise ValueError("package_matrix_boundary_invalid")
+        if self.mode == "registry-resolved" and (self.format, self.dependencies, self.bundle_size, self.route) != (
+            "npm",
+            100,
+            1000,
+            "protect_dry_run",
+        ):
+            raise ValueError("package_matrix_registry_scope_invalid")
         if self.mode in {"unresolved", "unversioned"} and self.format != "npm":
             raise ValueError("package_matrix_unresolved_format_invalid")
 
@@ -162,6 +169,14 @@ def matrix() -> tuple[Case, ...]:
     )
     kernel = tuple(Case("npm", d, b, "unversioned", "bundle_kernel") for d, b in product(CARDINALITIES, CARDINALITIES))
     return (*resolved, *unresolved, *kernel)
+
+
+def registry_payload() -> dict[str, object]:
+    return {"versions": {"1.0.0": {}, "2.0.0": {}}}
+
+
+def supplemental_cases() -> tuple[Case, ...]:
+    return (Case("npm", 100, 1000, "registry-resolved", "protect_dry_run"),)
 
 
 def package_name(index: int, *, absent: bool = False) -> str:
@@ -225,7 +240,15 @@ def package_record(fmt: Format, name: str, *, version: str = "1.0.0", risk: int 
 
 def bundle(case: Case) -> dict[str, object]:
     fmt = FORMAT_BY_NAME[case.format]
-    if case.mode == "unversioned":
+    if case.mode == "registry-resolved":
+        packages = [
+            package_record(fmt, package_name(i // 2), version=f"{i % 2 + 1}.0.0", risk=999 if i % 2 == 0 else 100)
+            for i in range(case.bundle_size)
+        ]
+        for i, package in enumerate(packages):
+            if i % 2:
+                package.update(knownExploited=False, malwareState="none", exploitLevel="none")
+    elif case.mode == "unversioned":
         packages = [
             package_record(fmt, package_name(i // 2), version=f"{i % 2 + 1}.0.0", risk=500 if i % 2 == 0 else 999)
             for i in range(case.bundle_size)
@@ -282,10 +305,21 @@ def bundle(case: Case) -> dict[str, object]:
 
 def fixture(case: Case) -> dict[str, object]:
     fmt = FORMAT_BY_NAME[case.format]
-    unresolved = case.mode in {"unresolved", "unversioned"}
+    unresolved = case.mode in {"unresolved", "unversioned", "registry-resolved"}
     files = {} if unresolved else {fmt.filename: lockfile(case), fmt.manifest: fmt.manifest_text}
     command = ("npm", "install", *(package_name(i) for i in range(case.dependencies))) if unresolved else fmt.command
-    return {"schema": SCHEMA, "case": case.to_dict(), "files": files, "command": list(command), "bundle": bundle(case)}
+    if case.mode == "registry-resolved":
+        command = ("npm", "install", *(package_name(i) + "@*" for i in range(case.dependencies)))
+    result: dict[str, object] = {
+        "schema": SCHEMA,
+        "case": case.to_dict(),
+        "files": files,
+        "command": list(command),
+        "bundle": bundle(case),
+    }
+    if case.mode == "registry-resolved":
+        result["registry_response"] = registry_payload()
+    return result
 
 
 def manifest() -> dict[str, object]:

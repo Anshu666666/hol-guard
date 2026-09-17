@@ -34,6 +34,7 @@ from ...version import __version__
 from ..action_lattice import is_guard_action as _is_guard_action
 from ..adapters import get_adapter
 from ..adapters.base import HarnessContext
+from ..adapters.contracts import contract_for
 from ..aibom_cli import _AIBOM_AUTO_SYNC_INTERVAL_SECONDS, sync_aibom_snapshots_if_due
 from ..approval_gate import (
     ApprovalGateError,
@@ -951,10 +952,10 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
 
     @staticmethod
     def canonical_hook_capacity_harness(harness: str) -> str:
-        try:
-            return get_adapter(harness).harness
-        except ValueError:
-            return "other"
+        # Capacity accounting only needs static identity. Loading every adapter
+        # here puts cold implementation imports ahead of bounded admission.
+        contract = contract_for(harness)
+        return contract.harness if contract is not None else "other"
 
     def daemon_host(self) -> str:
         return str(self.server_address[0])
@@ -6133,9 +6134,10 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             if isinstance(hook_event_name, str) and hook_event_name.strip().lower() == "posttooluse"
             else _RUNTIME_HOOK_PROCESS_TIMEOUT_SECONDS
         )
+        # Charge ingress and prior admission to the existing process cap.
         process_deadline = min(
             deadline if deadline is not None else float("inf"),
-            time.monotonic() + process_timeout_seconds,
+            daemon_server.request_deadline(self.request, process_timeout_seconds),
         )
         admission = daemon_server.runtime_hook_process_scheduler.acquire(
             harness=harness,

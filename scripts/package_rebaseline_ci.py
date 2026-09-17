@@ -16,9 +16,20 @@ from scripts.native_slo_evidence_files import atomic_exclusive, read_file
 from scripts.native_slo_evidence_format import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES, canonical
 from scripts.package_benchmark_corpus import BASELINE, digest, manifest
 from scripts.package_benchmark_evidence import compare_pair, write_private
-from scripts.package_benchmark_protocol import MISMATCH_FIELDS, descriptive_summary, preset, validate_worker_report
+from scripts.package_benchmark_protocol import (
+    MISMATCH_FIELDS,
+    descriptive_summary,
+    preset,
+    preset_arms,
+    validate_worker_report,
+)
 
 PLANS = {
+    "phase-attribution": (
+        ("phase-validation", 1, "validation", 30),
+        ("phase-attribution", 3, "attribution", 30),
+        ("registry-resolved", 1, "validation", 30),
+    ),
     "format-preflight": (("format-preflight", 1, "validation", 20),),
     "diagnostic": (
         ("cardinality", 1, "timing", 15),
@@ -27,6 +38,7 @@ PLANS = {
     ),
 }
 ARCHIVE_GROUPS = {
+    "phase-attribution": ("phase-validation", "phase-attribution", "registry-resolved"),
     "format-preflight": ("format-preflight",),
     "diagnostic": ("cardinality-d100", "cardinality-d1000", "cardinality-d10000", "unresolved", "hot-route"),
 }
@@ -49,7 +61,7 @@ def expected_paths(scope: str, runs: int) -> list[tuple[str | None, str]]:
     for identifier in preset(scope):
         paths.append((identifier, "private_samples/" + identifier + ".fixture.json"))
         for run in range(runs):
-            for arm in ("baseline", "candidate"):
+            for arm in preset_arms(scope):
                 prefix = f"private_samples/{identifier}.r{run:02d}.s0000.{arm}"
                 paths.extend(((identifier, prefix + ".jsonl"), (identifier, prefix + ".semantic.json")))
     return paths
@@ -111,9 +123,7 @@ def stage(private: Path, staging: Path, *, plan: str, required_semantics: set[tu
 def _scope(
     private: Path, *, scope: str, runs: int, measurement: str, timeout: int, candidate: str, outcome: str
 ) -> dict[str, Any]:
-    expected = {
-        (case, arm, run, 0) for case in preset(scope) for arm in ("baseline", "candidate") for run in range(runs)
-    }
+    expected = {(case, arm, run, 0) for case in preset(scope) for arm in preset_arms(scope) for run in range(runs)}
     result: dict[str, Any] = {
         "scope": scope,
         "status": "incomplete",
@@ -189,6 +199,8 @@ def _scope(
                     raise ValueError("attempt_state_invalid")
             seen[identity] = row
             projected = {"case_id": identity[0], "arm": arm, "run": identity[2], "sample": 0, "status": row["status"]}
+            if row["status"] == "completed":
+                projected["bundle_admission_verified_before_route"] = True
             for key in (
                 "wall_ms",
                 "cpu_ms",
@@ -204,6 +216,7 @@ def _scope(
             for key in (
                 "semantic_sha256",
                 "evidence_sha256",
+                "protect_sha256",
                 "entry_sha256",
                 "fixture_sha256",
                 "signed_response_sha256",
@@ -211,10 +224,15 @@ def _scope(
                 value = row.get(key)
                 if isinstance(value, str) and _HASH.fullmatch(value):
                     projected[key] = value
+            if row["status"] == "completed" and measurement == "attribution":
+                projected["phases"] = row["phases"]
+                projected["operation_counts"] = row["operation_counts"]
+            if row["status"] == "completed" and "registry_transport" in row:
+                projected["registry_transport"] = row["registry_transport"]
             if row.get("mismatch") in MISMATCH_FIELDS:
                 projected["mismatch"] = row["mismatch"]
             result["observations"].append(projected)
-        for case in preset(scope):
+        for case in preset(scope) if len(preset_arms(scope)) == 2 else ():
             for run in range(runs):
                 baseline, optimized = seen.get((case, "baseline", run, 0)), seen.get((case, "candidate", run, 0))
                 comparison = (
@@ -230,6 +248,7 @@ def _scope(
             not incomplete.exists()
             and report["status"] == "completed"
             and len(seen) == len(expected)
+            and all(row["status"] == "completed" for row in seen.values())
             and all(item["comparable"] for item in result["comparisons"])
             and outcome == "success"
         ):
@@ -272,11 +291,28 @@ def publish(
         staged = stage(private, staging, plan=plan, required_semantics=required_semantics)
     except (OSError, ValueError):
         staged = {"status": "incomplete", "reason": "archive_staging_failed"}
+    phase_parity = None
+    if plan == "phase-attribution":
+        validation = {row["case_id"]: row for row in scopes[0]["observations"] if row["status"] == "completed"}
+        observed = scopes[1]["observations"]
+        compared_fields = ("fixture_sha256", "semantic_sha256", "evidence_sha256", "entry_sha256", "protect_sha256")
+        phase_parity = (
+            len(validation) == 2
+            and len(observed) == 6
+            and all(
+                row["status"] == "completed"
+                and row["case_id"] in validation
+                and all(row.get(key) == validation[row["case_id"]].get(key) for key in compared_fields)
+                for row in observed
+            )
+        )
     report = {
         "schema": "hol-guard.package-ci.v2",
         "plan": plan,
         "status": "completed"
-        if all(item["status"] == "completed" for item in scopes) and staged["status"] == "complete"
+        if all(item["status"] == "completed" for item in scopes)
+        and staged["status"] == "complete"
+        and phase_parity is not False
         else "incomplete",
         "source": {"baseline": BASELINE, "candidate": candidate},
         "scopes": scopes,
@@ -286,6 +322,8 @@ def publish(
         "native_activation_authorized": False,
         "native_benefit_proven": False,
     }
+    if phase_parity is not None:
+        report["instrumented_semantic_parity"] = phase_parity
     public.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     write_private(public, report)
     return report

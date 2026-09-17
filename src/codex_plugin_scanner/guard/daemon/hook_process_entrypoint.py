@@ -134,6 +134,27 @@ def _terminate_guardian_group() -> None:
             os.killpg(os.getpid(), getattr(signal, "SIGKILL", 9))
 
 
+def _prepare_hook_evaluator_oracle() -> None:
+    """Prepare admitted oracle code and immutable contracts before readiness.
+
+    No guard state or request authority is read here. Their verification stays
+    on each request; this only moves process-local cold initialization out of
+    the first review's deadline.
+    """
+
+    if not python_oracle_surface_enabled():
+        return
+    from ..cli.commands_hook_compat_loader import load_hook_compatibility_surface
+    from ..runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
+    from ..store_extension_control_manifest import catalog_target_manifest
+
+    if load_hook_compatibility_surface() is None:
+        raise RuntimeError("Python hook oracle bootstrap was not admitted")
+    # JSON replies use this module's existing sanitization/redaction path too.
+    _ = importlib.import_module("codex_plugin_scanner.guard.cli.render")
+    _ = catalog_target_manifest(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+
+
 def _hook_evaluator_main(connection: Connection, configured_guard_home: str | None) -> None:
     os.environ[_HOOK_SQLITE_TIMEOUT_ENV] = "250"
     for module_name in (
@@ -145,6 +166,7 @@ def _hook_evaluator_main(connection: Connection, configured_guard_home: str | No
         "codex_plugin_scanner.guard.store",
     ):
         _ = importlib.import_module(module_name)
+    _prepare_hook_evaluator_oracle()
     stores: dict[str, GuardStore] = {}
     hook_workers: dict[str, HookWorker] = {}
     # Store construction stays on the first request. Readiness must only prove

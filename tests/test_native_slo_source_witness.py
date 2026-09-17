@@ -97,7 +97,10 @@ def _failure_diagnostic(worker, request=_REQUEST, **context):
     return json.loads(message.removeprefix(prefix)), message
 
 
-def test_failed_native_review_retains_exact_fixed_reason_and_case_scope() -> None:
+def test_failed_native_review_retains_exact_fixed_reason_and_case_scope(monkeypatch) -> None:
+    from scripts import native_slo_source_witness as witness
+
+    monkeypatch.setattr(witness, "_client_failure", lambda: "not_recorded")
     worker = SimpleNamespace(
         _review_raw_hook_native=lambda **kwargs: _edge(
             decision="deny", model_output_action="block", reason_code="no_output_to_review", reviewed_output_sha256=None
@@ -109,6 +112,7 @@ def test_failed_native_review_retains_exact_fixed_reason_and_case_scope() -> Non
     assert diagnostic == {
         "harness": "claude-code",
         "size_class": "1m",
+        "client_failure_scope": "thread_context_before_after",
         "observed_calls_capped_at_two": 1,
         "observations": [
             {
@@ -119,6 +123,8 @@ def test_failed_native_review_retains_exact_fixed_reason_and_case_scope() -> Non
                 "reviewed_digest_present": False,
                 "reviewed_digest_matches": False,
                 "deadline_remaining_ms": None,
+                "client_failure_before": "not_recorded",
+                "client_failure_after": "not_recorded",
             }
         ],
     }
@@ -174,3 +180,36 @@ def test_failure_diagnostic_preserves_owned_budget_without_refreshing_it(monkeyp
     diagnostic = json.loads(str(raised.value).split(": ", 1)[1])
     assert diagnostic["observations"][0]["deadline_remaining_ms"] == 500
     assert diagnostic["observations"][0]["native_elapsed_ms"] == 750
+
+
+def test_client_context_failure_is_retained_without_inventing_a_new_call(monkeypatch) -> None:
+    from scripts import native_slo_source_witness as witness
+
+    values = iter(["native_client_stream_failed", "native_client_stream_failed"])
+    monkeypatch.setattr(witness.native_resident_client, "native_resident_client_failure_code", lambda: next(values))
+    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: None)
+    diagnostic, _ = _failure_diagnostic(worker)
+    assert diagnostic["client_failure_scope"] == "thread_context_before_after"
+    observed = diagnostic["observations"][0]
+    assert observed["client_failure_before"] == observed["client_failure_after"] == "native_client_stream_failed"
+    assert observed["rust_authority"] is False
+
+
+@pytest.mark.parametrize(
+    "code", ["native_client_timed_out", "native_resident_authentication_failed", None, "private-value" * 1000]
+)
+def test_client_context_projection_is_closed_and_restores_original_worker(monkeypatch, code) -> None:
+    from scripts import native_slo_source_witness as witness
+
+    monkeypatch.setattr(witness.native_resident_client, "native_resident_client_failure_code", lambda: code)
+
+    def original(**kwargs):
+        return None
+
+    worker = SimpleNamespace(_review_raw_hook_native=original)
+    diagnostic, message = _failure_diagnostic(worker)
+    observed = diagnostic["observations"][0]
+    expected = "not_recorded" if code is None else code if code in witness._CLIENT_FAILURE_CODES else "other"
+    assert observed["client_failure_before"] == observed["client_failure_after"] == expected
+    assert "private-value" not in message
+    assert worker._review_raw_hook_native is original

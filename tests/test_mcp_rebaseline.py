@@ -128,8 +128,25 @@ def _records():
 
 
 def test_identical_trace_is_deterministic_and_refresh_changes_catalog_identity():
+    ordinary = ("ad28eaa46adc48c915861f08d0612952845c35e6289e4337d272f7d24c08e62a", 604)
+    expected_wire_identity = {
+        "catalog10": ordinary,
+        "catalog100": ordinary,
+        "catalog1000": ordinary,
+        "payload16k": ("e70eb6acd6622bdf42097ca57f5216afa44216e9399af40f2f48cc9c6e40a92c", 33116),
+        "catalog_refresh": ("637204e928056fe5152f2e8d0c9c58ce4fffb51e4e5eef5e029af84cb9583ce8", 671),
+        "child_delay10ms": ordinary,
+        "inline_approval10ms": ("771f3ba7be56f05af2cac04987495e048d32d109f5197b287d75e91902a735b0", 688),
+        "loopback_tcp10ms": ordinary,
+    }
+    assert {trace.name for trace in trace_module.TRACES} == set(expected_wire_identity)
     for trace in trace_module.TRACES:
-        assert trace_module.trace_identity(trace, 2) == trace_module.trace_identity(trace, 2)
+        original = trace_module.trace_identity(trace, 2)
+        assert (original["sha256"], original["canonical_bytes"]) == expected_wire_identity[trace.name]
+        assert trace_module.trace_identity(trace, 3)["sha256"] != original["sha256"]
+        equivalent = copy.deepcopy(trace)
+        assert equivalent is not trace
+        assert trace_module.trace_identity(equivalent, 2) == original
         assert trace_module.digest(trace_module.catalog_result(trace, 1)) != trace_module.digest(
             trace_module.catalog_result(trace, 2)
         )

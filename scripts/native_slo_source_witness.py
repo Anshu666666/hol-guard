@@ -10,6 +10,27 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
 
+from codex_plugin_scanner.guard import native_resident_client
+
+_CLIENT_FAILURE_CODES = frozenset(
+    {
+        "native_client_containment_failed",
+        "native_client_timed_out",
+        "native_client_output_limit_exceeded",
+        "native_client_status_missing",
+        "native_client_exit_nonzero",
+        "native_client_output_missing",
+        "native_client_process_failed",
+        "native_client_pool_exhausted",
+        "native_client_request_invalid",
+        "native_client_launcher_failed",
+        "native_client_start_failed",
+        "native_client_stdin_unavailable",
+        "native_client_stream_failed",
+        "native_client_frame_write_failed",
+    }
+) | getattr(native_resident_client, "NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES", frozenset())
+
 _HARNESSES = frozenset(
     {
         "claude-code",
@@ -52,6 +73,17 @@ def _known(value: object, allowed: frozenset[str]) -> str:
     return value if isinstance(value, str) and value in allowed else "other"
 
 
+def _client_failure() -> str:
+    reader = getattr(native_resident_client, "native_resident_client_failure_code", None)
+    if not callable(reader):
+        return "unsupported"
+    try:
+        value = reader()
+    except Exception:
+        return "unavailable"
+    return "not_recorded" if value is None else _known(value, _CLIENT_FAILURE_CODES)
+
+
 @contextmanager
 def source_review_witness(
     worker: Any, request: Mapping[str, object], *, harness: str | None = None, size_class: str | None = None
@@ -72,9 +104,11 @@ def source_review_witness(
     diagnostics: list[dict[str, object]] = []
 
     def capture(**kwargs: object) -> object:
+        client_failure_before = _client_failure()
         entered = time.monotonic()
         edge = original(**kwargs)
         elapsed = time.monotonic() - entered
+        client_failure_after = _client_failure()
         result = edge.get("result") if isinstance(edge, Mapping) else None
         if len(observations) >= 2:
             return edge
@@ -113,6 +147,8 @@ def source_review_witness(
                 "reviewed_digest_matches": reviewed == digest,
                 "deadline_remaining_ms": remaining,
                 "native_elapsed_ms": max(0, min(10_000, int(elapsed * 1_000))),
+                "client_failure_before": client_failure_before,
+                "client_failure_after": client_failure_after,
             }
         )
         return edge
@@ -130,6 +166,7 @@ def source_review_witness(
         diagnostic = {
             "harness": _known(harness, _HARNESSES),
             "size_class": _known(size_class, frozenset({"250k", "1m", "5m"})),
+            "client_failure_scope": "thread_context_before_after",
             "observed_calls_capped_at_two": len(diagnostics),
             "observations": diagnostics,
         }

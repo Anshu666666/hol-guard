@@ -379,7 +379,11 @@ class HookProcessRunner(HookProcessRunnerLifecycleMixin):
         adaptive_capacity.observe_load(queue_p95_ms=queue_p95_ms, queued=queued)
         if queued > 0:
             self.notify_queued_work()
-        self._refresh_capacity_policy()
+        else:
+            # Resource sampling can spawn ps and inspect the process tree. The
+            # supervisor owns that work; a completed review only records load
+            # and wakes it, including the idle transition used for scale-down.
+            self._recovery_event.set()
 
     def notify_queued_work(self) -> None:
         with self._state_lock:

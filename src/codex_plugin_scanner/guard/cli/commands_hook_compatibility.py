@@ -30,24 +30,20 @@ from .commands_support_workspace import _workspace_from_cursor_project_dir
 def prepare_compatibility_hook_payload(payload: dict[str, object], *, harness: str) -> dict[str, object]:
     """Apply harness-specific normalization after native authority declines."""
 
-    from ..adapters.cline_hook_payload import prepare_cline_hook_payload
-    from ..adapters.cursor_hooks import prepare_cursor_hook_payload
-    from ..adapters.grok_hooks import prepare_grok_hook_payload
-    from ..adapters.zcode_hooks import prepare_zcode_hook_payload
     from .commands_support_runtime_resolution import _canonical_harness_name
 
     canonical_harness = _canonical_harness_name(harness)
-    preparers = {
-        "cline": prepare_cline_hook_payload,
-        "cursor": prepare_cursor_hook_payload,
-        "grok": prepare_grok_hook_payload,
-        "zcode": prepare_zcode_hook_payload,
-    }
-    prepare = preparers.get(canonical_harness)
-    if prepare is not None:
-        payload = prepare(payload)
-        payload = _normalize_hook_payload(payload, harness=harness)
-    return payload
+    if canonical_harness == "cline":
+        from ..adapters.cline_hook_payload import prepare_cline_hook_payload as prepare
+    elif canonical_harness == "cursor":
+        from ..adapters.cursor_hooks import prepare_cursor_hook_payload as prepare
+    elif canonical_harness == "grok":
+        from ..adapters.grok_hooks import prepare_grok_hook_payload as prepare
+    elif canonical_harness == "zcode":
+        from ..adapters.zcode_hooks import prepare_zcode_hook_payload as prepare
+    else:
+        return payload
+    return _normalize_hook_payload(prepare(payload), harness=harness)
 
 
 def maybe_handle_cursor_post_tool(

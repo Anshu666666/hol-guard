@@ -55,6 +55,32 @@ no blocker in the scope, ABI, lifecycle, cumulative accounting or failure gates.
 These checks do not substitute for the Windows CI regressions or installed
 baseline/candidate resource evidence.
 
+Windows CI run `35228364933`, job `105225647303`, reached both real child-exit
+tests but rejected their assumed process counts: the job reported four total
+and two active processes, while the test assumed two total and one active.
+CPython documents Windows virtual-environment redirectors and its
+[launcher source](https://github.com/python/cpython/blob/main/PC/venvlauncher.c)
+starts the actual interpreter as a separate process and waits for it. That is
+consistent with the observed counts; the revised test verifies the actual topology
+instead of hardcoding either pair or relaxing equality.
+
+The test-only worker now records PID, parent and creation identity for its root
+and short-child launch chains. Only direct execution or one redirector per
+invocation is admitted. After the child has completed, the test independently
+checks the exact surviving root census and verifies every original child
+identity has exited. It then constructs its first CPU reader and requires exact
+total and active job counts derived from those witnessed chains. The unchanged
+CPU lower bound includes both the root's and the exited child's reported CPU;
+the generator stays outside the dedicated job. Both direct and nested child-job
+variants remain enabled in Windows CI. A local direct-worker protocol check
+does not claim Windows Job Object execution. The revised actual Windows cases
+still require CI proof; no collector behavior, completeness flag or threshold
+was changed by this fixture correction.
+The corrected four-file accounting/resource/fixture suite passes 67 tests on
+Linux, with the two Windows execution cases skipped. Ruff/format checks pass,
+and the new witness worker has zero type errors. Those results validate the
+witness protocol and rejection logic without promoting the skipped cases.
+
 macOS is unchanged. Its current observed-descendant metric remains incomplete.
 Apple exposes child-usage fields through
 [`rusage_info_v1`](https://developer.apple.com/documentation/kernel/rusage_info_v1)

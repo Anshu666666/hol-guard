@@ -8,6 +8,7 @@ import base64
 import os
 import struct
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -147,6 +148,7 @@ def encrypt_samples(
     recipient_id: str,
     context: dict[str, object],
     numeric_commitments: dict[str, dict[str, object]] | None = None,
+    snapshot_observer: Callable[[tuple[tuple[str, bytes], ...]], None] | None = None,
 ) -> dict[str, object]:
     source = _plain_path(source)
     try:
@@ -156,6 +158,10 @@ def encrypt_samples(
     files = read_samples(source)
     if not files:
         return {"schema": _RECEIPT_SCHEMA, "status": "no_observations", "archive_created": False, "files": 0}
+    if snapshot_observer is not None:
+        # The observer cannot mutate this byte snapshot. A caller can retain
+        # mismatched evidence while recording that its own commitments failed.
+        snapshot_observer(tuple(files))
     if numeric_commitments is not None:
         require("pair_index" in context and len(numeric_commitments) <= 2)
         # Check the exact snapshot being sealed, so a later path replacement

@@ -44,7 +44,9 @@ from scripts.package_benchmark_oracle import (  # noqa: E402
     validate_evaluation,
     validate_kernel,
 )
+from scripts.package_benchmark_phases import new_profile, phase_report  # noqa: E402
 from scripts.package_benchmark_protocol import MISMATCH_FIELDS  # noqa: E402
+from scripts.package_benchmark_registry import registry_transport  # noqa: E402
 
 
 def _cpu() -> float:
@@ -193,7 +195,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "fixture_trust_anchor",
     )
     verify_supply_chain_bundle_response(response, trusted_keys=response.verification_keys, now=NOW_SECONDS)
-    profile = cProfile.Profile() if args.measurement == "attribution" else None
+    report["bundle_admission_verified_before_route"] = True
+    profile = new_profile() if args.measurement == "attribution" else None
     with tempfile.TemporaryDirectory(prefix="package-matrix-", dir=args.temporary_root) as temporary:
         home = Path(temporary)
         workspace = home / "workspace"
@@ -210,15 +213,34 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         with store._connect() as connection:
             connection.execute("delete from guard_supply_chain_eval_cache")
         write_private(args.journal, {**report, "status": "measurement_started"}, append=True)
+        phase_cpu = time.process_time_ns() if profile is not None else 0
+        phase_wall = time.perf_counter_ns() if profile is not None else 0
         if profile is not None:
             profile.enable()
         cpu_started = _cpu() if args.measurement == "timing" else None
         wall_started = time.perf_counter_ns() if args.measurement == "timing" else None
-        evaluation, protection = _run_route(case, value, store, workspace, response)
+        try:
+            if case.mode == "registry-resolved":
+                with registry_transport(case, evaluator) as registry:
+                    evaluation, protection = _run_route(case, value, store, workspace, response)
+                assert registry is not None
+                report["registry_transport"] = registry.report()
+            else:
+                evaluation, protection = _run_route(case, value, store, workspace, response)
+        finally:
+            if profile is not None:
+                profile.disable()
+                report["phases"] = phase_report(
+                    profile,
+                    root,
+                    wall_ns=time.perf_counter_ns() - phase_wall,
+                    process_ns=time.process_time_ns() - phase_cpu,
+                )
+                # A subsequent route/oracle exception keeps the observed phase
+                # record privately, but cannot become a completed observation.
+                write_private(args.journal, {**report, "status": "attribution_finished"}, append=True)
         wall_ended = time.perf_counter_ns() if args.measurement == "timing" else None
         cpu_ended = _cpu() if args.measurement == "timing" else None
-        if profile is not None:
-            profile.disable()
         if args.measurement == "timing":
             assert (
                 wall_started is not None

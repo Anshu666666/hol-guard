@@ -15,7 +15,7 @@ from scripts import package_rebaseline_ci as ci
 from scripts.native_slo_evidence_files import read_samples
 from scripts.package_benchmark_corpus import BASELINE, digest, manifest
 from scripts.package_benchmark_evidence import write_private
-from scripts.package_benchmark_protocol import preset
+from scripts.package_benchmark_protocol import preset, preset_arms
 from tests.test_package_benchmark_controller import valid_report
 
 pytestmark = pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Linux package component CI")
@@ -45,7 +45,7 @@ def write_scope(private, scope, *, failed_composer=False, unknown_field=False):
         "measurement": measurement,
         "timeout_seconds": timeout,
         "timeout_scope": "whole_worker_including_setup_and_postvalidation",
-        "offered_attempts": len(preset(scope)) * runs * 2,
+        "offered_attempts": len(preset(scope)) * runs * len(preset_arms(scope)),
         "source": sources,
         "environment": {"synthetic": True},
         "harness_sha256": "c" * 64,
@@ -54,7 +54,7 @@ def write_scope(private, scope, *, failed_composer=False, unknown_field=False):
     for case in preset(scope):
         write_private(samples / (case + ".fixture.json"), {"synthetic": True})
         for run in range(runs):
-            for arm in ("baseline", "candidate"):
+            for arm in preset_arms(scope):
                 offered = {
                     "schema": "hol-guard.package-attempt.v2",
                     "case_id": case,
@@ -75,6 +75,19 @@ def write_scope(private, scope, *, failed_composer=False, unknown_field=False):
                 }
                 if case.startswith("bundle_kernel."):
                     row.update(lookups=100, matched=50)
+                if ".registry-resolved." in case:
+                    from scripts.package_benchmark_registry import REGISTRY_HEADERS, RegistryTransport
+
+                    registry = RegistryTransport(100)
+                    registry.observed = [
+                        {"url": url, "method": "GET", "headers": REGISTRY_HEADERS, "timeout": 1}
+                        for url in registry.expected
+                    ]
+                    row["registry_transport"] = registry.report()
+                if measurement == "attribution":
+                    from tests.test_package_benchmark_phases import synthetic_phases
+
+                    row.update(operation_counts={}, phases=synthetic_phases())
                 if measurement == "timing":
                     row.update(wall_ms=2.0 if arm == "baseline" else 1.0, cpu_ms=1.0)
                 if failed_composer and ".composer." in case and arm == "baseline":

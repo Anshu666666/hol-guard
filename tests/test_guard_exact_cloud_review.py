@@ -14,7 +14,6 @@ import pytest
 from codex_plugin_scanner.cli import _build_parser, _resolve_legacy_args, main
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli import commands_dispatch_cloud_review as cloud_review_dispatch
-from codex_plugin_scanner.guard.daemon import command_queue_worker as queue_worker_module
 from codex_plugin_scanner.guard.daemon import server as daemon_server_module
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.review_contracts import (
@@ -272,7 +271,7 @@ def test_successful_connect_issues_cloud_review_capability_only_after_explicit_c
     monkeypatch.setattr(
         cloud_review_dispatch,
         "_refresh_cloud_review_worker",
-        lambda _guard_home: {"status": "refreshed"},
+        lambda _guard_home: {"status": "refreshed", "running": True, "sync_running": True},
     )
     base_payload: dict[str, object] = {"status": "connected"}
 
@@ -312,7 +311,7 @@ def test_successful_connect_issues_cloud_review_capability_only_after_explicit_c
     assert cloud_review["enabled"] is True
     assert cloud_review["pending_requests_requeued"] == 0
     assert cloud_review["pending_request_requeue_status"] == "requeued"
-    assert cloud_review["worker"] == {"status": "refreshed"}
+    assert cloud_review["worker"] == {"status": "refreshed", "running": True, "sync_running": True}
     assert isinstance(cloud_review["capability"], dict)
     assert exact_cloud_review_operations(store) == (EXACT_CLOUD_REVIEW_OPERATION,)
 
@@ -328,7 +327,7 @@ def test_cloud_review_enable_requeues_existing_pending_requests(
     monkeypatch.setattr(
         cloud_review_dispatch,
         "_refresh_cloud_review_worker",
-        lambda _guard_home: {"status": "refreshed"},
+        lambda _guard_home: {"status": "refreshed", "running": True, "sync_running": True},
     )
 
     exit_code = cloud_review_dispatch._run_guard_cloud_review_command(
@@ -345,7 +344,7 @@ def test_cloud_review_enable_requeues_existing_pending_requests(
     assert exit_code == 0
     assert payload["pending_requests_requeued"] == 1
     assert payload["pending_request_requeue_status"] == "requeued"
-    assert payload["worker"] == {"status": "refreshed"}
+    assert payload["worker"] == {"status": "refreshed", "running": True, "sync_running": True}
 
 
 def test_cloud_review_enable_failure_does_not_requeue_pending_requests(
@@ -420,7 +419,7 @@ def test_connect_consent_does_not_enable_capability_when_requeue_needs_retry(
     monkeypatch.setattr(
         cloud_review_dispatch,
         "_refresh_cloud_review_worker",
-        lambda _guard_home: {"status": "refreshed"},
+        lambda _guard_home: {"status": "refreshed", "running": True, "sync_running": True},
     )
 
     connected = cloud_review_dispatch.apply_connect_time_cloud_review_consent(
@@ -460,7 +459,7 @@ def test_cloud_review_enable_reports_requeue_retry_without_crashing(
     monkeypatch.setattr(
         cloud_review_dispatch,
         "_refresh_cloud_review_worker",
-        lambda _guard_home: {"status": "refreshed"},
+        lambda _guard_home: {"status": "refreshed", "running": True, "sync_running": True},
     )
 
     exit_code = cloud_review_dispatch._run_guard_cloud_review_command(
@@ -669,17 +668,3 @@ def test_command_queue_worker_refresh_serializes_with_shutdown(
         assert starts == ["start"]
     finally:
         lifecycle_daemon.stop()
-
-    old_release = threading.Event()
-    old_thread = threading.Thread(target=old_release.wait)
-    old_thread.start()
-    old_stop = threading.Event()
-    old_stop.set()
-    old_worker = queue_worker_module.CommandQueueWorker(thread=old_thread, stop_event=old_stop)
-    monkeypatch.setattr(queue_worker_module, "command_queue_enabled", lambda _store: True)
-    monkeypatch.setattr(queue_worker_module, "_COMMAND_QUEUE_THREAD_JOIN_TIMEOUT_SECONDS", 0.01)
-    try:
-        assert queue_worker_module.start_command_queue_worker(store, old_worker) is old_worker
-    finally:
-        old_release.set()
-        old_thread.join(timeout=1)

@@ -690,8 +690,10 @@ class StorePolicyMixin:
             and self._materialized_policy_bundle_row_identity(candidate) not in policy_bundle_decision_identities
         ):
             return False
-        if (str(candidate["source"]) == "cloud-signed-memory"
-                and self._materialized_policy_bundle_row_identity(candidate) not in memory_decision_identities):
+        if (
+            str(candidate["source"]) == "cloud-signed-memory"
+            and self._materialized_policy_bundle_row_identity(candidate) not in memory_decision_identities
+        ):
             return False
         return not _scoped_runtime_row_requires_exact_match(
             scope=str(candidate["scope"]),
@@ -1760,7 +1762,8 @@ class StorePolicyMixin:
             )
             memory_decision_identities = (
                 self._cached_review_memory_decision_identities(now=current_time)
-                if any(str(candidate["source"]) == "cloud-signed-memory" for candidate in rows) else frozenset()
+                if any(str(candidate["source"]) == "cloud-signed-memory" for candidate in rows)
+                else frozenset()
             )
             has_local_rows = any(not is_remote_policy_source(str(candidate["source"])) for candidate in rows)
             if not has_local_rows:
@@ -2197,8 +2200,10 @@ class StorePolicyMixin:
             or self._materialized_policy_bundle_row_identity(row) not in policy_bundle_decision_identities
         ):
             return False
-        if (source == "cloud-signed-memory"
-                and self._materialized_policy_bundle_row_identity(row) not in memory_decision_identities):
+        if (
+            source == "cloud-signed-memory"
+            and self._materialized_policy_bundle_row_identity(row) not in memory_decision_identities
+        ):
             return False
         if is_remote_policy_source(source):
             integrity_result = self._policy_integrity_result_for_row(

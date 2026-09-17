@@ -821,7 +821,6 @@ def _update_guard_settings_locked(
     return updated
 
 
-@serialize_guard_settings
 def update_guard_update_channel(
     guard_home: Path,
     update_channel: object,
@@ -844,7 +843,6 @@ def update_guard_update_channel(
     return updated
 
 
-@serialize_guard_settings
 def reset_guard_settings(
     guard_home: Path,
     *,
@@ -855,9 +853,6 @@ def reset_guard_settings(
     require_settings_write(guard_home, approval_gate_grant=approval_gate_grant)
     current = _read_toml(guard_home / "config.toml")
     next_payload = {key: value for key, value in current.items() if key not in EDITABLE_GUARD_SETTING_KEYS}
-    next_payload["presentation_revision"] = next_presentation_revision(
-        load_guard_config(guard_home).presentation_revision
-    )
     _write_guard_config(guard_home / "config.toml", next_payload)
     updated = load_guard_config(guard_home)
     notify_native_policy_mutation(guard_home)

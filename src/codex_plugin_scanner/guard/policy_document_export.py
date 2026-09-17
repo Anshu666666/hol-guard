@@ -42,9 +42,16 @@ def coalesce_exported_rules(rules: list[dict[str, object]]) -> list[dict[str, ob
             raise PolicyCompilationError("policy_rule_export_conflict", rule_id)
         selector_rows: set[tuple[str | None, ...]] = set()
         for rule in group:
-            match = rule["match"]
+            match = cast(dict[str, list[str]], rule["match"])
             assert isinstance(match, dict)
-            selector_rows.add(tuple(match[name][0] if name in match else None for name in _SELECTORS))
+            # Stored wildcard harnesses are exported without a match entry. Restore
+            # that explicit selector before checking the original product, so a
+            # wildcard can coexist with a named harness without widening any row.
+            selectors: list[str | None] = []
+            for name in _SELECTORS:
+                default = "*" if name == "harnesses" else None
+                selectors.append(match[name][0] if name in match else default)
+            selector_rows.add(tuple(selectors))
         dimensions = [{values[index] for values in selector_rows} for index in range(len(_SELECTORS))]
         if any(None in dimension and len(dimension) > 1 for dimension in dimensions):
             raise PolicyCompilationError("policy_rule_export_conflict", rule_id)

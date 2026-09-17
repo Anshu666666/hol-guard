@@ -15,13 +15,12 @@ def validate_import_identities(
     normalized_rows: Sequence[NormalizedPolicyRow],
     current_rows: Iterable[Mapping[str, object]],
     *,
-    document: GuardPolicyDocument | None,
+    document: GuardPolicyDocument,
     mode: str,
 ) -> None:
-    if document is not None:
-        rule_ids = [rule.id for rule in document.rules]
-        if len(set(rule_ids)) != len(rule_ids):
-            raise PolicyCompilationError("duplicate_policy_rule_identity", document.metadata.id)
+    rule_ids = [rule.id for rule in document.rules]
+    if len(set(rule_ids)) != len(rule_ids):
+        raise PolicyCompilationError("duplicate_policy_rule_identity", document.metadata.id)
     if mode == "replace":
         return
     incoming: dict[str, set[tuple[object, ...]]] = {}
@@ -36,7 +35,7 @@ def validate_import_identities(
         if row.get("source") != "policy-yaml-import" or rule_id not in incoming:
             continue
         assert isinstance(rule_id, str)
-        if document is not None and row.get("policy_document_id") != document.metadata.id:
+        if row.get("policy_document_id") != document.metadata.id:
             raise PolicyCompilationError("policy_rule_identity_conflict", rule_id)
         current.setdefault(rule_id, set()).add(tuple(row.get(field) for field in _SELECTOR_COLUMNS))
     for rule_id, selectors in current.items():

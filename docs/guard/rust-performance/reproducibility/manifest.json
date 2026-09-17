@@ -1,0 +1,2473 @@
+{
+  "archived_harnesses": [
+    {
+      "id": "package-original-matrix-resume",
+      "original_first_cell": 19,
+      "restore_as": "scripts/bench_guard_package_matrix.py",
+      "sha256": "5d5520e8f1051127cfe55af9e881237e1ca1436bf28dbc744410a06c4db5ecac",
+      "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "source_path": "docs/guard/performance/rsp-package-continuation-resume-source.txt",
+      "use_with": "package-original-matrix"
+    },
+    {
+      "id": "package-deny-control-wrapper",
+      "scope": "Original-versus-final 100-by-10000 deny-only override; historical paths require an explicitly recorded replay adaptation.",
+      "sha256": "482bf23e45ea2878a39d3980978b39dbd82cf44de63ef5e25420d6defb2be7b5",
+      "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "source_path": "docs/guard/performance/rsp-package-deny-postfix-runner.txt",
+      "use_with": "package-final-comparison"
+    }
+  ],
+  "audit_scope": "exact tracked runtime/build-input and hash-pinned harness bytes; no benchmark rerun or historical Git-commit recreation",
+  "harnesses": [
+    {
+      "evidence": [
+        "release-metadata/mcp-risk-prefilter-comparison.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/compare_guard_mcp_risk.py": "9ee6dbc41631b94f5e3d9df0840d8b917d949c70c200b00d021e691cfd1df83b",
+        "scripts/profile_guard_mcp_session.py": "dad60313963b081505b96e512f1d5afe6f41faf10bfe946f1e581a208f5da26f"
+      },
+      "id": "mcp-a-b-comparison",
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 39244,
+            "git_blob_sha1": "3ebbdcb8380e93ca62121b226d54a304c2d41601",
+            "mode": "100644",
+            "sha256": "dad60313963b081505b96e512f1d5afe6f41faf10bfe946f1e581a208f5da26f"
+          },
+          "path": "scripts/profile_guard_mcp_session.py",
+          "source_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "source_path": "scripts/profile_guard_mcp_session.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 12023,
+            "git_blob_sha1": "be836668d1aa7b94da2ae374a27d27661bbfba34",
+            "mode": "100644",
+            "sha256": "9ee6dbc41631b94f5e3d9df0840d8b917d949c70c200b00d021e691cfd1df83b"
+          },
+          "path": "scripts/compare_guard_mcp_risk.py",
+          "source_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "source_path": "scripts/compare_guard_mcp_risk.py"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+      "scope": [
+        "scripts/profile_guard_mcp_session.py",
+        "scripts/compare_guard_mcp_risk.py"
+      ]
+    },
+    {
+      "evidence": [
+        "release-metadata/mcp-request-facts-comparison.json",
+        "release-metadata/mcp-request-facts-memory-boundary.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": false,
+      "files_sha256": {
+        "scripts/compare_guard_mcp_risk.py": "1d80987017c2e7ca7b60a5820187186d0ae48f8594fa2fc625e635f66360e4b2",
+        "scripts/profile_guard_mcp_session.py": "730528617f9cfa226394d376cec46e1f7422f76c7b356b4ea81dad22f8375ec4"
+      },
+      "id": "mcp-b-c-comparison",
+      "operations": [
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 15003,
+            "git_blob_sha1": "2952747bb483b0a6db396ce755eae6d23639008e",
+            "mode": "100644",
+            "sha256": "bf23dc9d0d45235d26c921251f4d53931394a4e0d53db47ac41a4a5b60609308"
+          },
+          "expected": {
+            "bytes": 14529,
+            "git_blob_sha1": "6edf79878544dc01140c280b4011bff6c5eeca5e",
+            "mode": "100644",
+            "sha256": "1d80987017c2e7ca7b60a5820187186d0ae48f8594fa2fc625e635f66360e4b2"
+          },
+          "patch": "patches/compare_guard_mcp_risk-5c1b302e5d4e.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 2968,
+          "patch_sha256": "5c1b302e5d4e4b73be62586c5d620b76523be67e4b9ca8eb96b604f0cde267ab",
+          "path": "scripts/compare_guard_mcp_risk.py",
+          "target_local_commit": "5bbd22e694e9480df03431a5d33053057b39040f"
+        },
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 43282,
+            "git_blob_sha1": "1b6f99207b5ea9725c4d33c248c7254e26e520f2",
+            "mode": "100644",
+            "sha256": "ced41b59aaeb670c5bad4b123ceaf8ebea0a608300fd0c7626985f69819eedff"
+          },
+          "expected": {
+            "bytes": 42292,
+            "git_blob_sha1": "39bf928e106fa3aea11aad7053b4be9c5ec52eac",
+            "mode": "100644",
+            "sha256": "730528617f9cfa226394d376cec46e1f7422f76c7b356b4ea81dad22f8375ec4"
+          },
+          "patch": "patches/profile_guard_mcp_session-2925c552cf3d.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 3086,
+          "patch_sha256": "2925c552cf3d80f15f167ec6cb653e3be8d374658f0395c2b0df1fced383468d",
+          "path": "scripts/profile_guard_mcp_session.py",
+          "target_local_commit": "5bbd22e694e9480df03431a5d33053057b39040f"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "5bbd22e694e9480df03431a5d33053057b39040f",
+      "scope": [
+        "scripts/compare_guard_mcp_risk.py",
+        "scripts/profile_guard_mcp_session.py"
+      ]
+    },
+    {
+      "evidence": [
+        "release-metadata/mcp-structural-facts-comparison.json",
+        "release-metadata/mcp-structural-facts-memory-boundary.json",
+        "release-metadata/mcp-structural-facts-container-boundary.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": false,
+      "files_sha256": {
+        "scripts/compare_guard_mcp_risk.py": "bf23dc9d0d45235d26c921251f4d53931394a4e0d53db47ac41a4a5b60609308",
+        "scripts/profile_guard_mcp_session.py": "7444fcc1accdedec1f7636783fa149894c956272e182d24ab619769883dfaa54"
+      },
+      "id": "mcp-b-d-comparison",
+      "operations": [
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 43282,
+            "git_blob_sha1": "1b6f99207b5ea9725c4d33c248c7254e26e520f2",
+            "mode": "100644",
+            "sha256": "ced41b59aaeb670c5bad4b123ceaf8ebea0a608300fd0c7626985f69819eedff"
+          },
+          "expected": {
+            "bytes": 43306,
+            "git_blob_sha1": "8763a49ec4fee68ee6f94c4a216d53c1fbc4b6d9",
+            "mode": "100644",
+            "sha256": "7444fcc1accdedec1f7636783fa149894c956272e182d24ab619769883dfaa54"
+          },
+          "patch": "patches/profile_guard_mcp_session-818e4606c7fb.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 892,
+          "patch_sha256": "818e4606c7fb18bff08a6cd59c5b13a17ebb1c8bc31ed9e65e2981030bfe71b6",
+          "path": "scripts/profile_guard_mcp_session.py",
+          "target_local_commit": "1dbc20f31b5cc7a0b6402afaa6a0b9127131771c"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "1dbc20f31b5cc7a0b6402afaa6a0b9127131771c",
+      "scope": [
+        "scripts/compare_guard_mcp_risk.py",
+        "scripts/profile_guard_mcp_session.py"
+      ]
+    },
+    {
+      "evidence": [
+        "release-metadata/mcp-near-limit-component-provenance.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/profile_guard_mcp_risk_component.py": "8a87cab67fe88a13fcbbefe7b889a1b24daf26c75a993e5d360e42df4ec20d10"
+      },
+      "id": "mcp-near-limit-component",
+      "operations": [],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "scope": [
+        "scripts/profile_guard_mcp_risk_component.py"
+      ]
+    },
+    {
+      "evidence": [
+        "docs/guard/performance/rsp-package-source-evidence.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/bench_guard_package_local.py": "363891a71e966dfe56dabf900b29f2072c7dc5fd0426b16a55ceb958c6727aaa"
+      },
+      "id": "package-initial-final-harness",
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 10052,
+            "git_blob_sha1": "ad2676fb732ad007b343d5adbb55da921a391802",
+            "mode": "100644",
+            "sha256": "363891a71e966dfe56dabf900b29f2072c7dc5fd0426b16a55ceb958c6727aaa"
+          },
+          "path": "scripts/bench_guard_package_local.py",
+          "source_commit": "42579f046ac262ff93c0c020547bc3873d308652",
+          "source_path": "scripts/bench_guard_package_local.py"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "scope": [
+        "scripts/bench_guard_package_local.py"
+      ]
+    },
+    {
+      "evidence": [
+        "docs/guard/performance/rsp-package-continuation-matrix.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/bench_guard_package_local.py": "5aa3ef661aca137569b4253d204ef35525eb0d4c70999cec08a412caa9346b43",
+        "scripts/bench_guard_package_matrix.py": "8040a9d07093410158d480bb3e4c267f611211bfb81a5ca84b0e1f1b9574fbd3"
+      },
+      "id": "package-original-matrix",
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 13354,
+            "git_blob_sha1": "c71b4710890c12f6f343fa5eebbe9c0acbae82b0",
+            "mode": "100644",
+            "sha256": "5aa3ef661aca137569b4253d204ef35525eb0d4c70999cec08a412caa9346b43"
+          },
+          "path": "scripts/bench_guard_package_local.py",
+          "source_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
+          "source_path": "scripts/bench_guard_package_local.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 8265,
+            "git_blob_sha1": "9b77a7e1867715071f641744a18152334e96f34a",
+            "mode": "100644",
+            "sha256": "8040a9d07093410158d480bb3e4c267f611211bfb81a5ca84b0e1f1b9574fbd3"
+          },
+          "path": "scripts/bench_guard_package_matrix.py",
+          "source_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
+          "source_path": "scripts/bench_guard_package_matrix.py"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
+      "scope": [
+        "scripts/bench_guard_package_local.py",
+        "scripts/bench_guard_package_matrix.py"
+      ]
+    },
+    {
+      "evidence": [
+        "docs/guard/performance/rsp-package-native-paired-matrix.json",
+        "docs/guard/performance/rsp-package-bundle-correction-pairs.json",
+        "docs/guard/performance/rsp-package-deny-postfix-original-pairs.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/bench_guard_package_local.py": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+        "scripts/bench_guard_package_matrix.py": "d96289f107f7d57755d62c4951ef4b0a977e87fe75612d9885f408776fb559c8",
+        "scripts/bench_guard_package_pilot.py": "3bfb3f6e90e462ca8787eaf6e907a553a6280f117df039a882456cb82a7e9dc2",
+        "scripts/package_native_pilot.py": "6009e74f244b0e1806e3b859b0099366b97b2df3edcc13ba98cbf8d35b0d65a7"
+      },
+      "id": "package-final-comparison",
+      "operations": [],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "scope": [
+        "scripts/bench_guard_package_pilot.py",
+        "scripts/bench_guard_package_local.py",
+        "scripts/bench_guard_package_matrix.py",
+        "scripts/package_native_pilot.py"
+      ]
+    },
+    {
+      "evidence": [
+        "docs/guard/performance/rsp-package-unversioned-route-original.json",
+        "docs/guard/performance/rsp-package-unversioned-route-optimized.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": true,
+      "files_sha256": {
+        "scripts/qualify_guard_package_unversioned_route.py": "5ae73a5df3471e03c5d043ed02de7c2c9327c9135046356b9128fcf03740f159"
+      },
+      "id": "package-unversioned-route",
+      "operations": [],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": null,
+      "recorded_local_harness_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "scope": [
+        "scripts/qualify_guard_package_unversioned_route.py"
+      ]
+    },
+    {
+      "evidence": [
+        "docs/guard/evidence/rsp-scanner-native-regex-final-reader-confirmation-linux.json"
+      ],
+      "exact_harness_bytes_available_without_new_patch": false,
+      "files_sha256": {
+        "scripts/bench_guard_secret_native_pilot.py": "c9bf88178dac035b14467551d415587dd305efe9a5289d123a14c17e86f2bd53",
+        "scripts/bench_guard_secret_scans.py": "7e2b86f5916774233d48246033ee768e1e1abfbd43fb79ab87cec638e5c15939",
+        "scripts/secret_scan_benchmark_cache.py": "7f36acc13b82f584d08ec9beb8e13cf2598effda1644dfd0f730df368bf7c46d",
+        "scripts/secret_scan_benchmark_fixtures.py": "cc2fcc4115a7ed9b5787a8308d3e39eaae9589f0c050ffc2e5564a1acbb9e060",
+        "scripts/secret_scan_native_pilot.py": "23bceb3d7bb60967094e1eabcb53220c474cb6f2aa727c7f49ab81cef2c1efe7"
+      },
+      "id": "scanner-final-reader",
+      "operations": [
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 27587,
+            "git_blob_sha1": "b7b30559724eb0323a0584fde4bd910a7461cf1b",
+            "mode": "100644",
+            "sha256": "e2e5b4f48896f95d11dd8ab92188393fdce18bdea149d756f190f6697111390f"
+          },
+          "expected": {
+            "bytes": 27655,
+            "git_blob_sha1": "d42b2771fbea2ec7daeee7f3cf1611ee2b5dd222",
+            "mode": "100644",
+            "sha256": "7e2b86f5916774233d48246033ee768e1e1abfbd43fb79ab87cec638e5c15939"
+          },
+          "patch": "patches/bench_guard_secret_scans-6c82e9579b11.patch",
+          "patch_base_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "patch_bytes": 733,
+          "patch_sha256": "6c82e9579b11f8025e014e78e9046aeb2956e4ee260b62742e02b130a3dadb0f",
+          "path": "scripts/bench_guard_secret_scans.py",
+          "target_local_commit": "66d86b3c9cc1d755878ad0649b618504bf4f5133"
+        }
+      ],
+      "public_base": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "reconstruction_verified": true,
+      "recorded_aggregate_sha256": "96e25522ea82647082cd0393dfbba34d7930d617c6d64dcfebfb45b885520336",
+      "recorded_local_harness_commit": "66d86b3c9cc1d755878ad0649b618504bf4f5133",
+      "scope": [
+        "scripts/secret_scan_native_pilot.py",
+        "scripts/secret_scan_benchmark_fixtures.py",
+        "scripts/secret_scan_benchmark_cache.py",
+        "scripts/bench_guard_secret_scans.py",
+        "scripts/bench_guard_secret_native_pilot.py"
+      ]
+    }
+  ],
+  "measurements": [
+    {
+      "bytes": 201229,
+      "harness": null,
+      "note": null,
+      "path": "release-metadata/mcp-stdio-rebaseline.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "mcp-a-before-prefilter"
+      },
+      "sha256": "9e85e54626d364c55d1292b641260daf1e1e426ba210eb8a60b47db01fcae36b",
+      "source_reconstruction_scope": "exact runtime available; per-cell historical harness attribution incomplete"
+    },
+    {
+      "bytes": 166402,
+      "harness": "mcp-a-b-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-risk-prefilter-comparison.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-a-before-prefilter",
+        "candidate": "mcp-b-prefilter"
+      },
+      "sha256": "e112dd79c71fb4ef398c37ed18d891ae0c3a84aa9a8cd9507a2fe4203a2dbfe5",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 182191,
+      "harness": "mcp-b-c-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-request-facts-comparison.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-b-prefilter",
+        "candidate": "mcp-c-request-facts"
+      },
+      "sha256": "d6009df4c33e9c6c33a0293b1f1740b25f5ad2cce31fe19d0238698ef8660844",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 54824,
+      "harness": "mcp-b-c-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-request-facts-memory-boundary.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-b-prefilter",
+        "candidate": "mcp-c-request-facts"
+      },
+      "sha256": "5a17c2b65afd4b6e14c4a5e43e9690b738aabf00f3af8af7123cefcb0a92fe62",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 182130,
+      "harness": "mcp-b-d-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-structural-facts-comparison.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-b-prefilter",
+        "candidate": "mcp-d-structural-facts"
+      },
+      "sha256": "cc555b7fea840d786e7b81d3373c16dd3223f9d10b858b63c6a2a89d670813a7",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 54300,
+      "harness": "mcp-b-d-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-structural-facts-memory-boundary.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-b-prefilter",
+        "candidate": "mcp-d-structural-facts"
+      },
+      "sha256": "395c35c06f3327763a147e88710a849fef3ed838efb2a25e98df990bfcb9a432",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 80385,
+      "harness": "mcp-b-d-comparison",
+      "note": null,
+      "path": "release-metadata/mcp-structural-facts-container-boundary.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "mcp-b-prefilter",
+        "candidate": "mcp-d-structural-facts"
+      },
+      "sha256": "f24332036bf3d610a24bb4edf31d96e918d5d80348b1cf2465f7d8f7e1e7868a",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 523,
+      "harness": "mcp-near-limit-component",
+      "note": null,
+      "path": "release-metadata/mcp-near-limit-component-provenance.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "mcp-c-request-facts"
+      },
+      "sha256": "90cd8f1752a2561518345a634fad40fc104007429d2c9d5895ea3a7a6903e56e",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 2829,
+      "harness": "mcp-near-limit-component",
+      "note": null,
+      "path": "release-metadata/mcp-near-limit-ascii-component.txt",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "mcp-c-request-facts"
+      },
+      "sha256": "d690eb13ff65377d5206d298bd43079839f816eb6eeaba92522524222b412e9c",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 2844,
+      "harness": "mcp-near-limit-component",
+      "note": null,
+      "path": "release-metadata/mcp-near-limit-unicode-component.txt",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "mcp-c-request-facts"
+      },
+      "sha256": "12c4faaed3650cb504b363c9847c2ca33dc810c05e94d7752ba67cd3bca36d96",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 52210,
+      "harness": null,
+      "note": null,
+      "path": "docs/guard/evidence/rsp-scanner-python-baseline-linux.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "original-python",
+        "candidate": "scanner-initial-optimized"
+      },
+      "sha256": "bb87a5080254311627020cae58cd6c0157c3ac756ee318bace14231993928e9c",
+      "source_reconstruction_scope": "exact runtime available; historical harness bytes not pinned"
+    },
+    {
+      "bytes": 467257,
+      "harness": null,
+      "note": null,
+      "path": "docs/guard/evidence/rsp-scanner-rich-linux.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "takeover-python",
+        "candidate": "scanner-rich-optimized"
+      },
+      "sha256": "d550f01d0f0ddacfda72a3a3316d9b1681bc4362d85bda3cf8e531001ffd8a67",
+      "source_reconstruction_scope": "exact runtime available; historical harness bytes not pinned"
+    },
+    {
+      "bytes": 252808,
+      "harness": null,
+      "note": "Excluded older cohort; retain its recorded five-file aggregate and original outcome.",
+      "path": "docs/guard/evidence/rsp-scanner-native-regex-initial-linux.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "scanner-native-older-reader"
+      },
+      "sha256": "f4e3ab6fc888307f6114452337bed9ed9985896497300fbb05d564e589b9df57",
+      "source_reconstruction_scope": "exact runtime and native source available; recorded collector aggregate unresolved"
+    },
+    {
+      "bytes": 428785,
+      "harness": null,
+      "note": "Excluded older cohort; retain its recorded five-file aggregate and original outcome.",
+      "path": "docs/guard/evidence/rsp-scanner-native-regex-post-relocation-linux.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "scanner-native-older-reader"
+      },
+      "sha256": "99c1105394f004990e1e21dfd6941d1f05d7af7979f23dadddf225ebbb8563c6",
+      "source_reconstruction_scope": "exact runtime and native source available; recorded collector aggregate unresolved"
+    },
+    {
+      "bytes": 46043,
+      "harness": "scanner-final-reader",
+      "note": "Authoritative final corrected-reader NO-GO cohort; no installed/default native activation.",
+      "path": "docs/guard/evidence/rsp-scanner-native-regex-final-reader-confirmation-linux.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "scanner-final-reader"
+      },
+      "sha256": "38ac4de50693f0de8a53fff68e94710c099b4a700416399e16dde8a56f7036be",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 39125,
+      "harness": "package-initial-final-harness",
+      "note": "Initial and final measurements used distinct hash-pinned local harnesses; the final script must not be assigned to initial observations.",
+      "path": "docs/guard/performance/rsp-package-source-evidence.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "original-python",
+        "candidate": "package-initial-optimized"
+      },
+      "sha256": "b9eda72a5636f8c8942fedc27e59737fa0bbee2911dfa1b56c5f9bb155b1ebbc",
+      "source_reconstruction_scope": "exact runtime and final local harness available; initial local harness bytes unresolved"
+    },
+    {
+      "bytes": 669888,
+      "harness": "package-original-matrix",
+      "note": "Use package-original-matrix-resume for the retained segment starting at cell 19; preserve censored/failed cells and API-only unversioned scope.",
+      "path": "docs/guard/performance/rsp-package-continuation-matrix.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "original-python",
+        "candidate": "package-e79-optimized"
+      },
+      "sha256": "d8d8bfd9769cb35299008f186d35c0ea38ff4b10f3291824866b51d9d5e0c973",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 91501,
+      "harness": "package-final-comparison",
+      "note": null,
+      "path": "docs/guard/performance/rsp-package-bundle-correction-pairs.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "package-e79-optimized",
+        "candidate": "package-final-python-and-native"
+      },
+      "sha256": "4de1f8ba5b03d5cf1a9d9b7437001264d3dc9cdee1f78a45ff3d8f1e9fe5fdd1",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 32572,
+      "harness": "package-final-comparison",
+      "note": "Also use the already published package-deny-control-wrapper.",
+      "path": "docs/guard/performance/rsp-package-deny-postfix-original-pairs.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "original-python",
+        "candidate": "package-final-python-and-native"
+      },
+      "sha256": "d5beed9e57742451c22f24080f23c29084a03dcd99cb198123835f7e27ad1022",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 194300,
+      "harness": "package-final-comparison",
+      "note": "Same runtime source; explicit experimental native adapter only in candidate arm. Preserve the primary NO-GO, censored pair and incomplete control scope.",
+      "path": "docs/guard/performance/rsp-package-native-paired-matrix.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "baseline": "package-final-python-and-native",
+        "candidate": "package-final-python-and-native"
+      },
+      "sha256": "66e845b6bc5e11165d2bcf2d8482689e4373a1091c84d97599b351f662f26048",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 22030,
+      "harness": "package-unversioned-route",
+      "note": null,
+      "path": "docs/guard/performance/rsp-package-unversioned-route-original.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "original-python"
+      },
+      "sha256": "7011c000ad26b983a6b3bc8ce94ce04f6412bbfee5a22db25c4aea5a8cbe45a3",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    },
+    {
+      "bytes": 22030,
+      "harness": "package-unversioned-route",
+      "note": null,
+      "path": "docs/guard/performance/rsp-package-unversioned-route-optimized.json",
+      "published_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "runtime_snapshots": {
+        "runtime": "package-final-python-and-native"
+      },
+      "sha256": "1e4f84b76a8eecbeb55690c3ba214f3e45744dc006d630f7817b13a6dd9bcc60",
+      "source_reconstruction_scope": "exact runtime and pinned harness available"
+    }
+  ],
+  "later_campaign_excluded": {
+    "campaign": "MCP native text-facts 60-cell comparison",
+    "reason": "not part of published abf evidence; B/D runtime recipes are reusable, while final outcomes and harness provenance belong to the separate later campaign report"
+  },
+  "patch_bytes_total": 15065,
+  "patches": [
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 27587,
+        "git_blob_sha1": "b7b30559724eb0323a0584fde4bd910a7461cf1b",
+        "mode": "100644",
+        "sha256": "e2e5b4f48896f95d11dd8ab92188393fdce18bdea149d756f190f6697111390f"
+      },
+      "expected": {
+        "bytes": 27655,
+        "git_blob_sha1": "d42b2771fbea2ec7daeee7f3cf1611ee2b5dd222",
+        "mode": "100644",
+        "sha256": "7e2b86f5916774233d48246033ee768e1e1abfbd43fb79ab87cec638e5c15939"
+      },
+      "patch": "patches/bench_guard_secret_scans-6c82e9579b11.patch",
+      "patch_base_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+      "patch_bytes": 733,
+      "patch_sha256": "6c82e9579b11f8025e014e78e9046aeb2956e4ee260b62742e02b130a3dadb0f",
+      "path": "scripts/bench_guard_secret_scans.py",
+      "target_local_commit": "66d86b3c9cc1d755878ad0649b618504bf4f5133"
+    },
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 15003,
+        "git_blob_sha1": "2952747bb483b0a6db396ce755eae6d23639008e",
+        "mode": "100644",
+        "sha256": "bf23dc9d0d45235d26c921251f4d53931394a4e0d53db47ac41a4a5b60609308"
+      },
+      "expected": {
+        "bytes": 14529,
+        "git_blob_sha1": "6edf79878544dc01140c280b4011bff6c5eeca5e",
+        "mode": "100644",
+        "sha256": "1d80987017c2e7ca7b60a5820187186d0ae48f8594fa2fc625e635f66360e4b2"
+      },
+      "patch": "patches/compare_guard_mcp_risk-5c1b302e5d4e.patch",
+      "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "patch_bytes": 2968,
+      "patch_sha256": "5c1b302e5d4e4b73be62586c5d620b76523be67e4b9ca8eb96b604f0cde267ab",
+      "path": "scripts/compare_guard_mcp_risk.py",
+      "target_local_commit": "5bbd22e694e9480df03431a5d33053057b39040f"
+    },
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 67609,
+        "git_blob_sha1": "52a0d770a76df0538adb6638e678251ff5c05c10",
+        "mode": "100644",
+        "sha256": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5"
+      },
+      "expected": {
+        "bytes": 66441,
+        "git_blob_sha1": "d453e43b7d0bd8f6ccd72e15b444ccd7571179e0",
+        "mode": "100644",
+        "sha256": "022c0c9926ca362184d96893fa9f83b684ddfa1d024be1d90cdfb0e306b35473"
+      },
+      "patch": "patches/mcp_tool_calls-26ce24d4637d.patch",
+      "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "patch_bytes": 5625,
+      "patch_sha256": "26ce24d4637d482af29c3dac46074694b0ce7068f5c27208957d9dfeb3cae98d",
+      "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+      "target_local_commit": "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4"
+    },
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 43282,
+        "git_blob_sha1": "1b6f99207b5ea9725c4d33c248c7254e26e520f2",
+        "mode": "100644",
+        "sha256": "ced41b59aaeb670c5bad4b123ceaf8ebea0a608300fd0c7626985f69819eedff"
+      },
+      "expected": {
+        "bytes": 42292,
+        "git_blob_sha1": "39bf928e106fa3aea11aad7053b4be9c5ec52eac",
+        "mode": "100644",
+        "sha256": "730528617f9cfa226394d376cec46e1f7422f76c7b356b4ea81dad22f8375ec4"
+      },
+      "patch": "patches/profile_guard_mcp_session-2925c552cf3d.patch",
+      "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "patch_bytes": 3086,
+      "patch_sha256": "2925c552cf3d80f15f167ec6cb653e3be8d374658f0395c2b0df1fced383468d",
+      "path": "scripts/profile_guard_mcp_session.py",
+      "target_local_commit": "5bbd22e694e9480df03431a5d33053057b39040f"
+    },
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 43282,
+        "git_blob_sha1": "1b6f99207b5ea9725c4d33c248c7254e26e520f2",
+        "mode": "100644",
+        "sha256": "ced41b59aaeb670c5bad4b123ceaf8ebea0a608300fd0c7626985f69819eedff"
+      },
+      "expected": {
+        "bytes": 43306,
+        "git_blob_sha1": "8763a49ec4fee68ee6f94c4a216d53c1fbc4b6d9",
+        "mode": "100644",
+        "sha256": "7444fcc1accdedec1f7636783fa149894c956272e182d24ab619769883dfaa54"
+      },
+      "patch": "patches/profile_guard_mcp_session-818e4606c7fb.patch",
+      "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "patch_bytes": 892,
+      "patch_sha256": "818e4606c7fb18bff08a6cd59c5b13a17ebb1c8bc31ed9e65e2981030bfe71b6",
+      "path": "scripts/profile_guard_mcp_session.py",
+      "target_local_commit": "1dbc20f31b5cc7a0b6402afaa6a0b9127131771c"
+    },
+    {
+      "action": "apply_patch",
+      "before": {
+        "bytes": 172792,
+        "git_blob_sha1": "303187496a8cdaf6e5bba5f1c50ad846167cd477",
+        "mode": "100644",
+        "sha256": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b"
+      },
+      "expected": {
+        "bytes": 173202,
+        "git_blob_sha1": "5c3d53f639a5bbb0245a9e87c5efef7fd05ebe17",
+        "mode": "100644",
+        "sha256": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100"
+      },
+      "patch": "patches/runtime_mcp-3e472e85196d.patch",
+      "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "patch_bytes": 1761,
+      "patch_sha256": "3e472e85196d230db8efa018f2103fd7e5f342075ba0e25a36f0b56652f7de90",
+      "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+      "target_local_commit": "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4"
+    }
+  ],
+  "preservation": "Original reports, failures, censors, regressions, interrupted states, source attribution limits, and qualification=false are unchanged. Source reconstruction does not reproduce timing, host/cache/load state, binary bytes or installed qualification.",
+  "public_commits": [
+    {
+      "commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "tree": "62eb319323cc7c9de7513af6ef7f05009d411189"
+    },
+    {
+      "commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+      "tree": "f292bc95eb53af29162fcc8ea7e46a4b213803b7"
+    },
+    {
+      "commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
+      "tree": "7580ea94e4847762df8eb8eed6dfefc26a692551"
+    },
+    {
+      "commit": "42579f046ac262ff93c0c020547bc3873d308652",
+      "tree": "096abd5c67d24ab3b324fb911c8bdac5d79090f8"
+    },
+    {
+      "commit": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "tree": "3c1d250c23bee22e23e5525880bdd3f65a63a59d"
+    },
+    {
+      "commit": "92cf3c72d80d932b2a0ec4d72ec4d102a06da010",
+      "tree": "b9060fedba6903ce4ef31f3b8577a251a934ece8"
+    },
+    {
+      "commit": "bea0a687c9ae3c0ea3dcad18af1b1e3d2a9031a8",
+      "tree": "7165b4a79a0fce1bf6c072c8adf9a7d6177b2594"
+    },
+    {
+      "commit": "b9dd466a20b123d0fe777b85a979db519b51f5bc",
+      "tree": "f42ab42f658116261a6e7d7f982592dc70dc849e"
+    },
+    {
+      "commit": "e449594e86c717e66e14598a4130475de79c536f",
+      "tree": "b6a17d026500c1821d02b5a9202b544be0874377"
+    },
+    {
+      "commit": "c62a3e0aa2a68d7a6eb6f83ae39295a3b0a9316a",
+      "tree": "aa09f1c2df628d917934ca82985be99896e83e53"
+    },
+    {
+      "commit": "7dd13874c6a07dc3e4a3f4f500839123d523b06d",
+      "tree": "beaf016c254e1a9c84556ed4bcaded4b076f0c77"
+    },
+    {
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+    }
+  ],
+  "published_head": "abf319d5a345d761d88e26ba787026e98370c26f",
+  "published_tree": "62eb319323cc7c9de7513af6ef7f05009d411189",
+  "qualification": false,
+  "recorded_source_digest_checks": [
+    {
+      "evidence": "release-metadata/mcp-stdio-rebaseline.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "55572e8c2eb9e941dda217d67c2f9b70492804dcdd2349d12494b6163c373211",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256",
+      "snapshot": "mcp-a-before-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-risk-prefilter-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "55572e8c2eb9e941dda217d67c2f9b70492804dcdd2349d12494b6163c373211",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-a-before-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-risk-prefilter-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-request-facts-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-request-facts-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "022c0c9926ca362184d96893fa9f83b684ddfa1d024be1d90cdfb0e306b35473",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-c-request-facts",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-request-facts-memory-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-request-facts-memory-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "022c0c9926ca362184d96893fa9f83b684ddfa1d024be1d90cdfb0e306b35473",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-c-request-facts",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-comparison.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-d-structural-facts",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-memory-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-memory-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-d-structural-facts",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-container-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.baseline",
+      "snapshot": "mcp-b-prefilter",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-structural-facts-container-boundary.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5",
+        "src/codex_plugin_scanner/guard/proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100",
+        "src/codex_plugin_scanner/guard/proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845"
+      },
+      "recorded_source_field": "runtime_sources_sha256.candidate",
+      "snapshot": "mcp-d-structural-facts",
+      "verified": true
+    },
+    {
+      "evidence": "release-metadata/mcp-near-limit-component-provenance.json",
+      "files_sha256": {
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "022c0c9926ca362184d96893fa9f83b684ddfa1d024be1d90cdfb0e306b35473"
+      },
+      "recorded_source_field": "risk_source_sha256",
+      "snapshot": "mcp-c-request-facts",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "935e50fdbdaa04786d7bca61be17377c90bc53680139c6f876e3ae4aa67f2e36",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-python-baseline-linux.json",
+      "ordered_paths": [
+        "src/codex_plugin_scanner/guard/secrets/__init__.py",
+        "src/codex_plugin_scanner/guard/secrets/cli.py",
+        "src/codex_plugin_scanner/guard/secrets/precommit.py",
+        "src/codex_plugin_scanner/guard/secrets/public_rule_catalog.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+        "src/codex_plugin_scanner/checks/security.py"
+      ],
+      "recorded_source_field": "sources.current_python.scanner_source_sha256",
+      "snapshot": "original-python",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "85851f427a11e69361231e92c3050a716e202c856295a0aec9b51faf091b9583",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-python-baseline-linux.json",
+      "ordered_paths": [
+        "src/codex_plugin_scanner/guard/secrets/__init__.py",
+        "src/codex_plugin_scanner/guard/secrets/cli.py",
+        "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py",
+        "src/codex_plugin_scanner/guard/secrets/git_object_reader.py",
+        "src/codex_plugin_scanner/guard/secrets/precommit.py",
+        "src/codex_plugin_scanner/guard/secrets/public_rule_catalog.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+        "src/codex_plugin_scanner/checks/security.py"
+      ],
+      "recorded_source_field": "sources.optimized_python.scanner_source_sha256",
+      "snapshot": "scanner-initial-optimized",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "eb8a4388f2252f7b28fcb0715307fdcef6eb9612a8c4b7df9fee74d2b250ff23",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-rich-linux.json",
+      "ordered_paths": [
+        "src/codex_plugin_scanner/guard/secrets/__init__.py",
+        "src/codex_plugin_scanner/guard/secrets/cli.py",
+        "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py",
+        "src/codex_plugin_scanner/guard/secrets/git_object_reader.py",
+        "src/codex_plugin_scanner/guard/secrets/precommit.py",
+        "src/codex_plugin_scanner/guard/secrets/public_rule_catalog.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+        "src/codex_plugin_scanner/checks/security.py",
+        "src/codex_plugin_scanner/checks/security_failures.py",
+        "src/codex_plugin_scanner/checks/security_secret_patterns.py"
+      ],
+      "recorded_source_field": "sources.baseline_python.scanner_source_sha256",
+      "snapshot": "takeover-python",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "41b1d7cc163835ecb03653eeafd188c583d1122492bf3d5cbfbc0f7d4a882383",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-rich-linux.json",
+      "ordered_paths": [
+        "src/codex_plugin_scanner/guard/secrets/__init__.py",
+        "src/codex_plugin_scanner/guard/secrets/cli.py",
+        "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py",
+        "src/codex_plugin_scanner/guard/secrets/git_object_reader.py",
+        "src/codex_plugin_scanner/guard/secrets/precommit.py",
+        "src/codex_plugin_scanner/guard/secrets/public_rule_catalog.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+        "src/codex_plugin_scanner/checks/security.py",
+        "src/codex_plugin_scanner/checks/security_failures.py",
+        "src/codex_plugin_scanner/checks/security_secret_patterns.py"
+      ],
+      "recorded_source_field": "sources.optimized_python.scanner_source_sha256",
+      "snapshot": "scanner-rich-optimized",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "14dea3727ed74a622c4024be018d069a8c76b7306ec1ebd71715d7418a2a22e8",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-native-regex-final-reader-confirmation-linux.json",
+      "ordered_paths": [
+        "src/codex_plugin_scanner/guard/secrets/__init__.py",
+        "src/codex_plugin_scanner/guard/secrets/cli.py",
+        "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py",
+        "src/codex_plugin_scanner/guard/secrets/git_object_reader.py",
+        "src/codex_plugin_scanner/guard/secrets/precommit.py",
+        "src/codex_plugin_scanner/guard/secrets/public_rule_catalog.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+        "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+        "src/codex_plugin_scanner/checks/security.py",
+        "src/codex_plugin_scanner/checks/security_failures.py",
+        "src/codex_plugin_scanner/checks/security_secret_patterns.py",
+        "src/codex_plugin_scanner/path_support.py"
+      ],
+      "recorded_source_field": "sources.python.scanner_source_sha256",
+      "snapshot": "scanner-final-reader",
+      "verified": true
+    },
+    {
+      "aggregate_sha256": "7e61ea8b2e41d32a5c4481abd18ef847be70c24eacce2e3277eea6aee3952874",
+      "algorithm": "SHA256 of each ordered relative path, NUL, and exact file bytes",
+      "evidence": "docs/guard/evidence/rsp-scanner-native-regex-final-reader-confirmation-linux.json",
+      "ordered_paths": [
+        "rust/Cargo.lock",
+        "rust/crates/guard-offline-regex-pilot/Cargo.toml",
+        "rust/crates/guard-offline-regex-pilot/src/main.rs"
+      ],
+      "recorded_source_field": "sources.native_source_sha256",
+      "snapshot": "scanner-final-reader",
+      "verified": true
+    }
+  ],
+  "remaining_attribution_limits": [
+    {
+      "evidence": "release-metadata/mcp-stdio-rebaseline.json",
+      "limit": "Initial 41-case campaign records c8 runtime hashes, but no per-cell execution-harness hash. Owner confirms harness corrections through 99e9a7c9a across the retained 19-cell pause/resume. Do not assign one later file to all 41."
+    },
+    {
+      "evidence": "docs/guard/evidence/rsp-scanner-python-baseline-linux.json",
+      "limit": "Runtime source is reconstructable; raw report does not pin execution-harness bytes."
+    },
+    {
+      "evidence": "docs/guard/evidence/rsp-scanner-rich-linux.json",
+      "limit": "Runtime source is reconstructable; raw report does not pin execution-harness bytes."
+    },
+    {
+      "evidence": "docs/guard/performance/rsp-package-source-evidence.json",
+      "limit": "Final local harness SHA256 363891a71e966dfe56dabf900b29f2072c7dc5fd0426b16a55ceb958c6727aaa is publicly available at 81ef6195. The initial local harness is pinned as 4866aa2692cac48ef8a92b66864a8c63de63a6fba4ef099736d2755e2230811f, but exact bytes were not located in retained root/package Git snapshots. Do not map the final script to initial observations; outer historical collection scripting is not fully pinned."
+    },
+    {
+      "evidence": "docs/guard/evidence/rsp-scanner-native-regex-initial-linux.json",
+      "limit": "Recorded five-script aggregate abad00f516a477d2a6b0c67bfcba25b54bf4d01391f8c1965ae4aa78563f357c does not match the scripts at its separate Python-root commit. Exact historical collector bytes must be located by this hash; do not infer them from ea8."
+    },
+    {
+      "evidence": "docs/guard/evidence/rsp-scanner-native-regex-post-relocation-linux.json",
+      "limit": "Recorded five-script aggregate 4d02384a0dad60764d82f36fc996131762b0072581037d271ec6166522598c12 does not match the scripts at its separate Python-root commit. Exact historical collector bytes must be located by this hash; do not infer them from 0d0. The final 66d corrected-reader collector is independently byte-reconstructed."
+    }
+  ],
+  "schema": "hol-guard.benchmark-source-reconstruction.v1",
+  "snapshots": [
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "original-python",
+      "measured_local_commits": [
+        "2e672d2d950c6ec471005ddba46e49bba16dc23b"
+      ],
+      "operations": [],
+      "public_base": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "tests/__init__.py",
+        "tests/support/__init__.py",
+        "tests/support/network.py",
+        "tests/test_guard_supply_chain_bundle.py",
+        "tests/test_guard_supply_chain_evaluator.py"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 549,
+          "git_blob_sha1": "06ae4bb20e93805c2f68ca2972642ca52dbac6c2",
+          "mode": "100644",
+          "sha256": "351a03fece313c84825f0ca22de1567ed79fd40b7865c4be303ddfed6ff06f6f"
+        },
+        "pyproject.toml": {
+          "bytes": 8462,
+          "git_blob_sha1": "5a1847a03922e5884ee025df5b6f5f6edc1690a4",
+          "mode": "100644",
+          "sha256": "4665fdf894d7fb5445a80e1845025af636c0dc0ac953b005811720bbcc342922"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "ffa458bc310fc70c06829f6d4ccc07516d35bea3",
+          "tracked_files": 1241
+        },
+        "tests/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/support/__init__.py": null,
+        "tests/support/network.py": {
+          "bytes": 2179,
+          "git_blob_sha1": "98b3bb519c5cfe882d8ad748264fa9eac6e86a59",
+          "mode": "100644",
+          "sha256": "61e5dc70d43ba9d7923555bcb6c6ddd0386237b04a7ca20d0da432417f345add"
+        },
+        "tests/test_guard_supply_chain_bundle.py": {
+          "bytes": 25049,
+          "git_blob_sha1": "672b075b6b91f51db4063b65eaee88debfc016e4",
+          "mode": "100644",
+          "sha256": "7e133fbb9c3d099073041342fc3962c9204bd556a2f35ca31392cb1dac154b15"
+        },
+        "tests/test_guard_supply_chain_evaluator.py": {
+          "bytes": 124462,
+          "git_blob_sha1": "b0cb89630a80c9b077161c908d369f10322eecc1",
+          "mode": "100644",
+          "sha256": "39799383023aa5873be1aceaf8324c856f62397aaa21511b15712ae06b9f3545"
+        },
+        "uv.lock": {
+          "bytes": 956741,
+          "git_blob_sha1": "87a7e665302f34c6ae1100387425572bab6e7c51",
+          "mode": "100644",
+          "sha256": "7689c0564c9a0d02ebbc51ac9e34bd5b35c323be5e873cf4f9e76cd676f9ce5a"
+        }
+      },
+      "tracked_files_in_scope": 1248
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "takeover-python",
+      "measured_local_commits": [
+        "fb8d57a8efc364068860f74ea41414d595ee976c"
+      ],
+      "operations": [],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "260568264cd8c688ba12ee154e8bdf6f66fd3072",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "mcp-a-before-prefilter",
+      "measured_local_commits": [
+        "c8f0178315b7586db1993fbf16c3935c1d4a7a74"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 172792,
+            "git_blob_sha1": "303187496a8cdaf6e5bba5f1c50ad846167cd477",
+            "mode": "100644",
+            "sha256": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b"
+          },
+          "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "85705d3bf909fafe30f0be4a48c202a0642148ef",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "mcp-b-prefilter",
+      "measured_local_commits": [
+        "d811b08f081d72c348b95f0cf9e45349fb1787e6"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 62302,
+            "git_blob_sha1": "93b3967c3a996e1a58e18e217e00f91eb19545dc",
+            "mode": "100644",
+            "sha256": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e"
+          },
+          "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "source_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "source_path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 172792,
+            "git_blob_sha1": "303187496a8cdaf6e5bba5f1c50ad846167cd477",
+            "mode": "100644",
+            "sha256": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b"
+          },
+          "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "e0d5cd477ce4dc9a89026ad25d404c5fbaa51ac4",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": false,
+      "id": "mcp-c-request-facts",
+      "measured_local_commits": [
+        "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4",
+        "4cc1aa83655a8e115b03a9cbe99de87f468bee9a"
+      ],
+      "operations": [
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 67609,
+            "git_blob_sha1": "52a0d770a76df0538adb6638e678251ff5c05c10",
+            "mode": "100644",
+            "sha256": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5"
+          },
+          "expected": {
+            "bytes": 66441,
+            "git_blob_sha1": "d453e43b7d0bd8f6ccd72e15b444ccd7571179e0",
+            "mode": "100644",
+            "sha256": "022c0c9926ca362184d96893fa9f83b684ddfa1d024be1d90cdfb0e306b35473"
+          },
+          "patch": "patches/mcp_tool_calls-26ce24d4637d.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 5625,
+          "patch_sha256": "26ce24d4637d482af29c3dac46074694b0ce7068f5c27208957d9dfeb3cae98d",
+          "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "target_local_commit": "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4"
+        },
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 172792,
+            "git_blob_sha1": "303187496a8cdaf6e5bba5f1c50ad846167cd477",
+            "mode": "100644",
+            "sha256": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b"
+          },
+          "expected": {
+            "bytes": 173202,
+            "git_blob_sha1": "5c3d53f639a5bbb0245a9e87c5efef7fd05ebe17",
+            "mode": "100644",
+            "sha256": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100"
+          },
+          "patch": "patches/runtime_mcp-3e472e85196d.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 1761,
+          "patch_sha256": "3e472e85196d230db8efa018f2103fd7e5f342075ba0e25a36f0b56652f7de90",
+          "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "target_local_commit": "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "a3e8a68bc0a5d3c790e69edb63a7ab7275c7e6e1",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": false,
+      "id": "mcp-d-structural-facts",
+      "measured_local_commits": [
+        "1dbc20f31b5cc7a0b6402afaa6a0b9127131771c"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 67609,
+            "git_blob_sha1": "52a0d770a76df0538adb6638e678251ff5c05c10",
+            "mode": "100644",
+            "sha256": "718332878de0285f5550713a8c6f47c8db9dc2c2e975418396c8f11a0e638ff5"
+          },
+          "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py"
+        },
+        {
+          "action": "apply_patch",
+          "before": {
+            "bytes": 172792,
+            "git_blob_sha1": "303187496a8cdaf6e5bba5f1c50ad846167cd477",
+            "mode": "100644",
+            "sha256": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b"
+          },
+          "expected": {
+            "bytes": 173202,
+            "git_blob_sha1": "5c3d53f639a5bbb0245a9e87c5efef7fd05ebe17",
+            "mode": "100644",
+            "sha256": "bd1f93fc9d7d4bc60b4e6beefc4beecd9be27e68beb54a1acdc906f052c61100"
+          },
+          "patch": "patches/runtime_mcp-3e472e85196d.patch",
+          "patch_base_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "patch_bytes": 1761,
+          "patch_sha256": "3e472e85196d230db8efa018f2103fd7e5f342075ba0e25a36f0b56652f7de90",
+          "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "target_local_commit": "1dbfdbb8e1c0236dd4eab2508747de3231fc3ee4"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "a6539671efc793419986f0aabe711ad562875297",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "package-initial-optimized",
+      "measured_local_commits": [
+        "640b47ae52dea98ad2d4f5dbfc36b86e91800d83"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 5199,
+            "git_blob_sha1": "189eafad8856eeebd2b92e9745b0208a9edfb6d9",
+            "mode": "100644",
+            "sha256": "1d8cb2d3c84a6d7ccde9acd59946c1ed97d04dbdd564f5a97a5ca6277354c14a"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_evaluation_support.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_evaluation_support.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 14098,
+            "git_blob_sha1": "bcfa940485fa17a549ec31da09feddf7201237eb",
+            "mode": "100644",
+            "sha256": "d75786ed4af800924447bcb611167730a1eb68a6b6ebbfff74790b11eff698de"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py",
+          "source_commit": "42579f046ac262ff93c0c020547bc3873d308652",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 6841,
+            "git_blob_sha1": "6d9eb9348e3b904353c871a1ed27fc9cfd2f68e4",
+            "mode": "100644",
+            "sha256": "559d3d6c48389368e4ecb56b294d8121c38e089e12d0ff71611bea808375566a"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/manifest_dependency_targets.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/manifest_dependency_targets.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 25930,
+            "git_blob_sha1": "bab19a640da02582b76bb810b051e9c821538d4d",
+            "mode": "100644",
+            "sha256": "13dd25e5ebbe9ea3bb1c31ef86f8441d90720949ee4a4ca46a340ae3f0fefec7"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/package_manifest_diff.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/package_manifest_diff.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 25906,
+            "git_blob_sha1": "5bc8eabcd4c1bf98e4e7dc6b36abb5387799de65",
+            "mode": "100644",
+            "sha256": "99248675035708f9e421b9b08c0c97f6059a18b479d24511a1b15cac07c59487"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py",
+          "source_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 13554,
+            "git_blob_sha1": "8c86c160e9980603aa391b7a0ab643f4d75bdfdb",
+            "mode": "100644",
+            "sha256": "82fe61a6c0873eabe3ddc3ec05c802ec5d5a726f4b0949c1d6809161978b33fe"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_runtime.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_runtime.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 207802,
+            "git_blob_sha1": "d0d4d9de23756980f15b930cf3b6b9d151c62c6a",
+            "mode": "100644",
+            "sha256": "a99e2620d1457311b876042575a5e2a4936055ed686005dedeef29df2b91aebb"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+          "source_commit": "42579f046ac262ff93c0c020547bc3873d308652",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9706,
+            "git_blob_sha1": "e0cbfe57cf1bb91e0611df55d660e024c14a86ba",
+            "mode": "100644",
+            "sha256": "8b6251b511062583f3487eb47a35c30784b7d8ede7e25af969a237a9d5bc9db8"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/workspace_path_guard.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/workspace_path_guard.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 1153,
+            "git_blob_sha1": "13b31ab7201de3ea92d054feb1906ca124bc1eaf",
+            "mode": "100644",
+            "sha256": "ddebefd66e7bb5e0fac6125f675802fd371bbef2993cdd9394706719adac2fa3"
+          },
+          "path": "src/codex_plugin_scanner/guard/stable_digest.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/stable_digest.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 14280,
+            "git_blob_sha1": "898031f5ba1351b6a7b6781c8a8007bd27bdf6fd",
+            "mode": "100644",
+            "sha256": "05668d5ad2595c583d5546af73394de3e3ee230d38d8d1830ce041265fa4735f"
+          },
+          "path": "src/codex_plugin_scanner/guard/store_evidence.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/store_evidence.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 2553,
+            "git_blob_sha1": "5edf7db2abf84c30c6752d7978aa4013e4de860b",
+            "mode": "100644",
+            "sha256": "0d1e00a87588a11d3e9e0ea47f33ee60a927c452c0c45880019a43fd66fe776c"
+          },
+          "path": "src/codex_plugin_scanner/guard/store_evidence_facade.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/store_evidence_facade.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 28343,
+            "git_blob_sha1": "3ce915ceef693b416830dc2a141c1c043cbe50ef",
+            "mode": "100644",
+            "sha256": "2ac71e6d375536d8da9d4b6b33e613363115d823831e9b8d37e0f2e3f866745d"
+          },
+          "path": "tests/test_guard_supply_chain_bundle.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "tests/test_guard_supply_chain_bundle.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 124547,
+            "git_blob_sha1": "08c1367dd970dd4567c1ef348bfaa58afd30a6fa",
+            "mode": "100644",
+            "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+          },
+          "path": "tests/test_guard_supply_chain_evaluator.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "tests/test_guard_supply_chain_evaluator.py"
+        }
+      ],
+      "public_base": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "tests/__init__.py",
+        "tests/support/__init__.py",
+        "tests/support/network.py",
+        "tests/test_guard_supply_chain_bundle.py",
+        "tests/test_guard_supply_chain_evaluator.py"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 549,
+          "git_blob_sha1": "06ae4bb20e93805c2f68ca2972642ca52dbac6c2",
+          "mode": "100644",
+          "sha256": "351a03fece313c84825f0ca22de1567ed79fd40b7865c4be303ddfed6ff06f6f"
+        },
+        "pyproject.toml": {
+          "bytes": 8462,
+          "git_blob_sha1": "5a1847a03922e5884ee025df5b6f5f6edc1690a4",
+          "mode": "100644",
+          "sha256": "4665fdf894d7fb5445a80e1845025af636c0dc0ac953b005811720bbcc342922"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "c5b1591f65c20f5d2f3f7e7b5857d8c24787ed85",
+          "tracked_files": 1241
+        },
+        "tests/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/support/__init__.py": null,
+        "tests/support/network.py": {
+          "bytes": 2179,
+          "git_blob_sha1": "98b3bb519c5cfe882d8ad748264fa9eac6e86a59",
+          "mode": "100644",
+          "sha256": "61e5dc70d43ba9d7923555bcb6c6ddd0386237b04a7ca20d0da432417f345add"
+        },
+        "tests/test_guard_supply_chain_bundle.py": {
+          "bytes": 28343,
+          "git_blob_sha1": "3ce915ceef693b416830dc2a141c1c043cbe50ef",
+          "mode": "100644",
+          "sha256": "2ac71e6d375536d8da9d4b6b33e613363115d823831e9b8d37e0f2e3f866745d"
+        },
+        "tests/test_guard_supply_chain_evaluator.py": {
+          "bytes": 124547,
+          "git_blob_sha1": "08c1367dd970dd4567c1ef348bfaa58afd30a6fa",
+          "mode": "100644",
+          "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+        },
+        "uv.lock": {
+          "bytes": 956741,
+          "git_blob_sha1": "87a7e665302f34c6ae1100387425572bab6e7c51",
+          "mode": "100644",
+          "sha256": "7689c0564c9a0d02ebbc51ac9e34bd5b35c323be5e873cf4f9e76cd676f9ce5a"
+        }
+      },
+      "tracked_files_in_scope": 1248
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "package-e79-optimized",
+      "measured_local_commits": [
+        "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 13960,
+            "git_blob_sha1": "c3874712b25e79bedd4c08808c1583b763029081",
+            "mode": "100644",
+            "sha256": "d58158d016b3678f52345fc258d44b7ce26f5e2ebe188fcdce80b668beb3a92b"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9235,
+            "git_blob_sha1": "8e84a18d9fdaf98e0c1f6ca71793d3a98e8e0229",
+            "mode": "100644",
+            "sha256": "c6498f8c703d9182d1999fc3973fb59e129c34ac8cd77dff4ad48ece32875a45"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 1058,
+            "git_blob_sha1": "1a599977d0c20dc27e19a7829423722a9f3a4114",
+            "mode": "100644",
+            "sha256": "d12384077dc45d5ab42fa8e0ab432c2f018073baab9e1b437c74fdb7e7cff9ca"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/package_lock_versions.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/package_lock_versions.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 208107,
+            "git_blob_sha1": "12618f8823460842b41d541898ade078f21b6d47",
+            "mode": "100644",
+            "sha256": "f8d10d251a036fa81734c9b7cd775484b06fbb1c0825445e7f3932f6cd209e2a"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "tests/__init__.py",
+        "tests/support/__init__.py",
+        "tests/support/network.py",
+        "tests/test_guard_supply_chain_bundle.py",
+        "tests/test_guard_supply_chain_evaluator.py"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "011a13aa54689df462df7d542f92aa64295dae44",
+          "tracked_files": 1292
+        },
+        "tests/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/support/__init__.py": null,
+        "tests/support/network.py": {
+          "bytes": 2179,
+          "git_blob_sha1": "98b3bb519c5cfe882d8ad748264fa9eac6e86a59",
+          "mode": "100644",
+          "sha256": "61e5dc70d43ba9d7923555bcb6c6ddd0386237b04a7ca20d0da432417f345add"
+        },
+        "tests/test_guard_supply_chain_bundle.py": {
+          "bytes": 28343,
+          "git_blob_sha1": "3ce915ceef693b416830dc2a141c1c043cbe50ef",
+          "mode": "100644",
+          "sha256": "2ac71e6d375536d8da9d4b6b33e613363115d823831e9b8d37e0f2e3f866745d"
+        },
+        "tests/test_guard_supply_chain_evaluator.py": {
+          "bytes": 124547,
+          "git_blob_sha1": "08c1367dd970dd4567c1ef348bfaa58afd30a6fa",
+          "mode": "100644",
+          "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1299
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "package-final-python-and-native",
+      "measured_local_commits": [
+        "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+        "af1106a5b2cb497d2e61cc33aa9914f727c0b205"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 13680,
+            "git_blob_sha1": "52422928100816ac1c265fe9873fb13faa97d021",
+            "mode": "100644",
+            "sha256": "7bf984893a77c422a3c5e5298a6b4ec07aad8cfb55a4ef6e58df55ede9bc4271"
+          },
+          "path": "rust/crates/guard-runtime/examples/package_lock_pilot.rs",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/crates/guard-runtime/examples/package_lock_pilot.rs"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 13960,
+            "git_blob_sha1": "c3874712b25e79bedd4c08808c1583b763029081",
+            "mode": "100644",
+            "sha256": "d58158d016b3678f52345fc258d44b7ce26f5e2ebe188fcdce80b668beb3a92b"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9235,
+            "git_blob_sha1": "8e84a18d9fdaf98e0c1f6ca71793d3a98e8e0229",
+            "mode": "100644",
+            "sha256": "c6498f8c703d9182d1999fc3973fb59e129c34ac8cd77dff4ad48ece32875a45"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 1058,
+            "git_blob_sha1": "1a599977d0c20dc27e19a7829423722a9f3a4114",
+            "mode": "100644",
+            "sha256": "d12384077dc45d5ab42fa8e0ab432c2f018073baab9e1b437c74fdb7e7cff9ca"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/package_lock_versions.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/package_lock_versions.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 26243,
+            "git_blob_sha1": "f4b0a095b202ad4b231520a42b7c0ef212f609ca",
+            "mode": "100644",
+            "sha256": "1415ffa373c95e9cd601fdbb10b84ad91d9c1bbc4588be20407f5025b9f23865"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 208107,
+            "git_blob_sha1": "12618f8823460842b41d541898ade078f21b6d47",
+            "mode": "100644",
+            "sha256": "f8d10d251a036fa81734c9b7cd775484b06fbb1c0825445e7f3932f6cd209e2a"
+          },
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "rust",
+        "tests/__init__.py",
+        "tests/support/__init__.py",
+        "tests/support/network.py",
+        "tests/test_guard_supply_chain_bundle.py",
+        "tests/test_guard_supply_chain_evaluator.py"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust": {
+          "git_tree_sha1": "3128cedeefee1922c3d9675f5f0733a6c95ac6f4",
+          "tracked_files": 183
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "c9f3090f3bce2bdfa1cf996939d113d6d29796b6",
+          "tracked_files": 1292
+        },
+        "tests/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tests/support/__init__.py": null,
+        "tests/support/network.py": {
+          "bytes": 2179,
+          "git_blob_sha1": "98b3bb519c5cfe882d8ad748264fa9eac6e86a59",
+          "mode": "100644",
+          "sha256": "61e5dc70d43ba9d7923555bcb6c6ddd0386237b04a7ca20d0da432417f345add"
+        },
+        "tests/test_guard_supply_chain_bundle.py": {
+          "bytes": 28343,
+          "git_blob_sha1": "3ce915ceef693b416830dc2a141c1c043cbe50ef",
+          "mode": "100644",
+          "sha256": "2ac71e6d375536d8da9d4b6b33e613363115d823831e9b8d37e0f2e3f866745d"
+        },
+        "tests/test_guard_supply_chain_evaluator.py": {
+          "bytes": 124547,
+          "git_blob_sha1": "08c1367dd970dd4567c1ef348bfaa58afd30a6fa",
+          "mode": "100644",
+          "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1482
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "scanner-initial-optimized",
+      "measured_local_commits": [
+        "8ab23abd55d2c4dddf2e2ffb3ad2c2f594e5665a"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 34690,
+            "git_blob_sha1": "8eb8e97a82950f2e4140d71fa99c9f12a1620ff8",
+            "mode": "100644",
+            "sha256": "e69184f1c4ab60e16c3aa96492dfcef5eeaf037a9cdef9bc551ccf3ac3bae1ad"
+          },
+          "path": "src/codex_plugin_scanner/checks/security.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/checks/security.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 2989,
+            "git_blob_sha1": "e8313b55c972b703c65d948e47e1bd44bd1258f7",
+            "mode": "100644",
+            "sha256": "b3c020b6e2a7e87cbfacbd88781b1a6c4954ae4321dd0927bb7e3c2015c79374"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/git_blob_scan_cache.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9086,
+            "git_blob_sha1": "8cd24a16475d006f5aa7047c52584d8bfae34a5b",
+            "mode": "100644",
+            "sha256": "bacdbc84ef2e025e37e1c11e61534c51db90a6646ccb9c664d4701ddf5819247"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/git_object_reader.py",
+          "source_commit": "b9dd466a20b123d0fe777b85a979db519b51f5bc",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/git_object_reader.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 29747,
+            "git_blob_sha1": "d45ce529e99a8621b0a5b2b27286b22a3bbcaa1c",
+            "mode": "100644",
+            "sha256": "4bb3817a42face1e623391150fc1b97f59bce621bfb5ef5362cea144c07202bc"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+          "source_commit": "42579f046ac262ff93c0c020547bc3873d308652",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 16175,
+            "git_blob_sha1": "bb8863bcbce7a6fd55e62e573c5ccc0c1350e327",
+            "mode": "100644",
+            "sha256": "f62baf8e9a5ad4c8c909e32a054566ac38dc93541c983b3e5df4baf7c54bf741"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+          "source_commit": "ae33987d0c8675c36a77375e03419aee920825f6",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 5952,
+            "git_blob_sha1": "6fc1c5f3143a504af130ca3a126f4bd86b7b10e8",
+            "mode": "100644",
+            "sha256": "14ed586905fe5154054a5a12d641488545619d721089b7335c24c16768c3df99"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_staged_scanner.py"
+        }
+      ],
+      "public_base": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 549,
+          "git_blob_sha1": "06ae4bb20e93805c2f68ca2972642ca52dbac6c2",
+          "mode": "100644",
+          "sha256": "351a03fece313c84825f0ca22de1567ed79fd40b7865c4be303ddfed6ff06f6f"
+        },
+        "pyproject.toml": {
+          "bytes": 8462,
+          "git_blob_sha1": "5a1847a03922e5884ee025df5b6f5f6edc1690a4",
+          "mode": "100644",
+          "sha256": "4665fdf894d7fb5445a80e1845025af636c0dc0ac953b005811720bbcc342922"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "6ad73b6fb1d9de09eb8064de440017f40cdfc4a6",
+          "tracked_files": 1243
+        },
+        "uv.lock": {
+          "bytes": 956741,
+          "git_blob_sha1": "87a7e665302f34c6ae1100387425572bab6e7c51",
+          "mode": "100644",
+          "sha256": "7689c0564c9a0d02ebbc51ac9e34bd5b35c323be5e873cf4f9e76cd676f9ce5a"
+        }
+      },
+      "tracked_files_in_scope": 1246
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "scanner-rich-optimized",
+      "measured_local_commits": [
+        "5ea667e15fdeada0a25533fe2d098119cea0dde8"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 30268,
+            "git_blob_sha1": "7977fa35ed8f577ac5a3c1774c6d3f20abb55e98",
+            "mode": "100644",
+            "sha256": "6b05e8e81dc5a87102d7b6adf62f68e02ada8cd5ff5068804b25c036449d85cc"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "4abf75b1325813f49cff8377932dfb1a4a5bf21f",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1293
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "scanner-native-older-reader",
+      "measured_local_commits": [
+        "ea8c7b8eba057e7a6a6c0a7621adb2c133c9972b",
+        "0d0bd553a709e32ca173531b48ea9b3c7ebbe558"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 23808,
+            "git_blob_sha1": "ebc0b86ed5e63269fe0622fbb1b287df526753cc",
+            "mode": "100644",
+            "sha256": "78fd6c5a2d270ca048da9450fb15e7309ae445853647f6f7b9acf352147bdbd3"
+          },
+          "path": "rust/Cargo.lock",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/Cargo.lock"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 1017,
+            "git_blob_sha1": "a4782eafffedc8a1dfae59db03740fe74937b9df",
+            "mode": "100644",
+            "sha256": "73bb63b12d2f54b641ea3cf43cf8c065fac0238c7d5759a721da575fb088c869"
+          },
+          "path": "rust/Cargo.toml",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/Cargo.toml"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 266,
+            "git_blob_sha1": "288cd9284fb901859b098dc12236e7b850bea29d",
+            "mode": "100644",
+            "sha256": "7ce24728bfa0250994854898396c161d2f9414efe13a4dbc0d1c5fb9f9bdbb36"
+          },
+          "path": "rust/crates/guard-offline-regex-pilot/Cargo.toml",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/crates/guard-offline-regex-pilot/Cargo.toml"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9413,
+            "git_blob_sha1": "a5cb5156138f51b45e111add5adde647205e94db",
+            "mode": "100644",
+            "sha256": "f55e87eb1795a5e06b9797f0c63d91ee1c0a4708261efda87d70b08aeb8c501d"
+          },
+          "path": "rust/crates/guard-offline-regex-pilot/src/main.rs",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/crates/guard-offline-regex-pilot/src/main.rs"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 30268,
+            "git_blob_sha1": "7977fa35ed8f577ac5a3c1774c6d3f20abb55e98",
+            "mode": "100644",
+            "sha256": "6b05e8e81dc5a87102d7b6adf62f68e02ada8cd5ff5068804b25c036449d85cc"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "rust"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust": {
+          "git_tree_sha1": "8ab8eb37d5d1398ffcd1b88764f1ad5833850abf",
+          "tracked_files": 184
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "4abf75b1325813f49cff8377932dfb1a4a5bf21f",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1477
+    },
+    {
+      "exact_runtime_bytes_available_without_new_patch": true,
+      "id": "scanner-final-reader",
+      "measured_local_commits": [
+        "66d86b3c9cc1d755878ad0649b618504bf4f5133"
+      ],
+      "operations": [
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 23808,
+            "git_blob_sha1": "ebc0b86ed5e63269fe0622fbb1b287df526753cc",
+            "mode": "100644",
+            "sha256": "78fd6c5a2d270ca048da9450fb15e7309ae445853647f6f7b9acf352147bdbd3"
+          },
+          "path": "rust/Cargo.lock",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/Cargo.lock"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 1017,
+            "git_blob_sha1": "a4782eafffedc8a1dfae59db03740fe74937b9df",
+            "mode": "100644",
+            "sha256": "73bb63b12d2f54b641ea3cf43cf8c065fac0238c7d5759a721da575fb088c869"
+          },
+          "path": "rust/Cargo.toml",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/Cargo.toml"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 266,
+            "git_blob_sha1": "288cd9284fb901859b098dc12236e7b850bea29d",
+            "mode": "100644",
+            "sha256": "7ce24728bfa0250994854898396c161d2f9414efe13a4dbc0d1c5fb9f9bdbb36"
+          },
+          "path": "rust/crates/guard-offline-regex-pilot/Cargo.toml",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/crates/guard-offline-regex-pilot/Cargo.toml"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 9413,
+            "git_blob_sha1": "a5cb5156138f51b45e111add5adde647205e94db",
+            "mode": "100644",
+            "sha256": "f55e87eb1795a5e06b9797f0c63d91ee1c0a4708261efda87d70b08aeb8c501d"
+          },
+          "path": "rust/crates/guard-offline-regex-pilot/src/main.rs",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "rust/crates/guard-offline-regex-pilot/src/main.rs"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 30268,
+            "git_blob_sha1": "7977fa35ed8f577ac5a3c1774c6d3f20abb55e98",
+            "mode": "100644",
+            "sha256": "6b05e8e81dc5a87102d7b6adf62f68e02ada8cd5ff5068804b25c036449d85cc"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_detection.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 16373,
+            "git_blob_sha1": "5cd89ee3c15c09ef45b776474a25d3347e19f655",
+            "mode": "100644",
+            "sha256": "f442f7066ff737aee8efa889954bafad13a8800188c7d6068d1aaaee2f460d64"
+          },
+          "path": "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py"
+        },
+        {
+          "action": "restore_public",
+          "expected": {
+            "bytes": 6084,
+            "git_blob_sha1": "5909c6b654040b088be547dd0bd0550aba1de162",
+            "mode": "100644",
+            "sha256": "31e84c782514afae8458719b8fdcc70df1c15dd1119b29a1082165232b76248b"
+          },
+          "path": "src/codex_plugin_scanner/path_support.py",
+          "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
+          "source_path": "src/codex_plugin_scanner/path_support.py"
+        }
+      ],
+      "public_base": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+      "reconstruction_verified": true,
+      "scope": [
+        "src",
+        "pyproject.toml",
+        "uv.lock",
+        "rust-toolchain.toml",
+        ".gitattributes",
+        "rust"
+      ],
+      "scope_identity": {
+        ".gitattributes": {
+          "bytes": 833,
+          "git_blob_sha1": "8d17b874a251018317b2ec53af777b787c0d9899",
+          "mode": "100644",
+          "sha256": "aba905b2ede0e5a4f06aa2441fbc97f81f983a3df66eef836e823d297c717476"
+        },
+        "pyproject.toml": {
+          "bytes": 8626,
+          "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+          "mode": "100644",
+          "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+        },
+        "rust": {
+          "git_tree_sha1": "8ab8eb37d5d1398ffcd1b88764f1ad5833850abf",
+          "tracked_files": 184
+        },
+        "rust-toolchain.toml": null,
+        "src": {
+          "git_tree_sha1": "eb5968f69017fe8b9c801f3b630d8ba267be31ee",
+          "tracked_files": 1290
+        },
+        "uv.lock": {
+          "bytes": 960988,
+          "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+          "mode": "100644",
+          "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        }
+      },
+      "tracked_files_in_scope": 1477
+    }
+  ],
+  "validation": {
+    "benchmark_executed": false,
+    "method": "isolated temporary Git indexes in package audit repo; public objects read via alternate object store; git apply --check/--cached; complete scoped path/mode/blob equality",
+    "production_worktrees_changed": false,
+    "tests_or_builds_executed": false
+  }
+}

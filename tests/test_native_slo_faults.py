@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import Context
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -114,3 +116,67 @@ def test_approval_persistence_fault_is_witnessed_through_real_positional_caller(
         fault.before_case()
         assert "approval_persistence_failed" not in fault.result()["setup"]
     assert session.store.add_approval_request == original
+
+
+def test_serial_case_captures_native_failure_in_worker_context_and_resets_between_cases(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.native_resident_client import (
+        native_resident_client_failure_code,
+        record_native_resident_client_failure_code,
+    )
+
+    def run() -> None:
+        record_native_resident_client_failure_code("native_client_endpoint_invalid")
+        session = _session(tmp_path)
+        worker = session.daemon._server.hook_worker
+        arguments = {"deadline": time.monotonic() + 1, "policy_snapshot": {"generation": 1, "mode": "enforce"}}
+        received = []
+
+        def native(**kwargs: object) -> None:
+            received.append(kwargs)
+            record_native_resident_client_failure_code("native_client_timed_out")
+            return None
+
+        worker._review_raw_hook_native = native
+        with FaultFixture(session, "normal") as fault, ThreadPoolExecutor(max_workers=1) as pool:
+            fault.before_case()
+            assert pool.submit(worker._review_raw_hook_native, **arguments).result(timeout=1) is None
+            result = fault.result()
+            assert result["native_result"] is None and result["native_call_count"] == 1
+            assert result["native_completed_call_count"] == 1
+            diagnostic = result["native_call_diagnostic"]
+            assert diagnostic["client_before_state"] == "absent"
+            assert diagnostic["client_after_value"] == "native_client_timed_out"
+            assert diagnostic["client_code_attribution"] == "context_transition"
+            assert diagnostic["caller_deadline_valid"] is diagnostic["policy_generation_valid"] is True
+            assert native_resident_client_failure_code() == "native_client_endpoint_invalid"
+            assert received == [arguments] and received[0]["policy_snapshot"] is arguments["policy_snapshot"]
+            fault.before_case()
+            assert fault.result()["native_result"] is fault.result()["native_call_diagnostic"] is None
+            assert fault.result()["native_call_count"] == 0
+        assert worker._review_raw_hook_native is native
+
+    Context().run(run)
+
+
+def test_native_capture_preserves_exact_success_and_exception(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+    worker = session.daemon._server.hook_worker
+    edge = {"result": {"decision": "deny"}}
+    error = RuntimeError("original unchanged error")
+
+    def native(*, fail: bool = False) -> object:
+        if fail:
+            raise error
+        return edge
+
+    worker._review_raw_hook_native = native
+    with FaultFixture(session, "normal") as fault:
+        assert worker._review_raw_hook_native() is edge
+        assert fault.result()["native_result"] == edge["result"]
+        fault.before_case()
+        with pytest.raises(RuntimeError) as caught:
+            worker._review_raw_hook_native(fail=True)
+        assert caught.value is error
+        assert fault.result()["native_call_count"] == 1
+        assert fault.result()["native_completed_call_count"] == 0
+        assert fault.result()["native_call_diagnostic"] is None

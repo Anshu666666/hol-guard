@@ -1,0 +1,120 @@
+diff --git a/src/codex_plugin_scanner/guard/mcp_tool_calls.py b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+index 52a0d770a76df0538adb6638e678251ff5c05c10..d453e43b7d0bd8f6ccd72e15b444ccd7571179e0 100644
+--- a/src/codex_plugin_scanner/guard/mcp_tool_calls.py
++++ b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+@@ -298,56 +298,30 @@ class ToolCallRiskFacts:
+     """
+ 
+     categories: tuple[str, ...]
+-    _input_binding: tuple[bytes, tuple[str | int, ...]] = field(repr=False)
++    _encoded_inputs: str = field(repr=False)
+ 
+ 
+-def _copy_strict_json(value: object, shape: bytearray, leaves: list[str | int]) -> object:
+-    """Own containers and bind their exact structure without encoding text.
+-
+-    The private preorder shape has distinct scalar, key, and container tags.
+-    Container closing tags preserve nesting and key tags preserve dict order.
+-    Immutable string/integer leaves can be shared; floats use their exact hex
+-    spelling so that signed zero cannot compare equal. Neither the eventual
+-    bytes shape nor its leaf tuple retains a mutable caller-owned container.
+-    """
++def _copy_strict_json(value: object) -> object:
++    """Own JSON values without invoking custom-container or scalar callbacks."""
+ 
+     kind = type(value)
+-    if value is None:
+-        shape.append(ord("n"))
+-        return value
+-    if kind is bool:
+-        shape.append(ord("t") if value else ord("f"))
+-        return value
+-    if kind is str or kind is int:
+-        shape.append(ord("s") if kind is str else ord("i"))
+-        leaves.append(cast(str | int, value))
++    if value is None or kind in (str, bool, int):
+         return value
+     if kind is float and math.isfinite(cast(float, value)):
+-        shape.append(ord("d"))
+-        leaves.append(cast(float, value).hex())
+         return value
+     if kind is list:
+-        shape.append(ord("["))
+-        owned = [_copy_strict_json(item, shape, leaves) for item in cast(list[object], value)]
+-        shape.append(ord("]"))
+-        return owned
++        return [_copy_strict_json(item) for item in cast(list[object], value)]
+     if kind is dict:
+-        shape.append(ord("{"))
+         result: dict[str, object] = {}
+         for key, item in cast(dict[object, object], value).items():
+             if type(key) is not str:
+                 raise ValueError("tool_call_facts_require_string_keys")
+-            shape.append(ord("k"))
+-            leaves.append(cast(str, key))
+-            result[cast(str, key)] = _copy_strict_json(item, shape, leaves)
+-        shape.append(ord("}"))
++            result[cast(str, key)] = _copy_strict_json(item)
+         return result
+     raise ValueError("tool_call_facts_require_plain_finite_json")
+ 
+ 
+-def _tool_call_risk_snapshot(
+-    artifact: GuardArtifact, arguments: object
+-) -> tuple[tuple[bytes, tuple[str | int, ...]], GuardArtifact, object] | None:
++def _tool_call_risk_snapshot(artifact: GuardArtifact, arguments: object) -> tuple[str, GuardArtifact, object] | None:
+     """Keep unsupported inputs on the existing, uncached analysis path."""
+ 
+     if type(artifact) is not GuardArtifact or type(artifact.args) is not tuple:
+@@ -355,22 +329,22 @@ def _tool_call_risk_snapshot(
+     if any(type(item) is not str for item in artifact.args):
+         return None
+     try:
+-        shape = bytearray()
+-        leaves: list[str | int] = []
+         owned_fields = {
+-            item.name: _copy_strict_json(getattr(artifact, item.name), shape, leaves)
++            item.name: _copy_strict_json(getattr(artifact, item.name))
+             for item in fields(artifact)
+             if item.name != "args"
+         }
+-        # The exact GuardArtifact field order is fixed above. Its args tuple is
+-        # already immutable and validated, but still enters the value binding.
+-        _copy_strict_json(list(artifact.args), shape, leaves)
+-        owned_arguments = _copy_strict_json(arguments, shape, leaves)
+-        binding = bytes(shape), tuple(leaves)
++        owned_arguments = _copy_strict_json(arguments)
++        # Preserve insertion order: browser normalization can observe key order.
++        encoded = json.dumps(
++            {"artifact": {**owned_fields, "args": list(artifact.args)}, "arguments": owned_arguments},
++            separators=(",", ":"),
++            allow_nan=False,
++        )
+         owned_artifact = replace(artifact, **owned_fields)
+     except (ValueError, TypeError, RecursionError, RuntimeError):
+         return None
+-    return binding, owned_artifact, owned_arguments
++    return encoded, owned_artifact, owned_arguments
+ 
+ 
+ def prepare_tool_call_risk_facts(artifact: GuardArtifact, arguments: object) -> ToolCallRiskFacts | None:
+@@ -379,8 +353,8 @@ def prepare_tool_call_risk_facts(artifact: GuardArtifact, arguments: object) ->
+     snapshot = _tool_call_risk_snapshot(artifact, arguments)
+     if snapshot is None:
+         return None
+-    binding, owned_artifact, owned_arguments = snapshot
+-    return ToolCallRiskFacts(tool_call_risk_categories(owned_artifact, owned_arguments), binding)
++    encoded, owned_artifact, owned_arguments = snapshot
++    return ToolCallRiskFacts(tool_call_risk_categories(owned_artifact, owned_arguments), encoded)
+ 
+ 
+ def _matching_tool_call_risk_snapshot(
+@@ -389,7 +363,7 @@ def _matching_tool_call_risk_snapshot(
+     if facts is None:
+         return None
+     snapshot = _tool_call_risk_snapshot(artifact, arguments)
+-    if snapshot is None or snapshot[0] != facts._input_binding:
++    if snapshot is None or snapshot[0] != facts._encoded_inputs:
+         return None
+     return snapshot[1], snapshot[2]
+ 

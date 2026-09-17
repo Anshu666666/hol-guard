@@ -1,0 +1,113 @@
+name: CodeQL foundation SARIF diagnostic
+
+on:
+  pull_request:
+    branches: [release/3.2]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-foundation-diagnostic-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  foundation:
+    name: Foundation SARIF (${{ matrix.language }})
+    if: >-
+      github.repository == 'hashgraph-online/hol-guard' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.number == 2954 &&
+        github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # The pinned CodeQL action reads its workflow identity through the Actions API.
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        language: [actions, javascript-typescript, python]
+    env:
+      # This workflow runs on PR2954, but analyzes the immutable PR2951 tree.
+      # Its unrelated PR diff must never filter the foundation findings. The
+      # original run also performed full analysis after exceeding the diff cap.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
+    steps:
+      - name: Check out the diagnostic definition
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          repository: hashgraph-online/hol-guard
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows/codeql-foundation-diagnostic.yml
+            /scripts/ci/codeql_foundation_diagnostic.py
+      - name: Check out the immutable analyzed foundation
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          repository: hashgraph-online/hol-guard
+          ref: e449594e86c717e66e14598a4130475de79c536f
+          path: foundation-src
+          persist-credentials: false
+      - name: Verify source identity and preserve the observed workspace alias
+        run: |
+          python3 -I scripts/ci/codeql_foundation_diagnostic.py verify --source-root foundation-src
+          LEGACY_ROOT="/home/runner/work/codex-plugin-scanner"
+          mkdir -p "$LEGACY_ROOT"
+          ln -sfn "$GITHUB_WORKSPACE/foundation-src" "$LEGACY_ROOT/codex-plugin-scanner"
+      - name: Initialize the observed CodeQL bundle and query configuration
+        id: init
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e
+        with:
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.0/codeql-bundle-linux64.tar.zst
+          languages: ${{ matrix.language }}
+          build-mode: none
+          source-root: foundation-src
+          trap-caching: false
+          dependency-caching: false
+          config: |
+            paths-ignore:
+              - src/codex_plugin_scanner/guard/stable_digest.py
+      - name: Generate SARIF without uploading security results or databases
+        id: analyze
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e
+        with:
+          category: /language:${{ matrix.language }}
+          checkout_path: ${{ github.workspace }}/foundation-src
+          output: ${{ runner.temp }}/codeql-foundation-results
+          # In this pinned action, deprecated false means failure-only, not never.
+          upload: never
+          upload-database: false
+          wait-for-processing: false
+      - name: Retain completion state and exact SARIF hashes
+        if: ${{ always() }}
+        env:
+          DIAGNOSTIC_LANGUAGE: ${{ matrix.language }}
+          OBSERVED_CODEQL_VERSION: ${{ steps.init.outputs.codeql-version }}
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
+        run: |
+          python3 -I scripts/ci/codeql_foundation_diagnostic.py collect \
+            --source-root foundation-src \
+            --results-root "$RUNNER_TEMP/codeql-foundation-results" \
+            --language "$DIAGNOSTIC_LANGUAGE" \
+            --observed-version "$OBSERVED_CODEQL_VERSION" \
+            --init-outcome "$INIT_OUTCOME" \
+            --analyze-outcome "$ANALYZE_OUTCOME"
+      - name: Retain the unmodified SARIF and diagnostic manifest
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: codeql-foundation-e449-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/codeql-foundation-results/*.sarif
+            ${{ runner.temp }}/codeql-foundation-results/diagnostic.json
+          if-no-files-found: error
+          retention-days: 14
+          include-hidden-files: false

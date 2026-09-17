@@ -27,11 +27,16 @@ if str(_ROOT) not in sys.path:
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process  # noqa: E402
 from scripts.ci.installed_transition_diagnostics import (  # noqa: E402
     LEGACY_REJECTION_REASONS,
+    exception_metadata,
     process_metadata,
     state_preserved,
 )
 from scripts.ci.installed_transition_prior import PRIOR_ARTIFACTS, PRIOR_BUILD_SHA  # noqa: E402
 from scripts.ci.installed_transition_receipts import AUDITED_BASELINE_SHA  # noqa: E402
+from scripts.native_qualification_interpreter import (  # noqa: E402
+    InterpreterProvisioningError,
+    provision_linux_venv_interpreter,
+)
 from scripts.native_slo_artifact import wheel_package_digest  # noqa: E402
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import failure_evidence  # noqa: E402
@@ -47,6 +52,24 @@ _COMPATIBLE_PHASES = (
     ("compatible_candidate_start", "candidate"),
     ("compatible_candidate_rollback", "prior_candidate"),
     ("compatible_candidate_restore", "candidate"),
+)
+_FALLBACK_FAILURE_REASONS = frozenset(
+    {
+        "qualification_transition_dependency_lock_changed",
+        "qualification_transition_installation_command_failed",
+        "qualification_transition_installer_unavailable",
+        "qualification_transition_prior_artifact_missing",
+        "qualification_transition_prior_artifact_pair_missing",
+        "qualification_transition_prior_cleanup_unverified",
+        "qualification_transition_prior_selection_identity_invalid",
+        "qualification_transition_prior_selection_invalid",
+        "qualification_transition_prior_selection_not_contained",
+        "qualification_transition_prior_selection_path_invalid",
+        "qualification_transition_prior_wheel_changed",
+        "qualification_transition_requires_distinct_artifacts",
+        "qualification_transition_requires_distinct_prior_artifact",
+        "qualification_transition_wheel_changed",
+    }
 )
 
 
@@ -75,7 +98,7 @@ def _run(arguments: tuple[str, ...], root: Path, *, timeout_seconds: float = 180
         environment.pop(key, None)
     # uv sync must target only this disposable prefix, never the paired
     # candidate project's default environment.
-    if Path(arguments[0]).name in {"uv", "uv.exe"}:
+    if Path(arguments[0]).name.casefold() in {"uv", "uv.exe"}:
         environment["UV_PROJECT_ENVIRONMENT"] = str(root / "installation")
     return run_isolated_hook_process(
         arguments,
@@ -85,6 +108,22 @@ def _run(arguments: tuple[str, ...], root: Path, *, timeout_seconds: float = 180
         timeout_seconds=timeout_seconds,
         output_limit=256 * 1024,
     )
+
+
+def _failure_evidence(error: Exception) -> dict:
+    """Keep the first failure even if installed package imports were lost."""
+    try:
+        return failure_evidence(error)
+    except Exception as reporting_error:
+        reason = str(error)
+        evidence = {
+            "schema": "hol-guard.native-qualification-failure.v1",
+            **exception_metadata(error),
+            "reporting_failure": exception_metadata(reporting_error),
+        }
+        if reason in _FALLBACK_FAILURE_REASONS:
+            evidence["reason"] = reason
+        return evidence
 
 
 def _process_ok(result) -> bool:
@@ -100,6 +139,43 @@ def _required_command(arguments: tuple[str, ...], root: Path) -> None:
     result = _run(arguments, root)
     if not _process_ok(result):
         raise RuntimeError("qualification_transition_installation_command_failed")
+
+
+def _interpreter_receipt(proof: dict) -> dict:
+    """Keep original/copy identities without relaxing the aggregate privacy filter."""
+    encoded = json.dumps(proof, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    renamed = {
+        {
+            "source": "original",
+            "source_sha256": "original_sha256",
+            "source_invocation_symlink": "original_invocation_symlink",
+        }.get(key, key): value
+        for key, value in proof.items()
+    }
+    # Identifier-like runtime fields survive normally. Free-form runtime labels
+    # (for example OpenSSL's build description) retain their complete receipt
+    # digest while the existing sanitizer controls the exported label.
+    renamed["receipt_sha256"] = hashlib.sha256(encoded).hexdigest()
+    renamed["runtime_labels_sanitized"] = True
+    return assert_privacy_safe(renamed)
+
+
+def _prepare_interpreter(python: Path, report: dict) -> None:
+    """Provision only the disposable Linux interpreter after its wheel exists."""
+    record: dict = {"required": sys.platform == "linux", "attempted": False}
+    report["interpreter_provisioning"] = record
+    if not record["required"]:
+        record["status"] = "platform_not_selected"
+        return
+    record["attempted"] = True
+    try:
+        proof = provision_linux_venv_interpreter(python)
+    except InterpreterProvisioningError as error:
+        record["evidence"] = _interpreter_receipt(error.evidence)
+        raise
+    record["evidence"] = _interpreter_receipt(proof)
+    if proof.get("passed") is not True:
+        raise InterpreterProvisioningError(proof)
 
 
 def select_prior_artifact(python: Path, root: Path, target: str) -> tuple[Path, dict]:
@@ -476,6 +552,7 @@ def verify(
             fixture = root / "fixture"
             fixture.mkdir(mode=0o700)
             prior_receipts = 0
+            interpreter_prepared = False
             for phase, arm in plan:
                 if sha256(wheels[arm]) != contracts[arm]["wheel_sha256"]:
                     raise RuntimeError("qualification_transition_wheel_changed")
@@ -493,6 +570,12 @@ def verify(
                     ),
                     root,
                 )
+                if not interpreter_prepared:
+                    # The helper validates against this exact installed wheel's
+                    # unchanged managed-file validator. Dependency-only sync is
+                    # insufficient, and later replacements reuse the same copy.
+                    _prepare_interpreter(worker_python, report)
+                    interpreter_prepared = True
                 expected = root / "expected.json"
                 expected.write_text(json.dumps(contracts[arm]), encoding="utf-8")
                 expected.chmod(0o600)
@@ -536,7 +619,7 @@ def verify(
         report["dependency_integrity_verified"] = True
     except Exception as error:
         report["passed"] = False
-        report["failure"] = failure_evidence(error)
+        report["failure"] = _failure_evidence(error)
     report["completed_phase_count"] = sum(row["passed"] for row in report["phases"])
     report["required_phase_count"] = len(_COMPATIBLE_PHASES if compatible_only else _PHASES)
     if compatible_only:
@@ -594,7 +677,7 @@ def main() -> int:
             != prior_evidence["wheel_sha256"]
         ):
             result["passed"] = False
-            mismatch = failure_evidence(ValueError("qualification_transition_prior_wheel_changed"))
+            mismatch = _failure_evidence(ValueError("qualification_transition_prior_wheel_changed"))
             result["prior_artifact_validation_failure"] = mismatch
             result.setdefault("failure", mismatch)
             result["suite_acceptance"] = suite_acceptance(result)
@@ -605,7 +688,7 @@ def main() -> int:
             "prior_candidate_requested": requested,
             "phases": [],
             "completed_phase_count": 0,
-            "failure": failure_evidence(error),
+            "failure": _failure_evidence(error),
         }
         result["suite_acceptance"] = suite_acceptance(result)
     if prior_evidence is not None:

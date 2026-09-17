@@ -17,6 +17,7 @@ import json
 import math
 import os
 import platform
+import signal
 import statistics
 import subprocess
 import sys
@@ -24,7 +25,7 @@ import tempfile
 import threading
 import time
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,8 @@ for line in sys.stdin:
                  for i in range(size)]}
     elif method == 'tools/call':
         start_cpu = time.process_time_ns()
+        with output.with_suffix('.forwarded.jsonl').open('a') as journal:
+            journal.write(json.dumps(message['id']) + '\n')
         start_wait = time.perf_counter_ns()
         if delay:
             time.sleep(delay)
@@ -188,6 +191,17 @@ def _worker(config_path: Path) -> int:
 
     imports_ms = (time.perf_counter_ns() - started) / 1e6
     phases = Phases(spec["profile"])
+    native_pilot = None
+    if spec.get("native_text_helper"):
+        from guard_mcp_text_facts_pilot import TextFactsPilot, install_adapter
+
+        native_pilot = TextFactsPilot(
+            Path(spec["native_text_helper"]),
+            minimum_characters=spec["native_minimum_characters"],
+        )
+        install_adapter(calls, native_pilot)
+        if spec["profile"]:
+            phases.wrap(native_pilot, "classify", "native_text_ipc")
     if spec["uncached"]:
         runtime._tool_catalog_fingerprint = runtime._uncached_tool_catalog_fingerprint
     if spec["profile"]:
@@ -281,7 +295,15 @@ def _worker(config_path: Path) -> int:
             source_scope="project",
             config_path=str(workspace / ".mcp.json"),
         )
-    exit_code = proxy.serve()
+    worker_failure = None
+    try:
+        exit_code = proxy.serve()
+    except Exception as error:
+        exit_code = 1
+        worker_failure = type(error).__name__
+    finally:
+        if native_pilot is not None:
+            native_pilot.close()
     worker_peak_rss_bytes = None
     if sys.platform in {"linux", "darwin"}:
         import resource
@@ -296,6 +318,8 @@ def _worker(config_path: Path) -> int:
                 "observations": observations,
                 "all_phases": phases.snapshot(),
                 "exit_code": exit_code,
+                "worker_failure": worker_failure,
+                "native_text_pilot": native_pilot.evidence() if native_pilot is not None else None,
                 "quiet_barrier_seconds": runtime._TOOLS_CALL_PREWRITE_QUIET_SECONDS,
                 "worker_peak_rss_bytes": worker_peak_rss_bytes,
                 "loaded_runtime_sha256": {
@@ -339,6 +363,8 @@ def run_case(
     refresh_every: int = 0,
     compact_result: bool = False,
     payload_kind: str = "ascii",
+    native_text_helper: Path | None = None,
+    native_minimum_characters: int = 256 * 1024,
 ) -> dict[str, Any]:
     """Complete ordinary local proxy path; abort on a mismatched result or ID."""
     # Import the client reader before timing worker startup.
@@ -359,6 +385,8 @@ def run_case(
             "refresh_every": refresh_every,
             "compact_result": compact_result,
             "payload_kind": payload_kind,
+            "native_text_helper": str(native_text_helper) if native_text_helper is not None else None,
+            "native_minimum_characters": native_minimum_characters,
             "worker_output": str(root / "worker.json"),
         }
         config_path = root / "config.json"
@@ -372,6 +400,7 @@ def run_case(
             text=True,
             encoding="utf-8",
             bufsize=1,
+            start_new_session=os.name == "posix",
         )
         assert process.stdin and process.stdout
         timings: list[float] = []
@@ -540,11 +569,14 @@ def run_case(
             warm = worker["observations"][1:]
             phase_names = sorted({name for row in warm for name in row["phases"]})
             return {
-                "fixture": {key: value for key, value in spec.items() if key != "worker_output"},
+                "fixture": {
+                    key: value for key, value in spec.items() if key not in {"worker_output", "native_text_helper"}
+                },
                 "boundary": "MCP_STDIO_CLIENT_THROUGH_SERVE_AND_CHILD",
                 "qualification": False,
                 "stderr_policy": "discarded_in_child_no_capture_backpressure",
                 "loaded_runtime_sha256": worker["loaded_runtime_sha256"],
+                "native_text_pilot": worker["native_text_pilot"],
                 "startup": {**startup, "guard_imports_ms": worker["imports_ms"]},
                 "cold_first_tool_ms": timings[0],
                 "client_roundtrip_ms": _summary(timings[1:]),
@@ -591,6 +623,22 @@ def run_case(
             }
         except (Exception, KeyboardInterrupt) as error:
             code = str(error)
+            # Allow a terminal proxy response to finish its bounded cleanup and
+            # persist the worker's helper evidence before inspecting the files.
+            if process.poll() is None:
+                with suppress(OSError):
+                    process.stdin.close()
+                with suppress(subprocess.TimeoutExpired):
+                    process.wait(timeout=2)
+            failed_worker = {}
+            if (root / "worker.json").is_file():
+                with suppress(OSError, ValueError):
+                    failed_worker = json.loads((root / "worker.json").read_text())
+            child_forwarded = []
+            with suppress(OSError, ValueError):
+                child_forwarded = [
+                    json.loads(line) for line in (root / "child.forwarded.jsonl").read_text().splitlines()
+                ]
             raise BenchmarkCaseError(
                 {
                     "stage": stage,
@@ -604,11 +652,18 @@ def run_case(
                     "invalidated": invalidated,
                     "notifications": dict(notifications),
                     "errors": 1,
+                    "native_text_pilot": failed_worker.get("native_text_pilot"),
+                    "worker_failure": failed_worker.get("worker_failure"),
+                    "worker_exit_code": process.poll(),
+                    "observed_child_forwarded_count": len(child_forwarded),
                 }
             ) from error
         finally:
             if process.poll() is None:
-                process.kill()
+                if os.name == "posix":
+                    os.killpg(process.pid, signal.SIGKILL)
+                else:
+                    process.kill()
                 process.wait(timeout=10)
             retire_reader(process.stdout)
             process.stdout.close()

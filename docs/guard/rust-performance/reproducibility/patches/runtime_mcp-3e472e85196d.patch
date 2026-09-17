@@ -1,0 +1,37 @@
+diff --git a/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py b/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
+index 303187496a8cdaf6e5bba5f1c50ad846167cd477..5c3d53f639a5bbb0245a9e87c5efef7fd05ebe17 100644
+--- a/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
++++ b/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
+@@ -52,6 +52,7 @@ from ..mcp_tool_calls import (
+     build_tool_call_hash,
+     claimed_approval_authorizes_postclaim_review,
+     evaluate_tool_call,
++    prepare_tool_call_risk_facts,
+     resolve_tool_call_policy_action,
+     tool_call_risk_categories,
+     tool_call_risk_summary,
+@@ -1146,11 +1147,16 @@ class RuntimeMcpGuardProxy:
+             tool_schema=tool_schema,
+             tool_description=tool_description_value if isinstance(tool_description_value, str) else None,
+         )
++        # Catalog values and decoded request arguments are owned by this
++        # preparation. Facts are private to it; later approval/catalog/claim
++        # boundaries construct a new preparation and re-evaluate current policy.
++        risk_facts = prepare_tool_call_risk_facts(artifact, arguments)
+         artifact_hash = build_tool_call_hash(
+             artifact,
+             arguments,
+             workspace=self.context.workspace_dir or Path.cwd(),
+             config=authority_config,
++            risk_facts=risk_facts,
+         )
+         decision = self._disable_saved_allow_without_complete_catalog(
+             evaluate_tool_call(
+@@ -1160,6 +1166,7 @@ class RuntimeMcpGuardProxy:
+                 artifact_hash=artifact_hash,
+                 arguments=arguments,
+                 claim_saved_approval=False,
++                risk_facts=risk_facts,
+             )
+         )
+         return _ToolCallAuthority(

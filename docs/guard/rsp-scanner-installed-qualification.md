@@ -145,18 +145,40 @@ The existing paired artifact builder now supplies its actual candidate wheel
 and build SHA to this probe as a separate required check. A failed paired
 sampling command does not prevent the installed scanner check from running.
 The receipt is written to `aggregate/installed-offline-secrets.json` within
-the existing qualification artifact. The workflow covers these hosts:
+the existing qualification artifact. The first published attempt at
+`abf319d5a345d761d88e26ba787026e98370c26f` completed on all four hosts in
+[run 35229526455](https://github.com/hashgraph-online/hol-guard/actions/runs/35229526455).
+The [hosted receipt manifest](evidence/rsp-scanner-installed-hosted-abf.json)
+retains every scanner attempt and each original build-metadata file, with
+artifact IDs and ZIP/JSON digests. All four overall jobs failed; the scanner
+ran independently and passed on three hosts.
 
 | Host | Candidate target | Installed scanner status |
 | --- | --- | --- |
-| Linux x86-64 | `x86_64-unknown-linux-musl` | Hosted native-wheel result pending |
-| macOS Intel | `x86_64-apple-darwin` | Hosted native-wheel result pending |
-| macOS Apple Silicon | `aarch64-apple-darwin` | Hosted native-wheel result pending |
-| Windows x86-64 | `x86_64-pc-windows-msvc` | Hosted native-wheel result pending |
+| Linux x86-64 | `x86_64-unknown-linux-musl` | [28 passed; no skips](evidence/rsp-scanner-installed-abf-linux.json) |
+| macOS Intel | `x86_64-apple-darwin` | [28 passed; no skips](evidence/rsp-scanner-installed-abf-macintel.json) |
+| macOS Apple Silicon | `aarch64-apple-darwin` | [28 passed; no skips](evidence/rsp-scanner-installed-abf-macarm.json) |
+| Windows x86-64 | `x86_64-pc-windows-msvc` | [Failed before any scanner case](evidence/rsp-scanner-installed-abf-windows.json) |
+
+All three passing hosts used actual native-bundled wheels from the published
+build, the exact final probe, verified launcher bindings and the same final
+scanner module bytes. Their 28 named cases, expected exits and semantic
+dimensions match the local reference. Every public result digest except
+host-generated Git-history commit IDs also matches. These are 84 completed
+functional cases across three hosts, with no native detector activation.
+
+Windows raised `PackageNotFoundError` during initial installed-distribution
+attestation, before recording any identity or running a scan. Its probe hash
+is the exact CRLF conversion of the published LF source, so the different
+hash does not establish a source change. The preceding transition check also
+lost access to an installed module. The common qualification environment
+failure is being corrected separately; the zero-case scanner failure remains
+preserved and Windows needs a corrected hosted attempt. No Windows launcher,
+finding, mutation or CLI acceptance is inferred from this failed attempt.
 
 RSP-069's probe implementation and local installed Python coverage are
-complete. Hosted platform results must be attached before claiming the four
-platform installed qualification complete. RSP-071 combines this scanner
+complete. Hosted qualification passes on Linux and both macOS architectures;
+Windows remains incomplete until the corrected hosted check passes. RSP-071 combines this scanner
 subset with the independent archive qualification. The
 [standalone native regex NO-GO](rsp-scanner-regex-pilot.md) remains unchanged;
 there is no native detector activation or inference of installed native

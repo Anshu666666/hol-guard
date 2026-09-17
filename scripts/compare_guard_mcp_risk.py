@@ -33,7 +33,7 @@ def source_identity(source: Path) -> dict[str, str]:
     }
 
 
-def verify_facts(baseline: Path) -> dict:
+def verify_facts(baseline: Path, *, progress=None, attempt=None) -> dict:
     """Use frozen pre-change source, not a second spelling of new predicates."""
     from codex_plugin_scanner.guard import mcp_tool_calls as candidate
     from codex_plugin_scanner.guard.config import GuardConfig
@@ -135,6 +135,8 @@ def verify_facts(baseline: Path) -> dict:
                     tool_description=description,
                 )
                 for probe in probes:
+                    if attempt is not None:
+                        attempt(checked + 1)
                     arguments = {key: probe, "sample": 17}
                     results = []
                     for module in (reference, candidate):
@@ -166,6 +168,8 @@ def verify_facts(baseline: Path) -> dict:
                     # Record a fixed-size outcome digest, never policy/receipt/path bodies.
                     trace.update(json.dumps(results[0], sort_keys=True, default=str).encode())
                     checked += 1
+                    if progress is not None:
+                        progress(checked)
     return {
         "cases": checked,
         "mismatches": 0,

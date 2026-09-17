@@ -223,15 +223,54 @@ def main() -> int:
         transitions.extend(
             ("--prior-artifact-root", str(args.prior_artifact_root.absolute()), "--prior-artifact-target", args.target)
         )
-    _run_required_checks(
-        (
-            ("paired_sampling", paired),
-            ("installed_ollama", ollama),
-            ("installed_artifact_transitions", transitions),
-            ("installed_offline_secrets", offline_secrets),
-        ),
-        cwd=args.candidate.resolve(),
+    checks = (
+        ("paired_sampling", paired),
+        ("installed_ollama", ollama),
+        ("installed_artifact_transitions", transitions),
+        ("installed_offline_secrets", offline_secrets),
     )
+    if args.target == "x86_64-unknown-linux-musl":
+        # Own exact same-byte copies only in these disposable environments.
+        # A failed provisioning check remains mandatory while other installed
+        # probes still run and retain their independent outcomes.
+        checks = (
+            (
+                "qualification_interpreters",
+                [
+                    str(candidate_python),
+                    "-I",
+                    str(args.candidate.resolve() / "scripts/provision_native_qualification_interpreters.py"),
+                    "--baseline-python",
+                    str(baseline_python),
+                    "--candidate-python",
+                    str(candidate_python),
+                    "--json",
+                    str(destination / "aggregate/qualification-interpreters.json"),
+                ],
+            ),
+            *checks,
+        )
+        # This private pilot must prove native transport through the actual
+        # installed wheel. Its report never enables a production registration.
+        checks += (
+            (
+                "installed_claude_launcher_pilot",
+                [
+                    str(candidate_python),
+                    "-I",
+                    str(args.candidate.resolve() / "scripts/bench_claude_native_launcher_pilot.py"),
+                    "--wheel",
+                    str(candidate_wheel),
+                    "--blocks",
+                    "5",
+                    "--samples",
+                    "30",
+                    "--json",
+                    str(destination / "aggregate/installed-claude-launcher-pilot.json"),
+                ],
+            ),
+        )
+    _run_required_checks(checks, cwd=args.candidate.resolve())
     return 0
 
 

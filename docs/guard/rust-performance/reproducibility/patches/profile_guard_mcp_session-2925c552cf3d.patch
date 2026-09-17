@@ -1,0 +1,57 @@
+diff --git a/scripts/profile_guard_mcp_session.py b/scripts/profile_guard_mcp_session.py
+index 1b6f99207b5ea9725c4d33c248c7254e26e520f2..39bf928e106fa3aea11aad7053b4be9c5ec52eac 100644
+--- a/scripts/profile_guard_mcp_session.py
++++ b/scripts/profile_guard_mcp_session.py
+@@ -93,27 +93,6 @@ class BenchmarkCaseError(RuntimeError):
+         super().__init__("mcp_benchmark_case_failed")
+ 
+ 
+-def fixture_arguments(payload_bytes: int, payload_kind: str, index: int) -> dict[str, Any]:
+-    """Bound synthetic text and decoded-container controls by their wire size."""
+-    if payload_kind in {"ascii", "unicode"}:
+-        text = (
+-            "€" * (payload_bytes // 3) + "x" * (payload_bytes % 3) if payload_kind == "unicode" else "x" * payload_bytes
+-        )
+-        return {"text": text, "sample": index}
+-    if payload_kind == "dense-integers":
+-        return {"text": "", "sample": index, "values": [0] * max(1, (payload_bytes - 256) // 2)}
+-    if payload_kind == "nested-records":
+-        record = {"k": [0, 1.0, None, False]}
+-        item_bytes = len(json.dumps(record, separators=(",", ":"))) + 1
+-        return {"text": "", "sample": index, "values": [record] * max(1, (payload_bytes - 256) // item_bytes)}
+-    if payload_kind == "nested-text":
+-        value: object = "x" * max(1, payload_bytes - 256)
+-        for _ in range(8):
+-            value = [value]
+-        return {"text": "", "sample": index, "values": value}
+-    raise ValueError("mcp_benchmark_unknown_payload_kind")
+-
+-
+ class Phases:
+     """Exclusive main-thread wall/CPU attribution; nested costs are subtracted."""
+ 
+@@ -470,9 +449,12 @@ def run_case(
+                     send({"jsonrpc": "2.0", "id": "catalog", "method": "tools/list", "params": {}})
+                     response_for("catalog")
+                 request_id: str | int = f"call-{index}" if index % 2 else index
+-                arguments = fixture_arguments(payload_bytes, payload_kind, index)
+-                payload = arguments["text"]
+-                params = {"name": "echo_0", "arguments": arguments}
++                payload = (
++                    "€" * (payload_bytes // 3) + "x" * (payload_bytes % 3)
++                    if payload_kind == "unicode"
++                    else "x" * payload_bytes
++                )
++                params = {"name": "echo_0", "arguments": {"text": payload, "sample": index}}
+                 # The declared review policy exercises real elicitation for an ordinary tool.
+                 stage = "tool_call"
+                 before = time.perf_counter_ns()
+@@ -502,7 +484,7 @@ def run_case(
+                             "content": [{"type": "text", "text": digest}],
+                             "structuredContent": {
+                                 "arguments_sha256": digest,
+-                                "payload_utf8_bytes": len(payload.encode()),
++                                "payload_utf8_bytes": payload_bytes,
+                                 "generation": generation,
+                             },
+                             "_meta": {"synthetic": True},

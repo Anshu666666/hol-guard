@@ -140,10 +140,12 @@ def test_missing_prior_download_fails_only_its_independent_required_check(monkey
     with pytest.raises(RuntimeError, match="installed_artifact_transitions"):
         builds.main()
     assert seen == [
+        "provision_native_qualification_interpreters.py",
         "qualify_guard_native.py",
         "verify_native_ollama_install.py",
         "verify_installed_artifact_transitions.py",
         "probe_installed_offline_secrets.py",
+        "bench_claude_native_launcher_pilot.py",
     ]
     report = json.loads((tmp_path / "evidence/aggregate/installed-artifact-transitions.json").read_text())
     assert report["passed"] is False and report["prior_candidate_requested"] is True

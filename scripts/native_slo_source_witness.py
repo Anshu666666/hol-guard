@@ -8,6 +8,7 @@ from typing import Any
 from unittest.mock import patch
 
 from scripts.native_slo_failure import FixtureFailureError
+from scripts.native_slo_native_diagnostic import observe_native_call
 from scripts.native_slo_observation_failure import verdict_evidence
 
 
@@ -25,13 +26,18 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
     ):
         raise RuntimeError("source SLO reference digest is invalid")
     original = worker._review_raw_hook_native
-    observations: list[tuple[object, object, object, object, object, object, bool]] = []
+    observations: list[tuple[object, object, object, object, object, object, bool, dict[str, object]]] = []
 
     def capture(**kwargs: object) -> object:
-        edge = original(**kwargs)
-        result = edge.get("result") if isinstance(edge, Mapping) else None
         if len(observations) >= 2:
-            return edge
+            return original(**kwargs)
+        edge, diagnostic = observe_native_call(
+            lambda: original(**kwargs),
+            worker=worker,
+            deadline=kwargs.get("deadline"),
+            policy_snapshot=kwargs.get("policy_snapshot"),
+        )
+        result = edge.get("result") if isinstance(edge, Mapping) else None
         if isinstance(result, Mapping):
             observations.append(
                 (
@@ -42,10 +48,11 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
                     result.get("reason_code"),
                     result.get("policy_action"),
                     True,
+                    diagnostic,
                 )
             )
         else:
-            observations.append((None, None, None, None, None, None, False))
+            observations.append((None, None, None, None, None, None, False, diagnostic))
         return edge
 
     # The large-source matrix is sequential. This fixture-only wrapper uses
@@ -77,6 +84,7 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
                         )["native"],
                         "rust_authority": item[0] == "rust",
                         "reference_digest_matches": item[3] == digest,
+                        "call_diagnostic": item[7],
                     }
                     for item in observations
                 ],

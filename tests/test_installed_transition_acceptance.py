@@ -21,6 +21,7 @@ def complete_suite(monkeypatch, tmp_path):
     (tmp_path / "uv.lock").write_text("pinned")
     monkeypatch.setattr(driver.shutil, "which", lambda _: "/usr/bin/uv")
     monkeypatch.setattr(driver, "_required_command", lambda *_: None)
+    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
 
     def run(argv, root):
         phase = argv[-1]

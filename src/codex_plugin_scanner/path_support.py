@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -38,6 +39,18 @@ def _read_identity(metadata: os.stat_result) -> tuple[int, ...]:
     )
 
 
+def _path_descriptor_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    # Windows Python exposes creation time as lstat().st_ctime_ns while
+    # fstat().st_ctime_ns can contain the distinct metadata change time.
+    # Compare their explicit birthtime across APIs; retain full change-time
+    # comparisons between the two observations made with each same API.
+    # Windows lstat cannot witness a metadata-only change before open when
+    # creation time, identity, size and modification time all remain unchanged.
+    if sys.platform != "win32":
+        return _read_identity(metadata)
+    return (*_read_identity(metadata)[:-1], getattr(metadata, "st_birthtime_ns", metadata.st_ctime_ns))
+
+
 def read_bytes_file_within_root(
     root: Path,
     candidate: Path,
@@ -66,7 +79,7 @@ def read_bytes_file_within_root(
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
             raise FileChangedDuringReadError(f"file changed while opening: {candidate}")
-        if _read_identity(opened) != _read_identity(metadata):
+        if _path_descriptor_identity(opened) != _path_descriptor_identity(metadata):
             raise FileChangedDuringReadError(f"file changed while opening: {candidate}")
         with os.fdopen(descriptor, "rb", closefd=False) as handle:
             # Read one byte beyond the observed size to detect growth without
@@ -81,7 +94,7 @@ def read_bytes_file_within_root(
             len(raw) > max_bytes
             or len(raw) != opened.st_size
             or _read_identity(after) != _read_identity(opened)
-            or _read_identity(path_after) != _read_identity(opened)
+            or _read_identity(path_after) != _read_identity(metadata)
         ):
             raise FileChangedDuringReadError(f"file changed while reading: {candidate}")
         return raw

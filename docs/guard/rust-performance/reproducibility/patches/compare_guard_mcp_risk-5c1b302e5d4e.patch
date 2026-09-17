@@ -1,0 +1,57 @@
+diff --git a/scripts/compare_guard_mcp_risk.py b/scripts/compare_guard_mcp_risk.py
+index 2952747bb483b0a6db396ce755eae6d23639008e..6edf79878544dc01140c280b4011bff6c5eeca5e 100644
+--- a/scripts/compare_guard_mcp_risk.py
++++ b/scripts/compare_guard_mcp_risk.py
+@@ -185,14 +185,12 @@ def run_comparison(
+     samples: int,
+     comparison_name: str = "risk-prefilter",
+     memory_boundary: bool = False,
+-    container_boundary: bool = False,
+ ) -> dict:
+     roots = {"baseline": baseline.resolve(), "candidate": candidate.resolve()}
+     identities = {label: source_identity(root) for label, root in roots.items()}
+     cases = []
+-    if memory_boundary or container_boundary:
+-        kinds = ("dense-integers", "nested-records", "nested-text") if container_boundary else ("ascii", "unicode")
+-        for block, payload_kind in enumerate(kinds):
++    if memory_boundary:
++        for block, payload_kind in enumerate(("ascii", "unicode")):
+             for source in ("baseline", "candidate") if block % 2 == 0 else ("candidate", "baseline"):
+                 cases.append(
+                     {
+@@ -216,11 +214,7 @@ def run_comparison(
+     report = {
+         "schema": f"hol-guard-mcp-{comparison_name}-comparison.v1",
+         "qualification": False,
+-        "campaign": "near_frame_ceiling_container_diagnostic"
+-        if container_boundary
+-        else "near_frame_ceiling_memory_diagnostic"
+-        if memory_boundary
+-        else "five_alternating_process_blocks",
++        "campaign": "near_frame_ceiling_memory_diagnostic" if memory_boundary else "five_alternating_process_blocks",
+         "platform": platform.system(),
+         "architecture": platform.machine(),
+         "python": platform.python_version(),
+@@ -335,12 +329,8 @@ def main() -> int:
+     parser.add_argument("--candidate-src", type=Path, required=True)
+     parser.add_argument("--lock-file", type=Path, required=True)
+     parser.add_argument("--samples", type=int, default=100)
+-    parser.add_argument(
+-        "--comparison-name", choices=("risk-prefilter", "request-facts", "structural-facts"), default="risk-prefilter"
+-    )
+-    boundary = parser.add_mutually_exclusive_group()
+-    boundary.add_argument("--memory-boundary", action="store_true")
+-    boundary.add_argument("--container-boundary", action="store_true")
++    parser.add_argument("--comparison-name", choices=("risk-prefilter", "request-facts"), default="risk-prefilter")
++    parser.add_argument("--memory-boundary", action="store_true")
+     parser.add_argument("--json", type=Path, required=True)
+     args = parser.parse_args()
+     if not 1 <= args.samples <= 10000:
+@@ -353,7 +343,6 @@ def main() -> int:
+         samples=args.samples,
+         comparison_name=args.comparison_name,
+         memory_boundary=args.memory_boundary,
+-        container_boundary=args.container_boundary,
+     )
+     print(json.dumps({"completed_cases": report["completed_cases"], "qualification": False}))
+     return 0

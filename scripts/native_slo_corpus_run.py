@@ -116,6 +116,9 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
                 except AssertionError as error:
                     detail = failure_evidence(error)
                     detail["observed_semantics"] = semantic_diagnostic(response, evidence["native_result"], cases)
+                    detail["native_call_diagnostic"] = evidence.get("native_call_diagnostic")
+                    detail["native_call_count"] = evidence.get("native_call_count")
+                    detail["native_completed_call_count"] = evidence.get("native_completed_call_count")
                     raise FixtureFailureError(detail) from error
                 validated.append(case.case_id)
                 semantic += int(case.semantic_sample)

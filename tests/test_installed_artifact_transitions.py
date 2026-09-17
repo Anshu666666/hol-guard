@@ -101,7 +101,7 @@ def test_successful_worker_metadata_survives_complete_outer_sanitizer() -> None:
     assert result["phases"][0]["worker"]["identity"]["build_sha"] == "a" * 40
 
 
-@pytest.mark.parametrize("executable", ["uv", "python"])
+@pytest.mark.parametrize("executable", ["uv", "uv.exe", "uv.EXE", "UV.ExE", "python"])
 def test_child_environment_cannot_select_the_paired_prefix_or_runtime_override(executable, monkeypatch, tmp_path):
     for key in ("VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT", "UV_PYTHON", "PYTHONHOME", "PYTHONPATH", "HOL_GUARD_NATIVE"):
         monkeypatch.setenv(key, "untrusted-inherited-value")
@@ -116,10 +116,33 @@ def test_child_environment_cannot_select_the_paired_prefix_or_runtime_override(e
     assert all(
         key not in observed for key in ("VIRTUAL_ENV", "UV_PYTHON", "PYTHONHOME", "PYTHONPATH", "HOL_GUARD_NATIVE")
     )
-    if executable == "uv":
+    if executable.casefold() in {"uv", "uv.exe"}:
         assert observed["UV_PROJECT_ENVIRONMENT"] == str(tmp_path / "installation")
     else:
         assert "UV_PROJECT_ENVIRONMENT" not in observed
+
+
+def test_failure_receipt_survives_missing_installed_package(monkeypatch):
+    def missing(_error):
+        raise ModuleNotFoundError("No module named 'codex_plugin_scanner.guard.codex_hook_file_integrity'")
+
+    monkeypatch.setattr(driver, "failure_evidence", missing)
+    original = RuntimeError("qualification_transition_prior_cleanup_unverified")
+    evidence = assert_privacy_safe(driver._failure_evidence(original))
+    assert evidence["reason"] == "qualification_transition_prior_cleanup_unverified"
+    assert evidence["category"] == "RuntimeError"
+    assert evidence["reporting_failure"]["category"] == "ModuleNotFoundError"
+    assert "codex_plugin_scanner" not in json.dumps(evidence)
+
+
+@pytest.mark.parametrize("message", ["private/path/" + "x" * 300, "qualification_customer_private_alphanumeric123"])
+def test_fallback_failure_receipt_does_not_export_unknown_exception_text(monkeypatch, message):
+    monkeypatch.setattr(driver, "failure_evidence", lambda _error: (_ for _ in ()).throw(ImportError("missing")))
+    original = RuntimeError(message)
+    evidence = assert_privacy_safe(driver._failure_evidence(original))
+    assert "reason" not in evidence
+    assert message not in json.dumps(evidence)
+    assert "private/path" not in json.dumps(evidence)
 
 
 def _wheel(path, text):
@@ -155,6 +178,7 @@ def test_replacement_uses_only_third_prefix_and_stops_after_failed_worker(fail_p
         return _result(report)
 
     monkeypatch.setattr(driver, "_required_command", required)
+    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
     monkeypatch.setattr(driver, "_run", run)
     result = driver.verify(source_python, baseline, candidate, "a" * 40, "b" * 40, dependency_root=tmp_path)
     assert result["passed"] is (fail_phase is None)
@@ -191,6 +215,7 @@ def test_dependency_change_retains_completed_phases_but_cannot_qualify(monkeypat
     lock.write_text("original-lock")
     monkeypatch.setattr(driver.shutil, "which", lambda _name: "/usr/bin/uv")
     monkeypatch.setattr(driver, "_required_command", lambda *_args: None)
+    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
 
     def run(argv, root):
         if argv[-1] == "candidate_restore":

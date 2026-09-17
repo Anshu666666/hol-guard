@@ -1,6 +1,8 @@
 """Tests for runtime verification engine."""
 
 import json
+import os
+import shutil
 import socket
 import threading
 import urllib.parse
@@ -23,6 +25,18 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_verify_plugin_passes_for_good_fixture():
     result = verify_plugin(FIXTURES / "good-plugin")
     assert result.verify_pass is True
+
+
+def test_verify_copied_plugin_with_distinct_creation_and_change_times(tmp_path):
+    plugin = tmp_path / "plugin"
+    shutil.copytree(FIXTURES / "good-plugin", plugin)
+    manifest = plugin / ".codex-plugin" / "plugin.json"
+    metadata = manifest.stat()
+    # copy2/utime preserves content while changing Windows ChangeTime. CPython
+    # exposes that time through fstat, but exposes CreationTime through lstat.
+    os.utime(manifest, ns=(metadata.st_atime_ns, metadata.st_mtime_ns - 1_000_000_000))
+    result = verify_plugin(plugin)
+    assert result.verify_pass, [case for case in result.cases if not case.passed]
 
 
 def test_verify_plugin_fails_for_insecure_remote(tmp_path: Path):

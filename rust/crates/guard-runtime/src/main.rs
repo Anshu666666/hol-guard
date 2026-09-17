@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod approval;
+mod claude_launcher_pilot;
 mod edge;
 mod hardening;
 mod managed_resident;
@@ -96,6 +97,11 @@ fn write_bytes_response(response: &[u8]) -> Result<(), String> {
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
     match args.as_slice() {
+        [command, registration_flag, registration, event_flag, event]
+            if command == "claude-hook-pilot" && registration_flag == "--registration" && event_flag == "--event" =>
+        {
+            claude_launcher_pilot::run(std::path::Path::new(registration), event)
+        }
         [command] if command == "capabilities" => write_json(&capabilities()),
         [command, flag] if command == "capabilities" && flag == "--json" => {
             write_json(&capabilities())

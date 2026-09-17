@@ -7,10 +7,13 @@ reported explicitly; a failed transport function is not a simulated crash test.
 from __future__ import annotations
 
 import sqlite3
+import threading
 from collections.abc import Mapping
 from contextlib import ExitStack
 from typing import Any, cast
 from unittest.mock import patch
+
+from scripts.native_slo_native_diagnostic import observe_native_call
 
 
 class FaultFixture:
@@ -19,6 +22,10 @@ class FaultFixture:
         self.setup = setup
         self.stack = ExitStack()
         self.last_native: dict[str, object] | None = None
+        self.last_native_diagnostic: dict[str, object] | None = None
+        self.native_calls = 0
+        self.native_completed_calls = 0
+        self.capture_lock = threading.Lock()
         self.observed: dict[str, object] = {}
         worker = session.daemon._server.hook_worker
         snapshot = worker.policy_snapshot_publisher.current_snapshot()
@@ -50,11 +57,21 @@ class FaultFixture:
         original = worker._review_raw_hook_native
 
         def capture(**kwargs: object) -> object:
-            result = original(**kwargs)
-            native_result = result.get("result") if isinstance(result, Mapping) else None
-            self.last_native = (
-                dict(cast(Mapping[str, object], native_result)) if isinstance(native_result, Mapping) else None
+            with self.capture_lock:
+                self.native_calls += 1
+            result, diagnostic = observe_native_call(
+                lambda: original(**kwargs),
+                worker=worker,
+                deadline=kwargs.get("deadline"),
+                policy_snapshot=kwargs.get("policy_snapshot"),
             )
+            native_result = result.get("result") if isinstance(result, Mapping) else None
+            with self.capture_lock:
+                self.last_native = (
+                    dict(cast(Mapping[str, object], native_result)) if isinstance(native_result, Mapping) else None
+                )
+                self.last_native_diagnostic = diagnostic
+                self.native_completed_calls += 1
             return result
 
         self.stack.enter_context(patch.object(worker, "_review_raw_hook_native", capture))
@@ -125,11 +142,21 @@ class FaultFixture:
         return self
 
     def before_case(self) -> None:
-        self.last_native = None
+        with self.capture_lock:
+            self.last_native = self.last_native_diagnostic = None
+            self.native_calls = 0
+            self.native_completed_calls = 0
         self.observed.clear()
 
     def result(self) -> dict[str, object]:
-        return {"setup": {**self.evidence, **self.observed}, "native_result": self.last_native}
+        with self.capture_lock:
+            return {
+                "setup": {**self.evidence, **self.observed},
+                "native_result": self.last_native,
+                "native_call_diagnostic": self.last_native_diagnostic,
+                "native_call_count": self.native_calls,
+                "native_completed_call_count": self.native_completed_calls,
+            }
 
     def __exit__(self, *_args: object) -> None:
         self.stack.close()

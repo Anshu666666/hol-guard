@@ -1,0 +1,59 @@
+{
+  "schema": "hol-guard-mcp-native-text-build.v1",
+  "qualification": false,
+  "production_activation": false,
+  "rust_source_commit": "3e1e8bdabe2943848dccd60b982cd5862ee39c78",
+  "harness_source_commit": "49ea9db7edb50a2cb9b1a4b4de845ee672270471",
+  "rust_source_sha256": "00aff10d74d2ccac567111d21281cf52e290ac6ba3ce73d79cf831d4e73419f7",
+  "cargo_lock_sha256": "1b295e7099fe90a41f1a8463a3c309c711d5efc6ca627e105023173577a84d66",
+  "compiler": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+  "build_profile": "release",
+  "explicit_cross_target": false,
+  "custom_rustflags_introduced": false,
+  "custom_cargo_home_introduced": false,
+  "build_command_working_directory": "rust",
+  "command_prefix": ["cargo", "+1.88.0"],
+  "common_arguments": ["--locked", "--offline", "--manifest-path", "Cargo.toml", "-p", "guard-scanner", "--example", "mcp_text_facts_pilot", "--release"],
+  "test": {"command": "test", "passed": 6, "compile_seconds": 33.99, "test_seconds": 0.28},
+  "normal_build": {"command": "build", "passed": true, "seconds": 1.82},
+  "clippy": {"command": "clippy", "extra_arguments": ["--", "-D", "warnings"], "passed": true, "seconds": 5.92},
+  "target_directory": "/dev/shm/hol-guard-takeover/mcp-text-facts-target",
+  "build_temp_directory": "/dev/shm/hol-guard-takeover/mcp-text-facts-build",
+  "target_filesystem_observed_before_build": "tmpfs_regular_directory_not_symlink",
+  "executable": {
+    "path": "/dev/shm/hol-guard-takeover/mcp-text-facts-target/release/examples/mcp_text_facts_pilot",
+    "sha256": "4a3a021d2b92c7e2a46530ab92bca280d6f11a4d5aac9c6659910d937dbc1b45",
+    "size": 2819472,
+    "device": 27,
+    "inode": 286194,
+    "normal_executable_not_test_harness": true
+  },
+  "python_final_gate": {
+    "passed": 30,
+    "skipped": 0,
+    "seconds": 72.85,
+    "compiled_helper_explicitly_enabled": true,
+    "tests": ["tests/test_mcp_text_facts_pilot.py", "tests/test_mcp_native_text_comparison.py", "tests/test_guard_mcp_stdio_profile.py"],
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "lock_acquisition_attempts": [
+      {"timeout_seconds": 180, "status": "acquisition_timeout_tests_not_started"},
+      {"timeout_seconds": 180, "status": "acquisition_timeout_tests_not_started"},
+      {"timeout_seconds": 600, "status": "acquired_tests_completed", "flock_close": true}
+    ]
+  },
+  "host_observation": {
+    "sampled_utc": "2026-09-17T13:54:41.321081+00:00",
+    "during_campaign": true,
+    "os": "Linux",
+    "kernel": "6.18.44",
+    "cpu_model": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+    "logical_cpus": 9,
+    "reported_ram_kib": 22568256,
+    "cgroup_cpu_max": "800000 100000",
+    "cgroup_memory_max_bytes": 21474836480,
+    "cpu_power_governor": "unavailable",
+    "load_average_1_5_15_minutes": [7.10205078125, 6.197265625, 6.357421875],
+    "limitations": ["shared_host", "one_observation_not_continuous_background_load_measurement", "source_route_not_installed_artifact"]
+  }
+}

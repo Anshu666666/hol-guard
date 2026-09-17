@@ -737,7 +737,12 @@ class RuntimeMcpGuardProxy:
             child_stdin = process.stdin
             child_stdout = process.stdout
             while True:
-                line = self._read_idle_client(input_stream)
+                line = self._read_idle_client(
+                    input_stream,
+                    child_stdin=child_stdin,
+                    child_stdout=child_stdout,
+                    server_output=output_stream,
+                )
                 if not line:
                     break
                 message = json.loads(line)
@@ -793,9 +798,27 @@ class RuntimeMcpGuardProxy:
         self._active_child_stdout = None
         self._reset_tools_catalog_unobserved()
 
-    def _read_idle_client(self, input_stream: TextIO) -> str:
+    def _read_idle_client(
+        self,
+        input_stream: TextIO,
+        *,
+        child_stdin: IO[str] | None = None,
+        child_stdout: IO[str] | None = None,
+        server_output: TextIO | None = None,
+    ) -> str:
         while True:
             self._check_transport()
+            if child_stdin is not None and child_stdout is not None:
+                # Servers can invalidate a catalog or request client input while
+                # the client is otherwise idle. Retain the ordinary bounded
+                # multiplexing path; another client request must not be needed
+                # to make a queued child notification visible.
+                self._drain_child_messages(
+                    child_stdin=child_stdin,
+                    child_stdout=child_stdout,
+                    client_input=input_stream,
+                    server_output=server_output,
+                )
             try:
                 line = _readline_with_timeout(input_stream, 0.1, source="client_input")
             except ProxyIoTimeoutError:

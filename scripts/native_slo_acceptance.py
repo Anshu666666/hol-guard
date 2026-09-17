@@ -131,6 +131,17 @@ def scoped_acceptance(
         },
     )
     scope("recovery_evidence", {"sampling": sampling.get("DAEMON_INGRESS.recovery") is True})
+    scope(
+        "reference_full_review",
+        {
+            "full_review": bool(baseline)
+            and bool(candidate)
+            and all(
+                report.get("contract_corpus", {}).get("platform_scope", {}).get("reference_review_qualified") is True
+                for report in [*baseline, *candidate]
+            )
+        },
+    )
     resources = resource_comparisons(baseline, candidate)
     for metric, evidence in resources.items():
         scope("daemon_resources." + metric, {"measurement": evidence["qualified"]})
@@ -178,5 +189,10 @@ def scoped_acceptance(
             "nonpriority_full_sampling_and_fault_matrix",
             "browser_approval_continuation",
             "malformed_launcher_input",
+            *(
+                []
+                if scopes["reference_full_review"]["qualified"]
+                else ["source_reference_full_content_review", "source_reference_identity_verification"]
+            ),
         ],
     }

@@ -38,6 +38,7 @@ from scripts.native_slo_workloads import (
     ExpectedResponse,
     QualificationCase,
     build_cases,
+    platform_scope_summary,
     validate_case,
     validate_native_result,
     validate_setup,
@@ -271,6 +272,8 @@ def run_registered_approval_corpus(runtime: Path, *, evidence_file: Path) -> dic
 def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: bool) -> dict[str, object]:
     evidence_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     validated: list[str] = []
+    validated_ids: list[str] = []
+    selected_cases: dict[str, QualificationCase] = {}
     review_harnesses: set[str] = set()
     offered_attempts = 0
     counts = {name: Counter() for name in ("harness", "event", "setup", "size", "route", "delivery", "representation")}
@@ -290,6 +293,7 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
                     ):
                         continue
                     case = installed_expectation(original)
+                    selected_cases[case.case_id] = case
                     case_digest = hashlib.sha256(case.case_id.encode()).hexdigest()
                     launcher = launchers[case.harness, case.event]
                     if original.expected.reason_class == "review":
@@ -344,6 +348,7 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
                         route, _ = _attempt(session, launcher, case, stage="ordinary", evidence=evidence)
                     offered_attempts += 1
                     validated.append(case_digest)
+                    validated_ids.append(case.case_id)
                     for name, value in (
                         ("harness", case.harness),
                         ("event", case.event),
@@ -359,6 +364,8 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
         raise RuntimeError("installed launcher corpus was empty")
     if review_only and remaining:
         raise RuntimeError("installed launcher approval corpus coverage incomplete")
+    platform_scope = platform_scope_summary(tuple(selected_cases.values()), validated_ids)
+    remaining.update(platform_scope["missing_scopes"])
     return assert_privacy_safe(
         {
             "schema": "hol-guard.registered-launcher-corpus.v1",
@@ -373,6 +380,7 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
             "stdout_and_exit_checked": True,
             "native_and_delivered_checked_independently": True,
             "implemented_scope_passed": True,
+            "platform_scope": platform_scope,
             "latency_claim": "semantic_preflight_no_tail_claim",
             "remaining": sorted(remaining | {"nonpriority_registered_launchers", "malformed_launcher_input"}),
             "qualification_complete": False,

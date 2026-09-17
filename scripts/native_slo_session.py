@@ -30,7 +30,7 @@ from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
 from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
-from scripts.native_slo_source_witness import source_review_witness
+from scripts.native_slo_source_witness import source_reference_denial_witness, source_review_witness
 
 _MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
 _CAPACITY_FAIL_SAFE = {
@@ -402,6 +402,57 @@ class AdapterSession:
         """Return the process-local native overload counter for this session."""
 
         return native_runtime_health(self.guard_home).overloads
+
+    def probe_source_reference_denial(
+        self,
+        harness: str,
+        event: str,
+        size_class: str,
+        request: Mapping[str, object],
+    ) -> dict[str, object]:
+        """Retain a platform denial proof outside every SLO sample collection."""
+        from scripts.native_slo_workloads import QualificationCase, _post_expected, validate_case
+
+        before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+        with source_reference_denial_witness(self.daemon._server.hook_worker, request):
+            response = _request(
+                self.daemon,
+                guard_home=self.guard_home,
+                workspace=self.workspace,
+                harness=harness,
+                request_payload=request,
+                connection=self._connection,
+            )
+        after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+        route = route_delta(before, after)
+        case = QualificationCase(
+            f"{harness}/{event}/platform-source-denial/{size_class}",
+            harness,
+            event,
+            "PostToolUse",
+            size_class,
+            request,
+            _post_expected(harness, "block", "no_output_to_review"),
+            "native_resident",
+            "normal",
+            "platform_source_reference_denial",
+            0,
+            0,
+            "source_file_ref",
+            validation_scope="platform_source_reference_denial",
+        )
+        validate_case(case, response, route)
+        return {
+            "harness": harness,
+            "event": event,
+            "size_class": size_class,
+            "route": route,
+            "reason_code": "no_output_to_review",
+            "native_denial_validated": True,
+            "delivered_denial_validated": True,
+            "full_review": False,
+            "headline_timing_eligible": False,
+        }
 
     def close(self) -> None:
         try:

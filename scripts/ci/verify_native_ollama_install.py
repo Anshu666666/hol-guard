@@ -17,6 +17,7 @@ if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
 
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process  # noqa: E402
+from scripts.ci.native_ollama_contract import validated_build_sha  # noqa: E402
 from scripts.ci.verify_extension_builder_install import verify as verify_builder  # noqa: E402
 from scripts.native_slo_artifact import wheel_package_digest  # noqa: E402
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
@@ -65,6 +66,7 @@ def builder_evidence(builder: Mapping[str, object], expected_wheel_sha256: str) 
 
 
 def installed_native_evidence(python: Path, expected: Mapping[str, object]) -> tuple[bool, dict[str, object]]:
+    validated_build_sha(expected.get("build_sha"))
     environment = dict(os.environ)
     clear_proof_environment(environment)
     environment.pop("PYTHONHOME", None)
@@ -113,7 +115,7 @@ def verify(python: Path, wheel: Path, source: Path, source_sha: str) -> dict[str
     expected = {
         "wheel_sha256": _sha256(wheel),
         "installed_package_sha256": wheel_package_digest(wheel),
-        "source_sha": source_sha,
+        "build_sha": validated_build_sha(source_sha),
         "contribution_sha256": _sha256(source / "contributions/extensions/command.ollama.json"),
         "program_sha256": _sha256(source / "contracts/extensions/native-command-program.v1.json"),
     }

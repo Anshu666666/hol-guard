@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
@@ -56,6 +57,11 @@ RESTRICTED_CASES = (
 def require(condition: object, reason: str) -> None:
     if not condition:
         raise AssertionError("installed_ollama_" + reason)
+
+
+def validated_build_sha(value: object) -> str:
+    require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None, "build_sha_invalid")
+    return cast(str, value)
 
 
 def validate_review(

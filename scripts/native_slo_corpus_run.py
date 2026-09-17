@@ -70,6 +70,7 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
     from scripts.native_slo_workloads import (
         build_cases,
         corpus_manifest,
+        platform_scope_summary,
         validate_case,
         validate_native_result,
         validate_setup,
@@ -108,8 +109,8 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
                     after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
                 route = witnessed_route(before, after)
                 evidence = session.control("case_result")
-                validate_setup(case, evidence["setup"])
                 try:
+                    validate_setup(case, evidence["setup"])
                     validate_case(case, response, route, http_status=http_status)
                     validate_native_result(case, evidence["native_result"])
                 except AssertionError as error:
@@ -144,6 +145,7 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
     missing = sorted(set(setups) - _IMPLEMENTED_SETUPS)
     if not counted or not validated:
         raise RuntimeError("qualification contract corpus was empty")
+    platform_scope = platform_scope_summary(cases, validated)
     return {
         "schema": "hol-guard.native-contract-corpus-run.v1",
         "boundary": "DAEMON_INGRESS",
@@ -157,7 +159,8 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
         "semantic_observations": semantic,
         "syntax_rejections": syntax_rejections,
         "oversize_transport_semantics": "declared_length_rejected_before_body_transfer",
-        "complete": len(validated) == len(counted),
+        "platform_scope": platform_scope,
+        "complete": len(validated) == len(counted) and not platform_scope["missing_scopes"],
         "implemented_scope_passed": True,
         "remaining_setups": missing,
         "coverage": {name: dict(values) for name, values in counters.items()},

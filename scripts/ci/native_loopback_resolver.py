@@ -1,53 +1,32 @@
-"""Condition disposable macOS runner DNS without modifying either wheel.
+"""Run both qualification arms inside an optional exact-zone macOS DNS fixture.
 
-This emits resolver diagnostics, not a qualification pass. Failed repair still
-allows the actual baseline/candidate execution to produce its decisive result.
-Only the fixed IPv4 loopback entry can be added; no discovered names are logged.
+Only the fixed loopback PTR resolver may be created. Both immutable wheels use
+the same environment. Failed setup still runs the actual measurements and keeps
+their outcome; no runtime patch, hosts rewrite, cache flush, or deadline change
+is applied. Cleanup refuses to remove bytes that this run does not own.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
+import secrets
+import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-_HOSTS_LIMIT = 1024 * 1024
-_ALIAS = "hol-guard-qualification.localhost"
-_ENTRY = "127.0.0.1 localhost " + _ALIAS
+if __package__:
+    from .native_loopback_dns import LoopbackPTRResponder
+else:
+    from native_loopback_dns import LoopbackPTRResponder
+
 _QUERY = (
     "import json,socket; name=socket.getfqdn('127.0.0.1'); "
     "print(json.dumps({'loopback_label':name in "
     "('127.0.0.1','localhost','hol-guard-qualification.localhost')}))"
 )
-
-
-def hosts_summary(path: Path) -> dict[str, bool]:
-    with path.open("rb") as handle:
-        data = handle.read(_HOSTS_LIMIT + 1)
-    if len(data) > _HOSTS_LIMIT:
-        raise ValueError("resolver_hosts_oversized")
-    names: set[str] = set()
-    for line in data.decode("utf-8").splitlines():
-        fields = line.partition("#")[0].split()
-        if fields and fields[0] == "127.0.0.1":
-            names.update(fields[1:])
-    return {"ipv4_localhost_entry": "localhost" in names, "fixed_alias_entry": _ALIAS in names}
-
-
-def add_fixed_entry(path: Path) -> bool:
-    """Append one known loopback alias, retaining existing hosts mappings."""
-    before = hosts_summary(path)
-    if before["fixed_alias_entry"]:
-        return False
-    with path.open("ab") as handle:
-        handle.write(("\n# HOL Guard disposable qualification runner\n" + _ENTRY + "\n").encode("ascii"))
-        handle.flush()
-        os.fsync(handle.fileno())
-    return True
 
 
 def resolver_probe() -> dict[str, object]:
@@ -69,68 +48,124 @@ def resolver_probe() -> dict[str, object]:
     return result
 
 
-def _run_maintenance(arguments: list[str]) -> str:
+def _run_helper(operation: str, port: int, owner: str) -> str:
+    arguments = [
+        "sudo",
+        "-n",
+        sys.executable,
+        "-I",
+        str(Path(__file__).with_name("native_loopback_dns.py").resolve()),
+        "--operation",
+        operation,
+        "--port",
+        str(port),
+        "--owner",
+        owner,
+    ]
     try:
         completed = subprocess.run(arguments, capture_output=True, timeout=10, check=False)
-        return "completed" if completed.returncode == 0 else "failed"
+        return {0: "completed", 2: "existing_configuration", 3: "refused_unowned"}.get(completed.returncode, "failed")
     except subprocess.TimeoutExpired:
         return "deadline_exceeded"
     except OSError:
         return "failed"
 
 
-def diagnose(*, repair: bool) -> dict[str, object]:
-    hosts = Path("/etc/hosts")
-    report: dict[str, object] = {
-        "schema": "hol-guard.native-loopback-resolver.v1",
+def _base_report() -> dict[str, object]:
+    return {
+        "schema": "hol-guard.native-loopback-resolver.v2",
         "environment_scope": "disposable_ci_runner_both_arms",
         "baseline_artifact_modified": False,
         "runtime_patched": False,
-        "repair_attempted": False,
+        "fixture_deadline_changed": False,
+        "qualification_pass": False,
+        "mechanism": "exact_loopback_ptr_resolver",
+        "experiment_attempted": False,
     }
-    try:
-        report["hosts_before"] = hosts_summary(hosts)
-    except (OSError, ValueError):
-        report["hosts_read_status"] = "failed"
+
+
+def _write_report(output: Path, report: dict[str, object]) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+
+
+def _run_command(command: list[str]) -> int:
+    return subprocess.run(command, check=False).returncode
+
+
+def _terminate(signum: int, _frame: object) -> None:
+    raise SystemExit(128 + signum)
+
+
+def run_wrapped(command: list[str], output: Path) -> int:
+    """Hold the exact DNS fixture around the entire paired build/measure command."""
+    report = _base_report()
+    if sys.platform != "darwin":
+        report["status"] = "not_macos"
+        _write_report(output, report)
+        return _run_command(command)
     before = resolver_probe()
     report["before"] = before
-    if repair and sys.platform == "darwin" and before["status"] != "completed":
-        report["repair_attempted"] = True
-        report["entry_repair"] = _run_maintenance(
-            ["sudo", "-n", sys.executable, "-I", str(Path(__file__).resolve()), "--apply-fixed-entry"]
-        )
-        report["cache_flush"] = _run_maintenance(["sudo", "-n", "/usr/bin/dscacheutil", "-flushcache"])
-        report["resolver_refresh"] = _run_maintenance(["sudo", "-n", "/usr/bin/killall", "-HUP", "mDNSResponder"])
+    if before["status"] == "completed":
+        report["status"] = "resolver_already_completed"
+        _write_report(output, report)
+        try:
+            return _run_command(command)
+        finally:
+            report["after"] = resolver_probe()
+            _write_report(output, report)
+    report["experiment_attempted"] = True
+    owner = secrets.token_hex(16)
+    cleanup = "not_installed"
+    returncode = 1
     try:
-        report["hosts_after"] = hosts_summary(hosts)
-    except (OSError, ValueError):
-        report["hosts_read_status"] = "failed"
-    report["after"] = resolver_probe()
-    return report
+        responder = LoopbackPTRResponder()
+    except OSError:
+        report["status"] = "responder_unavailable"
+        _write_report(output, report)
+        return _run_command(command)
+    with responder:
+        # Removal is attempted even after helper timeout/failure: an interrupted
+        # helper may have completed its exclusive create. Exact bytes guard it.
+        try:
+            report["configuration_install"] = _run_helper("install", responder.port, owner)
+            report["after"] = resolver_probe()
+            report["status"] = "experiment_running"
+            _write_report(output, report)
+            returncode = _run_command(command)
+            report["command_returncode"] = returncode
+        finally:
+            cleanup = (
+                "not_owned"
+                if report.get("configuration_install") == "existing_configuration"
+                else _run_helper("remove", responder.port, owner)
+            )
+            report["configuration_cleanup"] = cleanup
+            report["responder"] = responder.snapshot()
+            report["status"] = "experiment_finished"
+            _write_report(output, report)
+    report["after_cleanup"] = resolver_probe()
+    _write_report(output, report)
+    return returncode if cleanup in {"completed", "not_owned"} or returncode else 1
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--repair-localhost", action="store_true")
-    parser.add_argument("--apply-fixed-entry", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
-    if args.apply_fixed_entry:
-        if sys.platform != "darwin":
-            return 1
+    command = args.command[1:] if args.command[:1] == ["--"] else args.command
+    if command:
+        previous = signal.signal(signal.SIGTERM, _terminate)
         try:
-            add_fixed_entry(Path("/etc/hosts"))
-        except (OSError, ValueError):
-            return 1
-        return 0
-    if args.output is None:
-        parser.error("--output is required")
-    report = diagnose(repair=args.repair_localhost)
-    content = json.dumps(report, sort_keys=True, indent=2) + "\n"
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(content, encoding="utf-8")
-    print(content, end="", flush=True)
-    return 0  # Diagnostics complete; actual installed execution remains decisive.
+            return run_wrapped(command, args.output)
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+    report = _base_report()
+    report["before"] = resolver_probe()
+    report["status"] = "diagnostic_only"
+    _write_report(args.output, report)
+    return 0
 
 
 if __name__ == "__main__":

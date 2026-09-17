@@ -1,5 +1,12 @@
 # Scanner performance workstream
 
+The subsequent [rich workflow qualification](rsp-scanner-qualification.md)
+adds all 17 provider/context rules, caller-scoped HMAC checks, finding-heavy
+source workloads, explicit CLI completeness/exit gates and verified fixture
+file-data cache states. It also records why the observed host variability
+prevents a release performance claim and why large-source native work remains
+an open measured opportunity.
+
 This work implements the algorithm changes required before a rich offline
 detector port can be justified. The reviewed baseline is
 `2e672d2d950c6ec471005ddba46e49bba16dc23b`. The standalone Secrets CLI continues

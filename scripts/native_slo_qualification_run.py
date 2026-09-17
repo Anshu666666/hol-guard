@@ -29,6 +29,7 @@ from scripts.native_slo_priority_launchers import LauncherSession, launcher_payl
 from scripts.native_slo_qualification import confidence_summary
 from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
 from scripts.native_slo_resources import ResourceSampler
+from scripts.native_slo_workloads import source_reference_supported
 
 _PLATFORMS = ("linux-x64", "macos-x64", "macos-arm64", "windows-x64")
 _REQUIRED_CASES = (
@@ -88,6 +89,14 @@ def workload_matrix(
     launcher_corpus: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Declare coverage and remaining obligations without inferring missing routes."""
+    source_supported = source_reference_supported()
+    platform_scope = corpus.get("platform_scope", {})
+    source_qualified = isinstance(platform_scope, Mapping) and platform_scope.get("reference_review_qualified") is True
+    missing_source = (
+        []
+        if source_supported and source_qualified
+        else ["source_reference_full_content_review", "source_reference_identity_verification"]
+    )
     return {
         "required_platforms": list(_PLATFORMS),
         "observed_platform": platform_label(),
@@ -96,6 +105,14 @@ def workload_matrix(
         "concurrency": [1, 4, 16, 64],
         "daemon_routes": [f"{harness}.{event}" for harness, event in routes],
         "daemon_coverage": corpus["coverage"],
+        "daemon_platform_scope": platform_scope,
+        "daemon_semantic_coverage": platform_scope.get("semantic_coverage", {})
+        if isinstance(platform_scope, Mapping)
+        else {},
+        "reference_review_supported": source_supported,
+        "reference_review_qualified": source_supported and source_qualified,
+        "missing_reference_scopes": missing_source,
+        "platform_denial_timing_eligible": False,
         "declared_cases": corpus["declared_cases"],
         "validated_cases": corpus["validated_cases"],
         "launcher_routes": [
@@ -104,7 +121,7 @@ def workload_matrix(
         "launcher_contract_coverage": launcher_corpus.get("coverage", {}) if launcher_corpus else {},
         "launcher_contract_validated_cases": launcher_corpus.get("validated_cases", 0) if launcher_corpus else 0,
         "remaining_setups": corpus["remaining_setups"],
-        "daemon_contract_complete": corpus["complete"],
+        "daemon_contract_complete": corpus["complete"] is True and not missing_source,
         "complete": False,
     }
 
@@ -244,6 +261,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
                 "malformed_launcher_input",
                 "native_phase_attribution",
                 "all_platforms",
+                *matrix["missing_reference_scopes"],
             ],
         }
     )

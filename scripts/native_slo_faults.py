@@ -53,9 +53,7 @@ class FaultFixture:
             result = original(**kwargs)
             native_result = result.get("result") if isinstance(result, Mapping) else None
             self.last_native = (
-                dict(cast(Mapping[str, object], native_result))
-                if isinstance(native_result, Mapping)
-                else None
+                dict(cast(Mapping[str, object], native_result)) if isinstance(native_result, Mapping) else None
             )
             return result
 
@@ -106,7 +104,7 @@ class FaultFixture:
             self.evidence["fault_scope"] = "configured_byte_limit_rejection"
         elif self.setup == "review_queue_failed":
 
-            def approval_failed(**_kwargs: object) -> None:
+            def approval_failed(*_args: object, **_kwargs: object) -> None:
                 self.observed["approval_persistence_failed"] = True
                 raise sqlite3.OperationalError("synthetic qualification write failure")
 

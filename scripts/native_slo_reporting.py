@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 
 from scripts.native_slo_adapter import Observation
+from scripts.native_slo_batch import validate_batch_routes
 from scripts.native_slo_contract import (
     MAX_COLD_P95_MS,
     MAX_INSTALLED_ADAPTER_P95_MS,
@@ -36,6 +37,11 @@ class SloMeasurements:
     rss_baseline: int
     rss_peak: int
     installed_launcher: dict[str, object] | None = None
+    routes_16: dict[str, int] | None = None
+    routes_64: dict[str, int] | None = None
+    native_overloads_16: int | None = None
+    native_overloads_64: int | None = None
+    source_reference_denials: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,8 @@ class SloSummary:
     concurrent_64_summary: dict[str, float]
     concurrent_16_overloads: int
     concurrent_64_overloads: int
+    concurrent_16_routes: Counter[str]
+    concurrent_64_routes: Counter[str]
 
 
 def _require(condition: bool, reason: object) -> None:
@@ -88,7 +96,15 @@ def _all_observations(measurements: SloMeasurements) -> list[Observation]:
 
 def _latencies_by_size(observations: Sequence[Observation]) -> dict[str, list[float]]:
     return {
-        size_class: [observation.latency_ms for observation in observations if observation.size_class == size_class]
+        size_class: [
+            observation.latency_ms
+            for observation in observations
+            if observation.size_class == size_class
+            and (
+                size_class == "1k"
+                or (observation.allowed and not observation.overloaded and observation.route == "native_resident")
+            )
+        ]
         for size_class in SIZE_CLASSES
     }
 
@@ -127,13 +143,51 @@ def _rss_growth(measurements: SloMeasurements) -> float:
     return round(max(0, measurements.rss_peak - measurements.rss_baseline) / measurements.rss_baseline, 6)
 
 
+def _capacity_route_counts(
+    observations: Sequence[Observation], witnessed: Mapping[str, int] | None, native_overloads: int | None
+) -> Counter[str]:
+    """Retain actual batch counts without assigning an overload to a route."""
+    if witnessed is None:
+        _require(
+            all(item.route in SAFE_ROUTE_NAMES for item in observations),
+            "capacity batch route evidence was missing",
+        )
+        return Counter(item.route for item in observations)
+    _require(
+        all(type(value) is int and value > 0 for value in witnessed.values()),
+        "capacity batch route evidence was invalid",
+    )
+    attributed, actual = validate_batch_routes(
+        observations, {}, {name: value for name, value in witnessed.items() if name != "engine_bypassed"}
+    )
+    _require(actual == witnessed, "capacity batch route evidence did not conserve observations")
+    _require(
+        all(item.route == verified.route for item, verified in zip(observations, attributed, strict=True)),
+        "capacity batch observations were not validated",
+    )
+    _require(
+        type(native_overloads) is int and native_overloads == actual.get("native_fail_safe", 0),
+        "capacity native overload evidence was invalid",
+    )
+    return Counter(actual)
+
+
 def summarize_measurements(measurements: SloMeasurements) -> SloSummary:
     all_observations = _all_observations(measurements)
-    route_counts = Counter(observation.route for observation in all_observations)
+    ordinary = measurements.warm + measurements.sizes
+    route_counts = Counter(observation.route for observation in ordinary)
     _require(
         not (set(route_counts) - SAFE_ROUTE_NAMES),
         {"unexpected_routes": sorted(set(route_counts) - SAFE_ROUTE_NAMES)},
     )
+    concurrent_16_routes = _capacity_route_counts(
+        measurements.concurrent_16, measurements.routes_16, measurements.native_overloads_16
+    )
+    concurrent_64_routes = _capacity_route_counts(
+        measurements.concurrent_64, measurements.routes_64, measurements.native_overloads_64
+    )
+    route_counts.update(concurrent_16_routes)
+    route_counts.update(concurrent_64_routes)
     warm_values = [observation.latency_ms for observation in measurements.warm]
     size_values = _latencies_by_size(all_observations)
     event_values = _latencies_by_event(measurements.warm)
@@ -158,6 +212,8 @@ def summarize_measurements(measurements: SloMeasurements) -> SloSummary:
         concurrent_64_summary=summarize([item.latency_ms for item in measurements.concurrent_64]),
         concurrent_16_overloads=sum(item.overloaded for item in measurements.concurrent_16),
         concurrent_64_overloads=sum(item.overloaded for item in measurements.concurrent_64),
+        concurrent_16_routes=concurrent_16_routes,
+        concurrent_64_routes=concurrent_64_routes,
     )
 
 
@@ -171,8 +227,19 @@ def _concurrent_observations_are_bounded(
     if not observations:
         return False
     if allow_overload:
-        return all(observation.overloaded or observation.route == "native_resident" for observation in observations)
-    return all(not observation.overloaded and observation.route == "native_resident" for observation in observations)
+        return all(
+            (
+                observation.overloaded
+                and not observation.allowed
+                and observation.route in {"native_fail_safe", "overload_batch_validated"}
+            )
+            or (not observation.overloaded and observation.allowed and observation.route == "native_resident")
+            for observation in observations
+        )
+    return all(
+        not observation.overloaded and observation.allowed and observation.route == "native_resident"
+        for observation in observations
+    )
 
 
 def slo_gates(
@@ -245,6 +312,18 @@ def slo_result(
             "INSTALLED_LAUNCHER": "registered_argv" if measurements.installed_launcher else "not_measured",
         },
         "installed_launcher": measurements.installed_launcher,
+        "reference_review": {
+            "platform_denial_cases": measurements.source_reference_denials,
+            "platform_denial_timing_eligible": False,
+            "full_review_qualified": bool(measurements.sizes)
+            and not measurements.source_reference_denials
+            and all(
+                item.allowed and not item.overloaded and item.route == "native_resident" for item in measurements.sizes
+            ),
+            "missing_scopes": ["source_reference_full_content_review", "source_reference_identity_verification"]
+            if measurements.source_reference_denials
+            else [],
+        },
         "runtime": runtime_summary,
         "corpus": {
             "harnesses": len({harness for harness, _ in routes}),
@@ -302,13 +381,23 @@ def slo_result(
                 "latency": summarize(summary.concurrent_values),
                 "errors": measurements.errors_16,
                 "overloaded": summary.concurrent_16_overloads,
+                "routes": dict(sorted(summary.concurrent_16_routes.items())),
+                "route_attribution": "isolated_batch_counter_conservation"
+                if measurements.routes_16 is not None
+                else "per_observation",
+                "native_overloads": measurements.native_overloads_16,
                 "deadline_ms": MAX_INSTALLED_ADAPTER_P99_MS,
             },
             "sixty_four": {
                 "latency": summary.concurrent_64_summary,
                 "errors": measurements.errors_64,
                 "overloaded": summary.concurrent_64_overloads,
-                "fail_safe": sum(item.route == "native_fail_safe" for item in measurements.concurrent_64),
+                "fail_safe": summary.concurrent_64_routes["native_fail_safe"],
+                "routes": dict(sorted(summary.concurrent_64_routes.items())),
+                "route_attribution": "isolated_batch_counter_conservation"
+                if measurements.routes_64 is not None
+                else "per_observation",
+                "native_overloads": measurements.native_overloads_64,
                 "latency_ceiling_ms": None,
                 "bounded": gates.get("concurrency_64_bounded", False),
             },

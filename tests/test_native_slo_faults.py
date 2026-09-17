@@ -88,3 +88,29 @@ def test_integrity_fault_observes_the_handler_local_import_without_faking_reject
             hook_payload_reference_size({"guard_payload_ref": {"version": 1}})
         assert fault.result()["setup"]["payload_reference_rejected"] is True
     assert hook_payload_reference.hook_payload_reference_size is original
+
+
+def test_approval_persistence_fault_is_witnessed_through_real_positional_caller(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.daemon.hook_native_review_approval import pause_native_pre_tool_for_approval
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    session = _session(tmp_path)
+    session.store = GuardStore(session.guard_home)
+    original = session.store.add_approval_request
+    with FaultFixture(session, "review_queue_failed") as fault:
+        assert "approval_persistence_failed" not in fault.result()["setup"]
+        response = pause_native_pre_tool_for_approval(
+            session.store,
+            harness="claude-code",
+            payload={"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "git diff"}},
+            native_result={"decision": "deny", "minimum_action": "review", "policy_action": "review"},
+            workspace=session.workspace,
+            guard_home=session.guard_home,
+        )
+        assert fault.result()["setup"]["approval_persistence_failed"] is True
+        assert response["reason_code"] == "native_review_queue_failed"
+        assert response["policy_action"] == "block"
+        assert session.store.list_approval_requests(status="pending") == []
+        fault.before_case()
+        assert "approval_persistence_failed" not in fault.result()["setup"]
+    assert session.store.add_approval_request == original

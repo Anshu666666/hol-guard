@@ -61,6 +61,7 @@ from scripts.native_slo_reporting import (  # noqa: E402
     summarize_measurements,
 )
 from scripts.native_slo_session import AdapterSession, stop_native_resident  # noqa: E402
+from scripts.native_slo_workloads import source_reference_supported  # noqa: E402
 
 _DEFAULT_WARM_ITERATIONS = 2
 _DEFAULT_COLD_ITERATIONS = 3
@@ -141,13 +142,26 @@ def _run_warm(session: AdapterSession, routes: tuple[tuple[str, str], ...], iter
     return observations
 
 
-def _run_sizes(session: AdapterSession, routes: tuple[tuple[str, str], ...]) -> list[Observation]:
+def _run_sizes(
+    session: AdapterSession,
+    routes: tuple[tuple[str, str], ...],
+    *,
+    unsupported_evidence: list[dict[str, object]] | None = None,
+) -> list[Observation]:
     post_routes = tuple((harness, event) for harness, event in routes if event == "PostToolUse")
     selected = post_routes or (routes[0],)
     large_payloads = source_payloads(session.workspace)
     observations: list[Observation] = []
     for size_class in SIZE_CLASSES[1:]:
         request_payload = large_payloads[size_class]
+        if not source_reference_supported():
+            if unsupported_evidence is None:
+                raise RuntimeError("unsupported source review requires a separate evidence destination")
+            unsupported_evidence.extend(
+                session.probe_source_reference_denial(harness, event, size_class, request_payload)
+                for harness, event in selected
+            )
+            continue
         observations.extend(session.observe(harness, event, size_class, request_payload) for harness, event in selected)
     return observations
 
@@ -236,7 +250,8 @@ def _measure_slo(
         cold = _run_cold(runtime, cold_session, cold_iterations)
     with AdapterSession(runtime) as session:
         warm = _run_warm(session, routes, warm_iterations)
-        sizes = _run_sizes(session, routes)
+        source_denials: list[dict[str, object]] = []
+        sizes = _run_sizes(session, routes, unsupported_evidence=source_denials)
         recovery = _run_recovery(session, recovery_iterations)
         warmup_harness, warmup_event = routes[0]
         serialized_warmup = session.observe(warmup_harness, warmup_event, "1k")
@@ -263,6 +278,11 @@ def _measure_slo(
         rss_baseline=capacity.rss_baseline,
         rss_peak=rss_peak,
         installed_launcher=launcher,
+        routes_16=capacity.routes_16,
+        routes_64=capacity.routes_64,
+        native_overloads_16=capacity.native_overloads_16,
+        native_overloads_64=capacity.native_overloads_64,
+        source_reference_denials=source_denials,
     )
 
 

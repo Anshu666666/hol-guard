@@ -27,7 +27,10 @@ def recursively_block(depth):
     return capture(sys._getframe())
 result = recursively_block(20)
 """
-    code: CodeType = compile(source, "/home/private/synthetic_startup.py", "exec")
+    # Coverage must be able to resolve compiled frames to a real source file.
+    # Private frame locals remain adversarial; the separate frame test below
+    # also exercises an explicit private absolute filename.
+    code: CodeType = compile(source, __file__, "exec")
     exec(code, namespace)
     locations = namespace["result"]
     assert isinstance(locations, list)
@@ -35,7 +38,7 @@ result = recursively_block(20)
     safe = assert_privacy_safe({"stack": locations})
     safe_stack = safe["stack"]
     assert isinstance(safe_stack, list)
-    assert all(item["origin"] == "synthetic_startup.recursively_block" for item in safe_stack)
+    assert all(item["origin"] == "test_native_slo_startup.recursively_block" for item in safe_stack)
     assert "/home" not in json.dumps(safe)
     assert "private_runtime_value" not in json.dumps(safe)
     assert "live-credential" not in json.dumps(safe)
@@ -62,7 +65,7 @@ def test_startup_stack_allows_only_exact_stdlib_boundary_locations(module, class
         source += f"\nresult = {class_name}.{function}()\n"
     else:
         source += f"result = {function}()\n"
-    exec(compile(source, "/home/private/stdlib.py", "exec"), namespace)
+    exec(compile(source, __file__, "exec"), namespace)
     locations = namespace["result"]
     expected = f"{module}.{class_name + '.' if class_name else ''}{function}"
     assert any(location["origin"] == expected for location in locations) is allowed

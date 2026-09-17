@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
+from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import cast
 
@@ -97,10 +99,21 @@ class QualificationCase:
     native_expected: ExpectedResponse | None = None
     boundary: str = "daemon_adapter"
     expected_http_status: int = 200
+    validation_scope: str = "full_semantics"
 
     @property
     def semantic_sample(self) -> bool:
-        return self.native_expected is not None and self.expected_http_status == 200
+        source_denial = (
+            self.payload_kind == "source_file_ref"
+            and self.native_expected is not None
+            and (self.native_expected.reason_code in {"no_output_to_review", "observe_no_output_to_review"})
+        )
+        return (
+            self.native_expected is not None
+            and self.expected_http_status == 200
+            and not source_denial
+            and self.validation_scope != "platform_source_reference_denial"
+        )
 
     @property
     def installed_enforcement(self) -> bool:
@@ -263,7 +276,48 @@ def _content(size: int, secret: bool) -> bytes:
     return prefix + (unit * ((size + len(unit) - 1) // len(unit)))[: size - len(prefix)]
 
 
-def build_cases(workspace: Path) -> tuple[QualificationCase, ...]:
+def source_reference_supported(*, system: str | None = None) -> bool:
+    """The audited non-Unix secure opener has no Windows handle-bound walk."""
+    return (platform.system() if system is None else system) != "Windows"
+
+
+def platform_scope_summary(
+    cases: tuple[QualificationCase, ...],
+    validated: list[str],
+) -> dict[str, object]:
+    """Keep proved platform denials separate from completed content review."""
+    observed = set(validated)
+    source_cases = [case for case in cases if case.payload_kind == "source_file_ref"]
+    unsupported = [case for case in cases if case.validation_scope == "platform_source_reference_denial"]
+    checked = [case for case in unsupported if case.case_id in observed]
+    semantic = [case for case in cases if case.case_id in observed and case.semantic_sample]
+    return {
+        "reference_review_supported": not unsupported if source_cases else source_reference_supported(),
+        "reference_review_qualified": any(case.semantic_sample for case in source_cases)
+        and not unsupported
+        and all(case.case_id in observed for case in source_cases),
+        "platform_denial_declared_cases": len(unsupported),
+        "platform_denial_validated_cases": len(checked),
+        "platform_denial_contract_passed": bool(unsupported) and len(checked) == len(unsupported),
+        "platform_denial_case_digests": sorted(hashlib.sha256(case.case_id.encode()).hexdigest() for case in checked),
+        "semantic_validated_cases": len(semantic),
+        "semantic_coverage": {
+            "size": dict(Counter(case.size_class for case in semantic)),
+            "representation": dict(
+                Counter(
+                    "file_reference" if case.payload_kind == "source_file_ref" else case.payload_kind
+                    for case in semantic
+                )
+            ),
+        },
+        "missing_scopes": ["source_reference_full_content_review", "source_reference_identity_verification"]
+        if unsupported
+        else [],
+        "platform_denial_timing_eligible": False,
+    }
+
+
+def build_cases(workspace: Path, *, system: str | None = None) -> tuple[QualificationCase, ...]:
     """Materialize a bounded corpus with shared immutable synthetic source files.
 
     The caller supplies a private, disposable workspace. Case IDs and output
@@ -652,6 +706,23 @@ def build_cases(workspace: Path) -> tuple[QualificationCase, ...]:
                 )
     if len(cases) > _MAX_CASES or len({case.case_id for case in cases}) != len(cases):
         raise ValueError("native_qualification_case_bound_or_duplicate")
+    if not source_reference_supported(system=system):
+        for index, case in enumerate(cases):
+            if case.payload_kind != "source_file_ref":
+                continue
+            # Both pinned artifacts deliberately reject Windows source opens.
+            # This is a separate denial witness, never full-content coverage.
+            watch = case.setup == "watch"
+            kind = "watch" if watch else "block"
+            reason = "observe_no_output_to_review" if watch else "no_output_to_review"
+            reference = cast(Mapping[str, object], case.payload["guard_source_ref"])
+            digest = str(reference["output_sha256"])
+            cases[index] = replace(
+                case,
+                expected=_post_expected(case.harness, kind, reason, digest if watch else None),
+                native_expected=_native_post(kind, reason, digest),
+                validation_scope="platform_source_reference_denial",
+            )
     return tuple(cases)
 
 
@@ -775,6 +846,8 @@ __all__ = [
     "configuration_text",
     "corpus_manifest",
     "installed_response_expectation",
+    "platform_scope_summary",
+    "source_reference_supported",
     "validate_case",
     "validate_installed_response",
     "validate_native_result",

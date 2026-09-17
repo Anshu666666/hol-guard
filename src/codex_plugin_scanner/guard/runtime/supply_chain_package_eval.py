@@ -57,6 +57,8 @@ from .npm_policy_range import (
 from .npm_source_spec import NpmSourceSpec, parse_npm_source_spec
 from .offline_archive_inspection import inspect_archive_offline
 from .package_intent_common import split_python_extras
+from .package_lock_versions import direct_lockfile_version as _direct_lockfile_version
+from .package_lock_versions import exact_lockfile_version as _exact_version
 from .package_manifest_diff import (
     _DeadlineExceededError,
     _dependency_map_for_path,
@@ -3743,15 +3745,14 @@ def _lockfile_dependency_versions(
         parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
         if not parse_result.complete:
             continue
-        lockfile_text = lockfile_source.decode("utf-8")
         if lockfile_path.name == "package-lock.json":
             versions.update(_package_lock_target_versions_from_entries(parse_result, targets))
             continue
         if lockfile_path.name == "pnpm-lock.yaml":
-            versions.update(_pnpm_lock_target_versions(lockfile_text, targets))
+            versions.update(_target_versions_from_direct_map(targets, dict(parse_result.direct_version_candidates)))
             continue
         if lockfile_path.name == "yarn.lock":
-            versions.update(_yarn_lock_target_versions(lockfile_text, targets))
+            versions.update(_yarn_lock_target_versions_from_entries(parse_result, targets))
             continue
         if lockfile_path.name == "bun.lock":
             versions.update(_bun_lock_target_versions(parse_result, targets))
@@ -4105,6 +4106,25 @@ def _yarn_lock_target_versions(
     return versions
 
 
+def _yarn_lock_target_versions_from_entries(
+    parse_result: LockfileParseResult,
+    targets: tuple[dict[str, object], ...],
+) -> dict[tuple[str, str | None], str]:
+    # A selector's first declaration wins, including when one target has several
+    # accepted spellings. Dependency-map projection separately remains last-wins.
+    selector_first: dict[str, tuple[int, str]] = {}
+    for index, (selectors, version) in enumerate(parse_result.yarn_selector_versions):
+        for selector in selectors:
+            selector_first.setdefault(selector, (index, version))
+    versions: dict[tuple[str, str | None], str] = {}
+    target_selectors = {_lockfile_target_key(target): _expected_yarn_selectors(target) for target in targets}
+    for target_key, expected_selectors in target_selectors.items():
+        matches = [selector_first[selector] for selector in expected_selectors if selector in selector_first]
+        if matches:
+            versions[target_key] = min(matches, key=lambda item: item[0])[1]
+    return versions
+
+
 def _expected_yarn_selectors(target: dict[str, object]) -> tuple[str, ...]:
     requested = _optional_string(target.get("version")) or _optional_string(target.get("range"))
     if requested is None:
@@ -4233,19 +4253,6 @@ def _target_versions_from_direct_map(
                 versions[target_key] = version
                 break
     return versions
-
-
-def _direct_lockfile_version(value: str) -> str | None:
-    normalized = value.split("(", 1)[0].strip()
-    if normalized.startswith("npm:"):
-        normalized = normalized.partition("npm:")[2]
-    if "@" in normalized and not normalized.startswith("@"):
-        candidate = normalized.rsplit("@", 1)[-1]
-        if _exact_version(candidate) is not None:
-            return candidate
-    if _exact_version(normalized) is not None:
-        return normalized
-    return None
 
 
 def _lockfile_target_key(target: dict[str, object]) -> tuple[str, str | None]:
@@ -4791,19 +4798,6 @@ def _split_namespace_name(value: str, *, ecosystem: str) -> tuple[str | None, st
     except PackageIdentityError:
         return None, value
     return identity.namespace, identity.name
-
-
-def _exact_version(value: str | None) -> str | None:
-    normalized = _optional_string(value)
-    if normalized is None:
-        return None
-    if parse_npm_source_spec(normalized) is not None:
-        return None
-    if normalized.startswith(("^", "~", "<", ">", "!", "*")):
-        return None
-    if any(token in normalized for token in ("||", " - ", ",")):
-        return None
-    return normalized
 
 
 def _npm_source_spec(value: str | None, *, ecosystem: str) -> NpmSourceSpec | None:

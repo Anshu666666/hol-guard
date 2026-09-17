@@ -52,7 +52,10 @@ writer while another thread might own its lock.
 Output-pump retirement is bound to the captured queue and process generation.
 An old pump cannot poison or kill a replacement child. An idle runtime client
 is checked every 100 ms for terminal transport state without imposing an idle
-session timeout. A failed notification has no JSON-RPC response ID, but it
+session timeout. The same poll drains child notifications and nested requests
+through the bounded multiplexer. A child catalog-change notification therefore
+reaches the client and invalidates catalog authority without requiring another
+client request. A failed notification has no JSON-RPC response ID, but it
 still ends the session with a failure exit; another client message is never
 required to trigger cleanup. A terminal failure is also checked before a
 buffered or freshly handled normal result can be returned.

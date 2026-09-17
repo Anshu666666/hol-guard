@@ -39,7 +39,11 @@ def _reports() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
                 "short_exited_descendants_cpu_complete": True,
             },
             "launcher": {"contracts_passed": True},
-            "contract_corpus": {"implemented_scope_passed": True, "remaining_setups": []},
+            "contract_corpus": {
+                "implemented_scope_passed": True,
+                "remaining_setups": [],
+                "platform_scope": {"reference_review_qualified": True},
+            },
             "registered_launcher_contract_corpus": {"implemented_scope_passed": True},
             "additional_scenarios": {
                 "registered_surfaces": {"passed": True},

@@ -25,6 +25,7 @@ if str(_ROOT) not in sys.path:
 
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings  # noqa: E402
 from codex_plugin_scanner.guard.approvals import apply_approval_resolution  # noqa: E402
+from codex_plugin_scanner.guard.native_approval_errors import NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES  # noqa: E402
 from codex_plugin_scanner.guard.native_command_control_binding import load_native_command_program_metadata  # noqa: E402
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status  # noqa: E402
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY  # noqa: E402
@@ -53,11 +54,12 @@ from scripts.ci.native_ollama_contract import (  # noqa: E402
     OllamaCase,
     require,
     validate_review,
+    validated_build_sha,
 )
 from scripts.native_slo_adapter import route_counts  # noqa: E402
 from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
 from scripts.native_slo_contract import MAX_READINESS_P95_MS, assert_privacy_safe  # noqa: E402
-from scripts.native_slo_failure import failure_evidence  # noqa: E402
+from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_session import AdapterSession, _request  # noqa: E402
 from scripts.native_slo_workloads import configuration_text  # noqa: E402
 
@@ -70,6 +72,7 @@ def _bounded_artifact(path: Path, limit: int, reason: str) -> bytes:
 
 
 def artifact_identity(expected: Mapping[str, object]) -> tuple[Path, dict[str, object]]:
+    build_sha = validated_build_sha(expected.get("build_sha"))
     distribution = importlib.metadata.distribution("hol-guard")
     assert_installed_import_origin(distribution)
     package = Path(str(distribution.locate_file("codex_plugin_scanner"))).resolve(strict=True)
@@ -91,13 +94,13 @@ def artifact_identity(expected: Mapping[str, object]) -> tuple[Path, dict[str, o
     require(status.available and status.compatible and status.identity is not None, "native_runtime_unavailable")
     require(status.capabilities is not None, "native_capabilities_missing")
     assert status.capabilities is not None and status.identity is not None
-    require(status.capabilities.build_sha == expected["source_sha"], "native_build_mismatch")
+    require(status.capabilities.build_sha == build_sha, "native_build_mismatch")
     require(
         {"native-command-program-v1", "native-command-control-fence-v1"} <= set(status.capabilities.features),
         "native_capability_missing",
     )
     return status.identity.path, {
-        "source_sha": status.capabilities.build_sha,
+        "build_sha": status.capabilities.build_sha,
         "wheel_sha256": expected["wheel_sha256"],
         "installed_package_sha256": expected["installed_package_sha256"],
         "runtime_sha256": status.identity.sha256,
@@ -180,11 +183,67 @@ def commit_controls(store: GuardStore, password: str, layer: ExtensionControlLay
     return view.revision
 
 
-def ready_binding(session: AdapterSession, revision: int) -> dict[str, object]:
+_READINESS_PHASES = frozenset(
+    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
+)
+_PUBLISHER_ERRORS = (
+    frozenset(
+        {
+            "native_policy_snapshot_workspace_capacity",
+            "native_policy_snapshot_expired",
+            "native_policy_snapshot_publish_failed",
+            "native_policy_snapshot_resident_changed",
+            "native_policy_snapshot_native_disabled",
+            "native_policy_snapshot_runtime_unavailable",
+            "native_policy_snapshot_protocol_unsupported",
+            "native_policy_snapshot_integrity_key_unavailable",
+            "native_policy_snapshot_ack_invalid",
+            "native_policy_snapshot_ack_mismatch",
+            "native_client_containment_failed",
+            "native_client_process_failed",
+            "native_client_launcher_failed",
+            "native_client_timed_out",
+            "native_client_output_limit_exceeded",
+            "native_client_status_missing",
+            "native_client_exit_nonzero",
+            "native_client_output_missing",
+            "native_command_control_binding_changed",
+            "permissionerror",
+            "oserror",
+            "timeouterror",
+            "runtimeerror",
+            "valueerror",
+            "typeerror",
+            "attributeerror",
+            "operationalerror",
+        }
+    )
+    | NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
+)
+
+
+def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict[str, object]:
     worker = session.daemon._server.hook_worker
-    deadline = time.monotonic() + MAX_READINESS_P95_MS / 1000
+    started = time.monotonic()
+    deadline = started + MAX_READINESS_P95_MS / 1000
     snapshot = worker.prepare_workspace_policy(session.workspace, deadline=deadline)
-    require(snapshot is not None and time.monotonic() <= deadline, "native_readiness_failed")
+    finished = time.monotonic()
+    if snapshot is None or finished > deadline:
+        publisher = worker.policy_snapshot_publisher
+        error = publisher.last_error
+        detail = failure_evidence(AssertionError("installed_ollama_native_readiness_failed"))
+        detail["phase"] = phase if phase in _READINESS_PHASES else "unknown"
+        detail["readiness"] = {
+            "expected_revision": revision,
+            "budget_ms": MAX_READINESS_P95_MS,
+            "elapsed_ms": round((finished - started) * 1000, 3),
+            "snapshot_returned": snapshot is not None,
+            "budget_exhausted": finished > deadline,
+            "publisher_ready_after_failure": publisher.is_ready(),
+            "publisher_closed_after_failure": publisher.closed,
+            "publisher_error": error if error in _PUBLISHER_ERRORS else "unclassified" if error else "none",
+        }
+        raise FixtureFailureError(detail)
     current = worker.policy_snapshot_publisher.current_snapshot()
     require(current is not None and worker.policy_snapshot_publisher.is_ready(), "policy_ack_missing")
     current = cast(dict[str, Any], current)
@@ -326,7 +385,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
             for phase, layer, cases in phases:
                 if layer is not None:
                     revision = commit_controls(session.store, password, layer, revision=revision)
-                snapshot = ready_binding(session, revision)
+                snapshot = ready_binding(session, revision, phase=phase)
                 generation = cast(int, snapshot["generation"])
                 require(generation > previous_generation, "generation_did_not_advance")
                 previous_generation = generation
@@ -336,7 +395,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                     if phase == "enabled" and case.name == "push":
                         require(approval_id is not None, "approval_missing")
                         approve_review(session.store, password, cast(str, approval_id))
-                        current = ready_binding(session, revision)
+                        current = ready_binding(session, revision, phase="approved_retry")
                         record, _ = review_case(session, "approved_retry", case, current, approval_reused=True)
                         results.append(record)
             try:
@@ -345,7 +404,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                 pass
             else:
                 raise AssertionError("installed_ollama_stale_revision_accepted")
-            snapshot = ready_binding(session, revision)
+            snapshot = ready_binding(session, revision, phase="stale_write_rejected")
             record, _ = review_case(session, "stale_write_rejected", ACTIVE_CASES[0], snapshot)
             results.append(record)
     finally:

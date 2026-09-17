@@ -16,10 +16,12 @@ be presented as full package execution latency.
 from __future__ import annotations
 
 import argparse
+import cProfile
 import hashlib
 import json
 import os
 import platform
+import pstats
 import socket
 import statistics
 import subprocess
@@ -37,6 +39,7 @@ def main() -> int:
     parser.add_argument("--bundle-size", type=int, required=True)
     parser.add_argument("--mode", choices=("absent", "exact", "unversioned", "deny"), required=True)
     parser.add_argument("--samples", type=int, default=5)
+    parser.add_argument("--profile", action="store_true", help="Profile one additional untimed evaluator sample")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.dependencies < 1 or args.bundle_size < 2 or args.samples < 1:
@@ -99,7 +102,9 @@ def main() -> int:
         entries[f"node_modules/holder/node_modules/path-{index}"] = {"name": name, "version": "1.0.0"}
     lockfile = json.dumps({"lockfileVersion": 3, "packages": entries}, separators=(",", ":")).encode()
     target = "anchor@1.0.0"
-    wall, cpu, semantic = [], [], []
+    wall, cpu, semantic, complete_semantic, evidence_semantic = [], [], [], [], []
+    profiler = cProfile.Profile() if args.profile else None
+    load_at_start = os.getloadavg() if hasattr(os, "getloadavg") else None
     with tempfile.TemporaryDirectory(prefix="guard-package-bench-") as temporary:
         directory = Path(temporary)
         workspace = directory / "workspace"
@@ -109,11 +114,17 @@ def main() -> int:
         store.get_cloud_workspace_id = lambda: WORKSPACE_ID
         store.cache_supply_chain_bundle(WORKSPACE_ID, response, "2026-05-19T00:00:00Z")
         parsed_response = load_supply_chain_bundle_response(response)
-        for _sample in range(args.samples):
+        for _sample in range(args.samples + int(args.profile)):
+            profiling = _sample == args.samples
             artifact = _artifact_for_targets(target, lockfile_paths=("package-lock.json",))
             with store._connect() as connection:
                 connection.execute("delete from guard_supply_chain_eval_cache")
-            print(json.dumps({"event": "measurement_started", "sample": _sample}), flush=True)
+            print(
+                json.dumps({"event": "profile_started" if profiling else "measurement_started", "sample": _sample}),
+                flush=True,
+            )
+            if profiling:
+                profiler.enable()
             cpu_started = time.process_time_ns()
             started = time.perf_counter_ns()
             if args.mode == "unversioned":
@@ -127,8 +138,11 @@ def main() -> int:
                     )
                     for index in range(args.dependencies)
                 )
-                wall.append((time.perf_counter_ns() - started) / 1_000_000)
-                cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+                if profiling:
+                    profiler.disable()
+                else:
+                    wall.append((time.perf_counter_ns() - started) / 1_000_000)
+                    cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
                 if any(decision.action != "block" for decision in decisions):
                     raise AssertionError("Unversioned bundle lookup lost a known-malware decision")
                 semantic.append(
@@ -136,12 +150,17 @@ def main() -> int:
                         json.dumps([asdict(item) for item in decisions], sort_keys=True).encode()
                     ).hexdigest()
                 )
+                complete_semantic.append(semantic[-1])
+                evidence_semantic.append(None)
                 continue
             result = evaluate_package_request_artifact(
                 artifact=artifact, store=store, workspace_dir=workspace, now="2026-05-19T00:00:00Z"
             )
-            wall.append((time.perf_counter_ns() - started) / 1_000_000)
-            cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+            if profiling:
+                profiler.disable()
+            else:
+                wall.append((time.perf_counter_ns() - started) / 1_000_000)
+                cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
             expected_count = 1 if args.mode == "absent" else args.dependencies + 1
             if result.decision != "block" or len(result.packages) != expected_count:
                 raise AssertionError(f"Unexpected route output: {result.decision}, {len(result.packages)} packages")
@@ -160,12 +179,23 @@ def main() -> int:
                     ).encode()
                 ).hexdigest()
             )
+            # Compare every public result field and every persisted evidence field.
+            # Fixture time, source scope and artifact IDs are deterministic; no
+            # authority, completeness, user-copy or identity fields are omitted.
+            complete_semantic.append(hashlib.sha256(json.dumps(result.to_dict(), sort_keys=True).encode()).hexdigest())
+            with store._connect() as connection:
+                evidence_rows = [
+                    dict(row) for row in connection.execute("select * from guard_evidence order by evidence_id")
+                ]
+            if len(evidence_rows) != expected_count:
+                raise AssertionError(f"Evidence cardinality mismatch: {len(evidence_rows)} != {expected_count}")
+            evidence_semantic.append(hashlib.sha256(json.dumps(evidence_rows, sort_keys=True).encode()).hexdigest())
     if network_attempts:
         raise AssertionError("The synthetic local package benchmark attempted network access")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True).strip())
     output = {
-        "schema": "guard-package-local-benchmark-v1",
+        "schema": "guard-package-local-benchmark-v2",
         "source_commit": commit,
         "source_dirty": dirty,
         "source_diff_sha256": hashlib.sha256(
@@ -186,18 +216,56 @@ def main() -> int:
         "platform": platform.platform(),
         "machine": platform.machine(),
         "logical_cpus": os.cpu_count(),
+        "host_load_at_start": load_at_start,
+        "host_load_at_end": os.getloadavg() if hasattr(os, "getloadavg") else None,
+        "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "wall_ms": wall,
         "cpu_ms": cpu,
         "cpu_scope": "current evaluator process; child process CPU is not sampled",
         "wall_median_ms": statistics.median(wall),
         "cpu_median_ms": statistics.median(cpu),
         "semantic_sha256": semantic,
+        "complete_result_sha256": complete_semantic,
+        "persisted_evidence_sha256": evidence_semantic,
+        "semantic_scope": (
+            "Every public result field plus all persisted evidence columns; no normalization or exclusions"
+        ),
         "limitations": [
             "Synthetic local source route; no launcher/startup/network/approval wait",
             "Small samples are diagnostic observations, not reliable tail quantiles",
             "Shared host contention must be excluded before release qualification",
         ],
     }
+    if profiler is not None:
+        stats = pstats.Stats(profiler)
+        functions = []
+        for (filename, _line, function), (
+            primitive_calls,
+            total_calls,
+            self_seconds,
+            cumulative_seconds,
+            _callers,
+        ) in stats.stats.items():
+            if "codex_plugin_scanner" not in filename:
+                continue
+            functions.append(
+                {
+                    "module": Path(filename).name,
+                    "function": function,
+                    "primitive_calls": primitive_calls,
+                    "total_calls": total_calls,
+                    "self_ms": self_seconds * 1000,
+                    "cumulative_ms": cumulative_seconds * 1000,
+                }
+            )
+        output["profile"] = {
+            "scope": (
+                "One additional instrumented sample; excluded from wall_ms and cpu_ms. "
+                "Nested cumulative times are not additive."
+            ),
+            "total_seconds": stats.total_tt,
+            "functions": sorted(functions, key=lambda row: row["cumulative_ms"], reverse=True)[:60],
+        }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, indent=2) + "\n")
     print(

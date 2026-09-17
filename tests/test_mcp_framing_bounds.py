@@ -258,6 +258,53 @@ def test_idle_client_wait_observes_background_terminal_failure():
             alarm.join(timeout=1)
 
 
+def test_idle_client_receives_child_catalog_notification_before_sending_another_request():
+    instance = proxy(timeout=2)
+    instance._tool_catalog_state = "complete"
+    notification = {"jsonrpc": "2.0", "method": "notifications/tools/list_changed", "params": {}}
+    received: list[str] = []
+    errors: list[BaseException] = []
+    with (
+        pipe() as (client_input, client_writer),
+        pipe() as (child_stdout, child_writer),
+        pipe() as (client_reader, server_output),
+    ):
+        instance._activate_child_output_pump(child_stdout)
+
+        def wait_for_client():
+            try:
+                received.append(
+                    instance._read_idle_client(
+                        client_input, child_stdin=io.StringIO(), child_stdout=child_stdout, server_output=server_output
+                    )
+                )
+            except BaseException as error:
+                errors.append(error)
+
+        waiter = threading.Thread(target=wait_for_client, daemon=True)
+        waiter.start()
+        try:
+            child_writer.write(json.dumps(notification) + "\n")
+            child_writer.flush()
+            # No client input has been written. The server notification must
+            # reach the client and invalidate authority on its own.
+            line = _readline_with_timeout(client_reader, 2, source="idle_notification")
+            assert json.loads(line) == notification
+            assert instance._tool_catalog_state == "invalidated"
+            assert instance._tool_catalog_generation == 1
+            assert received == []
+            client_writer.write('{"id":"next","method":"tools/list"}\n')
+            client_writer.flush()
+            waiter.join(timeout=2)
+            assert not waiter.is_alive()
+            assert errors == []
+            assert json.loads(received[0])["id"] == "next"
+        finally:
+            client_writer.close()
+            waiter.join(timeout=2)
+            instance._deactivate_child_process_io()
+
+
 @pytest.mark.parametrize("kind", ["runtime", "generic"])
 def test_failed_notification_write_ends_stream_without_waiting_for_more_input(monkeypatch, kind):
     class BrokenWriter:

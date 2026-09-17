@@ -1,8 +1,9 @@
 # Current decision and performance contract
 
-This contract describes production source at local integration
-`264da76d3bca7a1a4f4970834291ca48d7c7a3c2`. It includes implemented native
-command execution, control authority and live-process attestation. Source support
+This contract describes the implementation identified in [EXECUTION.md](EXECUTION.md),
+including the 2026-09-17 takeover corrections to Codex continuation, package
+parsing and MCP notification delivery. It includes native command execution,
+control authority and live-process attestation. Source support
 is distinct from installed activation and release qualification; exact evidence
 and remaining acceptance are in the [execution ledger](EXECUTION_LEDGER.md).
 
@@ -54,6 +55,15 @@ acknowledged posture, availability reason and final harness result. A returned
 oracle must evaluate both benign and malicious fixtures and cannot enter a
 production fallback path. The frozen workload corpus contains independent
 expectations, rather than only asserting equivalence with Python.
+
+Full source-reference review has a platform boundary. The audited baseline and
+current candidate both deliberately reject non-Unix secure file opening until
+an equivalent handle-bound path walk exists. On Windows, a source-ref-only
+request therefore returns `no_output_to_review`; Watch may transform its delivered
+response but does not create a native content review. Qualification records this
+as unsupported full-source coverage and excludes it from successful content-review
+timings. Passing Windows inline hooks or package identity checks does not close
+that gap. Direct pathname opening is not an acceptable performance workaround.
 
 ## Limits and authority
 
@@ -143,7 +153,7 @@ flushes are cooperative boundaries: elapsed checks before/after a read cannot
 preempt a kernel operation already blocked. The Python edge's normal capture
 budget and caller admission bound must not be advertised as hard OS-I/O preemption.
 
-Ordinary local approval continuation is **resolved-row reuse**. The queued action
+Ordinary local approval retry uses **resolved-row reuse**. The queued action
 contains a validated `guard.native-review-policy-binding.v1` derived from the
 native result, binding policy/rule/runtime and compact command observations.
 Request metadata cannot manufacture it. A resolved allow is eligible only for the
@@ -160,15 +170,24 @@ The installed controlled-approval helper uses the existing local resolution API
 with policy persistence disabled. That path does not call the exported native
 v3/v4 one-time challenge/claim/consume APIs and must not be described as doing so.
 
-There is a further harness distinction. The source-supported Claude ask → local
-resolve → retry path can use that resolved-row binding. The current native queue
-resolution with `persist_policy=False` produces a retry-only continuation snapshot
-with `hookAttached=False`, not `approval-gate-once` authority. A Codex registered
-browser-wait allow therefore cannot be inferred from the Claude result: the actual
-`complete_codex_live_decision(fresh_allow_authorized=True)` path rejects this
-snapshot with `exact_approval_authority_missing`. This reported production
-continuation gap requires a separate correction and real installed regression;
-qualification fixtures must expose it rather than manufacture authority metadata.
+Codex browser-wait continuation has a distinct production path. The queue attaches
+one live waiting operation to the original bridge process, home, workspace,
+request digest and deadline. A local Allow once resolution authorizes only that
+operation. Completion requires a fresh real native evaluation and verified
+receipt under the shared control lease before atomically consuming the signed
+local authority. A current native block or uncertainty remains restrictive.
+The original process and deadline are checked again after durable finalization;
+a late allow is refused while the consumed record remains available for exact
+retry reconciliation. A mutable terminal approval row alone cannot authorize
+replay. The qualifier independently checks the canonical redacted command and
+workspace projection against the exact private approval row; it cannot create
+missing authority by copying metadata into the row.
+
+This corrects the earlier `exact_approval_authority_missing` continuation defect.
+Source and real-store tests cover the handoff, stale/mutated bindings, expiry,
+process replacement and late durable outcomes. Actual installed platform coverage
+is reported separately. Claude resolve-and-retry and Codex live continuation must
+not be treated as interchangeable test witnesses.
 
 Native v3/v4 approval APIs have separate authority-bound challenge, claim and
 transactional consume tests. Their final consume holds the shared fence. Actual
@@ -182,7 +201,11 @@ authority, input and entrypoint freshness are revalidated at the final boundary,
 including the existing 5 ms quiet drain. `tools/list_changed` notifications during
 approval invalidate saved catalog authority. Out-of-order responses retain their
 JSON-RPC IDs. Ambiguous writes are terminal; they are not transparently replayed.
-Bounded framing keeps notification processing live while approvals are pending.
+Bounded framing keeps notification processing live while approvals are pending
+and while the client is idle. The idle reader drains the existing bounded child
+multiplexer before its next client poll; a server catalog invalidation no longer
+waits for another client request. The existing operation limits and final 5 ms
+prewrite barrier remain in force.
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
 forward is permitted. Quiet drains cannot reset the deadline or discard catalog

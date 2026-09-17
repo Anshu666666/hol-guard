@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 from codex_plugin_scanner.guard.policy_bundle_delivery import (
     effective_policy_bundle_acknowledgement,
     policy_bundle_acknowledgement_payload,
@@ -13,7 +15,6 @@ from codex_plugin_scanner.guard.policy_bundle_generic_ack import (
 )
 from codex_plugin_scanner.guard.policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 _MANAGED_PROOF_KEYS = (
     "deliveryId",
@@ -58,11 +59,11 @@ def test_generic_v2_ack_is_unverified_until_the_chosen_lane_applies() -> None:
     )
 
     assert unverified["status"] == "received"
-    assert unverified["errorCode"] == "unverified_generic_application"
+    assert unverified["errorCode"] is None
     assert unverified["status"] != "applied"
     assert applied["status"] == "applied"
     assert applied["deviceId"] == "device-alpha"
-    assert applied["payloadHash"] == bundle["payloadHash"]
+    assert "payloadHash" not in applied
     assert applied["bundleHash"] == bundle["bundleHash"]
     _assert_generic_lane(unverified)
     _assert_generic_lane(applied)
@@ -99,7 +100,7 @@ def test_received_generic_ack_can_become_applied_after_the_lane_commits() -> Non
     assert received["status"] == "received"
     assert applied["status"] == "applied"
     assert applied["sequence"] == received["sequence"] + 1
-    assert applied["payloadHash"] == received["payloadHash"]
+    assert applied["bundleHash"] == received["bundleHash"]
     _assert_generic_lane(applied)
 
 

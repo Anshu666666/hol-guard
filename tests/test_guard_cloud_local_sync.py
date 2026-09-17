@@ -1015,8 +1015,8 @@ def test_sync_runtime_session_emits_package_manager_coverage_payload(
     ]
     assert session_payload["yamlImport"] is False
     assert "canonicalPolicyEnforcement" not in session_payload
-    assert session_payload["selectedEnforcementLane"] == "unverified"
-    assert session_payload["canonicalIncompatibilityReason"] == "canonical_enforcement_disabled"
+    assert session_payload["selectedEnforcementLane"] == "legacy"
+    assert "canonicalIncompatibilityReason" not in session_payload
     assert session_payload["canonicalRolloutPercentage"] == 0
 
 
@@ -1039,20 +1039,20 @@ def test_local_runtime_session_advertises_enabled_policy_capabilities(
     ]
     assert session["yaml_import"] is True
     assert session["canonical_policy_enforcement"] is True
-    assert session["selected_enforcement_lane"] == "canonical"
+    assert session["selected_enforcement_lane"] == "legacy"
     assert session["canonical_rollout_percentage"] == 100
     assert "advertised_canonical_capabilities" in session
 
 
-def test_local_runtime_session_reports_unverified_v2_when_canonical_disabled(
+def test_local_runtime_session_without_bundle_reports_legacy_when_canonical_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", raising=False)
 
     session = guard_runner_module._local_guard_runtime_session()
 
-    assert session["selected_enforcement_lane"] == "unverified"
-    assert session["canonical_incompatibility_reason"] == "canonical_enforcement_disabled"
+    assert session["selected_enforcement_lane"] == "legacy"
+    assert "canonical_incompatibility_reason" not in session
     assert session["canonical_rollout_percentage"] == 0
 
 

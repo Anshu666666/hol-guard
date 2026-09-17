@@ -1,41 +1,56 @@
-"""Sync summary statuses for policy application vs fallback/retention."""
+"""Project receipt upload separately from resident policy application evidence."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-
+from .policy_bundle_delivery import policy_bundle_has_extension_semantics
 from .policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
 
 
-def policy_application_status(
+def policy_sync_outcomes(
     *,
-    policy_application_committed: bool,
-    validated_policy_bundle: Mapping[str, object] | None,
+    candidate: dict[str, object] | None,
+    resident: dict[str, object] | None,
+    acknowledgement: object,
+    committed: bool,
+    provided: bool,
     canonical_enforcement: bool,
-    policy_bundle_field_provided: bool,
-    activation_last_error: Mapping[str, object],
-    retained_authority: bool,
-) -> str:
-    """Report whether this sync applied, fell back, retained, or has no authority."""
-
-    if policy_application_committed and validated_policy_bundle is not None:
-        is_v2 = validated_policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT
-        if is_v2 and not canonical_enforcement:
-            return "fallback"
-        return "applied"
-    if retained_authority:
-        return "retained"
-    if activation_last_error or not policy_bundle_field_provided:
-        return "no_authority"
-    return "rejected"
-
-
-def stored_policy_authority_present(*, current: object, last_good: object) -> bool:
-    return _non_empty_mapping(current) or _non_empty_mapping(last_good)
-
-
-def _non_empty_mapping(value: object) -> bool:
-    return isinstance(value, Mapping) and bool(value)
-
-
-__all__ = ["policy_application_status", "stored_policy_authority_present"]
+    rejection: dict[str, object],
+) -> dict[str, object]:
+    if candidate is not None:
+        validation = "accepted"
+    elif provided:
+        validation = "rejected"
+    else:
+        validation = "omitted"
+    new_resident = (
+        committed
+        and candidate is not None
+        and resident is not None
+        and candidate.get("bundleHash") == resident.get("bundleHash")
+        and candidate.get("bundleVersion") == resident.get("bundleVersion")
+    )
+    application = "no_authority"
+    if new_resident and resident is not None:
+        if resident.get("contractVersion") != POLICY_BUNDLE_V2_CONTRACT or (
+            isinstance(acknowledgement, dict)
+            and acknowledgement.get("status") == "applied"
+            and acknowledgement.get("bundleHash") == resident.get("bundleHash")
+            and acknowledgement.get("bundleVersion") == resident.get("bundleVersion")
+            and (canonical_enforcement or policy_bundle_has_extension_semantics(resident))
+        ):
+            application = "applied"
+        else:
+            application = "fallback" if not canonical_enforcement else "unverified"
+    elif resident is not None:
+        application = "retained"
+    elif provided and not rejection:
+        application = "rejected"
+    reason = rejection.get("reason")
+    if application == "fallback" and not reason:
+        reason = "canonical_enforcement_disabled"
+    return {
+        "receipt_upload_status": "success",
+        "policy_validation_status": validation,
+        "policy_application_status": application,
+        "policy_rejection_reason": reason,
+    }

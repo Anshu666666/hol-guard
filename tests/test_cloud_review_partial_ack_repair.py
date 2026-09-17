@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-import json
+import contextlib
 from pathlib import Path
+
+import pytest
 
 from codex_plugin_scanner.guard.runtime import cloud_review_event_delivery as delivery
 from codex_plugin_scanner.guard.runtime import cloud_review_sync
@@ -73,10 +75,8 @@ def test_wrong_result_count_does_not_ack_batch(tmp_path: Path, monkeypatch: pyte
         }
 
     monkeypatch.setattr(delivery, "_post_json", post)
-    try:
+    with contextlib.suppress(Exception):
         cloud_review_sync.sync_cloud_review_events_once(store, auth)
-    except Exception:
-        pass
     remaining = store.list_ready_review_events(
         now="2099-01-01T00:00:00+00:00",
         limit=20,

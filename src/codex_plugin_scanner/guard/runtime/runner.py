@@ -84,9 +84,9 @@ from ..policy_bundle_v2 import (
     validated_policy_bundle_v2_acknowledgement,
 )
 from ..policy_canonical_rollout import (
-    POLICY_CANONICAL_ENFORCEMENT_ENV as _POLICY_CANONICAL_ENFORCEMENT_ENV,
     canonical_policy_enforcement_enabled as _canonical_policy_enforcement_enabled,
-    canonical_policy_rollout_percentage as _canonical_policy_rollout_percentage,
+)
+from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
 from ..policy_document import GuardPolicyDocument
@@ -3255,7 +3255,6 @@ def sync_receipts(
             else ("retained" if not policy_bundle_field_provided or activation_last_error else "rejected")
         ),
         "policy_rejection_reason": activation_last_error.get("reason") if activation_last_error else None,
-        "advisories_stored": advisories_stored,
         "advisories_stored": advisories_stored,
         "exceptions_stored": len(deduped_exceptions),
         "cloud_exceptions_stored": len(cloud_exception_items),

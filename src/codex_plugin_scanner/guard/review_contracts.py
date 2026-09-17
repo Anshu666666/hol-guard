@@ -31,12 +31,12 @@ from .policy_bundle_trusted_keys import (
 )
 from .project_identity import resolve_portable_project_identity
 from .review_exact_capability_advertisement import attach_exact_review_capability
+from .review_memory_targets import validate_exact_memory_target
 from .review_oauth_binding import (
     GuardReviewContractError,
     GuardReviewOAuthMetadata,
     guard_review_oauth_metadata,  # noqa: F401 - compatibility re-export
 )
-from .review_memory_targets import validate_exact_memory_target
 from .review_verification_keyring import REVIEW_VERIFICATION_KEYRING_SYNC_KEY
 from .stable_digest import sha256_content_digest
 from .stable_json import stable_json_serialize

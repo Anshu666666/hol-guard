@@ -13,7 +13,6 @@ from ...version import __version__
 from ..approval_gate import ApprovalGateError, require_high_risk
 from ..policy_authority import PolicyAuthorityError
 from ..policy_compile_errors import bounded_policy_compile_error, bounded_policy_parse_error
-from ..policy_matcher_capability import published_generic_matcher_capability
 from ..policy_document import policy_document_digest
 from ..policy_document_io import (
     PolicyCompilationError,
@@ -27,6 +26,7 @@ from ..policy_document_io import (
     write_private_policy_text,
 )
 from ..policy_document_yaml import PolicyDocumentError, format_policy_document_yaml
+from ..policy_matcher_capability import published_generic_matcher_capability
 from ..runtime.command_policy import compile_command_policy_rules, evaluate_command_policy_rules
 from ..store import GuardStore
 from ..store_policy_document import PolicyImportMode

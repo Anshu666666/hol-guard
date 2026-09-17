@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 from codex_plugin_scanner.guard.policy_bundle_delivery import (
     effective_policy_bundle_acknowledgement,
     policy_bundle_acknowledgement_payload,
@@ -9,7 +11,6 @@ from codex_plugin_scanner.guard.policy_bundle_delivery import (
 from codex_plugin_scanner.guard.policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from codex_plugin_scanner.guard.policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 def _generic_v2_bundle() -> dict[str, object]:

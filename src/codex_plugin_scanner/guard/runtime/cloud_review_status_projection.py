@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from .exact_cloud_review import exact_cloud_review_status
 from .cloud_review_readiness import cloud_review_workers_ready
+from .exact_cloud_review import exact_cloud_review_status
 
 _RECOVERY_KEY = "guard_cloud_review_settings_recovery"
 _ENABLE_COMMAND = "hol-guard cloud-review enable"
@@ -44,7 +44,9 @@ def project_cloud_review_status(
         **status,
         "connected": connected,
         "consent_enabled": consent_enabled,
-        "capability_saved": consent_enabled or consent_expired or bool(store.get_sync_payload("guard_exact_cloud_review_capability")),
+        "capability_saved": consent_enabled
+        or consent_expired
+        or bool(store.get_sync_payload("guard_exact_cloud_review_capability")),
         "delivery_ready": delivery_ready and consent_enabled,
         "enabled": consent_enabled,
         "expires_at": status.get("expires_at"),

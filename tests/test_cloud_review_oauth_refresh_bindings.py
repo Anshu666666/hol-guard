@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from codex_plugin_scanner.guard.runtime.cloud_review_sync_auth import resolve_cloud_review_sync_auth_context
 from codex_plugin_scanner.guard.runtime.exact_cloud_review import enable_exact_cloud_review, exact_cloud_review_status
 from tests.guard_exact_cloud_review_support import connected_exact_review_store
 

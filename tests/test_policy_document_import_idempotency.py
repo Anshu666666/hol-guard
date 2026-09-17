@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument, policy_document_digest
+from codex_plugin_scanner.guard.policy_document import policy_document_digest
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
 from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
 from codex_plugin_scanner.guard.store import GuardStore

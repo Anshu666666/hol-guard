@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 
-from codex_plugin_scanner.guard.synced_policy import cached_policy_bundle_validation
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import validate_synced_policy_bundle
 from codex_plugin_scanner.guard.policy_bundle_v2 import (
     validate_policy_bundle_v2_transition,
@@ -15,6 +15,7 @@ from codex_plugin_scanner.guard.policy_bundle_v2 import (
 )
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.store import GuardStore
+from codex_plugin_scanner.guard.synced_policy import cached_policy_bundle_validation
 from tests.policy_bundle_signing_helpers import (
     TEST_POLICY_BUNDLE_WORKSPACE_ID,
     policy_bundle_test_keyring,
@@ -27,10 +28,13 @@ from tests.test_policy_bundle_delivery_runtime import _Response
 from tests.test_policy_bundle_v2 import _signed_bundle as _signed_v2_bundle
 from tests.test_policy_bundle_v2 import _verification_key
 from tests.test_synced_policy import _MemorySyncStore
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 
-def _v1_bundle(*, rules: list[dict[str, object]] | None = None, version: str = "policy-2026-07-18.live") -> dict[str, object]:
+def _v1_bundle(
+    *,
+    rules: list[dict[str, object]] | None = None,
+    version: str = "policy-2026-07-18.live",
+) -> dict[str, object]:
     bundle = _signed_bundle(rollout_state="enforcing", bundle_version=version)
     if rules is not None:
         unsigned = dict(bundle)

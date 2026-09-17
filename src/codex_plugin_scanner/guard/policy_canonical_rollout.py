@@ -52,7 +52,11 @@ def selected_enforcement_lane(
     advertised = flags.runtime_capabilities(protected_authority=protected_authority)
     if required_capability is not None and required_capability not in advertised:
         return "incompatible", "missing_negotiated_capability"
-    if required_capability is not None and negotiated_capabilities and required_capability not in negotiated_capabilities:
+    if (
+        required_capability is not None
+        and negotiated_capabilities
+        and required_capability not in negotiated_capabilities
+    ):
         return "incompatible", "missing_negotiated_capability"
     if (
         contract_version == POLICY_BUNDLE_V2_CONTRACT

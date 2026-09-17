@@ -23,7 +23,7 @@ from codex_plugin_scanner.guard.store import GuardStore
 def test_malformed_intervals_fall_back(value: object) -> None:
     result = normalized_cloud_review_interval(value, default=DEFAULT_SAFETY_POLL_SECONDS, maximum=3600)
     assert result >= MIN_INTERVAL_SECONDS
-    assert result == DEFAULT_SAFETY_POLL_SECONDS or result == MIN_INTERVAL_SECONDS
+    assert result in (DEFAULT_SAFETY_POLL_SECONDS, MIN_INTERVAL_SECONDS)
 
 
 def test_valid_interval_is_clamped() -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from codex_plugin_scanner.guard.policy_bundle_parser import (
     _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT,
@@ -22,7 +23,6 @@ from codex_plugin_scanner.guard.policy_canonical_rollout import (
     selected_enforcement_lane,
 )
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 def test_v2_draft_rollout_is_not_enforceable() -> None:

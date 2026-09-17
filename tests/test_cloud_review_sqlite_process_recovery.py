@@ -13,6 +13,7 @@ from codex_plugin_scanner.guard.runtime.cloud_review_sync_worker import (
     stop_cloud_sync_sync_worker,
 )
 from codex_plugin_scanner.guard.runtime.exact_cloud_review import (
+    ExactCloudReviewError,
     apply_exact_cloud_review,
     enable_exact_cloud_review,
     exact_cloud_review_status,
@@ -50,7 +51,7 @@ def test_sqlite_recovery_does_not_replay_consumed_receipt(
     restarted = GuardStore(store.guard_home)
     assert restarted.has_exact_cloud_review_receipt("consumed-receipt")
     proof = remote_approval(restarted, "recover-pending", receipt_id="consumed-receipt")
-    with pytest.raises(Exception):
+    with pytest.raises(ExactCloudReviewError):
         apply_exact_cloud_review(restarted, remote_approval=proof, expected_harness="codex")
     later = remote_approval(restarted, "recover-pending", receipt_id="fresh-after-recovery")
     result = apply_exact_cloud_review(restarted, remote_approval=later, expected_harness="codex")

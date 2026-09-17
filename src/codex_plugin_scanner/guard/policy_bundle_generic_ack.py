@@ -27,7 +27,9 @@ def generic_policy_bundle_acknowledgement(
     policy_revision = revision if isinstance(revision, int) and not isinstance(revision, bool) else None
     bundle_version = policy_bundle.get("bundleVersion")
     if policy_revision is None:
-        policy_revision = bundle_version if isinstance(bundle_version, int) and not isinstance(bundle_version, bool) else 1
+        policy_revision = (
+            bundle_version if isinstance(bundle_version, int) and not isinstance(bundle_version, bool) else 1
+        )
     payload_hash = policy_bundle.get("payloadHash")
     bundle_hash = policy_bundle.get("bundleHash")
     workspace_id = policy_bundle.get("workspaceId")

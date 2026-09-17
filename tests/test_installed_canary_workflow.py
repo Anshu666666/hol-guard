@@ -85,6 +85,15 @@ def test_same_repo_post_publish_matrix_covers_all_supported_operating_systems() 
     assert _mapping(bun["with"])["bun-version"] == "1.3.14"
 
 
+def test_installed_pr_canary_has_no_shared_cache_authority() -> None:
+    job = _job("pr-installed-canary")
+
+    # Cache service tokens must refuse writes even from installed code.
+    assert job.get("cache-mode", _workflow().get("cache-mode")) == "none"
+    setup_uv = _action_step(_steps(job), "astral-sh/setup-uv")
+    assert _mapping(setup_uv["with"])["enable-cache"] is False
+
+
 def test_dynamic_native_wheel_checkout_cannot_write_dependency_cache() -> None:
     steps = _steps(_job("build-native-guard-wheels"))
     checkout = _action_step(steps, "actions/checkout")

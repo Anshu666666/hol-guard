@@ -19,6 +19,8 @@ from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
 
 _HARNESS = "generic-test"
 _COMMAND = "/usr/bin/printf 'Synthetic  exact'"
+# A missing local script requires review independently of PATH interpreter trust.
+_REAPPROVAL_COMMAND = "bash synthetic-policy-review.sh"
 
 
 def _payload(command=_COMMAND):
@@ -264,7 +266,7 @@ def test_actual_runtime_artifact_producer_consumes_exact_policy(tmp_path, source
 
 
 def test_runtime_exact_policy_cannot_relax_intrinsic_reapproval(tmp_path):
-    command = 'python -c "print(123)"'
+    command = _REAPPROVAL_COMMAND
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     store = _store(tmp_path)
@@ -394,7 +396,7 @@ def test_outer_hook_preserves_raw_selector_before_alias_normalization(tmp_path, 
 
 @pytest.mark.parametrize(
     "command,expected",
-    [("ssh synthetic@example.invalid true", "block"), ('python -c "print(123)"', "require-reapproval")],
+    [("ssh synthetic@example.invalid true", "block"), (_REAPPROVAL_COMMAND, "require-reapproval")],
 )
 def test_outer_runtime_envelope_retains_intrinsic_floors(tmp_path, capsys, command, expected):
     workspace = tmp_path / "workspace"
@@ -408,7 +410,7 @@ def test_outer_runtime_envelope_retains_intrinsic_floors(tmp_path, capsys, comma
     assert after_rc == 1 and after["policy_action"] == expected
 
 
-@pytest.mark.parametrize("command", ["\tprintf 'Synthetic  source'\r\n", 'python -c "print(123)"'])
+@pytest.mark.parametrize("command", ["\tprintf 'Synthetic  source'\r\n", _REAPPROVAL_COMMAND])
 @pytest.mark.parametrize("consent,ambiguous", [(True, False), (False, False), (True, True)])
 def test_outer_hook_local_queue_discloses_only_original_consented_source(
     tmp_path, capsys, monkeypatch, command, consent, ambiguous

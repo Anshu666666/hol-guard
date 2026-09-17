@@ -482,20 +482,15 @@ def test_runtime_canonical_enforcement_compiles_signed_v2_payload() -> None:
     )
 
     assert legacy == []
-    assert [decision.to_dict() for decision in canonical] == [
-        {
-            "harness": "codex",
-            "scope": "artifact",
-            "action": "block",
-            "artifact_id": "command:npm-test",
-            "artifact_hash": None,
-            "workspace": None,
-            "publisher": None,
-            "reason": None,
-            "owner": "rule.block-command",
-            "source": "policy-bundle-canonical",
-            "expires_at": None,
-        }
+    assert canonical == [
+        PolicyDecision(
+            harness="codex",
+            scope="artifact",
+            action="block",
+            artifact_id="command:npm-test",
+            owner="rule.block-command",
+            source="policy-bundle-canonical",
+        )
     ]
 
 

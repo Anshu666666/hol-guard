@@ -180,6 +180,59 @@ fn missing_snapshot_is_not_ready_but_push_can_install_it() {
 }
 
 #[test]
+fn retry_ack_requires_unchanged_durable_authority() {
+    for replaced in [false, true] {
+        let root = test_root(if replaced {
+            "retry-replaced"
+        } else {
+            "retry-removed"
+        });
+        let key = install_test_key(&root, 25);
+        let store = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
+        let request = serde_json::json!({
+            "schema": POLICY_SNAPSHOT_PUSH_SCHEMA,
+            "snapshot": signed_snapshot(12, &key, &root),
+        });
+        store.push(&request).unwrap();
+        let file = root.join(SNAPSHOT_FILE_NAME);
+        if replaced {
+            fixture_file(&file, b"{}");
+        } else {
+            fs::remove_file(&file).unwrap();
+        }
+        assert_eq!(
+            store.push(&request).unwrap_err(),
+            "native_policy_snapshot_context_mismatch"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn new_generation_ack_requires_unchanged_approval_authority() {
+    let root = test_root("push-approval-replaced");
+    let key = install_test_key(&root, 26);
+    let store = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
+    let request = |generation| {
+        serde_json::json!({
+            "schema": POLICY_SNAPSHOT_PUSH_SCHEMA,
+            "snapshot": signed_snapshot(generation, &key, &root),
+        })
+    };
+    store.push(&request(1)).unwrap();
+    fixture_file(
+        &root.join(super::approval_authority::APPROVAL_AUTHORITY_FILE_NAME),
+        b"{}",
+    );
+    assert_eq!(
+        store.push(&request(2)).unwrap_err(),
+        "native_policy_snapshot_context_mismatch"
+    );
+    assert!(store.current_snapshot().is_err());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn generation_rollback_and_same_generation_mutation_are_rejected() {
     let root = test_root("rollback");
     let key = install_test_key(&root, 8);

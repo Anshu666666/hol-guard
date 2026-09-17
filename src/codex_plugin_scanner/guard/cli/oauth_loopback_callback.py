@@ -1,4 +1,5 @@
 """Single-terminal local OAuth callbacks; the canonical client owns enrollment."""
+
 from __future__ import annotations
 
 import http.server
@@ -72,7 +73,8 @@ class OAuthCallbackState:
 
 
 def callback_handler(
-    expected_state: str, terminal: OAuthCallbackState,
+    expected_state: str,
+    terminal: OAuthCallbackState,
 ) -> type[http.server.BaseHTTPRequestHandler]:
     class CallbackHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -91,9 +93,14 @@ def callback_handler(
             if bool(code) == bool(error) or any(len(params.get(key, [])) > 1 for key in ("code", "error")):
                 self.respond(400, "Guard OAuth callback is missing or has an ambiguous authorization code.")
                 return
-            status = terminal.complete(GuardOAuthLoopbackCallback(
-                code=code or None, state=state, error=error or None, error_description=description or None,
-            ))
+            status = terminal.complete(
+                GuardOAuthLoopbackCallback(
+                    code=code or None,
+                    state=state,
+                    error=error or None,
+                    error_description=description or None,
+                )
+            )
             if status != 200:
                 self.respond(status, "This HOL Guard authorization session has already ended.")
             elif error:

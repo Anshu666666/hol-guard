@@ -167,5 +167,3 @@ def _review_action_text_from_item(item: Mapping[str, object], artifact: GuardArt
             if not _is_generic_tool_label(stripped):
                 return stripped
     return None
-
-

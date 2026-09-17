@@ -4061,6 +4061,11 @@ clearer UX and an implementation plan with technical references.
                     "guard.hashgraphonline.com/v1alpha1",
                 ],
                 "yaml_import": False,
+                "advertised_canonical_capabilities": [],
+                "effective_canonical_capabilities": [],
+                "canonical_policy_enforcement_enabled": False,
+                "selected_enforcement_lane": "legacy",
+                "canonical_rollout_percentage": 0,
             }
             return {
                 "synced_at": "2026-06-05T12:00:00+00:00",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
@@ -12,12 +12,33 @@ from typing import Protocol, TypeVar
 class FunctionRecordLike(Protocol):
     """Minimum function-record shape needed by the resolver."""
 
-    path: str
-    qualname: str
-    node: ast.FunctionDef | ast.AsyncFunctionDef
+    @property
+    def path(self) -> str: ...
+
+    @property
+    def qualname(self) -> str: ...
+
+    @property
+    def node(self) -> ast.FunctionDef | ast.AsyncFunctionDef: ...
 
 
 RecordT = TypeVar("RecordT", bound=FunctionRecordLike)
+
+
+def scoped_nodes(record: FunctionRecordLike) -> Iterator[tuple[ast.AST, str]]:
+    """Keep nested operations visible without lending the outer I/O exception."""
+
+    pending: list[tuple[ast.AST, str]] = [(record.node, record.qualname)]
+    while pending:
+        node, scope = pending.pop()
+        yield node, scope
+        for child in ast.iter_child_nodes(node):
+            child_scope = scope
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                child_scope = f"{scope}.{child.name}"
+            elif isinstance(child, ast.Lambda):
+                child_scope = f"{scope}.<lambda>"
+            pending.append((child, child_scope))
 
 
 def _read(path: Path) -> str:
@@ -212,16 +233,16 @@ def _scope_imports(body: list[ast.stmt]) -> tuple[ast.Import | ast.ImportFrom, .
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
             imports.append(node)
 
-        def visit_FunctionDef(self, _node: ast.FunctionDef) -> None:
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
             return
 
-        def visit_AsyncFunctionDef(self, _node: ast.AsyncFunctionDef) -> None:
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
             return
 
-        def visit_ClassDef(self, _node: ast.ClassDef) -> None:
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
             return
 
-        def visit_Lambda(self, _node: ast.Lambda) -> None:
+        def visit_Lambda(self, node: ast.Lambda) -> None:
             return
 
     collector = Collector()
@@ -267,8 +288,7 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                     resolved = _resolve_exported_symbol(root, target, symbol_name, set())
                     if resolved is None:
                         raise RuntimeError(
-                            f"unresolved repository-qualified helper call {name!r} "
-                            f"from {record.path}:{record.qualname}"
+                            f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
                         )
                     return resolved
                 else:
@@ -297,8 +317,7 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                 resolved = _resolve_exported_symbol(root, target, symbol_name, set())
                 if resolved is None:
                     raise RuntimeError(
-                        f"unresolved repository-qualified helper call {name!r} "
-                        f"from {record.path}:{record.qualname}"
+                        f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
                     )
                 return resolved
     return None

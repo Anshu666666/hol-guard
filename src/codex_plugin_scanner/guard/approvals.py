@@ -472,6 +472,7 @@ def queue_blocked_approvals(
     notify: bool = True,
     redaction_level: str = "full",
     continuation_operation: Mapping[str, object] | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> list[dict[str, object]]:
     timestamp = now or _now()
     artifacts_by_id = {artifact.artifact_id: artifact for artifact in detection.artifacts}
@@ -599,6 +600,7 @@ def queue_blocked_approvals(
                 now=timestamp,
                 headless=True,
                 operation=continuation_operation,
+                config_reader=config_reader,
             ),
         )
         persisted_request_id = store.add_approval_request(request, timestamp)
@@ -613,7 +615,7 @@ def queue_blocked_approvals(
         if created_new_request:
             _record_created_event(store, request, timestamp)
         if notify:
-            _notify_pending_approval(store=store, request=request)
+            _notify_pending_approval(store=store, request=request, config_reader=config_reader)
         request_payload = store.get_approval_request(persisted_request_id)
         if request_payload is None:
             raise RuntimeError(f"Persisted approval request not found: {persisted_request_id}")
@@ -1164,11 +1166,17 @@ def _append_guard_token_to_url(url: str, auth_token: str) -> str:
     return urlunparse(parsed._replace(fragment=urlencode(fragment_pairs)))
 
 
-def _notify_pending_approval(*, store: GuardStore, request: GuardApprovalRequest) -> None:
+def _notify_pending_approval(
+    *,
+    store: GuardStore,
+    request: GuardApprovalRequest,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> None:
     try:
         config = load_guard_config(
             store.guard_home,
             Path(request.workspace) if request.workspace is not None else None,
+            config_reader=config_reader,
         )
     except Exception:
         config = None

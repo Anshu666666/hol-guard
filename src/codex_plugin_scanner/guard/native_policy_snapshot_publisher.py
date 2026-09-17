@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from .config_source_io import GuardConfigCapture
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_MAX_SECONDS,
     _PUBLISH_RETRY_SECONDS,
@@ -48,9 +49,11 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         poll_interval_seconds: float = _PUBLISH_RETRY_SECONDS,
         wall_clock: Callable[[], float] | None = None,
         monotonic_clock: Callable[[], float] | None = None,
+        config_capture: GuardConfigCapture | None = None,
     ) -> None:
         self.store = store
         self.guard_home = Path(store.guard_home)
+        self.config_capture = config_capture
         self._status_provider = status_provider
         self._client_request = client_request
         self._poll_interval_seconds = max(0.05, min(5.0, poll_interval_seconds))

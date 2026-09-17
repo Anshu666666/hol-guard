@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,7 @@ from typing import Any
 from ..adapters.base import HarnessContext
 from ..adapters.grok_approval_resume import apply_grok_pretool_approval_wait
 from ..config import GuardConfig, load_guard_config
+from ..config_source_io import GuardConfigCapture
 from ..daemon.hook_availability_policy import availability_harness_response
 from ..daemon.hook_request_parsing import runtime_hook_event_name
 from ..daemon.hook_worker import HookWorker, HookWorkerUnsupported
@@ -38,6 +40,8 @@ def try_native_hook_authority(
     guard_home: Path,
     workspace: Path | None,
     store: GuardStore,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+    config_capture: GuardConfigCapture | None = None,
 ) -> dict[str, Any] | None:
     """Return native harness JSON, or None when Python CLI must continue.
 
@@ -59,6 +63,8 @@ def try_native_hook_authority(
             activity_writer=evidence_writer,
             wait_for_native_policy=False,
             publish_native_policy=False,
+            config_reader=config_reader,
+            config_capture=config_capture,
         )
         return worker.review_http_payload(
             payload=payload,
@@ -102,6 +108,8 @@ def try_native_or_source_ref_hook(
     runtime_workspace: Path | None,
     store: GuardStore,
     allow_compatibility: bool = True,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+    config_capture: GuardConfigCapture | None = None,
 ) -> int | None:
     """Prefer native authority, then an explicitly injected test oracle.
 
@@ -119,12 +127,16 @@ def try_native_or_source_ref_hook(
         guard_home=context.guard_home,
         workspace=runtime_workspace,
         store=store,
+        config_reader=config_reader,
+        config_capture=config_capture,
     )
     if native_result is not None:
         if str(args.harness).strip().lower().replace("_", "-") == "grok":
             wait_config = config
             if wait_config is None:
-                wait_config = load_guard_config(context.guard_home, workspace=runtime_workspace)
+                wait_config = load_guard_config(
+                    context.guard_home, workspace=runtime_workspace, config_reader=config_reader
+                )
             with suppress(OSError, RuntimeError, TypeError, ValueError, KeyError, sqlite3.Error):
                 native_result = apply_grok_pretool_approval_wait(
                     native_result,

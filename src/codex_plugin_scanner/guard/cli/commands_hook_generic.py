@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -704,6 +705,7 @@ def _run_hook_generic_payload(
     _claimed_saved_allow_hash: str | None = None,
     _claim_saved_approval: bool = True,
     _post_claim_refresh_failed: bool = False,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> int:
     payload_map = dict(payload)
     artifact_id = _coalesce_string(
@@ -944,6 +946,7 @@ def _run_hook_generic_payload(
                 _claimed_saved_allow_hash=runtime_artifact_hash,
                 _claim_saved_approval=False,
                 _post_claim_refresh_failed=_post_claim_refresh_failed,
+                config_reader=config_reader,
             )
     policy_action = approval_reuse.action
     stored_policy_action = (
@@ -1221,6 +1224,7 @@ def _run_hook_generic_payload(
             risk_summary="Watch-only mode allowed an action that current policy would stop.",
             scanner_evidence=scanner_evidence,
             store=store,
+            config_reader=config_reader,
         )
     if (
         hook_is_pre_event(hook_event_name)
@@ -1282,6 +1286,7 @@ def _run_hook_generic_payload(
             approval_center_url=approval_center_url,
             now=_now(),
             redaction_level=config.receipt_redaction_level,
+            config_reader=config_reader,
         )
         payload_map["approval_requests"] = queued
         payload_map["approval_center_url"] = approval_center_url

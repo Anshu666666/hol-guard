@@ -10,7 +10,7 @@ import sqlite3
 import sys
 import tempfile
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,7 +25,7 @@ from .action_lattice import coerce_guard_action, normalize_guard_action
 from .approval_gate import ApprovalGateGrant, public_config, require_settings_write
 from .config_mutation import notify_native_policy_mutation, record_posture_change_if_needed
 from .config_preset_support import apply_named_posture_harness_policy
-from .config_source_io import capture_guard_config
+from .config_source_io import GuardConfigParentValidator, capture_guard_config
 from .guard_home_state import database_has_custom_extension_state
 from .mdm.contracts import ManagedPolicy, ManagedPolicyState
 from .mdm.policy import apply_managed_policy, fail_closed_managed_policy, load_managed_policy
@@ -492,9 +492,18 @@ def resolve_guard_home_for_user_home(user_home: Path) -> Path:
     return canonical_home
 
 
-def _read_toml(path: Path) -> dict[str, object]:
-    payload = tomllib.loads(capture_guard_config(path).content.decode("utf-8"))
+def _parse_toml(content: bytes) -> dict[str, object]:
+    payload = tomllib.loads(content.decode("utf-8"))
     return payload if isinstance(payload, dict) else {}
+
+
+def _read_toml(path: Path, *, parent_validator: GuardConfigParentValidator | None = None) -> dict[str, object]:
+    captured = capture_guard_config(
+        path,
+        parent_validator=parent_validator,
+        expected_parent=path.parent.absolute() if parent_validator is not None else None,
+    )
+    return _parse_toml(captured.content)
 
 
 def _coerce_loaded_receipt_redaction_level(value: object) -> str:
@@ -508,12 +517,15 @@ def load_guard_config(
     workspace: Path | None = None,
     *,
     managed_policy_state: ManagedPolicyState | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> GuardConfig:
     """Load Guard config from home and workspace overrides."""
 
     guard_home.mkdir(parents=True, exist_ok=True)
-    home_config = _read_toml(guard_home / "config.toml")
-    workspace_config = _load_workspace_guard_config(workspace)
+    home_config = (
+        _read_toml(guard_home / "config.toml") if config_reader is None else config_reader(guard_home / "config.toml")
+    )
+    workspace_config = _load_workspace_guard_config(workspace, config_reader=config_reader)
 
     merged = _merge_config_payload(home_config, workspace_config)
     managed_state = managed_policy_state or load_managed_policy()
@@ -1383,12 +1395,15 @@ def _raise_when_backup_deadline_elapsed(deadline: float) -> None:
         raise TimeoutError("guard.db migration timed out")
 
 
-def _load_workspace_guard_config(workspace: Path | None) -> dict[str, object]:
+def _load_workspace_guard_config(
+    workspace: Path | None, *, config_reader: Callable[[Path], dict[str, object]] | None = None
+) -> dict[str, object]:
     if workspace is None:
         return {}
     merged: dict[str, object] = {}
     for filename in WORKSPACE_CONFIG_FILENAMES:
-        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(_read_toml(workspace / filename)))
+        payload = _read_toml(workspace / filename) if config_reader is None else config_reader(workspace / filename)
+        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(payload))
     return merged
 
 

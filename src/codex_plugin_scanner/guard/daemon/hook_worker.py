@@ -34,6 +34,7 @@ from ..cli.commands_support_command_activity import (
     record_post_hook_command_activity_best_effort,
 )
 from ..config import load_guard_config
+from ..config_source_io import GuardConfigCapture
 from ..native_hook_edge import review_raw_hook_native
 from ..native_mode import python_oracle_enabled, python_oracle_surface_enabled
 from ..native_policy_snapshot import get_native_policy_snapshot_publisher
@@ -117,9 +118,12 @@ class HookWorker(HookWorkerNativeMixin):
         activity_writer: CommandActivityWriter | None = None,
         wait_for_native_policy: bool = True,
         publish_native_policy: bool = True,
+        config_reader: Callable[[Path], dict[str, object]] | None = None,
+        config_capture: GuardConfigCapture | None = None,
     ):
         self.store = store
         self.guard_home = store.guard_home
+        self.config_reader = config_reader
         self.activity_writer = activity_writer
         self._publish_native_policy = publish_native_policy
         self._last_native_decision_receipt: dict[str, object] | None = None
@@ -136,7 +140,11 @@ class HookWorker(HookWorkerNativeMixin):
                 if callable(review):
                     self._python_oracle_object = oracle
                     self._python_oracle = cast(Callable[[HookReviewRequest], HookReviewResponse], review)
-        self.policy_snapshot_publisher = get_native_policy_snapshot_publisher(self.store)
+        self.policy_snapshot_publisher = (
+            get_native_policy_snapshot_publisher(self.store)
+            if config_capture is None
+            else get_native_policy_snapshot_publisher(self.store, config_capture=config_capture)
+        )
         mode = native_mode()
         self._owns_policy_snapshot_publisher = publish_native_policy and mode in {"auto", "force", "shadow"}
         if self._owns_policy_snapshot_publisher:
@@ -159,7 +167,7 @@ class HookWorker(HookWorkerNativeMixin):
         return self._last_native_decision_receipt
 
     def _load_config(self, guard_home: Path, workspace: Path | None):
-        return load_guard_config(guard_home, workspace=workspace)
+        return load_guard_config(guard_home, workspace=workspace, config_reader=self.config_reader)
 
     def _review_raw_hook_native(
         self,

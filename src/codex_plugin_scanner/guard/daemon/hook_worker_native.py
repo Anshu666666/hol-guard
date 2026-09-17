@@ -113,6 +113,7 @@ if TYPE_CHECKING:
 
 class _HookWorkerNativeHost(Protocol):
     store: GuardStore
+    config_reader: Callable[[Path], dict[str, object]] | None
 
     @property
     def metrics(self) -> _HookWorkerMetrics: ...
@@ -252,7 +253,9 @@ class HookWorkerNativeMixin:
         command = pre_tool_command(payload)
         if command is None:
             raise HookWorkerUnsupported("fast path PreToolUse requires a command")
-        recording_only = hook_review_is_recording_only(guard_home=guard_home, workspace=workspace)
+        recording_only = hook_review_is_recording_only(
+            guard_home=guard_home, workspace=workspace, config_reader=self.config_reader
+        )
         native = self._review_pre_tool_native(command, guard_home=guard_home, cwd=workspace, home_dir=home_dir)
         if native is not None:
             if recording_only:

@@ -39,6 +39,22 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     all_categories = set(report["inventory_by_category"])
     assert "transport_identity" in categories
     assert "asynchronous_policy" in categories
+    config_reads = [
+        item
+        for item in report["inventory"]
+        if item["path"] == "src/codex_plugin_scanner/guard/config_source_io.py" and item["kind"] == "filesystem"
+    ]
+    assert config_reads
+    assert all(item["category"] == "synchronous_posture_config" for item in config_reads)
+    parser_path = "src/codex_plugin_scanner/guard/config.py"
+    parser = MODULE._function_map(ROOT)[parser_path, "_parse_toml"][0]
+    scoped_decodes = [
+        item
+        for item in report["inventory"]
+        if item["path"] == parser_path and parser.node.lineno <= item["line"] <= parser.node.end_lineno
+    ]
+    assert {item["operation"] for item in scoped_decodes} == {"loads", "decode"}
+    assert all(item["category"] == "synchronous_posture_config" for item in scoped_decodes)
     assert "compatibility_only" in all_categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
@@ -100,8 +116,7 @@ def test_resolver_follows_qualified_repository_module_alias(tmp_path: Path) -> N
     caller_path = _write_guard_fixture(
         tmp_path,
         "qualified_caller",
-        "from . import qualified_helper\n\n"
-        "def call() -> str:\n    return qualified_helper.read_source()\n",
+        "from . import qualified_helper\n\ndef call() -> str:\n    return qualified_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]
@@ -152,11 +167,39 @@ def test_resolver_fails_closed_for_unknown_symbol_on_repository_module(tmp_path:
     caller_path = _write_guard_fixture(
         tmp_path,
         "unknown_symbol_caller",
-        "from . import known_helper\n\n"
-        "def call() -> str:\n    return known_helper.read_source()\n",
+        "from . import known_helper\n\ndef call() -> str:\n    return known_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]
 
     with pytest.raises(RuntimeError, match="unresolved repository-qualified helper call"):
         MODULE.resolve_call(tmp_path, caller, "known_helper.read_source", records)
+
+
+def test_config_reader_inventory_keeps_unreviewed_operations_closed(tmp_path: Path) -> None:
+    path = _write_guard_fixture(
+        tmp_path,
+        "config_source_io",
+        "def _read_descriptor(descriptor, before):\n"
+        "    def unrelated():\n        return open('source.txt').read()\n"
+        "    value = os.read(descriptor, 10)\n"
+        "    return Path('source.txt').read_text()\n",
+    )
+    record = MODULE._function_map(tmp_path)[path, "_read_descriptor"][0]
+    observed = list(MODULE._observations(record))
+    nested = [item for item in observed if item.line == 3]
+    reviewed = [item for item in observed if item.line == 4]
+    new_operation = [item for item in observed if item.line == 5]
+    assert len(nested) == 2 and len(reviewed) == len(new_operation) == 1
+    assert all(item.category == "unclassified_python_io" for item in nested + new_operation)
+    assert reviewed[0].category == "asynchronous_policy"
+    for function in (
+        "_posix_parent_chain",
+        "_read_descriptor",
+        "_capture_in_parent",
+        "_capture_in_parent.metadata",
+        "_verify_missing_parent",
+        "capture_guard_config",
+    ):
+        for kind, operation in (("archive", "tarfile"), ("decode", "loads"), ("hash", "sha256")):
+            assert MODULE._category(path, kind, function, operation).startswith("unclassified_")

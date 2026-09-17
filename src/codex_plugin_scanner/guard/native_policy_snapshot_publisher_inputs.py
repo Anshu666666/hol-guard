@@ -7,6 +7,7 @@ from pathlib import Path
 from threading import Condition
 from typing import cast
 
+from .config_source_io import CapturedGuardConfig, GuardConfigCapture, GuardConfigSourceError, capture_guard_config
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     NATIVE_POLICY_VERIFIER_KEY_NAME,
@@ -20,6 +21,7 @@ class NativePolicySnapshotPublisherInputs:
     """Mixin containing filesystem observation outside synchronous hooks."""
 
     guard_home: Path  # pyright: ignore[reportUninitializedInstanceVariable]
+    config_capture: GuardConfigCapture | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _condition: Condition  # pyright: ignore[reportUninitializedInstanceVariable]
     _acked: bool  # pyright: ignore[reportUninitializedInstanceVariable]
     _workspace_paths: set[Path]  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -181,11 +183,32 @@ class NativePolicySnapshotPublisherInputs:
 
         with self._condition:
             workspaces = tuple(sorted(self._workspace_paths, key=str))
-        configs = [load_guard_config(self.guard_home)]
-        configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
+        configs = [load_guard_config(self.guard_home, config_reader=self._uncached_config_reader)]
+        configs.extend(
+            load_guard_config(self.guard_home, workspace=workspace, config_reader=self._uncached_config_reader)
+            for workspace in workspaces
+        )
         return _merge_effective_native_policies(
             tuple(effective_native_policy_v3(config) | {"mode": config.mode} for config in configs)
         )
+
+    def _capture_config_policy_input(self, path: Path) -> CapturedGuardConfig:
+        try:
+            capture = self.config_capture if self.config_capture is not None else capture_guard_config
+            return capture(path)
+        except GuardConfigSourceError:
+            # Rejection can precede input-change invalidation. Withdraw the
+            # previous ACK before generic publication errors can retain it.
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            raise
+
+    def _uncached_config_reader(self, path: Path) -> dict[str, object]:
+        from .config import tomllib
+
+        captured = self._capture_config_policy_input(path)
+        return cast(dict[str, object], tomllib.loads(captured.content.decode("utf-8")))
 
     @staticmethod
     def _external_policy_paths() -> tuple[Path, ...]:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from .hook_availability_floor import (
@@ -73,6 +73,7 @@ def hook_review_is_recording_only(
     guard_home: Path | None = None,
     workspace: Path | None = None,
     recording_only: bool = False,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> bool:
     """True when Watch/observe must record without stopping the harness."""
 
@@ -84,7 +85,7 @@ def hook_review_is_recording_only(
         from ..config import load_guard_config
         from ..protection_posture import protection_is_off
 
-        config = load_guard_config(guard_home, workspace=workspace)
+        config = load_guard_config(guard_home, workspace=workspace, config_reader=config_reader)
     except (OSError, RuntimeError, TypeError, ValueError):
         return False
     return protection_is_off(posture=config.protection_posture, mode=config.mode)

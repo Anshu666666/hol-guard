@@ -36,6 +36,7 @@ _coerce_resident_hook_request = coerce_resident_hook_request
 
 if TYPE_CHECKING:
     from ..store import GuardStore
+    from .config_read_scope import HookConfigReadScope
     from .hook_worker import HookWorker
 
 _HOOK_SQLITE_TIMEOUT_ENV = "HOL_GUARD_INTERNAL_HOOK_SQLITE_TIMEOUT_MS"
@@ -170,6 +171,11 @@ def _hook_evaluator_loop(
     hook_workers: dict[str, HookWorker],
     configured_guard_home: str | None,
 ) -> None:
+    from .config_read_scope import HookConfigReadScope
+
+    config_scope = (
+        HookConfigReadScope.for_guard_home(Path(configured_guard_home)) if configured_guard_home is not None else None
+    )
     try:
         connection.send(("ready", None))
     except (BrokenPipeError, EOFError, OSError):
@@ -213,6 +219,7 @@ def _hook_evaluator_loop(
                 stores=stores,
                 hook_workers=hook_workers,
                 configured_guard_home=configured_guard_home,
+                config_scope=config_scope,
             )
         except BaseException as error:
             reason_code = (
@@ -258,10 +265,12 @@ def _run_resident_hook_request(
     stores: dict[str, GuardStore],
     hook_workers: dict[str, HookWorker],
     configured_guard_home: str | None,
+    config_scope: HookConfigReadScope | None = None,
 ) -> dict[str, object]:
     from ..cli.commands_hook import _run_guard_hook_command
     from ..cli.commands_support_connect import _synced_policy_payload
     from ..config import load_guard_config, overlay_synced_guard_policy
+    from .config_read_scope import HookConfigReadScope
     from .hook_worker import HookWorker, HookWorkerUnsupported, runtime_hook_event_name
 
     parsed = coerce_resident_hook_request(request)
@@ -272,6 +281,10 @@ def _run_resident_hook_request(
         return {"payload": None, "reason_code": "daemon_hook_process_guard_home_mismatch"}
     store_key = str(parsed.guard_home)
     store, context = resident_hook_store_and_context(parsed, stores)
+    if config_scope is None:
+        config_scope = HookConfigReadScope.for_guard_home(
+            Path(configured_guard_home) if configured_guard_home is not None else store.guard_home
+        )
     event_name = runtime_hook_event_name(parsed.payload)
     if (
         _native_mode_requires_rust()
@@ -280,7 +293,12 @@ def _run_resident_hook_request(
     ):
         worker = hook_workers.get(store_key)
         if worker is None:
-            worker = HookWorker(store=store, wait_for_native_policy=False)
+            worker = HookWorker(
+                store=store,
+                wait_for_native_policy=False,
+                config_reader=config_scope.read_toml,
+                config_capture=config_scope,
+            )
             hook_workers[store_key] = worker
         try:
             worker_payload = worker.review_http_payload(
@@ -319,7 +337,7 @@ def _run_resident_hook_request(
             return response
     with applied_hook_environment(request):
         config = overlay_synced_guard_policy(
-            load_guard_config(parsed.guard_home, workspace=parsed.workspace),
+            load_guard_config(parsed.guard_home, workspace=parsed.workspace, config_reader=config_scope.read_toml),
             _synced_policy_payload(store),
         )
         args = compatibility_hook_args(parsed)
@@ -337,6 +355,8 @@ def _run_resident_hook_request(
                 _claimed_saved_allow_hash=parsed.claimed_saved_allow_hash,
                 _claimed_trusted_request_override=parsed.claimed_trusted_request_override,
                 _claimed_approval_request_id=parsed.claimed_approval_request_id,
+                config_reader=config_scope.read_toml,
+                config_capture=config_scope,
             )
         )
         response["route"] = _current_decision_route()

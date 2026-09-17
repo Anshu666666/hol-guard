@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +15,7 @@ from .windows_paths import open_windows_locked_regular_descriptor
 
 GUARD_CONFIG_FILENAMES = frozenset({"config.toml", ".ai-plugin-scanner-guard.toml", ".hol-guard.toml"})
 MAX_GUARD_CONFIG_BYTES = DEFAULT_SAFE_READ_LIMIT_BYTES
+GuardConfigParentValidator = Callable[[Path, os.stat_result], None]
 
 
 class GuardConfigSourceError(ValueError):
@@ -25,6 +26,9 @@ class GuardConfigSourceError(ValueError):
 class CapturedGuardConfig:
     content: bytes
     identity: tuple[int, ...] | None
+
+
+GuardConfigCapture = Callable[[Path], CapturedGuardConfig]
 
 
 def _directory_identity(metadata: os.stat_result) -> tuple[int, ...]:
@@ -159,13 +163,21 @@ def _verify_missing_parent(parent: Path) -> None:
     raise GuardConfigSourceError("guard_config_parent_changed")
 
 
-def capture_guard_config(path: Path) -> CapturedGuardConfig:
+def capture_guard_config(
+    path: Path,
+    *,
+    parent_validator: GuardConfigParentValidator | None = None,
+    expected_parent: Path | None = None,
+) -> CapturedGuardConfig:
     """Capture a fixed config basename, preserving intentional directory aliases.
 
     Missing files/directories contribute no override. Unsafe, inaccessible,
     changing or oversized existing inputs raise instead of becoming defaults.
     Directory aliases are resolved once at the scope boundary, then the real
     directory chain and config leaf are held while reading and verifying bytes.
+    A caller that has already admitted a canonical workspace supplies that path
+    as expected_parent. It is compared without resolving it again. Additional
+    caller authorization runs against the held parent before any leaf read.
     """
 
     if path.name not in GUARD_CONFIG_FILENAMES:
@@ -177,6 +189,8 @@ def capture_guard_config(path: Path) -> CapturedGuardConfig:
             _verify_missing_parent(path.parent)
             return CapturedGuardConfig(b"", None)
         parent = path.parent.resolve(strict=True)
+        if expected_parent is not None and parent != expected_parent:
+            raise GuardConfigSourceError("guard_config_scope_changed")
         if _directory_identity(parent.stat()) != parent_before:
             raise GuardConfigSourceError("guard_config_parent_changed")
         with ExitStack() as resources:
@@ -190,6 +204,13 @@ def capture_guard_config(path: Path) -> CapturedGuardConfig:
             held = parent.stat() if directory is None else os.fstat(directory)
             if _directory_identity(held) != parent_before:
                 raise GuardConfigSourceError("guard_config_parent_changed")
+            if parent_validator is not None:
+                try:
+                    parent_validator(parent, held)
+                except GuardConfigSourceError:
+                    raise
+                except (OSError, RuntimeError, TypeError, ValueError) as error:
+                    raise GuardConfigSourceError("guard_config_scope_rejected") from error
             captured = _capture_in_parent(parent / path.name, directory)
             if _directory_identity(path.parent.stat()) != parent_before or path.parent.resolve(strict=True) != parent:
                 raise GuardConfigSourceError("guard_config_parent_changed")

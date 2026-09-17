@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
@@ -174,6 +175,7 @@ def _review_runtime_artifact_hook(
     payload: Mapping[str, object],
     store: GuardStore,
     workspace: Path | None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> int | None:
     payload_map = dict(payload)
     action_envelope = state.action_envelope
@@ -232,6 +234,7 @@ def _review_runtime_artifact_hook(
                 risk_summary=risk_summary,
                 scanner_evidence=scanner_evidence_payload,
                 store=store,
+                config_reader=config_reader,
             )
             set_runtime_artifact_hook_final_action(
                 state,
@@ -403,6 +406,7 @@ def _review_runtime_artifact_hook(
                     store=store,
                     approval_center_url=approval_center_url,
                     now=_now(),
+                    config_reader=config_reader,
                 )
                 _bind_hook_blocked_operation_queue(
                     harness=args.harness,

@@ -34,15 +34,11 @@ def test_double_enable_and_retry_delivery_reuse_valid_consent(tmp_path: Path) ->
     reused = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(reused, dict)
     assert reused["nonce"] == nonce["nonce"]
-    retried = change_cloud_review_settings(
-        store, _payload("retry_delivery"), refresh_workers=_refresh_workers
-    )
+    retried = change_cloud_review_settings(store, _payload("retry_delivery"), refresh_workers=_refresh_workers)
     still = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(still, dict)
     assert still["nonce"] == nonce["nonce"]
-    renewed = change_cloud_review_settings(
-        store, _payload("renew_consent"), refresh_workers=_refresh_workers
-    )
+    renewed = change_cloud_review_settings(store, _payload("renew_consent"), refresh_workers=_refresh_workers)
     rotated = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(rotated, dict)
     assert rotated["nonce"] != nonce["nonce"]

@@ -171,9 +171,7 @@ def _run_guard_cloud_review_command(
                     "pending_requests_requeued": pending_requests_requeued,
                     "pending_request_requeue_status": "requeued",
                     "retained_existing_capability": previously_enabled and not bool(getattr(args, "renew", False)),
-                    "recovery_action": (
-                        "renew_consent" if bool(getattr(args, "renew", False)) else "retry_delivery"
-                    ),
+                    "recovery_action": "renew_consent" if bool(getattr(args, "renew", False)) else "retry_delivery",
                 }
                 if command == "enable"
                 else {}

@@ -48,9 +48,7 @@ def _seed(store: GuardStore) -> None:
     }
 
 
-def test_pain_signal_runtime_error_does_not_unapply_policy(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_pain_signal_runtime_error_does_not_unapply_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = GuardStore(tmp_path / "guard-home")
     _seed(store)
 

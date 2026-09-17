@@ -36,11 +36,7 @@ def _artifact(kind: str, *, harness: str = "codex") -> GuardArtifact:
 
 def test_allow_review_block_at_python_launch_boundary(tmp_path: Path) -> None:
     uncovered = sorted(
-        {
-            f"{contract.harness}:{spot}"
-            for contract in HARNESS_CONTRACTS
-            for spot in contract.known_blind_spots
-        }
+        {f"{contract.harness}:{spot}" for contract in HARNESS_CONTRACTS for spot in contract.known_blind_spots}
     )
     assert uncovered
     ranks = {
@@ -53,9 +49,7 @@ def test_allow_review_block_at_python_launch_boundary(tmp_path: Path) -> None:
     }
     for kind in ("shell", "file_read", "mcp", "package"):
         allowed = _runtime_artifact_policy_action(_config(tmp_path, default_action="allow"), _artifact(kind), "codex")
-        reviewed = _runtime_artifact_policy_action(
-            _config(tmp_path, default_action="review"), _artifact(kind), "codex"
-        )
+        reviewed = _runtime_artifact_policy_action(_config(tmp_path, default_action="review"), _artifact(kind), "codex")
         blocked = _runtime_artifact_policy_action(_config(tmp_path, default_action="block"), _artifact(kind), "codex")
         assert blocked == "block"
         assert ranks[allowed] <= ranks[blocked]

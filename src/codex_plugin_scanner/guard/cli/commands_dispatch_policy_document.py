@@ -12,6 +12,7 @@ from typing import Protocol, TextIO, cast
 from ...version import __version__
 from ..approval_gate import ApprovalGateError, require_high_risk
 from ..policy_authority import PolicyAuthorityError
+from ..policy_capability_inventory import local_row_projection_capabilities
 from ..policy_document import policy_document_digest
 from ..policy_document_io import (
     PolicyCompilationError,
@@ -103,6 +104,7 @@ def _run_guard_policy_document_command(
                     "guard_version": __version__,
                     "policy_schema": "guard.hashgraphonline.com/v1alpha1",
                     "capabilities": ["command-pattern-expressions.v1"],
+                    "local_row_projection": local_row_projection_capabilities(),
                     "command_pattern_expressions": {
                         "combinators": ["all", "any"],
                         "operators": [

@@ -13,9 +13,7 @@ POLICY_INTEGRITY_VERSION = 2
 POLICY_INTEGRITY_MAC_ALGORITHM = "hmac-sha256"
 _LEGACY_POLICY_INTEGRITY_VERSION = 1
 _SUPPORTED_POLICY_INTEGRITY_VERSIONS = frozenset({_LEGACY_POLICY_INTEGRITY_VERSION, POLICY_INTEGRITY_VERSION})
-BUNDLE_OWNED_POLICY_SOURCES = frozenset(
-    {"cloud-sync", "team-policy", "policy-bundle", "policy-bundle-canonical"}
-)
+BUNDLE_OWNED_POLICY_SOURCES = frozenset({"cloud-sync", "team-policy", "policy-bundle", "policy-bundle-canonical"})
 MEMORY_POLICY_SOURCES = frozenset({"cloud-signed-memory"})
 REMOTE_POLICY_SOURCES = BUNDLE_OWNED_POLICY_SOURCES | MEMORY_POLICY_SOURCES
 

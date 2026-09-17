@@ -30,7 +30,7 @@ def validate_exact_memory_target(
     oauth: GuardReviewOAuthMetadata,
     project_identity: str | None = None,
 ) -> None:
-    """Accept the portal 0..50 target arrays and refuse only unrepresentable projections."""
+    """Accept signed Cloud target arrays and refuse only unrepresentable projections."""
 
     workspace_ids = _text_ids(target.get("workspaceIds"))
     machine_ids = _text_ids(target.get("machineIds"))
@@ -84,3 +84,14 @@ def local_memory_match_fields(
 
 
 __all__ = ["local_memory_match_fields", "validate_exact_memory_target"]
+
+
+def validate_memory_rule_target_exact(
+    target: dict[str, object],
+    *,
+    oauth: GuardReviewOAuthMetadata,
+    rule: dict[str, object],
+) -> None:
+    value = rule.get("projectIdentity")
+    project_identity = value if isinstance(value, str) and value.strip() else None
+    validate_exact_memory_target(target, oauth=oauth, project_identity=project_identity)

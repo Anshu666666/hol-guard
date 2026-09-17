@@ -1783,7 +1783,7 @@ class StorePolicyMixin:
                         (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
                     )
                     if source_identity is not None:
-                        candidate_payload.update(source_identity.to_dict())
+                        candidate_payload.update(source_identity.to_selected_row_dict())
                     candidate_outranks_local_once = selected_payload is None or guard_action_severity(
                         candidate_payload.get("action"),
                         unknown_action="block",
@@ -1864,7 +1864,7 @@ class StorePolicyMixin:
                         (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
                     )
                     if source_identity is not None:
-                        candidate_payload.update(source_identity.to_dict())
+                        candidate_payload.update(source_identity.to_selected_row_dict())
                     candidate_outranks_local_once = selected_payload is None or guard_action_severity(
                         candidate_payload.get("action"),
                         unknown_action="block",

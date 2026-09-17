@@ -381,6 +381,10 @@ class AdapterSession:
         return native_runtime_health(self.guard_home).overloads
 
     def close(self) -> None:
+        # Cleanup may retry a failed probe successfully. Keep its evidence
+        # before that retry replaces the last diagnostic and its artifact.
+        probe_diagnostic = dict(getattr(self, "last_stop_diagnostic", {}))
+        probe_failed = probe_diagnostic.get("status") in _STOP_FAILURE_STATUSES
         try:
             if self._connection is not None:
                 self._connection.close()
@@ -407,6 +411,8 @@ class AdapterSession:
                 final_failure = final_diagnostic.get("status") in _STOP_FAILURE_STATUSES
                 if final_failure:
                     diagnostic = final_diagnostic
+                elif probe_failed:
+                    diagnostic = probe_diagnostic
                 elif prior_diagnostic.get("status") in _STOP_FAILURE_STATUSES:
                     # stop_resident already emitted this failure diagnostic;
                     # preserve that artifact instead of writing it twice.
@@ -414,7 +420,11 @@ class AdapterSession:
                 else:
                     diagnostic = final_diagnostic
 
-                if final_failure or not getattr(self, "_stop_diagnostic_written", False):
+                if (
+                    final_failure
+                    or (probe_failed and diagnostic != prior_diagnostic)
+                    or not getattr(self, "_stop_diagnostic_written", False)
+                ):
                     _write_stop_diagnostic(diagnostic)
                     self._stop_diagnostic_written = True
                 self.last_stop_diagnostic = diagnostic

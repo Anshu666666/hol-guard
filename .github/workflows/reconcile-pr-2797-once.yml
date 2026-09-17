@@ -21,35 +21,34 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Remove stale settings serialization merge artifacts
+      - name: Restore current-main dashboard update-channel wiring
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("src/codex_plugin_scanner/guard/config.py")
+          path = Path("dashboard/src/approval-center-layout.tsx")
           text = path.read_text()
 
-          replacements = {
-              "\n@serialize_guard_settings\ndef update_guard_update_channel(": "\ndef update_guard_update_channel(",
-              "\n@serialize_guard_settings\ndef reset_guard_settings(": "\ndef reset_guard_settings(",
-              '    next_payload["presentation_revision"] = next_presentation_revision(\n        load_guard_config(guard_home).presentation_revision\n    )\n': "",
-          }
-          for old, new in replacements.items():
-              if old not in text:
-                  raise SystemExit(f"Expected stale merge artifact not found: {old!r}")
-              text = text.replace(old, new, 1)
+          old_destructure = "    onUpdateGuard,\n    onReinstallGuard,\n  } = useGuardUpdate("
+          new_destructure = "    onUpdateGuard,\n    onReinstallGuard,\n    onSetUpdateChannel,\n  } = useGuardUpdate("
+          old_prop = "        onUpdateGuard={onUpdateGuard}\n        onReinstallGuard={onReinstallGuard}\n        approvalGate="
+          new_prop = "        onUpdateGuard={onUpdateGuard}\n        onReinstallGuard={onReinstallGuard}\n        onSetUpdateChannel={onSetUpdateChannel}\n        approvalGate="
 
-          if "@serialize_guard_settings" in text:
-              raise SystemExit("Unexpected serialize_guard_settings reference remains")
+          if old_destructure not in text:
+              raise SystemExit("Expected useGuardUpdate destructuring shape not found")
+          if old_prop not in text:
+              raise SystemExit("Expected ShellNavigation prop shape not found")
 
+          text = text.replace(old_destructure, new_destructure, 1)
+          text = text.replace(old_prop, new_prop, 1)
           path.write_text(text)
           PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/codex_plugin_scanner/guard/config.py
+          git add dashboard/src/approval-center-layout.tsx
           git diff --cached --check
-          git commit -m "fix: reconcile settings mutations with main"
+          git commit -m "fix: restore dashboard update-channel wiring"
           git push origin HEAD:automation/reconcile-pr-2797-result

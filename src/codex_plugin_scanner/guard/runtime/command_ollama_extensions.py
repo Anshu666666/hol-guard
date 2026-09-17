@@ -11,8 +11,10 @@ from .command_rules import AnyMatcher, CommandSafetyRule, CommandSafeVariant
 # `rm MODEL [MODEL...]` is MinimumNArgs(1) and documented as "Remove a model".
 # `push` accepts `--insecure`. Root `--version`/`-v`, `--verbose`, and
 # `--nowordwrap` are not persistent flags, so they cannot precede a subcommand
-# in the current Cobra registration. v1 does not review run, list, show, ps,
-# serve, launch, or other inventory commands.
+# in the current Cobra registration. Missing model operands still match: an
+# incomplete `ollama push` or `ollama rm` remains a publication or removal
+# attempt, so those forms stay fail-secure review instead of no_match. v1 does
+# not review run, list, show, ps, serve, launch, or other inventory commands.
 # https://github.com/ollama/ollama/blob/main/cmd/cmd.go
 # https://docs.ollama.com/cli
 

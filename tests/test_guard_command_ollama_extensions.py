@@ -11,16 +11,10 @@ from codex_plugin_scanner.guard.runtime.command_extensions import (
     risk_classes_for_command_action,
 )
 from codex_plugin_scanner.guard.runtime.command_model import parse_shell_command
-from codex_plugin_scanner.guard.runtime.extension_control_contract import (
-    CONTROL_SCHEMA_VERSION,
-    ControlLayerKind,
-    ControlState,
-    ControlTarget,
-    ControlTargetKind,
-    ExtensionControl,
-    ExtensionControlLayer,
+from tests.command_extension_contracts import (
+    assert_safe_command_cases,
+    enable_local_admin_extension_layer,
 )
-from tests.command_extension_contracts import assert_safe_command_cases
 
 _PUSH_ACTION = "Ollama model publication command"
 _RM_ACTION = "Ollama model removal command"
@@ -37,7 +31,10 @@ OLLAMA_REVIEW_CASES: tuple[tuple[str, str, str], ...] = (
     ("ollama.cmd push alice/my-model", _PUSH_ACTION, _PUSH_RULE),
     ('ollama push "alice/my-model"', _PUSH_ACTION, _PUSH_RULE),
     ("ollama push my-model --unknown-flag", _PUSH_ACTION, _PUSH_RULE),
+    ("ollama push", _PUSH_ACTION, _PUSH_RULE),
+    ("ollama push --insecure", _PUSH_ACTION, _PUSH_RULE),
     ("ollama rm llama3", _RM_ACTION, _RM_RULE),
+    ("ollama rm", _RM_ACTION, _RM_RULE),
     ("ollama rm llama3 mistral", _RM_ACTION, _RM_RULE),
     ("ollama.exe rm llama3", _RM_ACTION, _RM_RULE),
     ("ollama.cmd rm llama3 mistral", _RM_ACTION, _RM_RULE),
@@ -45,22 +42,6 @@ OLLAMA_REVIEW_CASES: tuple[tuple[str, str, str], ...] = (
     ("ollama list; ollama push my-model", _PUSH_ACTION, _PUSH_RULE),
     ("zsh -lc 'ollama push my-model'", _PUSH_ACTION, _PUSH_RULE),
 )
-
-
-def _enable_layer(*extension_ids: str) -> ExtensionControlLayer:
-    return ExtensionControlLayer(
-        schema_version=CONTROL_SCHEMA_VERSION,
-        kind=ControlLayerKind.LOCAL_ADMIN,
-        catalog_digest=BUILT_IN_COMMAND_EXTENSION_REGISTRY.catalog_digest,
-        global_lockdown=False,
-        controls=tuple(
-            ExtensionControl(
-                target=ControlTarget(ControlTargetKind.EXTENSION, extension_id),
-                state=ControlState.ENABLED,
-            )
-            for extension_id in extension_ids
-        ),
-    )
 
 
 def test_ollama_rules_stay_inert_until_enabled(tmp_path: Path) -> None:
@@ -76,7 +57,7 @@ def test_enabled_ollama_publication_and_removal_reach_review(tmp_path: Path) -> 
             command,
             cwd=tmp_path,
             home_dir=tmp_path,
-            extension_control_layers=(_enable_layer("command.ollama"),),
+            extension_control_layers=(enable_local_admin_extension_layer("command.ollama"),),
         )
         matched = {
             item.rule.rule_id
@@ -137,7 +118,7 @@ def test_enabled_ollama_help_and_read_commands_do_not_review(tmp_path: Path) -> 
             command,
             cwd=tmp_path,
             home_dir=tmp_path,
-            extension_control_layers=(_enable_layer("command.ollama"),),
+            extension_control_layers=(enable_local_admin_extension_layer("command.ollama"),),
         )
         assert evaluation.controlling_rule_id not in {_PUSH_RULE, _RM_RULE}
         assert all(
@@ -153,7 +134,7 @@ def test_independent_git_force_push_still_reviews_when_ollama_is_enabled(tmp_pat
         command,
         cwd=tmp_path,
         home_dir=tmp_path,
-        extension_control_layers=(_enable_layer("command.ollama"),),
+        extension_control_layers=(enable_local_admin_extension_layer("command.ollama"),),
     )
     matched = {item.rule.rule_id for item in evaluation.extension_observations}
     assert {_PUSH_RULE, "command.git.force-push"} <= matched
@@ -165,7 +146,7 @@ def test_ollama_evidence_omits_model_names_and_raw_arguments(tmp_path: Path) -> 
         command,
         cwd=tmp_path,
         home_dir=tmp_path,
-        extension_control_layers=(_enable_layer("command.ollama"),),
+        extension_control_layers=(enable_local_admin_extension_layer("command.ollama"),),
     )
     ollama_matches = [item.match for item in evaluation.matches if item.extension.extension_id == "command.ollama"]
     assert ollama_matches

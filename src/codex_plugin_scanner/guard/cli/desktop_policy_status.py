@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from ..policy_bundle_ack_contract import generic_ack_matches_bundle, validated_generic_policy_acknowledgement
 from ..policy_bundle_delivery import policy_bundle_has_extension_semantics
+from ..policy_bundle_rollout import policy_bundle_rollout_state
 from ..policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
 from ..policy_canonical_rollout import canonical_policy_enforcement_enabled
 from ..synced_policy import synced_policy_bundle_validation
@@ -34,7 +35,7 @@ def policy_application_evidence(
         "policyBundleVersion": _revision(bundle.get("bundleVersion")),
         "policyBundleHash": bundle.get("bundleHash"),
     }
-    rollout = bundle.get("rolloutState")
+    rollout = policy_bundle_rollout_state(bundle)
     if isinstance(rollout, str) and _SAFE_CODE.fullmatch(rollout):
         evidence["policyRolloutState"] = rollout
     if bundle.get("contractVersion") != POLICY_BUNDLE_V2_CONTRACT or not device_id or not workspace_id:
@@ -69,8 +70,13 @@ def read_policy_application_evidence(store: GuardStore) -> dict[str, object]:
             workspace_id=store.get_cloud_workspace_id(),
             device_id=device if isinstance(device, str) else None,
         ))
-        if not canonical_policy_enforcement_enabled(
-            device_id=store.get_or_create_installation_id(), workspace_id=store.get_cloud_workspace_id(),
+        with store._connect() as connection:
+            row = connection.execute(
+                "select installation_id from guard_devices where device_key = 'local-device'",
+            ).fetchone()
+        installation_id = row["installation_id"] if row is not None else None
+        if not isinstance(installation_id, str) or not canonical_policy_enforcement_enabled(
+            device_id=installation_id, workspace_id=store.get_cloud_workspace_id(),
         ):
             evidence.pop("appliedRevision", None)
             evidence.pop("policyLastAckAt", None)

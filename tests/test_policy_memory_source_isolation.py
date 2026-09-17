@@ -144,7 +144,7 @@ def test_machine_target_does_not_authorize_sibling_machine(tmp_path: Path) -> No
     assert owner == "allow"
 
 
-def test_portal_cardinality_targets_project_into_matcher_fields(tmp_path: Path) -> None:
+def test_portal_cardinality_preserves_targets_without_broadening_portable_allow(tmp_path: Path) -> None:
     store = _store(tmp_path)
     workspace_id = (store.get_cloud_sync_profile() or {})["workspace_id"]
     installation_id = store.get_device_metadata()["installation_id"]
@@ -163,6 +163,17 @@ def test_portal_cardinality_targets_project_into_matcher_fields(tmp_path: Path) 
         store=store,
         generated_at="2026-07-16T12:00:00Z",
     )
+    assert allowed["status"] == "rejected"
+    assert store.list_policy_decisions() == []
+
+    # Multiple machine/workspace targets are supported when no project permission is erased.
+    allow_rules[0]["projectIdentity"] = None
+    allow_rules[0]["target"].pop("projectIds")
+    allowed = execute_review_policy_memory(
+        {"decisionMemoryBundle": _resign_bundle(allow_bundle)},
+        store=store,
+        generated_at="2026-07-16T12:00:00Z",
+    )
     assert allowed["status"] == "accepted"
     assert (
         store.resolve_policy(
@@ -176,6 +187,7 @@ def test_portal_cardinality_targets_project_into_matcher_fields(tmp_path: Path) 
     )
 
     mismatched = _bundle(store)
+    mismatched["policyVersion"] = "policy-version-y-mismatch"
     mismatched_rules = mismatched["memoryRules"]
     assert isinstance(mismatched_rules, list) and isinstance(mismatched_rules[0], dict)
     mismatched_rules[0]["projectIdentity"] = project_id

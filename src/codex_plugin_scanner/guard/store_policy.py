@@ -688,6 +688,7 @@ class StorePolicyMixin:
         candidate,
         *,
         policy_bundle_decision_identities: frozenset[tuple[object, ...]],
+        memory_decision_identities: frozenset[tuple[object, ...]],
         artifact_id: str | None,
         artifact_hash: str | None,
         runtime_exact_match_key: str | None,
@@ -702,6 +703,9 @@ class StorePolicyMixin:
             str(candidate["source"]) == "policy-bundle"
             and self._materialized_policy_bundle_row_identity(candidate) not in policy_bundle_decision_identities
         ):
+            return False
+        if (str(candidate["source"]) == "cloud-signed-memory"
+                and self._materialized_policy_bundle_row_identity(candidate) not in memory_decision_identities):
             return False
         return not _scoped_runtime_row_requires_exact_match(
             scope=str(candidate["scope"]),
@@ -1791,12 +1795,17 @@ class StorePolicyMixin:
                 if any(str(candidate["source"]) == "policy-bundle" for candidate in rows)
                 else frozenset()
             )
+            memory_decision_identities = (
+                self._cached_review_memory_decision_identities(now=current_time)
+                if any(str(candidate["source"]) == "cloud-signed-memory" for candidate in rows) else frozenset()
+            )
             has_local_rows = any(not is_remote_policy_source(str(candidate["source"])) for candidate in rows)
             if not has_local_rows:
                 for candidate in rows:
                     if not self._runtime_policy_row_is_eligible(
                         candidate,
                         policy_bundle_decision_identities=policy_bundle_decision_identities,
+                        memory_decision_identities=memory_decision_identities,
                         artifact_id=artifact_id,
                         artifact_hash=artifact_hash,
                         runtime_exact_match_key=runtime_exact_match_key,
@@ -1880,6 +1889,7 @@ class StorePolicyMixin:
                 if not self._runtime_policy_row_is_eligible(
                     candidate,
                     policy_bundle_decision_identities=policy_bundle_decision_identities,
+                    memory_decision_identities=memory_decision_identities,
                     artifact_id=artifact_id,
                     artifact_hash=artifact_hash,
                     runtime_exact_match_key=runtime_exact_match_key,
@@ -2129,6 +2139,11 @@ class StorePolicyMixin:
                 policy_bundle_decision_identities = self._cached_policy_bundle_decision_identities(
                     now=_parse_utc_timestamp(current_time).timestamp(),
                 )
+            memory_decision_identities = (
+                self._cached_review_memory_decision_identities(now=current_time)
+                if any(decision.get("source") == "cloud-signed-memory" for decision in unique_decisions)
+                else frozenset()
+            )
             for decision in unique_decisions:
                 if not self._claim_approval_reuse_decision_locked(
                     connection,
@@ -2137,6 +2152,7 @@ class StorePolicyMixin:
                     local_integrity_key=local_integrity_key,
                     local_integrity_key_id=local_integrity_key_id,
                     policy_bundle_decision_identities=policy_bundle_decision_identities,
+                    memory_decision_identities=memory_decision_identities,
                 ):
                     connection.rollback()
                     return False
@@ -2151,6 +2167,7 @@ class StorePolicyMixin:
         local_integrity_key: bytes | None,
         local_integrity_key_id: str | None,
         policy_bundle_decision_identities: frozenset[tuple[object, ...]] | None,
+        memory_decision_identities: frozenset[tuple[object, ...]],
     ) -> bool:
         """Claim one prevalidated member of an open batch transaction."""
 
@@ -2216,6 +2233,9 @@ class StorePolicyMixin:
             policy_bundle_decision_identities is None
             or self._materialized_policy_bundle_row_identity(row) not in policy_bundle_decision_identities
         ):
+            return False
+        if (source == "cloud-signed-memory"
+                and self._materialized_policy_bundle_row_identity(row) not in memory_decision_identities):
             return False
         if is_remote_policy_source(source):
             integrity_result = self._policy_integrity_result_for_row(

@@ -25,6 +25,14 @@ def test_exact_applied_evidence_preserves_policy_revision(authority):
     assert result["policyLastAckAt"] == ack["observedAt"]
 
 
+def test_v2_rollout_evidence_uses_signed_document_spec(authority):
+    bundle, _ = authority
+    bundle["payload"]["spec"]["rolloutState"] = "enforcing"
+    bundle["rolloutState"] = "draft"
+    result = policy_application_evidence(bundle, None, workspace_id=bundle["workspaceId"], device_id="device-alpha")
+    assert result["policyRolloutState"] == "enforcing"
+
+
 @pytest.mark.parametrize("field,value", [
     ("deviceId", "device-beta"), ("workspaceId", "another-workspace"),
     ("bundleHash", "sha256:" + "1" * 64), ("bundleVersion", 999),
@@ -54,18 +62,17 @@ def test_managed_controls_need_resident_application_evidence(authority):
     assert "policyLastAckAt" not in result
 
 
-def test_disabled_canonical_lane_does_not_reuse_historical_applied_ack(authority, monkeypatch):
-    from unittest.mock import Mock
-
+def test_disabled_canonical_lane_does_not_reuse_historical_applied_ack(authority, monkeypatch, tmp_path):
     from codex_plugin_scanner.guard.cli import desktop_policy_status as status
+    from codex_plugin_scanner.guard.store import GuardStore
+
     bundle, ack = authority
-    store = Mock()
-    store.get_cloud_workspace_id.return_value = bundle["workspaceId"]
-    store.get_or_create_installation_id.return_value = "installation-alpha"
-    store.get_sync_payload.side_effect = lambda key: {
+    store = GuardStore(tmp_path, prime_policy_integrity=False)
+    monkeypatch.setattr(store, "get_cloud_workspace_id", lambda: bundle["workspaceId"])
+    monkeypatch.setattr(store, "get_sync_payload", lambda key: {
         "runtime_session_summary": {"runtime_device_id": "device-alpha"},
         "policy_bundle_ack": ack,
-    }.get(key)
+    }.get(key))
     monkeypatch.setattr(status, "synced_policy_bundle_validation", lambda _: (bundle, None))
     monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "0")
     result = status.read_policy_application_evidence(store)
@@ -74,3 +81,22 @@ def test_disabled_canonical_lane_does_not_reuse_historical_applied_ack(authority
     monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
     expected_revision = str(bundle["payload"]["metadata"]["revision"])
     assert status.read_policy_application_evidence(store)["appliedRevision"] == expected_revision
+
+
+def test_status_does_not_create_missing_installation_identity(authority, monkeypatch, tmp_path):
+    from codex_plugin_scanner.guard.cli import desktop_policy_status as status
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    bundle, ack = authority
+    store = GuardStore(tmp_path, prime_policy_integrity=False)
+    with store._connect() as connection:
+        connection.execute("delete from guard_devices")
+    monkeypatch.setattr(store, "get_cloud_workspace_id", lambda: bundle["workspaceId"])
+    monkeypatch.setattr(store, "get_sync_payload", lambda key: {
+        "runtime_session_summary": {"runtime_device_id": "device-alpha"}, "policy_bundle_ack": ack,
+    }.get(key))
+    monkeypatch.setattr(status, "synced_policy_bundle_validation", lambda _: (bundle, None))
+    monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
+    assert "appliedRevision" not in status.read_policy_application_evidence(store)
+    with store._connect() as connection:
+        assert connection.execute("select count(*) from guard_devices").fetchone()[0] == 0

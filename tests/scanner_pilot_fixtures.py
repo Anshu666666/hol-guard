@@ -56,6 +56,8 @@ def snapshot(case="working_provider_large", run=0, selection="full"):
         "preflight.json": {"passed": True, "complete_result_sha256": result, "variants": variants},
         "worker.json": {"finished": True, "failure": None, "cache_unavailable": [], "identity_verified_after": True},
     }
+    values["interpreter.json"] = interpreter_record()
+    values["worker.json"]["interpreter_setup_sha256"] = digest(canonical(values["interpreter.json"]))
     for prefix in ["oracle", *("preflight-" + label for label in variants)]:
         for arm in ARMS:
             values[f"{prefix}-{arm}.terminal.json"] = {"status": "completed", "result_sha256": result}
@@ -86,3 +88,37 @@ def snapshot(case="working_provider_large", run=0, selection="full"):
 
 def encoded(values):
     return tuple((name, canonical(value)) for name, value in sorted(values.items()))
+
+
+def interpreter_record():
+    """Synthetic setup commitment for evidence tests, never a hosted result."""
+    runtime = {
+        "executable": "/private/environment/bin/python",
+        "prefix": "/private/environment",
+        "base_prefix": "/private/toolchain",
+        "version": "3.12.14 fixture",
+        "stdlib": "/private/toolchain/lib/python3.12",
+        "platstdlib": "/private/environment/lib/python3.12",
+        "config_sha256": "c" * 64,
+    }
+    return {
+        "schema": "hol-guard.scanner-private-interpreter.v1",
+        "copy": {
+            "schema": "hol-guard.qualification-interpreter.v1",
+            "platform": "posix",
+            "private_copy": True,
+            "bytes": 100,
+            "source_sha256": "b" * 64,
+            "copy_sha256": "b" * 64,
+            "source": {"mode": 0o777, "owner": "root", "group_writable": True, "world_writable": True, "regular": True},
+            "copy": {
+                "mode": 0o700,
+                "owner": "current_user",
+                "group_writable": False,
+                "world_writable": False,
+                "regular": True,
+            },
+        },
+        "runtime_before": runtime,
+        "runtime_after": dict(runtime),
+    }

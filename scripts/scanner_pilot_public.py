@@ -23,6 +23,7 @@ from scripts.mcp_rebaseline_public_types import (
 from scripts.native_slo_evidence_format import canonical, digest
 from scripts.native_slo_qualification import paired_ratio_interval
 from scripts.native_slo_statistics import percentile
+from scripts.scanner_pilot_environment import verify_record as verify_interpreter_record
 from scripts.scanner_pilot_identity import EXECUTABLE_FAILURE_REASONS
 from scripts.scanner_pilot_protocol import ARMS, ATTEMPTS, CASES, PAIRS, RUNS, SCHEMA, STATES, planned
 
@@ -111,7 +112,10 @@ REPORT = fields(
         "commitments_sha256": SHA256,
         "private_files": integer,
     },
-    optional_fields={"identity_failure_reason": optional(choice(*EXECUTABLE_FAILURE_REASONS))},
+    optional_fields={
+        "identity_failure_reason": optional(choice(*EXECUTABLE_FAILURE_REASONS)),
+        "interpreter_setup_sha256": optional(SHA256),
+    },
 )
 
 
@@ -152,12 +156,20 @@ def projection(
     require(selection == "full" or (selection == "smoke" and case == "working_provider_large" and run == 0))
     source = SOURCE(values["source.json"]) if "source.json" in values else None
     require(source is None or source["source_sha"] == source_sha)
+    interpreter_setup_sha256 = None
+    if "interpreter.json" in values:
+        verify_interpreter_record(values["interpreter.json"], source["python_sha256"] if source is not None else None)
+        interpreter_setup_sha256 = digest(canonical(values["interpreter.json"]))
     fixture = values.get("fixture.json")
     fixture_digest = None
     if fixture is not None:
         fixture_digest = SHA256(fixture["sha256"])
         require(digest(canonical({k: v for k, v in fixture.items() if k != "sha256"})) == fixture_digest)
     worker = values.get("worker.json", {})
+    if worker.get("identity_verified_after") is True:
+        require(interpreter_setup_sha256 is not None and worker.get("interpreter_setup_sha256") is not None)
+    if worker.get("interpreter_setup_sha256") is not None:
+        require(interpreter_setup_sha256 == SHA256(worker["interpreter_setup_sha256"]))
     failure = choice(*FAILURES)(worker.get("failure"))
     identity_failure_reason = _identity_failure_reason(failure, worker.get("identity_failure"))
     preflight = values.get("preflight.json", {})
@@ -261,6 +273,7 @@ def projection(
             "identity_verified_after": worker.get("identity_verified_after") is True,
             "worker_failure": failure,
             "identity_failure_reason": identity_failure_reason,
+            "interpreter_setup_sha256": interpreter_setup_sha256,
             "collection_complete": complete,
             "installed_qualified": False,
             "commitments_sha256": digest(canonical(commitments)),
@@ -272,6 +285,7 @@ def projection(
 def validate_report(value: Any) -> dict[str, Any]:
     report = REPORT(value)
     reason = report.setdefault("identity_failure_reason", None)
+    require(not report["identity_verified_after"] or report.get("interpreter_setup_sha256") is not None)
     require(
         reason is None
         or report["worker_failure"] in ("python_executable_identity_failed", "native_executable_identity_failed")

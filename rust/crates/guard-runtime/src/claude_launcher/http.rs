@@ -27,6 +27,11 @@ impl Connection {
         }
         let stream = TcpStream::connect_timeout(&SocketAddr::new(ip, port), remaining(deadline)?)
             .map_err(|_| Failure::Availability("daemon connection is unavailable"))?;
+        // The challenge and hook each write headers followed by a small body.
+        // Match Python's HTTP transport without changing framing or deadlines.
+        stream
+            .set_nodelay(true)
+            .map_err(|_| Failure::Availability("daemon socket configuration is unavailable"))?;
         Ok(Self {
             reader: BufReader::new(stream),
             deadline,

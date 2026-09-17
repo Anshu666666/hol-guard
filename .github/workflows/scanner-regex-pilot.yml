@@ -84,7 +84,9 @@ jobs:
         timeout-minutes: 5
         env:
           UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/scanner-pilot-environment
-        run: uv sync --frozen --extra dev --python 3.12
+        run: |
+          uv sync --frozen --extra dev --python 3.12
+          python -I scripts/scanner_pilot_environment.py --environment "$UV_PROJECT_ENVIRONMENT"
       - name: Install pinned compiler
         timeout-minutes: 3
         run: rustup toolchain install 1.88.0 --profile minimal
@@ -104,7 +106,7 @@ jobs:
           uv run --no-sync pytest -q tests/test_guard_secret_native_pilot.py
           tests/test_scanner_pilot_process.py tests/test_scanner_pilot_ci.py
           tests/test_scanner_pilot_public.py tests/test_scanner_pilot_workflow.py
-          tests/test_scanner_pilot_identity.py
+          tests/test_scanner_pilot_identity.py tests/test_scanner_pilot_environment.py
       - name: Run exactly two cache states and six alternating pairs
         id: collect
         timeout-minutes: 105

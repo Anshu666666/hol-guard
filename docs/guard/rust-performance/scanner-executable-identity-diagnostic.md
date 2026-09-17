@@ -48,3 +48,48 @@ faults to verify the original-read metadata, no retries, exact cause
 retention, encrypted/private projection boundaries, and 24 unoffered rows.
 This diagnostic amendment does not establish that the next hosted run will
 pass, select a native scanner, or satisfy installed/performance acceptance.
+
+## Seventh observation and isolated setup correction
+
+The independent seventh run `35264203650`, at source
+`79cb6921ff722a597b545350485864dcd9310bdc`, now records the original-read
+subreason **`metadata_writable`**. It passed four actual Rust tests and 174
+Python tests, then retained all 24 timed attempts as unoffered. Sealing and
+both uploads succeeded; collection and aggregation correctly failed. This
+identifies group or other write permission on the selected Python executable
+in this run; it does not retroactively establish the sixth run's subreason.
+
+The setup amendment reuses the existing
+`native_slo_interpreter.prepare_private_interpreter` helper after the frozen
+`uv sync`, inside the existing five-minute dependency/setup step. It copies
+only the selected experiment venv's `bin/python` into an owned `0700` regular
+file. The shared hosted interpreter and its permissions are untouched.
+The helper verifies byte-for-byte hash equality and source stability;
+the scanner's original, unchanged executable admission then verifies the
+private copy. Both arms use this same venv and locked dependencies.
+
+Two fixed, isolated interpreter probes compare executable invocation,
+version, prefix/base prefix, stdlib/platstdlib paths and the exact venv
+configuration digest before and after copying. Each probe has a ten-second
+timeout; these are setup checks inside the unchanged step budget. The
+provenance and raw path values are retained as `interpreter.json` in the
+existing encrypted snapshot. The worker validates its byte identity against
+`source.python_sha256` before any offer and retains its canonical hash.
+Public projection publishes only this hash, checks it against the exact
+sealed record, and rejects a missing, replaced or mismatched required proof.
+The hash is per-run setup evidence, not a cross-run source-equivalence key.
+
+An actual local isolated venv test reproduces the writable-source rejection
+using an owned copy, then verifies unchanged source metadata/bytes, runtime
+identity, stdlib paths, venv configuration and retained environment content.
+The test cleans up its own interpreter copies immediately. It does not
+modify a hosted executable or run scanner timing work. The pinned GitHub
+`uv 0.9.26` workflow still needs the next actual CI observation; the local
+correctness test makes no claim that this hosted setup correction has passed.
+
+Separately, seventh native-wheel job `105347152805` passed the corrected
+Windows reader selection: 12 reader and five route tests passed, with 25
+explicit POSIX-only skips. The whole prebuild selection was 47 passed and
+25 skipped; its later installed-job failure is a separate outcome. This is
+actual Windows source correctness evidence, not native regex execution on
+Windows or an installed/performance qualification result.

@@ -14,6 +14,7 @@ from .native_policy_snapshot_constants import (
     NATIVE_RUNTIME_STATE_DIRECTORY,
     NativePolicySnapshotError,
 )
+from .native_policy_snapshot_windows_atomic import _windows_file_identity
 
 
 @dataclass
@@ -67,9 +68,10 @@ def _windows_bind_directory_component(
     dacl: Any,
     owner_sid: str,
     private: bool,
+    parent_only: bool = False,
 ) -> tuple[bool, tuple[Any, Any]]:
     created = _windows_create_directory(path, descriptor, api)
-    kernel32, handle, _information = api._windows_open_handle(
+    kernel32, handle, information = api._windows_open_handle(
         path,
         directory=True,
         repair=False,
@@ -83,7 +85,25 @@ def _windows_bind_directory_component(
                 api._windows_verify_private_owner(handle, owner_sid=owner_sid)
                 try:
                     api._windows_verify_private_dacl(handle, owner_sid=owner_sid, directory=True)
-                except NativePolicySnapshotError:
+                except NativePolicySnapshotError as error:
+                    if parent_only:
+                        if str(error).partition(":")[0] != "native_policy_windows_acl_not_private":
+                            raise
+                        identity = _windows_file_identity(information)
+                        if identity is None:
+                            raise NativePolicySnapshotError("native_policy_windows_parent_identity_failed") from error
+                        api._windows_close_handle(kernel32, handle)
+                        opened = False
+                        kernel32, handle = _windows_provision_parent_only(
+                            path,
+                            api=api,
+                            identity=identity,
+                            descriptor=descriptor,
+                            dacl=dacl,
+                            owner_sid=owner_sid,
+                        )
+                        opened = True
+                        return created, (kernel32, handle)
                     api._windows_close_handle(kernel32, handle)
                     opened = False
                     kernel32, handle, _information = api._windows_open_handle(
@@ -118,6 +138,40 @@ def _windows_bind_directory_component(
         raise
 
 
+def _windows_provision_parent_only(
+    path: Path,
+    *,
+    api: Any,
+    identity: tuple[int, int, int],
+    descriptor: Any,
+    dacl: Any,
+    owner_sid: str,
+) -> tuple[Any, Any]:
+    """Provision the same owned parent exclusively, preserving child security."""
+
+    kernel32, handle, information = api._windows_open_handle(
+        path, directory=True, repair=True, exclusive_directory=True
+    )
+    try:
+        if _windows_file_identity(information) != identity:
+            raise NativePolicySnapshotError("native_policy_windows_parent_identity_changed")
+        api._windows_verify_private_owner(handle, owner_sid=owner_sid)
+        api._windows_apply_private_dacl(kernel32, handle, descriptor, dacl, True)
+        api._windows_verify_private_dacl(handle, owner_sid=owner_sid, directory=True)
+    finally:
+        api._windows_close_handle(kernel32, handle)
+    kernel32, handle, information = api._windows_open_handle(path, directory=True, lock=True, add_file=True)
+    try:
+        if _windows_file_identity(information) != identity:
+            raise NativePolicySnapshotError("native_policy_windows_parent_identity_changed")
+        api._windows_verify_private_dacl(handle, owner_sid=owner_sid, directory=True)
+        return kernel32, handle
+    except BaseException:
+        with suppress(BaseException):
+            api._windows_close_handle(kernel32, handle)
+        raise
+
+
 def _windows_bind_directory_path(
     path: Path,
     *,
@@ -125,6 +179,7 @@ def _windows_bind_directory_path(
     descriptor: Any,
     dacl: Any,
     owner_sid: str,
+    parent_only: bool = False,
 ) -> _WindowsDirectoryBinding:
     absolute = Path(os.path.abspath(path))
     if not absolute.anchor:
@@ -132,6 +187,11 @@ def _windows_bind_directory_path(
     current = Path(absolute.anchor)
     handles: list[tuple[Any, Any]] = []
     try:
+        if parent_only:
+            if absolute == current:
+                raise NativePolicySnapshotError("native_policy_windows_state_directory_invalid")
+            kernel32, handle, _information = api._windows_open_handle(current, directory=True, lock=True)
+            handles.append((kernel32, handle))
         for part in absolute.parts[1:]:
             current /= part
             _created, opened = _windows_bind_directory_component(
@@ -141,6 +201,7 @@ def _windows_bind_directory_path(
                 dacl=dacl,
                 owner_sid=owner_sid,
                 private=current == absolute,
+                parent_only=parent_only,
             )
             handles.append(opened)
         if not handles:
@@ -165,7 +226,7 @@ def _windows_close_directory_binding(binding: _WindowsDirectoryBinding, api: Any
 
 
 @contextmanager
-def _windows_private_directory_binding(path: Path) -> Iterator[_WindowsDirectoryBinding]:
+def _windows_private_directory_binding(path: Path, *, parent_only: bool = False) -> Iterator[_WindowsDirectoryBinding]:
     """Bind a private directory and every existing ancestor until exit."""
 
     api = _snapshot_api()
@@ -176,6 +237,7 @@ def _windows_private_directory_binding(path: Path) -> Iterator[_WindowsDirectory
             descriptor=descriptor,
             dacl=dacl,
             owner_sid=owner_sid,
+            parent_only=parent_only,
         )
         try:
             yield binding

@@ -4,6 +4,7 @@ import ctypes
 import hashlib
 import json
 import os
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,6 +16,7 @@ from scripts.ci import native_claude_discovery_witness as witness
 from scripts.native_slo_contract import assert_privacy_safe
 
 
+@contextmanager
 def _fixture(tmp_path):
     key = "19" * 32
     peer = {
@@ -25,15 +27,26 @@ def _fixture(tmp_path):
     }
     state = discovery.authenticate_daemon_state({**peer, "guard_home": str(tmp_path)}, discovery_key=key)
     config = json.dumps({"daemon": peer, "guard_home": str(tmp_path)}).encode()
-    for name, raw in (
-        ("daemon-discovery-key", key.encode()),
-        ("daemon-state.json", json.dumps(state).encode()),
-        ("config.json", config),
-    ):
-        path = tmp_path / name
-        path.write_bytes(raw)
-        path.chmod(0o600)
-    return tmp_path / "config.json", hashlib.sha256(config).hexdigest()
+    try:
+        for name, raw in (
+            ("daemon-discovery-key", key.encode()),
+            ("daemon-state.json", json.dumps(state).encode()),
+            ("config.json", config),
+        ):
+            path = tmp_path / name
+            path.write_bytes(raw)
+            path.chmod(0o600)
+        yield tmp_path / "config.json", hashlib.sha256(config).hexdigest()
+    finally:
+        # This synthetic state never represents a launched daemon. Remove it
+        # after the byte-preservation assertions, before global daemon retirement.
+        (tmp_path / "daemon-state.json").unlink(missing_ok=True)
+
+
+@pytest.fixture
+def discovery_fixture(tmp_path):
+    with _fixture(tmp_path) as fixture:
+        yield fixture
 
 
 def test_non_windows_preflight_performs_no_filesystem_or_security_work(monkeypatch):
@@ -45,8 +58,10 @@ def test_non_windows_preflight_performs_no_filesystem_or_security_work(monkeypat
 
 
 @pytest.mark.parametrize("failure", [None, "security", "config", "signature", "peer", "observer"])
-def test_fixed_preflight_stages_preserve_bytes_and_never_become_authority(tmp_path, monkeypatch, failure):
-    config, digest = _fixture(tmp_path)
+def test_fixed_preflight_stages_preserve_bytes_and_never_become_authority(
+    tmp_path, monkeypatch, discovery_fixture, failure
+):
+    config, digest = discovery_fixture
     monkeypatch.setattr(witness, "os", SimpleNamespace(name="nt"))
     calls = []
 
@@ -83,6 +98,43 @@ def test_fixed_preflight_stages_preserve_bytes_and_never_become_authority(tmp_pa
         assert result["peer_identity"] == ("rejected" if failure in {"signature", "peer"} else "passed")
     assert assert_privacy_safe(result) == result
     assert str(tmp_path) not in json.dumps(result) and "private path" not in json.dumps(result)
+
+
+@pytest.mark.parametrize("assertion_failure", [False, True])
+def test_synthetic_state_cleanup_precedes_real_daemon_retirement(tmp_path, monkeypatch, assertion_failure):
+    from codex_plugin_scanner.guard.daemon import manager
+    from tests.conftest import _test_guard_homes_with_daemon_state, pytest_runtest_teardown
+
+    synthetic_home = tmp_path / "synthetic"
+    synthetic_home.mkdir()
+    unrelated_home = tmp_path / "unrelated"
+    unrelated_home.mkdir()
+    unrelated_state = unrelated_home / "daemon-state.json"
+    unrelated_state.write_bytes(b"retirement sentinel")
+    retired = []
+    monkeypatch.setattr(manager, "retire_all_guard_daemons_for_home", retired.append)
+    teardown = pytest_runtest_teardown(SimpleNamespace(funcargs={"tmp_path": tmp_path}), None)
+    next(teardown)
+    try:
+        outcome = pytest.raises(AssertionError, match="fixture assertion") if assertion_failure else nullcontext()
+        with outcome, _fixture(synthetic_home):
+            state_path = synthetic_home / "daemon-state.json"
+            state = json.loads(state_path.read_bytes())
+            state["package_version"] = "changed"
+            state_path.write_bytes(json.dumps(state).encode())
+            assert not discovery.verify_daemon_state(state, discovery_key="19" * 32)
+            assert _test_guard_homes_with_daemon_state(tmp_path) == {synthetic_home, unrelated_home}
+            if assertion_failure:
+                raise AssertionError("fixture assertion")
+        with pytest.raises(StopIteration):
+            next(teardown)
+        assert retired == [unrelated_home]
+        assert not (synthetic_home / "daemon-state.json").exists()
+        assert (synthetic_home / "daemon-discovery-key").read_bytes() == b"19" * 32
+        assert (synthetic_home / "config.json").is_file()
+        assert unrelated_state.read_bytes() == b"retirement sentinel"
+    finally:
+        unrelated_state.unlink(missing_ok=True)
 
 
 @pytest.mark.parametrize("fault", [None, "open", "metadata", "reparse", "directory", "links", "security"])

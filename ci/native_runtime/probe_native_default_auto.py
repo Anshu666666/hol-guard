@@ -46,6 +46,7 @@ from scripts.native_probe_receipts import (
     wait_for_receipt_corpus,
     wait_for_route_corpus,
 )
+from scripts.native_probe_request_witness import installed_request_witness
 from scripts.native_slo_adapter import is_allowed
 from scripts.native_slo_contract import MAX_READINESS_P95_MS, proof_environment_violations
 
@@ -260,7 +261,8 @@ def _exercise_installed_routes(
                 )
             )
         for event, payload in events:
-            response_payload = _installed_hook_request(daemon, guard_home, workspace, harness, event, payload)
+            with installed_request_witness(harness, event, validated_routes_before=len(route_receipts)):
+                response_payload = _installed_hook_request(daemon, guard_home, workspace, harness, event, payload)
             if response_payload is None:
                 raise RuntimeError(f"empty response for {harness} {event}")
             _require(

@@ -17,9 +17,36 @@ Source inspection separately identified that discovery-key creation and daemon
 state replacement used POSIX modes without establishing a Windows private DACL.
 Fresh Windows producers now create private files with the existing current-user
 and SYSTEM descriptor, retain verified no-reparse ancestor handles, flush a
-complete temporary, and publish through handle-relative rename. Existing parents
-are verified, never repaired. Generic config/store/start-lock setup creates
+complete temporary, and publish through handle-relative rename. The producers
+verify existing parents without repairing them. Generic config/store/start-lock setup creates
 missing directories privately at birth and preserves existing-directory behavior.
+
+The seventh Windows packaged bootstrap exposed a separate ordering requirement:
+an ordinary pre-existing Guard home reaches daemon state clearing before any
+synchronous directory provisioning. The daemon manager's existing
+`_ensure_private_directory` operation now explicitly provisions that parent on
+Windows. Shared directory helpers preserve their defaults; only this manager
+operation selects parent-only provisioning. New directories remain private at
+birth, and already-private directories need no ACL write.
+
+An existing nonprivate parent must have an owner accepted by the established
+current-principal/SYSTEM/Administrators contract. Its retained ancestry remains
+open while the final directory is reopened exclusively for the ACL change. The
+exclusive handle must identify the same directory, and its owner is checked again
+before the setter. Restoring the ordinary directory barrier requires the same
+identity and a private DACL. Missing identity, unavailable security metadata,
+foreign ownership, or failed exclusive acquisition cannot trigger a fallback ACL
+write. Contending directory handles can therefore cause provisioning to fail.
+
+Exclusive access follows the documented child-propagation suppression behavior
+of [SetSecurityInfo](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-setsecurityinfo).
+This parent operation does not open, rewrite or repair children. A live Windows
+regression compares existing key and nested-child bytes, file identities, raw
+owner/group SIDs, DACL bytes and descriptor control before and after provisioning;
+the inherited key must still be rejected. A separate regression exercises an
+ordinary existing directory followed by fresh key/state publication. The existing
+packaged bootstrap test keeps its ordinary-directory setup. These Windows checks
+must execute before claiming the bootstrap regression resolved on that platform.
 
 Key publication remains exclusive. The existing-key branch and raced-winner read
 retain their prior behavior; they do not repair, rewrite, rotate or newly attest

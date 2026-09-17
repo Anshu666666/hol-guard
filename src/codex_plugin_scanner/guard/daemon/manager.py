@@ -1911,6 +1911,12 @@ def _remove_invalid_daemon_discovery_key(guard_home: Path) -> bool:
 
 
 def _ensure_private_directory(path: Path) -> None:
+    if os.name == "nt":
+        from ..native_policy_snapshot_windows_state import _windows_private_directory_binding
+
+        with _windows_private_directory_binding(path, parent_only=True):
+            pass
+        return
     _create_daemon_directory(path)
     _set_private_mode(path, _GUARD_DAEMON_PRIVATE_DIR_MODE)
 

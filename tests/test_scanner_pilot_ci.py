@@ -167,7 +167,9 @@ def test_controller_budget_retains_unoffered_plan_and_fixed_failure(tmp_path, mo
     from scripts import secret_scan_benchmark_fixtures as fixtures
 
     monkeypatch.setitem(sys.modules, "secret_scan_benchmark_fixtures", fixtures)
-    monkeypatch.setattr(worker, "identities", lambda *_args: {})
+    from tests.scanner_pilot_fixtures import interpreter_record, snapshot
+
+    monkeypatch.setattr(worker, "identities", lambda *_args: snapshot()["source.json"])
 
     def create(target, _case):
         target.mkdir()
@@ -177,6 +179,7 @@ def test_controller_budget_retains_unoffered_plan_and_fixed_failure(tmp_path, mo
     monkeypatch.setattr(worker, "preflight", lambda *_args: (_ for _ in ()).throw(BudgetExceededError()))
     output = tmp_path / "evidence"
     ci.initialize(output, source_sha=SOURCE_SHA, case="working_provider_large", run=0, selection="smoke")
+    (output / "private_samples/interpreter.json").write_text(json.dumps(interpreter_record()))
     assert not worker.collect(
         Path(__file__).resolve().parents[1],
         tmp_path / "not-launched",

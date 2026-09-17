@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.native_slo_evidence_format import canonical, digest
+from scripts.scanner_pilot_environment import verify_record as verify_interpreter_record
 from scripts.scanner_pilot_identity import IdentityError
 from scripts.scanner_pilot_process import AttemptFailedError, full_cli, run_command
 from scripts.scanner_pilot_protocol import (
@@ -190,6 +191,7 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
     source = None
     failure = None
     identity_failure = None
+    interpreter_setup_sha256 = None
     cache_unavailable = []
     previous = signal.getsignal(signal.SIGALRM)
 
@@ -202,6 +204,9 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
         with lock.open("a+") as lease:
             fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
             source = identities(root, binary, expected_source)
+            interpreter = read_json(private / "interpreter.json", 65536)
+            verify_interpreter_record(interpreter, source["python_sha256"])
+            interpreter_setup_sha256 = digest(canonical(interpreter))
             private_write(private, "source.json", source)
             private_write(
                 private,
@@ -286,6 +291,7 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
                 "finished": True,
                 "failure": failure,
                 "identity_failure": identity_failure,
+                "interpreter_setup_sha256": interpreter_setup_sha256,
                 "cache_unavailable": cache_unavailable,
                 "identity_verified_after": failure is None and source is not None,
             },

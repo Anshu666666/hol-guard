@@ -123,10 +123,13 @@ def _windows_open_configuration(
     add_file: bool,
     share_delete: bool,
     rename_parent: bool,
+    exclusive_directory: bool = False,
 ) -> _WindowsOpenConfiguration:
     import ctypes
     from ctypes import wintypes
 
+    if exclusive_directory and (not directory or not repair or create_new or rename_parent):
+        raise NativePolicySnapshotError("native_policy_windows_exclusive_directory_invalid")
     flags = _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
     if directory:
         flags |= _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
@@ -143,6 +146,10 @@ def _windows_open_configuration(
             share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE | _WINDOWS_FILE_SHARE_DELETE
         elif lock:
             share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE
+        if exclusive_directory:
+            # SetSecurityInfo must not propagate this directory's ACEs to
+            # pre-existing children during explicit parent-only provisioning.
+            share_mode = 0
     else:
         desired_access = _WINDOWS_GENERIC_READ | (_WINDOWS_GENERIC_WRITE if create_new or repair else 0)
         if create_new or rename_source:
@@ -240,6 +247,7 @@ def _windows_open_handle(
     add_file: bool = False,
     share_delete: bool = False,
     rename_parent: bool = False,
+    exclusive_directory: bool = False,
 ) -> tuple[Any, Any, Any]:
     """Open/create one non-reparse Windows object while denying deletion."""
 
@@ -259,6 +267,7 @@ def _windows_open_handle(
         add_file=add_file,
         share_delete=share_delete,
         rename_parent=rename_parent,
+        exclusive_directory=exclusive_directory,
     )
     handle = functions.create_file(
         str(path),

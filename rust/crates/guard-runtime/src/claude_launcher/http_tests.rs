@@ -1,8 +1,75 @@
 use super::*;
 use std::io::{self, Cursor};
+use std::net::TcpListener;
 
 fn parse(bytes: &[u8]) -> Result<Vec<u8>, Failure> {
     read_response(&mut BufReader::new(Cursor::new(bytes)), || Ok(()))
+}
+
+#[test]
+fn connected_socket_disables_nagle_and_preserves_two_request_wire_bytes() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut connection = Connection::connect("127.0.0.1", port, deadline).unwrap();
+    assert!(connection.reader.get_ref().nodelay().unwrap());
+    assert_eq!(connection.deadline, deadline);
+    let (stream, _) = listener.accept().unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    stream
+        .set_write_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    let peer = std::thread::spawn(move || {
+        let mut reader = BufReader::new(stream);
+        let mut requests = Vec::new();
+        for body in [b"challenge".as_slice(), b"{\"command\":\"printf guard\"}"] {
+            let mut request = Vec::new();
+            loop {
+                let start = request.len();
+                assert!(reader.read_until(b'\n', &mut request).unwrap() > 0);
+                if &request[start..] == b"\r\n" {
+                    break;
+                }
+                assert!(request.len() <= MAX_HEADERS);
+            }
+            let mut actual_body = vec![0; body.len()];
+            reader.read_exact(&mut actual_body).unwrap();
+            assert_eq!(actual_body, body);
+            request.extend_from_slice(&actual_body);
+            requests.push(request);
+            reader
+                .get_mut()
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}")
+                .unwrap();
+        }
+        let mut extra = [0];
+        assert_eq!(reader.read(&mut extra).unwrap(), 0);
+        requests
+    });
+    let nonce = "a".repeat(64);
+    let signature = "b".repeat(64);
+    assert_eq!(
+        connection
+            .request("/challenge", b"challenge", None)
+            .unwrap(),
+        b"{}"
+    );
+    assert_eq!(
+        connection
+            .request(
+                "/hook",
+                b"{\"command\":\"printf guard\"}",
+                Some((&nonce, &signature))
+            )
+            .unwrap(),
+        b"{}"
+    );
+    drop(connection);
+    let requests = peer.join().unwrap();
+    assert_eq!(requests[0], format!("POST /challenge HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nContent-Type: application/json\r\nContent-Length: 9\r\nConnection: keep-alive\r\n\r\nchallenge").as_bytes());
+    assert_eq!(requests[1], format!("POST /hook HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nContent-Type: application/json\r\nContent-Length: 26\r\nConnection: close\r\nX-Guard-Daemon-Nonce: {nonce}\r\nX-Guard-Daemon-Proof: {signature}\r\n\r\n{{\"command\":\"printf guard\"}}").as_bytes());
 }
 
 #[test]

@@ -85,3 +85,22 @@ def test_crate_is_explicit_benchmark_only_and_lock_keeps_existing_dependencies()
     assert set(crate["dependencies"]) == {"regex", "serde", "serde_json"}
     for path in (ROOT / "src").rglob("*.py"):
         assert "secret_scan_native_pilot" not in path.read_text()
+
+
+def test_private_interpreter_setup_precedes_both_arms_without_changing_existing_budgets():
+    steps = workflow()["jobs"]["shards"]["steps"]
+    setup = next(step for step in steps if step.get("name") == "Install identical locked dependencies for both arms")
+    assert setup["run"].splitlines() == [
+        "uv sync --frozen --extra dev --python 3.12",
+        'python -I scripts/scanner_pilot_environment.py --environment "$UV_PROJECT_ENVIRONMENT"',
+    ]
+    assert setup["timeout-minutes"] == "5" and setup.get("continue-on-error", "false") == "false"
+    contracts = next(
+        step for step in steps if step.get("name") == "Check actual bridge and collector contracts before timing"
+    )
+    collect = next(step for step in steps if step.get("id") == "collect")
+    assert steps.index(setup) < steps.index(contracts) < steps.index(collect)
+    assert "tests/test_scanner_pilot_environment.py" in contracts["run"]
+    for step in (setup, contracts, collect):
+        assert step["env"]["UV_PROJECT_ENVIRONMENT"] == "${{ runner.temp }}/scanner-pilot-environment"
+    assert "chmod" not in setup["run"] and "sudo" not in setup["run"]

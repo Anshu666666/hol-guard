@@ -10,33 +10,23 @@ from codex_plugin_scanner.guard.runtime.cloud_review_sync_worker import (
     start_cloud_sync_sync_worker,
     stop_cloud_sync_sync_worker,
 )
-from codex_plugin_scanner.guard.runtime.cloud_review_worker_interval import (
-    DEFAULT_SAFETY_POLL_SECONDS,
-    MIN_INTERVAL_SECONDS,
-    cloud_review_worker_intervals,
-    normalized_cloud_review_interval,
-)
+from codex_plugin_scanner.guard.runtime.cloud_review_worker_timing import cloud_review_worker_timing
 from codex_plugin_scanner.guard.store import GuardStore
 
 
-@pytest.mark.parametrize("value", ["", "nope", "0", "-1", "nan", "inf", "-inf", None, True])
-def test_malformed_intervals_fall_back(value: object) -> None:
-    result = normalized_cloud_review_interval(value, default=DEFAULT_SAFETY_POLL_SECONDS, maximum=3600)
-    assert result >= MIN_INTERVAL_SECONDS
-    assert result in (DEFAULT_SAFETY_POLL_SECONDS, MIN_INTERVAL_SECONDS)
-
-
-def test_valid_interval_is_clamped() -> None:
-    poll, backoff, base = cloud_review_worker_intervals(
-        poll_interval="2.5",
-        error_backoff="10",
-        error_backoff_base="1",
+def test_valid_environment_intervals_are_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GUARD_CLOUD_REVIEW_POLL_INTERVAL", "2.5")
+    monkeypatch.setenv("GUARD_CLOUD_REVIEW_ERROR_BACKOFF", "10")
+    monkeypatch.setenv("GUARD_CLOUD_REVIEW_ERROR_BACKOFF_BASE", "1")
+    timing = cloud_review_worker_timing(
+        poll_interval=None, error_backoff=None, default_poll=30, default_backoff=30, default_base=1
     )
-    assert poll == 2.5
-    assert backoff == 10.0
-    assert base == 1.0
-    huge, _, _ = cloud_review_worker_intervals(poll_interval="999999")
-    assert huge == 3600.0
+    assert (timing.poll_interval, timing.error_backoff, timing.error_backoff_base) == (2.5, 10, 1)
+    monkeypatch.setenv("GUARD_CLOUD_REVIEW_POLL_INTERVAL", "999999")
+    bounded = cloud_review_worker_timing(
+        poll_interval=None, error_backoff=None, default_poll=30, default_backoff=30, default_base=1
+    )
+    assert bounded.poll_interval == 30
 
 
 def test_bad_env_does_not_kill_startup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

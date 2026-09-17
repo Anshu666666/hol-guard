@@ -31,7 +31,7 @@ from .policy_bundle_trusted_keys import (
 )
 from .project_identity import resolve_portable_project_identity
 from .review_exact_capability_advertisement import attach_exact_review_capability
-from .review_memory_targets import validate_exact_memory_target
+from .review_memory_targets import validate_memory_rule_target_exact as _validate_memory_rule_target_exact
 from .review_oauth_binding import (
     GuardReviewContractError,
     GuardReviewOAuthMetadata,
@@ -545,16 +545,6 @@ def _policy_version_is_stale(current: str, previous: str) -> bool:
     if current_key is not None and previous_key is not None:
         return current_key <= previous_key
     return current <= previous
-
-
-def _validate_memory_rule_target_exact(
-    target: dict[str, object],
-    *,
-    oauth: GuardReviewOAuthMetadata,
-    rule: dict[str, object],
-) -> None:
-    project_identity = _non_empty_string(rule.get("projectIdentity"))
-    validate_exact_memory_target(target, oauth=oauth, project_identity=project_identity)
 
 
 def validate_decision_memory_bundle_target(

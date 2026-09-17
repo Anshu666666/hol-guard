@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from codex_plugin_scanner.guard.policy_document import policy_document_digest
+from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument, policy_document_digest
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
 from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
 from codex_plugin_scanner.guard.store import GuardStore
@@ -32,6 +32,20 @@ def test_duplicate_rule_ids_conflict() -> None:
     document = _document(rule_ids=("same", "same"))
     with pytest.raises(PolicyCompilationError, match="duplicate_policy_rule_id"):
         compile_policy_document(document)
+
+
+def test_one_rule_can_import_several_distinct_selectors(tmp_path: Path) -> None:
+    store = GuardStore(tmp_path / "guard")
+    mapping = _document().to_mapping()
+    mapping["spec"]["rules"][0]["match"] = {"artifacts": ["skill:fixture/one", "skill:fixture/two"]}
+    document = GuardPolicyDocument.from_mapping(mapping)
+    compiled = compile_policy_document(document)
+    assert len(compiled) == 2
+    result = store.import_policy_document(
+        document, compiled, mode="merge", now="2026-07-16T12:00:00Z", approval_gate_grant=None
+    )
+    assert result.inserted == 2
+    assert [row["policy_rule_id"] for row in _rows(store)] == ["rule-1", "rule-1"]
 
 
 def test_reordered_rules_do_not_change_selectors(tmp_path: Path) -> None:

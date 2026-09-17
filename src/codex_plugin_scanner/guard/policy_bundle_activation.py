@@ -9,6 +9,7 @@ from typing import Protocol
 
 from .managed_controls_policy_bundle import signed_cloud_extension_projection_digest
 from .managed_controls_policy_fields import ParsedManagedControlsPolicy
+from .policy_activation_failure import PolicyActivationPersistenceError, classify_policy_activation_failure
 from .policy_bundle_delivery import effective_projection_digest, policy_bundle_acknowledgement_payload
 from .runtime.extension_control_authority import ExtensionControlAuthorityView
 from .runtime.extension_control_contract import ControlLayerKind, ExtensionControlLayer
@@ -46,6 +47,9 @@ def activate_with_reason(
         return result, "" if result is not None else "policy_bundle_activation_rejected"
     except PolicyBundleActivationRejectionError as error:
         return None, error.reason
+    except (sqlite3.Error, OSError, MemoryError) as error:
+        failure = classify_policy_activation_failure(error)
+        return None, str(failure["reason"])
 
 
 def persist_activation_rejection(
@@ -53,8 +57,13 @@ def persist_activation_rejection(
     payload: dict[str, object],
     now: str,
 ) -> None:
-    store.set_sync_payload("policy_bundle_last_error", payload, now)
-    store.add_event("policy_bundle/rejected", payload, now)
+    try:
+        store.set_sync_payload("policy_bundle_last_error", payload, now)
+        store.add_event("policy_bundle/rejected", payload, now)
+    except (sqlite3.Error, OSError, MemoryError) as error:
+        # Never replace a storage failure with a transport guess or a successful
+        # application when even the rejection record cannot be written.
+        raise PolicyActivationPersistenceError(error) from None
 
 
 def managed_delivery_matches_base(

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.cli import commands_dispatch_cloud_review as cloud_review_dispatch
-from codex_plugin_scanner.guard.runtime.cloud_review_readiness import project_cloud_review_worker_refresh
+from codex_plugin_scanner.guard.runtime.cloud_review_worker_readiness import project_cloud_review_worker_refresh
 from tests.guard_exact_cloud_review_support import connected_exact_review_store
 
 

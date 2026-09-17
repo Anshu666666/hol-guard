@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import hashlib
-from datetime import datetime, timezone
 from typing import Literal
 
-from .policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT, validated_policy_bundle_v2_acknowledgement
-
-_GENERIC_CATALOG_DIGEST = hashlib.sha256(b"guard-policy-generic.v2").hexdigest()
+from .policy_bundle_ack_contract import (
+    GENERIC_ACK_IDENTITY,
+    normalized_observed_at,
+    validated_generic_policy_acknowledgement,
+)
+from .policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
 
 
 def generic_policy_bundle_acknowledgement(
@@ -21,65 +22,51 @@ def generic_policy_bundle_acknowledgement(
 ) -> dict[str, object]:
     """Bind a generic revision/device ack without fabricating extension proofs."""
 
-    payload = policy_bundle.get("payload")
-    metadata = payload.get("metadata") if isinstance(payload, dict) else None
-    revision = metadata.get("revision") if isinstance(metadata, dict) else None
-    policy_revision = revision if isinstance(revision, int) and not isinstance(revision, bool) else None
     bundle_version = policy_bundle.get("bundleVersion")
-    if policy_revision is None:
-        policy_revision = (
-            bundle_version if isinstance(bundle_version, int) and not isinstance(bundle_version, bool) else 1
-        )
-    payload_hash = policy_bundle.get("payloadHash")
     bundle_hash = policy_bundle.get("bundleHash")
     workspace_id = policy_bundle.get("workspaceId")
-    if not isinstance(payload_hash, str) or not isinstance(bundle_hash, str) or not isinstance(workspace_id, str):
-        return {}
     identity = {
+        "contractVersion": POLICY_BUNDLE_V2_CONTRACT,
         "workspaceId": workspace_id,
         "deviceId": device_id,
-        "deliveryId": "00000000-0000-4000-8000-0000000000f1",
-        "runtimeSessionId": "generic-policy",
-        "bundleId": str(metadata.get("id") if isinstance(metadata, dict) else "generic-policy"),
         "bundleVersion": bundle_version,
         "bundleHash": bundle_hash,
-        "policyRevision": policy_revision,
-        "extensionAuthorityRevision": 0,
-        "catalogDigest": _GENERIC_CATALOG_DIGEST,
-        "effectiveProjectionDigest": payload_hash,
-        "payloadHash": payload_hash,
-        "extensionProjectionDigest": payload_hash,
-        "lastKnownGoodBundleHash": None,
-        "appliedExtensionAuthorityRevision": policy_revision,
-        "appliedEffectiveProjectionDigest": payload_hash,
     }
     matching_previous = (
         previous
         if previous is not None
-        and previous.get("payloadHash") == payload_hash
-        and previous.get("deviceId") == device_id
-        and previous.get("bundleHash") == bundle_hash
+        and validated_generic_policy_acknowledgement(previous)[0] is not None
+        and all(previous.get(key) == identity[key] for key in GENERIC_ACK_IDENTITY)
         else None
     )
+    if matching_previous is not None and matching_previous.get("status") == "applied" and not applied:
+        return dict(matching_previous)
     previous_sequence = matching_previous.get("sequence") if matching_previous is not None else None
-    status: Literal["received", "applied"] = "applied" if applied else "received"
+    was_applied = matching_previous is not None and matching_previous.get("status") == "applied"
+    status: Literal["received", "applied"] = "applied" if applied or was_applied else "received"
     acknowledgement = {
         "contractVersion": POLICY_BUNDLE_V2_CONTRACT,
         **identity,
         "sequence": previous_sequence + 1 if isinstance(previous_sequence, int) else 1,
         "status": status,
-        "observedAt": _normalized_observed_at(synced_at),
-        "errorCode": None if applied else "unverified_generic_application",
+        "observedAt": normalized_observed_at(synced_at),
+        "errorCode": None,
     }
-    validated, _error = validated_policy_bundle_v2_acknowledgement(acknowledgement, previous=matching_previous)
+    validated, _error = validated_generic_policy_acknowledgement(acknowledgement, previous=matching_previous)
     return validated if validated is not None else {}
 
 
-def _normalized_observed_at(value: str) -> str:
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return value
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+def is_generic_policy_bundle_acknowledgement(acknowledgement: dict[str, object]) -> bool:
+    return acknowledgement.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT and "deliveryId" not in acknowledgement
+
+
+def validated_generic_policy_bundle_acknowledgement(
+    acknowledgement: dict[str, object], *, previous: dict[str, object] | None = None
+) -> tuple[dict[str, object] | None, str | None]:
+    """Preserve the generic entry point while validating the existing Cloud wire schema."""
+    if "deliveryId" in acknowledgement:
+        return None, "generic_ack_managed_fields"
+    validated, error = validated_generic_policy_acknowledgement(acknowledgement, previous=previous)
+    if error == "acknowledgement_transition_rejected" and previous is not None and previous.get("status") == "applied":
+        return None, "acknowledgement_regression"
+    return validated, error

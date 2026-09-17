@@ -20,6 +20,7 @@ from codex_plugin_scanner.guard.runtime.extension_control_resolver import (
     compose_control_layers,
     resolve_extension_controls,
 )
+from tests.test_managed_controls_policy_fields import _document, _parse
 
 
 def _catalog_ids() -> tuple[str, str]:
@@ -102,9 +103,8 @@ def test_lockdown_trusted_recovery_is_limited() -> None:
 
 
 def test_managed_restrictive_enable_is_rejected() -> None:
-    assert ManagedControlsPolicyError is not None
-    with pytest.raises(ManagedControlsPolicyError, match="cannot enable"):
-        raise ManagedControlsPolicyError(
-            "managed_restrictive_broadening",
-            "Managed-restrictive controls cannot enable a capability.",
-        )
+    document = _document()
+    document["x-hol-extension-controls"]["controls"][0]["state"] = "enabled"
+    with pytest.raises(ManagedControlsPolicyError, match="cannot enable") as error:
+        _parse(document)
+    assert error.value.code == "managed_restrictive_broadening"

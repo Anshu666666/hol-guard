@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import json
 import sqlite3
 from collections.abc import Mapping
@@ -12,8 +13,17 @@ TRANSPORT_FAILURE: Final = "transport"
 PRECOMMIT_FAILURE: Final = "precommit"
 POSTCOMMIT_FAILURE: Final = "postcommit"
 
-_LOCKED_MARKERS: Final = ("database is locked", "database schema is locked")
-_DISK_FULL_MARKERS: Final = ("disk is full", "database or disk is full", "no space left")
+_STORAGE_REASONS: Final = frozenset(
+    {
+        "policy_activation_disk_full",
+        "policy_activation_sqlite_locked",
+        "policy_activation_sqlite_failed",
+        "policy_activation_storage_failed",
+        "policy_activation_payload_unencodable",
+        "policy_bundle_activation_payload_unencodable",
+    }
+)
+_TRANSPORT_REASON: Final = "policy_activation_transport_failed"
 
 
 def classify_policy_activation_failure(
@@ -21,7 +31,7 @@ def classify_policy_activation_failure(
     *,
     boundary: str = PRECOMMIT_FAILURE,
 ) -> dict[str, object]:
-    """Return a bounded status that never reports the candidate as applied."""
+    """Return fixed support codes; exception text never becomes display data."""
 
     kind = STORAGE_FAILURE
     reason = "policy_activation_storage_failed"
@@ -29,9 +39,16 @@ def classify_policy_activation_failure(
         reason = "policy_activation_payload_unencodable"
     elif isinstance(error, sqlite3.OperationalError):
         message = str(error).lower()
-        if any(marker in message for marker in _DISK_FULL_MARKERS):
+        code = getattr(error, "sqlite_errorcode", None)
+        base_code = code & 0xFF if isinstance(code, int) else None
+        if base_code == getattr(sqlite3, "SQLITE_FULL", 13) or any(
+            value in message for value in ("disk is full", "database or disk is full", "no space left")
+        ):
             reason = "policy_activation_disk_full"
-        elif any(marker in message for marker in _LOCKED_MARKERS):
+        elif base_code in {getattr(sqlite3, "SQLITE_BUSY", 5), getattr(sqlite3, "SQLITE_LOCKED", 6)} or any(
+            value in message
+            for value in ("database is locked", "database table is locked", "database schema is locked")
+        ):
             reason = "policy_activation_sqlite_locked"
         else:
             reason = "policy_activation_sqlite_failed"
@@ -39,43 +56,56 @@ def classify_policy_activation_failure(
         reason = "policy_activation_sqlite_failed"
     elif isinstance(error, (TimeoutError, ConnectionError)):
         kind = TRANSPORT_FAILURE
-        reason = "policy_activation_transport_failed"
-    elif isinstance(error, (OSError, MemoryError)):
-        reason = "policy_activation_storage_failed"
-    else:
-        kind = TRANSPORT_FAILURE
-        reason = "policy_activation_transport_failed"
+        reason = _TRANSPORT_REASON
+    elif isinstance(error, OSError):
+        if error.errno in {errno.ENOSPC, errno.EDQUOT}:
+            reason = "policy_activation_disk_full"
+    elif not isinstance(error, MemoryError):
+        kind = "activation"
+        reason = "policy_activation_failed"
     return {
         "applied": False,
-        "boundary": boundary,
+        "boundary": boundary if boundary in {PRECOMMIT_FAILURE, POSTCOMMIT_FAILURE} else PRECOMMIT_FAILURE,
         "failure_kind": kind,
         "reason": reason,
-        "retryable": kind == STORAGE_FAILURE and reason != "policy_activation_payload_unencodable",
+        "retryable": kind in {STORAGE_FAILURE, TRANSPORT_FAILURE} and reason != "policy_activation_payload_unencodable",
     }
 
 
+class PolicyActivationPersistenceError(RuntimeError):
+    """A failure record could not be persisted; retain its safe classification."""
+
+    def __init__(self, error: BaseException) -> None:
+        self.status = classify_policy_activation_failure(error)
+        super().__init__(str(self.status["reason"]))
+
+
 def activation_status_from_store(store: object) -> dict[str, object]:
-    """Project last-error versus last-good without inventing application."""
+    """Report durable recovery evidence without asserting native application."""
 
     get_sync = getattr(store, "get_sync_payload", None)
-    last_error = get_sync("policy_bundle_last_error") if callable(get_sync) else None
-    last_good = get_sync("policy_bundle_last_good") if callable(get_sync) else None
-    ack = get_sync("policy_bundle_ack") if callable(get_sync) else None
+    try:
+        last_error = get_sync("policy_bundle_last_error") if callable(get_sync) else None
+        last_good = get_sync("policy_bundle_last_good") if callable(get_sync) else None
+    except (sqlite3.Error, OSError, MemoryError) as error:
+        status = classify_policy_activation_failure(error)
+        return {
+            "applied": False,
+            "last_good_present": False,
+            "storage_failure": status["failure_kind"] == STORAGE_FAILURE,
+            "transport_failure": status["failure_kind"] == TRANSPORT_FAILURE,
+            "reason": status["reason"],
+        }
     error_payload = last_error if isinstance(last_error, Mapping) else {}
-    reason = error_payload.get("reason") if isinstance(error_payload.get("reason"), str) else None
-    ack_status = ack.get("status") if isinstance(ack, Mapping) else None
+    raw_reason = error_payload.get("reason")
+    reason = raw_reason if isinstance(raw_reason, str) and raw_reason else None
+    if reason is not None and reason not in _STORAGE_REASONS | {_TRANSPORT_REASON}:
+        reason = "policy_activation_rejected"
     return {
-        "applied": False if reason else ack_status in {"synced", "applied"},
+        "applied": False,
         "last_good_present": isinstance(last_good, Mapping) and bool(last_good),
-        "storage_failure": reason
-        in {
-            "policy_activation_disk_full",
-            "policy_activation_sqlite_locked",
-            "policy_activation_sqlite_failed",
-            "policy_activation_storage_failed",
-            "policy_activation_payload_unencodable",
-        },
-        "transport_failure": reason == "policy_activation_transport_failed",
+        "storage_failure": reason in _STORAGE_REASONS,
+        "transport_failure": reason == _TRANSPORT_REASON,
         "reason": reason,
     }
 
@@ -85,6 +115,7 @@ __all__ = [
     "PRECOMMIT_FAILURE",
     "STORAGE_FAILURE",
     "TRANSPORT_FAILURE",
+    "PolicyActivationPersistenceError",
     "activation_status_from_store",
     "classify_policy_activation_failure",
 ]

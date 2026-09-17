@@ -65,3 +65,20 @@ def test_supported_artifact_matcher_compiles() -> None:
     assert len(rows) == 1
     assert rows[0].decision.artifact_id == "codex:project:demo"
     assert rows[0].decision.scope == "artifact"
+
+
+def test_tool_matcher_preserves_supported_family_and_rejects_unknown_values() -> None:
+    assert "tools" in GENERIC_MATCH_KEYS
+    rows = compile_policy_document(_document({"tools": ["mcp"], "harnesses": ["codex"]}))
+    assert len(rows) == 1
+    assert rows[0].decision.artifact_id == "family:mcp"
+    assert rows[0].decision.harness == "codex"
+    with pytest.raises(PolicyCompilationError, match="unsupported_policy_match"):
+        compile_policy_document(_document({"tools": ["fixture-tool"]}))
+
+
+def test_published_capability_cannot_mutate_future_advertisements() -> None:
+    original = published_generic_matcher_capability()
+    changed = published_generic_matcher_capability()
+    changed["lanes"]["generic-local-sqlite"]["match_keys"].append("tools")
+    assert published_generic_matcher_capability() == original

@@ -9,12 +9,12 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.cli.commands_dispatch_policy_document import _run_guard_policy_document_command
-from codex_plugin_scanner.guard.policy_compile_errors import bounded_policy_compile_error, secret_bearing
 from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
 from codex_plugin_scanner.guard.policy_document_io import write_private_policy_text
 from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
 from codex_plugin_scanner.guard.policy_document_yaml import format_policy_document_yaml
+from codex_plugin_scanner.guard.policy_error_guidance import public_policy_document_error
 
 
 def _args(command: str, path: Path) -> object:
@@ -36,11 +36,11 @@ def _args(command: str, path: Path) -> object:
 
 def test_unknown_matcher_error_identifies_rule_and_remedy() -> None:
     error = PolicyCompilationError("unsupported_policy_match", "rule-secret")
-    payload = bounded_policy_compile_error(error)
+    payload = public_policy_document_error(error)
     assert payload["rule_id"] == "rule-secret"
     assert payload["field_path"].endswith(".match")
     assert "artifacts" in payload["remediation"]
-    assert secret_bearing(payload) is False
+    assert "refresh_token" not in json.dumps(payload)
 
 
 def test_cli_validate_returns_bounded_compile_error(tmp_path: Path) -> None:
@@ -111,6 +111,6 @@ def test_fanout_limit_names_the_rule() -> None:
                 }
             )
         )
-    payload = bounded_policy_compile_error(error.value)
+    payload = public_policy_document_error(error.value)
     assert payload["code"] == "policy_compilation_limit"
     assert payload["rule_id"] == "too-wide"

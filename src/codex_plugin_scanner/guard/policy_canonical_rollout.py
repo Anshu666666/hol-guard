@@ -50,16 +50,12 @@ def selected_enforcement_lane(
 
     flags = ManagedControlsFeatureFlags.from_environment()
     advertised = flags.runtime_capabilities(protected_authority=protected_authority)
-    if required_capability is not None and required_capability not in advertised:
-        return "incompatible", "missing_negotiated_capability"
-    if (
-        required_capability is not None
-        and negotiated_capabilities
-        and required_capability not in negotiated_capabilities
+    if contract_version == POLICY_BUNDLE_V2_CONTRACT and required_capability is not None and not protected_authority:
+        return "incompatible", "missing_protected_authority"
+    if required_capability is not None and (
+        required_capability not in advertised or required_capability not in negotiated_capabilities
     ):
         return "incompatible", "missing_negotiated_capability"
-    if contract_version == POLICY_BUNDLE_V2_CONTRACT and flags.catalog_sync and not protected_authority:
-        return "incompatible", "missing_protected_authority"
     if not canonical_policy_enforcement_enabled(device_id=device_id, workspace_id=workspace_id):
         if contract_version == POLICY_BUNDLE_V2_CONTRACT:
             return "unverified", "canonical_enforcement_disabled"
@@ -75,18 +71,24 @@ def canonical_runtime_posture(
     workspace_id: str | None,
     protected_authority: bool = False,
     negotiated_capabilities: frozenset[str] = frozenset(),
+    contract_version: str | None = None,
+    required_capability: str | None = None,
 ) -> dict[str, object]:
     """Advertise advertised vs effective canonical/managed capabilities."""
 
     flags = ManagedControlsFeatureFlags.from_environment()
     advertised = list(flags.runtime_capabilities(protected_authority=True))
     effective = list(flags.runtime_capabilities(protected_authority=protected_authority))
+    if required_capability is not None:
+        effective = [capability for capability in effective if capability in negotiated_capabilities]
     enabled = canonical_policy_enforcement_enabled(device_id=device_id, workspace_id=workspace_id)
     lane, reason = selected_enforcement_lane(
         device_id=device_id,
         workspace_id=workspace_id,
         protected_authority=protected_authority,
         negotiated_capabilities=negotiated_capabilities,
+        contract_version=contract_version,
+        required_capability=required_capability,
     )
     session: dict[str, object] = {
         "advertised_canonical_capabilities": advertised,

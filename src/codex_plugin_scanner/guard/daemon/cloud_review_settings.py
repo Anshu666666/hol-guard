@@ -7,7 +7,9 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from ..approval_gate import input_from_mapping, public_config, require_high_risk
-from ..runtime.cloud_review_status_projection import project_cloud_review_status
+from ..runtime.cloud_review_consent import reuse_or_issue_cloud_review_consent
+from ..runtime.cloud_review_status import CLOUD_REVIEW_RECOVERY_KEY, cloud_review_status, review_connection_binding_id
+from ..runtime.cloud_review_worker_readiness import cloud_review_workers_ready
 from ..runtime.exact_cloud_review import (
     ExactCloudReviewError,
     disable_exact_cloud_review,
@@ -15,7 +17,7 @@ from ..runtime.exact_cloud_review import (
 )
 from ..store import GuardStore
 
-_RECOVERY_KEY = "guard_cloud_review_settings_recovery"
+_RECOVERY_KEY = CLOUD_REVIEW_RECOVERY_KEY
 
 
 class CloudReviewSettingsError(ValueError):
@@ -24,9 +26,9 @@ class CloudReviewSettingsError(ValueError):
         self.code: str = code
 
 
-def cloud_review_settings_status(store: GuardStore) -> dict[str, object]:
+def cloud_review_settings_status(store: GuardStore, *, worker_observation: object = None) -> dict[str, object]:
     return {
-        **project_cloud_review_status(store),
+        **cloud_review_status(store, worker_observation=worker_observation),
         "approval_gate": public_config(store.guard_home).to_dict(),
     }
 
@@ -44,6 +46,8 @@ def change_cloud_review_settings(
         raise CloudReviewSettingsError("confirmation_required", "Confirm this Cloud Review change.")
     if type(payload.get("include_held_requests", False)) is not bool:
         raise CloudReviewSettingsError("invalid_recovery_scope", "Choose whether to include held requests.")
+    if type(payload.get("renew_consent", False)) is not bool:
+        raise CloudReviewSettingsError("invalid_consent_renewal", "Choose whether to renew Cloud Review consent.")
     _ = require_high_risk(
         store.guard_home,
         purpose="protection_lifecycle",
@@ -67,7 +71,11 @@ def change_cloud_review_settings(
                 raise CloudReviewSettingsError(
                     "connection_changed", "The connected workspace changed. Refresh before confirming."
                 )
-            _ = enable_exact_cloud_review(store, issuer="local-dashboard")
+            _ = reuse_or_issue_cloud_review_consent(
+                store,
+                issue=lambda: enable_exact_cloud_review(store, issuer="local-dashboard"),
+                renew=payload.get("renew_consent") is True,
+            )
             store.set_sync_payload(
                 _RECOVERY_KEY,
                 {"binding": binding, "error": "pending_request_requeue_failed"},
@@ -94,7 +102,7 @@ def change_cloud_review_settings(
         )
         try:
             worker = refresh_workers()
-            if action == "enable" and (worker.get("running") is not True or worker.get("sync_running") is not True):
+            if action == "enable" and not cloud_review_workers_ready(worker):
                 activation_error = activation_error or "worker_refresh_failed"
         except (OSError, RuntimeError, ValueError):
             worker = {"running": False, "sync_running": False}
@@ -103,7 +111,15 @@ def change_cloud_review_settings(
             _RECOVERY_KEY, {"binding": binding, "error": activation_error}, datetime.now(timezone.utc).isoformat()
         )
     return {
-        **cloud_review_settings_status(store),
+        **cloud_review_settings_status(
+            store,
+            worker_observation={
+                **worker,
+                "source": store.guard_source,
+                "connection_binding_id": review_connection_binding_id(binding),
+                "observed_at": datetime.now(timezone.utc).isoformat(),
+            },
+        ),
         "pending_requests_requeued": requeued,
         "held_events_recovered": adopted,
         "activation_error": activation_error,

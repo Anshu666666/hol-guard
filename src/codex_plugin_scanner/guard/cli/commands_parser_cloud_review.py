@@ -21,10 +21,7 @@ def configure_guard_cloud_review_parser(
         required=True,
         parser_class=FriendlyArgumentParser,
     )
-    status = subparsers.add_parser(
-        "status",
-        help="Show exact Cloud Review consent, connection, delivery readiness, and expiry recovery",
-    )
+    status = subparsers.add_parser("status", help="Show exact Cloud Review consent status")
     _add_guard_common_args(status)
     status.add_argument("--json", action="store_true")
 
@@ -37,7 +34,12 @@ def configure_guard_cloud_review_parser(
         "--expires-in-days",
         type=int,
         default=30,
-        help="Consent lifetime from 1 through 365 days (default: 30). Renewal does not extend a prior grant silently.",
+        help="Lifetime for new or renewed consent, from 1 through 365 days (default: 30)",
+    )
+    enable.add_argument(
+        "--renew",
+        action="store_true",
+        help="Replace existing consent and start a new expiry period; ordinary retries keep valid consent",
     )
     enable.add_argument("--json", action="store_true")
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import random
 import threading
 from contextlib import suppress
@@ -14,9 +13,13 @@ from ..mdm.user_health import run_user_health_cadence, user_health_report_due
 from ..review_event_wake import ReviewEventWake, ReviewEventWakeSignal, review_event_wake_signal
 from ..store import GuardStore
 from .cloud_review_retry_recovery import prepare_retry_identity_replay
-from .cloud_review_worker_interval import DEFAULT_ERROR_BACKOFF_BASE_SECONDS, cloud_review_worker_intervals
+from .cloud_review_worker_timing import cloud_review_worker_timing
 
 _LOGGER = logging.getLogger(__name__)
+
+DEFAULT_SAFETY_POLL_SECONDS = 30.0
+DEFAULT_ERROR_BACKOFF_SECONDS = 30.0
+DEFAULT_ERROR_BACKOFF_BASE_SECONDS = 1.0
 
 
 @dataclass
@@ -46,14 +49,12 @@ def start_cloud_sync_sync_worker(
 
     stop_event = threading.Event()
     wake_signal = review_event_wake_signal(store.path)
-    safety_poll, maximum_backoff, initial_backoff = cloud_review_worker_intervals(
-        poll_interval=poll_interval
-        if poll_interval is not None
-        else os.environ.get("GUARD_CLOUD_REVIEW_POLL_INTERVAL"),
-        error_backoff=error_backoff
-        if error_backoff is not None
-        else os.environ.get("GUARD_CLOUD_REVIEW_ERROR_BACKOFF"),
-        error_backoff_base=os.environ.get("GUARD_CLOUD_REVIEW_ERROR_BACKOFF_BASE"),
+    timing = cloud_review_worker_timing(
+        poll_interval=poll_interval,
+        error_backoff=error_backoff,
+        default_poll=DEFAULT_SAFETY_POLL_SECONDS,
+        default_backoff=DEFAULT_ERROR_BACKOFF_SECONDS,
+        default_base=DEFAULT_ERROR_BACKOFF_BASE_SECONDS,
     )
     thread = threading.Thread(
         target=_cloud_sync_sync_loop,
@@ -61,9 +62,9 @@ def start_cloud_sync_sync_worker(
             "store": store,
             "stop_event": stop_event,
             "wake_signal": wake_signal,
-            "poll_interval": safety_poll,
-            "error_backoff": maximum_backoff,
-            "error_backoff_base": initial_backoff,
+            "poll_interval": timing.poll_interval,
+            "error_backoff": timing.error_backoff,
+            "error_backoff_base": timing.error_backoff_base,
         },
         daemon=True,
         name="hol-guard-cloud-review-sync",

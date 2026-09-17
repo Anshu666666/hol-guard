@@ -8,14 +8,18 @@ from collections.abc import Mapping
 def cloud_review_workers_ready(worker: Mapping[str, object] | None) -> bool:
     if not isinstance(worker, Mapping):
         return False
-    return worker.get("running") is True and worker.get("sync_running") is True
+    return (
+        worker.get("status") != "restart_required"
+        and worker.get("running") is True
+        and worker.get("sync_running") is True
+    )
 
 
 def project_cloud_review_worker_refresh(worker: Mapping[str, object]) -> dict[str, object]:
     """Capability may be saved even when delivery workers are not yet ready."""
 
     restart_required = worker.get("status") == "restart_required"
-    ready = cloud_review_workers_ready(worker) and not restart_required
+    ready = cloud_review_workers_ready(worker)
     if restart_required:
         reason = "worker_restart_required"
         activation_status = "saved_retry_required"

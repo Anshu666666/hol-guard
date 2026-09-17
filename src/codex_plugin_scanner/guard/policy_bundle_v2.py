@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from .contract_validation import canonical_uuid, positive_integer
+from .policy_bundle_ack_contract import GENERIC_ACK_KEYS, validated_generic_policy_acknowledgement
 from .policy_bundle_trusted_keys import (
     PolicyBundleVerificationKey,
     resolve_policy_bundle_signing_key,
@@ -431,6 +432,8 @@ def validated_policy_bundle_v2_acknowledgement(
 ) -> tuple[dict[str, object] | None, str | None]:
     """Validate a monotonic explicit device acknowledgement transition."""
 
+    if set(acknowledgement) <= GENERIC_ACK_KEYS:
+        return validated_generic_policy_acknowledgement(acknowledgement, previous=previous)
     required = _ALLOWED_ACK_KEYS - {"errorCode"}
     error = _policy_bundle_v2_acknowledgement_error(acknowledgement, required=required)
     if error is not None:

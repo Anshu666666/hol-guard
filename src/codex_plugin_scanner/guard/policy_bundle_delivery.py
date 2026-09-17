@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from datetime import datetime, timezone
 from typing import Literal
 
 from .contract_validation import canonical_uuid, positive_integer
+from .policy_bundle_ack_contract import normalized_observed_at
 from .policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from .policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT, validated_policy_bundle_v2_acknowledgement
 from .runtime.extension_control_authority import ExtensionControlAuthorityView
@@ -241,23 +241,13 @@ def policy_bundle_acknowledgement_payload(
         **candidate_identity,
         "sequence": previous_sequence + 1 if isinstance(previous_sequence, int) else 1,
         "status": resolved_status,
-        "observedAt": _normalized_observed_at(synced_at),
+        "observedAt": normalized_observed_at(synced_at),
         "errorCode": None,
     }
     validated, error = validated_policy_bundle_v2_acknowledgement(acknowledgement, previous=matching_previous)
     if validated is None:
         raise ValueError(error or "invalid_policy_bundle_acknowledgement")
     return validated
-
-
-def _normalized_observed_at(value: str) -> str:
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return value
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def effective_policy_bundle_acknowledgement(

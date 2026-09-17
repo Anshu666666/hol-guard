@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import deepcopy
 from typing import Final
 
 GENERIC_LANE: Final = "generic-local-sqlite"
@@ -44,10 +45,7 @@ GENERIC_RUNTIME_MATCHER_CAPABILITY: Final[dict[str, object]] = {
 
 
 def published_generic_matcher_capability() -> dict[str, object]:
-    return {
-        "capability": GENERIC_RUNTIME_MATCHER_CAPABILITY["capability"],
-        "lanes": dict(GENERIC_RUNTIME_MATCHER_CAPABILITY["lanes"]),
-    }
+    return deepcopy(GENERIC_RUNTIME_MATCHER_CAPABILITY)
 
 
 def unsupported_matcher_reason(match: Mapping[str, object], *, rule_id: str) -> dict[str, object] | None:

@@ -32,10 +32,6 @@ An extension proposal must publish:
 
 Registration does not grant permission to weaken core policy. An extension that changes authority, precedence, signing, or rollback requires a new core API version.
 
-## Generic matcher representability
-
-Local SQLite compilation publishes `generic-matchers.v1`. Supported match keys are `artifacts`, `harnesses`, `publishers`, `tools`, and `workspaces`. Supported effects are `allow`, `block`, and `review`. `ignore` is inert. Lifetimes are `permanent` and `until`. Unknown matchers are rejected with a rule-id-specific reason and never become global rules. Device selectors are not compiled locally; signed-bundle targeting uses immutable installation identity.
-
 ## Conformance and ambiguity
 
 Implementations report fixture mismatches against `fixtures/manifest.json` with the fixture path, expected result, observed result, implementation version, and platform. Ambiguity findings belong in the public RFC before stabilization. No alpha behavior becomes v1.0 solely because one implementation shipped it.

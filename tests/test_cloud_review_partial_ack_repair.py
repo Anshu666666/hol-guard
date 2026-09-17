@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 from pathlib import Path
 
 import pytest
@@ -36,7 +35,7 @@ def test_mixed_accept_reject_keeps_failed_retryable(tmp_path: Path, monkeypatch:
             )
         return {
             "protocolVersion": 2,
-            "acknowledgedThrough": 100,
+            "acknowledgedThrough": events[0]["localStreamSequence"],
             "accepted": 1,
             "rejected": len(events) - 1,
             "results": results,
@@ -53,8 +52,7 @@ def test_mixed_accept_reject_keeps_failed_retryable(tmp_path: Path, monkeypatch:
         machine_id=binding["machine_id"],
         machine_installation_id=binding["machine_installation_id"],
     )
-    assert remaining
-    assert all("retry-rejected" in str(row.get("local_request_id")) or True for row in remaining)
+    assert [row["local_request_id"] for row in remaining] == ["retry-rejected"]
 
 
 def test_wrong_result_count_does_not_ack_batch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -68,14 +66,14 @@ def test_wrong_result_count_does_not_ack_batch(tmp_path: Path, monkeypatch: pyte
         del path, payload
         return {
             "protocolVersion": 2,
-            "acknowledgedThrough": 100,
+            "acknowledgedThrough": 0,
             "accepted": 1,
             "rejected": 0,
             "results": [],
         }
 
     monkeypatch.setattr(delivery, "_post_json", post)
-    with contextlib.suppress(Exception):
+    with pytest.raises(delivery.CloudReviewEventProtocolError, match="invalid protocol 2 acknowledgement"):
         cloud_review_sync.sync_cloud_review_events_once(store, auth)
     remaining = store.list_ready_review_events(
         now="2099-01-01T00:00:00+00:00",
@@ -85,4 +83,33 @@ def test_wrong_result_count_does_not_ack_batch(tmp_path: Path, monkeypatch: pyte
         machine_id=binding["machine_id"],
         machine_installation_id=binding["machine_installation_id"],
     )
-    assert remaining
+    assert [row["local_request_id"] for row in remaining] == ["count-mismatch"]
+
+
+@pytest.mark.parametrize("field,value", [("accepted", True), ("accepted", 1.0), ("rejected", False), ("rejected", 0.0)])
+def test_non_integer_result_counts_do_not_ack_batch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str, value: object
+) -> None:
+    store = connected_exact_review_store(tmp_path)
+    add_review_request(store, review_request("malformed-count"))
+    binding = store.get_review_event_oauth_binding()
+    assert binding is not None
+
+    def post(_auth: dict[str, object], *, path: str, payload: dict[str, object]) -> dict[str, object]:
+        del path
+        event = payload["events"][0]
+        response = {
+            "protocolVersion": 2,
+            "acknowledgedThrough": event["localStreamSequence"],
+            "accepted": 1,
+            "rejected": 0,
+            "results": [{"eventId": event["eventId"], "status": "accepted", "code": None}],
+        }
+        response[field] = value
+        return response
+
+    monkeypatch.setattr(delivery, "_post_json", post)
+    with pytest.raises(delivery.CloudReviewEventProtocolError, match="counts are inconsistent"):
+        cloud_review_sync.sync_cloud_review_events_once(store, {"sync_url": "https://guard.example", **binding})
+    remaining = store.list_ready_review_events(now="2099-01-01T00:00:00Z", limit=10)
+    assert [row["local_request_id"] for row in remaining] == ["malformed-count"]

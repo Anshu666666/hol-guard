@@ -49,8 +49,9 @@ def test_sqlite_recovery_does_not_replay_consumed_receipt(tmp_path: Path, monkey
     restarted = GuardStore(store.guard_home)
     assert restarted.has_exact_cloud_review_receipt("consumed-receipt")
     proof = remote_approval(restarted, "recover-pending", receipt_id="consumed-receipt")
-    with pytest.raises(ExactCloudReviewError):
+    with pytest.raises(ExactCloudReviewError) as error:
         apply_exact_cloud_review(restarted, remote_approval=proof, expected_harness="codex")
+    assert error.value.code == "remote_exact_replayed"
     later = remote_approval(restarted, "recover-pending", receipt_id="fresh-after-recovery")
     result = apply_exact_cloud_review(restarted, remote_approval=later, expected_harness="codex")
     assert result.resolved_request["status"] == "resolved"

@@ -27,6 +27,11 @@ from tests.test_policy_bundle_activation_atomicity import _activate_bundle, _sig
 from tests.test_policy_bundle_delivery_runtime import _Response
 from tests.test_policy_bundle_v2 import _signed_bundle as _signed_v2_bundle
 from tests.test_policy_bundle_v2 import _verification_key
+from tests.test_policy_bundle_v2_runtime_admission import (
+    _generic_v2_payload,
+    _seed_v2_admission_store,
+    _sync_signed_v2_bundle,
+)
 from tests.test_synced_policy import _MemorySyncStore
 
 
@@ -169,6 +174,75 @@ def test_future_dated_v2_is_rejected_with_stable_code_and_last_good_kept() -> No
     retained, last_error = cached_policy_bundle_validation(store, last_good)
     assert retained is not None
     assert last_error is None
+
+
+def test_fresh_omitted_policy_reports_no_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = GuardStore(tmp_path / "guard-home")
+    _seed_guard_cloud(store, workspace_id=TEST_POLICY_BUNDLE_WORKSPACE_ID)
+    _stub_http(monkeypatch, {"syncedAt": "2026-07-18T00:01:00Z", "receiptsStored": 0})
+
+    summary = runner.sync_receipts(store)
+
+    assert summary["policy_validation_status"] == "omitted"
+    assert summary["policy_application_status"] == "no_authority"
+    assert store.get_sync_payload("policy_bundle") in (None, {})
+
+
+def test_v2_fallback_commit_is_not_reported_as_applied(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", raising=False)
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    verification_key = _verification_key(private_key, workspace_id="workspace-alpha")
+    bundle = _signed_v2_bundle(
+        private_key,
+        verification_key,
+        payload_base=_generic_v2_payload(
+            rule_id="rule.fallback",
+            artifact_id="command:fallback",
+        ),
+    )
+    store = _seed_v2_admission_store(tmp_path, verification_key)
+    summary = _sync_signed_v2_bundle(store, monkeypatch, bundle, synced_at="2026-07-15T12:01:00Z")
+    assert summary["policy_validation_status"] == "accepted"
+    assert summary["policy_application_status"] == "fallback"
+    ack = store.get_sync_payload("policy_bundle_ack")
+    assert isinstance(ack, dict)
+    assert ack.get("status") != "applied"
+    assert "deliveryId" not in ack
+
+
+def test_v2_canonical_lane_reports_applied(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    verification_key = _verification_key(private_key, workspace_id="workspace-alpha")
+    bundle = _signed_v2_bundle(
+        private_key,
+        verification_key,
+        payload_base=_generic_v2_payload(
+            rule_id="rule.applied",
+            artifact_id="command:applied",
+        ),
+    )
+    store = _seed_v2_admission_store(tmp_path, verification_key)
+    summary = _sync_signed_v2_bundle(store, monkeypatch, bundle, synced_at="2026-07-15T12:01:00Z")
+    assert summary["policy_application_status"] == "applied"
+    ack = store.get_sync_payload("policy_bundle_ack")
+    assert isinstance(ack, dict)
+    assert ack["status"] == "applied"
+    assert "deliveryId" not in ack
+
+
+def test_sync_summary_has_a_single_advisories_stored_key() -> None:
+    source = Path(runner.__file__).read_text(encoding="utf-8")
+    assert source.count('"advisories_stored":') == 1
 
 
 def test_workspace_b_cannot_adopt_workspace_a_keys() -> None:

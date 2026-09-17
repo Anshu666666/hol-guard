@@ -35,6 +35,7 @@ from .config import GuardConfig, resolve_risk_action
 from .mdm.network import managed_urlopen
 from .models import GuardAction, GuardArtifact
 from .package_execution_context import PackageExecutionContext, build_package_execution_context
+from .receipts.policy_execution_outcome import persist_completed_package_receipt
 from .redaction import redact_local_path, redact_text
 from .runtime.approval_context import (
     approval_context_tokens_validation_reason,
@@ -55,6 +56,7 @@ from .runtime.approval_reuse import (
     bind_saved_policy_identity,
     evaluate_approval_reuse,
 )
+from .runtime.command_execution_output import _build_command_execution_payload as _build_command_execution_payload
 from .runtime.lockfile_parse_result import LOCKFILE_PARSER_VERSION
 from .runtime.package_current_policy_projection import _package_decision_for_action
 from .runtime.package_current_policy_projection import (
@@ -2089,12 +2091,15 @@ def build_package_protect_payload(
         returncode=execution.returncode,
         unsafe_raw_output=unsafe_raw_output,
     )
+    persist_completed_package_receipt(
+        store=store,
+        receipt=final_projection.receipt,
+        metadata=final_projection.receipt_policy_metadata,
+        evaluation=final_evaluation,
+        final_action=final_execution_action,
+        returncode=execution.returncode,
+    )
     if execution.returncode == 0:
-        store.add_receipt(final_projection.receipt)
-        store.set_receipt_action_envelope(
-            final_projection.receipt.receipt_id,
-            final_projection.receipt_policy_metadata,
-        )
         store.add_event(
             f"install_time_{verdict_action}",
             _install_time_event_payload(
@@ -3050,25 +3055,6 @@ def _package_policy_override_evaluation(
 
 def redacted_command_tokens(command: Sequence[str]) -> tuple[str, ...]:
     return tuple(_redact_command_token(str(token)) for token in command)
-
-
-def _build_command_execution_payload(
-    *,
-    stdout: str,
-    stderr: str,
-    returncode: int,
-    unsafe_raw_output: bool,
-) -> dict[str, object]:
-    redacted_stdout = redact_text(stdout)
-    redacted_stderr = redact_text(stderr)
-    return {
-        "returncode": returncode,
-        "stdout": stdout if unsafe_raw_output else redacted_stdout.text,
-        "stderr": stderr if unsafe_raw_output else redacted_stderr.text,
-        "stdout_redactions": redacted_stdout.to_dict(),
-        "stderr_redactions": redacted_stderr.to_dict(),
-        "raw_output_enabled": unsafe_raw_output,
-    }
 
 
 def _coerce_command_output(value: str | bytes | None) -> str:

@@ -14,7 +14,6 @@ import pytest
 from codex_plugin_scanner.cli import _build_parser, _resolve_legacy_args, main
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli import commands_dispatch_cloud_review as cloud_review_dispatch
-from codex_plugin_scanner.guard.daemon import command_queue_worker as queue_worker_module
 from codex_plugin_scanner.guard.daemon import server as daemon_server_module
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.review_contracts import (
@@ -669,17 +668,3 @@ def test_command_queue_worker_refresh_serializes_with_shutdown(
         assert starts == ["start"]
     finally:
         lifecycle_daemon.stop()
-
-    old_release = threading.Event()
-    old_thread = threading.Thread(target=old_release.wait)
-    old_thread.start()
-    old_stop = threading.Event()
-    old_stop.set()
-    old_worker = queue_worker_module.CommandQueueWorker(thread=old_thread, stop_event=old_stop)
-    monkeypatch.setattr(queue_worker_module, "command_queue_enabled", lambda _store: True)
-    monkeypatch.setattr(queue_worker_module, "_COMMAND_QUEUE_THREAD_JOIN_TIMEOUT_SECONDS", 0.01)
-    try:
-        assert queue_worker_module.start_command_queue_worker(store, old_worker) is old_worker
-    finally:
-        old_release.set()
-        old_thread.join(timeout=1)

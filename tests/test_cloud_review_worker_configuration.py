@@ -11,6 +11,8 @@ import pytest
 from codex_plugin_scanner.guard.runtime import cloud_review_sync_worker as workers
 from tests.test_guard_cloud_review_sync_worker import Store
 
+pytestmark = pytest.mark.daemon_service_workers
+
 
 @pytest.mark.parametrize(
     "name,argument,default",

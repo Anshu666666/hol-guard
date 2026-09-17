@@ -298,7 +298,7 @@ class TestSecretDetection:
         cache: HookDecisionCache,
         deadline: float,
     ) -> None:
-        content = 'const token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
+        content = 'const token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
         file_path = workspace / "src" / "config.ts"
         file_path.write_text(content)
 

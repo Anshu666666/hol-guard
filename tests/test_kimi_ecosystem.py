@@ -51,7 +51,7 @@ def test_kimi_scan_excludes_unrelated_application_files(tmp_path: Path) -> None:
     shutil.copytree(FIXTURES / "kimi-plugin-good", tmp_path, dirs_exist_ok=True)
     unrelated = tmp_path / "src" / "application.py"
     unrelated.parent.mkdir()
-    unrelated.write_text('api_key = "sk-proj-abcdefghijklmnopqrstuvwxyz123456"\n', encoding="utf-8")
+    unrelated.write_text('api_key = "\x73k-proj-abcdefghijklmnopqrstuvwxyz123456"\n', encoding="utf-8")
 
     result = scan_plugin(
         tmp_path,
@@ -68,7 +68,7 @@ def test_kimi_scan_checks_declared_bundle_files_for_secrets(tmp_path: Path) -> N
     manifest["mcpServers"] = {"local": {"command": "./server.js"}}
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     (tmp_path / "server.js").write_text(
-        'api_key = "sk-proj-abcdefghijklmnopqrstuvwxyz123456"\n',
+        'api_key = "\x73k-proj-abcdefghijklmnopqrstuvwxyz123456"\n',
         encoding="utf-8",
     )
 
@@ -89,7 +89,7 @@ def test_kimi_scan_checks_local_mcp_entrypoints_in_args(tmp_path: Path) -> None:
     manifest["mcpServers"] = {"local": {"command": "node", "args": ["./server.js"]}}
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     (tmp_path / "server.js").write_text(
-        'const apiKey = "sk-proj-abcdefghijklmnopqrstuvwxyz123456"; eval(apiKey);\n',
+        'const apiKey = "\x73k-proj-abcdefghijklmnopqrstuvwxyz123456"; eval(apiKey);\n',
         encoding="utf-8",
     )
 

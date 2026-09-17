@@ -185,15 +185,19 @@ def known_option_advance(
 
     if not _is_option(argument):
         return None
-    shape = _option_shape(
-        argument,
-        options_with_values=options_with_values,
-        known_flags=known_flags,
-    )
-    advances = {transition.advance for transition in shape.transitions}
-    if not shape.fully_known or len(advances) != 1:
-        return None
-    return advances.pop()
+    if argument.startswith("--"):
+        option_name, separator, _value = argument.partition("=")
+        if option_name in options_with_values:
+            return 1 if separator else 2
+        return 1 if option_name in known_flags or separator else None
+    # Token consumption needs no flag assignments or ambiguous transitions.
+    for index, character in enumerate(argument[1:], start=1):
+        short_option = f"-{character}"
+        if short_option in options_with_values:
+            return 1 if index + 1 < len(argument) else 2
+        if short_option not in known_flags:
+            return None
+    return 1
 
 
 def long_flag_assignment_is_enabled(argument: str) -> bool:
@@ -210,6 +214,14 @@ def _subcommand_parse_outcome(
     options_with_values: frozenset[str],
     known_flags: frozenset[str],
 ) -> _ParseOutcome:
+    if (
+        _MAX_OPTION_PARSE_STATES > 0
+        and arguments
+        and subcommands
+        and arguments[0] != subcommands[0]
+        and not _is_option(arguments[0])
+    ):
+        return _ParseOutcome.NO_MATCH
     pending = [(0, 0)]
     visited: set[tuple[int, int]] = set()
     while pending:

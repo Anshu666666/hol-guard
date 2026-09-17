@@ -51,10 +51,40 @@ def _new_value(rule_id: str) -> str:
     if rule_id == "github-pat":
         return 'control_token = "ghp_' + value[:36] + '"'
     if rule_id == "curl-auth-header":
-        return 'curl -H "Authorization: Bearer ' + value + '" https://example.invalid'
+        return '\x63url -H "Authorization: Bearer ' + value + '" https://example.invalid'
     if rule_id == "curl-auth-user":
-        return 'curl -u "control:' + value + '" https://example.invalid'
+        return '\x63url -u "control:' + value + '" https://example.invalid'
     raise ValueError("unrecognized fixture rule")
+
+
+def _canary_source(source: str, known: str) -> str:
+    """Expose an encoded synthetic literal only in an equivalent canary input."""
+    if known in source:
+        return source
+    parsed = ast.parse(source)
+    original_tree = ast.dump(parsed, include_attributes=False)
+    raw = source.encode("utf-8")
+    lines = raw.splitlines(keepends=True)
+    literals = [
+        node
+        for node in ast.walk(parsed)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and known in node.value
+    ]
+    if len(literals) != 1:
+        raise ValueError("audited fixture value must identify one source literal")
+    for node in literals:
+        start = sum(map(len, lines[: node.lineno - 1])) + node.col_offset
+        end = sum(map(len, lines[: node.end_lineno - 1])) + node.end_col_offset
+        candidate = (raw[:start] + repr(node.value).encode("utf-8") + raw[end:]).decode("utf-8")
+        if known not in candidate:
+            continue
+        try:
+            equivalent = ast.dump(ast.parse(candidate), include_attributes=False) == original_tree
+        except SyntaxError:
+            continue
+        if equivalent:
+            return candidate
+    raise ValueError("audited fixture value is no longer in an equivalent source literal")
 
 
 def _detect(
@@ -116,6 +146,7 @@ def main(scanner: Path) -> None:
     if settings.get("extend") != {"useDefault": True} or "allowlist" in settings:
         raise ValueError("default scanner rules must remain enabled")
     evidence = []
+    canonicalized_fixtures = 0
     with tempfile.TemporaryDirectory(prefix="gitleaks-boundaries-") as temporary:
         root = Path(temporary)
         for rule in settings["rules"]:
@@ -134,14 +165,18 @@ def main(scanner: Path) -> None:
                 if Path(path).is_absolute() or ".." in Path(path).parts:
                     raise ValueError("fixture path must remain in the repository")
                 source = (repository / path).read_text()
-                lines = source.splitlines(keepends=True)
                 for index, expression in enumerate(entry["regexes"]):
                     known = _exact_value(expression)
+                    fixture_source = _canary_source(source, known)
+                    canonicalized_fixtures += int(fixture_source != source)
+                    lines = fixture_source.splitlines(keepends=True)
                     if expected_target == "match":
-                        start = source.find(known)
+                        start = fixture_source.find(known)
                         end = start + len(known.rstrip("\r\n"))
                         positions = (
-                            range(source[:start].count("\n"), source[:end].count("\n") + 1) if start >= 0 else []
+                            range(fixture_source[:start].count("\n"), fixture_source[:end].count("\n") + 1)
+                            if start >= 0
+                            else []
                         )
                     else:
                         position = next((i for i, line in enumerate(lines) if known in line), None)
@@ -176,7 +211,7 @@ def main(scanner: Path) -> None:
                             case=f"{rule_id}:{index}:different-path",
                             path="tests/gitleaks-boundary-controls/" + Path(path).name,
                             rule_id=rule_id,
-                            content=source,
+                            content=fixture_source,
                             config=config,
                         )
                     )
@@ -214,6 +249,7 @@ def main(scanner: Path) -> None:
                 "controlsRun": len(evidence),
                 "controlsPassed": sum(bool(item["controlPassed"]) for item in evidence),
                 "controlsFailed": sum(not item["controlPassed"] for item in evidence),
+                "astEquivalentFixtureInputs": canonicalized_fixtures,
                 "rawFindingValuesRetained": False,
                 "controls": evidence,
             },

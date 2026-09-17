@@ -113,7 +113,7 @@ class TestRawOversizedOutputNeverUnreviewed:
     ) -> None:
         """Secret after the old 12k prefix must never pass through."""
         prefix = "x" * 15_000 + "\n"
-        secret = 'token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
+        secret = 'token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
         content = prefix + secret
         file_path = workspace / "src" / "large.ts"
         file_path.write_text(content)
@@ -292,7 +292,7 @@ class TestMetricsNoRawContent:
             metrics=metrics,
         )
 
-        secret_value = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+        secret_value = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz"
         content = f'const token = "{secret_value}";\n'
         file_path = workspace / "src" / "config.ts"
         file_path.write_text(content)

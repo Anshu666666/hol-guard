@@ -266,6 +266,11 @@ def _verify_signature(
         return "untrusted_signing_key"
     if not signing_key_is_current(signing_key, now=now):
         return "untrusted_signing_key"
+    # Discovery metadata cannot restore the pinned key's state or validity.
+    anchored_key = resolve_policy_bundle_signing_key(key_id, anchored_verification_keys)
+    if anchored_key is None or not signing_key_is_current(anchored_key, now=now, require_active=True):
+        return "untrusted_signing_key"
+    signing_key = anchored_key
     key_fingerprint = verifier.get("keyFingerprint")
     if key_fingerprint is not None and key_fingerprint != signing_key.fingerprint_sha256:
         return "untrusted_signing_key"

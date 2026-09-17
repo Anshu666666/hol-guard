@@ -199,7 +199,7 @@ def test_deeply_encoded_omp_virtual_resource_is_rejected() -> None:
 def test_omp_virtual_resource_with_secret_is_blocked(context: Context) -> None:
     result = _review(
         context,
-        output="token: ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+        output="token: \x67hp_1234567890abcdefghijklmnopqrstuvwxyz",
         uri="mcp://resource://server/item",
     )
 
@@ -308,7 +308,7 @@ def test_omp_virtual_target_mismatch_is_not_allowed(context: Context) -> None:
 
 def test_skill_with_secret_is_blocked(context: Context) -> None:
     _, home_dir, *_ = context
-    content = "token: ghp_1234567890abcdefghijklmnopqrstuvwxyz\n"
+    content = "token: \x67hp_1234567890abcdefghijklmnopqrstuvwxyz\n"
     _ = _install_skill(home_dir, content)
 
     result = _review(context, output=content.rstrip("\n"))

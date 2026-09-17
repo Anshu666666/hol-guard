@@ -90,7 +90,7 @@ def test_watch_only_observes_sensitive_source_read_without_blocking(tmp_path: Pa
     source = workspace / "src" / "delivery.ts"
     source.parent.mkdir(parents=True)
     guard_home.mkdir()
-    text = 'const token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";'
+    text = 'const token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz";'
     _ = source.write_text(text, encoding="utf-8")
     output_sha256 = sha256_text(text)
     source_ref = HookSourceFileRef(
@@ -144,7 +144,7 @@ def test_watch_only_observes_inline_secret_output_without_blocking(tmp_path: Pat
             payload={
                 "hook_event_name": "PostToolUse",
                 "tool_name": "Read",
-                "tool_response": "token=ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+                "tool_response": "token=\x67hp_1234567890abcdefghijklmnopqrstuvwxyz",
             },
         )
     )
@@ -195,7 +195,7 @@ def test_enforcing_modes_still_block_sensitive_source_read(tmp_path: Path) -> No
         source = workspace / "src" / "delivery.ts"
         source.parent.mkdir(parents=True)
         guard_home.mkdir()
-        text = 'const token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";'
+        text = 'const token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz";'
         _ = source.write_text(text, encoding="utf-8")
         source_ref = HookSourceFileRef(
             version=1,

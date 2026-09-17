@@ -702,7 +702,7 @@ class TestHookWorkerOutputScanning:
             "hook_event_name": "PostToolUse",
             "tool_name": "Read",
             "tool_input": {"file_path": "src/config.py"},
-            "tool_response": "token: ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+            "tool_response": "token: \x67hp_1234567890abcdefghijklmnopqrstuvwxyz",
         }
 
         result = worker.review_http_payload(

@@ -43,7 +43,7 @@ def policy_sync_outcomes(
             application = "fallback" if not canonical_enforcement else "unverified"
     elif resident is not None:
         application = "retained"
-    elif provided and not rejection:
+    elif provided:
         application = "rejected"
     reason = rejection.get("reason")
     if application == "fallback" and not reason:

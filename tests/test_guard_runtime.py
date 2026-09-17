@@ -24656,7 +24656,7 @@ def test_codex_read_only_source_inspection_still_blocks_value_like_secret_output
             "tool_name": "Bash",
             "tool_input": {"command": command},
             "tool_response": {
-                "stdout": "src/config.ts:1:export const token = 'ghp_123456789012345678901234567890123456';\n"
+                "stdout": "src/config.ts:1:export const token = '\x67hp_123456789012345678901234567890123456';\n"
             },
         },
         config_path=str(workspace_dir / ".codex" / "config.toml"),

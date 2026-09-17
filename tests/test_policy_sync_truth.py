@@ -16,7 +16,7 @@ from tests.test_policy_bundle_v2_runtime_admission import _generic_v2_payload, _
 
 @pytest.mark.parametrize(
     "include_bundle,value,expected",
-    [(True, None, "no_authority"), (True, {}, "no_authority"), (False, None, "no_authority")],
+    [(True, None, "rejected"), (True, {}, "rejected"), (False, None, "no_authority")],
 )
 def test_first_sync_cannot_claim_missing_authority_was_retained(
     tmp_path: Path,

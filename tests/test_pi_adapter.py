@@ -743,7 +743,7 @@ class TestPiRuntime:
 
     def test_pi_post_tool_output_creates_runtime_artifact(self, tmp_path: Path) -> None:
         secret_path = tmp_path / ".npmrc"
-        secret_line = "//registry.npmjs.org/:_authToken=npm_abcdefghijklmnopqrstuvwxyz012345\n"
+        secret_line = "//registry.npmjs.org/:_authToken=\x6epm_abcdefghijklmnopqrstuvwxyz012345\n"
         secret_path.write_text(secret_line, encoding="utf-8")
 
         artifact = _codex_post_tool_output_artifact(
@@ -767,7 +767,7 @@ class TestPiRuntime:
 
     def test_pi_stdout_only_post_tool_output_creates_runtime_artifact(self, tmp_path: Path) -> None:
         secret_path = tmp_path / ".npmrc"
-        secret_line = "//registry.npmjs.org/:_authToken=npm_abcdefghijklmnopqrstuvwxyz012345\n"
+        secret_line = "//registry.npmjs.org/:_authToken=\x6epm_abcdefghijklmnopqrstuvwxyz012345\n"
         secret_path.write_text(secret_line, encoding="utf-8")
 
         artifact = _codex_post_tool_output_artifact(

@@ -93,12 +93,13 @@ def canonical_runtime_posture(
     session: dict[str, object] = {
         "advertised_canonical_capabilities": advertised,
         "effective_canonical_capabilities": effective,
-        "canonical_policy_enforcement_enabled": enabled,
+        "canonical_policy_enforcement_enabled": lane == "canonical",
         "selected_enforcement_lane": lane,
         "canonical_rollout_percentage": canonical_policy_rollout_percentage(),
     }
     if reason is not None:
         session["canonical_incompatibility_reason"] = reason
     if enabled:
+        # This legacy capability permits first delivery before a v2 policy is resident.
         session["canonical_policy_enforcement"] = True
     return session

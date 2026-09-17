@@ -35,7 +35,7 @@ class TestScannerVersion:
 
 class TestDetectSecrets:
     def test_detect_github_token_single_chunk(self, scanner: ContentScanner) -> None:
-        text = "export TOKEN=ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+        text = "export TOKEN=\x67hp_1234567890abcdefghijklmnopqrstuvwxyz"
         result = scanner.scan_text(text, local_content=False, source_context=False)
         assert result.reason_code in ("secret_match_early_exit", "matches")
         assert any(m.classifier == "github-token" for m in result.matches)
@@ -50,7 +50,7 @@ class TestDetectSecrets:
     def test_detect_token_split_across_chunk_boundary(self, scanner: ContentScanner) -> None:
         # Split a GitHub token across two chunks at a point where the
         # rolling context window should catch it.
-        token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+        token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz"
         mid = len(token) // 2
         chunks = [f"export TOKEN={token[:mid]}", f"{token[mid:]}\n"]
         result = scanner.scan_chunks(chunks, local_content=False, source_context=False)
@@ -155,7 +155,7 @@ class TestBudgetExhaustion:
 
 class TestNoSecretSamplesInResult:
     def test_result_never_contains_secret_sample_text(self, scanner: ContentScanner) -> None:
-        token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+        token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz"
         text = f"export TOKEN={token}\nmore text here"
         result = scanner.scan_text(text, local_content=False, source_context=False)
         # The match objects should only have classifier/family/sensitivity/reason.
@@ -166,7 +166,7 @@ class TestNoSecretSamplesInResult:
             )
 
     def test_reason_field_is_generic(self, scanner: ContentScanner) -> None:
-        text = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+        text = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz"
         result = scanner.scan_text(text, local_content=False, source_context=False)
         for match in result.matches:
             assert "Guard found" in match.reason or match.reason

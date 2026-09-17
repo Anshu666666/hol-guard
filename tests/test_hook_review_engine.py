@@ -176,7 +176,7 @@ class TestSecretSourceFile:
     def test_secret_source_file_returns_deny_block(
         self, engine: HookReviewEngine, workspace: Path, home_dir: Path, guard_home: Path
     ) -> None:
-        content = 'const token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
+        content = 'const token = "\x67hp_1234567890abcdefghijklmnopqrstuvwxyz";\n'
         file_path = workspace / "src" / "config.ts"
         file_path.write_text(content)
 

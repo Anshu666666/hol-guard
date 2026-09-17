@@ -1,0 +1,295 @@
+{
+  "evidence_class": "smoke",
+  "evidence_origin": {
+    "archive_bytes": 13205963,
+    "archive_sha256": "11b1399d4bd15464a522a7aa13eb1d5d570a7085fd2395be309acfc121234374",
+    "artifact_id": 10503583745,
+    "head_sha": "d0e37011b3d0f07c56831b9b53eca4f0c9fe4d7f",
+    "job_id": 105243299147,
+    "members": [
+      {
+        "bytes": 10740,
+        "name": "native-installed-slo.json",
+        "sha256": "3b44f4375e10adba0ffb6f390c354e954eb40b9536822a830fe610aaf411293f"
+      },
+      {
+        "bytes": 527,
+        "name": "native-soak.json",
+        "sha256": "b345209e0ab9cff3b25e8ee51d0857510bdd7bc1c7fe2c5df104684d5a8163df"
+      },
+      {
+        "bytes": 3072,
+        "name": "native-installed-identity.json",
+        "sha256": "7066adad5c65067bb7391ee5e56789e70450f4f3d4e44be1b8949f5e6aaf0d5c"
+      },
+      {
+        "bytes": 863,
+        "name": "native-artifact-evidence.json",
+        "sha256": "1e067277b4002ba6643f9999db81877b80f82fdf56d4761e069c6407ef7d8953"
+      }
+    ],
+    "run_id": 35233473553
+  },
+  "installed_slo": {
+    "concurrency": {
+      "sixteen": {
+        "deadline_ms": 1000.0,
+        "errors": 0,
+        "latency": {
+          "count": 16,
+          "max_ms": 548.365,
+          "p50_ms": 520.879,
+          "p95_ms": 548.365,
+          "p99_ms": 548.365
+        },
+        "native_overloads": 0,
+        "overloaded": 0,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "native_resident": 16
+        },
+        "wave_evidence": {
+          "accounted": true,
+          "attempted": 16,
+          "bookkeeping_complete": true,
+          "completed": 16,
+          "delivered_allowed": 16,
+          "engine_bypassed": 0,
+          "engine_routes": {
+            "native_resident": 16
+          },
+          "errors": 0,
+          "explicit_overloaded": 0,
+          "failures": [],
+          "native_overloads": 0,
+          "per_request_native_route_proven": false,
+          "responses_received": 16,
+          "route_attribution": "isolated_whole_wave_counter_conservation",
+          "terminal_outcomes": 16,
+          "unclassified_responses": 0
+        }
+      },
+      "sixty_four": {
+        "bounded": true,
+        "errors": 0,
+        "fail_safe": 0,
+        "latency": {
+          "count": 64,
+          "max_ms": 718.737,
+          "p50_ms": 498.55,
+          "p95_ms": 694.748,
+          "p99_ms": 718.737
+        },
+        "latency_ceiling_ms": null,
+        "native_overloads": 0,
+        "overloaded": 11,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "engine_bypassed": 11,
+          "native_resident": 53
+        },
+        "wave_evidence": {
+          "accounted": true,
+          "attempted": 64,
+          "bookkeeping_complete": true,
+          "completed": 64,
+          "delivered_allowed": 53,
+          "engine_bypassed": 11,
+          "engine_routes": {
+            "native_resident": 53
+          },
+          "errors": 0,
+          "explicit_overloaded": 11,
+          "failures": [],
+          "native_overloads": 0,
+          "per_request_native_route_proven": false,
+          "responses_received": 64,
+          "route_attribution": "isolated_whole_wave_counter_conservation",
+          "terminal_outcomes": 64,
+          "unclassified_responses": 0
+        }
+      }
+    },
+    "corpus": {
+      "harnesses": 13,
+      "installed": {
+        "fail_safe": 0,
+        "oneshot": 0,
+        "python_semantic": 0,
+        "python_semantic_decisions": 0,
+        "resident": 21,
+        "routes": 21
+      },
+      "observations": 146,
+      "python_semantic_decisions": 0,
+      "resident_share": 1.0,
+      "routes": 21,
+      "safe_failures": 0,
+      "warm_failures": 0
+    },
+    "gates": {
+      "1m_latency": true,
+      "250k_latency": true,
+      "5m_latency": true,
+      "cold_latency": true,
+      "concurrency": true,
+      "concurrency_64_bounded": true,
+      "installed_corpus": true,
+      "python_fallback": true,
+      "readiness": true,
+      "recovery_latency": true,
+      "resident_share": true,
+      "rss": true,
+      "safe_corpus": true,
+      "warm_latency": true
+    },
+    "installed_launcher": {
+      "boundary": "INSTALLED_LAUNCHER",
+      "cases_validated": [
+        "benign",
+        "redacted"
+      ],
+      "configuration": "registered_argv",
+      "event": "PostToolUse",
+      "evidence_class": "smoke",
+      "harness": "claude-code",
+      "latency": {
+        "count": 2,
+        "max_ms": 264.08,
+        "p50_ms": 263.305,
+        "p95_ms": 264.08,
+        "p99_ms": 264.08
+      },
+      "process_startup_included": true,
+      "qualification_complete": false,
+      "remaining_routes": "not_measured",
+      "stdout_and_exit_checked": true
+    },
+    "latency": {
+      "boundary": "DAEMON_INGRESS",
+      "cold_native_oneshot": {
+        "count": 2,
+        "max_ms": 5.302,
+        "p50_ms": 5.27,
+        "p95_ms": 5.302,
+        "p99_ms": 5.302
+      },
+      "readiness": {
+        "count": 2,
+        "max_ms": 0.034,
+        "p50_ms": 0.032,
+        "p95_ms": 0.034,
+        "p99_ms": 0.034
+      },
+      "resident_recovery": {
+        "count": 2,
+        "max_ms": 152.97,
+        "p50_ms": 152.618,
+        "p95_ms": 152.97,
+        "p99_ms": 152.97
+      },
+      "size_classes": {
+        "1k": {
+          "count": 122,
+          "max_ms": 718.737,
+          "p50_ms": 365.096,
+          "p95_ms": 679.381,
+          "p99_ms": 700.516
+        },
+        "1m": {
+          "count": 8,
+          "max_ms": 35.894,
+          "p50_ms": 35.359,
+          "p95_ms": 35.894,
+          "p99_ms": 35.894
+        },
+        "250k": {
+          "count": 8,
+          "max_ms": 31.388,
+          "p50_ms": 27.318,
+          "p95_ms": 31.388,
+          "p99_ms": 31.388
+        },
+        "5m": {
+          "count": 8,
+          "max_ms": 110.859,
+          "p50_ms": 102.383,
+          "p95_ms": 110.859,
+          "p99_ms": 110.859
+        }
+      },
+      "warm_all_harnesses": {
+        "count": 42,
+        "max_ms": 44.686,
+        "p50_ms": 21.244,
+        "p95_ms": 35.372,
+        "p99_ms": 44.686
+      }
+    },
+    "passed": true,
+    "reference_review": {
+      "full_review_qualified": true,
+      "missing_scopes": [],
+      "platform_denial_cases": [],
+      "platform_denial_timing_eligible": false
+    },
+    "routes": {
+      "engine_bypassed": 11,
+      "native_resident": 135
+    },
+    "runtime": {
+      "architecture": "x86_64",
+      "build_sha": "c855bae3e83579587d229c83b597dc1cbc1d4bb6",
+      "installed_package_sha256": "7001d494c18d89bd927d9e2b8a90cb074917482041f269d50e243fa2fd6b18b0",
+      "mode": "auto",
+      "package_origin": "installed",
+      "package_record_sha256": "75d4042a25d24b1b8e3f13d0d858ed5febf1597b4f53621b5546f925477482ae",
+      "package_version": "3.0.1",
+      "protocol_version": 1,
+      "python_version": "3.12.14",
+      "reference_reader_capability": "native-source-handle-read-v1",
+      "rule_digest": "5edc0ccd5ab3b3da7f9232b56678c854c849fa6a4a2d0f2e5ad8e8ab4215043f",
+      "runtime_sha256": "75247b32a94249cf0e2d9e76e936fad37b762381301544210d0fadf521af3cf8",
+      "runtime_version": "3.0.1",
+      "system": "Linux",
+      "target": "x86_64-linux"
+    },
+    "schema": "hol-guard.native-installed-slo.v1",
+    "thresholds": {
+      "direct_cold_p95_ms": 150.0,
+      "installed_adapter_concurrent_p99_ms": 1000.0,
+      "installed_adapter_p95_ms": 1000.0,
+      "readiness_p95_ms": 400.0
+    }
+  },
+  "prior_failure_cause_proven": false,
+  "qualification_complete": false,
+  "schema": "hol-guard.linux-installed-smoke-projection.v1",
+  "soak": {
+    "daemon_process_count": 1,
+    "database_bytes": 180228096,
+    "errors": 0,
+    "health_checks": 20128,
+    "health_failures": 0,
+    "lifecycle_events": [
+      "start_requested",
+      "ready",
+      "stopped"
+    ],
+    "max_file_descriptors": 202,
+    "max_hook_latency_ms": 4500.0,
+    "max_ms": 583.38,
+    "max_threads": 71,
+    "p95_ms": 495.9,
+    "passed": true,
+    "pid_stable": true,
+    "receipts": 250000,
+    "requests": 100000,
+    "responses": 100000,
+    "rss_baseline_bytes": 612978688,
+    "rss_growth": 0.055121,
+    "rss_peak_bytes": 646766592,
+    "soak_passed": true,
+    "transient_health_failures": 0
+  }
+}

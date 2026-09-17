@@ -15,6 +15,32 @@ def workflow():
     return yaml.safe_load((ROOT / ".github/workflows/native-performance-qualification.yml").read_text())
 
 
+def test_skipped_label_and_later_push_cannot_replace_an_offered_run():
+    concurrency = workflow()["concurrency"]
+
+    def group(run: int, attempt: int, action: str) -> str:
+        values = {
+            "github.run_id": run,
+            "github.run_attempt": attempt,
+            "github.event.pull_request.number": 2970,
+            "github.ref": "refs/pull/2970/merge",
+            "github.event.action": action,
+        }
+
+        def expression(match: re.Match[str]) -> str:
+            alternatives = [part.strip() for part in match.group(1).split("||")]
+            return str(next(values[part] for part in alternatives if values[part]))
+
+        return re.sub(r"\$\{\{(.*?)\}\}", expression, concurrency["group"])
+
+    offered = group(100, 1, "synchronize")
+    ignored_label = group(101, 1, "labeled")
+    later_push = group(102, 1, "synchronize")
+    retry = group(100, 2, "synchronize")
+    assert len({offered, ignored_label, later_push, retry}) == 4
+    assert concurrency["cancel-in-progress"] is False
+
+
 def test_fixed_matrices_preserve_all_five_global_indices_and_smoke_is_separate():
     full = matrices("qualification", "a" * 40)
     assert len(full["pairs"]["include"]) == 20 and full["runs"] == 5
@@ -54,6 +80,17 @@ def test_source_selection_is_immutable_and_full_pr_run_requires_same_repo_label(
     )
     assert "'qualification' || 'smoke'" in mode
     for name, job in value["jobs"].items():
+        if "uses" in job:
+            assert job["uses"] == "./.github/workflows/native-surface-tail-pair.yml"
+            assert job["with"]["candidate-sha"] == "${{ needs.plan.outputs.sha }}"
+            reusable = yaml.safe_load((ROOT / job["uses"]).read_text())
+            for called in reusable["jobs"].values():
+                checkouts = [step for step in called["steps"] if "actions/checkout@" in step.get("uses", "")]
+                assert checkouts
+                for checkout in checkouts:
+                    assert checkout["with"]["persist-credentials"] is False
+                    assert checkout["with"]["ref"] == "${{ inputs.candidate-sha }}"
+            continue
         for step in job["steps"]:
             if "actions/checkout@" in step.get("uses", ""):
                 assert step["with"]["persist-credentials"] is False

@@ -91,6 +91,7 @@ class CorpusAttempt:
     http_status_observation: str = "not_returned"
     response: Mapping[str, object] | None = None
     native_result: Mapping[str, object] | None = None
+    native_bridge: Mapping[str, object] | None = None
 
 
 class CorpusEvidence(SurfaceEvidence):
@@ -161,6 +162,7 @@ class CorpusEvidence(SurfaceEvidence):
                     "route_after": dict(observed.route_after),
                     "response": semantic_evidence(observed.response),
                     "native_result": semantic_evidence(observed.native_result),
+                    "native_bridge": observed.native_bridge,
                     "failure": failure,
                 }
             )

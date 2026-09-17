@@ -82,7 +82,7 @@ jobs:
           .venv/bin/python -m pytest -q -p tests.package_offline
           tests/test_package_benchmark_matrix.py tests/test_package_benchmark_controller.py
           tests/test_package_rebaseline_ci.py tests/test_package_benchmark_phases.py
-          tests/test_package_benchmark_registry.py
+          tests/test_package_benchmark_registry.py tests/test_package_benchmark_profile_origins.py
       - name: Validate every supported format and both real source routes
         id: preflight
         if: matrix.plan == 'format-preflight'

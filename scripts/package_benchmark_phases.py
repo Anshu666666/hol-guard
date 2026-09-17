@@ -8,6 +8,8 @@ from pathlib import Path
 from types import CodeType
 from typing import Any
 
+from scripts.package_benchmark_profile_origins import private_top, summarize_origins, validate_origins
+
 # Exact module/qualname pairs prevent ambiguous same-named from_dict methods.
 # Inclusive rows overlap; only exclusive rows form a disjoint partition.
 FUNCTIONS = {
@@ -69,12 +71,21 @@ def new_profile() -> cProfile.Profile:
     return cProfile.Profile(timer=time.thread_time_ns, timeunit=1e-9)
 
 
-def phase_report(profile: cProfile.Profile, root: Path, *, wall_ns: int, process_ns: int) -> dict[str, Any]:
+def phase_report(
+    profile: cProfile.Profile,
+    root: Path,
+    *,
+    wall_ns: int,
+    process_ns: int,
+    private_details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     rows = {label: dict.fromkeys(_FIELDS, 0) for label in LABELS}
     selected = {value: label for label, value in FUNCTIONS.items()}
     production = (root / "src/codex_plugin_scanner/guard").resolve()
     total = 0
-    for entry in profile.getstats():
+    entries = list(profile.getstats())
+    unselected = []
+    for entry in entries:
         exclusive = round(entry.inlinetime * 1e9)
         total += exclusive
         label = None
@@ -82,7 +93,7 @@ def phase_report(profile: cProfile.Profile, root: Path, *, wall_ns: int, process
             try:
                 module = ".".join(Path(entry.code.co_filename).resolve().relative_to(production).with_suffix("").parts)
             except ValueError:
-                continue
+                module = ""
             label = selected.get((module, getattr(entry.code, "co_qualname", entry.code.co_name)))
         elif entry.code in _SQLITE:
             label = "sqlite_calls"
@@ -94,9 +105,13 @@ def phase_report(profile: cProfile.Profile, root: Path, *, wall_ns: int, process
             row["recursive_calls"] += entry.reccallcount
             row["inclusive_thread_cpu_ns"] += round(entry.totaltime * 1e9)
             row["exclusive_thread_cpu_ns"] += exclusive
+        else:
+            unselected.append(entry)
+    if private_details is not None:
+        private_details.update(private_top(unselected, root))
     selected_total = sum(row["exclusive_thread_cpu_ns"] for row in rows.values())
     result = {
-        "schema": "hol-guard.package-phases.v1",
+        "schema": "hol-guard.package-phases.v2",
         "clock": "calling_thread_cpu",
         "inclusive_relationship": "nested_overlapping_not_additive",
         "residual_scope": "unattributed_other_threads_or_instrumentation",
@@ -108,6 +123,7 @@ def phase_report(profile: cProfile.Profile, root: Path, *, wall_ns: int, process
         "unattributed_profile_thread_cpu_ns": total - selected_total,
         "process_minus_profile_cpu_ns": process_ns - total,
         "functions": rows,
+        "origins": summarize_origins(entries, root),
     }
     validate_phases(result)
     return result
@@ -121,11 +137,12 @@ def validate_phases(value: object) -> None:
         "residual_scope",
         "headline_eligible",
         "functions",
+        "origins",
         *_TOTALS,
     }:
         raise ValueError("package_phase_schema_invalid")
     if (
-        value["schema"] != "hol-guard.package-phases.v1"
+        value["schema"] != "hol-guard.package-phases.v2"
         or value["clock"] != "calling_thread_cpu"
         or value["inclusive_relationship"] != "nested_overlapping_not_additive"
         or value["residual_scope"] != "unattributed_other_threads_or_instrumentation"
@@ -138,6 +155,7 @@ def validate_phases(value: object) -> None:
             raise ValueError("package_phase_total_invalid")
         if key != "process_minus_profile_cpu_ns" and number < 0:
             raise ValueError("package_phase_total_invalid")
+    validate_origins(value["origins"], total=value["profiled_exclusive_thread_cpu_ns"])
     rows = value["functions"]
     if not isinstance(rows, dict) or set(rows) != set(LABELS):
         raise ValueError("package_phase_functions_invalid")

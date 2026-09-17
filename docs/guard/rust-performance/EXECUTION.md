@@ -1,6 +1,6 @@
 # Rust performance execution for release/3.2
 
-Current implementation and validation are recorded in [RELEASE_REVIEW.md](RELEASE_REVIEW.md), with **74 DONE / 30 OPEN / 37 BLOCKED / 3 DEFERRED** in the [execution ledger](EXECUTION_LEDGER.md). The substantive source checkpoint is `599509be545b9992076d7f9f71dd19ecfd34bbc2`, with later validation-only follow-up `a86ee9736`. The last measured isolated PR #2970 publication is `24ba2d130`, with 32 successful and seven failed workflows. [SECOND_CI_EVIDENCE.md](SECOND_CI_EVIDENCE.md) retains that exact checkpoint; newer source publication, final installed qualification and release remain incomplete. The original [PRD](PRD.md) and [TODO](TODO.md) are unchanged.
+Current implementation and validation are recorded in [RELEASE_REVIEW.md](RELEASE_REVIEW.md), with **77 DONE / 30 OPEN / 34 BLOCKED / 3 DEFERRED** in the [execution ledger](EXECUTION_LEDGER.md). The reviewed source checkpoint is `6c7c3097d566da35812d087d1dadae1fba8823de`, tree `87828bda11b356fa9ba982f3d47fffc96a05451c`. The last measured isolated PR #2970 publication is `d0e37011b`, with 36 successful, five failed and two skipped workflow instances. [THIRD_CI_EVIDENCE.md](THIRD_CI_EVIDENCE.md) retains that exact checkpoint. Later source corrections, final installed qualification, independent review and release remain incomplete. The original [PRD](PRD.md) and [TODO](TODO.md) are unchanged.
 
 ## Historical integration and evidence record
 

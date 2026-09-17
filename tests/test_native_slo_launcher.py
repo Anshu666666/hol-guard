@@ -70,5 +70,9 @@ def test_launcher_times_registered_process_and_checks_route_and_exit(
             "routes": {"native_resident": 1, "native_fail_safe": 1},
         },
     )
-    with pytest.raises(RuntimeError, match="native resident authority"):
+    with pytest.raises(RuntimeError, match="native resident authority") as failure:
         native_slo_launcher._observe_launcher(session, argv, sample=0, case="benign")
+    assert failure.value.detail["routes_before"]["native_resident"] == 1
+    assert failure.value.detail["routes_after"]["native_fail_safe"] == 1
+    assert failure.value.detail["response_fields"] == ["hookSpecificOutput", "policy_action"]
+    assert len(calls) == 3  # Diagnostic observes the failed attempt; it never retries it.

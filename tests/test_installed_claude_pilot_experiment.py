@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -20,9 +22,50 @@ from scripts.ci import measure_installed_claude_pilot as installed
 from scripts.ci import native_claude_pilot_evidence as evidence
 from scripts.ci import native_claude_pilot_measure as measurement
 from scripts.ci import native_claude_pilot_registration as registration
-from scripts.native_slo_contract import assert_privacy_safe
+from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment, proof_environment_violations
 from scripts.native_slo_numeric_journal import recover_numeric_journal
 from scripts.native_slo_priority_launchers import RegisteredLauncher
+
+
+@contextmanager
+def _preserved_experiment_environment():
+    """In-process worker tests must not change the enclosing pytest process."""
+
+    names = (*proof_environment_violations(), "PYTHONHOME")
+    saved = {name: os.environ.get(name) for name in names}
+    try:
+        yield
+    finally:
+        for name in {*proof_environment_violations(), *saved}:
+            value = saved.get(name)
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
+@pytest.fixture(autouse=True)
+def _restore_experiment_proof_environment():
+    with _preserved_experiment_environment():
+        yield
+
+
+def test_in_process_experiment_restores_explicit_and_prefixed_test_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GUARD_PYTEST_DURATION_OUTPUT", "enclosing-report.json")
+    monkeypatch.setenv("GUARD_PYTEST_UNDER_COVERAGE", "1")
+    monkeypatch.setenv("PYTHONHOME", "enclosing-python-home")
+    with _preserved_experiment_environment():
+        clear_proof_environment()
+        os.environ.pop("PYTHONHOME")
+        assert "GUARD_PYTEST_DURATION_OUTPUT" not in os.environ
+        assert "GUARD_PYTEST_UNDER_COVERAGE" not in os.environ
+        os.environ["GUARD_PYTEST_LATE_FIXTURE_OVERRIDE"] = "created-inside"
+    assert os.environ["GUARD_PYTEST_DURATION_OUTPUT"] == "enclosing-report.json"
+    assert os.environ["GUARD_PYTEST_UNDER_COVERAGE"] == "1"
+    assert os.environ["PYTHONHOME"] == "enclosing-python-home"
+    assert "GUARD_PYTEST_LATE_FIXTURE_OVERRIDE" not in os.environ
 
 
 @pytest.fixture

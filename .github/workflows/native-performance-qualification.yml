@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
     paths:
       - '.github/workflows/native-performance-qualification.yml'
+      - '.github/workflows/native-surface-tail-pair.yml'
       - 'scripts/*native*.py'
       - 'scripts/native_slo*.py'
       - 'scripts/ci/*native*.py'
@@ -32,6 +33,11 @@ on:
         type: choice
         options: [smoke, qualification]
         default: qualification
+      nonpriority_route:
+        description: 'Opt-in nonpriority route ID, all for the 320-job full plan, or none. Smoke requires one route.'
+        required: true
+        type: string
+        default: none
   schedule:
     - cron: '17 3 * * 0'
 
@@ -39,15 +45,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: native-performance-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A skipped label event or a later source push must not cancel retained offers.
+  group: native-performance-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
 
 jobs:
   plan:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.action != 'labeled' ||
-      github.event.label.name == 'rust-performance-qualification'
+      github.event.label.name == 'rust-performance-qualification' ||
+      github.event.label.name == 'rust-nonpriority-tails'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -56,6 +64,12 @@ jobs:
       runs: ${{ steps.plan.outputs.runs }}
       platforms: ${{ steps.plan.outputs.platforms }}
       pairs: ${{ steps.plan.outputs.pairs }}
+      tails_enabled: ${{ steps.tails.outputs.enabled }}
+      tails_selection: ${{ steps.tails.outputs.selection }}
+      tails_first_enabled: ${{ steps.tails.outputs.first_enabled }}
+      tails_second_enabled: ${{ steps.tails.outputs.second_enabled }}
+      tails_first: ${{ steps.tails.outputs.first }}
+      tails_second: ${{ steps.tails.outputs.second }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
@@ -74,6 +88,19 @@ jobs:
           candidate_sha="$(git -C candidate-src rev-parse --verify HEAD)"
           python candidate-src/scripts/native_slo_pair_plan.py --mode "$QUALIFICATION_MODE" \
             --candidate-sha "$candidate_sha" --output "$GITHUB_OUTPUT"
+      - id: tails
+        env:
+          TAIL_MODE: ${{ steps.plan.outputs.mode }}
+          TAIL_SELECTION: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository &&
+                contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification') &&
+                contains(github.event.pull_request.labels.*.name, 'rust-nonpriority-tails') && 'all' ||
+                github.event_name == 'workflow_dispatch' && inputs.nonpriority_route || 'none' }}
+        shell: bash
+        run: |
+          python candidate-src/scripts/native_slo_surface_tail_plan.py --mode "$TAIL_MODE" \
+            --selection "$TAIL_SELECTION" --output "$GITHUB_OUTPUT"
 
   build:
     needs: plan
@@ -394,6 +421,91 @@ jobs:
             --action retention --output transition-evidence \
             --source-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
+
+  nonpriority-tails-first:
+    needs: [plan, build]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_first_enabled == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.tails_first) }}
+    uses: ./.github/workflows/native-surface-tail-pair.yml
+    with:
+      runner: ${{ matrix.runner }}
+      target: ${{ matrix.target }}
+      candidate-sha: ${{ needs.plan.outputs.sha }}
+      route: ${{ matrix.route }}
+      mode: ${{ needs.plan.outputs.mode }}
+      pair-index: ${{ matrix.pair_index }}
+
+  nonpriority-tails-second:
+    needs: [plan, build]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_second_enabled == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.tails_second) }}
+    uses: ./.github/workflows/native-surface-tail-pair.yml
+    with:
+      runner: ${{ matrix.runner }}
+      target: ${{ matrix.target }}
+      candidate-sha: ${{ needs.plan.outputs.sha }}
+      route: ${{ matrix.route }}
+      mode: ${{ needs.plan.outputs.mode }}
+      pair-index: ${{ matrix.pair_index }}
+
+  nonpriority-tail-aggregation:
+    needs: [plan, build, nonpriority-tails-first, nonpriority-tails-second]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_enabled == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - name: Fetch every expected route pair without merging artifact roots
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: surface-tail-${{ matrix.target }}-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tail-pairs
+          merge-multiple: false
+      - name: Validate companion identities, archives, counts and scoped tails
+        timeout-minutes: 30
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/tail-aggregation-environment
+          TAIL_TARGET: ${{ matrix.target }}
+          TAIL_SHA: ${{ needs.plan.outputs.sha }}
+          TAIL_SELECTION: ${{ needs.plan.outputs.tails_selection }}
+          TAIL_MODE: ${{ needs.plan.outputs.mode }}
+        run: |
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_surface_tail_aggregate.py \
+            --pairs tail-pairs --bundle wheel-bundle --output tail-summary --target "$TAIL_TARGET" \
+            --candidate-sha "$TAIL_SHA" --selection "$TAIL_SELECTION" --mode "$TAIL_MODE" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Retain separate per-registration tail conclusions
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: nonpriority-tail-summary-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tail-summary/*.json
+          if-no-files-found: error
+          retention-days: 30
 
   aggregate:
     needs: [plan, build, pairs]

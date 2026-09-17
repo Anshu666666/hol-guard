@@ -230,15 +230,21 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         finally:
             if profile is not None:
                 profile.disable()
+                private_details: dict[str, Any] = {}
                 report["phases"] = phase_report(
                     profile,
                     root,
                     wall_ns=time.perf_counter_ns() - phase_wall,
                     process_ns=time.process_time_ns() - phase_cpu,
+                    private_details=private_details,
                 )
                 # A subsequent route/oracle exception keeps the observed phase
                 # record privately, but cannot become a completed observation.
-                write_private(args.journal, {**report, "status": "attribution_finished"}, append=True)
+                write_private(
+                    args.journal,
+                    {**report, "status": "attribution_finished", "private_profile_residual": private_details},
+                    append=True,
+                )
         wall_ended = time.perf_counter_ns() if args.measurement == "timing" else None
         cpu_ended = _cpu() if args.measurement == "timing" else None
         if args.measurement == "timing":

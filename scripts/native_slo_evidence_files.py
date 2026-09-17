@@ -81,7 +81,9 @@ def directory(path: Path) -> Iterator[tuple[Path, int | None]]:
 
 def _stat(parent: Path, descriptor: int | None, name: str) -> os.stat_result:
     if descriptor is None:
-        return (parent / name).lstat()
+        from scripts.native_slo_evidence_windows import metadata_handle
+
+        return metadata_handle(parent / name)
     return os.stat(name, dir_fd=descriptor, follow_symlinks=False)
 
 
@@ -133,7 +135,9 @@ def _inventory(parent: Path, descriptor: int | None) -> dict[str, tuple[int, ...
         for entry in entries:
             require(len(result) < MAX_FILES, "archive_bounds_exceeded")
             require(valid_name(entry.name) and entry.name.casefold() not in folded, "archive_input_name_invalid")
-            metadata = entry.stat(follow_symlinks=False)
+            # Windows DirEntry.stat has zero identity/link fields. Use the
+            # same fresh handle metadata domain as the later bounded read.
+            metadata = _stat(parent, descriptor, entry.name)
             _file(metadata, MAX_FILE_BYTES)
             result[entry.name] = fingerprint(metadata)
             folded.add(entry.name.casefold())

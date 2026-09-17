@@ -1,0 +1,116 @@
+name: Nonpriority installed route pair
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      candidate-sha:
+        required: true
+        type: string
+      route:
+        required: true
+        type: string
+      mode:
+        required: true
+        type: string
+      pair-index:
+        required: true
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  pair:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        timeout-minutes: 5
+        with:
+          path: candidate-src
+          ref: ${{ inputs.candidate-sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        timeout-minutes: 5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        timeout-minutes: 5
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        timeout-minutes: 5
+        with:
+          name: wheels-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - name: Install the same immutable wheel pair outside the checkout
+        timeout-minutes: 20
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/tail-controller-environment
+          TAIL_TARGET: ${{ inputs.target }}
+          TAIL_SHA: ${{ inputs.candidate-sha }}
+        run: |
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action install \
+            --bundle wheel-bundle --environments "$RUNNER_TEMP/tail-environments" \
+            --target "$TAIL_TARGET" --candidate-sha "$TAIL_SHA"
+      - name: Collect one exact registration and paired index
+        timeout-minutes: 125
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/tail-controller-environment
+          TAIL_TARGET: ${{ inputs.target }}
+          TAIL_SHA: ${{ inputs.candidate-sha }}
+          TAIL_ROUTE: ${{ inputs.route }}
+          TAIL_MODE: ${{ inputs.mode }}
+          TAIL_INDEX: ${{ inputs.pair-index }}
+        run: |
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_surface_tail_pair.py \
+            --action conditioned-collect --bundle wheel-bundle --environments "$RUNNER_TEMP/tail-environments" \
+            --target "$TAIL_TARGET" --candidate-sha "$TAIL_SHA" --route "$TAIL_ROUTE" \
+            --mode "$TAIL_MODE" --pair-index "$TAIL_INDEX" --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --output tail-evidence
+      - name: Encrypt complete and partial companion evidence
+        if: always()
+        timeout-minutes: 15
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/tail-archive-environment
+          TAIL_TARGET: ${{ inputs.target }}
+          TAIL_SHA: ${{ inputs.candidate-sha }}
+          TAIL_ROUTE: ${{ inputs.route }}
+          TAIL_MODE: ${{ inputs.mode }}
+          TAIL_INDEX: ${{ inputs.pair-index }}
+        run: |
+          receipt="$GITHUB_WORKSPACE/tail-evidence/archive-receipt.json"
+          if ! (uv sync --frozen --no-dev --project candidate-src && \
+            uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_surface_tail_pair.py \
+              --action archive --bundle wheel-bundle --target "$TAIL_TARGET" --candidate-sha "$TAIL_SHA" \
+              --route "$TAIL_ROUTE" --mode "$TAIL_MODE" --pair-index "$TAIL_INDEX" \
+              --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --output tail-evidence \
+              --public-key candidate-src/docs/guard/rust-performance/qualification-recipient.pem); then
+            if [ ! -f "$receipt" ]; then
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py failure-receipt --receipt "$receipt" || true
+            fi
+            exit 1
+          fi
+      - name: Retain bounded public summaries and encrypted observations
+        if: always()
+        timeout-minutes: 10
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: surface-tail-${{ inputs.target }}-${{ inputs.route }}-${{ inputs.pair-index }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            tail-evidence/aggregate/*.json
+            tail-evidence/archive-receipt.json
+            tail-evidence/encrypted/*.hge
+          if-no-files-found: error
+          retention-days: 30

@@ -20,6 +20,7 @@ from scripts.native_benchmark_oracle import synthetic_payload
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import is_allowed, route_counts, route_delta
 from scripts.native_slo_contract import clear_proof_environment, summarize
+from scripts.native_slo_launcher_failure import LauncherAuthorityFailureError
 from scripts.native_slo_session import AdapterSession
 
 
@@ -76,8 +77,18 @@ def _observe_launcher(session: AdapterSession, argv: tuple[str, ...], *, sample:
     if not isinstance(response, Mapping):
         raise RuntimeError("installed launcher did not return a harness object")
     after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
-    if route_delta(before, after) != "native_resident":
-        raise RuntimeError("installed launcher did not use native resident authority")
+    route = route_delta(before, after)
+    if route != "native_resident":
+        raise LauncherAuthorityFailureError(
+            before=before,
+            after=after,
+            route=route,
+            response=response,
+            completed=completed,
+            sample=sample,
+            case=case,
+            elapsed_ms=elapsed_ms,
+        )
     if case == "benign":
         if not is_allowed("PostToolUse", response):
             raise RuntimeError("installed launcher benign fixture failed")

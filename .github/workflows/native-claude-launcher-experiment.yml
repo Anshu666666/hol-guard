@@ -11,6 +11,8 @@ on:
       - 'scripts/native_slo*.py'
       - 'src/codex_plugin_scanner/guard/**'
       - 'tests/test_installed_claude_pilot_experiment.py'
+      - 'tests/test_claude_pilot_build_interpreter.py'
+      - 'tests/test_native_slo_evidence_windows_metadata.py'
       - 'rust/**'
       - 'pyproject.toml'
       - 'uv.lock'
@@ -82,7 +84,10 @@ jobs:
       - name: Validate experiment contracts
         env:
           UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/claude-pilot-environment
-        run: uv run --no-sync pytest tests/test_installed_claude_pilot_experiment.py -q
+        run: >-
+          uv run --no-sync pytest tests/test_installed_claude_pilot_experiment.py
+          tests/test_claude_pilot_build_interpreter.py
+          tests/test_native_slo_evidence_windows_metadata.py -q
       - name: Install Linux target linker
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools

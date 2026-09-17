@@ -107,3 +107,53 @@ locate a candidate kernel after successful CI observations; it does not prove
 that Rust improves the optimized Python route by 30%, qualify installed startup
 or tails, or authorize native activation. The prior measured package medians
 remain bound to their original source and workload.
+
+
+## Residual origin projection after the d0e checkpoint
+
+The first completed phase job at candidate `d0e37011` measured approximately
+82–86% of exclusive calling-thread CPU outside the selected function rows.
+That historical `package-phases.v1` evidence retains only the finite projection;
+full cProfile statistics cannot be reconstructed from its encrypted journal.
+The follow-up `package-phases.v2` collector changes only post-profile projection
+and private evidence. It retains the same six attribution invocations, two
+validation invocations, separate registry pair, original route interval,
+30-second worker limit and ten-minute phase-job cap. There is no added local
+performance matrix, no new production code and no native-selection claim.
+
+Every cProfile entry contributes its exclusive CPU exactly once to a closed
+function-origin partition: Guard Python, Pydantic Python, identified
+Pydantic-core C methods, JSON Python/C, hash Python/C, byte/text C methods,
+SQLite Python/C, regex Python/C, other standard-library Python, other installed
+third-party Python, other Python, or other C. Category counts, recursive counts,
+function counts and exclusive CPU are numeric public fields. Their exclusive
+sum must equal total profiled exclusive CPU. Exact installed module roots and
+exact C-method descriptions classify known entries; ambiguous C leaf names
+remain `other_c`. Unknown names, paths and additional public fields are rejected.
+
+These categories identify the profiled function's origin, not whether every
+instruction inside it is implemented in Python or Rust/C. An opaque native call
+that cProfile does not expose separately remains charged to its Python caller.
+Existing overlapping inclusive phase rows are retained separately. Neither
+origin totals nor those inclusive rows can be treated as a formal native-benefit
+upper bound, and process-minus-profile CPU keeps its existing distinct scope.
+
+After the profile stops, the existing private `attribution_finished` journal
+record additionally retains at most 50 unselected functions ranked by exclusive
+CPU. Each record has a relative module/qualified-function identity or C-method
+identity, bounded to 256 characters, its full identity hash, fixed origin,
+counts and exclusive CPU. Unlocated and generated source paths are represented
+by hashes. No arguments, locals, globals, callers or request payloads are added.
+The record reports its eligible and omitted counts; it is not a complete pstats
+dump. These function identities stay only in the existing encrypted journal,
+including exceptional-route observations, and are absent from final worker and
+public aggregate fields. Existing per-file/total archive limits still apply.
+The new collector module is covered by the existing package harness hash and
+workflow path trigger; its synthetic accounting/privacy tests run in the same
+correctness step.
+
+The next isolated CI observation can therefore distinguish modeled validation,
+JSON/identity/byte work and storage from unresolved entries without broadening
+the workload. A concrete native candidate still requires the original optimized
+Python versus native route comparison and the PRD benefit threshold. No result
+from this new projection is assumed until that CI artifact exists.

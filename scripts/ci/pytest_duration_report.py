@@ -30,6 +30,7 @@ class _Config(Protocol):
 
 
 _DURATIONS: dict[str, float] = {}
+_output_path: Path | None = None
 
 
 def load_duration_report(path: Path) -> dict[str, float]:
@@ -46,21 +47,24 @@ def pytest_runtest_logreport(report: _Report) -> None:
 
 
 def pytest_sessionstart() -> None:
-    """Prevent stale in-process values when pytest is invoked repeatedly."""
+    """Bind the invocation's report obligation before tests can change state."""
 
+    global _output_path
     _DURATIONS.clear()
+    output_value = os.environ.get(OUTPUT_ENV)
+    # Installed-proof tests deliberately clear environment overrides. A test
+    # must not disable this invocation's telemetry or redirect its destination.
+    _output_path = Path(output_value).absolute() if output_value else None
 
 
 def pytest_sessionfinish(session: object, exitstatus: int) -> None:
     """Write the shard artifact only when CI requested a destination."""
 
     _ = session, exitstatus
-    output_value = os.environ.get(OUTPUT_ENV)
-    if not output_value:
+    if _output_path is None:
         return
-    output = Path(output_value)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "node_durations_seconds": dict(sorted(_DURATIONS.items())),
     }
-    output.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    _ = _output_path.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")

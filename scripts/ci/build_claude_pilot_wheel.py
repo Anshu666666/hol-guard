@@ -22,16 +22,38 @@ def _run(argv: list[str], *, environment: dict[str, str] | None = None) -> str:
     return result.stdout.strip()
 
 
-def build(*, target: str, platform_tag: str, destination: Path) -> Path:
+def _prepare_build_interpreter() -> Path:
     prefix = Path(sys.prefix).resolve(strict=True)
     if prefix.is_relative_to(_ROOT) or not (prefix / "pyvenv.cfg").is_file():
         raise ValueError("claude_pilot_build_requires_external_environment")
-    prepare_private_interpreter(Path(sys.executable).absolute(), environment_root=prefix)
+    python = prefix / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    selected = Path(sys.executable).absolute()
+    aliases = {
+        python.name,
+        f"python{sys.version_info.major}",
+        f"python{sys.version_info.major}.{sys.version_info.minor}",
+    }
+    if (
+        selected.parent != python.parent
+        or selected.name not in aliases
+        or selected.resolve(strict=True) != python.resolve(strict=True)
+    ):
+        raise ValueError("claude_pilot_build_interpreter_mismatch")
+    # uv can invoke bin/python3. The helper deliberately owns only bin/python;
+    # the selected alias must resolve through that exact private executable.
+    prepare_private_interpreter(python, environment_root=prefix)
+    if selected.resolve(strict=True) != python.resolve(strict=True):
+        raise ValueError("claude_pilot_build_interpreter_alias_detached")
+    return python
+
+
+def build(*, target: str, platform_tag: str, destination: Path) -> Path:
+    python = str(_prepare_build_interpreter())
     destination = destination.resolve()
     destination.mkdir(mode=0o700, parents=True, exist_ok=False)
-    version = _run([sys.executable, "scripts/sync_repo_version.py", "--check"]).splitlines()[-1]
+    version = _run([python, "scripts/sync_repo_version.py", "--check"]).splitlines()[-1]
     build_sha = _run(["git", "rev-parse", "HEAD"]).splitlines()[-1]
-    _run([sys.executable, "-m", "build", "--wheel", "--outdir", str(destination / "pure")])
+    _run([python, "-m", "build", "--wheel", "--outdir", str(destination / "pure")])
     environment = dict(os.environ)
     environment.update(HOL_GUARD_BUILD_SHA=build_sha, HOL_GUARD_PACKAGE_VERSION=version)
     _run(
@@ -65,7 +87,7 @@ def build(*, target: str, platform_tag: str, destination: Path) -> Path:
     _run([str(runtime), "self-test", "--json"])
     _run(
         [
-            sys.executable,
+            python,
             "scripts/build_native_hol_guard_wheel.py",
             "--wheel",
             str(destination / "pure" / f"hol_guard-{version}-py3-none-any.whl"),
@@ -88,8 +110,8 @@ def build(*, target: str, platform_tag: str, destination: Path) -> Path:
     wheels = tuple((destination / "native").glob("*.whl"))
     if len(wheels) != 1:
         raise ValueError("claude_pilot_build_wheel_count")
-    _run(["uv", "pip", "uninstall", "--python", sys.executable, "hol-guard"])
-    _run(["uv", "pip", "install", "--python", sys.executable, "--no-deps", "--force-reinstall", str(wheels[0])])
+    _run(["uv", "pip", "uninstall", "--python", python, "hol-guard"])
+    _run(["uv", "pip", "install", "--python", python, "--no-deps", "--force-reinstall", str(wheels[0])])
     return wheels[0]
 
 

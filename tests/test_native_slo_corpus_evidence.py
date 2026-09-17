@@ -38,6 +38,12 @@ def _case() -> QualificationCase:
 
 def test_failed_real_projection_retains_actual_observation_before_rethrow(tmp_path: Path) -> None:
     path = tmp_path / "evidence.jsonl"
+    bridge = {
+        "schema": "hol-guard.native-corpus-bridge-witness.v1",
+        "headline_timing_eligible": False,
+        "observed_calls_capped_at_two": 1,
+        "observations": [{"client_failure_after": "native_client_timed_out", "deadline_exhausted_after": True}],
+    }
     state = SimpleNamespace(metrics=SimpleNamespace(snapshot=lambda: {"routes": {}}))
     session = cast(
         DaemonFixture,
@@ -54,6 +60,7 @@ def test_failed_real_projection_retains_actual_observation_before_rethrow(tmp_pa
             control=lambda *_: {
                 "setup": {"isolated_store": True, "effective_policy_allow": True, "policy_ack_current": True},
                 "native_result": None,
+                "native_bridge": bridge,
             },
         ),
     )
@@ -64,6 +71,7 @@ def test_failed_real_projection_retains_actual_observation_before_rethrow(tmp_pa
         runner._observe_case(session, _case(), journal)
     assert isinstance(failed.value.__cause__, AssertionError)
     assert failed.value.detail["observed_semantics"]["delivered"]["policy_action"] == "block"
+    assert failed.value.detail["native_bridge"] == bridge
     raw = path.read_text()
     assert "private synthetic output" not in raw and "/private/context" not in raw
     records = [json.loads(line) for line in raw.splitlines()]
@@ -74,6 +82,7 @@ def test_failed_real_projection_retains_actual_observation_before_rethrow(tmp_pa
     assert last["http_status"] is None and last["route"] == "engine_bypassed"
     assert last["http_status_observation"] == "unavailable_in_normalized_adapter_api"
     assert last["stage"] == "witness"
+    assert last["native_bridge"] == bridge and last["failure"]["native_bridge"] == bridge
     assert last["failure"]["reason"] == "qualification_fixture.native_qualification_mismatch"
     if os.name != "nt":
         assert path.stat().st_mode & 0o777 == 0o600

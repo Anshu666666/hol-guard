@@ -57,6 +57,51 @@ def _descriptor(handle: Any, flags: int) -> int:
     return msvcrt.open_osfhandle(value, flags | os.O_BINARY)
 
 
+def metadata_handle(path: Path) -> os.stat_result:
+    """Read fresh metadata in the descriptor domain used by bounded reads.
+
+    CPython 3.12 lstat substitutes creation time for st_ctime, whereas fstat
+    preserves the Windows change time. Never compare those domains or discard
+    change time to make them agree. DirEntry.stat also omits file identity.
+    This no-reparse, attribute-only handle uses exactly the fstat domain,
+    including full file/volume identity, links and change/write timestamps.
+    The enclosing retained-directory context protects the path ancestry.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    api = _api()
+    kernel = api._windows_dll("kernel32")
+    create = kernel.CreateFileW
+    create.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    create.restype = wintypes.HANDLE
+    # Metadata only; permit an already-open journal writer. Reparse points
+    # are opened themselves and then rejected, never followed.
+    handle = create(str(path), 0x80, 0x7, None, 3, 0x02200000, None)
+    require(handle not in (None, ctypes.c_void_p(-1).value), "archive_file_invalid")
+    transferred = False
+    try:
+        descriptor = _descriptor(handle, os.O_RDONLY)
+        transferred = True
+        try:
+            metadata = os.fstat(descriptor)
+            require(not getattr(metadata, "st_file_attributes", 0) & 0x400, "archive_file_invalid")
+            return metadata
+        finally:
+            os.close(descriptor)
+    finally:
+        if not transferred:
+            api._windows_close_handle(kernel, handle)
+
+
 def write_private_file(path: Path, content: bytes) -> os.stat_result:
     api = _api()
     with api._windows_private_descriptor(False) as (_, security, _, owner):

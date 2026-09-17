@@ -107,6 +107,10 @@ def _run_registered(
         environment.pop("WAYLAND_DISPLAY", None)
         environment["BROWSER"] = shlex.join((sys.executable, "-I", "-c", "pass", "%s"))
     payload = dict(case.payload)
+    # Global Codex registration carries no workspace query. A real host sends
+    # cwd in its hook payload; the child's process cwd is not serialized by the
+    # bridge. Preserve any deliberately supplied conflict/invalid-cwd case.
+    payload.setdefault("cwd", str(session.workspace))
     payload["tool_use_id"] = "installed-corpus-" + hashlib.sha256(case.case_id.encode()).hexdigest()[:24]
     encoded = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
     started = time.perf_counter()

@@ -105,6 +105,56 @@ def _launcher(registrations: tuple[RegisteredLauncher, ...], harness: str, event
     return next(item for item in registrations if item.harness == harness and item.event == event)
 
 
+@pytest.mark.parametrize("harness", ["claude-code", "codex"])
+@pytest.mark.parametrize("explicit_cwd", [False, True])
+def test_registered_contract_payload_carries_host_workspace_without_rewriting_explicit_context(
+    session: LauncherSession,
+    registrations: tuple[RegisteredLauncher, ...],
+    monkeypatch: pytest.MonkeyPatch,
+    harness: str,
+    explicit_cwd: bool,
+) -> None:
+    from urllib.parse import parse_qs
+
+    from scripts import native_slo_launcher_corpus as corpus
+    from scripts.native_slo_daemon_fixture import DaemonFixture
+    from scripts.native_slo_workloads import build_cases
+
+    launcher = _launcher(registrations, harness, "PostToolUse")
+    if harness == "codex":
+        configuration = json.loads(launcher.argv[-1])
+        query = parse_qs(configuration["query"])
+        assert {"home", "guard-home"} <= set(query)
+        assert "workspace" not in query
+    case = next(
+        item
+        for item in build_cases(session.workspace)
+        if item.harness == harness and item.case_id.endswith("/benign/1m")
+    )
+    if explicit_cwd:
+        case = replace(case, payload={**case.payload, "cwd": str(session.root / "explicit-conflict")})
+    original_payload = dict(case.payload)
+    captured: dict[str, object] = {}
+
+    def run(argv, **kwargs):
+        captured.update(argv=tuple(argv), **kwargs)
+        return BoundedHookProcessResult(0, "{}", False, False)
+
+    monkeypatch.setattr(corpus, "run_isolated_hook_process", run)
+    response, _elapsed = corpus._run_registered(cast(DaemonFixture, cast(object, session)), launcher, case)
+    assert response == {}
+    supplied = json.loads(cast(str, captured["input_text"]))
+    assert supplied["cwd"] == original_payload.get("cwd", str(session.workspace))
+    assert supplied["guard_source_ref"] == original_payload["guard_source_ref"]
+    assert {key: value for key, value in supplied.items() if key not in {"cwd", "tool_use_id"}} == {
+        key: value for key, value in original_payload.items() if key != "cwd"
+    }
+    assert case.payload == original_payload
+    assert captured["argv"] == launcher.argv and captured["cwd"] == session.workspace
+    assert captured["timeout_seconds"] == 10 and captured["output_limit"] == 2 * 1024 * 1024
+    assert module.registered_launcher(launcher.config_path, harness, "PostToolUse") == launcher
+
+
 def _mapping(value: object) -> dict[str, object]:
     assert isinstance(value, dict)
     return cast(dict[str, object], value)

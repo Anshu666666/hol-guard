@@ -6,11 +6,16 @@ reported explicitly; a failed transport function is not a simulated crash test.
 
 from __future__ import annotations
 
+import math
 import sqlite3
+import time
 from collections.abc import Mapping
 from contextlib import ExitStack
 from typing import Any, cast
 from unittest.mock import patch
+
+from scripts.native_slo_bridge_witness import native_bridge_witness
+from scripts.native_slo_source_witness import _client_failure
 
 
 class FaultFixture:
@@ -19,6 +24,7 @@ class FaultFixture:
         self.setup = setup
         self.stack = ExitStack()
         self.last_native: dict[str, object] | None = None
+        self.native_observations: list[dict[str, object]] = []
         self.observed: dict[str, object] = {}
         worker = session.daemon._server.hook_worker
         snapshot = worker.policy_snapshot_publisher.current_snapshot()
@@ -50,7 +56,33 @@ class FaultFixture:
         original = worker._review_raw_hook_native
 
         def capture(**kwargs: object) -> object:
-            result = original(**kwargs)
+            # These ordinary contract cases precede headline sampling. Observe
+            # the original bridge once, on its HTTP thread, using the same
+            # nonblocking diagnostic owner as the source-reference witness.
+            failure_before = _client_failure()
+            with native_bridge_witness(kwargs.get("policy_snapshot")) as bridge:
+                entered = time.monotonic()
+                result = original(**kwargs)
+                finished = time.monotonic()
+            if len(self.native_observations) < 2:
+                deadline = kwargs.get("deadline")
+                known_deadline = type(deadline) in {int, float} and math.isfinite(cast(float, deadline))
+                self.native_observations.append(
+                    {
+                        "client_failure_before": failure_before,
+                        "client_failure_after": _client_failure(),
+                        "deadline_remaining_ms": max(0, min(9_000, int((cast(float, deadline) - entered) * 1_000)))
+                        if known_deadline
+                        else None,
+                        "deadline_exhausted_after": finished >= cast(float, deadline) if known_deadline else None,
+                        "native_elapsed_ms": max(0, min(10_000, int((finished - entered) * 1_000))),
+                        # The public failure envelope forbids output-named
+                        # fields. This enum identifies only reply presence.
+                        "bridge": {
+                            ("client_reply" if key == "client_output" else key): value for key, value in bridge.items()
+                        },
+                    }
+                )
             native_result = result.get("result") if isinstance(result, Mapping) else None
             self.last_native = (
                 dict(cast(Mapping[str, object], native_result)) if isinstance(native_result, Mapping) else None
@@ -128,10 +160,20 @@ class FaultFixture:
 
     def before_case(self) -> None:
         self.last_native = None
+        self.native_observations.clear()
         self.observed.clear()
 
     def result(self) -> dict[str, object]:
-        return {"setup": {**self.evidence, **self.observed}, "native_result": self.last_native}
+        return {
+            "setup": {**self.evidence, **self.observed},
+            "native_result": self.last_native,
+            "native_bridge": {
+                "schema": "hol-guard.native-corpus-bridge-witness.v1",
+                "headline_timing_eligible": False,
+                "observed_calls_capped_at_two": len(self.native_observations),
+                "observations": list(self.native_observations),
+            },
+        }
 
     def __exit__(self, *_args: object) -> None:
         self.stack.close()

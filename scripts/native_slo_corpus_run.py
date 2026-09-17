@@ -100,12 +100,14 @@ def _observe_case(session: DaemonFixture, case: QualificationCase, journal: Corp
         observed.stage = "witness"
         evidence = session.control("case_result")
         native_result = evidence.get("native_result")
+        native_bridge = evidence.get("native_bridge")
         setup = evidence.get("setup")
         if native_result is not None and not isinstance(native_result, Mapping):
             raise RuntimeError("qualification native result evidence must be an object")
         if not isinstance(setup, Mapping):
             raise RuntimeError("qualification setup evidence must be an object")
         observed.native_result = cast(Mapping[str, object] | None, native_result)
+        observed.native_bridge = dict(native_bridge) if isinstance(native_bridge, Mapping) else None
         validate_setup(case, cast(Mapping[str, object], setup))
         try:
             validate_case(case, observed.response, observed.route, http_status=validation_status)
@@ -113,6 +115,8 @@ def _observe_case(session: DaemonFixture, case: QualificationCase, journal: Corp
         except AssertionError as error:
             detail = failure_evidence(error)
             detail["observed_semantics"] = semantic_diagnostic(observed.response, observed.native_result, (case,))
+            if observed.native_bridge is not None:
+                detail["native_bridge"] = dict(observed.native_bridge)
             raise FixtureFailureError(detail) from error
         observed.stage = "complete"
         return observed.route, validation_status

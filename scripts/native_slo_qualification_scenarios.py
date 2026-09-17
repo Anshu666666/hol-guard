@@ -17,6 +17,7 @@ from scripts.native_slo_daemon_fixture import DaemonFixture
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_launcher_corpus import run_registered_approval_corpus
 from scripts.native_slo_launcher_input import run_registered_input_corpus
+from scripts.native_slo_launcher_utf8 import run_registered_utf8_observation
 from scripts.native_slo_mixed import run_mixed_scenario
 from scripts.native_slo_phase_run import measure_installed_phases
 from scripts.native_slo_registered_surfaces_run import SurfaceSession, run_registered_surface_corpus
@@ -97,6 +98,12 @@ def run_additional_scenarios(
         report["passed"] = report.get("implemented_scope_passed") is True
         return report
 
+    def raw_utf8() -> dict[str, object]:
+        with DaemonFixture(runtime, setup="normal") as session:
+            return run_registered_utf8_observation(
+                session, evidence_file=raw_file.with_name(raw_file.stem + "-utf8-cases.jsonl")
+            )
+
     return {
         "schema": "hol-guard.additional-installed-scenarios.v1",
         "receipt_profile": receipt_profile,
@@ -125,5 +132,10 @@ def run_additional_scenarios(
             inputs,
             evidence_file=raw_file.with_name(raw_file.stem + "-input-summary.json"),
             scope="priority_input",
+        ),
+        "priority_utf8": _retained_scenario(
+            raw_utf8,
+            evidence_file=raw_file.with_name(raw_file.stem + "-utf8-summary.json"),
+            scope="priority_utf8_observation",
         ),
     }

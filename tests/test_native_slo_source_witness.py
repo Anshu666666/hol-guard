@@ -93,7 +93,7 @@ def _failure_diagnostic(worker, request=_REQUEST, **context):
     prefix = "source SLO did not witness one complete native content review: "
     message = str(raised.value)
     assert message.startswith(prefix)
-    assert len(message) < 1_024
+    assert len(message) < 2_048
     return json.loads(message.removeprefix(prefix)), message
 
 
@@ -108,6 +108,9 @@ def test_failed_native_review_retains_exact_fixed_reason_and_case_scope(monkeypa
     )
     diagnostic, _ = _failure_diagnostic(worker, harness="claude-code", size_class="1m")
     elapsed = diagnostic["observations"][0].pop("native_elapsed_ms")
+    bridge = diagnostic["observations"][0].pop("bridge")
+    assert bridge["scope"] == "original_calls_current_thread"
+    assert set(bridge["calls_capped_at_two"].values()) == {0}
     assert type(elapsed) is int and 0 <= elapsed <= 10_000
     assert diagnostic == {
         "harness": "claude-code",

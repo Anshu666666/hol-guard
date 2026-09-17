@@ -11,6 +11,7 @@ from typing import Any
 from unittest.mock import patch
 
 from codex_plugin_scanner.guard import native_resident_client
+from scripts.native_slo_bridge_witness import native_bridge_witness
 
 _CLIENT_FAILURE_CODES = frozenset(
     {
@@ -105,9 +106,10 @@ def source_review_witness(
 
     def capture(**kwargs: object) -> object:
         client_failure_before = _client_failure()
-        entered = time.monotonic()
-        edge = original(**kwargs)
-        elapsed = time.monotonic() - entered
+        with native_bridge_witness(kwargs.get("policy_snapshot")) as bridge:
+            entered = time.monotonic()
+            edge = original(**kwargs)
+            elapsed = time.monotonic() - entered
         client_failure_after = _client_failure()
         result = edge.get("result") if isinstance(edge, Mapping) else None
         if len(observations) >= 2:
@@ -149,6 +151,7 @@ def source_review_witness(
                 "native_elapsed_ms": max(0, min(10_000, int(elapsed * 1_000))),
                 "client_failure_before": client_failure_before,
                 "client_failure_after": client_failure_after,
+                "bridge": bridge,
             }
         )
         return edge

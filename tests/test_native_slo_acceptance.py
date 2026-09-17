@@ -70,6 +70,22 @@ def test_scopes_can_qualify_without_claiming_unmeasured_program_completion() -> 
     assert "browser_approval_continuation" in result["remaining_program_evidence"]
 
 
+def test_unqualified_utf8_observation_does_not_change_existing_semantic_gates() -> None:
+    baseline, candidate = _reports()
+    comparison = compare_routes(
+        [item["measurements"] for item in baseline], [item["measurements"] for item in candidate]
+    )
+    sampling = sampling_gates(comparison, runs=5)
+    before = scoped_acceptance(baseline, candidate, comparison, sampling)
+    for report in [*baseline, *candidate]:
+        report["additional_scenarios"]["priority_utf8"] = {
+            "passed": False,
+            "qualification_complete": False,
+            "expected_delivery_profile": "not_qualified",
+        }
+    assert scoped_acceptance(baseline, candidate, comparison, sampling) == before
+
+
 def test_unavailable_cpu_does_not_invalidate_an_independently_measured_launcher() -> None:
     baseline, candidate = _reports()
     for report in candidate:

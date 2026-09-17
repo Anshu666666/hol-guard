@@ -38,7 +38,9 @@ def test_inclusive_overlap_and_unassigned_cpu_are_not_double_counted(tmp_path):
     code = compile("def build():\n    pass\n", str(source), "exec")
     scope = {}
     exec(code, scope)
-    build = scope["build"].__code__.replace(co_qualname="SupplyChainBundleIndex.build")
+    build = scope["build"].__code__
+    field = "co_qualname" if hasattr(build, "co_qualname") else "co_name"
+    build = build.replace(**{field: "SupplyChainBundleIndex.build"})
     profile = SimpleNamespace(
         getstats=lambda: [
             SimpleNamespace(code=build, callcount=1, reccallcount=0, totaltime=0.009, inlinetime=0.004),
@@ -84,6 +86,7 @@ def test_negative_process_difference_is_retained_without_a_fake_zero():
     value.update(
         profiled_exclusive_thread_cpu_ns=900, unattributed_profile_thread_cpu_ns=900, process_minus_profile_cpu_ns=-100
     )
+    value["origins"]["categories"]["other_c"].update(functions=1, calls=1, exclusive_thread_cpu_ns=900)
     validate_phases(value)
     assert value["process_minus_profile_cpu_ns"] == -100
 
@@ -137,6 +140,22 @@ def test_actual_instrumented_protect_preserves_oracle_and_single_parse(tmp_path,
     # Authentic fixture verification is before this unchanged measured route.
     assert rows["bundle_verification"]["calls"] == rows["rsa_signature_verify"]["calls"] == 0
     assert observed["operation_counts"]["lockfile_parse_result.parse_lockfile_text"] == 1
+    import json
+
+    journal = [json.loads(line) for line in (tmp_path / "journal.jsonl").read_text().splitlines()]
+    residual_records = [row["private_profile_residual"] for row in journal if "private_profile_residual" in row]
+    assert len(residual_records) == 1
+    private = residual_records[0]
+    assert 0 < len(private["functions"]) <= 50
+    assert private["omitted_functions"] == private["eligible_functions"] - len(private["functions"])
+    assert "private_profile_residual" not in observed
+    assert all("identity" not in row for row in value["origins"]["categories"].values())
+    for category in ("guard_python", "json_python", "sqlite_c", "bytes_text_c"):
+        assert value["origins"]["categories"][category]["calls"] > 0
+    assert (
+        sum(row["exclusive_thread_cpu_ns"] for row in value["origins"]["categories"].values())
+        == value["profiled_exclusive_thread_cpu_ns"]
+    )
     # No private method names, source paths, payloads or signature bytes are emitted.
     assert all(
         label in FUNCTIONS or label in {"sqlite_calls", "rsa_signature_verify", "rsa_public_key_load"} for label in rows

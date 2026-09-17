@@ -22,12 +22,13 @@ def test_paired_driver_preserves_alternating_environments_and_rejects_unqualifie
 
     def run(argv: tuple[str, ...], **_kwargs: object) -> SimpleNamespace:
         arm = "baseline" if argv[0] == str(baseline) else "candidate"
+        assert argv[argv.index("--receipt-profile") + 1] == ("baseline_2e672d2" if arm == "baseline" else "candidate")
         calls.append(arm)
         raw_file = Path(argv[argv.index("--raw-file") + 1])
         raw_file.write_text("{}")
         report = {
             "schema": "hol-guard.native-qualification-block.v1",
-            "runtime": {"runtime_sha256": arm, "package_record_sha256": arm},
+            "runtime": {"runtime_sha256": arm, "package_record_sha256": arm, "python_version": "3.12.14"},
             "corpus_digest": "same-corpus",
             "hardware": {"platform": "linux-x64", "cpu_model": "same-cpu"},
             "resources": {"sample_minimum_met": False},

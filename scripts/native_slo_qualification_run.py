@@ -27,6 +27,7 @@ from scripts.native_slo_launcher_corpus import run_registered_contract_corpus
 from scripts.native_slo_load_profiles import measure_load_profiles
 from scripts.native_slo_priority_launchers import LauncherSession, launcher_payload, measure_priority_launchers
 from scripts.native_slo_qualification import confidence_summary
+from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
 from scripts.native_slo_resources import ResourceSampler
 
 _PLATFORMS = ("linux-x64", "macos-x64", "macos-arm64", "windows-x64")
@@ -124,7 +125,7 @@ def _native_sample_values(measured: Mapping[str, object], expected: int) -> list
     return [float(value) for value in values]
 
 
-def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
+def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str = "candidate") -> dict[str, object]:
     """Measure one block using this interpreter's installed default native wheel."""
     _clear_proof_overrides()
     status = native_runtime_status()
@@ -132,6 +133,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
         raise RuntimeError("qualification native runtime unavailable")
     runtime = status.identity.path
     identity = _runtime_summary(runtime)
+    validate_receipt_profile(receipt_profile, identity)
     routes = route_matrix()
     contract_corpus = run_contract_corpus(runtime)
     launcher_corpus = run_registered_contract_corpus(
@@ -171,11 +173,6 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
         launcher, launcher_series = measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
         raw.update(launcher_series)
         concurrent, offered, capacity_resources = measure_load_profiles(session, routes)
-        # Instrumented timings are deliberately separate from the headline samples.
-        session.control("phases_start")
-        for _ in range(min(100, plan["priority_per_run"])):
-            session.observe("claude-code", "PostToolUse", "1k")
-        phase_report = session.control("phases_finish")
         native_readiness_ms = session.readiness_ms
     with DaemonFixture(runtime, policy="normal") as cold_session:
         cold = _run_cold(runtime, cold_session, plan["cold_per_run"])
@@ -196,6 +193,13 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
     raw_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     raw_file.write_text(json.dumps(raw, separators=(",", ":")) + "\n", encoding="utf-8")
     raw_file.chmod(0o600)
+    additional = run_additional_scenarios(
+        runtime,
+        raw_file=raw_file,
+        receipt_profile=receipt_profile,
+        runtime_identity=identity,
+        phase_count=min(100, plan["priority_per_run"]),
+    )
     matrix = workload_matrix(routes, contract_corpus, launcher_corpus)
     corpus_definition = {
         "matrix": matrix,
@@ -223,6 +227,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
             "matrix": matrix,
             "contract_corpus": contract_corpus,
             "registered_launcher_contract_corpus": launcher_corpus,
+            "additional_scenarios": additional,
             "measurements": {key: confidence_summary(values) for key, values in raw.items()},
             "daemon_process_start_to_policy_ready_ms": startup_ms,
             "native_readiness_ms": native_readiness_ms,
@@ -231,7 +236,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
             "capacity_resources": capacity_resources,
             "closed_loop": concurrent,
             "offered_load": offered,
-            "phases": phase_report,
+            "phases": additional["python_phases"],
             "qualification_complete": False,
             "remaining": [
                 "nonpriority_registered_launchers",

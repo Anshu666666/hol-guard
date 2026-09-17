@@ -41,6 +41,12 @@ def _reports() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
             "launcher": {"contracts_passed": True},
             "contract_corpus": {"implemented_scope_passed": True, "remaining_setups": []},
             "registered_launcher_contract_corpus": {"implemented_scope_passed": True},
+            "additional_scenarios": {
+                "registered_surfaces": {"passed": True},
+                "mixed_contention": {"passed": True},
+                "priority_approval": {"passed": True},
+                "priority_input": {"passed": True},
+            },
         }
         arms.append([deepcopy(report) for _ in range(5)])
     return arms[0], arms[1]
@@ -96,3 +102,32 @@ def test_http_fault_evidence_cannot_qualify_missing_registered_launcher_faults()
     launcher = result["scopes"]["launcher.claude-code.PreToolUse"]
     assert launcher["qualified"] is False
     assert launcher["gates"]["registered_fault_contracts"] is False
+
+
+def test_failed_side_scenario_is_not_qualified_by_successful_headline_samples() -> None:
+    baseline, candidate = _reports()
+    candidate[0]["additional_scenarios"]["mixed_contention"]["passed"] = False
+    del candidate[1]["additional_scenarios"]["registered_surfaces"]
+    comparison = compare_routes(
+        [item["measurements"] for item in baseline], [item["measurements"] for item in candidate]
+    )
+    result = scoped_acceptance(baseline, candidate, comparison, sampling_gates(comparison, runs=5))
+    assert result["scopes"]["launcher.claude-code.PostToolUse"]["qualified"] is True
+    for name in ("registered_surfaces", "mixed_contention"):
+        assert result["scopes"]["candidate_observed_semantics." + name]["qualified"] is False
+        assert result["additional_scenario_results"][name]["candidate_passed"] is False
+
+
+def test_fixed_candidate_contract_preserves_failed_baseline_semantics() -> None:
+    baseline, candidate = _reports()
+    baseline[0]["additional_scenarios"]["registered_surfaces"]["passed"] = False
+    comparison = compare_routes(
+        [item["measurements"] for item in baseline], [item["measurements"] for item in candidate]
+    )
+    result = scoped_acceptance(baseline, candidate, comparison, sampling_gates(comparison, runs=5))
+    observed = result["additional_scenario_results"]["registered_surfaces"]
+    assert observed["baseline_passed"] is False
+    assert observed["candidate_passed"] is True
+    assert observed["headline_timing_eligible"] is False
+    assert result["scopes"]["candidate_observed_semantics.registered_surfaces"]["qualified"] is True
+    assert result["program_qualification_complete"] is False

@@ -262,3 +262,7 @@ mod tests;
 #[cfg(test)]
 #[path = "native_command_program_bench.rs"]
 mod bench;
+
+#[cfg(test)]
+#[path = "native_command_program_matrix.rs"]
+mod matrix;

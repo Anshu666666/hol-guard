@@ -1,240 +1,256 @@
-# HOL Guard Rust Performance: Implementation Takeaway Prompt
-
-## Copy the prompt below into the implementation session
-
-You are implementing the HOL Guard Rust Performance PRD and its 144-task TODO for hashgraph-online/hol-guard. Read those companion documents when they are supplied. This prompt preserves the essential audit findings and execution rules so you can begin correctly in a fresh session.
-
-
-
-Your objective is to reduce actual installed tool latency, CPU use, and process-tree memory without losing protection, Watch behavior, availability behavior, approvals, evidence, package completeness, or community extension usability. Optimize repeated work and algorithms first. Port a component to Rust only when the adopted measurement and compatibility gates justify it.
-
-
-
-## Source baseline and operating rules
-
-The source review used main at 2e672d2d950c6ec471005ddba46e49bba16dc23b. Refresh current main and compare relevant changes before editing. The audited release/3.2 SHA was 4b89e0d2d496a85f04922b2e019a4aea15326bb9; it is not the implicit implementation target. Recheck draft PR [#2797](https://github.com/hashgraph-online/hol-guard/pull/2797) and overlapping [#2807](https://github.com/hashgraph-online/hol-guard/pull/2807), [#2870](https://github.com/hashgraph-online/hol-guard/pull/2870), [#2931](https://github.com/hashgraph-online/hol-guard/pull/2931), [#2948](https://github.com/hashgraph-online/hol-guard/pull/2948) and [#2911](https://github.com/hashgraph-online/hol-guard/pull/2911).
-
-
-
-Work in an isolated branch/worktree from the correct current target. Read repository instructions, pyproject.toml, rust/Cargo.toml, rust/rust-toolchain.toml, current CI workflows, and the existing ownership contracts. Resolve routine implementation choices yourself. Preserve unrelated work.
-
-
-
-Do not create GitHub issues in hashgraph-online repositories. Do not merge or release just because this prompt requests implementation. Prepare reviewable changes and a draft PR when authorized by the implementation session; use its existing merge/release authorization if one is explicitly present. Never weaken CI or raise a performance threshold simply to get a pass.
-
-
-
-Track TODO IDs RSP-001 through RSP-144. Use OPEN, IN_PROGRESS, DONE, DEFERRED and BLOCKED honestly. A measured no-go completes an investigation but does not mark an unimplemented port done. Dependent implementation tasks should be explicitly deferred when their go/no-go gate rejects the port. Continue independent work when one optional tranche is blocked.
-
-
-
-## Facts you must not rediscover incorrectly
-
-1. Rust migration is already substantial. The 10-crate workspace includes command/pretool evaluation, contracts, scanner/rules, secure file access, hook core, policy snapshots, runtime and Windows process support. NHD work merged through [#2682](https://github.com/hashgraph-online/hol-guard/pull/2682), [#2699](https://github.com/hashgraph-online/hol-guard/pull/2699), [#2713](https://github.com/hashgraph-online/hol-guard/pull/2713), [#2718](https://github.com/hashgraph-online/hol-guard/pull/2718), [#2719](https://github.com/hashgraph-online/hol-guard/pull/2719), [#2720](https://github.com/hashgraph-online/hol-guard/pull/2720) and [#2724](https://github.com/hashgraph-online/hol-guard/pull/2724). Do not propose this completed scope as a new migration.
-
-2. Ordinary daemon native hooks go directly from server.py to the in-process HookWorker, then the Python native edge and a persistent Rust helper, then the Rust resident. Guardian/evaluator multiprocessing is not two extra hops for every ordinary native request. It still matters to selected compatibility and approval revalidation paths and idle startup memory.
-
-3. The Rust helper is persistent. Do not claim a new Rust subprocess starts for every warm hook. Inside the persistent helper, discovery, socket connection and authentication still occur per request.
-
-4. native_hook_edge.py::review_raw_hook_native calls native_runtime_status for each review. native_runtime.py::_validate_binary hashes the entire runtime executable before capability-cache lookup. This is actual repeated work, but removing attestation without equivalent identity binding is unacceptable.
-
-5. daemon/hook_worker_native.py::_review_native_edge calls hook_review_is_recording_only, which invokes load_guard_config. Watch can also transform native results in Python. Current source therefore needs a more precise ownership contract than the old prose.
-
-6. Availability behavior is event- and reason-specific. Current hook_availability_policy.py continues selected native-unavailable cases, preserves particular integrity/size denials, and treats permission/lifecycle events separately. Freeze the actual matrix; do not silently restore blanket fail-closed behavior or relax a completed native block as a performance change.
-
-7. The retained Python native_runtime_resident.py is excluded from distributions. Deleting it is not a runtime speed improvement. The old hook ContentScanner/HookReviewEngine/reference evaluators are not ordinary native-hook bottlenecks.
-
-8. guard-scanner is not the full repository secrets detector. The Python secrets CLI has richer providers, entropy, context, positions, HMAC and scan coverage semantics. Test names containing “native” do not prove Rust execution.
-
-9. Command extension catalog presence is not native execution. The current catalog exports matcher kind and digest rather than a complete executable program. Extension Builder's “native” output is in-tree Python. Preserve the Python contribution flow while compiling a complete bounded matcher IR.
-
-10. No new installed speedup was measured by the source review. Proposed targets are requirements to qualify, not evidence.
-
-
-
-## Start with benchmark integrity
-
-Read scripts/bench_guard_native_release_gate.py before running it. The warm production arm times review_post_tool_native, including the Python adapter/client but excluding the installed launcher and daemon HTTP path. Direct resident IPC is a separate diagnostic.
-
-
-
-The reference sets HOL_GUARD_NATIVE=off, while ordinary off now produces an availability response unless an explicit test oracle is constructed. The benchmark only checks payload presence in its Python arm. Fix the reference construction and prove expected semantic route and verdict for both benign and malicious inputs. Never reopen a production Python fallback to make the benchmark work.
-
-
-
-Current warm acceptance is p95 ≤20 ms OR ≥1.15x relative speedup. Cold is p95 ≤150 ms AND ≥5x. Readiness is 400 ms. Installed adapter limits are currently tied to the 1,000 ms hook budget. SLO prose and executable code disagree about a direct c16 gate. Correct labels and checks instead of repeating documentation claims.
-
-
-
-Add four explicit boundaries: KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER. Include actual registered executable startup, final stdout/exit status, queue time, recovery and retries where relevant. Classify human and remote wait separately. A native-unavailable continuation must not count as an evaluated allow.
-
-
-
-Use installed release artifacts and current production as the principal baseline. For a new Python-to-Rust kernel, also compare against optimized Python. Qualify per harness/event/platform with synthetic benign and malicious fixtures. Use c1/c4/c16/c64 plus offered-rate load. Report every attempt, rejection, deadline miss and failure, not just successful timings.
-
-
-
-The PRD proposes 10,000 warm samples per priority route/platform across at least five runs, 100 cold launches and recoveries, and full-process-tree resource measurements. Two-sample CI smoke is not p99 proof. Record hardware, OS, builds, artifact/corpus digests and confidence. Baseline/candidate runs should alternate on the same machine.
-
-
-
-For small ordinary hooks, proposed product targets are installed warm p95 ≤50 ms/p99 ≤100 ms at c1 and p99 ≤200 ms at c16. A selected optimization should deliver ≥30% lower relevant p95 or CPU with ≤5% regression in the other primary metric. Native ingress needs material memory or concurrency benefit. Validate applicability before committing thresholds; do not quietly relax them after a failure.
-
-
-
-## First implementation tranches
-
-A. Repair benchmark reference integrity and route documentation, then baseline the system.
-
-B. Optimize Python signed-bundle indexing and lockfile single parsing.
-
-C. Remove repeated runtime identity and mode/configuration work through an equivalent verified-generation and acknowledged-snapshot design.
-
-D. Reduce repeated JSON, canonical identity, typed-result conversions, output copies and policy-map validation already in Rust.
-
-E. Optimize compact evidence handoff, real journal/SQL batching and domain-specific policy invalidation.
-
-F. Use the new evidence to choose one native installed launcher and one native package-format pilot. Expand only proven scopes.
-
-G. Treat native extension execution as a separate compatibility tranche with its own performance/coverage proof.
-
-H. Keep full MCP/daemon rewrites and broader scanner ports conditional.
-
-
-
-## Exact source anchors
-
-Hot path:
-
-src/codex_plugin_scanner/guard/native_runtime.py::_validate_binary and native_runtime_status
-
-src/codex_plugin_scanner/guard/native_hook_edge.py::review_raw_hook_native
-
-src/codex_plugin_scanner/guard/daemon/hook_worker_native.py::_review_native_edge
-
-src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py
-
-src/codex_plugin_scanner/guard/daemon/server.py::_handle_runtime_hook_fast
-
-native_resident_client.py and native_resident_stream.py
-
-rust/crates/guard-runtime/src/managed_resident*.rs, resident_client.rs, resident_transport.rs and edge.rs
-
-
-
-Already-Rust work:
-
-edge.rs validates/reencodes and computes canonical identity more than once.
-
-policy_enforcement_policy.rs validates whole action maps and normalizes harness aliases; compile immutable maps at snapshot admission while retaining per-request freshness/authority fences.
-
-guard-hook-core/src/lib.rs copies/concatenates output; preserve exact Unicode/newline/hash behavior.
-
-guard-scanner already caches compiled regexes. Any RegexSet/prefilter must preserve per-match suppression, document boundaries and early-exit semantics.
-
-
-
-Package core:
-
-guard/runtime/supply_chain_package_eval.py::_transitive_lockfile_results builds an index but still calls evaluate_cached_supply_chain_bundle for every dependency.
-
-guard/runtime/supply_chain_bundle_runtime.py::evaluate_cached_supply_chain_bundle scans bundle.packages again.
-
-guard/runtime/lockfile_parse_result.py validates then extracts, causing repeated parsing.
-
-First use immutable verified bundle indexes and one input snapshot. Then consider proposed guard-package-core through one coarse bounded batch request.
-
-Preserve 8 MiB/100,000-entry/250,000-node/depth-128 parser bounds, complete/source_hash/version/error state, ecosystem version semantics, stale emergency denies, bun.lockb fallback and final package launch revalidation.
-
-
-
-Secrets and plugin scanning:
-
-guard/secrets/secret_detection.py, secret_repository_scanner.py and secret_staged_scanner.py.
-
-Batch Git object reads before attributing subprocess savings to Rust. Preserve staged-index bytes and path/commit occurrences when deduplicating blobs.
-
-Preserve exits 0/2/3, HMAC/redaction and richer detector semantics.
-
-Keep offline_archive_inspection.py/offline_archive_worker.py in a dedicated isolated process with digest/file identity, expansion bounds and launch binding. Do not move hostile parsing into the resident hook process.
-
-Keep third-party scanner/network orchestration in Python unless profiling identifies local CPU work.
-
-
-
-MCP:
-
-guard/proxy/runtime_mcp.py repeatedly hashes immutable full tool catalogs; cache by validated generation.
-
-guard/mcp_tool_calls.py computes risk categories repeatedly; reuse request-local facts when authority inputs are unchanged.
-
-Preserve the final 5 ms quiet prewrite barrier unless an equivalent ordering proof replaces it.
-
-Carry test_guard_runtime_mcp_saved_blocks.py catalog-change and spawn-time entrypoint-quarantine cases. Never replay an ambiguous tool write.
-
-
-
-Extensions:
-
-guard/runtime/command_rules.py and command_matcher_contracts.py define exported matcher metadata.
-
-Build explicit versioned IR for all selected matcher families, not only basic token matching.
-
-Preserve local opt-in, publisher trust, managed/local revisions, permission IDs, safe variants, uncertainty and strongest non-overridable floors.
-
-Qualify command.ollama from contributor source through build/install/enable/native decision/receipt/disable/update.
-
-No runtime arbitrary Python imports, per-rule IPC or required Rust toolchain for ordinary declarative contributors.
-
-
-
-Background:
-
-daemon/runtime_hook_evidence_writer.py performs foreground copies/serialization and per-record durable work despite dequeuing batches.
-
-runtime_hook_evidence_journal.py rewrites remaining journal records on removal. Implement real bounded batching/checkpointing with crash proof.
-
-native_policy_snapshot_publisher_inputs.py may recompile all registered workspace policies after unrelated database activity. Use precise revision/invalidation plus cross-process reconciliation.
-
-Distinguish memory acceptance, journal durability and DB commit. Do not claim exactly-once durability that current submit does not promise.
-
-
-
-## Nonnegotiable implementation constraints
-
-Preserve package/executable/peer identity, private transport permissions, policy generation/scope/expiry/rollback protection, source identity and equivalence, approval challenge/consume/replay rules, and integrity-specific failures. A path/mtime-only identity cache is insufficient. Test same-size replacement, restored timestamp, permission/owner changes, signing, restart and concurrent upgrades.
-
-
-
-Use one deadline and bounded work across all stages. Do not replay committed operations. Keep safe Rust as the default and the current locked toolchain. New transports and in-process bindings need explicit ABI, distribution, failure-containment and rollback choices.
-
-
-
-Do not change decision coverage to win a benchmark. Incomplete or unsupported scans must remain distinct from clean. Keep diagnostics aggregate and bounded without raw secrets, commands, prompts, output or private paths.
-
-
-
-## Verification and deliverables
-
-The source review ran the following existing checks successfully; rerun them for changed code and extend them where current callers escape their scope:
-
-python3 scripts/ci/python_hook_semantic_callgraph_gate.py
-
-python3 scripts/ci/rust_authority_ownership_gate.py
-
-python3 scripts/ci/rust_io_ownership_gate.py
-
-
-
-Read the current CI files for the exact dependency setup and Rust/Python test commands. Run meaningful affected suites, installed native-wheel probes, actual launcher tests, policy/approval/source-mutation tests, and fault/recovery tests. Keep the test oracle independent. All supported targets need explicit coverage; a Linux pass is not a Windows pass.
-
-
-
-For each PR provide: task IDs; exact base/head SHA; changed production route; compatibility results; test commands/outcomes; benchmark boundary and baseline/candidate digests; samples/confidence; latency/CPU/memory; unsupported/deferred scope; and rollback evidence.
-
-
-
-The final result must distinguish implementation from activation and activation from measured benefit. Do not stop at writing a new crate or updating a TODO. Carry selected work through real caller integration, review and verification. If measurements reject a port, keep the useful algorithmic fix and document the no-go.
-
-
-
+# Continue HOL Guard Rust performance execution on release/3.2
+
+Use the following prompt to resume the authorized implementation. It supersedes
+this file's original proposal-only prompt; the original PRD and all 144 TODO
+acceptance criteria remain unchanged. This is a continuation, not permission to
+start over, weaken the targets or declare source tests to be installed acceptance.
+
+---
+
+You are continuing the user's authorized request: review HOL Guard, determine
+which remaining Python work should move to Rust for performance, and complete the
+PRD/TODO end to end on `release/3.2` using GitHub. Continue implementation,
+validation, concrete review preparation and permitted publication autonomously.
+Do not stop at a plan, ask for authorization already given, or redo completed
+native ports. Respect independent code-owner approval and branch protection;
+never fabricate it or treat automation as that approval.
+
+Read these files before making changes:
+
+1. `docs/guard/rust-performance/PRD.md` and `TODO.md`: original requirements and
+   144 acceptance conditions. Preserve their requirements and thresholds.
+2. `EXECUTION.md`, `CURRENT_CONTRACT.md`, `EXECUTION_LEDGER.md` and
+   `execution-ledger.json`: current architecture, provenance, evidence and open
+   obligations. Every original acceptance/dependency is retained in the JSON.
+3. The linked workstream reports for the files you will touch, plus applicable
+   repository instructions. Do not apply another workstream's tests or timing
+   claims to a changed tree without verification.
+
+## Establish the exact current tree
+
+The documentation cutoff is local integration
+`264da76d3bca7a1a4f4970834291ca48d7c7a3c2`, branch `work/rsp-performance-32`,
+workspace `rsp-integration-32`. The docs branch is `rsp/execution-ledger-final`.
+Other workstreams were still delivering commits. Inspect `git status`, branch,
+HEAD and worktree ownership before editing. Preserve unrelated/uncommitted work;
+coordinate shared files and use isolated worktrees for independent tasks.
+
+Baseline is `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1,
+Rust 1.88.0 with locked dependencies and diagnostic CPython 3.12.14. The original
+release branch was `4b89e0d2d496a85f04922b2e019a4aea15326bb9`; the reconciled
+foundation is `c4bd916fb0d0f375a4e2de0d1e498a0a533f63c8`. Release contains a
+squashed main lineage. Preserve release-only control/UI/schema behavior and
+carried main authority changes; do not blindly re-merge or revive superseded PRs.
+
+Use GitHub to refresh exact PR heads, checks, threads, approval and release
+rulesets before making current-state claims:
+
+- [Foundation PR #2951](https://github.com/hashgraph-online/hol-guard/pull/2951)
+  targets `release/3.2`; reported head
+  `e449594e86c717e66e14598a4130475de79c536f` had 25 successful workflows and
+  33 resolved threads. Independent last-push code-owner approval was missing.
+- [Implementation PR #2954](https://github.com/hashgraph-online/hol-guard/pull/2954)
+  had reported remote head prefix `92cf3c72d80d`, older than the docs cutoff.
+  Local mixed, J118, binding/receipt and nonpriority launcher followups must be
+  reconciled with the actual published tree. When GitHub commit metadata changes
+  a SHA, verify exact Git tree equality rather than assuming source equivalence.
+- [Performance run 35201516872](https://github.com/hashgraph-online/hol-guard/actions/runs/35201516872)
+  selected four targets and failed before complete qualification. Linux/Windows
+  baseline 1 MiB `.txt` fixtures missed source classification; macOS ARM stalled
+  in reverse DNS during HTTP server construction. Intel diagnosis was pending.
+  Get complete logs and preserve each failed attempt in the qualification record.
+
+Also retain the separate Linux/Windows 17-case installed status/real-child
+identity successes in [wheel run 35201516674](https://github.com/hashgraph-online/hol-guard/actions/runs/35201516674),
+jobs `105137144858`/`105137144563`, observed build SHA
+`73f34ba984ff01563257599692cce33098014bdf`. EXECUTION.md records runtime and
+manifest hashes. Those jobs later failed default-auto hooks; signing and
+cross-release rollback were not exercised. This does not establish all-platform
+identity or hook qualification, and a differing source head requires explicit
+artifact reconciliation.
+
+Reported observations are dated 2026-09-17, not a promise of current remote state.
+No merge, canary or release completion has been established.
+
+## Preserve what is already implemented
+
+The ledger currently records 62 DONE, 41 OPEN, 41 BLOCKED and zero DEFERRED.
+A source/specification task can be DONE while its installed qualification remains
+blocked. Do not relabel an unbuilt conditional Rust port as DONE or DEFERRED.
+
+- Native core avoids redundant parsing/copies and shares immutable compiled
+  policy. Ordinary hooks use direct in-daemon HookWorker dispatch and a persistent
+  native helper; compatibility/Codex revalidation still use the Python pool.
+- Linux live-process attestation reuses only an already fully verified owned
+  image on supported filesystems, with exact start/parent/image/package/manifest
+  binding. New spawns fully validate before frames. Unsupported platform or
+  filesystem proof retains full hashing. Stat metadata alone is never authority.
+- Acknowledged authenticated observe mode avoids one redundant configuration
+  read. Enforcing/missing-binding paths retain current config visibility; do not
+  transfer that authority without an explicit equivalent transition contract.
+- The trusted command compiler and Rust interpreter implement all 29 reviewed
+  operations. The source catalog has 86 extensions, 291 rules, 304 permissions
+  and 2242 nodes; 26 matcher families are instantiated. One canonical command
+  feeds indexed/memoized evaluation and complete observations. Profile is
+  CPython 3.12/UCD15. Context-heavy or unsupported behavior is owned uncertainty,
+  never silent no-match. Read the exact program/catalog digests in EXECUTION.md.
+- Production J activation requires both program-v1 and control-fence-v1
+  capabilities, verified trust/catalog/program/control identity, and the live
+  SH/EX authority protocol. Mutations close a durable authenticated marker before
+  SQL/key effects. Recovery binds an exact predecessor floor; no revision rollback
+  or historical-proof key substitution. Signed source manifest context prevents
+  managed enables from being restored by mutable-manifest deletion/replacement.
+- Ordinary local approval continuation is resolved-row reuse under the shared
+  mutation fence, bound to exact native policy/program/observation and request
+  context. It is not the exported native v3/v4 one-time challenge/claim/consume
+  path. Tests of those separate APIs do not prove ordinary launcher consumption.
+- Complete optional command binding survives receipt persistence through
+  migration 28 and `GuardStore.get_native_decision_receipt()`. Queue acceptance,
+  journal durability, SQL commit and checkpoint remain distinct. Stable attempts
+  deduplicate replay; recovery never re-runs the decision engine.
+- Package indexes/captured-content views, Git object batching/blob reuse, MCP
+  catalog/request reuse and bounded I/O, SQL transaction/journal batching, precise
+  DB/WAL reconciliation and per-call inventory root coalescing are implemented.
+  Keep their security/completeness semantics and existing regression coverage.
+- MCP has 4 MiB UTF-8 frames, 64/16 MiB child queue, 64/8 MiB per-direction reply
+  buffers and bounded deadlines/operation counts. Overload is terminal, preserves
+  uncertain delivery and prevents later forwards. Keep notification invalidation
+  during approval and the 5 ms final prewrite quiet barrier.
+
+## Finish concrete integration and correctness work first
+
+Check whether these delivered/pending workstreams are already in the current
+integration. Do not cherry-pick twice or overwrite their owners' edits:
+
+1. Baseline corpus fix `e7c3a86cb` and numeric HTTP bind/startup repair. Keep
+   baseline source and runtime pinned. Fix the fixture/environment or production
+   defect in its proper owner, never monkeypatch the baseline or raise readiness
+   to hide a stall. Diagnose all four logs, including default-auto hook failures.
+2. Controlled ordinary launcher approval helper `7b2113f2e`, with 19 real-store
+   tests: canonical harness aliases, exact new native artifact/action identity,
+   ambiguous-row refusal and retained late durable outcomes. Integrate its sibling
+   DaemonFixture dispatch and qualification route tests. Exercise real approval,
+   denial, expiration/restart and stale-binding behavior; label the actual local
+   reuse path accurately. Current Claude ask → local resolve → retry is distinct
+   from Codex registered browser-wait allow: local resolution produces retry-only
+   `hookAttached=False`, and actual Codex finalization rejects
+   `exact_approval_authority_missing`. Implement the proper production authority
+   handoff and regression separately; a fixture cannot add fabricated
+   `approval-gate-once` or one-time native authority to make the case pass.
+3. Mixed runner `a5d2ffeda` and its minimal DaemonFixture delegate. Root owns
+   `native_slo_qualification_run.py` integration. Call
+   `run_mixed_scenario(session, raw_file=..., receipt_profile="candidate")`
+   with a fresh normal DaemonFixture, and explicitly select
+   `receipt_profile="baseline_2e672d2"` only for the pinned baseline arm.
+   Candidate must use the complete binding-aware receipt getter. The baseline
+   path may validate legacy rows only when the installed baseline lacks that
+   getter; candidate errors cannot fall back or strip fields.
+4. Registered nonpriority probe `264da76d3`: repair Copilot response shape and
+   use the real Cline default home layout. Preserve genuine configured argv,
+   aliases, permission/exit behavior and platform shell semantics. Unsupported
+   Windows ZCode marker interpretation cannot be "fixed" by changing the tested
+   argv. Complete declared host/route cases; preflight or callback discovery is
+   not enforcement activation. Coordinate adapter-owner followups first.
+5. J118 installed probe `1b59b2d3b`, complete receipt support `58548bb2e` and
+   ordinary approval binding `017214841`. Run wheel-only CLI/MCP Builder and
+   Ollama enable/review/receipt/disable lifecycle on each platform. Settings
+   rollback is narrower than a changed package/program artifact update/rollback;
+   implement the latter for RSP-118/139. Interactive/system-keychain enrollment
+   and dormant native approval APIs remain separate declared scope.
+6. Inventory followups `16001f0f5`, `1f6b21e73`, `6aacf9770`, `b37edef16` and
+   command diagnostic source `d9802fac2` plus its measured report. Reconcile
+   paths/commits before citing them as integrated. Preserve source limitations:
+   unchanged inventory refresh still rehashes; controlled HTTP waits are not cloud
+   timing; fewer SQL queries do not prove fewer transactions or throughput gains.
+
+Complete missing scenario implementation and observability where required.
+The mixed runner currently restarts the Rust resident, not the whole Python
+fixture daemon. It measures actual journal writes/fsync and SQLite transaction
+counts, but SQLite VFS bytes/fsync remain null. Add justified instrumentation or
+record the unmet acceptance; never convert unsupported metrics to zero/pass.
+Its 30-second default and 1000 ms inherited diagnostic latency check are not the
+PRD mixed soak or frozen product budget.
+
+## Run qualification without changing its meaning
+
+Build baseline and candidate as separately installed, locked artifacts for Linux
+x64, macOS x64, macOS arm64 and Windows x64. Clear development runtime overrides
+and run isolated installed workers outside the checkout. Record exact package,
+source, target, rule, runtime, manifest and command program/catalog identities,
+including signed/frozen manifests where applicable. Local build_sha=unknown
+binaries and the baseline-binary status component cannot qualify the final J tree.
+
+Use the committed qualification CLI and its current `--help`; inspect workflow
+arguments instead of guessing a command against changing helpers. Keep smoke
+runs labeled smoke. Freeze and record the candidate before enabling the full
+`rust-performance-qualification` run; a later code/dependency change requires
+renewed qualification on the resulting exact head.
+
+Preserve these PRD gates and independent route/platform series:
+
+- Installed warm c1 p95 ≤50 ms, p99 ≤100 ms; c16 p99 ≤200 ms without errors.
+- Native client p95 ≤20 ms; cold native p95 ≤150 ms; readiness ≤400 ms.
+- At least five alternating independent runs; 10,000 priority warm decisions,
+  1,000 other-route decisions, 100 priority cold starts, 100 recoveries and
+  30 resource observations in their specified scopes. Keep confidence intervals.
+- Selected hot tranche: at least 30% p95 or CPU benefit and no more than 5%
+  regression in the other primary metric. Optional ingress: at least 25% private
+  memory or 30% c16 p99 benefit. Retain existing RSS-growth safeguards.
+
+Existing script gates warm ≤20 ms OR ≥1.15x and cold ≤150 ms AND ≥5x, and the
+1000 ms adapter diagnostic budget, are distinct historical gates. Passing them
+does not substitute for the PRD installed targets.
+
+Retain every offered, admitted, completed, failed, rejected, timed-out and late
+attempt. Scheduled-offer-to-terminal latency includes generator lateness and
+queue wait; request-only latency is a separate metric. A timeout's terminal
+outcome cannot be replaced by a later completion. Separate measured native allow,
+Watch delivery, review/block and unavailable continuation. Assert actual route,
+verdict/reason, final harness JSON and exit behavior, plus genuine committed
+receipt identities. Do not pool routes, discard slow/failing baseline cells,
+substitute HTTP for registered startup or count unavailable work as enforcement.
+
+Measure independent daemon/helper/resident and driver resource series; execute
+mixed pre/post load, control changes, first enforcement, real receipt ingestion,
+inventory and restart/recovery. Preserve queue age/depth witnesses and private
+bounded raw ledgers. Probe real Windows lock/pipe semantics and Unix peer/path
+identity. Complete frozen source-ref, aliases, fault and approval coverage and
+actual package update/downgrade/signing/registration restoration transcripts.
+
+## Resolve conditional Rust scope from evidence
+
+The Python package 98.22% CPU diagnostic improvement, narrower identity gain,
+Git/MCP/inventory reductions and native command component gains are useful source
+evidence. None proves an unbuilt native package/offline-scanner/MCP/inventory/
+spool/compiler/launcher/ingress implementation would meet its coarse-boundary
+benefit gate. Rebaseline optimized Python, choose a bounded native pilot where
+justified, test full contract parity and compare actual local/installed cost.
+Record measured go or no-go with artifact identities and limits. Do not manufacture
+a no-go by declining to build or measure, and do not broaden a migration simply
+because Rust is available. Preserve the richer offline secret detector contract.
+
+## Complete review and release evidence
+
+Run appropriate format/lint/type, Rust crate, Python, command differential,
+adversarial, source mutation, authority/floor/approval, receipt/crash, MCP and
+workflow-selection checks on the exact final combined source. Existing per-owner
+passes are evidence of their commits, not the later tree. Resolve every difference
+or intentional behavior change explicitly. Scan final exported results/errors for
+raw secrets, command/output and private paths; retain only bounded necessary data.
+
+Refresh GitHub checks/threads/approval on the final published head. Obtain the
+required independent code-owner approval through the actual reviewer process;
+no agent or bot approval substitution and no branch-protection bypass. Prepare a
+concrete qualified candidate/prior-version artifact manifest, platform/harness
+cohorts, stop conditions and tested rollback. Never lower persistent floors or
+reopen hidden Python semantic fallback to make downgrade work. Ambiguous tool
+execution must not be retried automatically.
+
+Update all 144 ledger entries with exact code, tests, installed results, measured
+native selections/no-go decisions and remaining blockers. Do not change original
+acceptance to fit partial delivery. The final user handoff must link PRs and
+Actions artifacts, identify the exact published/qualified tree, show per-route
+metrics and intervals including misses, state merge/approval status separately,
+and include tested rollout/rollback evidence. If an external review is the last
+blocker, finish the concrete reviewable work first and explain the exact ruleset
+requirement; do not present unfinished implementation as waiting only on approval.

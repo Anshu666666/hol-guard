@@ -8,6 +8,15 @@ from collections.abc import Iterable
 def capability_contract(compatibility_modes: Iterable[str]) -> list[dict[str, object]]:
     return [
         {
+            "id": "command_review_mutation_fence",
+            "authority": "shared_python_native_coordination",
+            "python_decision_time_disk_io": True,
+            "inventory_category": "synchronous_authority_fence",
+            "python_semantic_fallback": False,
+            "scope": "owned_lock_identity_and_shared_lease_through_review_response",
+            "failure": "existing_event_specific_availability_contract",
+        },
+        {
             "id": "hook_posture_and_availability_response",
             "authority": "python_bridge",
             "python_decision_time_disk_io": True,

@@ -30,7 +30,13 @@ def _edge(harness: str, *, url: str = "https://example.test") -> dict[str, objec
     }
 
 
-def _worker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, edge: dict[str, object]) -> tuple[HookWorker, GuardStore]:
+def _worker(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    edge: dict[str, object],
+    *,
+    publish_native_policy: bool = True,
+) -> tuple[HookWorker, GuardStore]:
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.daemon.hook_worker.native_mode",
         lambda: "auto",
@@ -47,7 +53,7 @@ def _worker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, edge: dict[str, obj
         started_at="2026-09-05T00:00:00+00:00",
         last_heartbeat_at="2026-09-05T00:00:00+00:00",
     )
-    return HookWorker(store=store), store
+    return HookWorker(store=store, publish_native_policy=publish_native_policy), store
 
 
 def test_cursor_native_review_asks_and_queues_approval(

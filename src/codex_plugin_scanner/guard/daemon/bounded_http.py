@@ -17,6 +17,7 @@ import threading
 from contextlib import suppress
 from dataclasses import dataclass
 from http.server import ThreadingHTTPServer
+from socketserver import TCPServer
 from typing import Any, cast
 
 _DEFAULT_ACTIVE_REQUESTS = 64
@@ -189,6 +190,15 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
         _DEFAULT_LISTEN_BACKLOG,
         _MAX_LISTEN_BACKLOG,
     )
+
+    def server_bind(self) -> None:
+        # HTTPServer adds socket.getfqdn() solely for server_name metadata.
+        # A local daemon needs the actual bound address, not reverse DNS:
+        # resolver stalls must not hold its constructor indefinitely.
+        TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = str(host)
+        self.server_port = int(port)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # ``TCPServer.__init__`` can call ``server_close`` when binding fails.

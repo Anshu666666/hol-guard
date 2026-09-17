@@ -40,6 +40,8 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     assert "transport_identity" in categories
     assert "asynchronous_policy" in categories
     assert "synchronous_posture_config" in categories
+    assert "synchronous_authority_fence" in categories
+    assert "approval_identity" in categories
     config_reads = [
         item
         for item in report["inventory"]
@@ -70,6 +72,17 @@ def test_floor_codec_exception_does_not_admit_program_or_source_io() -> None:
     assert MODULE._category(path, "filesystem", "native_command_control_floor_mac") == "unclassified_python_io"
     assert MODULE._category(path, "decode", "_metadata_from_bytes") == "unclassified_python_content_io"
     assert MODULE._category(path, "hash", "_metadata_from_bytes") == "unclassified_python_io"
+
+
+def test_fence_exception_does_not_admit_control_content_or_program_compilation() -> None:
+    path = "src/codex_plugin_scanner/guard/native_command_control_authority_io.py"
+    assert MODULE._category(path, "filesystem", "hold_command_control_authority_lock") == "synchronous_authority_fence"
+    assert MODULE._category(path, "decode", "hold_command_control_authority_lock") == "unclassified_python_content_io"
+    assert MODULE._category(path, "hash", "hold_command_control_authority_lock") == "unclassified_python_io"
+    assert MODULE._category(path, "filesystem", "read_private_state") == "unclassified_python_io"
+    binding = "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py"
+    assert MODULE._category(binding, "hash", "native_review_action_identity") == "approval_identity"
+    assert MODULE._category(binding, "hash", "native_review_policy_binding") == "unclassified_python_io"
 
 
 def test_gate_rejects_native_branch_semantic_fallback(tmp_path: Path) -> None:
@@ -174,3 +187,22 @@ def test_resolver_fails_closed_for_unknown_symbol_on_repository_module(tmp_path:
 
     with pytest.raises(RuntimeError, match="unresolved repository-qualified helper call"):
         MODULE.resolve_call(tmp_path, caller, "known_helper.read_source", records)
+
+
+def test_resolver_follows_exact_static_facade_without_accepting_computed_exports(tmp_path: Path) -> None:
+    implementation = _write_guard_fixture(tmp_path, "platform_io", "def read_source():\n    return 'source'\n")
+    facade_path = _write_guard_fixture(
+        tmp_path, "io_facade", "from . import platform_io as backend\nread_source = backend.read_source\n"
+    )
+    caller_path = _write_guard_fixture(
+        tmp_path, "facade_caller", "from . import io_facade as api\ndef call():\n    return api.read_source()\n"
+    )
+    records = MODULE._function_map(tmp_path)
+    caller = records[caller_path, "call"][0]
+    resolved = MODULE.resolve_call(tmp_path, caller, "api.read_source", records)
+    assert resolved is not None and resolved.path == implementation
+    (tmp_path / facade_path).write_text(
+        "from . import platform_io as backend\nread_source = getattr(backend, 'read_source')\n"
+    )
+    with pytest.raises(RuntimeError, match="unresolved repository-qualified helper call"):
+        MODULE.resolve_call(tmp_path, caller, "api.read_source", MODULE._function_map(tmp_path))

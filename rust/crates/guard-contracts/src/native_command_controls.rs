@@ -8,6 +8,45 @@ use sha2::{Digest, Sha256};
 pub const NATIVE_COMMAND_CONTROL_BINDING_SCHEMA: &str = "guard.native-command-control-binding.v1";
 pub const NATIVE_COMMAND_PROGRAM_CAPABILITY: &str = "native-command-program-v1";
 pub const NATIVE_COMMAND_CONTROL_FENCE_CAPABILITY: &str = "native-command-control-fence-v1";
+
+/// Fixed public failure identities. These contain no paths, keys, revisions,
+/// command text or raw OS errors; unknown codes remain redacted by transport.
+pub const NATIVE_COMMAND_CONTROL_ERROR_CODES: &[&str] = &[
+    "native_command_control_authority_downgrade",
+    "native_command_control_authority_epoch_reused",
+    "native_command_control_authority_invalid",
+    "native_command_control_authority_mac_invalid",
+    "native_command_control_authority_missing",
+    "native_command_control_authority_noncanonical",
+    "native_command_control_authority_not_current",
+    "native_command_control_authority_path_invalid",
+    "native_command_control_authority_removed",
+    "native_command_control_binding_invalid",
+    "native_command_control_binding_removed",
+    "native_command_control_digest_mismatch",
+    "native_command_control_encoding_failed",
+    "native_command_control_floor_invalid",
+    "native_command_control_layer_invalid",
+    "native_command_control_mutation_in_progress",
+    "native_command_control_mutation_lock_invalid",
+    "native_command_control_mutation_lock_missing",
+    "native_command_control_mutation_lock_unsupported",
+    "native_command_control_mutation_reused",
+    "native_command_control_recovery_context_mismatch",
+    "native_command_control_recovery_invalid",
+    "native_command_control_recovery_missing",
+    "native_command_control_revision_downgrade",
+    "native_command_control_revision_reused",
+    "native_command_control_target_invalid",
+    "native_command_control_target_unknown",
+    "native_policy_snapshot_command_authority_invalid",
+    "native_policy_snapshot_command_authority_not_private",
+    "native_policy_snapshot_command_authority_read_failed",
+    "native_policy_snapshot_command_authority_stat_failed",
+    "native_policy_snapshot_command_authority_too_large",
+    "native_resident_command_mutation_lock_invalid",
+    "native_resident_command_mutation_lock_read_failed",
+];
 const RUNTIME_SCHEMA: &str = "guard.extension-control-runtime-snapshot.v1";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

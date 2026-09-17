@@ -14,6 +14,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from ..models import GuardApprovalRequest, format_local_http_origin
+from .hook_native_review_binding import (
+    NATIVE_REVIEW_BINDING_FIELD,
+    native_review_action_identity,
+    native_review_binding_matches,
+    native_review_policy_binding,
+)
 from .hook_request_parsing import pre_tool_command
 from .hook_worker_responses import (
     harness_json_from_native_pre_tool,
@@ -31,17 +37,33 @@ def pause_native_pre_tool_for_approval(
     native_result: Mapping[str, object],
     workspace: Path | None,
     guard_home: Path,
+    verified_receipt: object = None,
 ) -> dict[str, object]:
     """Pause a native review result and attach any queued approval metadata."""
 
     launch_target = _native_review_launch_target(payload)
     tool_name = _native_review_tool_name(payload)
+    try:
+        binding = native_review_policy_binding(
+            harness=harness, native_result=native_result, verified_receipt=verified_receipt
+        )
+    except ValueError:
+        failed = dict(native_result)
+        failed.update(
+            decision="deny",
+            minimum_action="block",
+            policy_action="block",
+            reason_code="native_review_policy_binding_invalid",
+            reason="HOL Guard could not bind this review to its native policy.",
+        )
+        return harness_json_from_native_pre_tool(harness, failed)
     if _native_review_matching_allow(
         store,
         harness=harness,
         tool_name=tool_name,
         launch_target=launch_target,
         workspace=workspace,
+        policy_binding=binding,
     ):
         allowed = dict(native_result)
         allowed["decision"] = "allow"
@@ -50,13 +72,14 @@ def pause_native_pre_tool_for_approval(
         response = harness_json_from_native_pre_tool(harness, allowed)
         response["approval_reuse_status"] = "accepted"
         return response
-    queued = queue_native_pre_tool_review(
+    queued = _queue_native_pre_tool_review(
         store,
         harness=harness,
         payload=payload,
         native_result=native_result,
         workspace=workspace,
         guard_home=guard_home,
+        policy_binding=binding,
     )
     if queued is None:
         failed = dict(native_result)
@@ -85,9 +108,37 @@ def queue_native_pre_tool_review(
     native_result: Mapping[str, object],
     workspace: Path | None,
     guard_home: Path,
+    verified_receipt: object = None,
 ) -> dict[str, object] | None:
     """Persist one native review as an approval-center request."""
 
+    try:
+        binding = native_review_policy_binding(
+            harness=harness, native_result=native_result, verified_receipt=verified_receipt
+        )
+    except ValueError:
+        return None
+    return _queue_native_pre_tool_review(
+        store,
+        harness=harness,
+        payload=payload,
+        native_result=native_result,
+        workspace=workspace,
+        guard_home=guard_home,
+        policy_binding=binding,
+    )
+
+
+def _queue_native_pre_tool_review(
+    store: object,
+    *,
+    harness: str,
+    payload: Mapping[str, object],
+    native_result: Mapping[str, object],
+    workspace: Path | None,
+    guard_home: Path,
+    policy_binding: Mapping[str, object] | None,
+) -> dict[str, object] | None:
     persist = getattr(store, "add_approval_request", None)
     lookup = getattr(store, "get_approval_request", None)
     if not callable(persist) or not callable(lookup):
@@ -117,6 +168,9 @@ def queue_native_pre_tool_review(
         artifact_type="tool_call",
         launch_target=launch_target,
         risk_summary=reason,
+        action_identity=native_review_action_identity(
+            tool_name=tool_name, launch_target=launch_target, binding=policy_binding
+        ),
         action_envelope_json=_native_review_action_envelope(
             request_id=request_id,
             harness=harness,
@@ -124,6 +178,7 @@ def queue_native_pre_tool_review(
             command=command,
             launch_target=launch_target,
             workspace=workspace,
+            policy_binding=policy_binding,
         ),
     )
     try:
@@ -145,6 +200,7 @@ def _native_review_matching_allow(
     tool_name: str,
     launch_target: str,
     workspace: Path | None,
+    policy_binding: Mapping[str, object] | None = None,
 ) -> bool:
     listing = getattr(store, "list_approval_requests", None)
     if not callable(listing) or not launch_target:
@@ -170,6 +226,8 @@ def _native_review_matching_allow(
             continue
         if row.get("workspace") != expected_workspace:
             continue
+        if not native_review_binding_matches(row, policy_binding):
+            continue
         return True
     return False
 
@@ -182,10 +240,11 @@ def _native_review_action_envelope(
     command: str | None,
     launch_target: str,
     workspace: Path | None,
+    policy_binding: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     host = urlparse(launch_target).hostname if "://" in launch_target else None
     action_type = "shell_command" if command is not None else "network_request" if host else "mcp_tool"
-    return {
+    envelope: dict[str, object] = {
         "schema_version": 1,
         "action_id": request_id,
         "harness": harness,
@@ -205,6 +264,9 @@ def _native_review_action_envelope(
         "package_name": None,
         "pre_execution_result": "review",
     }
+    if policy_binding is not None:
+        envelope[NATIVE_REVIEW_BINDING_FIELD] = dict(policy_binding)
+    return envelope
 
 
 def _native_review_approval_center_url(store: object) -> str:

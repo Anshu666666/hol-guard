@@ -111,6 +111,15 @@ _TRANSPORT_CODEC_FUNCTIONS: Final = frozenset(
         ),
     }
 )
+_SYNCHRONOUS_FENCE_FUNCTIONS: Final = frozenset(
+    {
+        ("src/codex_plugin_scanner/guard/native_command_control_authority_io.py", "_unix_directory"),
+        (
+            "src/codex_plugin_scanner/guard/native_command_control_authority_io.py",
+            "hold_command_control_authority_lock",
+        ),
+    }
+)
 _PERSISTENCE_PATH_PREFIXES: Final = (
     "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
     "src/codex_plugin_scanner/guard/runtime/hook_enrichment_queue.py",
@@ -267,6 +276,14 @@ def _category(path: str, kind: str, function: str = "") -> str:
         return "transport_decode"
     if (path, function) in _TRANSPORT_CODEC_FUNCTIONS and kind == "decode":
         return "transport_decode"
+    if (path, function) in _SYNCHRONOUS_FENCE_FUNCTIONS and kind == "filesystem":
+        return "synchronous_authority_fence"
+    if (
+        path == "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py"
+        and function == "native_review_action_identity"
+        and kind == "hash"
+    ):
+        return "approval_identity"
     if (
         path
         in {

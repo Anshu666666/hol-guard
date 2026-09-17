@@ -1,0 +1,649 @@
+{
+  "schema": "guard.inventory-wait-profile.v1",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "head": "cef2edff2d0241c0c678d996c2a261cdbc7e2976",
+  "source_sha256": {
+    "guard/inventory_cisco.py": "45785a07d40c8bbc7c1e3d26e7501422c570819473785ecbdf35bea538ebbb9b",
+    "integrations/scanner_subprocess.py": "c0d1ef7b0d6d78c5859202f4afd1343f896c7228b66704d8146e1ae7fef22b36",
+    "integrations/cisco_mcp_scanner.py": "093c91ff98d4c23c8630aba8185da1a30980a1b24e2e0d11e33177e4017e6c74",
+    "integrations/cisco_skill_scanner.py": "bb9574e1e4dd418d64f7215e859df3a96cbee1023b851d6b84dc72fa300606b5",
+    "guard/runtime/runner.py": "60edce64505dc9782c555b1e93c96a2335ae0b77980590ab55323b0ddd5b8128"
+  },
+  "scope": "offline component fixture; controlled transport wait is not actual cloud latency",
+  "process": [
+    {
+      "case": "isolated_json_1k",
+      "engine": "controlled Python fixture, not Cisco",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.2754858679982135,
+          "parent_cpu_s": 0.006393414000000042,
+          "reaped_children_cpu_s": 0.217094,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.31273580999913975,
+          "parent_cpu_s": 0.005953172000000007,
+          "reaped_children_cpu_s": 0.233564,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.5175615059997654,
+          "parent_cpu_s": 0.00854542199999997,
+          "reaped_children_cpu_s": 0.3235059999999999,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        }
+      ]
+    },
+    {
+      "case": "isolated_json_256k",
+      "engine": "controlled Python fixture, not Cisco",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.3419449020002503,
+          "parent_cpu_s": 0.0052828560000000024,
+          "reaped_children_cpu_s": 0.25768900000000006,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 262160,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.28473500999825774,
+          "parent_cpu_s": 0.007878684999999996,
+          "reaped_children_cpu_s": 0.26005599999999984,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 262160,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.264044018000277,
+          "parent_cpu_s": 0.005436785999999971,
+          "reaped_children_cpu_s": 0.2549610000000002,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 262160,
+          "stderr_bytes": 0
+        }
+      ]
+    },
+    {
+      "case": "isolated_controlled_wait",
+      "engine": "controlled Python fixture, not Cisco",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.359573363999516,
+          "parent_cpu_s": 0.005118249000000019,
+          "reaped_children_cpu_s": 0.26549599999999995,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.3267961550009204,
+          "parent_cpu_s": 0.004542324999999958,
+          "reaped_children_cpu_s": 0.2569299999999999,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.3405091029999312,
+          "parent_cpu_s": 0.008845725999999998,
+          "reaped_children_cpu_s": 0.25977799999999984,
+          "timed_out": false,
+          "returncode": 0,
+          "stdout_bytes": 1040,
+          "stderr_bytes": 0
+        }
+      ]
+    },
+    {
+      "case": "isolated_deadline",
+      "engine": "controlled Python fixture, not Cisco",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.27511343200239935,
+          "parent_cpu_s": 0.005056237999999991,
+          "reaped_children_cpu_s": 0.24125500000000022,
+          "timed_out": true,
+          "returncode": -9,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.25759515300160274,
+          "parent_cpu_s": 0.004909602999999985,
+          "reaped_children_cpu_s": 0.2431540000000001,
+          "timed_out": true,
+          "returncode": -9,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.25757067399899825,
+          "parent_cpu_s": 0.004899419000000016,
+          "reaped_children_cpu_s": 0.2401469999999999,
+          "timed_out": true,
+          "returncode": -9,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0
+        }
+      ]
+    }
+  ],
+  "cisco": {
+    "installed": {
+      "cisco-ai-mcp-scanner": null,
+      "cisco-ai-skill-scanner": null
+    },
+    "scope": "actual unavailable-engine wrappers, no successful scan claim",
+    "samples": [
+      {
+        "sample": 0,
+        "wall_s": 0.4576582400004554,
+        "cpu_s": 0.01108867400000002
+      },
+      {
+        "sample": 1,
+        "wall_s": 0.45929102500304,
+        "cpu_s": 0.008964884999999922
+      },
+      {
+        "sample": 2,
+        "wall_s": 0.4406103679975786,
+        "cpu_s": 0.00886356399999988
+      }
+    ],
+    "results": [
+      {
+        "source": "cisco-mcp-scanner",
+        "status": "unavailable",
+        "duration_ms": 439,
+        "findings": 0,
+        "evidenceProvenance": "client_unverified",
+        "scannerResolutionSource": "local_reported",
+        "scannerVerificationRequired": "guard_cloud"
+      },
+      {
+        "source": "cisco-skill-scanner",
+        "status": "unavailable",
+        "duration_ms": 0,
+        "findings": 0,
+        "evidenceProvenance": "client_unverified",
+        "scannerResolutionSource": "local_reported",
+        "scannerVerificationRequired": "guard_cloud"
+      }
+    ]
+  },
+  "cloud_client": [
+    {
+      "case": "accepted",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.010331828001653776,
+          "parent_cpu_s": 0.0001978389999996999,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.010195193000981817,
+          "parent_cpu_s": 0.0001278580000003693,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.010223090997897089,
+          "parent_cpu_s": 0.0001369000000002174,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        }
+      ]
+    },
+    {
+      "case": "timeout_retry",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.020415709001099458,
+          "parent_cpu_s": 0.0002868539999996145,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 120,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.02
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.020477622998441802,
+          "parent_cpu_s": 0.0003121329999999922,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 120,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.02
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.020545797000522725,
+          "parent_cpu_s": 0.00032680300000009765,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 120,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.02
+        }
+      ]
+    },
+    {
+      "case": "rate_limit_retry",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.05363469599978998,
+          "parent_cpu_s": 0.0007022119999997578,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.05182986699946923,
+          "parent_cpu_s": 0.0011313109999999682,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.05103229499945883,
+          "parent_cpu_s": 0.0005944809999998135,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        }
+      ]
+    },
+    {
+      "case": "gateway_retry",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.051286213001731085,
+          "parent_cpu_s": 0.0008841219999999872,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.05131532999803312,
+          "parent_cpu_s": 0.0007083909999998639,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.057201077997888206,
+          "parent_cpu_s": 0.00313008700000017,
+          "error_class": null,
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            },
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [
+            2,
+            2
+          ],
+          "imposed_fixture_wait_s": 0.05
+        }
+      ]
+    },
+    {
+      "case": "unauthorized",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.010409141999843996,
+          "parent_cpu_s": 0.00034338599999994557,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.010472617999766953,
+          "parent_cpu_s": 0.0003944900000001361,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.010997142002452165,
+          "parent_cpu_s": 0.0002208990000003297,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        }
+      ]
+    },
+    {
+      "case": "missing_endpoint",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.01024345600308152,
+          "parent_cpu_s": 0.0001448540000001941,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.010225206999166403,
+          "parent_cpu_s": 0.00015181499999972203,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.010213951998593984,
+          "parent_cpu_s": 0.00014138000000007978,
+          "error_class": "HTTPError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        }
+      ]
+    },
+    {
+      "case": "malformed_response",
+      "samples": [
+        {
+          "sample": 0,
+          "wall_s": 0.010587845001282403,
+          "parent_cpu_s": 0.0005086319999998423,
+          "error_class": "JSONDecodeError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 1,
+          "wall_s": 0.010216028000286315,
+          "parent_cpu_s": 0.00013942299999980534,
+          "error_class": "JSONDecodeError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        },
+        {
+          "sample": 2,
+          "wall_s": 0.01020823399812798,
+          "parent_cpu_s": 0.0001385280000003597,
+          "error_class": "JSONDecodeError",
+          "attempts": [
+            {
+              "timeout_s": 90,
+              "request_bytes": 13,
+              "same_body": true
+            }
+          ],
+          "requested_retry_wait_s": [],
+          "imposed_fixture_wait_s": 0.01
+        }
+      ]
+    }
+  ]
+}

@@ -282,7 +282,10 @@ def build_cases(workspace: Path) -> tuple[QualificationCase, ...]:
     for size_class, size in sizes.items():
         for secret in (False, True):
             body = _content(size, secret)
-            path = root / f"{'secret' if secret else 'benign'}-{size_class}.txt"
+            # The native source classifier admits .rs. A .txt file under this
+            # neutral directory is intentionally not source-like and blocks
+            # before scanning, which cannot qualify either content verdict.
+            path = root / f"{'secret' if secret else 'benign'}-{size_class}.rs"
             # Do not follow a pre-existing fixture symlink, even in a caller's
             # purportedly private workspace.
             if path.is_symlink():

@@ -79,6 +79,39 @@ def _payload(sample: int | None = None, *, case: str = "benign") -> dict[str, ob
     return synthetic_payload(sample, case=case)
 
 
+def _prepare_benchmark_policy(guard_home: Path) -> None:
+    """Give both semantic arms the same explicit policy before any timing."""
+    from scripts.native_slo_workloads import configuration_text
+
+    with (guard_home / "config.toml").open("x", encoding="utf-8") as handle:
+        handle.write(configuration_text("normal"))
+
+
+def _require_benchmark_policy(snapshot: Mapping[str, object]) -> None:
+    effective = snapshot.get("effective_policy")
+    if not isinstance(effective, Mapping):
+        raise RuntimeError("benchmark acknowledged policy missing")
+    actions = (
+        "default_action",
+        "subprocess_action",
+        "unknown_publisher_action",
+        "changed_hash_action",
+        "new_network_domain_action",
+    )
+    selectors = ("artifact_actions", "harness_actions", "publisher_actions", "harness_risk_actions")
+    risks = effective.get("risk_actions")
+    if (
+        snapshot.get("mode") != "enforce"
+        or effective.get("protection_posture") != "protected"
+        or any(effective.get(name) != "allow" for name in actions)
+        or any(effective.get(name) != {} for name in selectors)
+        or not isinstance(risks, Mapping)
+        or not risks
+        or any(action != "allow" for action in risks.values())
+    ):
+        raise RuntimeError("benchmark acknowledged policy does not match explicit semantic fixture")
+
+
 def _request(
     *,
     workspace: Path,
@@ -384,6 +417,7 @@ def _run_benchmarks(
         workspace = Path(temp_dir)
         guard_home = workspace / "guard-home"
         guard_home.mkdir(mode=0o700)
+        _prepare_benchmark_policy(guard_home)
 
         python_warm = _bench_python_warm_reference(
             workspace=workspace,
@@ -394,6 +428,7 @@ def _run_benchmarks(
         close_native_residents()
         try:
             with native_policy_snapshot(guard_home) as snapshot:
+                _require_benchmark_policy(snapshot)
                 reset_native_hook_route()
                 # Snapshot materialization is durable policy bookkeeping, not resident readiness.
                 # Start the gate when the production adapter begins its first authenticated request.
@@ -482,6 +517,8 @@ def main() -> int:
             "production_fallback": False,
             "cases_validated": ["benign", "secret"],
             "comparison_scope": "semantic_engine_process_not_legacy_guardian_topology",
+            "shared_policy_fixture": "explicit_protected_allow_policy",
+            "acknowledged_policy_validated": True,
         },
         "warm": {
             "boundary": "NATIVE_CLIENT",

@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Mapping
 from contextlib import ExitStack
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 
@@ -23,14 +23,17 @@ class FaultFixture:
         worker = session.daemon._server.hook_worker
         snapshot = worker.policy_snapshot_publisher.current_snapshot()
         effective = snapshot.get("effective_policy") if snapshot else None
+        risk_actions = effective.get("risk_actions") if isinstance(effective, Mapping) else None
         self.evidence: dict[str, object] = {
+            "command_authority_fixture": dict(session.command_authority_fixture),
             "isolated_store": session.guard_home.is_relative_to(session.root)
             and session.workspace.is_relative_to(session.root),
             "policy_ack_current": snapshot is not None and worker.policy_snapshot_publisher.is_ready(),
             "effective_policy_allow": isinstance(effective, Mapping)
             and effective.get("default_action") == "allow"
             and effective.get("subprocess_action") == "allow"
-            and all(value == "allow" for value in effective.get("risk_actions", {}).values()),
+            and isinstance(risk_actions, Mapping)
+            and all(value == "allow" for value in risk_actions.values()),
             "watch_observe_config": snapshot is not None
             and snapshot.get("mode") == "observe"
             and isinstance(effective, Mapping)
@@ -48,9 +51,10 @@ class FaultFixture:
 
         def capture(**kwargs: object) -> object:
             result = original(**kwargs)
+            native_result = result.get("result") if isinstance(result, Mapping) else None
             self.last_native = (
-                dict(result["result"])
-                if isinstance(result, Mapping) and isinstance(result.get("result"), Mapping)
+                dict(cast(Mapping[str, object], native_result))
+                if isinstance(native_result, Mapping)
                 else None
             )
             return result
@@ -76,7 +80,7 @@ class FaultFixture:
             # attribute with that name in the pinned baseline or candidate.
             original_size = hook_payload_reference.hook_payload_reference_size
 
-            def reference_size(*args: object, **kwargs: object) -> object:
+            def reference_size(*args: Any, **kwargs: Any) -> object:
                 try:
                     return original_size(*args, **kwargs)
                 except hook_payload_reference.HookPayloadReferenceError:

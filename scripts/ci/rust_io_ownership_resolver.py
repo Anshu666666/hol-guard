@@ -143,6 +143,33 @@ def _resolve_exported_symbol(
     for item in tree.body:
         if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == name:
             return module_path
+    # Compatibility facades also re-export a helper with an exact static
+    # assignment, such as `open_private = _windows_io.open_private`. Follow
+    # only a same-name attribute on an explicitly imported repository module;
+    # computed getattr, mutable containers, and renamed callables stay unknown.
+    for item in tree.body:
+        if (
+            not isinstance(item, ast.Assign)
+            or len(item.targets) != 1
+            or not isinstance(item.targets[0], ast.Name)
+            or item.targets[0].id != name
+            or not isinstance(item.value, ast.Attribute)
+            or not isinstance(item.value.value, ast.Name)
+            or item.value.attr != name
+        ):
+            continue
+        module_alias = item.value.value.id
+        for imported in tree.body:
+            if not isinstance(imported, ast.ImportFrom):
+                continue
+            for alias in imported.names:
+                if (alias.asname or alias.name) != module_alias:
+                    continue
+                target = _import_target_path(root, module_path, imported, alias.name)
+                if target is not None:
+                    resolved = _resolve_exported_symbol(root, target, name, seen)
+                    if resolved is not None:
+                        return resolved
     for item in tree.body:
         if not isinstance(item, ast.ImportFrom):
             continue
@@ -267,8 +294,7 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                     resolved = _resolve_exported_symbol(root, target, symbol_name, set())
                     if resolved is None:
                         raise RuntimeError(
-                            f"unresolved repository-qualified helper call {name!r} "
-                            f"from {record.path}:{record.qualname}"
+                            f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
                         )
                     return resolved
                 else:
@@ -297,8 +323,7 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                 resolved = _resolve_exported_symbol(root, target, symbol_name, set())
                 if resolved is None:
                     raise RuntimeError(
-                        f"unresolved repository-qualified helper call {name!r} "
-                        f"from {record.path}:{record.qualname}"
+                        f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
                     )
                 return resolved
     return None

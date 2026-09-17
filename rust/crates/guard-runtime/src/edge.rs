@@ -8,7 +8,6 @@ use guard_contracts::{
 };
 use guard_hook_core::review_post_tool_with_deadline;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::time::{Duration, Instant};
 
 use crate::native_hook_receipt::{receipt_from_post_tool, receipt_from_pre_tool};
@@ -16,85 +15,12 @@ use crate::native_hook_receipt::{receipt_from_post_tool, receipt_from_pre_tool};
 const MAX_HARNESS_BYTES: usize = 64;
 const MAX_EVENT_BYTES: usize = 64;
 const MAX_PATH_BYTES: usize = 32 * 1024;
-fn request_id_is_safe(value: &str) -> bool {
-    let opaque_token = !value.is_empty()
-        && value.len() <= 256
-        && value.bytes().all(|byte| {
-            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'-' | b'_' | b'.')
-        });
-    let compact_uuid = value.len() == 32
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
-    let dashed_uuid = value.len() == 36
-        && value.bytes().enumerate().all(|(index, byte)| {
-            matches!(index, 8 | 13 | 18 | 23)
-                .then_some(byte == b'-')
-                .unwrap_or_else(|| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        });
-    opaque_token || compact_uuid || dashed_uuid
-}
 
-fn request_payload_identity(payload: &Value) -> Result<Value, String> {
-    let Some(record) = payload.as_object() else {
-        return Err("native_hook_payload_invalid".to_owned());
-    };
-    // Event aliases and adapter timestamps are transport metadata, not request
-    // semantics. Event aliases are validated for agreement by
-    // `authoritative_event`, then omitted here so a harness spelling change
-    // cannot change an otherwise identical request. Timestamps are removed
-    // only at the envelope root: a nested timestamp may be an actual tool
-    // argument and must remain part of the action commitment.
-    let mut identity = record.clone();
-    for key in [
-        "event",
-        "eventName",
-        "hook_event_name",
-        "hookEventName",
-        "hook_name",
-        "hookName",
-        "timestamp",
-        "timestamp_ms",
-        "timestampMs",
-        "created_at",
-        "createdAt",
-        "received_at",
-        "receivedAt",
-    ] {
-        identity.remove(key);
-    }
-    Ok(Value::Object(identity))
-}
-
-fn stable_policy_identity(snapshot: &Value, generation: u64) -> Value {
-    let object = snapshot.as_object();
-    let runtime_identity = object
-        .and_then(|value| value.get("runtime_identity"))
-        .cloned()
-        .unwrap_or(Value::Null);
-    let policy_digest = object
-        .and_then(|value| value.get("policy_digest"))
-        .cloned()
-        .unwrap_or(Value::Null);
-    let rule_digest = object
-        .and_then(|value| value.get("rule_digest"))
-        .cloned()
-        .unwrap_or(Value::Null);
-    let scope_digest = object
-        .and_then(|value| value.get("scope_contract"))
-        .and_then(Value::as_object)
-        .and_then(|scope| scope.get("scope_digest"))
-        .cloned()
-        .unwrap_or(Value::Null);
-    serde_json::json!({
-        "generation": generation,
-        "policy_digest": policy_digest,
-        "rule_digest": rule_digest,
-        "runtime_identity": runtime_identity,
-        "scope_digest": scope_digest,
-    })
-}
-
+#[path = "edge_identity.rs"]
+mod identity;
+#[path = "edge_serialization.rs"]
+mod serialization;
+use identity::request_identity_for_event;
 /// Derive a stable opaque identity when the harness omitted a request ID.
 /// The digest covers semantic request inputs only. Transport deadlines,
 /// object field order, and event-alias spelling are deliberately excluded.
@@ -104,38 +30,6 @@ pub(crate) fn request_identity(envelope: &GuardHookEnvelopeV2) -> Result<(String
     let harness = canonical_harness(&envelope.harness)?;
     let event = authoritative_event(envelope)?;
     request_identity_for_event(envelope, &harness, &event)
-}
-
-fn request_identity_for_event(
-    envelope: &GuardHookEnvelopeV2,
-    harness: &str,
-    event: &str,
-) -> Result<(String, String), String> {
-    let payload = request_payload_identity(&envelope.raw_payload)?;
-    let source = serde_json::json!({
-        "cwd": envelope.source.cwd,
-        "guard_home": envelope.source.guard_home,
-        "home_dir": envelope.source.home_dir,
-        "source_ref_external_allowed": envelope.source.source_ref_external_allowed,
-    });
-    let value = serde_json::json!({
-        "schema": "guard-native-request-identity.v3",
-        "version": 3,
-        "event": event,
-        "harness": harness,
-        "payload": payload,
-        "policy": stable_policy_identity(&envelope.policy_snapshot, envelope.policy_generation),
-        "source": source,
-    });
-    let canonical = guard_policy_snapshot::canonical_json_bytes(&value)
-        .map_err(|_| "native_hook_request_digest_failed".to_owned())?;
-    let digest = hex::encode(Sha256::digest(&canonical));
-    let request_id = match envelope.request_id.as_deref() {
-        Some(value) if request_id_is_safe(value) => value.to_owned(),
-        Some(_) => return Err("native_hook_request_id_invalid".to_owned()),
-        None => format!("sha256:{digest}"),
-    };
-    Ok((request_id, digest))
 }
 
 fn bounded_nonempty(value: &str, maximum: usize, code: &str) -> Result<(), String> {
@@ -295,11 +189,8 @@ fn validate_envelope_shape(
     {
         return Err("native_hook_policy_generation_mismatch".to_owned());
     }
-    let encoded = serde_json::to_vec(&envelope)
+    serialization::serialized_size_within(&envelope, MAX_NATIVE_REQUEST_BYTES)
         .map_err(|_| "native_hook_request_bounds_exceeded".to_owned())?;
-    if encoded.len() > MAX_NATIVE_REQUEST_BYTES {
-        return Err("native_hook_request_bounds_exceeded".to_owned());
-    }
     let harness = canonical_harness(&envelope.harness)?;
     let event_name = authoritative_event(&envelope)?;
     let (request_id, request_digest) =
@@ -482,3 +373,7 @@ pub(crate) fn evaluate_envelope_with_snapshot(
 #[cfg(test)]
 #[path = "edge_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "diagnostic-allocations"))]
+#[path = "edge_allocation_diagnostic.rs"]
+mod allocation_diagnostic;

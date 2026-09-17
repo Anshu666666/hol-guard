@@ -62,6 +62,7 @@ def failure_evidence(error: Exception) -> dict[str, object]:
         (
             "qualification",
             "priority_launcher_",
+            "installed_ollama_",
             "native_installed_slo_failed:",
             "daemon fixture",
             "expiry fixture",

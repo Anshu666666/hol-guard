@@ -474,6 +474,7 @@ def test_large_classes_use_bounded_local_source_references(tmp_path: Path) -> No
         reference = fixture["guard_source_ref"]
         assert isinstance(reference, dict)
         assert Path(str(reference["path"])).stat().st_size == expected_bytes
+        assert Path(str(reference["path"])).suffix == ".rs"
         assert reference["version"] == 1
         assert reference["output_chars"] == expected_bytes
         assert "tool_response" not in fixture

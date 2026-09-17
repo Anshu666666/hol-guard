@@ -1,8 +1,10 @@
 # Current decision and performance contract
 
-This contract describes the reconciled production route and the first performance
-tranche. New native extension and attestation capabilities must extend it with
-explicit version/coverage evidence before activation.
+This contract describes production source at local integration
+`264da76d3bca7a1a4f4970834291ca48d7c7a3c2`. It includes implemented native
+command execution, control authority and live-process attestation. Source support
+is distinct from installed activation and release qualification; exact evidence
+and remaining acceptance are in the [execution ledger](EXECUTION_LEDGER.md).
 
 ## Ownership and timing boundaries
 
@@ -67,9 +69,17 @@ expectations, rather than only asserting equivalence with Python.
 | Foreground evidence queue | 2,000 queued records and 16 MiB retained facts, plus one bounded in-flight batch |
 | Evidence batch | At most 50 records per pass, existing nominal 25 ms batch wait and 50 ms SQLite timeout |
 | Workspace policy registration | 1,024 workspaces plus home; capacity exhaustion closes the publication barrier rather than evicting a stricter active overlay |
+| Native command program | 4 MiB, 1,024 rules, 16,384 graph nodes, depth 32; typed configs and complete digest validation |
+| Command authority marker | 4 KiB, authenticated canonical record and retained SH/EX lock |
+| Managed source context | At most 512 configured targets, 256 characters per target and 512 KiB authenticated context record |
+| Live attestation registry | 256 reusable proofs/full-validation blockers; saturation disables reuse for the Python process lifetime |
+| MCP UTF-8 line | 4 MiB including newline; incomplete frame bounded to 30 seconds from first bytes |
+| MCP child output queue | 64 frames and 16 MiB encoded bytes; nonblocking admission and terminal overflow |
+| MCP unmatched replies | 64 responses and 8 MiB encoded bytes per direction |
+| MCP nested operation | 4,096 frames and depth 16 under the original deadline; ordinary writes bounded by configured timeout capped at 30 seconds |
 
-These are distinct limits, not a single process RSS cap. New IR/program/control
-and MCP framing limits must be recorded with their implementation. A performance
+These are distinct limits, not a single process RSS cap. Decoded objects and
+catalogs have additional memory cost. A performance
 optimization must not weaken duplicate-key rejection, strict UTF-8, unknown-field
 policy, byte versus character distinctions, collection/depth bounds, canonical
 field ordering or digest domains. Exact-byte identities retain CRLF and Unicode
@@ -78,12 +88,51 @@ result validation; legacy optional-field absence must retain legacy encoding.
 
 Executable status binds package version, manifest/runtime digest, target and
 ownership/permissions. Capability caching alone does not eliminate executable
-hashing. Any attestation reuse must refer to an already verified live process,
+hashing. Implemented attestation reuse refers to an already verified Linux live process,
 with stable start identity, exact image, verified package and current manifest.
 Stat metadata can invalidate a cache but cannot prove content integrity. A new
 spawn requires fresh full validation; death between lookup and dispatch must not
 let a cached digest authorize its replacement. Unsupported platform/filesystem
 proof retains full validation.
+
+## Native program and control authority
+
+The reviewed trusted compiler produces executable typed configurations; a matcher
+name and digest alone are not a program. The Rust interpreter admits one immutable
+program, verifies all graph digests, shares compiled state and evaluates one
+canonical command with candidate indexing and memoization. Complete rule,
+permission, variant and owned-uncertainty observations feed the existing core
+floors. Unsupported/context-heavy cases cannot silently become no-match or allow.
+The semantic profile is pinned to CPython 3.12/UCD15; opaque operand handling does
+not imply arbitrary non-ASCII configuration support.
+
+Production command publication requires both `native-command-program-v1` and
+`native-command-control-fence-v1`, exact program/catalog/trust identity and verified
+local/managed control authority. Missing capability or proof closes readiness;
+there is no unbound legacy command fallback. Legacy APIs where the optional
+command extension field is absent preserve their previous canonical encoding.
+
+Control mutation holds a retained exclusive lock and durably writes an
+authenticated closed marker **before** credential/SQLite semantic effects. A
+committed marker identifies the verified result. Native publication/admission,
+evaluation and final approval authority use the overlapping shared lock. Stable
+Python reconciliation also uses shared access; a semantic-write sentinel releases
+it and re-verifies under a new exclusive lease before effects. There is no
+in-place shared-to-exclusive upgrade. Compilation is outside the critical lease.
+
+Local and managed floors remain independent and monotonic. Explicit recovery
+chooses the new key/epoch before effects and links the exact prior authenticated
+native floor. Historical recovery cannot permit a later key change in the same
+epoch. Failed mutations/crashes leave authority closed until verified recovery.
+A signed activation source manifest pins managed enabled-control meaning across
+catalog replacement/deletion; legacy missing-source records conservatively clamp
+enables. Mutable current manifests cannot retroactively establish old authority.
+The cloud acknowledgement is not rewritten.
+
+Native receipts preserve the complete optional command binding in SQLite
+migration 28. `GuardStore.get_native_decision_receipt()` reconstructs and validates
+the full durable receipt; a row count alone is not evidence that the current
+program/control binding survived ingestion.
 
 ## Deadlines, commit points and replay
 
@@ -94,20 +143,51 @@ flushes are cooperative boundaries: elapsed checks before/after a read cannot
 preempt a kernel operation already blocked. The Python edge's normal capture
 budget and caller admission bound must not be advertised as hard OS-I/O preemption.
 
-Approval reuse binds the exact request, workspace, policy/native decision and
-eligible content identity; freshness and one-time transactional consume remain
-mandatory. An ambiguous consume or tool-write result cannot be retried as though
-the first operation did not happen. Policy authority is committed durably before
-publication and becomes visible only through the matching resident ACK; newer
-stricter authority invalidates stale publication. Extension authority must add
-its own independent local/cloud revision and equivocation fences.
+Ordinary local approval continuation is **resolved-row reuse**. The queued action
+contains a validated `guard.native-review-policy-binding.v1` derived from the
+native result, binding policy/rule/runtime and compact command observations.
+Request metadata cannot manufacture it. A resolved allow is eligible only for the
+same binding, harness, tool, launch and workspace. Legacy absence matches only
+legacy absence; policy renewal alone may retain the same effective binding.
+A native block cannot be replaced by a saved allow.
+
+The Python worker holds the shared authority fence through native evaluation,
+queue/reuse and final rendering, after posture/ACK preparation. Mutation takes the
+exclusive fence and therefore cannot cross that protected decision. The lock
+consumes the caller's deadline. Timeout, failed authority or late allow follows
+the existing availability contract; a completed native block remains a block.
+The installed controlled-approval helper uses the existing local resolution API
+with policy persistence disabled. That path does not call the exported native
+v3/v4 one-time challenge/claim/consume APIs and must not be described as doing so.
+
+There is a further harness distinction. The source-supported Claude ask → local
+resolve → retry path can use that resolved-row binding. The current native queue
+resolution with `persist_policy=False` produces a retry-only continuation snapshot
+with `hookAttached=False`, not `approval-gate-once` authority. A Codex registered
+browser-wait allow therefore cannot be inferred from the Claude result: the actual
+`complete_codex_live_decision(fresh_allow_authorized=True)` path rejects this
+snapshot with `exact_approval_authority_missing`. This reported production
+continuation gap requires a separate correction and real installed regression;
+qualification fixtures must expose it rather than manufacture authority metadata.
+
+Native v3/v4 approval APIs have separate authority-bound challenge, claim and
+transactional consume tests. Their final consume holds the shared fence. Actual
+ordinary-launcher exercise of those APIs is not established. An ambiguous consume
+or tool write must not be transparently retried, regardless of which approval
+route eventually uses it. [The authority protocol](../rust-native-command-control-binding.md)
+records the exact request, binding, floor and recovery contracts.
 
 MCP forwarding commits at the actual child stdin write. Full-catalog generation,
 authority, input and entrypoint freshness are revalidated at the final boundary,
 including the existing 5 ms quiet drain. `tools/list_changed` notifications during
 approval invalidate saved catalog authority. Out-of-order responses retain their
 JSON-RPC IDs. Ambiguous writes are terminal; they are not transparently replayed.
-Bounded framing must keep notification processing live while approvals are pending.
+Bounded framing keeps notification processing live while approvals are pending.
+Overflow, malformed frames and timed-out/ambiguous writes retire the captured
+stream generation and quarantine the child. No subsequent normal result or
+forward is permitted. Quiet drains cannot reset the deadline or discard catalog
+invalidation. [The framing contract](../../mcp-framing-bounds.md) distinguishes
+real POSIX tests from simulated Windows worker coverage.
 
 Evidence acceptance is distinct from durability: memory accepted can be lost
 before journaling; journal-durable records replay; database-committed records may
@@ -124,7 +204,8 @@ decision-time config access `synchronous_posture_config`; it does not relabel it
 as background work. Background captured-byte policy compilation and foreground
 native receipt validation retain their distinct ownership.
 
-Current test suites cover native contracts, malformed/source mutation, approval
-consume, Watch/availability, policy publication and scanner parity. Those tests
+Current test suites cover native contracts, malformed/source mutation, separate
+native approval APIs and ordinary local review reuse, Watch/availability,
+policy publication and scanner parity. Those tests
 are necessary but do not establish installed performance or final code-owner
 approval. The [execution ledger](EXECUTION_LEDGER.md) records those remaining gates.

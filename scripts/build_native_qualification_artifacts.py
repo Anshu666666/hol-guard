@@ -16,6 +16,18 @@ def _run(argv: list[str], *, cwd: Path, environment: dict[str, str] | None = Non
     return completed.stdout.strip()
 
 
+def _run_required_checks(checks: tuple[tuple[str, list[str]], ...], *, cwd: Path) -> None:
+    """Retain independent installed evidence even when another check fails."""
+    failed: list[str] = []
+    for name, argv in checks:
+        try:
+            _run(argv, cwd=cwd)
+        except subprocess.CalledProcessError:
+            failed.append(name)
+    if failed:
+        raise RuntimeError("installed qualification failed: " + ",".join(failed))
+
+
 def _build(
     source: Path, *, target: str, platform_tag: str, deployment_target: str
 ) -> tuple[Path, Path, dict[str, object]]:
@@ -88,7 +100,7 @@ def _build(
     _run(
         ["uv", "pip", "install", "--python", str(python), "--no-deps", "--force-reinstall", str(wheels[0])], cwd=source
     )
-    metadata = {
+    metadata: dict[str, object] = {
         "source_sha": sha,
         "package_version": version,
         "target": target,
@@ -140,27 +152,39 @@ def main() -> int:
     (destination / "build-metadata.json").write_text(
         json.dumps({"baseline": baseline, "candidate": candidate}, indent=2) + "\n"
     )
-    _run(
-        [
-            str(candidate_python),
-            str(args.candidate.resolve() / "scripts/qualify_guard_native.py"),
-            "--baseline-python",
-            str(baseline_python),
-            "--candidate-python",
-            str(candidate_python),
-            "--baseline-artifact",
-            str(baseline_wheel),
-            "--candidate-artifact",
-            str(candidate_wheel),
-            "--mode",
-            args.mode,
-            "--runs",
-            "5" if args.mode == "qualification" else "1",
-            "--output-dir",
-            str(destination),
-        ],
-        cwd=args.candidate.resolve(),
-    )
+    paired = [
+        str(candidate_python),
+        str(args.candidate.resolve() / "scripts/qualify_guard_native.py"),
+        "--baseline-python",
+        str(baseline_python),
+        "--candidate-python",
+        str(candidate_python),
+        "--baseline-artifact",
+        str(baseline_wheel),
+        "--candidate-artifact",
+        str(candidate_wheel),
+        "--mode",
+        args.mode,
+        "--runs",
+        "5" if args.mode == "qualification" else "1",
+        "--output-dir",
+        str(destination),
+    ]
+    ollama = [
+        str(candidate_python),
+        str(args.candidate.resolve() / "scripts/ci/verify_native_ollama_install.py"),
+        "--python",
+        str(candidate_python),
+        "--wheel",
+        str(candidate_wheel),
+        "--source-root",
+        str(args.candidate.resolve()),
+        "--source-sha",
+        str(candidate["source_sha"]),
+        "--output",
+        str(destination / "aggregate/installed-ollama.json"),
+    ]
+    _run_required_checks((("paired_sampling", paired), ("installed_ollama", ollama)), cwd=args.candidate.resolve())
     return 0
 
 

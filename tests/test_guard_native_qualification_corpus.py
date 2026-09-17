@@ -22,6 +22,7 @@ from codex_plugin_scanner.guard.daemon.hook_worker_responses import (
     harness_json_from_native_pre_tool_review,
 )
 from codex_plugin_scanner.guard.daemon.server import _GuardDaemonHandler
+from codex_plugin_scanner.guard.runtime.source_paths import source_path_is_allowed
 from scripts.native_slo_workloads import (
     QualificationCase,
     build_cases,
@@ -160,12 +161,24 @@ def test_source_refs_bind_exact_shared_synthetic_content(cases: tuple[Qualificat
             continue
         path = Path(str(reference["path"]))
         paths.add(path)
+        workspace = path.parent.parent
+        assert source_path_is_allowed(str(path), cwd=workspace, home_dir=workspace).allowed
         body = path.read_bytes()
         assert len(body) == case.content_bytes
         assert len(body.decode("ascii")) == reference["output_chars"]
         if "source-digest-mismatch" not in case.case_id:
             assert hashlib.sha256(body).hexdigest() == reference["output_sha256"]
     assert len(paths) == 5  # benign/secret 1MiB and max, plus the 1KiB identity fault
+
+
+def test_non_source_fixture_suffix_cannot_qualify_content_scanning(tmp_path: Path) -> None:
+    directory = tmp_path / "native-qualification"
+    directory.mkdir()
+    for extension, allowed in (("txt", False), ("rs", True)):
+        path = directory / ("benign." + extension)
+        path.write_bytes(b"const guard_value = 1;\n")
+        decision = source_path_is_allowed(str(path), cwd=tmp_path, home_dir=tmp_path)
+        assert decision.allowed is allowed
 
 
 def test_warm_fixture_reuse_does_not_change_source_identity(tmp_path: Path) -> None:
@@ -179,7 +192,7 @@ def test_warm_fixture_reuse_does_not_change_source_identity(tmp_path: Path) -> N
 
 def test_changed_fixture_and_symlink_are_rejected(tmp_path: Path) -> None:
     build_cases(tmp_path)
-    path = tmp_path / "native-qualification/benign-1k.txt"
+    path = tmp_path / "native-qualification/benign-1k.rs"
     path.write_text("changed")
     with pytest.raises(ValueError, match="fixture_changed"):
         build_cases(tmp_path)

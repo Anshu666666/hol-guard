@@ -206,10 +206,9 @@ def hold_command_control_authority_lock(
         while True:
             try:
                 if os.name == "nt":
-                    import msvcrt
+                    from .native_command_control_windows_lock import try_lock_authority_file
 
-                    os.lseek(descriptor, 0, os.SEEK_SET)
-                    msvcrt.locking(descriptor, msvcrt.LK_NBRLCK if shared else msvcrt.LK_NBLCK, 1)
+                    try_lock_authority_file(descriptor, shared=shared)
                 else:
                     import fcntl
 
@@ -235,10 +234,9 @@ def hold_command_control_authority_lock(
             if os.getpid() == process_id:
                 _LOCKS.active = active
                 if os.name == "nt":
-                    import msvcrt
+                    from .native_command_control_windows_lock import unlock_authority_file
 
-                    os.lseek(descriptor, 0, os.SEEK_SET)
-                    msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+                    unlock_authority_file(descriptor)
                 else:
                     import fcntl
 

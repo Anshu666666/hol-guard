@@ -17,6 +17,14 @@ def test_paired_workflow_pins_baseline_and_isolates_install_environments() -> No
         "scripts/qualify_guard_native.py",
         "scripts/native_slo_artifact.py",
         "scripts/build_native_qualification_artifacts.py",
+        "scripts/ci/installed_native_ollama_probe.py",
+        "scripts/ci/native_ollama_contract.py",
+        "src/codex_plugin_scanner/guard/store_native_decision_receipts.py",
+        "src/codex_plugin_scanner/guard/store_connection_schema.py",
+        "src/codex_plugin_scanner/guard/runtime/command_ollama_extensions.py",
+        "src/codex_plugin_scanner/guard/runtime/extension_control_contract.py",
+        "contracts/extensions/native-command-program.v1.json",
+        "contributions/extensions/command.ollama.json",
         "rust/crates/guard-runtime/src/edge.rs",
     ):
         assert any(fnmatch.fnmatch(changed, pattern) for pattern in patterns)

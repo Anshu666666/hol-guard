@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.util
 import os
 from pathlib import Path
@@ -17,6 +18,35 @@ benchmark = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(benchmark)
 
 
+def test_shared_semantic_policy_is_explicit_and_ack_must_match(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.config import load_guard_config
+    from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_native_policy_v3
+
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    default = effective_native_policy_v3(load_guard_config(guard_home, workspace=tmp_path))
+    assert default["default_action"] == "warn"
+    with pytest.raises(RuntimeError, match="does not match"):
+        benchmark._require_benchmark_policy({"mode": "enforce", "effective_policy": default})
+    benchmark._prepare_benchmark_policy(guard_home)
+    effective = effective_native_policy_v3(load_guard_config(guard_home, workspace=tmp_path))
+    snapshot = {"mode": "enforce", "effective_policy": effective}
+    benchmark._require_benchmark_policy(snapshot)
+    for name in ("default_action", "subprocess_action", "unknown_publisher_action"):
+        changed = copy.deepcopy(effective)
+        changed[name] = "warn"
+        with pytest.raises(RuntimeError, match="does not match"):
+            benchmark._require_benchmark_policy({"mode": "enforce", "effective_policy": changed})
+    with pytest.raises(RuntimeError, match="does not match"):
+        benchmark._require_benchmark_policy({**snapshot, "mode": "observe"})
+
+
+def test_native_policy_warning_is_named_but_never_accepted_as_content_scan() -> None:
+    response = {"decision": "allow", "model_output_action": "allow_original", "reason_code": "native_policy_warning"}
+    with pytest.raises(RuntimeError, match="reason=native_policy_warning"):
+        validate_semantic_response(response, route="native_resident", expected_route="native_resident", case="benign")
+
+
 def test_isolated_python_oracle_performs_semantic_work_without_production_callback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -27,6 +57,8 @@ def test_isolated_python_oracle_performs_semantic_work_without_production_callba
     for key in ("HOL_GUARD_TEST_MODE", "HOL_GUARD_PYTHON_ORACLE", "HOL_GUARD_NATIVE_DIAGNOSTIC"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr(HookWorker, "_test_python_oracle_factory", None)
+    (tmp_path / "guard-home").mkdir()
+    benchmark._prepare_benchmark_policy(tmp_path / "guard-home")
     runner = BenchmarkPythonOracle(workspace=tmp_path, guard_home=tmp_path / "guard-home")
     try:
         runner.start()
@@ -46,6 +78,11 @@ def test_isolated_python_oracle_performs_semantic_work_without_production_callba
         ({"decision": "allow", "reason_code": "native_hook_disabled"}, "python_semantic", "benign"),
         (
             {"decision": "allow", "model_output_action": "allow_original", "reason_code": "output_scan_allow"},
+            None,
+            "benign",
+        ),
+        (
+            {"decision": "allow", "model_output_action": "allow_original", "reason_code": "output_scan_allow"},
             "native_fail_safe",
             "benign",
         ),
@@ -63,7 +100,7 @@ def test_isolated_python_oracle_performs_semantic_work_without_production_callba
 )
 def test_semantic_validation_rejects_availability_wrong_route_and_wrong_reason(
     response: dict[str, str],
-    route: str,
+    route: str | None,
     case: str,
 ) -> None:
     with pytest.raises(RuntimeError, match="semantic validation failed"):

@@ -38,7 +38,7 @@ def synthetic_payload(sample: int | None = None, *, case: str = "benign") -> dic
     }
 
 
-def validate_semantic_response(response: object, *, route: str, expected_route: str, case: str) -> None:
+def validate_semantic_response(response: object, *, route: str | None, expected_route: str, case: str) -> None:
     """Reject availability, wrong routes, and skipped or different semantic work."""
 
     if case not in {"benign", "secret"}:
@@ -65,6 +65,7 @@ def validate_semantic_response(response: object, *, route: str, expected_route: 
             "observe_output_scan_allow",
             "observe_output_secret_match",
             "policy_allow",
+            "native_policy_warning",
             "native_resident",
             "native_fail_safe",
             "native_oneshot",

@@ -1,0 +1,244 @@
+"""Exact, bounded fixture resolution of real local approval records."""
+
+from __future__ import annotations
+
+import json
+import threading
+import time
+import uuid
+from types import SimpleNamespace
+
+import pytest
+
+from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings
+from codex_plugin_scanner.guard.daemon.hook_native_review_approval import queue_native_pre_tool_review
+from codex_plugin_scanner.guard.models import GuardApprovalRequest
+from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_slo_contract import assert_privacy_safe
+from scripts.native_slo_launcher_approval import LauncherApprovalControl, resolve_launcher_review
+
+
+def _session(tmp_path):
+    store = GuardStore(tmp_path / "guard-home")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    routes = {"native_resident": 0}
+    metrics = SimpleNamespace(snapshot=lambda: {"routes": dict(routes)})
+    daemon = SimpleNamespace(_server=SimpleNamespace(hook_worker=SimpleNamespace(metrics=metrics)))
+    return SimpleNamespace(store=store, workspace=workspace, daemon=daemon), routes
+
+
+def _payload(command="curl https://example.invalid/synthetic-token"):
+    return {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": command}}
+
+
+def _queue(session, *, harness="claude-code", payload=None, workspace=None):
+    row = queue_native_pre_tool_review(
+        session.store,
+        harness="claude-code" if harness == "claude" else harness,
+        payload=payload or _payload(),
+        native_result={"minimum_action": "review", "reason": "Synthetic launcher qualification"},
+        workspace=workspace or session.workspace,
+        guard_home=session.store.guard_home,
+    )
+    assert row is not None
+    return row["request_id"]
+
+
+def _result(control, operation_id):
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        result = control.result(operation_id)
+        if result["state"] != "waiting":
+            return result
+        time.sleep(0.01)
+    pytest.fail("fixture controller did not terminate")
+
+
+@pytest.mark.parametrize("harness", ["claude", "claude-code", "codex"])
+@pytest.mark.parametrize("resolution", ["allow", "block"])
+def test_real_pending_resolution_is_exact_and_privacy_safe(tmp_path, harness, resolution):
+    session, routes = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    try:
+        begun = control.begin(harness, _payload(), resolution=resolution, timeout_seconds=2)
+        routes["native_resident"] += 1
+        request_id = _queue(session, harness=harness)
+        result = _result(control, begun["operation_id"])
+        assert result["state"] == "resolved"
+        assert result["request_id"] == request_id
+        assert result["resolution"] == resolution
+        assert result["scope"] == "artifact"
+        assert result["authority"] == "ordinary_local_review"
+        assert result["routes"] == {"native_resident": 1}
+        assert result["binding_present"] is False
+        assert result["input_digest"] == begun["input_digest"]
+        assert session.store.get_approval_request(request_id)["resolution_action"] == resolution
+        serialized = json.dumps(assert_privacy_safe(result))
+        assert "example.invalid" not in serialized
+        assert "synthetic-token" not in serialized
+        assert str(tmp_path) not in serialized
+    finally:
+        control.close()
+
+
+def test_preexisting_deduplicated_request_is_never_selected(tmp_path):
+    session, _ = _session(tmp_path)
+    old = _queue(session)
+    control = LauncherApprovalControl(session)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=0.15)
+        assert _queue(session) == old
+        result = _result(control, begun["operation_id"])
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "qualification_launcher_approval_deadline"
+        assert session.store.get_approval_request(old)["status"] == "pending"
+    finally:
+        control.close()
+
+
+def test_other_harness_tool_command_and_workspace_are_not_resolved(tmp_path):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        others = [
+            _queue(session, harness="codex"),
+            _queue(session, payload=_payload("curl https://different.invalid")),
+            _queue(session, payload={**_payload(), "tool_name": "Shell"}),
+            _queue(session, workspace=tmp_path / "another-workspace"),
+        ]
+        exact = _queue(session)
+        result = _result(control, begun["operation_id"])
+        assert result["request_id"] == exact
+        assert all(session.store.get_approval_request(request_id)["status"] == "pending" for request_id in others)
+    finally:
+        control.close()
+
+
+def test_ambiguous_new_rows_fail_without_resolving_either(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    release = threading.Event()
+    original = control._new_pending
+
+    def delayed(operation):
+        assert release.wait(2)
+        return original(operation)
+
+    monkeypatch.setattr(control, "_new_pending", delayed)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        ids = []
+        for _ in range(2):
+            request_id = uuid.uuid4().hex
+            request = GuardApprovalRequest(
+                request_id=request_id,
+                harness="claude-code",
+                artifact_id="claude-code:native-pretool:Bash",
+                artifact_name="Bash",
+                artifact_hash=request_id,
+                policy_action="review",
+                recommended_scope="artifact",
+                changed_fields=("native_pre_tool",),
+                source_scope="project",
+                config_path=str(session.workspace),
+                review_command="synthetic",
+                approval_url="http://localhost",
+                workspace=str(session.workspace),
+                artifact_type="tool_call",
+                launch_target=_payload()["tool_input"]["command"],
+                action_identity=request_id,
+            )
+            ids.append(session.store.add_approval_request(request, "2026-09-17T00:00:00Z"))
+        assert len(set(ids)) == 2
+        release.set()
+        result = _result(control, begun["operation_id"])
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "qualification_launcher_approval_ambiguous"
+        assert all(session.store.get_approval_request(request_id)["status"] == "pending" for request_id in ids)
+    finally:
+        release.set()
+        control.close()
+
+
+def test_enabled_approval_gate_is_honored_by_production_service(tmp_path):
+    session, _ = _session(tmp_path)
+    password = "synthetic-fixture-password"
+    update_settings(session.store.guard_home, {"enabled": True, "new_password": password, "confirm_password": password})
+    request_id = _queue(session)
+    with pytest.raises(PermissionError):
+        resolve_launcher_review(session.store, request_id, "allow")
+    assert session.store.get_approval_request(request_id)["status"] == "pending"
+    result = resolve_launcher_review(
+        session.store, request_id, "allow", approval_gate_input=ApprovalGateInput(password=password)
+    )
+    assert result["approval_durable"] is True
+    assert password not in json.dumps(result)
+
+
+def test_close_cancels_wait_without_resolving_later_request(tmp_path):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    begun = control.begin("claude", _payload(), timeout_seconds=2)
+    with pytest.raises(RuntimeError, match="already_active"):
+        control.begin("codex", _payload())
+    control.close()
+    request_id = _queue(session)
+    assert control.result(begun["operation_id"])["state"] == "failed"
+    assert session.store.get_approval_request(request_id)["status"] == "pending"
+    with pytest.raises(RuntimeError, match="capacity"):
+        control.begin("claude", _payload())
+    with pytest.raises(ValueError, match="unknown_operation"):
+        control.result(uuid.uuid4().hex)
+
+
+def test_late_service_completion_reports_failure_and_actual_durable_outcome(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    entered, release = threading.Event(), threading.Event()
+
+    def delayed(*args, **kwargs):
+        entered.set()
+        assert release.wait(2)
+        return resolve_launcher_review(*args, **kwargs)
+
+    monkeypatch.setattr("scripts.native_slo_launcher_approval.resolve_launcher_review", delayed)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=0.2)
+        request_id = _queue(session)
+        assert entered.wait(1)
+        time.sleep(0.25)
+        release.set()
+        result = _result(control, begun["operation_id"])
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "qualification_launcher_approval_resolution_late"
+        assert result["approval_durable"] is True
+        assert result["request_id"] == request_id
+        assert session.store.get_approval_request(request_id)["status"] == "resolved"
+    finally:
+        release.set()
+        control.close()
+
+
+@pytest.mark.parametrize("timeout", [0, -1, 8.01, float("nan"), float("inf"), True])
+def test_deadline_is_explicitly_bounded(tmp_path, timeout):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    with pytest.raises(ValueError, match="invalid_deadline"):
+        control.begin("claude", _payload(), timeout_seconds=timeout)
+    control.close()
+
+
+def test_input_and_operation_count_are_bounded(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    for harness, payload in (("cursor", _payload()), ("claude", _payload("x" * 2049))):
+        with pytest.raises(ValueError):
+            control.begin(harness, payload)
+    monkeypatch.setattr("scripts.native_slo_launcher_approval._MAX_OPERATIONS", 1)
+    begun = control.begin("claude", _payload(), timeout_seconds=0.01)
+    assert _result(control, begun["operation_id"])["state"] == "failed"
+    with pytest.raises(RuntimeError, match="capacity"):
+        control.begin("claude", _payload())
+    control.close()

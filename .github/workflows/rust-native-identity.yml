@@ -71,7 +71,7 @@ jobs:
           uv run --no-sync python -m ruff format --check src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_identity.py
       - name: Run manifest and live Linux identity contracts
         run: >-
-          uv run --no-sync pytest -p tests.package_offline
+          uv run --no-sync python -m pytest -p tests.package_offline
           ci/native_runtime/test_native_runtime_manifest.py
           tests/test_native_runtime_live_identity.py
           tests/test_native_runtime_unsupported_inspection.py

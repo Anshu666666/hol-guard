@@ -336,7 +336,8 @@ def test_hook_binding_read_never_reads_program_or_control_authority(
     monkeypatch.setattr(binding_module, "load_native_command_program_metadata", unexpected_read)
     try:
         assert publisher.current_snapshot_binding() == {
-            key: first[key] for key in ("generation", "policy_digest", "runtime_identity", "mode")
+            **{key: first[key] for key in ("generation", "policy_digest", "runtime_identity", "mode")},
+            "command_extensions_bound": True,
         }
     finally:
         publisher.close()

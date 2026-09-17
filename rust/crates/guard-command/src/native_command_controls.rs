@@ -29,8 +29,17 @@ pub struct CompiledNativeCommandControls {
 
 impl CompiledNativeCommandControls {
     pub fn new(binding: &NativeCommandControlBindingV1) -> Result<Self, &'static str> {
+        Self::for_program(binding, packaged_command_program()?)
+    }
+
+    // Production always supplies the packaged, attested program through new().
+    // The crate-local seam also lets diagnostic tests vary real compiled
+    // catalogs without duplicating any control admission or evaluation logic.
+    pub(crate) fn for_program(
+        binding: &NativeCommandControlBindingV1,
+        program: Arc<NativeCommandProgram>,
+    ) -> Result<Self, &'static str> {
         binding.validate()?;
-        let program = packaged_command_program()?;
         if binding.program_digest != program.program_digest
             || binding.catalog_digest != program.catalog_digest
             || binding.trust_digest != program.trust_digest

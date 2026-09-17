@@ -98,5 +98,8 @@ every one of the 2,242 node digests still matches the independent Python compile
 Unknown fields, duplicate/noncanonical input, graph limits, hashes, the Unicode
 profile, and the full observation fixtures retain the same rejection semantics.
 Phase callbacks have a no-op production observer and record timings only in the
-explicit ignored diagnostic. Allocation counting and the wider valid catalog,
-control, and false-review matrix remain separate follow-up diagnostics.
+explicit ignored diagnostic. Follow-up evidence now covers
+[small and maximum-envelope allocations](native-allocation-performance.md) and
+the [valid catalog, control, and false-review matrix](native-command-matrix-performance.md).
+Those reports retain their own sample counts, binary identities and qualification
+limits; they do not replace installed release gates.

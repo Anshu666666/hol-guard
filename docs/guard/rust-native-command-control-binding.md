@@ -142,7 +142,7 @@ context can only reconstruct the source already authenticated by the activation.
 | Control marker | At most 4 KiB, exact canonical authenticated fields, positive epoch and mutation revision |
 | Managed source context | At most 512 configured targets, existing 256-character target limit, 512 KiB complete authenticated record |
 | Snapshot transport | Existing 256 KiB total snapshot/push envelope limit remains; oversized complete projections fail explicitly |
-| Synchronous hook read | Python uses the small in-memory binding; Rust checks a bounded marker and shared lease, with no artifact, database, registry or compiler reads |
+| Synchronous hook read | Python uses the small acknowledged binding and retains a shared mutation lease for enforcing PreToolUse; Rust checks the bounded marker. The added fence does not read the program, registry, configuration, or credential material. Ordinary review coordination still reads/writes its approval rows. |
 
 When a binding is present, the policy digest adds
 `command_extensions_digest = SHA256(canonical binding JSON)`. The generation
@@ -158,6 +158,94 @@ discarding its predecessor link. An authenticated legacy raw v3 snapshot without
 command bindings has no control floor and can enter the resident's migration
 path. The floor is anti-rollback evidence and is never used as a replacement for
 verified policy.
+
+## Ordinary review approval binding and finalization
+
+The registered daemon hook path uses the existing local review queue and
+resolved-allow reuse. It does not call the separate native v3/v4 approval
+claim/consume API. An artifact resolution with `persist_policy=False` records
+the ordinary approval row; it does not acquire one-time consumption semantics.
+
+For a native command review, `hook_native_review_binding.py` derives a compact
+`guard.native-review-policy-binding.v1` solely from the validated native edge
+receipt and its matching typed result. The domain includes the policy, rule,
+and runtime digests plus the receipt's complete compact command observation
+binding. The policy digest covers the authenticated recovery epoch and mutation
+fence even when the effective controls are unchanged. Request payload metadata
+cannot supply this domain. Evidence-writer acceptance is independent: declining
+an asynchronous receipt write does not remove the current review's authority.
+
+The queued action envelope retains this domain. A resolved allow is reusable
+only when the current domain matches exactly along with the existing harness,
+tool, launch target, and workspace. Pending deduplication includes the domain
+in its action identity, so a new policy cannot overwrite an earlier pending
+review while a user is deciding it. An absent binding retains the prior legacy
+contract; bound and unbound approvals cannot authorize each other. Snapshot
+generation renewal alone does not invalidate a matching policy domain. Native
+block decisions bypass this reuse logic.
+
+The enforcing PreToolUse worker first prepares its acknowledged snapshot and
+recording posture. A trusted presence flag in the compact acknowledged
+projection then selects `native_review_fence`, which acquires the retained
+shared control lease before native evaluation and retains it through review
+queueing, reuse, and final response rendering. The snapshot wire envelope keeps
+its existing fields; the presence flag is internal. Legacy, post-tool, and
+recording-only paths perform no added fence I/O. The final allowed response
+must still fit the original absolute request deadline. Fence unavailability or
+an expired allow uses the existing availability delivery and exactly one
+availability route counter; a completed native hard block is preserved.
+
+This extends the native request's control linearization interval through local
+approval reuse. A stricter cross-process control writer cannot commit during
+that interval. The shared lease is released after the final result is chosen
+and before the response is returned. The added Python operations are the secure
+retained lock open, bounded regular-file/owner/mode/link/inode checks,
+nonblocking shared-lock acquisition with the remaining deadline, and release.
+An old owned lock may be tightened in place, and an empty new lock initialized
+with its single byte. The path does not load the integrity keyring, guard
+configuration, packaged program, or extension registry. No shared-to-exclusive
+upgrade or resident publication is performed inside it.
+
+`tests/test_native_review_policy_binding.py` and
+`tests/test_native_review_mutation_fence.py` use typed native edge fixtures and
+real approval persistence. They cover domain changes, absence-only legacy
+behavior, pending-row isolation, payload forgery rejection, unchanged-domain
+reuse, deadline/availability accounting, hard-block preservation, and lease
+release on timeout, exception, and inherited-context fork unwind. The process
+regression pauses actual worker reuse while another process calls the public
+control commit API, verifies its SQL revision cannot advance, then verifies
+the commit completes after reuse releases the lease. These are source-level
+proofs; actual registered launchers, Rust IPC, and Windows fs2/msvcrt overlap
+remain separate installed qualification requirements.
+
+### Local component timing, 2026-09-17
+
+The separate `native-review-fence-component-2026-09-17.json` record measures
+source commit `8ad5a92d2242ab8a8e98005a89e652bd11a771f0` on a shared Linux x86_64
+host with Python 3.12.14 and normal garbage collection. Each component has 200
+warm-up calls and 2,000 measured calls using `perf_counter_ns`, with linear
+interpolation for percentiles. The retained private lock is initialized before
+measurement. The host was coordinated through the shared performance lock;
+CPU affinity and other host scheduling were not controlled.
+
+| Component | p50, microseconds | p95, microseconds | p99, microseconds | Maximum, microseconds |
+| --- | ---: | ---: | ---: | ---: |
+| Unbound context, no added lock I/O | 1.475 | 1.570 | 3.674 | 192.950 |
+| Warm shared fence | 22.102 | 88.681 | 225.913 | 3,767.072 |
+| Verified review receipt binding | 142.590 | 410.897 | 1,900.077 | 34,818.926 |
+| Fence containing binding validation | 253.746 | 792.303 | 17,994.552 | 134,120.467 |
+
+The full tails are retained: the combined p99 was 17.99 ms and maximum was
+134.12 ms. This run cannot attribute those pauses to a particular cause. It
+measures only the added fence and typed-fixture binding components, with no
+resident IPC, approval database, launcher startup, full hook execution, or tool
+execution. It is a local diagnostic, not an installed latency/SLO result; the
+component percentiles must not be added or subtracted as a full-hook estimate.
+
+`scripts/ci/measure_native_review_fence.py` reproduces the procedure from a
+source checkout. Use its `--coordination-lock` and `--source-commit` arguments
+after reserving a quiet host interval. It emits bounded aggregate JSON, keeps
+all measured samples in the percentiles, and makes no pass/fail SLO judgment.
 
 ## Evidence
 

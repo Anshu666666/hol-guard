@@ -4,6 +4,8 @@ The remaining Python evaluation pool should keep its current startup behavior un
 
 This audit implements the bounded RSP-092 and RSP-130 investigation against integration source `cebf2d1bb9b4bd30d1f50c400d68db655dffaeb3`. The measured inventory candidate is `139fed730e7f142ce739ce65af810d4713941270`. It does not mark RSP-093, the complete RSP-130 acceptance criteria, installed latency gates, or cross-platform qualification complete.
 
+The later [inventory refresh and persistence follow-up](inventory-refresh-audit.md) supplies actual filesystem-change, SQL, scanner-process, and controlled cloud-client attribution. It records the measured repeated collection traversal, its bounded Python correction, and the remaining installed/incremental qualification limits. The remaining-work list below describes this earlier tranche's scope.
+
 **Legacy pool ownership and consumers.** `guard/daemon/hook_process_runner.py::HookProcessRunner` owns a bounded pool of guardian/evaluator pairs. `GuardDaemonServer` constructs it, connects its ready capacity to the process scheduler, starts it during owned-service startup, and calls contained shutdown during service completion. The ordinary adaptive initial target is two slots, with a maximum of sixteen. Deferred daemon startup initially exposes one slot and later enables backfill; that is separate from lazy initialization inside each evaluator.
 
 Each slot starts one guardian with an OS process-group or Windows Job containment boundary, then one evaluator. The evaluator imports its review dependencies before signaling ready. Its `GuardStore` and `HookWorker` are initialized on the first request already. A Python multiprocessing resource tracker may also remain in the parent process tree.

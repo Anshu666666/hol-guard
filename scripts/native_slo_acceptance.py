@@ -135,6 +135,29 @@ def scoped_acceptance(
     for metric, evidence in resources.items():
         scope("daemon_resources." + metric, {"measurement": evidence["qualified"]})
     scope("full_daemon_startup_evidence", {"sampling": sampling.get("DAEMON_PROCESS.startup") is True})
+    # New delivery contracts can expose a real defect in the audited baseline.
+    # Preserve that result while qualifying the candidate's observed semantic
+    # scope separately. Neither side scenario contributes a latency sample.
+    side_results: dict[str, Any] = {}
+    for name in ("registered_surfaces", "mixed_contention", "priority_approval", "priority_input"):
+        observed: dict[str, list[bool]] = {}
+        for arm_name, reports in (("baseline", baseline), ("candidate", candidate)):
+            outcomes: list[bool] = []
+            for report in reports:
+                scenarios = report.get("additional_scenarios")
+                scenario = scenarios.get(name) if isinstance(scenarios, Mapping) else None
+                outcomes.append(isinstance(scenario, Mapping) and scenario.get("passed") is True)
+            observed[arm_name] = outcomes
+        side_results[name] = {
+            "baseline_passed": bool(observed["baseline"]) and all(observed["baseline"]),
+            "candidate_passed": bool(observed["candidate"]) and all(observed["candidate"]),
+            "headline_timing_eligible": False,
+            "coverage": "observed_scenarios_only",
+        }
+        scope(
+            "candidate_observed_semantics." + name,
+            {"candidate_contracts": side_results[name]["candidate_passed"]},
+        )
     latency = [comparison.get("INSTALLED_LAUNCHER." + route, {}).get("p95", {}) for route in _PRIORITY]
     latency_no_regression = all(item.get("ci95_high", float("inf")) <= 1.05 for item in latency)
     latency_gain = any(item.get("ci95_high", float("inf")) <= 0.70 for item in latency)
@@ -145,13 +168,14 @@ def scoped_acceptance(
         "scopes": scopes,
         "qualified_scope_count": sum(item["qualified"] for item in scopes.values()),
         "resource_comparisons": resources,
+        "additional_scenario_results": side_results,
         "migration_benefit_go": gain,
         "migration_gain_basis": "paired_ci_upper_30pct_gain_and_5pct_other_metric_limit",
         "program_qualification_complete": False,
         "remaining_program_evidence": [
             "all_platforms_combined",
             "native_inner_phase_attribution",
-            "nonpriority_registered_launchers",
+            "nonpriority_full_sampling_and_fault_matrix",
             "browser_approval_continuation",
             "malformed_launcher_input",
         ],

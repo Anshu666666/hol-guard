@@ -9,6 +9,9 @@ use guard_policy_snapshot::{
 use serde_json::{json, Map};
 use std::collections::BTreeMap;
 
+#[path = "policy_enforcement_diagnostic.rs"]
+mod diagnostic;
+
 fn apply_pre_tool_policy(
     snapshot: &PolicySnapshotV3,
     payload: &Value,

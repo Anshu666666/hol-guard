@@ -270,12 +270,15 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             if not self._acked or self._snapshot is None or self._closed:
                 return None
             snapshot = self._snapshot
-            return {
+            binding = {
                 "generation": snapshot.get("generation"),
                 "policy_digest": snapshot.get("policy_digest"),
                 "runtime_identity": snapshot.get("runtime_identity"),
                 "mode": snapshot.get("mode"),
             }
+            if "command_extensions" in snapshot:
+                binding["command_extensions_bound"] = True
+            return binding
 
     @property
     def last_error(self) -> str | None:

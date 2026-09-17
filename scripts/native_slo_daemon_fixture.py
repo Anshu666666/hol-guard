@@ -363,9 +363,13 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
 
 
 def _serve_session(session: Any, fault: Any) -> None:
+    from scripts.native_slo_launcher_review import LauncherReviewFixture
+    from scripts.native_slo_mixed_server import MixedScenarioFixture
     from scripts.native_slo_phases import PhaseProfiler
 
     profiler: PhaseProfiler | None = None
+    mixed = MixedScenarioFixture(session)
+    launcher_review = LauncherReviewFixture(session)
     try:
         _emit(
             {
@@ -406,6 +410,10 @@ def _serve_session(session: Any, fault: Any) -> None:
                 profiler.__exit__(None, None, None)
                 _emit(profiler.report())
                 profiler = None
+            elif isinstance(operation, str) and operation.startswith("mixed_"):
+                _emit(mixed.dispatch(operation, request))
+            elif isinstance(operation, str) and operation.startswith("launcher_approval_"):
+                _emit(launcher_review.dispatch(operation, request))
             elif operation == "close":
                 if profiler is not None:
                     profiler.__exit__(None, None, None)
@@ -413,7 +421,11 @@ def _serve_session(session: Any, fault: Any) -> None:
             else:
                 raise RuntimeError("unsupported daemon fixture operation")
     finally:
-        _emit({"state": "progress", "stage": "cleanup"})
+        try:
+            launcher_review.close()
+        finally:
+            mixed.close()
+            _emit({"state": "progress", "stage": "cleanup"})
 
 
 if __name__ == "__main__":

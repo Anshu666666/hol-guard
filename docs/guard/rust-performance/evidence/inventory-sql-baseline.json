@@ -1,0 +1,519 @@
+{
+  "schema": "guard.inventory-refresh-profile.v1",
+  "label": "baseline",
+  "advancing_write_timestamps": true,
+  "head": "16001f0f5cbc30f631e18d19250249a7226e665d",
+  "source_sha256": {
+    "guard/inventory_cisco.py": "45785a07d40c8bbc7c1e3d26e7501422c570819473785ecbdf35bea538ebbb9b",
+    "guard/store_inventory.py": "185b858aae58989398c3a6db0ee1fba130cb330edcace8d509082e02dbc6d8df",
+    "guard/skill_directory_identity.py": "79100a7480e57643138a8338c399e9bff158665c4cdb3d9b6d4ff96fe6e05370",
+    "guard/aibom_commands.py": "e00270037fcef1dc54a69aaecb9fc81199bff6aedd73a50df1b11fbe1d2783b8",
+    "guard/aibom_reporting.py": "a5d332a403dca9829dff30e532c495e1daaf8dfeff6ac64612b0c8214c8966ff",
+    "guard/store_connection_schema.py": "fe171206c970bd929b5119dae45e260326ba6e43ad06ea0240c87978b9a2cfc8"
+  },
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "scope": "real synthetic local files and SQLite; warm process; no daemon/cloud/Cisco engine qualification",
+  "workloads": [
+    {
+      "skills": 24,
+      "artifacts": 24,
+      "sqlite": {
+        "stages": {
+          "inventory_upsert": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.09006194600078743,
+                "cpu_s": 0.089401756
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.08620361400244292,
+                "cpu_s": 0.08609314199999996
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.08156765199964866,
+                "cpu_s": 0.0808295189999999
+              }
+            ],
+            "sqlite_profile": {
+              "connects": 72,
+              "transactions": 72,
+              "commits": 72,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.05,
+                "p95": 0.1,
+                "p99": 0.141,
+                "max": 0.141
+              },
+              "transaction_ms": {
+                "p50": 2.309,
+                "p95": 5.357,
+                "p99": 7.096,
+                "max": 7.096
+              },
+              "commit_ms": {
+                "p50": 0.039,
+                "p95": 0.273,
+                "p99": 1.375,
+                "max": 1.375
+              }
+            },
+            "separate_statement_witness": {
+              "connections": 24,
+              "pragma": 120,
+              "select": 96,
+              "preliminary_first_seen_selects": 24,
+              "begin": 24,
+              "insert": 24,
+              "commit": 24
+            }
+          },
+          "five_related_writes_excluding_receipt": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.3787623429998348,
+                "cpu_s": 0.37847859500000003
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.36342987600073684,
+                "cpu_s": 0.36258083100000005
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.5280836050005746,
+                "cpu_s": 0.5276580690000001
+              }
+            ],
+            "sqlite_profile": {
+              "connects": 360,
+              "transactions": 360,
+              "commits": 360,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.05,
+                "p95": 0.14,
+                "p99": 0.419,
+                "max": 1.758
+              },
+              "transaction_ms": {
+                "p50": 2.19,
+                "p95": 4.598,
+                "p99": 9.892,
+                "max": 15.988
+              },
+              "commit_ms": {
+                "p50": 0.042,
+                "p95": 0.088,
+                "p99": 0.267,
+                "max": 1.001
+              }
+            },
+            "separate_statement_witness": {
+              "connections": 120,
+              "pragma": 600,
+              "select": 384,
+              "preliminary_first_seen_selects": 24,
+              "begin": 120,
+              "insert": 144,
+              "commit": 120
+            }
+          },
+          "list_inventory": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.005054200999438763,
+                "cpu_s": 0.005054737000000031
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.004078234996995889,
+                "cpu_s": 0.004080409000000174
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.0031083620015124325,
+                "cpu_s": 0.0031100789999998213
+              }
+            ],
+            "rows": 24,
+            "sqlite_profile": {
+              "connects": 3,
+              "transactions": 3,
+              "commits": 3,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.149,
+                "p95": 0.16,
+                "p99": 0.16,
+                "max": 0.16
+              },
+              "transaction_ms": {
+                "p50": 2.684,
+                "p95": 3.341,
+                "p99": 3.341,
+                "max": 3.341
+              },
+              "commit_ms": {
+                "p50": 0.0,
+                "p95": 0.001,
+                "p99": 0.001,
+                "max": 0.001
+              }
+            }
+          },
+          "metadata_hash_join_index": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.0200320969997847,
+                "cpu_s": 0.020035347000000314
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.018118997002602555,
+                "cpu_s": 0.018124413000000228
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.04239401000086218,
+                "cpu_s": 0.04241243799999994
+              }
+            ],
+            "rows": 24,
+            "sqlite_profile": {
+              "connects": 0,
+              "transactions": 0,
+              "commits": 0,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              },
+              "transaction_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              },
+              "commit_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              }
+            }
+          },
+          "stored_rows_with_metadata_and_redaction": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.04704517599748215,
+                "cpu_s": 0.047046952999999725
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.045134308998967754,
+                "cpu_s": 0.0451375249999999
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.030992053001682507,
+                "cpu_s": 0.030994569999999833
+              }
+            ],
+            "rows": 24,
+            "sqlite_profile": {
+              "connects": 3,
+              "transactions": 3,
+              "commits": 3,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.574,
+                "p95": 1.514,
+                "p99": 1.514,
+                "max": 1.514
+              },
+              "transaction_ms": {
+                "p50": 6.09,
+                "p95": 9.199,
+                "p99": 9.199,
+                "max": 9.199
+              },
+              "commit_ms": {
+                "p50": 0.001,
+                "p95": 0.001,
+                "p99": 0.001,
+                "max": 0.001
+              }
+            }
+          }
+        },
+        "final_inventory_sha256": "3869d5c9322a12a99c28f9dabec611b56e181d70931df9b71a43336426b46611"
+      }
+    },
+    {
+      "skills": 128,
+      "artifacts": 128,
+      "sqlite": {
+        "stages": {
+          "inventory_upsert": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.9286023679997015,
+                "cpu_s": 0.9273746320000003
+              },
+              {
+                "sample": 1,
+                "wall_s": 2.2760456549985975,
+                "cpu_s": 2.274982649999999
+              },
+              {
+                "sample": 2,
+                "wall_s": 2.84457497800031,
+                "cpu_s": 2.821051315
+              }
+            ],
+            "sqlite_profile": {
+              "connects": 384,
+              "transactions": 384,
+              "commits": 384,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.071,
+                "p95": 2.236,
+                "p99": 5.643,
+                "max": 9.866
+              },
+              "transaction_ms": {
+                "p50": 8.374,
+                "p95": 24.754,
+                "p99": 48.802,
+                "max": 71.373
+              },
+              "commit_ms": {
+                "p50": 0.05,
+                "p95": 1.689,
+                "p99": 10.112,
+                "max": 33.615
+              }
+            },
+            "separate_statement_witness": {
+              "connections": 128,
+              "pragma": 640,
+              "select": 512,
+              "preliminary_first_seen_selects": 128,
+              "begin": 128,
+              "insert": 128,
+              "commit": 128
+            }
+          },
+          "five_related_writes_excluding_receipt": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 3.7453269859979628,
+                "cpu_s": 3.698161913
+              },
+              {
+                "sample": 1,
+                "wall_s": 2.5623018900005263,
+                "cpu_s": 2.5594963410000027
+              },
+              {
+                "sample": 2,
+                "wall_s": 1.9728717900034098,
+                "cpu_s": 1.970515314
+              }
+            ],
+            "sqlite_profile": {
+              "connects": 1920,
+              "transactions": 1920,
+              "commits": 1920,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.063,
+                "p95": 0.176,
+                "p99": 0.521,
+                "max": 7.099
+              },
+              "transaction_ms": {
+                "p50": 2.378,
+                "p95": 7.688,
+                "p99": 16.064,
+                "max": 66.031
+              },
+              "commit_ms": {
+                "p50": 0.047,
+                "p95": 0.128,
+                "p99": 0.363,
+                "max": 31.522
+              }
+            },
+            "separate_statement_witness": {
+              "connections": 640,
+              "pragma": 3200,
+              "select": 2048,
+              "preliminary_first_seen_selects": 128,
+              "begin": 640,
+              "insert": 768,
+              "commit": 640
+            }
+          },
+          "list_inventory": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.004430330998729914,
+                "cpu_s": 0.004428643000000676
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.003460126998106716,
+                "cpu_s": 0.003462904999999239
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.00475370900312555,
+                "cpu_s": 0.004757162000000648
+              }
+            ],
+            "rows": 128,
+            "sqlite_profile": {
+              "connects": 3,
+              "transactions": 3,
+              "commits": 3,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.061,
+                "p95": 0.111,
+                "p99": 0.111,
+                "max": 0.111
+              },
+              "transaction_ms": {
+                "p50": 2.766,
+                "p95": 2.87,
+                "p99": 2.87,
+                "max": 2.87
+              },
+              "commit_ms": {
+                "p50": 0.001,
+                "p95": 0.001,
+                "p99": 0.001,
+                "max": 0.001
+              }
+            }
+          },
+          "metadata_hash_join_index": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.1047599360026652,
+                "cpu_s": 0.1047633999999995
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.09599319400149398,
+                "cpu_s": 0.09599713199999726
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.20179064399781055,
+                "cpu_s": 0.20179572499999665
+              }
+            ],
+            "rows": 128,
+            "sqlite_profile": {
+              "connects": 0,
+              "transactions": 0,
+              "commits": 0,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              },
+              "transaction_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              },
+              "commit_ms": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "max": 0.0
+              }
+            }
+          },
+          "stored_rows_with_metadata_and_redaction": {
+            "samples": [
+              {
+                "sample": 0,
+                "wall_s": 0.14256915800069692,
+                "cpu_s": 0.14257296499999939
+              },
+              {
+                "sample": 1,
+                "wall_s": 0.1460123830001976,
+                "cpu_s": 0.14600952099999986
+              },
+              {
+                "sample": 2,
+                "wall_s": 0.11600822399850585,
+                "cpu_s": 0.11601161400000137
+              }
+            ],
+            "rows": 128,
+            "sqlite_profile": {
+              "connects": 3,
+              "transactions": 3,
+              "commits": 3,
+              "busy_locked": 0,
+              "busy_locked_percent": 0.0,
+              "connect_ms": {
+                "p50": 0.131,
+                "p95": 0.132,
+                "p99": 0.132,
+                "max": 0.132
+              },
+              "transaction_ms": {
+                "p50": 2.956,
+                "p95": 3.37,
+                "p99": 3.37,
+                "max": 3.37
+              },
+              "commit_ms": {
+                "p50": 0.001,
+                "p95": 0.001,
+                "p99": 0.001,
+                "max": 0.001
+              }
+            }
+          }
+        },
+        "final_inventory_sha256": "21071354d4a8f9cbd4f0370b6e96e4922e965f7cf948976b4d014f3d7592c3e7"
+      }
+    }
+  ]
+}

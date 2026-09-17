@@ -12,7 +12,9 @@ import argparse
 import hashlib
 import json
 import sys
+from collections.abc import Mapping
 from pathlib import Path
+from typing import cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -24,6 +26,20 @@ from scripts.native_slo_artifact import wheel_package_digest  # noqa: E402
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import failure_evidence  # noqa: E402
 from scripts.native_slo_qualification import compare_routes, paired_order, sampling_gates, sampling_plan  # noqa: E402
+
+
+def _object_field(report: Mapping[str, object], field: str) -> Mapping[str, object]:
+    value = report.get(field)
+    if not isinstance(value, Mapping) or any(not isinstance(key, str) for key in value):
+        raise RuntimeError("paired block evidence object invalid: " + field)
+    return cast(Mapping[str, object], value)
+
+
+def _text_field(report: Mapping[str, object], field: str) -> str:
+    value = report.get(field)
+    if not isinstance(value, str) or not value:
+        raise RuntimeError("paired block evidence identifier invalid: " + field)
+    return value
 
 
 def _run_pair(args: argparse.Namespace) -> dict[str, object]:
@@ -73,6 +89,8 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                     str(args.runs),
                     "--raw-file",
                     str(raw_file),
+                    "--receipt-profile",
+                    "baseline_2e672d2" if arm == "baseline" else "candidate",
                 ),
                 input_text="",
                 cwd=_ROOT,
@@ -117,7 +135,7 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
             safe = assert_privacy_safe(report)
             if (
                 arm in expected_package_digests
-                and safe["runtime"].get("installed_package_sha256") != expected_package_digests[arm]
+                and _object_field(safe, "runtime").get("installed_package_sha256") != expected_package_digests[arm]
             ):
                 raise RuntimeError("paired interpreter does not contain the declared wheel artifact")
             if not raw_file.is_file():
@@ -127,27 +145,37 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
             reports[arm].append(safe)
             print(f"completed paired block {run + 1}/{args.runs} {arm}", file=sys.stderr, flush=True)
     combined = reports["baseline"] + reports["candidate"]
-    if len({report.get("corpus_digest") for report in combined}) != 1:
+    if len({_text_field(report, "corpus_digest") for report in combined}) != 1:
         raise RuntimeError("paired artifacts used different corpus definitions")
-    identities = [report["hardware"] for report in combined]
+    identities = [_object_field(report, "hardware") for report in combined]
     stable_fields = ("platform", "cpu_model", "cpu_count", "effective_cpu_count", "ram_bytes", "os_release")
     if any(any(item.get(field) != identities[0].get(field) for field in stable_fields) for item in identities[1:]):
         raise RuntimeError("paired hardware identity changed between blocks")
-    if len({report["runtime"].get("python_version") for report in combined}) != 1:
+    if len({_text_field(_object_field(report, "runtime"), "python_version") for report in combined}) != 1:
         raise RuntimeError("paired interpreter version changed between artifacts")
     # Keep artifact identity stable within each arm, not equal across arms.
     for arm in reports.values():
         if (
-            len({(report["runtime"]["runtime_sha256"], report["runtime"]["package_record_sha256"]) for report in arm})
+            len(
+                {
+                    tuple(
+                        _text_field(_object_field(report, "runtime"), key)
+                        for key in ("runtime_sha256", "package_record_sha256")
+                    )
+                    for report in arm
+                }
+            )
             != 1
         ):
             raise RuntimeError("artifact changed within a paired arm")
     comparison = compare_routes(
-        [report["measurements"] for report in reports["baseline"]],
-        [report["measurements"] for report in reports["candidate"]],
+        [_object_field(report, "measurements") for report in reports["baseline"]],
+        [_object_field(report, "measurements") for report in reports["candidate"]],
     )
     gates = sampling_gates(comparison, runs=args.runs)
-    gates["steady_state_resources"] = all(report["resources"]["sample_minimum_met"] for report in combined)
+    gates["steady_state_resources"] = all(
+        _object_field(report, "resources").get("sample_minimum_met") is True for report in combined
+    )
     acceptance = scoped_acceptance(reports["baseline"], reports["candidate"], comparison, gates)
     result = assert_privacy_safe(
         {
@@ -186,6 +214,9 @@ def main() -> int:
     parser.add_argument("--block-timeout-seconds", type=float, default=3600)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--raw-file", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--receipt-profile", choices=("candidate", "baseline_2e672d2"), default="candidate", help=argparse.SUPPRESS
+    )
     args = parser.parse_args()
     try:
         plan = sampling_plan(runs=args.runs, qualification=args.mode == "qualification")
@@ -196,7 +227,7 @@ def main() -> int:
                 raise ValueError("worker numeric sample destination is required")
             from scripts.native_slo_qualification_run import run_block
 
-            result = run_block(plan=plan, raw_file=args.raw_file)
+            result = run_block(plan=plan, raw_file=args.raw_file, receipt_profile=args.receipt_profile)
         else:
             result = _run_pair(args)
     except Exception as error:

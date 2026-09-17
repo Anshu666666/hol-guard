@@ -109,6 +109,47 @@ def _permission_decision(response: Mapping[str, object]) -> str | None:
     return value if isinstance(value, str) else None
 
 
+def _prepare_empty_command_authority(store: GuardStore) -> dict[str, str]:
+    """Provision generated production keys only inside this fresh CI fixture.
+
+    An unenrolled installation deliberately blocks native command review. This
+    synthetic allow corpus therefore needs an authenticated empty authority,
+    as does the existing installed Extension Control Center CI fixture. There
+    is no interactive enrollment claim and no invented protected health/ACK.
+    """
+
+    from scripts.native_slo_command_fixture import prepare_empty_command_authority
+
+    return prepare_empty_command_authority(store)
+
+
+def _delivery_diagnostic(response: Mapping[str, object]) -> dict[str, object]:
+    """Fixed public codes only: never log source text or arbitrary reasons."""
+
+    allowed = {
+        "decision": {"allow", "deny", "block", "review", "ask"},
+        "policy_action": {"allow", "warn", "block", "review", "suppress"},
+        "reason_code": {
+            "native_exact_safe_command",
+            "native_command_control_authority_block",
+            "native_command_control_mutation_in_progress",
+            "native_request_invalid_json",
+            "native_policy_warning",
+            "native_policy_block",
+            "native_policy_snapshot_unavailable",
+            "native_hook_unavailable",
+            "output_secret_match",
+        },
+    }
+    result: dict[str, object] = {}
+    for field, choices in allowed.items():
+        value = response.get(field)
+        result[field] = value if isinstance(value, str) and value in choices else (None if value is None else "other")
+    permission = _permission_decision(response)
+    result["permission_decision"] = permission if permission in {None, "allow", "deny", "ask"} else "other"
+    return result
+
+
 def _native_state_files(guard_home: Path) -> list[Path]:
     return list((guard_home / "native-runtime").glob("resident-v3-*/generation-*.json"))
 
@@ -227,8 +268,7 @@ def _exercise_installed_routes(
                 {
                     "harness": harness,
                     "event": event,
-                    "decision": response_payload.get("decision"),
-                    "permission_decision": _permission_decision(response_payload),
+                    **_delivery_diagnostic(response_payload),
                 },
             )
             reason = response_payload.get("reason_code")
@@ -283,6 +323,7 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
     guard_home.mkdir(mode=0o700)
     workspace.mkdir(mode=0o700)
     store = GuardStore(guard_home)
+    command_authority_fixture = _prepare_empty_command_authority(store)
     daemon = GuardDaemonServer(
         store,
         host="127.0.0.1",
@@ -340,6 +381,7 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
     _require(observed_routes.get("native_resident") == expected, worker_stats)
     _require(receipt_corpus_is_complete(evidence_stats, expected=expected), evidence_stats)
     return {
+        "command_authority_fixture": command_authority_fixture,
         "routes": route_receipts,
         "route_count": expected,
         "native_resident_decisions": observed_routes.get("native_resident", 0),
@@ -497,6 +539,7 @@ def _build_probe_receipt(
         "reason_code_counts": installed_corpus["reason_code_counts"],
         "receipt_metrics": installed_corpus["receipt_metrics"],
         "mode_invariants": installed_corpus["mode_invariants"],
+        "command_authority_fixture": installed_corpus["command_authority_fixture"],
     }
 
 

@@ -28,7 +28,9 @@ from codex_plugin_scanner.guard.native_resident_client import close_native_resid
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
+from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
+from scripts.native_slo_source_witness import source_review_witness
 
 _MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
 _CAPACITY_FAIL_SAFE = {
@@ -307,7 +309,9 @@ class AdapterSession:
         # one spelling avoids registering the same workspace twice and
         # invalidating the ACKed native policy snapshot on the first request.
         self.root = Path(self.temporary.name).resolve()
-        self.guard_home = self.root / "guard-home"
+        # Use the production home shape inside the disposable synthetic HOME.
+        # File-hook registrations such as Cline resolve this exact default.
+        self.guard_home = self.root / ".hol-guard"
         self.workspace = self.root / "workspace"
         self.guard_home.mkdir(mode=0o700)
         self.workspace.mkdir(mode=0o700)
@@ -315,6 +319,7 @@ class AdapterSession:
             (self.guard_home / "config.toml").write_text(configuration, encoding="utf-8")
         report("construct_store")
         self.store = GuardStore(self.guard_home)
+        self.command_authority_fixture = prepare_empty_command_authority(self.store)
         report("construct_daemon")
         self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
         # Match the installed ownership probe: register the canonical workspace
@@ -371,16 +376,17 @@ class AdapterSession:
     ) -> Observation:
         request = request_payload or payload(event, size_class)
         before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        started = time.perf_counter()
-        response = _request(
-            self.daemon,
-            guard_home=self.guard_home,
-            workspace=self.workspace,
-            harness=harness,
-            request_payload=request,
-            connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
-        )
-        elapsed_ms = (time.perf_counter() - started) * 1_000.0
+        with source_review_witness(self.daemon._server.hook_worker, request):
+            started = time.perf_counter()
+            response = _request(
+                self.daemon,
+                guard_home=self.guard_home,
+                workspace=self.workspace,
+                harness=harness,
+                request_payload=request,
+                connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
+            )
+            elapsed_ms = (time.perf_counter() - started) * 1_000.0
         after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
         return Observation(
             harness,

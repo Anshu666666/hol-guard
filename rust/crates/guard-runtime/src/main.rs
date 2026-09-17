@@ -17,6 +17,9 @@ mod resident_transport;
 mod resident_transport_service;
 mod strict_json;
 
+#[cfg(all(test, feature = "diagnostic-allocations"))]
+mod native_allocation_diagnostic;
+
 pub(crate) use resident_protocol::{capabilities, encode_response, strict_json_value};
 pub(crate) use resident_transport::{
     constant_time_eq, hmac_sha256, BoxedResidentStream, ResidentStream,

@@ -267,6 +267,14 @@ const COMPONENTS: &[(&str, &[u8])] = &[
         "guard-runtime-edge",
         include_bytes!("../../guard-runtime/src/edge.rs"),
     ),
+    (
+        "guard-runtime-edge-identity",
+        include_bytes!("../../guard-runtime/src/edge_identity.rs"),
+    ),
+    (
+        "guard-runtime-edge-serialization",
+        include_bytes!("../../guard-runtime/src/edge_serialization.rs"),
+    ),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -397,6 +405,8 @@ mod tests {
                 "guard-runtime-policy-store-persistence",
                 "guard-runtime-native-hook-receipt",
                 "guard-runtime-edge",
+                "guard-runtime-edge-identity",
+                "guard-runtime-edge-serialization",
             ]
         );
         assert!(first

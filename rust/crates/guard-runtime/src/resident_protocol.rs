@@ -242,6 +242,7 @@ pub(crate) fn error_response(code: &'static str, retryable: bool) -> Vec<u8> {
 pub(crate) fn safe_error_response(code: &str, retryable: bool) -> Vec<u8> {
     if NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES.contains(&code)
         || NATIVE_APPROVAL_ERROR_CODES.contains(&code)
+        || guard_contracts::NATIVE_COMMAND_CONTROL_ERROR_CODES.contains(&code)
     {
         return serde_json::to_vec(&serde_json::json!({
             "error": code,
@@ -279,6 +280,28 @@ mod tests {
             br#"{"operation":"shutdown","request":{}} {}"#.as_slice(),
         ] {
             assert!(evaluate_resident_bytes(malformed, None).is_err());
+        }
+    }
+
+    #[test]
+    fn command_control_error_transport_preserves_only_registered_fixed_codes() {
+        for code in guard_contracts::NATIVE_COMMAND_CONTROL_ERROR_CODES {
+            for retryable in [false, true] {
+                let response: Value =
+                    serde_json::from_slice(&safe_error_response(code, retryable)).unwrap();
+                assert_eq!(response["error"], *code);
+                assert_eq!(response["retryable"], retryable);
+                assert_eq!(response.as_object().unwrap().len(), 2);
+            }
+        }
+        for untrusted in [
+            "native_command_control_future_unregistered_code",
+            "native_command_control_authority_missing:/private/guard-home",
+            "native_command_control_authority_mac_invalid secret=fixture",
+        ] {
+            let response: Value =
+                serde_json::from_slice(&safe_error_response(untrusted, false)).unwrap();
+            assert_eq!(response["error"], "native_request_invalid_json");
         }
     }
 

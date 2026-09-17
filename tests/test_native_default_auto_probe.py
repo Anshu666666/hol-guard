@@ -112,6 +112,7 @@ def test_installed_corpus_waits_before_mode_changes(tmp_path: Path, monkeypatch:
         return {}
 
     monkeypatch.setattr(probe, "GuardStore", lambda *args: object())
+    monkeypatch.setattr(probe, "_prepare_empty_command_authority", lambda store: {"verified_health": "protected"})
     monkeypatch.setattr(probe, "GuardDaemonServer", FakeDaemon)
     monkeypatch.setattr(probe, "_ownership_routes", lambda: {})
     monkeypatch.setattr(probe, "_exercise_installed_routes", exercise_routes)

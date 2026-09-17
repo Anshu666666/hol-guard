@@ -396,7 +396,10 @@ jobs:
           Remove-Item Env:HOL_GUARD_PYTHON_ORACLE -ErrorAction SilentlyContinue
           .venv\Scripts\python.exe -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          uv run --no-sync python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
+          .venv\Scripts\python.exe -I ci/native_runtime/probe_installed_command_control_lock.py --json native-installed-control-lock.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .venv\Scripts\python.exe ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: hol-guard-native-wheel-windows-x64
@@ -404,4 +407,5 @@ jobs:
             native-dist/*.whl
             native-default-auto.json
             native-installed-identity.json
+            native-installed-control-lock.json
           if-no-files-found: error

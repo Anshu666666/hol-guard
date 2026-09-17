@@ -28,6 +28,7 @@ def _session(tmp_path: Path) -> SimpleNamespace:
         _review_raw_hook_native=lambda **_kwargs: {"result": {"decision": "allow"}},
     )
     return SimpleNamespace(
+        command_authority_fixture={"verified_health": "protected"},
         root=tmp_path,
         guard_home=home,
         workspace=workspace,

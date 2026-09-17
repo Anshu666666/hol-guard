@@ -28,7 +28,11 @@ from scripts.native_slo_load_profiles import measure_load_profiles
 from scripts.native_slo_numeric_journal import NumericJournal
 from scripts.native_slo_priority_launchers import LauncherSession, measure_priority_launchers
 from scripts.native_slo_qualification import confidence_summary
-from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
+from scripts.native_slo_qualification_scenarios import (
+    run_additional_scenarios,
+    run_attribution_scenarios,
+    validate_receipt_profile,
+)
 from scripts.native_slo_resources import ResourceSampler
 from scripts.native_slo_workload_identity import common_workload_digest, semantic_scope_digest
 
@@ -173,6 +177,13 @@ def _run_block(
     runtime = status.identity.path
     identity = _runtime_summary(runtime)
     validate_receipt_profile(receipt_profile, identity)
+    attribution = run_attribution_scenarios(
+        runtime,
+        raw_file=raw_file,
+        receipt_profile=receipt_profile,
+        runtime_identity=identity,
+        phase_count=min(100, plan["priority_per_run"]),
+    )
     routes = route_matrix()
     contract_corpus = run_contract_corpus(
         runtime, evidence_file=raw_file.with_name(raw_file.stem + "-daemon-contract.jsonl")
@@ -252,7 +263,7 @@ def _run_block(
         raw_file=raw_file,
         receipt_profile=receipt_profile,
         runtime_identity=identity,
-        phase_count=min(100, plan["priority_per_run"]),
+        precollected_attribution=attribution,
     )
     matrix = workload_matrix(routes, contract_corpus, launcher_corpus)
     workload_digest = common_workload_digest(

@@ -16,7 +16,7 @@ from codex_plugin_scanner.guard import native_policy_snapshot_windows_io as wind
 from codex_plugin_scanner.guard import native_policy_snapshot_windows_state as windows_state
 from codex_plugin_scanner.guard.daemon import discovery, discovery_windows, manager
 
-from .windows_failure_witness import WindowsParentWitness
+from .windows_failure_witness import WindowsParentWitness, _descriptor_components, _nt_descriptor_for_handle
 
 
 @pytest.mark.parametrize(
@@ -218,7 +218,7 @@ def test_parent_only_setter_has_no_fallback_when_unavailable(monkeypatch, missin
 
 
 def _windows_child_snapshot(path, *, directory=False):
-    """Capture raw owner/group SIDs, DACL and control without a security write."""
+    """Keep the GetSecurityInfo representation for the separate finite witness."""
     from ctypes import wintypes
 
     kernel, handle, information = api._windows_open_handle(path, directory=directory)
@@ -267,6 +267,24 @@ def _windows_child_snapshot(path, *, directory=False):
         api._windows_close_handle(kernel, handle)
 
 
+def _windows_native_child_snapshot(path, *, directory=False):
+    """Compare complete native bytes, identity and payload without normalization.
+
+    Actual tenth witnesses showed stable native descriptor bytes while the Get
+    representation changed after parent provisioning. Keep Get as a diagnostic;
+    the preservation oracle uses the documented self-relative native query.
+    """
+    kernel, handle, information = api._windows_open_handle(path, directory=directory)
+    try:
+        raw = _nt_descriptor_for_handle(handle)
+        _descriptor_components(raw)  # Validate the format; retain every returned byte.
+        identity = atomic._windows_file_identity(information)
+        assert identity is not None
+        return identity, raw, None if directory else path.read_bytes()
+    finally:
+        api._windows_close_handle(kernel, handle)
+
+
 @pytest.mark.skipif(os.name != "nt", reason="actual Windows parent-only ACL propagation contract")
 def test_windows_parent_provisioning_preserves_inherited_key_and_nested_child(tmp_path):
     parent = tmp_path / "legacy"
@@ -278,9 +296,10 @@ def test_windows_parent_provisioning_preserves_inherited_key_and_nested_child(tm
     child = nested / "child"
     child.write_bytes(b"unchanged child")
     objects = [(key_path, False), (nested, True), (child, False)]
-    before = [_windows_child_snapshot(path, directory=directory) for path, directory in objects]
+    before = [_windows_native_child_snapshot(path, directory=directory) for path, directory in objects]
+    get_before = [_windows_child_snapshot(path, directory=directory) for path, directory in objects]
     parent_identity = _windows_child_snapshot(parent, directory=True)[0]
-    witness = WindowsParentWitness(objects, before, _windows_child_snapshot)
+    witness = WindowsParentWitness(objects, get_before, _windows_child_snapshot)
     with witness.failure_only():
         witness.capture("before_key_verification")
         with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
@@ -292,9 +311,9 @@ def test_windows_parent_provisioning_preserves_inherited_key_and_nested_child(tm
             pass
         witness.capture("after_discovery_binding")
         assert _windows_child_snapshot(parent, directory=True)[0] == parent_identity
-        assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
+        assert [_windows_native_child_snapshot(path, directory=directory) for path, directory in objects] == before
         assert discovery.ensure_daemon_discovery_key(parent) == "19" * 32
-        assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
+        assert [_windows_native_child_snapshot(path, directory=directory) for path, directory in objects] == before
         with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
             api._windows_verify_private_file(key_path)
 

@@ -147,3 +147,83 @@ status request, wait, deadline change or retry. Local source validation reported
 assertion AST checks passing. **These added diagnostics have not executed on
 Windows.** They change no production setter, establish no failure cause and
 provide no new performance or platform qualification evidence.
+
+
+## Tenth attempt: descriptor observations and bootstrap outcome
+
+The tenth source was `095074cda6a751ffaf12b070ecc46a3091f12471`, with tree
+`04d79da9c1cf212cce263c202bfdd5b4350007e3`. Installed Claude used that
+published head; Main used merge `9e85de6f42910785e7ba4b53198ddcc05672607c`,
+whose tree matched it. In installed Claude
+[run 35283193497, attempt 1](https://github.com/hashgraph-online/hol-guard/actions/runs/35283193497/attempts/1),
+all five Windows jobs (`105409584340`, `105409584224`, `105409584304`,
+`105409584231`, `105409584286`, runs 0–4 respectively) again failed the
+original first child-snapshot equality assertion. Each reported **107 passed,
+6 skipped, 1 failed**. Build/comparison stayed skipped; the five receipts reported
+`no_observations`, zero files and no archive, leaving 440 planned requests unoffered.
+
+All five new security witnesses were identical and complete: four stages for
+three children, successful bounded native queries throughout. Every 148-byte
+`NtQuerySecurityObject` descriptor matched its initial native-query bytes at all
+stages. The two native queries bracketing each added `GetSecurityInfo` read
+also matched each other.
+File identities, owner/group SID bytes and file contents where applicable stayed
+equal to the original snapshots. The observed API representations were:
+
+| Object | Native query at every stage | Get before/after key verification | Get after manager and discovery binding |
+| --- | --- | --- | --- |
+| Direct key | Control `0x8004`; ACE flags `0x00` × 3 | Control `0x8004`; flags `0x10` × 3 | Control `0x9004`; flags `0x00` × 3 |
+| Nested directory | Control `0x8004`; flags `0x03` × 3 | Control `0x8004`; flags `0x13` × 3 | Control `0x9004`; flags `0x03` × 3 |
+| Grandchild | Control `0x8004`; flags `0x00` × 3 | Control `0x8004`; flags `0x10` × 3 | Control `0x8004`; flags `0x10` × 3 |
+
+The native and Get representations already differed before provisioning. The
+Get-only difference for the direct children first appeared after the manager
+operation; the subsequent discovery binding added no observed change. These
+measurements show unchanged native descriptor bytes at the observation points.
+They do not show a stored child-descriptor mutation or identify an internal
+Windows conversion routine. Microsoft's documented
+[inheritance conversion](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-converttoautoinheritprivateobjectsecurity)
+can derive inheritance annotations from a parent while producing an equivalent
+security descriptor; that is context for the distinction, not a traced call
+inside `GetSecurityInfo`. The original equality gate remains failed, and no
+flags were masked, children repaired or production setter changed.
+
+Separately, tenth Main
+[Windows job 105409585814](https://github.com/hashgraph-online/hol-guard/actions/runs/35283194145/job/105409585814)
+passed cross-platform regressions (246 passed, 5 skipped in 28.01s), Codex bridge
+smoke (2 passed, 14 deselected in 1.98s), and the packaged bootstrap regression
+(**1 passed in 53.60s**). This preserves the ninth retry-status failure as a prior
+observation; it supplies no new cause for that failure. The passing packaged
+bootstrap does not qualify the unoffered installed launcher requests.
+
+## Later source correction: exact native preservation oracle
+
+The child-preservation test now compares the complete native self-relative
+descriptor returned by
+[NtQuerySecurityObject](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntquerysecurityobject),
+alongside the original file identity and exact file contents. Microsoft's
+contract specifies a copied self-relative descriptor and the returned byte
+length. Owner/group/DACL are queried with the same `0x7` selection as the prior
+Get snapshot; SACL is outside both tests' scope. This choice follows the five
+identical tenth witnesses: native bytes stayed equal at every observation,
+while the Get representation for direct children changed after provisioning.
+It makes no claim about an undocumented implementation inside `GetSecurityInfo`.
+
+Both preservation assertions compare every returned byte, including control,
+ACE inheritance flags, reserved bytes and padding. No flags are masked and no
+child is repaired. Query status, descriptor format, identity or payload-read
+failures fail the test; the read handle closes on every outcome. Get snapshots
+and the four-stage finite failure witness remain separate diagnostics. Parent
+identity, discovery-key value and strict legacy-key rejection before and after
+the existing product calls remain unchanged. Production setters, requests,
+timeouts and retries are unchanged.
+
+Focused regressions distinguish a Get-only representation difference from a
+changed native protection bit, inherited ACE flag, access mask, owner, group,
+reserved byte, padding, file identity or payload. They also reject mutation
+during discovery-key loading and unexpected admission of the legacy key. Local
+validation reported **78 passed, 6 platform skips**, with Ruff check/format and
+diff checks passing; independent source/security review was clear. **The revised
+preservation oracle still requires execution on Windows.** Historical eighth,
+ninth and tenth failures remain recorded; this source correction establishes no
+new launcher or performance qualification.

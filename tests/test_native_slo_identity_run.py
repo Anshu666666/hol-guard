@@ -180,7 +180,7 @@ def test_identity_scenario_is_additive_and_separately_retained(tmp_path, monkeyp
 
     monkeypatch.setattr(scenarios, "DaemonFixture", Fixture)
     monkeypatch.setattr(scenarios, "_retained_scenario", retained)
-    report = scenarios.run_additional_scenarios(
+    report = scenarios.run_attribution_scenarios(
         tmp_path / "runtime", raw_file=tmp_path / "arm.jsonl", receipt_profile="candidate", runtime_identity={}
     )
     assert len(sessions) == 1 and len(sessions[0].requests) == 3

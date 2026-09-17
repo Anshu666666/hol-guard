@@ -118,29 +118,34 @@ def _nt_descriptor(path: Path, *, directory: bool) -> bytes:
     The existing open helper receives no repair or creation request. No descriptor
     is written and no failed query is retried or converted into an empty DACL.
     """
-    from ctypes import wintypes
-
     kernel, handle, _information = api._windows_open_handle(path, directory=directory)
     try:
-        query = api._windows_dll("ntdll").NtQuerySecurityObject
-        query.argtypes = [
-            wintypes.HANDLE,
-            wintypes.DWORD,
-            ctypes.c_void_p,
-            wintypes.ULONG,
-            ctypes.POINTER(wintypes.ULONG),
-        ]
-        query.restype = ctypes.c_int32
-        buffer = ctypes.create_string_buffer(_DESCRIPTOR_LIMIT)
-        needed = wintypes.ULONG()
-        status = int(query(handle, 0x7, buffer, len(buffer), ctypes.byref(needed)))
-        if status != 0:
-            raise _NtQueryError(status)
-        if not 20 <= needed.value <= _DESCRIPTOR_LIMIT:
-            raise ValueError("windows_witness_descriptor_size")
-        return bytes(buffer.raw[: needed.value])
+        return _nt_descriptor_for_handle(handle)
     finally:
         api._windows_close_handle(kernel, handle)
+
+
+def _nt_descriptor_for_handle(handle: Any) -> bytes:
+    """Share the same bounded read with the exact-byte preservation oracle."""
+    from ctypes import wintypes
+
+    query = api._windows_dll("ntdll").NtQuerySecurityObject
+    query.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.ULONG,
+        ctypes.POINTER(wintypes.ULONG),
+    ]
+    query.restype = ctypes.c_int32
+    buffer = ctypes.create_string_buffer(_DESCRIPTOR_LIMIT)
+    needed = wintypes.ULONG()
+    status = int(query(handle, 0x7, buffer, len(buffer), ctypes.byref(needed)))
+    if status != 0:
+        raise _NtQueryError(status)
+    if not 20 <= needed.value <= _DESCRIPTOR_LIMIT:
+        raise ValueError("windows_witness_descriptor_size")
+    return bytes(buffer.raw[: needed.value])
 
 
 def _descriptor_components(raw: bytes) -> tuple[bytes, bytes, bytes, int, int]:

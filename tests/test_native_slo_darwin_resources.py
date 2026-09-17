@@ -255,27 +255,109 @@ def test_sampler_retains_private_mach_delta_without_promoting_ambiguous_cpu(monk
     assert sampler._observed_cpu == {}
 
 
+def _assert_public_resource_report(report):
+    # Check fields and value shapes, not decimal substrings: an elapsed time
+    # or memory count can legitimately contain the same digits as a PID.
+    assert report["scope"] == "daemon_fixture_process_tree"
+    assert report["collector"] == "psutil_with_darwin_rusage_cpu"
+    assert report["cpu_accounting_scope"] == "observed_process_tree"
+    reasons = {
+        darwin.REAPED_CPU_UNAVAILABLE,
+        "permission_denied",
+        "darwin_cpu_root_changed",
+        "darwin_cpu_timebase_changed",
+        "darwin_cpu_counter_regressed",
+    }
+    metrics = {
+        "rss_bytes",
+        "private_bytes",
+        "cpu_seconds",
+        "processes",
+        "threads",
+        "descriptors",
+        "handles",
+    }
+    assert set(report) == {
+        "scope",
+        "collector",
+        "samples",
+        "unavailable_samples",
+        "metric_samples",
+        "unavailable_metrics",
+        "metric_minimum_met",
+        "sample_minimum_met",
+        "elapsed_seconds",
+        "baseline",
+        "peak",
+        "rss_growth",
+        "cpu_seconds",
+        "cpu_ms_per_attempt",
+        "cpu_includes_reaped_descendants",
+        "short_exited_descendants_cpu_complete",
+        "cpu_accounting_scope",
+        "cpu_unavailable_samples",
+        "includes_load_generator",
+        "fixture_control_overhead_included",
+    }
+    grouped = {
+        "metric_samples",
+        "unavailable_metrics",
+        "metric_minimum_met",
+        "baseline",
+        "peak",
+    }
+    for name in grouped:
+        assert isinstance(report[name], dict) and set(report[name]) <= metrics
+        for value in report[name].values():
+            if name == "unavailable_metrics":
+                assert isinstance(value, dict) and set(value) <= reasons
+                assert all(type(reason) is str and type(count) is int for reason, count in value.items())
+            else:
+                assert value is None or type(value) in {int, float, bool}
+    finite_strings = {"scope", "collector", "cpu_accounting_scope"}
+    assert all(
+        value is None or type(value) in {int, float, bool}
+        for name, value in report.items()
+        if name not in grouped | finite_strings
+    )
+
+
+@pytest.mark.parametrize(
+    "elapsed_seconds",
+    [None, 338.413213],
+    ids=["ordinary-duration", "pid-digit-collision"],
+)
 @pytest.mark.parametrize("fault", ["missing", "denied", "root", "timebase", "regression"])
-def test_any_missing_or_invalid_sample_withholds_complete_darwin_cpu(monkeypatch, fault):
+def test_any_missing_or_invalid_sample_withholds_complete_darwin_cpu(monkeypatch, fault, elapsed_seconds):
     values = [_snapshot(darwin.DarwinTreeCpu((321, 1.0, 1), i + 10, 125, 3)) for i in range(32)]
     if fault == "missing":
         values[1] = None
     elif fault == "denied":
         values[1] = _snapshot(None, unavailable={"cpu_seconds": "permission_denied"})
     else:
-        change = {"root": {"root": (321, 2.0, 2)}, "timebase": {"numer": 1}, "regression": {"ticks": 1}}[fault]
+        change = {
+            "root": {"root": (321, 2.0, 2)},
+            "timebase": {"numer": 1},
+            "regression": {"ticks": 1},
+        }[fault]
         values[1] = _snapshot(replace(values[1].darwin_cpu, **change))
     snapshots = iter(values)
     monkeypatch.setattr(resources, "sample_process_tree", lambda _pid: next(snapshots))
     sampler = resources.ResourceSampler(pid=321)
     for _ in values:
         sampler._sample()
+    if elapsed_seconds is not None:
+        sampler.started = 0.0
+        sampler.stopped = elapsed_seconds
     report = sampler.report(attempted=30)
     assert report["cpu_seconds"] is None
     assert report["short_exited_descendants_cpu_complete"] is False
     assert report["metric_minimum_met"]["cpu_seconds"] is False
     assert report["cpu_unavailable_samples"] >= 1
-    assert "321" not in repr(report)
+    _assert_public_resource_report(report)
+    if elapsed_seconds is not None:
+        assert report["elapsed_seconds"] == elapsed_seconds
+        assert "321" in str(report["elapsed_seconds"])
 
 
 @pytest.fixture

@@ -266,6 +266,9 @@ def test_real_parent_assertion_keeps_original_product_calls_and_stopping_point(t
     state, calls = [legacy], []
     monkeypatch.setattr(witness, "_nt_descriptor", lambda *_a, **_k: state[0])
     monkeypatch.setattr(gate, "_windows_child_snapshot", lambda *_a, **_k: snapshot(state[0]))
+    monkeypatch.setattr(
+        gate, "_windows_native_child_snapshot", lambda *_a, **_k: ((7, 8, 9), state[0], b"private synthetic contents")
+    )
 
     def verify(path):
         calls.append("verify")

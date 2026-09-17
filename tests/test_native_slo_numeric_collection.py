@@ -100,6 +100,7 @@ def collection(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     )
     monkeypatch.setattr(module, "run_registered_contract_corpus", lambda *_args, **_kw: {"validated_digest": "e" * 64})
     monkeypatch.setattr(module, "workload_matrix", lambda *_args: {"missing_reference_scopes": []})
+    monkeypatch.setattr(module, "run_attribution_scenarios", lambda *_args, **_kw: {"python_phases": {}})
     monkeypatch.setattr(module, "run_additional_scenarios", lambda *_args, **_kw: {"python_phases": {}})
     monkeypatch.setattr(module, "hardware_summary", lambda: {"platform": "linux-x64"})
     monkeypatch.setattr(module, "DaemonFixture", Fixture)
@@ -213,3 +214,110 @@ def test_rejected_warm_observation_is_retained_without_qualification(
     assert recovered["batches"][-1]["status"] == "failed"
     assert recovered["collection_complete"] is recovered["qualification_complete"] is False
     assert not collection.exists()
+
+
+def test_attribution_precedes_gates_and_same_mapping_reaches_additional(collection, monkeypatch):
+    from scripts import native_slo_qualification_scenarios as scenarios
+
+    from .test_native_slo_qualification_scenarios import _install_collectors
+
+    collectors, _ = _install_collectors(monkeypatch, collection)
+    events, captured = [], []
+    original_corpus, original_launchers = module.run_contract_corpus, module.measure_priority_launchers
+
+    def attribution(*args, **kwargs):
+        events.append("attribution")
+        value = scenarios.run_attribution_scenarios(*args, **kwargs)
+        captured.append(value)
+        return value
+
+    def corpus(*args, **kwargs):
+        assert collectors == ["phases", "identity", "cold"]
+        events.append("corpus")
+        return original_corpus(*args, **kwargs)
+
+    def launchers(*args, **kwargs):
+        events.append("headline")
+        return original_launchers(*args, **kwargs)
+
+    def additional(*args, precollected_attribution, **kwargs):
+        assert precollected_attribution is captured[0]
+        scenarios._validate_attribution(precollected_attribution, receipt_profile="candidate")
+        events.append("additional")
+        return {"python_phases": precollected_attribution["python_phases"]}
+
+    monkeypatch.setattr(module, "run_attribution_scenarios", attribution)
+    monkeypatch.setattr(module, "run_contract_corpus", corpus)
+    monkeypatch.setattr(module, "measure_priority_launchers", launchers)
+    monkeypatch.setattr(module, "run_additional_scenarios", additional)
+    report = module.run_block(plan=PLAN, raw_file=collection)
+    assert events == ["attribution", "corpus", "headline", "additional"]
+    assert collectors == ["phases", "identity", "cold"]
+    # The unchanged final privacy projection copies containers after handoff.
+    assert report["phases"] == captured[0]["python_phases"]
+
+
+@pytest.mark.parametrize("failure_stage", ["corpus", "c16"])
+def test_downstream_failure_preserves_attribution_and_partial_archive(collection, monkeypatch, failure_stage):
+    import hashlib
+    import traceback
+
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    from scripts import native_slo_qualification_scenarios as scenarios
+    from scripts.native_slo_evidence_archive import open_archive, seal
+    from scripts.native_slo_evidence_files import read_samples
+
+    from .test_native_slo_qualification_scenarios import _install_collectors
+
+    calls, _ = _install_collectors(monkeypatch, collection, fail_phases=True)
+    monkeypatch.setattr(module, "run_attribution_scenarios", scenarios.run_attribution_scenarios)
+    original = RuntimeError("qualification c16 route mismatch")
+
+    def fail(*_args, **kwargs):
+        assert calls == ["phases", "identity", "cold"]
+        if failure_stage == "c16":
+            with kwargs["journal"].batch("INSTALLED_LAUNCHER.c16.claude-code.PreToolUse", 16) as batch:
+                batch.record([7.0] * 16)
+                raise original
+        raise original
+
+    monkeypatch.setattr(
+        module, "run_contract_corpus" if failure_stage == "corpus" else "measure_priority_launchers", fail
+    )
+    monkeypatch.setattr(module, "run_additional_scenarios", lambda *_a, **_k: pytest.fail("past original failed gate"))
+    with pytest.raises(RuntimeError) as caught:
+        module.run_block(plan=PLAN, raw_file=collection)
+    assert caught.value is original and traceback.extract_tb(original.__traceback__)[-1].name == "fail"
+    assert calls == ["phases", "identity", "cold"] and not collection.exists()
+    partial = dict(read_samples(collection.parent))
+    expected = {
+        "block-phase-cases.jsonl",
+        "block-phase-summary.json",
+        "block-identity-cases.jsonl",
+        "block-identity-summary.json",
+        "block-identity-cold-cases.jsonl",
+        "block-identity-cold-observer.jsonl",
+        "block-identity-cold-summary.json",
+        "block-numeric.jsonl",
+    }
+    assert set(partial) == expected
+    assert partial["block-phase-cases.jsonl"].endswith(b"{")
+    assert json.loads(partial["block-phase-summary.json"])["passed"] is False
+    for name in ("block-identity-summary.json", "block-identity-cold-summary.json"):
+        assert json.loads(partial[name])["passed"] is True
+    assert b"PRIVATE" not in partial["block-phase-summary.json"]
+    key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
+    public = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    private = key.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+    )
+    key_id = hashlib.sha256(
+        key.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+    ).hexdigest()
+    encoded = seal(list(partial.items()), public, key_id, context={"source_sha": "a" * 40})
+    recovered, _ = open_archive(encoded, private)
+    assert dict(recovered) == partial
+    journal = recover_numeric_journal(collection.with_name("block-numeric.jsonl"))
+    assert journal["collection_complete"] is False

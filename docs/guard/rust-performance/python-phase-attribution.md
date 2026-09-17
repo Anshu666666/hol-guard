@@ -22,7 +22,7 @@ attribution diagnostics, not replacements for uninstrumented hook SLO samples.
 | `envelope_encode`, `receipt_record_serialization` | `_encode_hook_envelope`, `_NativeDecisionReceiptRecord.serialized` | Inclusive serialization plus encoding/validation; counts returned bytes. No claim that this isolates the UTF-8 encoding or allocation itself. |
 | `runtime_identity_including_hash` | `native_runtime._validate_binary` | Existing inclusive path/stat/read/hash validation. |
 | `runtime_sha256_*`, `runtime_manifest_sha256_*` | SHA-256 constructor, update and finalization in `native_runtime` and `native_runtime_identity` | Actual hash callable time and bytes passed to successful hash calls. Repeated hashing is counted repeatedly. Filesystem read time remains outside the hash-only spans. Other modules' hashing is not observed. |
-| `config_lookup` | `config.load_guard_config` | Existing callable wrapper. Absence means no call through this binding was observed, not that all configuration lookup costs are zero. |
+| `config_lookup` | Canonical `config.load_guard_config` and the existing aliases in `daemon.hook_worker`, `daemon.server`, and `daemon.hook_native_review_continuation` | Outermost observed lookup, with original return/exception behavior. A forwarding alias and its nested canonical call produce one timed lookup; separate fixed binding-entry counts retain both observations. |
 | `byte_admission` | `RuntimeHookScheduler.reserve_bytes` | Attempted payload bytes, reservation/rejection counts and inclusive call time; rejected work does not invent a queue span. |
 | `admission_and_queue` | `RuntimeHookScheduler.acquire` | Inclusive admission and waiting, attempted payload bytes, queued/never-queued and admitted/rejected counts. Exceptions remain in outcomes. |
 | `scheduler_queue_admitted` | Scheduler item's `queued_at` and `admitted_at` | Uses the real scheduler's timestamps even when another thread dispatches the item. Includes scheduling from initial queue insertion to admission. |
@@ -43,6 +43,55 @@ intentionally not wrapped because changing its digest constructor would select a
 different HMAC implementation. The existing `Condition.wait` and `Queue.get`
 methods are temporarily wrapped in the isolated diagnostic process, but only the
 exact request-scoped condition or captured response queue is measured.
+
+### Config binding coverage correction
+
+The original profiler patched only `config.load_guard_config`. Existing imports
+in `HookWorker`, the daemon server and native continuation code retain separate
+module bindings and could bypass that wrapper. The correction resolves these
+four fixed bindings before installing any config wrapper. It observes each
+original callable once without an additional config read, retry or production
+change. Dynamic imports in the availability helper use the canonical wrapper.
+
+The additive `config_lookup_coverage` object has the closed schema
+`hol-guard.config-lookup-observation.v1`. Per-binding `entries` and
+`outermost_calls` distinguish alias forwarding from separate lookups; entries
+must not be summed as independent lookups. Observation applies only to the
+existing foreground HTTP/hook context. Unscoped background work and the explicit
+`unattributed.native_stream_reader` context are excluded.
+
+`zero_calls_observed` requires successful installation, a finished scope with
+the same wrapper still bound at teardown, completed restoration, a foreground
+root admitted and completed while observation was open, and
+zero binding entries. Foreground/config calls still active at teardown mark the
+window `in_flight_at_teardown`, with no wait or added deadline. Observation
+admission closes atomically before restoration; late original calls still run
+and return/raise normally but cannot certify the old window. The foreground
+coverage snapshot is frozen at teardown, so a late root cannot turn an empty
+window into a measured zero. A foreground call already running at installation
+also makes the window incomplete. An active scope, no observed foreground request, missing
+historical module/callable, setup failure, binding replacement or restoration
+failure cannot establish zero. Missing modules/callables use `unsupported` and
+null counts; a missing dependency inside an existing module still raises its
+original import error. These states describe only the four declared bindings,
+not every config read in another process, a previously captured arbitrary local
+reference, or the publisher's background work.
+
+Focused regressions call the actual `HookWorker._load_config` method, the
+availability helper's dynamic import, and each fixed alias; they preserve exact
+argument, result and exception identities, verify restoration and nested-call
+accounting, and distinguish zero, missing, changed and failed observation.
+Fresh installed execution must supply the new coverage field. Old v2 reports
+without it remain historical partial observations and cannot gain a zero-call
+claim retroactively. Complete authenticated phase journals remain authoritative;
+this change does not repair the separate deeply nested aggregate projection or
+increase any evidence/timing bound.
+
+The correction's four-module source suite passes 72 tests, including deterministic
+blocked-call teardown and late-wrapper cases. Ruff, formatting and whitespace
+checks pass; the changed script has zero type errors and 86 existing/dynamic
+typing warnings. Independent source review is clear. These are correctness
+checks, not a new installed phase observation or completion of RSP-008.
 
 ## Attribution, failures and bounds
 

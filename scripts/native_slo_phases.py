@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextvars
 import functools
+import importlib
 import threading
 import time
 from collections import Counter, defaultdict
@@ -28,6 +29,13 @@ _MAX_TOTAL_SAMPLES = 100_000
 _MAX_SERIES = 512
 _ROUTE = contextvars.ContextVar[tuple[str, str] | None]("native_benchmark_route", default=None)
 _INSTALL_LOCK = threading.Lock()
+_CONFIG_DEPTH = contextvars.ContextVar[int]("native_benchmark_config_depth", default=0)
+_CONFIG_BINDINGS = (
+    ("config_module", "codex_plugin_scanner.guard.config"),
+    ("hook_worker", "codex_plugin_scanner.guard.daemon.hook_worker"),
+    ("daemon_server", "codex_plugin_scanner.guard.daemon.server"),
+    ("native_review_continuation", "codex_plugin_scanner.guard.daemon.hook_native_review_continuation"),
+)
 
 
 class PhaseProfiler:
@@ -44,6 +52,16 @@ class PhaseProfiler:
         self._discarded_series_updates = 0
         self._total_samples = 0
         self._active = False
+        self._config_state = {name: "not_installed" for name, _module in _CONFIG_BINDINGS}
+        self._config_entries: Counter[str] = Counter()
+        self._config_outermost: Counter[str] = Counter()
+        self._config_wrappers: list[tuple[str, Any, Callable[..., Any]]] = []
+        self._config_accepting = False
+        self._config_active = 0
+        self._foreground_active = 0
+        self._config_foreground_completed = 0
+        self._config_overlap_at_start = False
+        self._config_foreground_seen: bool | None = None
         self._allowed = frozenset(route_matrix())
         self._harnesses = frozenset(pair[0] for pair in self._allowed)
 
@@ -119,17 +137,25 @@ class PhaseProfiler:
         @functools.wraps(function)
         def measured(*args: Any, **kwargs: Any) -> Any:
             token = None
+            foreground_eligible = False
             if root:
                 payload = args[1] if len(args) > 1 else kwargs.get("payload")
                 harness = kwargs.get("default_harness")
                 event = payload.get("hook_event_name") if isinstance(payload, dict) else None
                 pair = (str(harness), str(event))
                 token = _ROUTE.set(pair if pair in self._allowed else ("other", "other"))
+                with self._lock:
+                    self._foreground_active += 1
+                    foreground_eligible = self._config_accepting
             try:
                 return self.call(function, name, *args, **kwargs)
             finally:
                 if token is not None:
                     _ROUTE.reset(token)
+                    with self._lock:
+                        self._foreground_active -= 1
+                        if foreground_eligible and self._config_accepting:
+                            self._config_foreground_completed += 1
 
         return measured
 
@@ -143,26 +169,88 @@ class PhaseProfiler:
             # Input parsing precedes a trusted event. Do not parse again to
             # invent attribution; keep transport failures in this bucket too.
             token = _ROUTE.set((harness, "transport_unclassified"))
+            with self._lock:
+                self._foreground_active += 1
+                foreground_eligible = self._config_accepting
             try:
                 return self.call(function, "http_post_inclusive", handler)
             finally:
                 _ROUTE.reset(token)
+                with self._lock:
+                    self._foreground_active -= 1
+                    if foreground_eligible and self._config_accepting:
+                        self._config_foreground_completed += 1
 
         return measured
+
+    def _wrap_config(self, function: Callable[..., Any], binding: str) -> Callable[..., Any]:
+        @functools.wraps(function)
+        def measured(*args: Any, **kwargs: Any) -> Any:
+            route = _ROUTE.get()
+            if route is None or route == ("unattributed", "native_stream_reader"):
+                return function(*args, **kwargs)
+            depth = _CONFIG_DEPTH.get()
+            with self._lock:
+                admitted = self._config_accepting
+                if admitted:
+                    self._config_entries[binding] += 1
+                    if depth == 0:
+                        self._config_outermost[binding] += 1
+                        self._config_active += 1
+            if not admitted:
+                return function(*args, **kwargs)
+            # A forwarding alias can call the canonical binding. Retain both
+            # binding entries, but time/count the lookup only once.
+            if depth:
+                return function(*args, **kwargs)
+            token = _CONFIG_DEPTH.set(depth + 1)
+            try:
+                return self.call(function, "config_lookup", *args, **kwargs)
+            finally:
+                _CONFIG_DEPTH.reset(token)
+                with self._lock:
+                    self._config_active -= 1
+
+        return measured
+
+    def _install_config_probes(self) -> None:
+        targets: list[tuple[str, Any, Callable[..., Any]]] = []
+        # Resolve all existing aliases before patching the canonical module;
+        # importing an alias afterward could capture our wrapper as its origin.
+        for binding, module_name in _CONFIG_BINDINGS:
+            try:
+                owner = importlib.import_module(module_name)
+            except ModuleNotFoundError as error:
+                if error.name != module_name:
+                    raise
+                self._config_state[binding] = "unsupported"
+                continue
+            function = getattr(owner, "load_guard_config", None)
+            if not callable(function):
+                self._config_state[binding] = "unsupported"
+                continue
+            targets.append((binding, owner, function))
+        for binding, owner, function in targets:
+            measured = self._wrap_config(function, binding)
+            self._stack.enter_context(patch.object(owner, "load_guard_config", measured))
+            self._config_wrappers.append((binding, owner, measured))
+            self._config_state[binding] = "observing"
+        with self._lock:
+            self._config_overlap_at_start = self._foreground_active > 0
+            self._config_accepting = True
 
     def __enter__(self) -> PhaseProfiler:
         if self._active or not _INSTALL_LOCK.acquire(blocking=False):
             raise RuntimeError("phase instrumentation is already active in this process")
         self._active = True
         try:
-            from codex_plugin_scanner.guard import config, native_hook_edge, native_runtime
+            from codex_plugin_scanner.guard import native_hook_edge, native_runtime
             from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_writer import RuntimeHookEvidenceWriter
             from codex_plugin_scanner.guard.daemon.server import _GuardDaemonHandler
 
             targets = (
                 (_GuardDaemonHandler, "_handle_runtime_hook", "daemon_hook_inclusive", True),
                 (native_runtime, "_validate_binary", "runtime_identity_including_hash", False),
-                (config, "load_guard_config", "config_lookup", False),
                 (native_hook_edge, "_decode_edge", "response_decode_validate", False),
                 (native_hook_edge, "native_resident_client_request", "native_client_inclusive", False),
                 (RuntimeHookEvidenceWriter, "submit_command_activity", "activity_submission", False),
@@ -173,16 +261,39 @@ class PhaseProfiler:
             self._stack.enter_context(
                 patch.object(_GuardDaemonHandler, "do_POST", self._http_root(_GuardDaemonHandler.do_POST))
             )
+            self._install_config_probes()
             install_wait_probes(self._stack, self)
             install_io_probes(self._stack, self)
         except BaseException:
+            for binding, _owner, _measured in self._config_wrappers:
+                self._config_state[binding] = "setup_failed"
             self.__exit__()
             raise
         return self
 
     def __exit__(self, *_args: object) -> None:
         try:
+            with self._lock:
+                if self._config_accepting:
+                    self._config_foreground_seen = self._config_foreground_completed > 0
+                self._config_accepting = False
+                in_flight = self._foreground_active > 0 or self._config_active > 0
+            for binding, owner, measured in self._config_wrappers:
+                if self._config_state[binding] == "observing":
+                    self._config_state[binding] = (
+                        "binding_changed"
+                        if getattr(owner, "load_guard_config", None) is not measured
+                        else "in_flight_at_teardown"
+                        if in_flight
+                        else "foreground_at_installation"
+                        if self._config_overlap_at_start
+                        else "complete"
+                    )
             self._stack.close()
+        except BaseException:
+            for binding, _owner, _measured in self._config_wrappers:
+                self._config_state[binding] = "restoration_failed"
+            raise
         finally:
             if self._active:
                 self._active = False
@@ -195,6 +306,28 @@ class PhaseProfiler:
                 "scope": "diagnostic_instrumented_run",
                 "span_semantics": "inclusive_do_not_sum",
                 "headline_timing_eligible": False,
+                "config_lookup_coverage": {
+                    "schema": "hol-guard.config-lookup-observation.v1",
+                    "scope": "declared_bindings_in_foreground_route_context_only",
+                    "foreground_context_observed": self._config_foreground_seen,
+                    "nested_binding_entries_are_not_additive_lookups": True,
+                    "bindings": {
+                        binding: {
+                            "status": status,
+                            "entries": self._config_entries[binding]
+                            if status not in {"not_installed", "unsupported"}
+                            else None,
+                            "outermost_calls": self._config_outermost[binding]
+                            if status not in {"not_installed", "unsupported"}
+                            else None,
+                            "zero_calls_observed": status == "complete"
+                            and not self._active
+                            and self._config_foreground_seen is True
+                            and self._config_entries[binding] == 0,
+                        }
+                        for binding, status in self._config_state.items()
+                    },
+                },
                 "by_route": {
                     f"{harness}.{event}": {
                         phase: {

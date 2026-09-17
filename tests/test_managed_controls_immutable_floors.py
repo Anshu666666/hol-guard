@@ -66,7 +66,7 @@ def test_local_enable_cannot_override_managed_disable() -> None:
         BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         extension_ids=(extension_id,),
         permission_ids=(permission_id,),
-            surface=ControlSurface.COMMAND_EVALUATION,
+        surface=ControlSurface.COMMAND_EVALUATION,
     )
     assert resolution.blocked is True
     assert resolution.factors[0].reason_code == "control.disabled-extension"
@@ -86,7 +86,7 @@ def test_lockdown_trusted_recovery_is_limited() -> None:
         BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         extension_ids=(extension_id,),
         permission_ids=(permission_id,),
-            surface=ControlSurface.COMMAND_EVALUATION,
+        surface=ControlSurface.COMMAND_EVALUATION,
     )
     recovered = resolve_extension_controls(
         layers,

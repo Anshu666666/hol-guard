@@ -65,9 +65,7 @@ def bounded_policy_parse_error(error: PolicyDocumentError) -> dict[str, object]:
     diagnostic = error.diagnostics[0] if error.diagnostics else None
     code = diagnostic.code if diagnostic is not None else "invalid_policy_document"
     path = getattr(diagnostic, "path", ()) if diagnostic is not None else ()
-    field_path = "$" + "".join(
-        f"[{item}]" if isinstance(item, int) else f".{item}" for item in path
-    )
+    field_path = "$" + "".join(f"[{item}]" if isinstance(item, int) else f".{item}" for item in path)
     message = str(error)
     if len(message) > _MAX_ERROR_CHARS:
         message = message[: _MAX_ERROR_CHARS - 1] + "…"

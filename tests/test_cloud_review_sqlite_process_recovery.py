@@ -43,9 +43,7 @@ def test_process_restart_preserves_pending_identity(tmp_path: Path) -> None:
     assert pending["status"] == "pending"
 
 
-def test_sqlite_recovery_does_not_replay_consumed_receipt(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_sqlite_recovery_does_not_replay_consumed_receipt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = _prepare(tmp_path)
     _recover(store, monkeypatch)
     restarted = GuardStore(store.guard_home)

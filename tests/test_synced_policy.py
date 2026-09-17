@@ -259,4 +259,3 @@ def test_offline_lifetime_distinguishes_current_valid_expired_and_last_good() ->
     assert revoked["active"] is False
     assert revoked["recovery"] is True
     assert revoked["state"] == "recovery"
-

@@ -58,11 +58,7 @@ def selected_enforcement_lane(
         and required_capability not in negotiated_capabilities
     ):
         return "incompatible", "missing_negotiated_capability"
-    if (
-        contract_version == POLICY_BUNDLE_V2_CONTRACT
-        and flags.catalog_sync
-        and not protected_authority
-    ):
+    if contract_version == POLICY_BUNDLE_V2_CONTRACT and flags.catalog_sync and not protected_authority:
         return "incompatible", "missing_protected_authority"
     if not canonical_policy_enforcement_enabled(device_id=device_id, workspace_id=workspace_id):
         if contract_version == POLICY_BUNDLE_V2_CONTRACT:

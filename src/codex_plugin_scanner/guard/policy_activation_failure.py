@@ -67,7 +67,8 @@ def activation_status_from_store(store: object) -> dict[str, object]:
     return {
         "applied": False if reason else ack_status in {"synced", "applied"},
         "last_good_present": isinstance(last_good, Mapping) and bool(last_good),
-        "storage_failure": reason in {
+        "storage_failure": reason
+        in {
             "policy_activation_disk_full",
             "policy_activation_sqlite_locked",
             "policy_activation_sqlite_failed",

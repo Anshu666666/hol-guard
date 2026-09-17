@@ -16,11 +16,16 @@ pending requests do not lose their authority merely because delivery was retried
 Use `hol-guard cloud-review enable --renew` when you intend to replace consent and
 start a new expiry period. `--expires-in-days` applies when issuing or renewing
 consent. Renewal changes the consent identity; a Cloud decision bound to the old
-identity must be refreshed before it can apply. Dashboard delivery retries also
-reuse valid consent; an explicit `renew_consent: true` action renews it. Dashboard
-confirmation, local proof, and workspace/source checks remain required for either
-action. Turning off review still revokes consent through the existing disable
-command or dashboard action.
+identity must be refreshed before it can apply. An unused expiry option does not
+block delivery recovery while existing consent remains valid; new or explicitly
+renewed consent still requires an expiry from 1 through 365 days.
+
+In local Settings, **Restore Cloud Review** retries delivery with the existing
+authorization and expiry. **Renew authorization** opens a separate confirmation
+to start a new 30-day period. Both actions require workspace/source checks and
+the existing local approval proof when configured. Previously unassigned events remain excluded unless
+their checkbox is explicitly selected. Turning off review still revokes consent
+through the existing disable command or dashboard action.
 
 The worker retains its wake signal and jittered error backoff. Invalid timing
 configuration falls back to the defaults below and records the variable name in a

@@ -27,7 +27,15 @@ def generic_policy_row_precedence(row: GenericPolicyRow) -> tuple[int, int, str,
     specific = scope in {"workspace", "harness", "global"} and row["artifact_id"] is not None
     selectors = tuple(
         str(row[field]) if row[field] is not None else ""
-        for field in ("harness", "artifact_id", "artifact_hash", "workspace", "publisher", "expires_at")
+        for field in (
+            "harness",
+            "artifact_id",
+            "artifact_hash",
+            "workspace",
+            "publisher",
+            "exact_command_sha256",
+            "expires_at",
+        )
     )
     return (
         -_SCOPE_PRIORITY.get(scope, 5),

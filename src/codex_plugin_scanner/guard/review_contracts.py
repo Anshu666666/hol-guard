@@ -324,6 +324,11 @@ def build_local_review_request_claim(
     identity = PolicyRuleIdentity.from_mapping(_read_json_mapping(request_row.get("decision_v2_json")))
     if identity is not None:
         claim.update(identity.to_dict())
+    from .policy_memory_source import verified_request_policy_memory_source
+
+    policy_source = verified_request_policy_memory_source(store, request_row)
+    if policy_source is not None:
+        claim["policyMemorySource"] = policy_source
     claim["claimHash"] = compute_local_review_request_claim_hash(claim)
     return attach_exact_review_capability(claim, oauth, store)
 

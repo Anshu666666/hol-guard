@@ -5,13 +5,22 @@
 from __future__ import annotations
 
 import os
-import shlex
 from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from ..runtime.review_decision_projection import runtime_review_decision_payload
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
+from .hook_exact_policy import (
+    HookExactCommandSource,
+    HookPolicyClaim,
+    authenticated_exact_policy_allow,
+    hook_claim_context_hash,
+    hook_claim_policy_changed,
+    hook_exact_command_digest,
+    hook_policy_claim,
+)
+from .hook_runtime_checks import _runtime_external_archive_command_matches_executable, _stamp_runtime_posture_metadata
 
 bootstrap_compatibility_module(globals())
 
@@ -111,28 +120,6 @@ def _cursor_native_saved_approval_hash(
     return _optional_string(approved.get("artifact_hash"))
 
 
-def _runtime_external_archive_command_matches_executable(raw_command: str | None, executable: str) -> bool:
-    if (
-        raw_command is None
-        or os.name == "nt"
-        or "`" in raw_command
-        or "$(" in raw_command
-        or "\n" in raw_command
-        or "\r" in raw_command
-    ):
-        return False
-    lexer = shlex.shlex(raw_command, posix=True, punctuation_chars=True)
-    lexer.whitespace_split = True
-    lexer.commenters = ""
-    try:
-        tokens = list(lexer)
-    except ValueError:
-        return False
-    if not tokens or tokens[0] != executable:
-        return False
-    return not any(token and all(character in "();<>|&" for character in token) for token in tokens)
-
-
 def _runtime_external_archive_has_digest_binding_sink(
     *,
     artifact: GuardArtifact,
@@ -178,27 +165,6 @@ def _runtime_external_archive_has_digest_binding_sink(
     except (OSError, RuntimeError):
         return False
     return resolved_executable == shim_path
-
-
-def _stamp_runtime_posture_metadata(artifact: object, signals: object) -> None:
-    metadata = getattr(artifact, "metadata", None)
-    if not isinstance(metadata, dict):
-        return
-    if isinstance(signals, tuple) and signals:
-        metadata["risk_signals"] = [
-            {
-                "confidence": getattr(signal, "confidence", None),
-                "category": getattr(signal, "category", None),
-            }
-            for signal in signals
-        ]
-        if any(getattr(signal, "confidence", None) == "strong" for signal in signals):
-            metadata["risk_confidence"] = "strong"
-    action_class = metadata.get("action_class")
-    if isinstance(action_class, str):
-        lowered = action_class.lower()
-        if any(token in lowered for token in ("launch agent", "login item", "launchctl", "cron", "systemd", "launchd")):
-            metadata["persistence_writes_launch_agent"] = True
 
 
 def _embedded_script_evidence(command_text: str) -> list[dict[str, object]]:
@@ -256,16 +222,20 @@ def _evaluate_runtime_artifact_hook(
     store: GuardStore,
     trusted_request_override_hash: str | None = None,
     post_claim_revalidator: (
-        Callable[[str, bool, str | None, bool], int | RuntimeArtifactHookState | None] | None
+        Callable[[HookPolicyClaim, bool, str | None, bool], int | RuntimeArtifactHookState | None] | None
     ) = None,
-    _claimed_saved_allow_hash: str | None = None,
+    _claimed_saved_allow_hash: HookPolicyClaim | None = None,
     _claimed_trusted_request_override: bool = False,
     _claimed_package_approval_consumed: bool = False,
     _claimed_approval_request_id: str | None = None,
     _claim_saved_approval: bool = True,
     _post_claim_refresh_failed: bool = False,
+    _exact_command_source: HookExactCommandSource | None = None,
 ) -> int | RuntimeArtifactHookState:
     payload_map = dict(payload)
+    exact_digest = (
+        _exact_command_source.sha256 if _exact_command_source is not None else hook_exact_command_digest(payload)
+    )
     pre_workflow_metadata = dict(runtime_artifact.metadata)
 
     workflow_state = prepare_github_workflow_hook_state(
@@ -293,11 +263,12 @@ def _evaluate_runtime_artifact_hook(
         package_approval_consumed: bool = False,
         approval_request_id: str | None = None,
     ) -> int | RuntimeArtifactHookState:
+        captured_claim = exact_policy_claim if claimed_hash == runtime_artifact_hash else claimed_hash
         refresh_failed = False
         if post_claim_revalidator is not None:
             try:
                 refreshed_result = post_claim_revalidator(
-                    claimed_hash,
+                    captured_claim,
                     trusted_request_override,
                     approval_request_id,
                     package_approval_consumed,
@@ -319,12 +290,13 @@ def _evaluate_runtime_artifact_hook(
             runtime_workspace=runtime_workspace,
             store=store,
             post_claim_revalidator=None,
-            _claimed_saved_allow_hash=claimed_hash,
+            _claimed_saved_allow_hash=captured_claim,
             _claimed_trusted_request_override=trusted_request_override,
             _claimed_package_approval_consumed=package_approval_consumed,
             _claimed_approval_request_id=approval_request_id,
             _claim_saved_approval=False,
             _post_claim_refresh_failed=refresh_failed,
+            _exact_command_source=_exact_command_source,
         )
 
     event_name = _hook_event_name(payload_map) or "PreToolUse"
@@ -722,6 +694,7 @@ def _evaluate_runtime_artifact_hook(
         artifact_hash=runtime_artifact_hash,
         workspace=policy_workspace,
         publisher=runtime_artifact.publisher,
+        exact_command_sha256=exact_digest,
         runtime_exact_match_context=runtime_exact_match_context,
         memory_command=runtime_artifact.command,
         memory_artifact_type=runtime_artifact.artifact_type,
@@ -755,6 +728,7 @@ def _evaluate_runtime_artifact_hook(
         artifact_hash=artifact_content_hash,
         workspace=legacy_policy_workspace,
         publisher=runtime_artifact.publisher,
+        exact_command_sha256=exact_digest,
         runtime_exact_match_context=runtime_exact_match_context,
         memory_command=runtime_artifact.command,
         memory_artifact_type=runtime_artifact.artifact_type,
@@ -803,6 +777,9 @@ def _evaluate_runtime_artifact_hook(
                 workspace=str(runtime_workspace) if runtime_workspace else None,
                 consume_one_shot=False,
             )
+    exact_policy_claim = hook_policy_claim(
+        runtime_artifact_hash, store=store, decision=stored_policy_decision, command_digest=exact_digest
+    )
     stored_policy_action = (
         _optional_string(stored_policy_decision.get("action")) if stored_policy_decision is not None else None
     )
@@ -903,7 +880,11 @@ def _evaluate_runtime_artifact_hook(
             # when a different, valid saved allow also matched.  Letting the
             # valid row win would make a tampered broader block invisible.
             validation_reason = "approval_reuse_integrity_failure"
-        elif stored_policy_decision is not None:
+        elif stored_policy_decision is not None and not authenticated_exact_policy_allow(
+            store,
+            stored_policy_decision,
+            exact_digest,
+        ):
             stored_validation_reason = _runtime_saved_allow_validation_reason(
                 stored_policy_decision,
                 artifact=runtime_artifact,
@@ -1044,7 +1025,7 @@ def _evaluate_runtime_artifact_hook(
         )
     if _claimed_saved_allow_hash is not None:
         context_changed = approval_context_tokens_validation_reason(
-            _claimed_saved_allow_hash,
+            hook_claim_context_hash(_claimed_saved_allow_hash),
             runtime_artifact_hash,
         )
         claimed_validation_reason: ApprovalReuseValidationFailure | None = (
@@ -1052,8 +1033,15 @@ def _evaluate_runtime_artifact_hook(
             if _post_claim_refresh_failed or context_changed is not None
             else None
         )
-        if remembered_rule_rejection is not None or (
-            approval_reuse is not None and approval_reuse.reason_code == "approval_reuse_integrity_failure"
+        if (
+            remembered_rule_rejection is not None
+            or (approval_reuse is not None and approval_reuse.reason_code == "approval_reuse_integrity_failure")
+            or hook_claim_policy_changed(
+                _claimed_saved_allow_hash,
+                store=store,
+                decision=stored_policy_decision,
+                command_digest=exact_digest,
+            )
         ):
             claimed_validation_reason = "approval_reuse_integrity_failure"
         if workflow_state.capability_required and not workflow_state.authorization_claimed:

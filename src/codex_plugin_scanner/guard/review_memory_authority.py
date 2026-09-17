@@ -5,9 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from .action_lattice import is_guard_action
+from .exact_command_policy import exact_command_policy_digest
 from .local_authority_integrity import sign_local_authority_payload, verify_local_authority_payload
 from .models import PolicyDecision
 from .review_contracts import validate_decision_memory_bundle_target, validated_decision_memory_bundle
+from .review_memory_application import registered_oauth_for_bundle
 from .review_memory_targets import local_memory_match_fields, validate_exact_memory_target
 from .review_oauth_binding import GuardReviewContractError, GuardReviewOAuthMetadata, guard_review_oauth_metadata
 from .runtime.time_support import parse_utc_timestamp
@@ -72,12 +74,19 @@ def decision_from_memory_rule(
     if bundle_expiry is None or (rule.get("expiresAt") is not None and rule_expiry is None):
         raise GuardReviewContractError("decision_memory_rule_expiry_invalid")
     expiry = min(bundle_expiry, rule_expiry) if rule_expiry is not None else bundle_expiry
+    exact_digest = None
+    if "exactCommand" in rule:
+        try:
+            exact_digest = exact_command_policy_digest(rule["exactCommand"], rule.get("artifactId"), scope=scope)
+        except ValueError as error:
+            raise GuardReviewContractError("invalid_decision_memory_exact_command") from error
     return PolicyDecision(
         harness=harness,
         scope="workspace" if workspace is not None else "artifact",
         action=action,
         artifact_id=artifact_id,
         artifact_hash=text(rule.get("artifactHash")),
+        exact_command_sha256=exact_digest,
         workspace=workspace,
         publisher=publisher,
         reason=text(rule.get("reason")) or "Guard Cloud signed decision memory sync",
@@ -133,7 +142,9 @@ def registry_entries(
             expiry = parse_utc_timestamp(bundle.get("expiresAt"))
             if expiry is None or parsed_now is None or expiry <= parsed_now:
                 continue
-            validate_decision_memory_bundle_target(bundle=bundle, oauth=oauth)
+            validate_decision_memory_bundle_target(
+                bundle=bundle, oauth=registered_oauth_for_bundle(oauth, bound, digest)
+            )
             validated[digest] = bundle
         except (GuardReviewContractError, TypeError, ValueError):
             continue
@@ -147,7 +158,9 @@ def registry_entries(
             if not isinstance(rule, dict) or rule.get("ruleId") != rule_id:
                 continue
             try:
-                decision = decision_from_memory_rule(bundle=bundle, rule=rule, oauth=oauth)
+                decision = decision_from_memory_rule(
+                    bundle=bundle, rule=rule, oauth=registered_oauth_for_bundle(oauth, bound, str(digest))
+                )
                 expiry = parse_utc_timestamp(decision.expires_at)
                 if expiry is not None and parsed_now is not None and expiry > parsed_now:
                     entries[rule_id] = (bundle, decision)
@@ -164,6 +177,7 @@ def encode_registry(
     store,
     now: str,
     acknowledgement: Mapping[str, object],
+    registered_installations: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     payload = {
         "contractVersion": REGISTRY_CONTRACT,
@@ -172,6 +186,11 @@ def encode_registry(
         "bundleHash": acknowledgement.get("bundleHash"),
         "acknowledgement": dict(acknowledgement),
         "bundles": {str(bundle["bundleHash"]): bundle for bundle, _ in entries.values()},
+        "registeredInstallations": {
+            digest: value
+            for digest, value in (registered_installations or {}).items()
+            if digest in {str(bundle["bundleHash"]) for bundle, _ in entries.values()}
+        },
         "rules": {rule_id: str(bundle["bundleHash"]) for rule_id, (bundle, _) in entries.items()},
     }
     key, key_id = store._policy_integrity_secret_material(create=True)

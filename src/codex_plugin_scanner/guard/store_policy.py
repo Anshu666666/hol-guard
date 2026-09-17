@@ -40,7 +40,12 @@ from .store_policy_activation_preflight import (
     encoded_policy_activation_payloads,
     policy_checkpoint_rejection,
 )
-from .store_policy_rows import materialized_policy_row_identity, replace_remote_policy_rows_locked
+from .store_policy_rows import (
+    materialized_policy_row_identity,
+    normalized_policy_keys,
+    replace_remote_policy_rows_locked,
+    runtime_policy_row_is_eligible,
+)
 
 if TYPE_CHECKING:
     from .managed_controls_policy_fields import ParsedManagedControlsPolicy
@@ -62,7 +67,9 @@ _NON_CONSUMING_POLICY_MATCH_LIMIT = 256
 _APPROVAL_REUSE_DIAGNOSTIC_LIMIT = 32
 _APPROVAL_CONTEXT_SQL_PATTERN = "guard-approval-context:v1:%"
 _POLICY_LOOKUP_COLUMNS = """
-    decision_id, harness, scope, artifact_id, action, artifact_hash, workspace, publisher, source,
+    decision_id, harness, scope, artifact_id, action, artifact_hash, workspace, publisher,
+                   exact_command_sha256,
+                       source,
     reason, owner, expires_at, updated_at, integrity_version, integrity_generation,
     payload_hash, payload_mac, integrity_key_id, signed_at
 """
@@ -229,6 +236,7 @@ def _bounded_non_consuming_policy_rows(
     publisher: str | None,
     action_family_key: str | None,
     current_time: str,
+    exact_command_sha256: str | None = None,
     _explain: bool = False,
 ) -> list[sqlite3.Row]:
     """Read at most one-over-limit matches through disjoint exact probes.
@@ -342,7 +350,14 @@ def _bounded_non_consuming_policy_rows(
         connection,
         table="policy_decisions",
         columns=_POLICY_LOOKUP_COLUMNS,
-        probes=probes,
+        probes=[
+            (
+                f"({predicate}) and (exact_command_sha256 is null or exact_command_sha256 = ?)",
+                (*params, exact_command_sha256),
+                index,
+            )
+            for predicate, params, index in probes
+        ],
         limit=_NON_CONSUMING_POLICY_MATCH_LIMIT + 1,
         current_time=current_time,
         explain=_explain,
@@ -662,47 +677,7 @@ class StorePolicyMixin:
 
     _materialized_policy_bundle_row_identity = staticmethod(materialized_policy_row_identity)
 
-    def _runtime_policy_row_is_eligible(
-        self,
-        candidate,
-        *,
-        policy_bundle_decision_identities: frozenset[tuple[object, ...]],
-        memory_decision_identities: frozenset[tuple[object, ...]],
-        artifact_id: str | None,
-        artifact_hash: str | None,
-        runtime_exact_match_key: str | None,
-        portable_runtime_exact_match_key: str | None,
-        global_runtime_exact_match_key: str | None,
-    ) -> bool:
-        """Return True when a stored runtime policy row may serve this lookup."""
-
-        if str(candidate["source"]) in {"cloud-sync", "team-policy"}:
-            return False
-        if (
-            str(candidate["source"]) in {"policy-bundle", "policy-bundle-canonical"}
-            and (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
-            not in policy_bundle_decision_identities
-        ):
-            return False
-        if (
-            str(candidate["source"]) == "cloud-signed-memory"
-            and (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
-            not in memory_decision_identities
-        ):
-            return False
-        return not _scoped_runtime_row_requires_exact_match(
-            scope=str(candidate["scope"]),
-            stored_artifact_id=str(candidate["artifact_id"]) if isinstance(candidate["artifact_id"], str) else None,
-            stored_artifact_hash=(
-                str(candidate["artifact_hash"]) if isinstance(candidate["artifact_hash"], str) else None
-            ),
-            source=str(candidate["source"]),
-            requested_artifact_id=artifact_id,
-            requested_artifact_hash=artifact_hash,
-            requested_runtime_exact_match_key=runtime_exact_match_key,
-            requested_portable_exact_match_key=portable_runtime_exact_match_key,
-            requested_global_exact_match_key=global_runtime_exact_match_key,
-        )
+    _runtime_policy_row_is_eligible = staticmethod(runtime_policy_row_is_eligible)
 
     def _cached_policy_bundle_decision_identities(
         self,
@@ -778,17 +753,7 @@ class StorePolicyMixin:
               and coalesce(artifact_hash, '') = coalesce(?, '')
               and coalesce(workspace, '') = coalesce(?, '')
               and coalesce(publisher, '') = coalesce(?, '')
-            """,
-            (decision.harness, decision.scope, artifact_id, artifact_hash, workspace, publisher),
-        )
-        cursor = connection.execute(
-            """
-            insert into policy_decisions (
-              harness, scope, artifact_id, artifact_hash, workspace, publisher, action, reason, owner, source,
-              expires_at, updated_at, integrity_version, integrity_generation, payload_hash, payload_mac,
-              integrity_key_id, signed_at
-            )
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              and exact_command_sha256 is ?
             """,
             (
                 decision.harness,
@@ -797,6 +762,28 @@ class StorePolicyMixin:
                 artifact_hash,
                 workspace,
                 publisher,
+                decision.exact_command_sha256,
+            ),
+        )
+        cursor = connection.execute(
+            """
+            insert into policy_decisions (
+              harness, scope, artifact_id, artifact_hash, workspace, publisher,
+                   exact_command_sha256,
+              action, reason, owner, source,
+              expires_at, updated_at, integrity_version, integrity_generation, payload_hash, payload_mac,
+              integrity_key_id, signed_at
+            )
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                decision.harness,
+                decision.scope,
+                artifact_id,
+                artifact_hash,
+                workspace,
+                publisher,
+                decision.exact_command_sha256,
                 decision.action,
                 decision.reason,
                 decision.owner,
@@ -1298,6 +1285,7 @@ class StorePolicyMixin:
                     artifact_hash,
                     workspace,
                     publisher,
+                    decision.exact_command_sha256,
                     decision.action,
                     decision.reason,
                     decision.owner,
@@ -1329,6 +1317,7 @@ class StorePolicyMixin:
         memory_artifact_type: str | None = None,
         memory_artifact_name: str | None = None,
         consume_one_shot: bool = True,
+        exact_command_sha256: str | None = None,
     ) -> str | None:
         lookup = self.resolve_policy_decision_lookup_with_memory_pattern(
             harness,
@@ -1341,6 +1330,7 @@ class StorePolicyMixin:
             memory_artifact_type=memory_artifact_type,
             memory_artifact_name=memory_artifact_name,
             consume_one_shot=consume_one_shot,
+            exact_command_sha256=exact_command_sha256,
         )
         decision = lookup["decision"]
         return str(decision["action"]) if decision is not None else None
@@ -1359,6 +1349,7 @@ class StorePolicyMixin:
         memory_artifact_type: str | None = None,
         memory_artifact_name: str | None = None,
         consume_one_shot: bool = True,
+        exact_command_sha256: str | None = None,
     ) -> PolicyDecisionLookupResult:
         direct_lookup = self.resolve_policy_decision_lookup(
             harness,
@@ -1369,6 +1360,7 @@ class StorePolicyMixin:
             now=now,
             runtime_exact_match_context=runtime_exact_match_context,
             consume_one_shot=consume_one_shot,
+            exact_command_sha256=exact_command_sha256,
         )
         candidate_lookups = [direct_lookup]
         if consume_one_shot and (
@@ -1392,6 +1384,7 @@ class StorePolicyMixin:
                     now=now,
                     runtime_exact_match_context=runtime_exact_match_context,
                     consume_one_shot=consume_one_shot,
+                    exact_command_sha256=exact_command_sha256,
                 )
                 candidate_lookups.append(exact_command_lookup)
                 if consume_one_shot and (
@@ -1420,6 +1413,7 @@ class StorePolicyMixin:
             now=now,
             runtime_exact_match_context=runtime_exact_match_context,
             consume_one_shot=consume_one_shot,
+            exact_command_sha256=exact_command_sha256,
         )
         candidate_lookups.append(memory_lookup)
         if consume_one_shot:
@@ -1440,6 +1434,7 @@ class StorePolicyMixin:
         now: str | None = None,
         runtime_exact_match_context: str | None = None,
         consume_one_shot: bool = True,
+        exact_command_sha256: str | None = None,
     ) -> PolicyDecisionLookupResult:
         current_time = _canonical_utc_timestamp(now or _now())
         workspace_key = _workspace_policy_key(workspace)
@@ -1601,11 +1596,14 @@ class StorePolicyMixin:
                     publisher=publisher,
                     action_family_key=action_family_key,
                     current_time=current_time,
+                    exact_command_sha256=exact_command_sha256,
                 )
             else:
                 rows = connection.execute(
                     """
-                select decision_id, harness, scope, artifact_id, action, artifact_hash, workspace, publisher, source,
+                select decision_id, harness, scope, artifact_id, action, artifact_hash, workspace, publisher,
+                   exact_command_sha256,
+                       source,
                        reason, owner, expires_at, updated_at, integrity_version, integrity_generation,
                        payload_hash, payload_mac,
                        integrity_key_id, signed_at
@@ -1651,6 +1649,7 @@ class StorePolicyMixin:
                       )
                     )
                 )
+                and (exact_command_sha256 is null or exact_command_sha256 = ?)
                 and (expires_at is null or julianday(expires_at) > julianday(?))
                 limit ?
                 """,
@@ -1678,6 +1677,7 @@ class StorePolicyMixin:
                         artifact_hash,
                         global_runtime_exact_match_key,
                         global_runtime_exact_match_key,
+                        exact_command_sha256,
                         current_time,
                         _NON_CONSUMING_POLICY_MATCH_LIMIT + 1 if not consume_one_shot else -1,
                     ),
@@ -1969,6 +1969,7 @@ class StorePolicyMixin:
         now: str | None = None,
         runtime_exact_match_context: str | None = None,
         consume_one_shot: bool = True,
+        exact_command_sha256: str | None = None,
     ) -> dict[str, object] | None:
         lookup = self.resolve_policy_decision_lookup(
             harness,
@@ -1979,6 +1980,7 @@ class StorePolicyMixin:
             now=now,
             runtime_exact_match_context=runtime_exact_match_context,
             consume_one_shot=consume_one_shot,
+            exact_command_sha256=exact_command_sha256,
         )
         return lookup["decision"]
 
@@ -2167,6 +2169,7 @@ class StorePolicyMixin:
         row = connection.execute(
             """
             select decision_id, harness, scope, artifact_id, action, artifact_hash, workspace, publisher,
+                   exact_command_sha256,
                    source, reason, owner, expires_at, updated_at, integrity_version, integrity_generation,
                    payload_hash, payload_mac, integrity_key_id, signed_at
             from policy_decisions
@@ -2225,6 +2228,7 @@ class StorePolicyMixin:
         identity_keys = (
             "action",
             "artifact_hash",
+            "exact_command_sha256",
             "artifact_id",
             "decision_id",
             "expires_at",
@@ -2383,22 +2387,7 @@ class StorePolicyMixin:
                 return "approval_reuse_identity_changed"
         return None
 
-    @staticmethod
-    def _normalized_policy_keys(decision: PolicyDecision) -> tuple[str | None, str | None, str | None, str | None]:
-        if decision.scope in {"harness", "global"}:
-            artifact_id = _artifact_family_key(decision.artifact_id)
-        else:
-            artifact_id = decision.artifact_id if decision.scope in {"artifact", "workspace"} else None
-        artifact_hash = (
-            decision.artifact_hash
-            if decision.scope in {"artifact", "workspace"}
-            or _is_runtime_scoped_exact_match_key(decision.artifact_hash)
-            or _is_approval_context_token(decision.artifact_hash)
-            else None
-        )
-        workspace = _workspace_policy_key(decision.workspace) if decision.scope == "workspace" else None
-        publisher = decision.publisher if decision.scope == "publisher" else None
-        return artifact_id, artifact_hash, workspace, publisher
+    _normalized_policy_keys = staticmethod(normalized_policy_keys)
 
     def policy_fingerprint(
         self,
@@ -2424,7 +2413,8 @@ class StorePolicyMixin:
             rows = connection.execute(
                 """
                 select decision_id, harness, scope, artifact_id, artifact_hash, workspace, publisher,
-                       action, source, expires_at, updated_at, integrity_version, integrity_generation,
+                       exact_command_sha256, action, source, expires_at, updated_at,
+                       integrity_version, integrity_generation,
                        payload_hash, payload_mac, integrity_key_id, signed_at
                 from policy_decisions
                 where (harness = ? or harness = '*')

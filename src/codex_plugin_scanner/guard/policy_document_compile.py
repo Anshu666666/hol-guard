@@ -9,6 +9,8 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import Final, cast
 
+from .exact_command import EXACT_COMMAND_CONTRACT
+from .exact_command_policy import exact_command_policy_digest
 from .models import DecisionScope, GuardAction, PolicyDecision
 from .policy_document import GuardPolicyDocument
 from .policy_document_export import coalesce_exported_rules
@@ -23,7 +25,9 @@ _UTC_TIMESTAMP_RE: Final = re.compile(
     r"^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T" + r"([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,9})?Z$"
 )
 _REDACTED_TIMESTAMP: Final = "1970-01-01T00:00:00Z"
-_SUPPORTED_MATCH_KEYS: Final = frozenset({"artifacts", "harnesses", "publishers", "tools", "workspaces"})
+_SUPPORTED_MATCH_KEYS: Final = frozenset(
+    {"artifacts", "harnesses", "publishers", "tools", "workspaces", "exactCommand"}
+)
 _TOOL_SELECTOR_FAMILIES: Final = {
     "file-read": "file-read",
     "mcp": "mcp",
@@ -108,6 +112,13 @@ def _rule_match_from_row(row: Mapping[str, object], *, include_provenance: bool)
         match["publishers"] = [publisher]
     if include_provenance and workspace is not None:
         match["workspaces"] = [workspace]
+    if row.get("exact_command_sha256") is not None:
+        selector = {"contractVersion": EXACT_COMMAND_CONTRACT, "sha256": row["exact_command_sha256"]}
+        try:
+            _ = exact_command_policy_digest(selector, artifact_id, scope=row.get("scope"))
+        except ValueError as error:
+            raise PolicyCompilationError("invalid_exact_command_policy", _stable_rule_id(row)) from error
+        match["exactCommand"] = selector
     return match
 
 
@@ -362,6 +373,12 @@ def compile_policy_document(document: GuardPolicyDocument) -> tuple[CompiledPoli
                 )
             ):
                 raise PolicyCompilationError("unsupported_policy_scope_projection", rule_id)
+            exact_digest = None
+            if "exactCommand" in match:
+                try:
+                    exact_digest = exact_command_policy_digest(match["exactCommand"], artifact_id, scope=scope)
+                except ValueError as error:
+                    raise PolicyCompilationError("invalid_exact_command_policy", rule_id) from error
             compiled.append(
                 CompiledPolicyRow(
                     decision=PolicyDecision(
@@ -370,6 +387,7 @@ def compile_policy_document(document: GuardPolicyDocument) -> tuple[CompiledPoli
                         action=cast(GuardAction, effect),
                         artifact_id=artifact_id,
                         artifact_hash=_optional_string(extension.get("artifactHash")),
+                        exact_command_sha256=exact_digest,
                         workspace=workspace,
                         publisher=publisher,
                         reason=_optional_string(raw_rule.get("description")),

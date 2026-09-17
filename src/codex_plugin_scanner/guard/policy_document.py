@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from typing import TypeAlias, cast
 
+from .exact_command import EXACT_COMMAND_CONTRACT, validate_exact_command_selector
 from .runtime.command_expression import CommandExpression, command_expression_from_mapping
 from .runtime.network_policy_contract import NETWORK_POLICY_SCHEMA_VERSION
 
@@ -164,6 +165,7 @@ class PolicyMatch:
     fields: tuple[tuple[str, tuple[str, ...]], ...] = ()
     command_expression: CommandExpression | None = None
     extensions: EncodedExtensions = ()
+    exact_command_sha256: str | None = None
 
     @classmethod
     def from_mapping(cls, value: dict[str, object]) -> PolicyMatch:
@@ -177,13 +179,18 @@ class PolicyMatch:
         return cls(
             fields=fields,
             command_expression=command_expression,
-            extensions=_encode_extensions(value, frozenset(POLICY_MATCH_FIELDS)),
+            extensions=_encode_extensions(value, frozenset((*POLICY_MATCH_FIELDS, "exactCommand"))),
+            exact_command_sha256=validate_exact_command_selector(value["exactCommand"])
+            if "exactCommand" in value
+            else None,
         )
 
     def to_mapping(self) -> dict[str, JsonValue]:
         result: dict[str, JsonValue] = {key: list(values) for key, values in self.fields}
         if self.command_expression is not None:
             result["commands"] = cast(dict[str, JsonValue], self.command_expression.to_mapping())
+        if self.exact_command_sha256 is not None:
+            result["exactCommand"] = {"contractVersion": EXACT_COMMAND_CONTRACT, "sha256": self.exact_command_sha256}
         return _with_extensions(result, self.extensions)
 
 

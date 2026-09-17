@@ -59,6 +59,7 @@ def build_canonical_policy_bundle_decisions(
                 action=decision.action,
                 artifact_id=decision.artifact_id,
                 artifact_hash=decision.artifact_hash,
+                exact_command_sha256=decision.exact_command_sha256,
                 workspace=decision.workspace,
                 publisher=decision.publisher,
                 reason=decision.reason,

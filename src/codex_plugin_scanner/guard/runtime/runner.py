@@ -89,6 +89,7 @@ from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
 from ..policy_document_io import PolicyCompilationError
+from ..policy_memory_source import attach_disclosed_policy_source
 from ..policy_sync_outcomes import policy_sync_outcomes
 from ..redaction import redact_sensitive_text
 from ..review_contracts import validated_review_verification_keys_from_sync
@@ -147,6 +148,7 @@ from .optional_telemetry_sync import PainSignalSyncError, sync_nonessential_tele
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
 from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
+from .receipt_sync_cursor import _receipt_sync_cursor_rowid, _receipt_sync_rows_for_upload
 from .signals import RiskSignalV2
 from .supply_chain_bundle import (
     SupplyChainBundleError,
@@ -920,8 +922,6 @@ _SYNC_RETRYABLE_GATEWAY_MAX_ATTEMPTS = 2
 _RUNTIME_SYNC_TIMEOUT_SECONDS = 10
 _RUNTIME_SYNC_RETRY_TIMEOUT_SECONDS = 90
 _RECEIPT_SYNC_BATCH_SIZE = 50
-_RECEIPT_SYNC_CURSOR_PAGE_SIZE = 200
-_RECEIPT_SYNC_CURSOR_BACKFILL_ROWS = 200
 _RECEIPT_COMMAND_DETAIL_BACKFILL_DAYS = 30
 _RECEIPT_COMMAND_DETAIL_BACKFILL_LIMIT = 200
 _PAIN_SIGNAL_TIMEOUT_SECONDS = 10
@@ -2649,6 +2649,7 @@ def sync_receipts(
             {
                 "receipts": _cloud_sync_receipts_payload(
                     receipt_batch,
+                    store=store,
                     device_id=device_id,
                     device_name=device_name,
                     redaction_level=redaction_level,
@@ -5623,10 +5624,12 @@ def _cloud_sync_receipts_payload(
     device_id: str,
     device_name: str,
     redaction_level: str = "full",
+    store: GuardStore | None = None,
 ) -> list[dict[str, object]]:
     return [
         _cloud_sync_receipt_payload(
             receipt,
+            store=store,
             device_id=device_id,
             device_name=device_name,
             redaction_level=redaction_level,
@@ -5654,32 +5657,6 @@ def _iter_receipt_sync_batches(receipts: list[dict[str, object]]) -> tuple[list[
         receipts[index : index + _RECEIPT_SYNC_BATCH_SIZE]
         for index in range(0, len(receipts), _RECEIPT_SYNC_BATCH_SIZE)
     )
-
-
-def _receipt_sync_cursor_rowid(store: GuardStore) -> int | None:
-    payload = store.get_sync_payload("receipt_sync_cursor")
-    if not isinstance(payload, dict):
-        return None
-    value = payload.get("last_rowid")
-    if isinstance(value, int) and not isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        stripped = value.strip()
-        if stripped.isdigit():
-            return int(stripped)
-    return None
-
-
-def _receipt_sync_rows_for_upload(store: GuardStore, *, cursor_rowid: int | None) -> list[dict[str, object]]:
-    if cursor_rowid is None:
-        return store.list_receipts(limit=_RECEIPT_SYNC_CURSOR_PAGE_SIZE)
-    latest_rowid = store.latest_receipt_rowid()
-    if latest_rowid is None:
-        return []
-    if cursor_rowid > latest_rowid:
-        backfill_after = max(latest_rowid - _RECEIPT_SYNC_CURSOR_BACKFILL_ROWS, 0)
-        return store.list_receipts_since_rowid(after_rowid=backfill_after, limit=_RECEIPT_SYNC_CURSOR_PAGE_SIZE)
-    return store.list_receipts_since_rowid(after_rowid=cursor_rowid, limit=_RECEIPT_SYNC_CURSOR_PAGE_SIZE)
 
 
 def _receipt_sync_rows_with_command_detail_backfill(
@@ -6015,6 +5992,7 @@ def _cloud_sync_receipt_payload(
     device_id: str,
     device_name: str,
     redaction_level: str = "full",
+    store: GuardStore | None = None,
 ) -> dict[str, object]:
     receipt_fingerprint = _cloud_sync_receipt_fingerprint(receipt)
     artifact_id = _optional_string(receipt.get("artifact_id")) or f"guard:local-receipt:{receipt_fingerprint[:24]}"
@@ -6090,7 +6068,7 @@ def _cloud_sync_receipt_payload(
             payload["envelopeRedacted"] = enriched
         else:
             payload["envelopeRedacted"] = redacted_envelope
-    return payload
+    return attach_disclosed_policy_source(payload, receipt, store, redaction_level=redaction_level)
 
 
 def _cloud_runtime_session_payload(store: GuardStore, session: dict[str, object]) -> dict[str, object]:

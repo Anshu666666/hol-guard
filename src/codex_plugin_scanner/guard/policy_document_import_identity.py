@@ -8,7 +8,15 @@ from .policy_document import GuardPolicyDocument
 from .policy_document_types import CompiledPolicyRow, PolicyCompilationError
 
 NormalizedPolicyRow = tuple[CompiledPolicyRow, str | None, str | None, str | None, str | None]
-_SELECTOR_COLUMNS = ("harness", "scope", "artifact_id", "artifact_hash", "workspace", "publisher")
+_SELECTOR_COLUMNS = (
+    "harness",
+    "scope",
+    "artifact_id",
+    "artifact_hash",
+    "workspace",
+    "publisher",
+    "exact_command_sha256",
+)
 
 
 def validate_import_identities(
@@ -27,7 +35,7 @@ def validate_import_identities(
     for compiled, artifact, digest, workspace, publisher in normalized_rows:
         decision = compiled.decision
         incoming.setdefault(compiled.rule_id, set()).add(
-            (decision.harness, decision.scope, artifact, digest, workspace, publisher)
+            (decision.harness, decision.scope, artifact, digest, workspace, publisher, decision.exact_command_sha256)
         )
     current: dict[str, set[tuple[object, ...]]] = {}
     for row in current_rows:

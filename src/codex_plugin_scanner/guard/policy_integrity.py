@@ -62,6 +62,9 @@ def canonical_policy_payload(
         "updated_at": _string_or_none(_mapping_value(row, "updated_at")),
         "workspace": _string_or_none(_mapping_value(row, "workspace")),
     }
+    exact_command = _mapping_value(row, "exact_command_sha256")
+    if exact_command is not None:
+        payload["exact_command_sha256"] = exact_command
     if resolved_version == POLICY_INTEGRITY_VERSION:
         payload["decision_id"] = _int_or_none(_mapping_value(row, "decision_id"))
         payload["integrity_generation"] = _int_or_none(_mapping_value(row, "integrity_generation"))

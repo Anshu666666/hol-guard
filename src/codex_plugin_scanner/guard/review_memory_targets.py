@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
+from .exact_command_policy import exact_command_policy_digest
 from .project_identity import is_portable_project_identity
 from .review_oauth_binding import GuardReviewContractError, GuardReviewOAuthMetadata
 
@@ -92,6 +93,11 @@ def validate_memory_rule_target_exact(
     oauth: GuardReviewOAuthMetadata,
     rule: dict[str, object],
 ) -> None:
+    if "exactCommand" in rule:
+        try:
+            _ = exact_command_policy_digest(rule["exactCommand"], rule.get("artifactId"), scope=rule.get("scope"))
+        except ValueError as error:
+            raise GuardReviewContractError("invalid_decision_memory_exact_command") from error
     value = rule.get("projectIdentity")
     project_identity = value if isinstance(value, str) and value.strip() else None
     validate_exact_memory_target(target, oauth=oauth, project_identity=project_identity)

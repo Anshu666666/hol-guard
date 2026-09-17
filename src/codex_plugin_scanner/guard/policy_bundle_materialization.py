@@ -126,7 +126,7 @@ def bind_policy_bundle_materialization(
             raise PolicyBundleMaterializationError
     payload = _identity(bundle, device_id, key_id, timestamp)
     payload["mac"] = _mac(payload, key)
-    return [(*row[:11], timestamp, *row[12:]) for row in rows], payload
+    return [(*row[:12], timestamp, *row[13:]) for row in rows], payload
 
 
 __all__ = [

@@ -20,7 +20,8 @@ def _local_extension(rule: Mapping[str, object]) -> dict[str, object]:
 
 def _non_selector_content(rule: Mapping[str, object]) -> str:
     content = dict(rule)
-    content.pop("match", None)
+    match = cast(dict[str, object], content.pop("match", {}))
+    content["match"] = {key: value for key, value in match.items() if key not in _SELECTORS}
     extension = _local_extension(content)
     for name in _LOCAL_SELECTOR_FIELDS:
         extension.pop(name, None)
@@ -59,9 +60,12 @@ def coalesce_exported_rules(rules: list[dict[str, object]]) -> list[dict[str, ob
             raise PolicyCompilationError("policy_rule_export_sparse_selectors", rule_id)
         merged = dict(group[0])
         merged["match"] = {
-            name: sorted(value for value in dimension if value is not None)
-            for name, dimension in zip(_SELECTORS, dimensions, strict=True)
-            if dimension != {None}
+            **{key: value for key, value in cast(dict[str, object], merged["match"]).items() if key not in _SELECTORS},
+            **{
+                name: sorted(value for value in dimension if value is not None)
+                for name, dimension in zip(_SELECTORS, dimensions, strict=True)
+                if dimension != {None}
+            },
         }
         extension = _local_extension(merged)
         for field, selector in (("harness", "harnesses"), ("publisher", "publishers"), ("workspace", "workspaces")):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ..review_memory_application import validated_memory_application
 from ..store import GuardStore
 
 REVIEW_POLICY_MEMORY_OPERATION = "guard.review.syncPolicyMemory"
@@ -12,6 +13,7 @@ def execute_review_policy_memory(
     *,
     store: GuardStore,
     generated_at: str,
+    job: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Apply signed memory without resolving or authorizing any one-time request."""
     if "localRequestId" in payload or "local_request_id" in payload:
@@ -19,7 +21,8 @@ def execute_review_policy_memory(
     bundle = payload.get("decisionMemoryBundle")
     if not isinstance(bundle, dict) or not bundle:
         raise ValueError("missing_decision_memory_bundle")
-    ack = store.apply_review_policy_memory_state(bundle, now=generated_at)
+    application = validated_memory_application(payload, job, store=store)
+    ack = store.apply_review_policy_memory_state(bundle, now=generated_at, application=application)
     return {
         "bundleHash": ack.get("bundleHash"),
         "bundleVersion": ack.get("bundleVersion"),

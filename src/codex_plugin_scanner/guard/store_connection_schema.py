@@ -40,6 +40,7 @@ from .store_command_activity_schema import ensure_command_activity_schema
 from .store_command_shadow_schema import ensure_command_shadow_schema
 from .store_extension_control_authority_schema import ensure_extension_control_authority_schema
 from .store_local_cli_schema import ensure_local_cli_schema
+from .store_policy_schema import ensure_generic_policy_columns
 from .store_resume import ensure_resume_schema
 from .store_review_event_outbox_schema import ensure_review_event_outbox_schema
 from .store_secret_policy_integrity import _POLICY_INTEGRITY_LOOKUP_UNSET
@@ -695,6 +696,7 @@ class StoreConnectionSchemaMixin:
               owner text,
               source text not null default 'local',
               expires_at text,
+              exact_command_sha256 text,
               policy_document_schema_version text,
               policy_document_id text,
               policy_document_digest text,
@@ -1026,22 +1028,7 @@ class StoreConnectionSchemaMixin:
                 connection.execute(idx_stmt)
             for idx_stmt in threat_intel_index_statements():
                 connection.execute(idx_stmt)
-            self._ensure_policy_column(connection, "publisher", "text")
-            self._ensure_policy_column(connection, "artifact_hash", "text")
-            self._ensure_policy_column(connection, "owner", "text")
-            self._ensure_policy_column(connection, "source", "text not null default 'local'")
-            self._ensure_policy_column(connection, "expires_at", "text")
-            self._ensure_policy_column(connection, "integrity_version", "integer")
-            self._ensure_policy_column(connection, "integrity_generation", "integer")
-            self._ensure_policy_column(connection, "payload_hash", "text")
-            self._ensure_policy_column(connection, "payload_mac", "text")
-            self._ensure_policy_column(connection, "integrity_key_id", "text")
-            self._ensure_policy_column(connection, "signed_at", "text")
-            self._ensure_policy_column(connection, "policy_document_schema_version", "text")
-            self._ensure_policy_column(connection, "policy_document_id", "text")
-            self._ensure_policy_column(connection, "policy_document_digest", "text")
-            self._ensure_policy_column(connection, "policy_rule_id", "text")
-            self._ensure_policy_column(connection, "policy_provenance_json", "text")
+            ensure_generic_policy_columns(connection)
             for index_statement in _POLICY_INDEX_STATEMENTS:
                 connection.execute(index_statement)
             self._ensure_column(connection, "guard_local_once_approvals", "integrity_version", "integer")

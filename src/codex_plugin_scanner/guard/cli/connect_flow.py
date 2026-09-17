@@ -46,6 +46,7 @@ from .oauth_client import (
     resolve_guard_oauth_client_config,
 )
 from .oauth_credential_persistence import OAuthCredentialUpdateParams, persist_oauth_local_credentials
+from .oauth_loopback_callback import GuardOAuthLoopbackCallback, OAuthCallbackState, callback_handler
 
 DEFAULT_GUARD_SYNC_URL = "https://hol.org/api/guard/receipts/sync"
 DEFAULT_GUARD_CONNECT_URL = "https://hol.org/guard/connect"
@@ -89,14 +90,6 @@ def _guard_oauth_request_headers(*, dpop: str | None = None) -> dict[str, str]:
 _LOOPBACK_HOSTS = ("127.0.0.1", "::1")
 _LOOPBACK_PORT_MIN = 49152
 _LOOPBACK_PORT_MAX = 65535
-
-
-@dataclass(frozen=True)
-class GuardOAuthLoopbackCallback:
-    code: str | None
-    state: str
-    error: str | None = None
-    error_description: str | None = None
 
 
 class GuardOAuthTargetBinding(TypedDict):
@@ -148,23 +141,13 @@ class GuardOAuthBrowserSession:
     dpop_key_material: GuardDpopKeyMaterial
     _server: http.server.ThreadingHTTPServer
     _thread: threading.Thread
-    _callback_ready: threading.Event
-    _callback: GuardOAuthLoopbackCallback | None = None
+    _terminal: OAuthCallbackState
 
     def wait_for_callback(self, timeout_seconds: float) -> GuardOAuthLoopbackCallback:
-        if timeout_seconds <= 0:
-            raise TimeoutError("Guard OAuth browser callback timed out.")
-        if not self._callback_ready.wait(timeout_seconds):
-            raise TimeoutError("Guard OAuth browser callback timed out.")
-        callback = self._callback or getattr(self._server, "guard_callback", None)
-        if callback is None:
-            raise TimeoutError("Guard OAuth browser callback timed out.")
-        if callback.error is not None:
-            description = callback.error_description or callback.error
-            raise RuntimeError(f"Guard OAuth authorization was denied: {description}")
-        return callback
+        return self._terminal.wait(timeout_seconds)
 
     def close(self) -> None:
+        self._terminal.close()
         self._server.shutdown()
         self._server.server_close()
         self._thread.join(timeout=2)
@@ -335,68 +318,18 @@ def start_guard_loopback_callback_listener(
     dpop_key_material: GuardDpopKeyMaterial | None = None,
     pkce_verifier: str | None = None,
 ) -> GuardOAuthBrowserSession:
-    callback_ready = threading.Event()
+    terminal = OAuthCallbackState()
 
     class _CallbackServer(http.server.ThreadingHTTPServer):
         allow_reuse_address = False
-        guard_callback: GuardOAuthLoopbackCallback | None = None
 
-    class _CallbackHandler(http.server.BaseHTTPRequestHandler):
-        def _callback_server(self) -> _CallbackServer:
-            if not isinstance(self.server, _CallbackServer):
-                raise RuntimeError("Guard OAuth callback server is unavailable.")
-            return self.server
-
-        def do_GET(self) -> None:
-            parsed = urllib.parse.urlparse(self.path)
-            if parsed.path != _LOOPBACK_REDIRECT_PATH:
-                self.send_error(404)
-                return
-            params = urllib.parse.parse_qs(parsed.query)
-            state = str(params.get("state", [""])[0] or "")
-            code = str(params.get("code", [""])[0] or "")
-            error = str(params.get("error", [""])[0] or "")
-            error_description = str(params.get("error_description", [""])[0] or "")
-            if state != expected_state:
-                self.send_response(400)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(b"Guard OAuth state mismatch.")
-                return
-            if error:
-                self._callback_server().guard_callback = GuardOAuthLoopbackCallback(
-                    code=None,
-                    state=state,
-                    error=error,
-                    error_description=error_description or None,
-                )
-                callback_ready.set()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(b"HOL Guard authorization was denied. Return to your terminal.")
-                return
-            if not code:
-                self.send_response(400)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(b"Guard OAuth callback is missing the authorization code.")
-                return
-            self._callback_server().guard_callback = GuardOAuthLoopbackCallback(code=code, state=state)
-            callback_ready.set()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(b"HOL Guard connected. Return to your terminal.")
-
-        def log_message(self, format: str, *args: object) -> None:  # noqa: A002
-            return
+    handler = callback_handler(expected_state, terminal)
 
     for host in _LOOPBACK_HOSTS:
         for _ in range(20):
             port = secrets.randbelow(_LOOPBACK_PORT_MAX - _LOOPBACK_PORT_MIN + 1) + _LOOPBACK_PORT_MIN
             try:
-                server = _CallbackServer((host, port), _CallbackHandler)
+                server = _CallbackServer((host, port), handler)
             except OSError:
                 continue
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -411,7 +344,7 @@ def start_guard_loopback_callback_listener(
                 dpop_key_material=dpop_key_material or generate_dpop_key_pair(),
                 _server=server,
                 _thread=thread,
-                _callback_ready=callback_ready,
+                _terminal=terminal,
             )
     raise RuntimeError("Guard OAuth loopback callback listener could not bind a random high port.")
 

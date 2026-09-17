@@ -67,6 +67,7 @@ def current_policy_bundle_row_authorities(
                     artifact_hash,
                     workspace,
                     publisher,
+                    decision.exact_command_sha256,
                     decision.action,
                     decision.reason,
                     decision.owner,

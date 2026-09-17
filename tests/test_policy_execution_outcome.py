@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 from pathlib import Path
 
 import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from codex_plugin_scanner.guard.cli.oauth_client import generate_dpop_key_pair
 from codex_plugin_scanner.guard.config import GuardConfig
 from codex_plugin_scanner.guard.local_supply_chain import build_package_protect_payload
 from codex_plugin_scanner.guard.policy_bundle_parser import policy_bundle_acceptance_checkpoint
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import policy_bundle_keyring_payload
+from codex_plugin_scanner.guard.policy_bundle_v2 import (
+    canonical_policy_bundle_v2_payload,
+    computed_policy_bundle_v2_hash,
+)
 from codex_plugin_scanner.guard.runtime.canonical_policy_decisions import build_canonical_policy_bundle_decisions
 from codex_plugin_scanner.guard.runtime.runner import _cloud_sync_receipt_payload, _receipt_sync_rows_for_upload
 from codex_plugin_scanner.guard.store import GuardStore
@@ -43,7 +49,9 @@ def _package_payload(*, package_manager, store, workspace_dir, now, dry_run=True
     return result
 
 
-def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_code: int = 0):
+def _execution_store(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_code: int = 0, workspace_id: str = "workspace-alpha"
+):
     _install_fake_package_manager(monkeypatch, tmp_path, "npm")
     executable = tmp_path / "package-bin" / ("npm.cmd" if os.name == "nt" else "npm")
     executable.write_text(
@@ -62,8 +70,8 @@ def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_co
         dpop_public_jwk_thumbprint=key_pair.public_jwk_thumbprint,
         device_id=key_pair.public_jwk_thumbprint,
         grant_id="synthetic-grant",
-        machine_id="synthetic-machine",
-        workspace_id="workspace-alpha",
+        machine_id=store.get_or_create_installation_id(),
+        workspace_id=workspace_id,
         supply_chain_plan_id="free",
         supply_chain_firewall=False,
         now=_NOW,
@@ -88,13 +96,13 @@ def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_co
         "relatedAdvisoryIds": [],
         "recommendedFixVersion": None,
     }
-    store.cache_supply_chain_bundle("workspace-alpha", _bundle_response(packages=[package]), _NOW)
+    store.cache_supply_chain_bundle(workspace_id, _bundle_response(packages=[package]), _NOW)
     baseline, baseline_rc = _package_payload(package_manager="npm", store=store, workspace_dir=workspace, now=_NOW)
     assert baseline_rc == 2, baseline
     receipt = baseline["receipt"]
     device = store.get_device_metadata()
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    key = _verification_key(private_key, workspace_id="workspace-alpha")
+    key = _verification_key(private_key, workspace_id=workspace_id)
     document = {
         "apiVersion": "guard.hashgraphonline.com/v1alpha1",
         "kind": "GuardPolicy",
@@ -119,6 +127,15 @@ def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_co
         },
     }
     bundle = _signed_bundle(private_key, key, payload_base=document, rollout_state="enforcing", bundle_version=42)
+    bundle["workspaceId"] = workspace_id
+    bundle["bundleHash"] = computed_policy_bundle_v2_hash(bundle)
+    bundle["verifier"]["signature"] = base64.b64encode(
+        private_key.sign(
+            canonical_policy_bundle_v2_payload(bundle),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
+        )
+    ).decode("ascii")
     decisions = build_canonical_policy_bundle_decisions(
         bundle, device_id=device["installation_id"], device_name=device["device_label"]
     )
@@ -126,7 +143,7 @@ def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_co
         decisions,
         _NOW,
         policy_bundle=bundle,
-        policy_bundle_keyring=policy_bundle_keyring_payload((key,), workspace_id="workspace-alpha"),
+        policy_bundle_keyring=policy_bundle_keyring_payload((key,), workspace_id=workspace_id),
         cloud_exceptions=[],
         policy_bundle_ack={},
         policy_bundle_checkpoint=policy_bundle_acceptance_checkpoint(bundle),
@@ -136,9 +153,14 @@ def _execution_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, exit_co
     return store, workspace, bundle
 
 
-@pytest.mark.parametrize("exit_code", [0, 7])
-def test_actual_subprocess_completion_survives_receipt_redaction_and_transport(tmp_path, monkeypatch, exit_code):
-    store, workspace, bundle = _execution_store(tmp_path, monkeypatch, exit_code=exit_code)
+@pytest.mark.parametrize(
+    "exit_code,workspace_id",
+    [(0, "workspace-alpha"), (7, "workspace-alpha"), (0, "11111111-1111-4111-8111-111111111111")],
+)
+def test_actual_subprocess_completion_survives_receipt_redaction_and_transport(
+    tmp_path, monkeypatch, exit_code, workspace_id
+):
+    store, workspace, bundle = _execution_store(tmp_path, monkeypatch, exit_code=exit_code, workspace_id=workspace_id)
     payload, status = _package_payload(
         package_manager="npm", store=store, workspace_dir=workspace, now=_NOW, dry_run=False
     )

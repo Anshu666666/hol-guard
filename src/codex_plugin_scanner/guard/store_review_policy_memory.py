@@ -9,6 +9,7 @@ import sqlite3
 from .policy_integrity import MEMORY_POLICY_SOURCES
 from .review_contracts import validate_decision_memory_bundle_target, validated_decision_memory_bundle
 from .review_memory_ack import build_decision_memory_ack
+from .review_memory_application import MemoryApplicationBinding
 from .review_memory_authority import (
     ACK_KEY,
     REGISTRY_KEY,
@@ -42,13 +43,16 @@ def _write_state(connection: sqlite3.Connection, key: str, value: object, now: s
 
 
 class StoreReviewPolicyMemoryMixin:
-    def apply_review_policy_memory_state(self, bundle_payload: dict[str, object], *, now: str) -> dict[str, object]:
+    def apply_review_policy_memory_state(
+        self, bundle_payload: dict[str, object], *, now: str, application: MemoryApplicationBinding | None = None
+    ) -> dict[str, object]:
         """Validate the current binding/version and merge signed rules under one write lock."""
         normalized_now = _canonical_utc_timestamp(now)
         with self.hold_oauth_credential_lock(), self._connect() as connection:
             connection.execute("begin immediate")
             oauth, binding = memory_oauth_authority(self)
             bundle = validated_decision_memory_bundle(bundle_payload, store=self)
+            target_oauth = oauth if application is None else application.target_oauth(oauth, bundle)
             registry = _read_state(connection, REGISTRY_KEY)
             bound = bound_registry(registry, binding, store=self)
             last_version = text(bound.get("policyVersion")) if bound is not None else None
@@ -60,14 +64,18 @@ class StoreReviewPolicyMemoryMixin:
                 and bound.get("bundleHash") == bundle.get("bundleHash")
                 and previous_ack.get("status") == "accepted"
             ):
+                if application is not None and not application.matches_ack(previous_ack):
+                    raise GuardReviewContractError("decision_memory_application_binding_mismatch")
                 return previous_ack
             try:
-                validate_decision_memory_bundle_target(bundle=bundle, oauth=oauth, last_policy_version=last_version)
+                validate_decision_memory_bundle_target(
+                    bundle=bundle, oauth=target_oauth, last_policy_version=last_version
+                )
             except GuardReviewContractError as error:
                 reason = str(error)
                 ack = build_decision_memory_ack(
                     bundle=bundle,
-                    oauth=oauth,
+                    oauth=target_oauth,
                     status="stale" if reason == "decision_memory_policy_version_stale" else "rejected",
                     applied_rule_count=0,
                     reason=reason,
@@ -85,13 +93,16 @@ class StoreReviewPolicyMemoryMixin:
                 try:
                     if rule_id in accepted:
                         raise GuardReviewContractError("duplicate_decision_memory_rule")
-                    accepted[rule_id] = (bundle, decision_from_memory_rule(bundle=bundle, rule=rule, oauth=oauth))
+                    accepted[rule_id] = (
+                        bundle,
+                        decision_from_memory_rule(bundle=bundle, rule=rule, oauth=target_oauth),
+                    )
                 except GuardReviewContractError:
                     rejected.append(rule_id)
             if rejected:
                 ack = build_decision_memory_ack(
                     bundle=bundle,
-                    oauth=oauth,
+                    oauth=target_oauth,
                     status="rejected",
                     applied_rule_count=0,
                     reason="decision_memory_rule_rejected",
@@ -107,7 +118,7 @@ class StoreReviewPolicyMemoryMixin:
             entries.update(accepted)
             ack = build_decision_memory_ack(
                 bundle=bundle,
-                oauth=oauth,
+                oauth=target_oauth,
                 status="accepted",
                 applied_rule_count=len(accepted),
                 reason=None,
@@ -120,10 +131,23 @@ class StoreReviewPolicyMemoryMixin:
                 remote_write_authorized=True,
             )
             self._replace_remote_policy_rows_locked(connection, rows, sources=tuple(MEMORY_POLICY_SOURCES))
+            prior_registered = bound.get("registeredInstallations", {}) if bound is not None else {}
+            if not isinstance(prior_registered, dict):
+                raise GuardReviewContractError("decision_memory_application_binding_invalid")
+            registered: dict[str, object] = dict(prior_registered)
+            if application is not None:
+                registered[str(bundle["bundleHash"])] = target_oauth.installation_id
             _write_state(
                 connection,
                 REGISTRY_KEY,
-                encode_registry(entries, binding, store=self, now=normalized_now, acknowledgement=ack),
+                encode_registry(
+                    entries,
+                    binding,
+                    store=self,
+                    now=normalized_now,
+                    acknowledgement=ack,
+                    registered_installations=registered,
+                ),
                 normalized_now,
             )
             _write_state(
@@ -170,6 +194,7 @@ class StoreReviewPolicyMemoryMixin:
                     artifact_hash,
                     workspace,
                     publisher,
+                    decision.exact_command_sha256,
                     decision.action,
                     decision.reason,
                     decision.owner,

@@ -29,6 +29,7 @@ from ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence
 from ..runtime.command_activity_privacy import InstallationCorrelationKey
 from ..sqlite_tuning import sqlite_connect_timeout_override
 from ..store import GuardStore
+from .runtime_hook_evidence_diagnostics import receipt_failure_category
 from .runtime_hook_evidence_journal import (
     _CommandActivityRecord,
     _EvidenceRecord,
@@ -66,6 +67,7 @@ class RuntimeHookEvidenceWriterStats(TypedDict):
     receipt_deduped: int
     receipt_dropped: int
     receipt_failures: int
+    receipt_failure_categories: dict[str, int]
     receipt_durable_pending: int
 
 
@@ -109,6 +111,7 @@ class RuntimeHookEvidenceWriter:
         self._receipt_deduped = 0
         self._receipt_dropped = 0
         self._receipt_failures = 0
+        self._receipt_failure_categories: dict[str, int] = {}
         self._stopping = False
         self._drain_deadline: float | None = None
         self._sqlite_timeout_seconds = 0.05
@@ -236,6 +239,11 @@ class RuntimeHookEvidenceWriter:
             self._correlation_key = key
             return derive_proven_request_correlation(harness=harness, event=event, payload=payload, key=key)
 
+    def _record_receipt_failure(self, error: Exception) -> None:
+        self._receipt_failures += 1
+        category = receipt_failure_category(error)
+        self._receipt_failure_categories[category] = self._receipt_failure_categories.get(category, 0) + 1
+
     def stats(self) -> RuntimeHookEvidenceWriterStats:
         with self._condition:
             return {
@@ -254,6 +262,7 @@ class RuntimeHookEvidenceWriter:
                 "receipt_deduped": self._receipt_deduped,
                 "receipt_dropped": self._receipt_dropped,
                 "receipt_failures": self._receipt_failures,
+                "receipt_failure_categories": dict(self._receipt_failure_categories),
                 "receipt_durable_pending": sum(
                     isinstance(record, _NativeDecisionReceiptRecord) for record in self._durable.values()
                 ),
@@ -283,13 +292,13 @@ class RuntimeHookEvidenceWriter:
                 if not already_durable:
                     try:
                         self._append_journal(record)
-                    except OSError:
+                    except OSError as error:
                         with self._condition:
                             self._dropped += 1
                             self._failures += 1
                             if isinstance(record, _NativeDecisionReceiptRecord):
                                 self._receipt_dropped += 1
-                                self._receipt_failures += 1
+                                self._record_receipt_failure(error)
                             self._degraded = True
                             self._in_flight = False
                         continue
@@ -360,11 +369,11 @@ class RuntimeHookEvidenceWriter:
                                 succeeded=record.succeeded,
                                 invocation_preview=record.invocation_preview,
                             )
-                except Exception:
+                except Exception as error:
                     with self._condition:
                         self._failures += 1
                         if isinstance(record, _NativeDecisionReceiptRecord):
-                            self._receipt_failures += 1
+                            self._record_receipt_failure(error)
                         self._degraded = True
                         if not self._stopping:
                             attempt = self._retry_attempts.get(record.record_id, 0) + 1

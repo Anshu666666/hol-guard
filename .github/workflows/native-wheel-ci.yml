@@ -315,6 +315,8 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify native shared access and exclusive recovery
+        run: uv run --no-sync pytest tests/test_guard_storage_access_gate.py tests/test_guard_storage_windows_lock.py --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |

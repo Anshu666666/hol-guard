@@ -44,6 +44,7 @@ from .store_policy_schema import ensure_generic_policy_columns
 from .store_resume import ensure_resume_schema
 from .store_review_event_outbox_schema import ensure_review_event_outbox_schema
 from .store_secret_policy_integrity import _POLICY_INTEGRITY_LOOKUP_UNSET
+from .store_storage_lock import hold_storage_file_lock
 from .store_storage_maintenance import (
     STORAGE_MAINTENANCE_MIGRATION_VERSION,
     STORAGE_QUERY_INDEX_MIGRATION_VERSION,
@@ -218,30 +219,9 @@ class StoreConnectionSchemaMixin:
                 local.depth -= 1
             return
         path = self.guard_home / "storage-access.lock"
-        deadline = time.monotonic() + sqlite_connect_timeout_seconds()
-        with path.open("a+b") as handle:
-            while True:
-                try:
-                    if os.name == "nt":
-                        import msvcrt
-
-                        handle.seek(0)
-                        if not handle.read(1):
-                            handle.write(b"0")
-                            handle.flush()
-                        handle.seek(0)
-                        mode = msvcrt.LK_NBLCK if exclusive else msvcrt.LK_NBRLCK
-                        msvcrt.locking(handle.fileno(), mode, 1)
-                    else:
-                        import fcntl
-
-                        mode = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
-                        fcntl.flock(handle.fileno(), mode | fcntl.LOCK_NB)
-                    break
-                except OSError:
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError("Timed out waiting for Guard storage access.") from None
-                    time.sleep(0.01)
+        with hold_storage_file_lock(
+            path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds(),
+        ):
             local.owner = id(self)
             local.depth = 1
             local.exclusive = exclusive
@@ -251,15 +231,6 @@ class StoreConnectionSchemaMixin:
                 local.owner = None
                 local.depth = 0
                 local.exclusive = False
-                if os.name == "nt":
-                    import msvcrt
-
-                    handle.seek(0)
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
     def _store_is_proven_unusable(self, error: BaseException) -> bool:
         return sqlite_store_is_proven_unusable(

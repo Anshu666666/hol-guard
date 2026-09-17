@@ -1,11 +1,11 @@
 # Rust performance execution for release/3.2
 
 Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
-with **85 DONE / 22 OPEN / 29 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
-Implementation `8dc0831dbeab56c497f855b4d50289383425ef7c`, tree `93d1c84cbc7f54ecf0539f892bfbbbf2f0bbff6d`. Seventh measured publication
-`79cb6921ff722a597b545350485864dcd9310bdc` has 41 terminal first-attempt workflows: 34 successful and 7 failed; its exact tree and distinct merge identity are
-retained in [SEVENTH_CI_EVIDENCE](SEVENTH_CI_EVIDENCE.md).
-Later reviewed source requires its own execution. RSP-071 closes only its original source/adversarial case-coverage criterion after the actual supported Windows reader cases pass. Its RSP-069/RSP-070 dependencies, native/installed qualification, documented platform limits and failed archive exact-result gate remain unchanged; all other statuses are preserved.
+with **89 DONE / 20 OPEN / 27 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
+Implementation `8ddf86494e8bb4da50be83d849603195b6b77976`, tree `566d910caaa29b0ec3585803a9f4095b11a5651d`. Eighth measured publication
+`a933921372ddb3772eff8a9d86771fe15da063b1` has 41 terminal first-attempt workflows: 36 successful and 5 failed; its exact tree and distinct merge identity are
+retained in [EIGHTH_CI_EVIDENCE](EIGHTH_CI_EVIDENCE.md).
+Later reviewed source requires its own execution. Four criteria close at their original scopes: RSP-034 concurrent transition correctness, RSP-066 selective scanner comparison/deferral, RSP-072 published full-CLI scanner evidence and RSP-118 installed command.ollama lifecycle. Their original definitions and dependencies remain unchanged. These closures do not establish native activation, complete installed performance/resources, signing, package downgrade or release qualification.
 All 144 original definitions/dependencies and the historical record below are
 unchanged. Installed qualification, complete resources, signed/frozen live
 rollback, final CI, human approval and release remain incomplete.

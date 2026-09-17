@@ -10,6 +10,7 @@ from typing import Protocol
 from ..models import GuardReceipt
 from ..policy_publication_binding import PolicyPublicationBinding
 from ..policy_rule_identity import PolicyRuleIdentity, package_policy_rule_identity
+from ..runtime.actions import GuardActionEnvelope
 
 _SCHEMA = "guard.policy-execution-outcome.v1"
 _RECEIPT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", re.ASCII)
@@ -32,9 +33,9 @@ _FIELDS = frozenset(
 
 
 class ExecutionReceiptStore(Protocol):
-    def add_receipt(self, receipt: GuardReceipt) -> None: ...
-
-    def set_receipt_action_envelope(self, receipt_id: str, action_envelope: dict[str, object]) -> None: ...
+    def add_receipt(
+        self, receipt: GuardReceipt, *, action_envelope: GuardActionEnvelope | dict[str, object] | None = None
+    ) -> None: ...
 
 
 def safe_policy_execution_outcome(value: object) -> dict[str, object] | None:
@@ -118,5 +119,4 @@ def persist_completed_package_receipt(
     envelope = dict(metadata)
     if witness is not None:
         envelope["policyExecutionOutcome"] = witness
-    store.add_receipt(receipt)
-    store.set_receipt_action_envelope(receipt.receipt_id, envelope)
+    store.add_receipt(receipt, action_envelope=envelope)

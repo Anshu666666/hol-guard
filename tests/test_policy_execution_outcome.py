@@ -15,7 +15,7 @@ from codex_plugin_scanner.guard.local_supply_chain import build_package_protect_
 from codex_plugin_scanner.guard.policy_bundle_parser import policy_bundle_acceptance_checkpoint
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import policy_bundle_keyring_payload
 from codex_plugin_scanner.guard.runtime.canonical_policy_decisions import build_canonical_policy_bundle_decisions
-from codex_plugin_scanner.guard.runtime.runner import _cloud_sync_receipt_payload
+from codex_plugin_scanner.guard.runtime.runner import _cloud_sync_receipt_payload, _receipt_sync_rows_for_upload
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.test_canonical_policy_row_authority import _NOW
 from tests.test_guard_local_supply_chain_phase15 import _bundle_response, _package
@@ -200,6 +200,67 @@ def test_source_removed_after_real_child_completion_does_not_relabel_the_receipt
     assert store.get_sync_payload("policy_bundle") is None
     receipt = store.list_receipts(limit=1)[0]
     assert receipt["envelope_redacted_json"]["policyExecutionOutcome"]["bundleHash"] == bundle["bundleHash"]
+
+
+def test_completed_receipt_is_sync_visible_with_witness_at_first_insert_commit(tmp_path, monkeypatch):
+    store, workspace, bundle = _execution_store(tmp_path, monkeypatch)
+    cursor = store.latest_receipt_rowid() or 0
+    actual_add_receipt = store.add_receipt
+    uploaded = []
+
+    def insert_then_sync(receipt, **kwargs):
+        nonlocal cursor
+        actual_add_receipt(receipt, **kwargs)
+        # A real cursor reader at the former receipt/envelope transaction seam.
+        rows = _receipt_sync_rows_for_upload(store, cursor_rowid=cursor)
+        for row in rows:
+            uploaded.append(
+                _cloud_sync_receipt_payload(row, device_id="synthetic-device", device_name="Synthetic device")
+            )
+            cursor = max(cursor, row["receipt_rowid"])
+
+    monkeypatch.setattr(store, "add_receipt", insert_then_sync)
+    payload, status = _package_payload(
+        package_manager="npm", store=store, workspace_dir=workspace, now=_NOW, dry_run=False
+    )
+    assert status == 0 and payload["executed"] is True
+    assert len(uploaded) == 1
+    assert uploaded[0]["envelopeRedacted"]["policyExecutionOutcome"]["bundleHash"] == bundle["bundleHash"]
+    assert _receipt_sync_rows_for_upload(store, cursor_rowid=cursor) == []
+
+
+def test_completed_receipt_envelope_and_event_roll_back_together(tmp_path, monkeypatch):
+    store, workspace, _bundle = _execution_store(tmp_path, monkeypatch)
+    cursor = store.latest_receipt_rowid() or 0
+    inserted = []
+
+    def fail_before_commit(connection, event):
+        rows = connection.execute("select receipt_id from runtime_receipts where rowid > ?", (cursor,)).fetchall()
+        inserted.extend(row["receipt_id"] for row in rows)
+        assert len(inserted) == 1
+        row = connection.execute(
+            "select envelope_redacted_json from runtime_receipt_envelopes where receipt_id = ?", (inserted[0],)
+        ).fetchone()
+        assert json.loads(row["envelope_redacted_json"])["policyExecutionOutcome"]["outcome"] == "succeeded"
+        raise RuntimeError("synthetic transaction failure")
+
+    monkeypatch.setattr(store, "_add_guard_event_v1", fail_before_commit)
+    with pytest.raises(RuntimeError, match="synthetic transaction failure"):
+        _package_payload(package_manager="npm", store=store, workspace_dir=workspace, now=_NOW, dry_run=False)
+    assert _receipt_sync_rows_for_upload(store, cursor_rowid=cursor) == []
+    with store._connect() as connection:
+        assert (
+            connection.execute(
+                "select 1 from runtime_receipt_envelopes where receipt_id = ?", (inserted[0],)
+            ).fetchone()
+            is None
+        )
+        assert (
+            connection.execute(
+                "select 1 from guard_cloud_events where idempotency_key = ?", (f"receipt.created:{inserted[0]}",)
+            ).fetchone()
+            is None
+        )
 
 
 def test_failed_spawn_does_not_claim_completed_execution(tmp_path, monkeypatch):

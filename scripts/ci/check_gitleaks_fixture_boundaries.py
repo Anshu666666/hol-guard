@@ -26,12 +26,20 @@ PEM_PATHS = (
 )
 
 
+def _literal_pattern(value: str) -> str:
+    escaped = re.sub(r"([\\.+*?()|\[\]{}^$])", r"\\\1", value)
+    return "^" + escaped.replace("ghp_", r"\x67hp_") + "$"
+
+
 def _exact_value(pattern: str) -> str:
     if not pattern.startswith("^") or not pattern.endswith("$"):
         raise ValueError("fixture exceptions must match complete values")
-    value = re.sub(r"\\(.)", r"\1", pattern[1:-1])
-    escaped = re.sub(r"([\\.+*?()|\[\]{}^$])", r"\\\1", value)
-    if pattern != "^" + escaped + "$" or re.fullmatch(pattern, value) is None:
+    value = re.sub(
+        r"\\x([0-9a-fA-F]{2})|\\(.)",
+        lambda match: chr(int(match[1], 16)) if match[1] is not None else match[2],
+        pattern[1:-1],
+    )
+    if pattern != _literal_pattern(value) or re.fullmatch(pattern, value) is None:
         raise ValueError("fixture exception is not one exact value")
     return value
 
@@ -95,9 +103,7 @@ def _detect(
             "findingCount": len(findings),
             "expectedRuleCount": len(matched),
         }
-        if result.returncode != 1 or not matched:
-            print(json.dumps(evidence, sort_keys=True))
-            raise RuntimeError("a fixture exception suppressed a new credential control")
+        evidence["controlPassed"] = result.returncode == 1 and bool(matched)
         return evidence
 
 
@@ -117,7 +123,8 @@ def main(scanner: Path) -> None:
             if rule_id == "private-key" or set(rule) != {"id", "allowlists"}:
                 raise ValueError("fixture config must not redefine default detectors")
             for entry in rule["allowlists"]:
-                if entry.get("condition") != "AND" or entry.get("regexTarget") != "secret":
+                expected_target = "match" if rule_id == "curl-auth-user" else "secret"
+                if entry.get("condition") != "AND" or entry.get("regexTarget") != expected_target:
                     raise ValueError("fixture exceptions require exact path and value")
                 if set(entry) != {"description", "condition", "regexTarget", "paths", "regexes"}:
                     raise ValueError("unrecognized fixture exception criterion")
@@ -130,24 +137,38 @@ def main(scanner: Path) -> None:
                 lines = source.splitlines(keepends=True)
                 for index, expression in enumerate(entry["regexes"]):
                     known = _exact_value(expression)
-                    position = next((i for i, line in enumerate(lines) if known in line), None)
-                    if position is None:
-                        raise ValueError("audited fixture value is no longer in its source")
-                    for kind in ("same-line", "adjacent-line"):
-                        changed = list(lines)
-                        separator = " " if kind == "same-line" else "\n"
-                        changed[position] = changed[position].rstrip("\r\n") + separator + _new_value(rule_id) + "\n"
-                        evidence.append(
-                            _detect(
-                                scanner,
-                                root,
-                                case=f"{rule_id}:{index}:{kind}",
-                                path=path,
-                                rule_id=rule_id,
-                                content="".join(changed),
-                                config=config,
-                            )
+                    if expected_target == "match":
+                        start = source.find(known)
+                        end = start + len(known.rstrip("\r\n"))
+                        positions = (
+                            range(source[:start].count("\n"), source[:end].count("\n") + 1) if start >= 0 else []
                         )
+                    else:
+                        position = next((i for i, line in enumerate(lines) if known in line), None)
+                        positions = [position] if position is not None else []
+                    if not positions:
+                        raise ValueError("audited fixture value is no longer in its source")
+                    for position in positions:
+                        for kind in ("same-line", "adjacent-line"):
+                            changed = list(lines)
+                            separator = " " if kind == "same-line" else "\n"
+                            changed[position] = (
+                                changed[position].rstrip("\r\n") + separator + _new_value(rule_id) + "\n"
+                            )
+                            case = f"{rule_id}:{index}:{kind}"
+                            if expected_target == "match":
+                                case += f":line-{position + 1}"
+                            evidence.append(
+                                _detect(
+                                    scanner,
+                                    root,
+                                    case=case,
+                                    path=path,
+                                    rule_id=rule_id,
+                                    content="".join(changed),
+                                    config=config,
+                                )
+                            )
                     evidence.append(
                         _detect(
                             scanner,
@@ -190,13 +211,17 @@ def main(scanner: Path) -> None:
         json.dumps(
             {
                 "scanner": "gitleaks v8.24.2",
-                "controlsPassed": len(evidence),
+                "controlsRun": len(evidence),
+                "controlsPassed": sum(bool(item["controlPassed"]) for item in evidence),
+                "controlsFailed": sum(not item["controlPassed"] for item in evidence),
                 "rawFindingValuesRetained": False,
                 "controls": evidence,
             },
             sort_keys=True,
         )
     )
+    if not all(item["controlPassed"] for item in evidence):
+        raise RuntimeError("a fixture exception suppressed a new credential control")
 
 
 if __name__ == "__main__":

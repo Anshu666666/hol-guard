@@ -33,7 +33,10 @@ _CATALOG: Final[tuple[PolicyRuntimeErrorEntry, ...]] = (
         "owner": "operator",
         "retryable": False,
         "retained_authority": "pending-request-unchanged",
-        "next_action": "Create a fresh Cloud Review request. The previous signed decision targeted a different binding.",
+        "next_action": (
+            "Create a fresh Cloud Review request. "
+            "The previous signed decision targeted a different binding."
+        ),
         "explanation": "The signed Cloud decision no longer matches this request's action, claim, policy, or nonce.",
         "source": "exact_cloud_review_apply.py",
     },
@@ -70,7 +73,10 @@ _CATALOG: Final[tuple[PolicyRuntimeErrorEntry, ...]] = (
         "retryable": True,
         "retained_authority": "pending-request-unchanged",
         "next_action": "Complete a current workspace-admin step-up challenge, then re-review the request.",
-        "explanation": "Managed admin review requires a current MFA step-up. Personal Cloud Review consent is not enough.",
+        "explanation": (
+            "Managed admin review requires a current MFA step-up. "
+            "Personal Cloud Review consent is not enough."
+        ),
         "source": "review_contracts.py",
     },
     {
@@ -78,8 +84,14 @@ _CATALOG: Final[tuple[PolicyRuntimeErrorEntry, ...]] = (
         "owner": "device",
         "retryable": False,
         "retained_authority": "approved-restrictions",
-        "next_action": "Update HOL Guard on this device, or change the Cloud rule to a permission in the current catalog.",
-        "explanation": "Managed policy named a catalog this runtime does not understand. It cannot be shown as applied.",
+        "next_action": (
+            "Update HOL Guard on this device, or change the Cloud rule "
+            "to a permission in the current catalog."
+        ),
+        "explanation": (
+            "Managed policy named a catalog this runtime does not understand. "
+            "It cannot be shown as applied."
+        ),
         "source": "extension_control_resolver.py",
     },
     {

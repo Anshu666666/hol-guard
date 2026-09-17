@@ -18,7 +18,9 @@ from ..review_contracts import (
     validate_remote_approval_request_binding,
     validated_remote_approval_envelope,
 )
-from ..review_exact_capability_advertisement import validate_exact_review_envelope_authority as validate_exact_authority
+from ..review_exact_capability_advertisement import (
+    validate_exact_review_envelope_authority as validate_exact_authority,
+)
 from .exact_cloud_review import (
     EXACT_CLOUD_REVIEW_CAPABILITY_STATE_KEY,
     EXACT_CLOUD_REVIEW_OPERATION,

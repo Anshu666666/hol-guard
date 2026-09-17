@@ -21,23 +21,27 @@ def _payload(action: str = "enable", **changes: object) -> dict[str, object]:
     }
 
 
+def _refresh_workers() -> dict[str, bool]:
+    return {"running": True, "sync_running": True}
+
+
 def test_double_enable_and_retry_delivery_reuse_valid_consent(tmp_path: Path) -> None:
     store = connected_exact_review_store(tmp_path)
-    first = change_cloud_review_settings(store, _payload(), refresh_workers=lambda: {"running": True, "sync_running": True})
+    first = change_cloud_review_settings(store, _payload(), refresh_workers=_refresh_workers)
     nonce = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(nonce, dict)
-    second = change_cloud_review_settings(store, _payload(), refresh_workers=lambda: {"running": True, "sync_running": True})
+    second = change_cloud_review_settings(store, _payload(), refresh_workers=_refresh_workers)
     reused = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(reused, dict)
     assert reused["nonce"] == nonce["nonce"]
     retried = change_cloud_review_settings(
-        store, _payload("retry_delivery"), refresh_workers=lambda: {"running": True, "sync_running": True}
+        store, _payload("retry_delivery"), refresh_workers=_refresh_workers
     )
     still = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(still, dict)
     assert still["nonce"] == nonce["nonce"]
     renewed = change_cloud_review_settings(
-        store, _payload("renew_consent"), refresh_workers=lambda: {"running": True, "sync_running": True}
+        store, _payload("renew_consent"), refresh_workers=_refresh_workers
     )
     rotated = store.get_sync_payload("guard_exact_cloud_review_capability")
     assert isinstance(rotated, dict)

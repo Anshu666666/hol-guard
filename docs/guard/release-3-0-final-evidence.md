@@ -83,6 +83,26 @@ If Windows evidence is unavailable, the final record must carry a visible
 `windows.status=waived` entry. A waiver does not convert a failed Windows
 run into a pass and does not weaken any non-Windows gate.
 
+## Negative outcomes
+
+Happy-path installed checks are not enough. The release record must also keep
+fail-closed results as first-class evidence: unpublished draft rollout,
+wrong-workspace binding, stale revision, unavailable native runtime, and
+immutable policy blocks. Those cases must refuse or fail closed, never pass.
+
+```text
+python scripts/ci/verify_release_negative_outcomes.py \
+  --evidence negative-outcomes.json
+python scripts/ci/release_required_evidence.py
+```
+
+`release_required_evidence.py` fails if a required pytest node is missing or
+silently deselected by default `-m not slow` collection. The Publish workflow
+already proves installed artifacts: TestPyPI canary install on
+Linux/macOS/Windows for labeled same-repository PRs, and
+`uv tool run --from <wheel> hol-guard --version` after exact TestPyPI/PyPI
+bytes are verified for alpha and stable publication.
+
 ## Final gate and signature
 
 The final record names these independent gates: CI, CodeQL, fuzzing,

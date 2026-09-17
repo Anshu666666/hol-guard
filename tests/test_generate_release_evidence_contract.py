@@ -8,6 +8,7 @@ from scripts.ci.final_release_evidence import validate_final_evidence
 from scripts.ci.generate_release_evidence_contract import generate
 from scripts.ci.verify_installed_release_matrix import _load as load_matrix
 from scripts.ci.verify_installed_release_matrix import validate_matrix
+from scripts.ci.verify_release_negative_outcomes import validate_negative_outcomes
 
 VERSION = "3.0.1"
 SOURCE_SHA = "a" * 40
@@ -25,6 +26,18 @@ def test_generated_contract_fixtures_validate_together(tmp_path: Path) -> None:
         windows_waiver="contract-fixture",
     )
     assert len(matrix["platforms"]) == 3
+
+    negatives = validate_negative_outcomes(
+        json.loads((tmp_path / "negative-outcomes.json").read_text(encoding="utf-8"))
+    )
+    assert [case["name"] for case in negatives["cases"]] == [
+        "draft",
+        "wrong-workspace",
+        "stale",
+        "unavailable-runtime",
+        "immutable-block",
+    ]
+    assert all(case["passed"] is False for case in negatives["cases"])
 
     final = validate_final_evidence(
         load_final_evidence(tmp_path / "final-release-evidence.json"),

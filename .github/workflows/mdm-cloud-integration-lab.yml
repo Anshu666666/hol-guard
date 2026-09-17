@@ -71,7 +71,7 @@ jobs:
           echo "HOL_MDM_LAB_ADMIN_TOKEN=$token" >> "$GITHUB_ENV"
       - name: Run focused contracts, persistence, and real-HTTP restart tests
         run: |
-          uv run --no-sync pytest -q \
+          uv run --no-sync pytest -q -ra --override-ini="addopts=" \
             tests/test_guard_mdm_cloud_control.py \
             tests/test_guard_mdm_cloud_hardening.py \
             tests/test_guard_mdm_cloud_schemas.py \

@@ -22,6 +22,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from scripts.ci.final_release_evidence import REQUIRED_GATES  # noqa: E402
 from scripts.ci.verify_installed_release_matrix import ALL_HARNESSES, REQUIRED_SCENARIOS  # noqa: E402
+from scripts.ci.verify_release_negative_outcomes import REQUIRED_CASES  # noqa: E402
 
 _PLATFORMS: Final = ("manylinux-x64", "macos-arm64", "macos-x64")
 _WINDOWS_WAIVER: Final = "contract-fixture"
@@ -46,7 +47,7 @@ def _installed_matrix(version: str, source_sha: str, rule_digest: str) -> dict[s
                 "python_fallback": False,
                 "path_search": False,
                 "download_attempted": False,
-                "outcome": "pass",
+                "outcome": "fail-safe" if scenario == "fault-injection" else "pass",
                 "evidence_count": 1,
                 "harness_count": len(ALL_HARNESSES),
                 "harnesses": list(ALL_HARNESSES),
@@ -86,6 +87,22 @@ def generate(output_dir: Path, *, version: str, source_sha: str, rule_digest: st
             "platforms": list(_PLATFORMS),
             "windows_waiver": _WINDOWS_WAIVER,
             "status": "pass",
+        },
+    )
+    negative_path = output_dir / "negative-outcomes.json"
+    _write_json(
+        negative_path,
+        {
+            "schema": "hol-guard-release-negative-outcomes.v1",
+            "cases": [
+                {
+                    "name": name,
+                    "result": "fail-closed" if name != "immutable-block" else "refused",
+                    "passed": False,
+                    "evidence": f"release-required-{name}",
+                }
+                for name in REQUIRED_CASES
+            ],
         },
     )
     desktop_path = output_dir / "desktop-core-evidence.json"
@@ -135,6 +152,7 @@ def generate(output_dir: Path, *, version: str, source_sha: str, rule_digest: st
                 "deterministic": True,
                 "commands": [
                     "validate_installed_release_matrix",
+                    "validate_release_negative_outcomes",
                     "validate_final_release_evidence",
                 ],
             },

@@ -335,11 +335,28 @@ def policy_bundle_daemon_version_supported(policy_bundle: dict[str, object]) -> 
     return current is not None and minimum is not None and current >= minimum
 
 
+def _v2_publication_rollout_state(policy_bundle: dict[str, object]) -> object:
+    payload = policy_bundle.get("payload")
+    if not isinstance(payload, dict):
+        return None
+    spec = payload.get("spec")
+    if not isinstance(spec, dict):
+        return None
+    return spec.get("rolloutState")
+
+
 def policy_bundle_is_enforceable(policy_bundle: dict[str, object]) -> bool:
     """Return whether an authenticated rollout is intended as live authority."""
 
     if policy_bundle.get("contractVersion") == "guard-policy-bundle.v2":
-        return True
+        # Presence-aware: omitting spec.rolloutState keeps already-published
+        # generic v2 documents live. Explicit draft/pending/simulated states
+        # are not enforcement authority. Broader v2 admission hardening remains
+        # in-review in hashgraph-online/hol-guard#2948.
+        state = _v2_publication_rollout_state(policy_bundle)
+        if state is None:
+            return True
+        return state in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
     return policy_bundle.get("rolloutState") in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
 
 

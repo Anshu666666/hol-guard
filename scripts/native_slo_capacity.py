@@ -12,6 +12,8 @@ from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import Observation, process_rss_bytes, route_counts
 from scripts.native_slo_baseline import steady_state_rss_baseline as _steady_state_rss_baseline
 from scripts.native_slo_batch import validate_batch_routes
+from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_observation_failure import contextual_failure
 from scripts.native_slo_session import AdapterSession
 
 _MAX_CONCURRENCY = 64
@@ -71,6 +73,7 @@ def _run_concurrent(
     routes: tuple[tuple[str, str], ...],
     concurrency: int,
     executor: ThreadPoolExecutor,
+    failures: list[dict[str, object]] | None = None,
 ) -> tuple[list[Observation], int]:
     selected = tuple(routes[index % len(routes)] for index in range(concurrency))
     observations: list[Observation] = []
@@ -89,8 +92,10 @@ def _run_concurrent(
     for future in futures:
         try:
             observations.append(future.result())
-        except Exception:
+        except Exception as error:
             errors += 1
+            if failures is not None and len(failures) < 4:
+                failures.append(failure_evidence(error))
     return observations, errors
 
 
@@ -189,7 +194,8 @@ def _run_capacity_wave(
     )
     before = route_counts(initial)
     overloads_before = session.native_overload_count()
-    observations, errors = _run_concurrent(session, routes, concurrency, executor)
+    failures: list[dict[str, object]] = []
+    observations, errors = _run_concurrent(session, routes, concurrency, executor, failures)
     overloads_after = session.native_overload_count()
     _require(
         type(overloads_before) is int and type(overloads_after) is int and overloads_before >= 0,
@@ -215,8 +221,23 @@ def _run_capacity_wave(
         overload_delta=overload_delta,
         native_fail_safe_delta=after.get("native_fail_safe", 0) - before.get("native_fail_safe", 0),
     )
-    attributed, witnessed = validate_batch_routes(observations, before, after)
-    _require(overload_delta == witnessed.get("native_fail_safe", 0), "native overload route evidence did not match")
+    try:
+        attributed, witnessed = validate_batch_routes(observations, before, after)
+        _require(overload_delta == witnessed.get("native_fail_safe", 0), "native overload route evidence did not match")
+    except RuntimeError as error:
+        raise contextual_failure(
+            error,
+            concurrency=concurrency,
+            routes_before=dict(before),
+            routes_after=dict(after),
+            delivered_count=len(observations),
+            delivered_allowed=sum(item.allowed for item in observations),
+            delivered_overloaded=sum(item.overloaded for item in observations),
+            transport_errors=errors,
+            transport_failures=failures,
+            native_overloads_before=overloads_before,
+            native_overloads_after=overloads_after,
+        ) from error
     return CapacityWave(attributed, errors, witnessed, overload_delta)
 
 

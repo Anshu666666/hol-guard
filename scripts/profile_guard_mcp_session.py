@@ -29,9 +29,10 @@ from pathlib import Path
 from typing import Any
 
 _CHILD = r"""
-import json, sys, time
+import hashlib, json, sys, time
 from pathlib import Path
 size, delay, output = int(sys.argv[1]), float(sys.argv[2]), Path(sys.argv[3])
+compact_result = sys.argv[4] == 'true'
 generation = 0
 calls = []
 waits = []
@@ -58,10 +59,18 @@ for line in sys.stdin:
         if delay:
             time.sleep(delay)
         waits.append((time.perf_counter_ns() - start_wait) / 1e6)
-        text = message['params']['arguments']['text']
-        result = {'content': [{'type': 'text', 'text': text}],
-                  'structuredContent': {'text': text, 'generation': generation},
-                  '_meta': {'synthetic': True}}
+        arguments = message['params']['arguments']
+        text = arguments['text']
+        if compact_result:
+            digest = hashlib.sha256(json.dumps(arguments, sort_keys=True, ensure_ascii=False,
+                                                separators=(',', ':')).encode()).hexdigest()
+            result = {'content': [{'type': 'text', 'text': digest}],
+                      'structuredContent': {'arguments_sha256': digest, 'payload_utf8_bytes': len(text.encode()),
+                                            'generation': generation}, '_meta': {'synthetic': True}}
+        else:
+            result = {'content': [{'type': 'text', 'text': text}],
+                      'structuredContent': {'text': text, 'generation': generation},
+                      '_meta': {'synthetic': True}}
         calls.append(message['id'])
         send({'jsonrpc': '2.0', 'method': 'notifications/progress',
               'params': {'progressToken': message['id'], 'progress': 1, 'total': 1}})
@@ -82,6 +91,27 @@ class BenchmarkCaseError(RuntimeError):
     def __init__(self, evidence: dict[str, Any]) -> None:
         self.evidence = evidence
         super().__init__("mcp_benchmark_case_failed")
+
+
+def fixture_arguments(payload_bytes: int, payload_kind: str, index: int) -> dict[str, Any]:
+    """Bound synthetic text and decoded-container controls by their wire size."""
+    if payload_kind in {"ascii", "unicode"}:
+        text = (
+            "€" * (payload_bytes // 3) + "x" * (payload_bytes % 3) if payload_kind == "unicode" else "x" * payload_bytes
+        )
+        return {"text": text, "sample": index}
+    if payload_kind == "dense-integers":
+        return {"text": "", "sample": index, "values": [0] * max(1, (payload_bytes - 256) // 2)}
+    if payload_kind == "nested-records":
+        record = {"k": [0, 1.0, None, False]}
+        item_bytes = len(json.dumps(record, separators=(",", ":"))) + 1
+        return {"text": "", "sample": index, "values": [record] * max(1, (payload_bytes - 256) // item_bytes)}
+    if payload_kind == "nested-text":
+        value: object = "x" * max(1, payload_bytes - 256)
+        for _ in range(8):
+            value = [value]
+        return {"text": "", "sample": index, "values": value}
+    raise ValueError("mcp_benchmark_unknown_payload_kind")
 
 
 class Phases:
@@ -165,6 +195,8 @@ def _worker(config_path: Path) -> int:
             phases.wrap(json, name, "serialization")
         phases.wrap(runtime, "_tool_catalog_fingerprint", "catalog_hash")
         phases.wrap(calls, "_tool_call_risk_category_set", "classification")
+        if hasattr(calls, "_tool_call_risk_snapshot"):
+            phases.wrap(calls, "_tool_call_risk_snapshot", "facts_snapshot")
         phases.wrap(runtime, "evaluate_tool_call", "policy")
         phases.wrap(runtime, "build_tool_call_hash", "request_identity")
         phases.wrap(runtime, "allow_tool_call", "receipt_and_result")
@@ -240,6 +272,7 @@ def _worker(config_path: Path) -> int:
                 str(spec["catalog_size"]),
                 str(spec["child_delay_ms"] / 1000),
                 str(root / "child.json"),
+                "true" if spec["compact_result"] else "false",
             ],
             context=context,
             store=GuardStore(guard_home),
@@ -249,6 +282,13 @@ def _worker(config_path: Path) -> int:
             config_path=str(workspace / ".mcp.json"),
         )
     exit_code = proxy.serve()
+    worker_peak_rss_bytes = None
+    if sys.platform in {"linux", "darwin"}:
+        import resource
+
+        worker_peak_rss_bytes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (
+            1024 if sys.platform == "linux" else 1
+        )
     Path(spec["worker_output"]).write_text(
         json.dumps(
             {
@@ -257,6 +297,7 @@ def _worker(config_path: Path) -> int:
                 "all_phases": phases.snapshot(),
                 "exit_code": exit_code,
                 "quiet_barrier_seconds": runtime._TOOLS_CALL_PREWRITE_QUIET_SECONDS,
+                "worker_peak_rss_bytes": worker_peak_rss_bytes,
                 "loaded_runtime_sha256": {
                     name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
                     for name, module in (("proxy/runtime_mcp.py", runtime), ("mcp_tool_calls.py", calls))
@@ -296,6 +337,8 @@ def run_case(
     approval: str = "none",
     approval_delay_ms: float = 30,
     refresh_every: int = 0,
+    compact_result: bool = False,
+    payload_kind: str = "ascii",
 ) -> dict[str, Any]:
     """Complete ordinary local proxy path; abort on a mismatched result or ID."""
     # Import the client reader before timing worker startup.
@@ -314,6 +357,8 @@ def run_case(
             "approval": approval,
             "approval_delay_ms": approval_delay_ms,
             "refresh_every": refresh_every,
+            "compact_result": compact_result,
+            "payload_kind": payload_kind,
             "worker_output": str(root / "worker.json"),
         }
         config_path = root / "config.json"
@@ -338,10 +383,14 @@ def run_case(
         generation = 0
         forwarded_ids: list[Any] = []
         attempted_tools = 0
+        largest_client_frame_bytes = 0
         stage = "initialize"
 
         def send(message: dict[str, Any]) -> None:
-            process.stdin.write(json.dumps(message, ensure_ascii=False, separators=(",", ":")) + "\n")
+            nonlocal largest_client_frame_bytes
+            encoded = json.dumps(message, ensure_ascii=False, separators=(",", ":")) + "\n"
+            largest_client_frame_bytes = max(largest_client_frame_bytes, len(encoded.encode()))
+            process.stdin.write(encoded)
             process.stdin.flush()
 
         def read(timeout_seconds: float = 30) -> dict[str, Any]:
@@ -421,8 +470,9 @@ def run_case(
                     send({"jsonrpc": "2.0", "id": "catalog", "method": "tools/list", "params": {}})
                     response_for("catalog")
                 request_id: str | int = f"call-{index}" if index % 2 else index
-                payload = "x" * payload_bytes
-                params = {"name": "echo_0", "arguments": {"text": payload, "sample": index}}
+                arguments = fixture_arguments(payload_bytes, payload_kind, index)
+                payload = arguments["text"]
+                params = {"name": "echo_0", "arguments": arguments}
                 # The declared review policy exercises real elicitation for an ordinary tool.
                 stage = "tool_call"
                 before = time.perf_counter_ns()
@@ -442,14 +492,31 @@ def run_case(
                         cancelled += 1
                     trace.update(json.dumps({"id": request_id, "code": error["code"]}).encode())
                 else:
-                    expected = {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {
+                    if compact_result:
+                        digest = hashlib.sha256(
+                            json.dumps(
+                                params["arguments"], sort_keys=True, ensure_ascii=False, separators=(",", ":")
+                            ).encode()
+                        ).hexdigest()
+                        expected_result = {
+                            "content": [{"type": "text", "text": digest}],
+                            "structuredContent": {
+                                "arguments_sha256": digest,
+                                "payload_utf8_bytes": len(payload.encode()),
+                                "generation": generation,
+                            },
+                            "_meta": {"synthetic": True},
+                        }
+                    else:
+                        expected_result = {
                             "content": [{"type": "text", "text": payload}],
                             "structuredContent": {"text": payload, "generation": generation},
                             "_meta": {"synthetic": True},
-                        },
+                        }
+                    expected = {
+                        "jsonrpc": "2.0",
+                        "id": request_id,
+                        "result": expected_result,
                     }
                     if response != expected:
                         raise RuntimeError("mcp_benchmark_complete_result_mismatch")
@@ -494,6 +561,8 @@ def run_case(
                     "uss_max_bytes": max(row["uss_bytes"] for row in memory),
                     "uss_after_catalog_bytes": memory[0]["uss_bytes"],
                     "uss_final_bytes": memory[-1]["uss_bytes"],
+                    "worker_peak_rss_bytes": worker["worker_peak_rss_bytes"],
+                    "worker_peak_rss_scope": "OS_RUSAGE_SELF_whole_worker_including_imports_and_transient_requests",
                 },
                 "exclusive_phases": {
                     name: {
@@ -515,6 +584,7 @@ def run_case(
                     "exact_response_trace_sha256": trace.hexdigest(),
                     "forwarded_ids_exact": True,
                     "quiet_barrier_seconds": 0.005,
+                    "largest_client_frame_utf8_bytes": largest_client_frame_bytes,
                     "decisions": dict(Counter(row["decision"] for row in worker["observations"])),
                     "catalog_generations": sorted({row["catalog_generation"] for row in worker["observations"]}),
                 },
@@ -817,12 +887,15 @@ def main() -> int:
     parser.add_argument("--approval", choices=("none", "accept", "cancel", "invalidate"), default="none")
     parser.add_argument("--approval-delay-ms", type=float, default=30)
     parser.add_argument("--refresh-every", type=int, default=0)
+    parser.add_argument("--compact-result", action="store_true")
+    parser.add_argument("--payload-kind", choices=("ascii", "unicode"), default="ascii")
     parser.add_argument("--json", type=Path)
     args = parser.parse_args()
     if args.worker:
         return _worker(args.worker)
-    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= 131072 and 1 <= args.samples <= 10000):
-        parser.error("catalog must be 1..1000, payload 1..131072, samples 1..10000")
+    payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072
+    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= payload_limit and 1 <= args.samples <= 10000):
+        parser.error(f"catalog must be 1..1000, payload 1..{payload_limit}, samples 1..10000")
     if not (0 <= args.child_delay_ms <= 1000 and 0 <= args.approval_delay_ms <= 1000 and args.refresh_every >= 0):
         parser.error("delays must be 0..1000 ms; refresh interval must be nonnegative")
     if args.matrix:

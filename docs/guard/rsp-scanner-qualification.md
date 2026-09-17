@@ -122,7 +122,7 @@ tests: it previously materialized every line for each ordinary provider match
 and now performs zero such materializations. The broad local timing matrix
 does not establish a stable end-to-end speedup for that change.
 
-## Native detector decision
+## Native detector investigation
 
 There is no qualified native cutover in this evidence. Small staged scans,
 finding reuse and the 17-file provider workload spend little of the complete
@@ -133,16 +133,20 @@ process would add startup and input/output serialization costs.
 The large-source workload is different: detection still accounts for roughly
 54–71% of full-command CPU in this diagnostic. This leaves a plausible native
 kernel opportunity. A blanket conclusion that a richer native detector cannot
-help would be unsupported. The next bounded comparison must isolate regex
-candidate extraction from Python context/suppression/HMAC work, preserve the
-complete existing public result, and include the actual boundary in full CLI
-measurements. A native default remains gated on that comparison and a stable
-runner meeting the original thresholds.
+help would be unsupported. That finding justified the subsequent
+[native regex extraction pilot](rsp-scanner-regex-pilot.md), which preserves
+Python context/suppression/HMAC work and the complete public result while
+including the actual boundary in full CLI measurements. Its separate final
+comparison used the corrected descriptor reader at commit `66d86b3c9`, not the
+older source measured in this report. It reduced mean full-command CPU by
+31.6%, but increased p95 wall time by 13.5%; the allowed regression is 5%.
+The scoped decision is NO-GO for activating that standalone subprocess.
 
 RSP-062 now has a broader Linux workflow baseline. RSP-066 and RSP-072 have
-explicit evidence for retained scopes and remaining native opportunity; this
-report does not mark an unbuilt native detector or its conditional RSP-067–069
-integration complete. The existing hook `guard-scanner` contract is not used
+explicit historical evidence for retained scopes and remaining native
+opportunity. The subsequent pilot report maps its implementation, NO-GO and
+installed/platform limitations to the conditional RSP-067–069 acceptances.
+The existing hook `guard-scanner` contract is not used
 as a substitute for the richer offline detector. Archive workers, third-party
 scanners, network intelligence and report orchestration remain in their
 existing separately bounded routes.

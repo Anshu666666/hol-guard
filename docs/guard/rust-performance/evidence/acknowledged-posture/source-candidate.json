@@ -1,0 +1,122 @@
+{
+  "schema": "guard-posture-config-component-v1",
+  "boundary": "_review_native_edge entry until first native transport call",
+  "installed_wheel": false,
+  "source_diagnostic": true,
+  "component_timing_eligible": false,
+  "headline_timing_eligible": false,
+  "selected_posture_contract": "acknowledged-only",
+  "workspace_overlay": "sandbox_analysis=strict; workspace mode/posture keys remain blocked",
+  "hook_worker_native_sha256": "5cfbebe8c2e5ae3a4ba8f2202da3e7e434e4e4b3f7799999108908cda7f6f85d",
+  "environment_overrides": false,
+  "snapshot_binding": "synthetic acknowledged mode or missing binding; authentication is not exercised",
+  "native_decision": "not invoked; sentinel ends component before native transport",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "observations": [
+    {
+      "case": "ack_observe_watch",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.0040325,
+      "wall_median_ms": 0.003593,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": true
+    },
+    {
+      "case": "ack_observe_protected_before_new_ack",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.0040355,
+      "wall_median_ms": 0.0035765,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": true
+    },
+    {
+      "case": "ack_enforce_protected",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.004158500000000001,
+      "wall_median_ms": 0.0037025,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": false
+    },
+    {
+      "case": "ack_enforce_watch_before_new_ack",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.0046885,
+      "wall_median_ms": 0.004231,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": false
+    },
+    {
+      "case": "missing_ack_protected",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.0038335,
+      "wall_median_ms": 0.0033465,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": false
+    },
+    {
+      "case": "missing_ack_watch",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.0039074999999999995,
+      "wall_median_ms": 0.0034415,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": false
+    },
+    {
+      "case": "missing_ack_missing_files",
+      "run": 0,
+      "samples": 100,
+      "cpu_median_ms": 0.003744,
+      "wall_median_ms": 0.003304,
+      "config_cpu_total_ms": 0.0,
+      "counts": {
+        "config_load_calls": 0,
+        "home_config_opens": 0,
+        "workspace_config_opens": 0
+      },
+      "observe_mode": false
+    }
+  ],
+  "limitations": [
+    "No resident acknowledgement, request/response, availability transformation, or process-tree timing",
+    "Stable fixture repetitions do not qualify concurrent posture/update transitions",
+    "Config timing is nested within total component timing and must not be added to it",
+    "Synthetic configs contain no user paths, commands, policies, or credentials"
+  ]
+}

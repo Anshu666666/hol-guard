@@ -25,16 +25,17 @@ def _result(report, **changes):
 
 
 def _report(expected, phase="clean_baseline"):
+    plan = driver._COMPATIBLE_PHASES if phase.startswith("compatible_") else driver._PHASES
     return {
         "schema": "hol-guard.installed-artifact-transition-phase.v1",
         "phase": phase,
         "passed": True,
         "cleanup_confirmed": True,
         "registered_native_cases": 2,
-        "prior_receipts_verified": next(index for index, item in enumerate(driver._PHASES) if item[0] == phase) * 2,
+        "prior_receipts_verified": next(index for index, item in enumerate(plan) if item[0] == phase) * 2,
         "control_revision": 1,
         "stale_control_write_rejected": True,
-        "registration_preserved": phase != "clean_baseline",
+        "registration_preserved": phase not in {"clean_baseline", "compatible_candidate_start"},
         "authority_health": "protected",
         "identity": {
             **expected,

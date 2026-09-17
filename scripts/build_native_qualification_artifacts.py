@@ -7,7 +7,10 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 
 def _run(argv: list[str], *, cwd: Path, environment: dict[str, str] | None = None) -> str:
@@ -122,6 +125,7 @@ def main() -> int:
     parser.add_argument("--deployment-target", default="")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "qualification"), default="smoke")
+    parser.add_argument("--prior-artifact-root", type=Path)
     args = parser.parse_args()
     baseline_python, baseline_wheel, baseline = _build(
         args.baseline,
@@ -202,8 +206,30 @@ def main() -> int:
         "--output",
         str(destination / "aggregate/installed-artifact-transitions.json"),
     ]
+    offline_secrets = [
+        str(candidate_python),
+        "-I",
+        str(args.candidate.resolve() / "ci/native_runtime/probe_installed_offline_secrets.py"),
+        "--wheel",
+        str(candidate_wheel),
+        "--source-sha",
+        str(candidate["source_sha"]),
+        "--json",
+        str(destination / "aggregate/installed-offline-secrets.json"),
+    ]
+    if args.prior_artifact_root is not None:
+        # Selection belongs to its required transition check. A failed or
+        # missing historical download must not erase other installed probes.
+        transitions.extend(
+            ("--prior-artifact-root", str(args.prior_artifact_root.absolute()), "--prior-artifact-target", args.target)
+        )
     _run_required_checks(
-        (("paired_sampling", paired), ("installed_ollama", ollama), ("installed_artifact_transitions", transitions)),
+        (
+            ("paired_sampling", paired),
+            ("installed_ollama", ollama),
+            ("installed_artifact_transitions", transitions),
+            ("installed_offline_secrets", offline_secrets),
+        ),
         cwd=args.candidate.resolve(),
     )
     return 0

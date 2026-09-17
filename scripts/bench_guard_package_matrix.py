@@ -76,6 +76,10 @@ def run_arm(args, *, root: Path, dependencies: int, bundle_size: int, mode: str,
         ]
         if candidate and args.profile and mode != "unversioned":
             command.append("--profile")
+        if candidate and getattr(args, "native_pilot_binary", None):
+            command.extend(["--native-pilot-binary", str(args.native_pilot_binary)])
+            if getattr(args, "allow_native_fallback", False):
+                command.append("--allow-native-fallback")
         started = time.monotonic()
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout, check=False)
@@ -94,6 +98,7 @@ def run_arm(args, *, root: Path, dependencies: int, bundle_size: int, mode: str,
                 "error_sha256": hashlib.sha256(result.stderr.encode()).hexdigest(),
                 "whole_process_seconds": elapsed,
                 "last_observed_phase": observed_phase(result.stdout),
+                **({"diagnostic_measurement": json.loads(output.read_text())} if output.exists() else {}),
             }
         return {"status": "complete", "whole_process_seconds": elapsed, "measurement": json.loads(output.read_text())}
 

@@ -34,11 +34,16 @@ driver costs so load generation does not masquerade as daemon CPU/memory.
 ## Decision and delivered response
 
 The native verdict and receipt are authority evidence. Posture transformation
-and availability handling are separate stages. An authenticated acknowledged
-observe snapshot can establish Watch recording behavior without re-reading
-configuration. When that proof is absent, the current config and availability
-logic remain necessary. A metadata-only or unacknowledged mode cache cannot
-authorize a stale observation posture after an enforcing update.
+and availability handling are separate stages. Ordinary native evaluation and
+Python delivery use the same authenticated acknowledged snapshot. Its observe
+mode establishes Watch recording behavior without re-reading configuration; a
+local Watch edit cannot weaken an enforcing snapshot before its replacement is
+accepted. Missing acknowledged authority follows the existing posture-independent
+unavailable response. Off, shadow and administrative configuration paths retain
+their separate behavior. A metadata-only or unacknowledged mode cache cannot
+authorize a stale observation posture after an enforcing update. The
+[acknowledged-posture contract](acknowledged-posture-contract.md) records update,
+workspace, expiry and validation boundaries.
 
 Ordinary PreToolUse native unavailability currently returns a harness continuation
 with warning semantics, including for commands whose unavailable payload might
@@ -206,6 +211,12 @@ and while the client is idle. The idle reader drains the existing bounded child
 multiplexer before its next client poll; a server catalog invalidation no longer
 waits for another client request. The existing operation limits and final 5 ms
 prewrite barrier remain in force.
+The runtime retains the optimized Python category path after the request-facts
+candidates regress supported workloads. The explicit immutable facts API remains
+an inactive experiment: consumers own and match exact inputs, including scalar
+types, container shape, dictionary order and signed zero. No facts value is
+retained across approval/catalog/claim boundaries, and no performance selection
+is inferred from semantic parity tests.
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
 forward is permitted. Quiet drains cannot reset the deadline or discard catalog

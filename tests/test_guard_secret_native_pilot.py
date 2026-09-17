@@ -10,12 +10,10 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import secret_scan_native_pilot as pilot
-from bench_guard_secret_scans import _qualify_detector
-from secret_scan_benchmark_fixtures import WORKLOADS, _file_bytes, context_examples, provider_examples
-
 from codex_plugin_scanner.guard.secrets import secret_detection as detector
+from scripts import secret_scan_native_pilot as pilot
+from scripts.bench_guard_secret_scans import _qualify_detector
+from scripts.secret_scan_benchmark_fixtures import WORKLOADS, _file_bytes, context_examples, provider_examples
 
 
 @pytest.fixture
@@ -213,8 +211,8 @@ def test_installed_pilot_restores_repository_function(binary):
 
 
 def test_full_cli_staged_divergence_includes_native_boundary(binary, tmp_path):
-    from bench_guard_secret_scans import _full_cli
-    from secret_scan_benchmark_fixtures import Workload, create_fixture
+    from scripts.bench_guard_secret_scans import _full_cli
+    from scripts.secret_scan_benchmark_fixtures import Workload, create_fixture
 
     target = tmp_path / "repository"
     create_fixture(target, Workload("cli", "staged", 2, 512, content="providers", unstaged_change=True))
@@ -245,3 +243,42 @@ def test_provider_length_and_ascii_word_boundaries(client):
             for left, right in (("", ""), ("_", "_"), ("x", "-"), ("-", "x"), ("\x1c", "\x1f")):
                 text = left + value + "A" * extra + right
                 assert client.extract(text) == expected_captures(text), (example.label, extra, left, right)
+
+
+def test_repository_links_encoding_and_changed_working_bytes_preserve_parity(binary, tmp_path):
+    from codex_plugin_scanner.guard.secrets.secret_repository_scanner import scan_repository_secrets
+
+    root = tmp_path / "repository"
+    root.mkdir()
+    example = next(item for item in provider_examples() if item.label == "github-token")
+    valid = root / "config.ts"
+    valid.write_text(example.text)
+    os.link(valid, root / "alias.ts")
+    unicode_text = "// 雪\n" + example.text
+    (root / "unicode.ts").write_text(unicode_text)
+    (root / "invalid.ts").write_bytes(b"\xff" + example.text.encode())
+    (root / "binary.ts").write_bytes(b"\0" + example.text.encode())
+    outside = tmp_path / "outside.ts"
+    outside.write_text(example.text)
+    (root / "external.ts").symlink_to(outside)
+    (root / "internal.ts").symlink_to(valid)
+    (root / "dangling.ts").symlink_to(tmp_path / "absent.ts")
+    expected = scan_repository_secrets(root)
+    assert expected.files_scanned == 5
+    assert expected.bytes_scanned == 2 * len(example.text.encode()) + len(unicode_text.encode())
+    assert {finding.path for finding in expected.findings} == {"config.ts", "alias.ts", "unicode.ts"}
+    assert not expected.errors and not expected.truncated
+    installed = pilot.install(binary)
+    try:
+        assert scan_repository_secrets(root) == expected
+        assert installed.client.stats["native_files"] == 2
+        assert installed.client.stats["python_fallback_files"] == 1
+        # Both hardlinked paths change; a working-file scan cannot reuse stale captures.
+        valid.write_text("export const safe = 42;\n")
+        changed = scan_repository_secrets(root)
+        assert {finding.path for finding in changed.findings} == {"unicode.ts"}
+        process = installed.client.process
+    finally:
+        installed.close()
+    assert process is not None and process.poll() == 0
+    assert scan_repository_secrets(root) == changed

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, fields, replace
 from functools import lru_cache
 from hashlib import sha256
 from ipaddress import ip_address
@@ -287,13 +288,123 @@ def build_tool_call_artifact(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class ToolCallRiskFacts:
+    """Ordered pure facts bound to one exact, private request snapshot.
+
+    This value carries no policy or approval authority. Consumers must match
+    the complete inputs again and consume their owned matching copy. The
+    private binding may contain request secrets, so it must never be exported.
+    """
+
+    categories: tuple[str, ...]
+    _input_binding: tuple[bytes, tuple[str | int, ...]] = field(repr=False)
+
+
+def _copy_strict_json(value: object, shape: bytearray, leaves: list[str | int]) -> object:
+    """Own containers and bind their exact structure without encoding text.
+
+    The private preorder shape has distinct scalar, key, and container tags.
+    Container closing tags preserve nesting and key tags preserve dict order.
+    Immutable string/integer leaves can be shared; floats use their exact hex
+    spelling so that signed zero cannot compare equal. Neither the eventual
+    bytes shape nor its leaf tuple retains a mutable caller-owned container.
+    """
+
+    kind = type(value)
+    if value is None:
+        shape.append(ord("n"))
+        return value
+    if kind is bool:
+        shape.append(ord("t") if value else ord("f"))
+        return value
+    if kind is str or kind is int:
+        shape.append(ord("s") if kind is str else ord("i"))
+        leaves.append(cast(str | int, value))
+        return value
+    if kind is float and math.isfinite(cast(float, value)):
+        shape.append(ord("d"))
+        leaves.append(cast(float, value).hex())
+        return value
+    if kind is list:
+        shape.append(ord("["))
+        owned = [_copy_strict_json(item, shape, leaves) for item in cast(list[object], value)]
+        shape.append(ord("]"))
+        return owned
+    if kind is dict:
+        shape.append(ord("{"))
+        result: dict[str, object] = {}
+        for key, item in cast(dict[object, object], value).items():
+            if type(key) is not str:
+                raise ValueError("tool_call_facts_require_string_keys")
+            shape.append(ord("k"))
+            leaves.append(cast(str, key))
+            result[cast(str, key)] = _copy_strict_json(item, shape, leaves)
+        shape.append(ord("}"))
+        return result
+    raise ValueError("tool_call_facts_require_plain_finite_json")
+
+
+def _tool_call_risk_snapshot(
+    artifact: GuardArtifact, arguments: object
+) -> tuple[tuple[bytes, tuple[str | int, ...]], GuardArtifact, object] | None:
+    """Keep unsupported inputs on the existing, uncached analysis path."""
+
+    if type(artifact) is not GuardArtifact or type(artifact.args) is not tuple:
+        return None
+    if any(type(item) is not str for item in artifact.args):
+        return None
+    try:
+        shape = bytearray()
+        leaves: list[str | int] = []
+        owned_fields = {
+            item.name: _copy_strict_json(getattr(artifact, item.name), shape, leaves)
+            for item in fields(artifact)
+            if item.name != "args"
+        }
+        # The exact GuardArtifact field order is fixed above. Its args tuple is
+        # already immutable and validated, but still enters the value binding.
+        _copy_strict_json(list(artifact.args), shape, leaves)
+        owned_arguments = _copy_strict_json(arguments, shape, leaves)
+        binding = bytes(shape), tuple(leaves)
+        owned_artifact = replace(artifact, **owned_fields)
+    except (ValueError, TypeError, RecursionError, RuntimeError):
+        return None
+    return binding, owned_artifact, owned_arguments
+
+
+def prepare_tool_call_risk_facts(artifact: GuardArtifact, arguments: object) -> ToolCallRiskFacts | None:
+    """Analyze once for a single authority preparation, never across waits."""
+
+    snapshot = _tool_call_risk_snapshot(artifact, arguments)
+    if snapshot is None:
+        return None
+    binding, owned_artifact, owned_arguments = snapshot
+    return ToolCallRiskFacts(tool_call_risk_categories(owned_artifact, owned_arguments), binding)
+
+
+def _matching_tool_call_risk_snapshot(
+    artifact: GuardArtifact, arguments: object, facts: ToolCallRiskFacts | None
+) -> tuple[GuardArtifact, object] | None:
+    if facts is None:
+        return None
+    snapshot = _tool_call_risk_snapshot(artifact, arguments)
+    if snapshot is None or snapshot[0] != facts._input_binding:
+        return None
+    return snapshot[1], snapshot[2]
+
+
 def build_tool_call_hash(
     artifact: GuardArtifact,
     arguments: object,
     *,
     workspace: Path | str | None = None,
     config: GuardConfig | None = None,
+    risk_facts: ToolCallRiskFacts | None = None,
 ) -> str:
+    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+    if matching_snapshot is not None:
+        artifact, arguments = matching_snapshot
     browser_intent = normalize_browser_mcp_intent(artifact, arguments)
     content_arguments: object = arguments
     if browser_intent is not None:
@@ -375,7 +486,11 @@ def build_tool_call_hash(
         },
         content=content_hash,
         capabilities={
-            "risk_categories": list(tool_call_risk_categories(artifact, arguments)),
+            "risk_categories": list(
+                risk_facts.categories
+                if matching_snapshot is not None and risk_facts is not None
+                else tool_call_risk_categories(artifact, arguments)
+            ),
             "server_identity": artifact.metadata.get("mcp_server_identity"),
             "tool_catalog_fingerprint": tool_catalog_fingerprint,
             "tool_identity": artifact.metadata.get("mcp_tool_identity"),
@@ -448,11 +563,13 @@ def evaluate_tool_call(
     arguments: object,
     claim_saved_approval: bool = True,
     fresh_authority_provider: (Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None) = None,
+    risk_facts: ToolCallRiskFacts | None = None,
 ) -> ToolCallDecision:
     current = _evaluate_current_tool_call(
         config=config,
         artifact=artifact,
         arguments=arguments,
+        risk_facts=risk_facts,
     )
     current = _apply_temporary_mcp_grant(
         store=store,
@@ -761,6 +878,7 @@ def _evaluate_current_tool_call(
     config: GuardConfig,
     artifact: GuardArtifact,
     arguments: object,
+    risk_facts: ToolCallRiskFacts | None = None,
 ) -> ToolCallDecision:
     """Evaluate current configuration and call shape without saved state."""
 
@@ -782,7 +900,14 @@ def _evaluate_current_tool_call(
             summary=("Local Guard's current configuration is stricter than the tool-call-specific recommendation."),
         )
 
-    risk_categories = tool_call_risk_categories(artifact, arguments)
+    # Resolve current policy first, then validate facts against the current
+    # inputs. Never match a mutable alias and subsequently analyze that alias.
+    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+    if matching_snapshot is not None and risk_facts is not None:
+        artifact, arguments = matching_snapshot
+        risk_categories = risk_facts.categories
+    else:
+        risk_categories = tool_call_risk_categories(artifact, arguments)
     signals = _tool_call_risk_signals_for_categories(artifact, arguments, risk_categories)
     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
 

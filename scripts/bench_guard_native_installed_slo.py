@@ -54,7 +54,11 @@ from scripts.native_slo_capacity import (  # noqa: E402, F401
 from scripts.native_slo_contract import SIZE_CLASSES, assert_privacy_safe  # noqa: E402
 from scripts.native_slo_failure import failure_evidence  # noqa: E402
 from scripts.native_slo_launcher import measure_registered_launcher  # noqa: E402
-from scripts.native_slo_observation_failure import SloProgress, contextual_failure  # noqa: E402
+from scripts.native_slo_observation_failure import (  # noqa: E402
+    SloProgress,
+    capture_recovery_observation,
+    contextual_failure,
+)
 from scripts.native_slo_reporting import (  # noqa: E402
     SloMeasurements,
     safe_failure_rate,
@@ -241,9 +245,26 @@ def _run_recovery(session: _LifecycleSession, iterations: int) -> list[float]:
             f"resident stop failed during recovery sample {index}",
         )
         started = time.perf_counter()
-        observation = session.observe("claude-code", "PostToolUse", "1k")
+        with capture_recovery_observation() as detail:
+            observation = session.observe("claude-code", "PostToolUse", "1k")
         values.append((time.perf_counter() - started) * 1_000.0)
-        _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
+        try:
+            _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
+        except Exception as error:
+            raise contextual_failure(
+                error,
+                sample_phase="resident_recovery",
+                sample_index=index,
+                completed_sample_counts={"recovery": len(values) - 1},
+                harness=observation.harness,
+                event=observation.event,
+                size_class=observation.size_class,
+                route=observation.route,
+                allowed=observation.allowed,
+                overloaded=observation.overloaded,
+                resident_stop_contained=True,
+                **detail,
+            ) from error
     return values
 
 

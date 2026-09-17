@@ -1,0 +1,116 @@
+{
+  "cohort": {
+    "cache": {
+      "bytes": 1086646,
+      "files": 27,
+      "state": "fixture-data-prewarmed",
+      "verified": false
+    },
+    "case": "working_provider_large",
+    "dimensions": {
+      "file_occurrences": 4,
+      "files": 4,
+      "input_bytes": 1048576
+    },
+    "findings_each_call": 680,
+    "full_cli_calls": 60,
+    "paired_trials": 30,
+    "public_result_sha256": "b1ad19e97b543d012de00dfba20b5e6e0c0087cb5728a05d05efe9340b0397e7",
+    "state_finished_utc": "2026-09-17T12:24:05.448348+00:00",
+    "state_started_utc": "2026-09-17T12:23:14.936779+00:00"
+  },
+  "comparison": {
+    "conservative_interval_threshold_passed": false,
+    "mean_process_tree_cpu_ratio": 0.6842380559858402,
+    "p95_wall_ratio": 1.1347696899390745,
+    "paired_bootstrap_95pct_intervals": {
+      "mean_process_tree_cpu_ratio": [
+        0.5111711011748338,
+        0.9123600723227229
+      ],
+      "p95_wall_ratio": [
+        0.2886499747368647,
+        2.084491080978094
+      ]
+    },
+    "point_threshold_passed": false,
+    "qualification": "local Linux source CLI pilot; installed/platform release gates remain separate"
+  },
+  "decision": "NO-GO for activating this standalone regex extraction subprocess",
+  "original_task_mapping": [
+    {
+      "acceptance_and_limit": "Startup/import, detector CPU, Git object I/O, subprocesses, files/bytes and full CLI measured for small/large/repeated blobs. Installed and other-platform performance are separate.",
+      "status": "DONE: Linux source-workflow baseline",
+      "task": "RSP-062"
+    },
+    {
+      "acceptance_and_limit": "Optimized Python versus actual standalone extraction boundary including startup and serialization. Final-reader confirmation fails the required full-command gate. Other native boundaries are not rejected.",
+      "status": "DONE: scoped subprocess NO-GO comparison",
+      "task": "RSP-066"
+    },
+    {
+      "acceptance_and_limit": "Versioned ordered capture/span protocol preserves rich public findings, caller-keyed HMAC and completeness through retained Python. This is not a production-native rich-output schema.",
+      "status": "DONE: experimental extraction schema",
+      "task": "RSP-067"
+    },
+    {
+      "acceptance_and_limit": "ASCII <=4 MiB extraction, exact ordered captures, independent logical files, and Python-owned context/suppression/entropy/positions/HMAC. Unicode and oversized input use Python. Protocol/native errors abort the experiment; production fallback semantics are not claimed.",
+      "status": "PILOT COMPLETE; production port deferred by NO-GO",
+      "task": "RSP-068"
+    },
+    {
+      "acceptance_and_limit": "Source CLI verifies 0/2/3 and default/explicit limits. No installed native activation is shipped. Actual installed retained-Python qualification remains a separate pending probe.",
+      "status": "SOURCE CLI VERIFIED; installed retained-Python probe pending",
+      "task": "RSP-069"
+    },
+    {
+      "acceptance_and_limit": "Provider/context credentials, staged divergence, hardlinks/symlinks, invalid encoding, Unicode, mutation and incomplete scans are tested. Archive bombs and archive isolation belong to the separate archive qualification; installed and platform coverage remain explicit.",
+      "status": "SCANNER SUBSET COMPLETE; archive evidence separate",
+      "task": "RSP-071"
+    },
+    {
+      "acceptance_and_limit": "Full Linux source CLI comparison, complete findings parity, exact source/binary/provenance and retained Python scopes are published. Cross-platform performance, installed native behavior and in-process bindings are not inferred.",
+      "status": "DONE: scoped NO-GO and coverage publication",
+      "task": "RSP-072"
+    }
+  ],
+  "provenance_correction": "rsp-scanner-native-executable-provenance-linux.json",
+  "raw_report": "rsp-scanner-native-regex-final-reader-confirmation-linux.json",
+  "raw_report_sha256": "38ac4de50693f0de8a53fff68e94710c099b4a700416399e16dde8a56f7036be",
+  "reason": "Mean complete process-tree CPU improves 31.6%, but p95 full CLI wall time regresses 13.5%, exceeding the allowed 5% regression. Both point and conservative interval gates fail.",
+  "retained": [
+    "Optimized Python provider fixture-context materialization fix.",
+    "Bounded descriptor working-file reader and incomplete-scan mutation reporting.",
+    "Existing Python offline CLI, richer findings, suppression, scoring, entropy, Unicode, HMAC, traversal, Git reuse, default/explicit limits and exits."
+  ],
+  "schema": "guard-scanner-native-decision.v1",
+  "scope_limits": [
+    "This rejects activation of this measured standalone ASCII extraction boundary; it does not reject all Rust kernels or unmeasured in-process bindings.",
+    "No native installed route was activated.",
+    "No cross-platform release-performance conclusion.",
+    "Earlier numerical passing cohort retains its withdrawn qualifying status because disclosed unlocked cleanup could overlap.",
+    "No timing samples are pooled across reader source changes or the interrupted executable relocation."
+  ],
+  "sources": {
+    "bridge_and_runner_sha256": "96e25522ea82647082cd0393dfbba34d7930d617c6d64dcfebfb45b885520336",
+    "native_binary_sha256": "bda6936a350d361b0de0422c54ea57842c9353d9e7de11c554880532bdcebe35",
+    "native_source_sha256": "7e61ea8b2e41d32a5c4481abd18ef847be70c24eacce2e3277eea6aee3952874",
+    "python": {
+      "commit": "66d86b3c9cc1d755878ad0649b618504bf4f5133",
+      "scanner_source_sha256": "14dea3727ed74a622c4024be018d069a8c76b7306ec1ebd71715d7418a2a22e8"
+    }
+  },
+  "statistics": {
+    "native_regex_pilot": {
+      "mean_process_tree_cpu_ms": 639.1112333333328,
+      "p95_wall_ms": 2056.4647850042093,
+      "samples": 30
+    },
+    "optimized_python": {
+      "mean_process_tree_cpu_ms": 934.0480666666672,
+      "p95_wall_ms": 1812.2309780010255,
+      "samples": 30
+    }
+  },
+  "threshold": "At least 30% lower mean process-tree CPU or p95 wall, with at most 5% regression in the other metric."
+}

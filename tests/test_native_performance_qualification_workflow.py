@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from scripts.ci.installed_transition_prior import PRIOR_ARTIFACTS, PRIOR_RUN_ID
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -43,7 +45,20 @@ def test_paired_workflow_pins_baseline_and_isolates_install_environments() -> No
     artifact = next(step for step in job["steps"] if "actions/upload-artifact@" in step.get("uses", ""))
     assert "private_samples" not in artifact["with"]["path"]
     assert "aggregate/*.json" in artifact["with"]["path"]
-    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["permissions"] == {"contents": "read", "actions": "read"}
+    prior = next(step for step in job["steps"] if "actions/download-artifact@" in step.get("uses", ""))
+    assert prior["continue-on-error"] is True
+    assert prior["with"]["run-id"] == PRIOR_RUN_ID
+    assert prior["with"]["repository"] == "hashgraph-online/hol-guard"
+    assert prior["with"]["artifact-ids"] == "${{ matrix.prior_artifact_id }}"
+    build = next(step for step in job["steps"] if step.get("name") == "Build isolated wheels and run paired sampling")
+    assert "--prior-artifact-root prior-candidate-artifact" in build["run"]
+    assert build.get("continue-on-error", False) is False
+    assert {row["target"]: int(row["prior_artifact_id"]) for row in job["strategy"]["matrix"]["include"]} == {
+        target: pin["artifact_id"] for target, pin in PRIOR_ARTIFACTS.items()
+    }
+    for name in ("installed_transition_entry", "installed_transition_diagnostics", "installed_transition_prior"):
+        assert any(fnmatch.fnmatch("scripts/ci/" + name + ".py", pattern) for pattern in patterns)
 
 
 def test_full_qualification_is_available_before_merge_only_by_explicit_same_repo_label() -> None:

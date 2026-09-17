@@ -4,9 +4,43 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
+from contextvars import ContextVar
 
+from scripts.native_slo_adapter import Observation
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence
 from scripts.native_slo_semantic_diagnostic import semantic_diagnostic
+
+_RECOVERY_OBSERVATION: ContextVar[dict[str, object] | None] = ContextVar(
+    "qualification_recovery_observation", default=None
+)
+
+
+@contextmanager
+def capture_recovery_observation() -> Iterator[dict[str, object]]:
+    """Capture only this serial recovery call, never a concurrent peer's result."""
+    detail: dict[str, object] = {}
+    context = _RECOVERY_OBSERVATION.set(detail)
+    try:
+        yield detail
+    finally:
+        _RECOVERY_OBSERVATION.reset(context)
+
+
+def retain_failed_recovery_observation(
+    observation: Observation,
+    response: Mapping[str, object],
+    before: Mapping[str, int],
+    after: Mapping[str, int],
+) -> None:
+    """Record closed evidence only if the active recovery result is unexpected."""
+    detail = _RECOVERY_OBSERVATION.get()
+    if detail is None or (observation.allowed and observation.route == "native_resident"):
+        return
+    detail.update(
+        routes_before=dict(before),
+        routes_after=dict(after),
+        observed_semantics=verdict_evidence(response),
+    )
 
 
 def verdict_evidence(response: object = None, native: object = None) -> dict[str, object]:

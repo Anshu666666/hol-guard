@@ -27,10 +27,41 @@ def test_real_stdio_catalog_modes_preserve_complete_trace_and_refresh() -> None:
     assert len(expected["catalog_generations"]) == 3
     assert expected["quiet_barrier_seconds"] == 0.005
     assert optimized["exclusive_phases"]["prewrite_quiet_barrier"]["calls"] == 2
+    assert optimized["exclusive_phases"]["classification"]["calls"] == 4
     assert optimized["memory"]["max_processes"] >= 2
     encoded = json.dumps(optimized)
     assert "guard-mcp-profile-" not in encoded
     assert "xxxxxxxx" not in encoded
+
+
+def test_compact_memory_probe_preserves_utf8_and_complete_arguments_digest() -> None:
+    result = profile.run_case(
+        catalog_size=10,
+        payload_bytes=3072,
+        samples=1,
+        profile=True,
+        compact_result=True,
+        payload_kind="unicode",
+    )
+    assert result["correctness"]["accepted"] == 2
+    assert result["correctness"]["forwarded_ids_exact"] is True
+    assert 3072 < result["correctness"]["largest_client_frame_utf8_bytes"] < 4096
+    assert result["exclusive_phases"]["classification"]["calls"] == 2
+    assert result["exclusive_phases"].get("facts_snapshot", {}).get("calls", 0) == 0
+    if profile.sys.platform in {"linux", "darwin"}:
+        assert result["memory"]["worker_peak_rss_bytes"] > 0
+
+
+@pytest.mark.parametrize("kind", ["dense-integers", "nested-records", "nested-text"])
+def test_compact_container_probe_preserves_all_arguments_and_frame_limit(kind: str) -> None:
+    result = profile.run_case(
+        catalog_size=10, payload_bytes=3072, samples=1, profile=True, compact_result=True, payload_kind=kind
+    )
+    assert result["correctness"]["accepted"] == 2
+    assert result["correctness"]["forwarded_ids_exact"] is True
+    assert 2000 < result["correctness"]["largest_client_frame_utf8_bytes"] < 4096
+    assert result["exclusive_phases"]["classification"]["calls"] == 2
+    assert result["exclusive_phases"].get("facts_snapshot", {}).get("calls", 0) == 0
 
 
 @pytest.mark.parametrize("approval", ["accept", "cancel", "invalidate"])

@@ -1,0 +1,25 @@
+"""Exact retained original-baseline deny regression control; no other cells."""
+
+import hashlib
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/workspace/scratch/c25672eb4c10/package-index-fix/scripts")
+import bench_guard_package_pilot as runner
+
+runner.CORRECTION_CASES = ((100, 10000, "deny"),)
+original_checkpoint = runner.write_checkpoint
+wrapper_identity = {
+    "scope": "Original audited Python versus corrected optimized Python; targeted 100-by-10000 deny control",
+    "cases": [[100, 10000, "deny"]],
+    "wrapper_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+}
+
+
+def checkpoint(path, report):
+    report["case_selection_override"] = wrapper_identity
+    original_checkpoint(path, report)
+
+
+runner.write_checkpoint = checkpoint
+raise SystemExit(runner.main())

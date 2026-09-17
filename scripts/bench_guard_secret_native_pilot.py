@@ -101,7 +101,13 @@ def main() -> int:
     from secret_scan_native_pilot import install
 
     def identities():
-        scripts = ["secret_scan_native_pilot.py", "bench_guard_secret_scans.py", "bench_guard_secret_native_pilot.py"]
+        scripts = [
+            "secret_scan_native_pilot.py",
+            "secret_scan_benchmark_fixtures.py",
+            "secret_scan_benchmark_cache.py",
+            "bench_guard_secret_scans.py",
+            "bench_guard_secret_native_pilot.py",
+        ]
         digest = hashlib.sha256()
         for name in scripts:
             digest.update(name.encode() + b"\0" + (Path(__file__).parent / name).read_bytes())

@@ -1,0 +1,2454 @@
+{
+  "schema": "guard-package-paired-pilot-v1",
+  "suite": "correction",
+  "qualification": "shared-host Linux source-route diagnostic; no installed or tail-quantile qualification",
+  "sources": {
+    "baseline": {
+      "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+      "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "candidate": {
+      "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+      "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "harnesses": {
+    "bench_guard_package_pilot.py": "3bfb3f6e90e462ca8787eaf6e907a553a6280f117df039a882456cb82a7e9dc2",
+    "bench_guard_package_local.py": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+    "bench_guard_package_matrix.py": "d96289f107f7d57755d62c4951ef4b0a977e87fe75612d9885f408776fb559c8",
+    "package_native_pilot.py": "6009e74f244b0e1806e3b859b0099366b97b2df3edcc13ba98cbf8d35b0d65a7"
+  },
+  "native_binary_sha256": null,
+  "method": {
+    "repeats": 5,
+    "samples_per_arm_process": 1,
+    "fresh_process_store_each_arm": true,
+    "warmups": 0,
+    "order": "alternating AB/BA within each case across repeated blocks",
+    "coordination": "shared advisory lock per paired case; unrelated contention remains possible",
+    "cpu": "parent process plus all children reaped during the full evaluation",
+    "semantics": "all public result fields and all persisted evidence columns; no normalization",
+    "native_boundary": null
+  },
+  "environment": {
+    "python": "3.12.14",
+    "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "machine": "x86_64"
+  },
+  "matrix": [
+    {
+      "repeat": 1,
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 3.7334947240015026,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            4.72607421875,
+            8.58642578125,
+            9.94287109375
+          ],
+          "host_load_at_end": [
+            4.72607421875,
+            8.58642578125,
+            9.94287109375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            575.529885
+          ],
+          "cpu_ms": [
+            564.201358
+          ],
+          "parent_cpu_ms": [
+            564.201358
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 575.529885,
+          "cpu_median_ms": 564.201358,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 4.922787964002055,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            4.58740234375,
+            8.49365234375,
+            9.9052734375
+          ],
+          "host_load_at_end": [
+            4.58740234375,
+            8.49365234375,
+            9.9052734375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            617.8099
+          ],
+          "cpu_ms": [
+            617.486799
+          ],
+          "parent_cpu_ms": [
+            617.486799
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 617.8099,
+          "cpu_median_ms": 617.486799,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": -7.346276205969726,
+        "median_cpu_improvement_percent": -9.444401408193691
+      }
+    },
+    {
+      "repeat": 1,
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.3193316319957376,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            4.10888671875,
+            8.2626953125,
+            9.81494140625
+          ],
+          "host_load_at_end": [
+            4.10888671875,
+            8.2626953125,
+            9.81494140625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            52.171939
+          ],
+          "cpu_ms": [
+            52.107056
+          ],
+          "parent_cpu_ms": [
+            52.107056
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 52.171939,
+          "cpu_median_ms": 52.107056,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 2.113226184002997,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            3.93994140625,
+            8.15869140625,
+            9.77294921875
+          ],
+          "host_load_at_end": [
+            3.93994140625,
+            8.15869140625,
+            9.77294921875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            55.496281
+          ],
+          "cpu_ms": [
+            55.505223
+          ],
+          "parent_cpu_ms": [
+            55.505223
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 55.496281,
+          "cpu_median_ms": 55.505223,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 5.99020680322705,
+        "median_cpu_improvement_percent": 6.122247270315451
+      }
+    },
+    {
+      "repeat": 1,
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 9.830476783994527,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            3.94482421875,
+            8.08935546875,
+            9.74169921875
+          ],
+          "host_load_at_end": [
+            4.02978515625,
+            8.03759765625,
+            9.7158203125
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            369.338671
+          ],
+          "cpu_ms": [
+            369.162337
+          ],
+          "parent_cpu_ms": [
+            369.162337
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 369.338671,
+          "cpu_median_ms": 369.162337,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.651169791002758,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            4.34814453125,
+            8.03662109375,
+            9.70654296875
+          ],
+          "host_load_at_end": [
+            4.34814453125,
+            8.03662109375,
+            9.70654296875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            228.857855
+          ],
+          "cpu_ms": [
+            217.225702
+          ],
+          "parent_cpu_ms": [
+            217.225702
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 228.857855,
+          "cpu_median_ms": 217.225702,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 38.03577232236264,
+        "median_cpu_improvement_percent": 41.15713326411192
+      }
+    },
+    {
+      "repeat": 2,
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 4.125335787997756,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            4.54833984375,
+            7.90283203125,
+            9.6357421875
+          ],
+          "host_load_at_end": [
+            4.54833984375,
+            7.90283203125,
+            9.6357421875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            484.15301
+          ],
+          "cpu_ms": [
+            468.500014
+          ],
+          "parent_cpu_ms": [
+            468.500014
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 484.15301,
+          "cpu_median_ms": 468.500014,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 6.4628715430008015,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            5.4658203125,
+            8.03759765625,
+            9.67041015625
+          ],
+          "host_load_at_end": [
+            5.4658203125,
+            8.03759765625,
+            9.67041015625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            626.450491
+          ],
+          "cpu_ms": [
+            510.843259
+          ],
+          "parent_cpu_ms": [
+            510.843259
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 626.450491,
+          "cpu_median_ms": 510.843259,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 22.71488059221587,
+        "median_cpu_improvement_percent": 8.288891798805153
+      }
+    },
+    {
+      "repeat": 2,
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.23346056000446,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.87841796875,
+            8.14306640625,
+            9.654296875
+          ],
+          "host_load_at_end": [
+            6.87841796875,
+            8.14306640625,
+            9.654296875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            73.626191
+          ],
+          "cpu_ms": [
+            63.79418
+          ],
+          "parent_cpu_ms": [
+            63.79418
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 73.626191,
+          "cpu_median_ms": 63.79418,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 3.633656748002977,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.87841796875,
+            8.14306640625,
+            9.654296875
+          ],
+          "host_load_at_end": [
+            6.7275390625,
+            8.0908203125,
+            9.62890625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            146.068679
+          ],
+          "cpu_ms": [
+            121.304884
+          ],
+          "parent_cpu_ms": [
+            121.304884
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 146.068679,
+          "cpu_median_ms": 121.304884,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": -98.39227999720914,
+        "median_cpu_improvement_percent": -90.15039302958358
+      }
+    },
+    {
+      "repeat": 2,
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.706152815000678,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.7822265625,
+            8.05517578125,
+            9.6005859375
+          ],
+          "host_load_at_end": [
+            6.7822265625,
+            8.05517578125,
+            9.6005859375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            208.367173
+          ],
+          "cpu_ms": [
+            208.284368
+          ],
+          "parent_cpu_ms": [
+            208.284368
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 208.367173,
+          "cpu_median_ms": 208.284368,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 3.3568268899980467,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.7822265625,
+            8.05517578125,
+            9.6005859375
+          ],
+          "host_load_at_end": [
+            6.7822265625,
+            8.05517578125,
+            9.6005859375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            325.381061
+          ],
+          "cpu_ms": [
+            324.770929
+          ],
+          "parent_cpu_ms": [
+            324.770929
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 325.381061,
+          "cpu_median_ms": 324.770929,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 35.962107825322995,
+        "median_cpu_improvement_percent": 35.86729925571633
+      }
+    },
+    {
+      "repeat": 3,
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 2.7793023319973145,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.2392578125,
+            7.8720703125,
+            9.515625
+          ],
+          "host_load_at_end": [
+            6.2392578125,
+            7.8720703125,
+            9.515625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            338.380433
+          ],
+          "cpu_ms": [
+            337.339813
+          ],
+          "parent_cpu_ms": [
+            337.339813
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 338.380433,
+          "cpu_median_ms": 337.339813,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 4.410096808001981,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.54052734375,
+            7.90771484375,
+            9.5185546875
+          ],
+          "host_load_at_end": [
+            6.54052734375,
+            7.90771484375,
+            9.5185546875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            520.797578
+          ],
+          "cpu_ms": [
+            496.081327
+          ],
+          "parent_cpu_ms": [
+            496.081327
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 520.797578,
+          "cpu_median_ms": 496.081327,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": -53.90889283482891,
+        "median_cpu_improvement_percent": -47.056857175645604
+      }
+    },
+    {
+      "repeat": 3,
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 6.509041039003932,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            9.1259765625,
+            8.291015625,
+            9.56494140625
+          ],
+          "host_load_at_end": [
+            9.1259765625,
+            8.291015625,
+            9.56494140625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            52.778625
+          ],
+          "cpu_ms": [
+            50.833261
+          ],
+          "parent_cpu_ms": [
+            50.833261
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 52.778625,
+          "cpu_median_ms": 50.833261,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.024878495001758,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            9.11572265625,
+            8.30322265625,
+            9.5615234375
+          ],
+          "host_load_at_end": [
+            9.11572265625,
+            8.30322265625,
+            9.5615234375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            95.315915
+          ],
+          "cpu_ms": [
+            94.804988
+          ],
+          "parent_cpu_ms": [
+            94.804988
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 95.315915,
+          "cpu_median_ms": 94.804988,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 44.627688880707915,
+        "median_cpu_improvement_percent": 46.38123787326464
+      }
+    },
+    {
+      "repeat": 3,
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.311654320998059,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            8.65869140625,
+            8.2802734375,
+            9.49365234375
+          ],
+          "host_load_at_end": [
+            8.65869140625,
+            8.2802734375,
+            9.49365234375
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            415.708668
+          ],
+          "cpu_ms": [
+            412.508314
+          ],
+          "parent_cpu_ms": [
+            412.508314
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 415.708668,
+          "cpu_median_ms": 412.508314,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 3.782203495997237,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            8.125,
+            8.17578125,
+            9.453125
+          ],
+          "host_load_at_end": [
+            8.125,
+            8.17578125,
+            9.453125
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            236.186768
+          ],
+          "cpu_ms": [
+            236.185377
+          ],
+          "parent_cpu_ms": [
+            236.185377
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 236.186768,
+          "cpu_median_ms": 236.185377,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 43.18454576944255,
+        "median_cpu_improvement_percent": 42.74409291057344
+      }
+    },
+    {
+      "repeat": 4,
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.9629838330001803,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.13232421875,
+            7.8505859375,
+            9.2646484375
+          ],
+          "host_load_at_end": [
+            6.96142578125,
+            7.80322265625,
+            9.24169921875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            335.217452
+          ],
+          "cpu_ms": [
+            333.47745
+          ],
+          "parent_cpu_ms": [
+            333.47745
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 335.217452,
+          "cpu_median_ms": 333.47745,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 6.748437601003388,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            6.96142578125,
+            7.80322265625,
+            9.24169921875
+          ],
+          "host_load_at_end": [
+            7.60546875,
+            7.9228515625,
+            9.27294921875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            845.87988
+          ],
+          "cpu_ms": [
+            631.083889
+          ],
+          "parent_cpu_ms": [
+            631.083889
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 845.87988,
+          "cpu_median_ms": 631.083889,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 60.37056088862168,
+        "median_cpu_improvement_percent": 47.15798393642719
+      }
+    },
+    {
+      "repeat": 4,
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.222384676999354,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.63720703125,
+            7.92431640625,
+            9.265625
+          ],
+          "host_load_at_end": [
+            7.63720703125,
+            7.92431640625,
+            9.265625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            81.151019
+          ],
+          "cpu_ms": [
+            80.758392
+          ],
+          "parent_cpu_ms": [
+            80.758392
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 81.151019,
+          "cpu_median_ms": 80.758392,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.991276493004989,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.63720703125,
+            7.92431640625,
+            9.265625
+          ],
+          "host_load_at_end": [
+            7.63720703125,
+            7.92431640625,
+            9.265625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            53.582808
+          ],
+          "cpu_ms": [
+            53.058424
+          ],
+          "parent_cpu_ms": [
+            53.058424
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 53.582808,
+          "cpu_median_ms": 53.058424,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 33.9714908570649,
+        "median_cpu_improvement_percent": 34.29980131352789
+      }
+    },
+    {
+      "repeat": 4,
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 3.197030540999549,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.90087890625,
+            7.92529296875,
+            9.2138671875
+          ],
+          "host_load_at_end": [
+            7.90087890625,
+            7.92529296875,
+            9.2138671875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            202.630155
+          ],
+          "cpu_ms": [
+            192.519527
+          ],
+          "parent_cpu_ms": [
+            192.519527
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 202.630155,
+          "cpu_median_ms": 192.519527,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.0039865450016805,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            8.1494140625,
+            7.9765625,
+            9.2236328125
+          ],
+          "host_load_at_end": [
+            8.1494140625,
+            7.9765625,
+            9.2236328125
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            230.288175
+          ],
+          "cpu_ms": [
+            215.676426
+          ],
+          "parent_cpu_ms": [
+            215.676426
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 230.288175,
+          "cpu_median_ms": 215.676426,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 12.010178117048342,
+        "median_cpu_improvement_percent": 10.736870704636015
+      }
+    },
+    {
+      "repeat": 5,
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 5.196187204994203,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.8115234375,
+            7.9130859375,
+            9.16796875
+          ],
+          "host_load_at_end": [
+            7.8115234375,
+            7.9130859375,
+            9.16796875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            344.919915
+          ],
+          "cpu_ms": [
+            339.028696
+          ],
+          "parent_cpu_ms": [
+            339.028696
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 344.919915,
+          "cpu_median_ms": 339.028696,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.4944318880006904,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 10000,
+          "mode": "deny",
+          "samples": 1,
+          "lockfile_bytes": 7924,
+          "corpus_sha256": "aba3507af32bf13e3e3be491c7f07694518465b363be4742c1fa72e58ae07456",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.666015625,
+            7.880859375,
+            9.15087890625
+          ],
+          "host_load_at_end": [
+            7.666015625,
+            7.880859375,
+            9.15087890625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            300.10284
+          ],
+          "cpu_ms": [
+            299.862832
+          ],
+          "parent_cpu_ms": [
+            299.862832
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 300.10284,
+          "cpu_median_ms": 299.862832,
+          "semantic_sha256": [
+            "4fce8a345866af25278c8b74be9da9d0c92f2c82914e2d43f632f5b1671f9889"
+          ],
+          "complete_result_sha256": [
+            "248ec2a191c63cbd52e3f1f7421641e534d34dd89bc50df6e55f0c0312ee4234"
+          ],
+          "persisted_evidence_sha256": [
+            "fc1ad7a762fa533645a284d07b6857c46c3813f0d2ce38ffccf190e2861c4ae4"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 12.993472702206821,
+        "median_cpu_improvement_percent": 11.552374315830772
+      }
+    },
+    {
+      "repeat": 5,
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "arm_order": [
+        "candidate",
+        "baseline"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 2.8649173119993065,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.60888671875,
+            7.845703125,
+            9.09765625
+          ],
+          "host_load_at_end": [
+            7.60888671875,
+            7.845703125,
+            9.09765625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            64.655539
+          ],
+          "cpu_ms": [
+            64.651587
+          ],
+          "parent_cpu_ms": [
+            64.651587
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 64.655539,
+          "cpu_median_ms": 64.651587,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 4.388940791002824,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 100,
+          "bundle_size": 1000,
+          "mode": "exact",
+          "samples": 1,
+          "lockfile_bytes": 8014,
+          "corpus_sha256": "af6478eb86c07cef3cdc9fe712f469a67ed70e5f63810ca782291a7431176f9a",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            7.60888671875,
+            7.845703125,
+            9.09765625
+          ],
+          "host_load_at_end": [
+            7.47998046875,
+            7.81494140625,
+            9.08056640625
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            629.736364
+          ],
+          "cpu_ms": [
+            590.369067
+          ],
+          "parent_cpu_ms": [
+            590.369067
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 629.736364,
+          "cpu_median_ms": 590.369067,
+          "semantic_sha256": [
+            "91d9dc0d23b817a5cab65de610549f1ca639a7a22bacb8deb6712a608a1142b6"
+          ],
+          "complete_result_sha256": [
+            "b2b531c3df2cc3b76afd44ed9aa14c51081a0b75b5accea9ce346fd38fd0a018"
+          ],
+          "persisted_evidence_sha256": [
+            "4eda332d55d65fc571f6eec1670afda963be6fcd15f57564f2a3bb9460cf044f"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": 89.73291956822744,
+        "median_cpu_improvement_percent": 89.04895418580594
+      }
+    },
+    {
+      "repeat": 5,
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "arm_order": [
+        "baseline",
+        "candidate"
+      ],
+      "whole_process_cutoff_seconds": 120.0,
+      "expected_native_completions": null,
+      "baseline": {
+        "status": "complete",
+        "whole_process_seconds": 2.065170563997526,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            5.97412109375,
+            7.4287109375,
+            8.91796875
+          ],
+          "host_load_at_end": [
+            5.97412109375,
+            7.4287109375,
+            8.91796875
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            194.680128
+          ],
+          "cpu_ms": [
+            194.60957
+          ],
+          "parent_cpu_ms": [
+            194.60957
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 194.680128,
+          "cpu_median_ms": 194.60957,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "candidate": {
+        "status": "complete",
+        "whole_process_seconds": 4.502597646001959,
+        "measurement": {
+          "schema": "guard-package-local-benchmark-v2",
+          "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+          "source_dirty": false,
+          "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "evaluation_cache": "cleared before each sample, outside timing",
+          "route": "evaluate_package_request_artifact",
+          "installed_artifact": false,
+          "dependencies": 10000,
+          "bundle_size": 1000,
+          "mode": "absent",
+          "samples": 1,
+          "lockfile_bytes": 857814,
+          "corpus_sha256": "337b0e7742e1df6031ee51ef64b3d03329cc8488f31b2b1768108140ea7d47a7",
+          "python": "3.12.14",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "logical_cpus": 9,
+          "host_load_at_start": [
+            5.81591796875,
+            7.37158203125,
+            8.89111328125
+          ],
+          "host_load_at_end": [
+            5.81591796875,
+            7.37158203125,
+            8.89111328125
+          ],
+          "harness_sha256": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+          "wall_ms": [
+            416.667288
+          ],
+          "cpu_ms": [
+            416.528317
+          ],
+          "parent_cpu_ms": [
+            416.528317
+          ],
+          "reaped_child_cpu_ms": [
+            0.0
+          ],
+          "cpu_scope": "evaluator process plus user/system CPU of all children reaped during evaluation",
+          "wall_median_ms": 416.667288,
+          "cpu_median_ms": 416.528317,
+          "semantic_sha256": [
+            "0761e0c3f155bf15489660d153ed7f0d4d54bc0c3bd0333b3107eaef9ef79c10"
+          ],
+          "complete_result_sha256": [
+            "0f1235f494718dbfa27f4a5e7af87341af91b13c376e1aa4c795551c7de16858"
+          ],
+          "persisted_evidence_sha256": [
+            "3a2f64bf806dc36b5177a591cf9de2a6df11419eb60b3023055b25578b24a136"
+          ],
+          "semantic_scope": "Every public result field plus all persisted evidence columns; no normalization or exclusions",
+          "limitations": [
+            "Synthetic local source route; no launcher/startup/network/approval wait",
+            "Small samples are diagnostic observations, not reliable tail quantiles",
+            "Shared host contention must be excluded before release qualification"
+          ]
+        }
+      },
+      "comparison": {
+        "status": "equal",
+        "parity": {
+          "corpus_sha256": true,
+          "semantic_sha256": true,
+          "complete_result_sha256": true,
+          "persisted_evidence_sha256": true
+        },
+        "median_wall_improvement_percent": -114.02661498147361,
+        "median_cpu_improvement_percent": -114.03280270338199
+      }
+    }
+  ],
+  "summary": [
+    {
+      "dependencies": 100,
+      "bundle_records": 10000,
+      "mode": "deny",
+      "pairs": 5,
+      "equal_pairs": 5,
+      "native_scope": false,
+      "cpu_ms": {
+        "baseline": [
+          564.201358,
+          510.843259,
+          337.339813,
+          631.083889,
+          339.028696
+        ],
+        "candidate": [
+          617.486799,
+          468.500014,
+          496.081327,
+          333.47745,
+          299.862832
+        ]
+      },
+      "cpu_median_improvement_percent": 8.288891798805153,
+      "wall_ms": {
+        "baseline": [
+          575.529885,
+          626.450491,
+          338.380433,
+          845.87988,
+          344.919915
+        ],
+        "candidate": [
+          617.8099,
+          484.15301,
+          520.797578,
+          335.217452,
+          300.10284
+        ]
+      },
+      "wall_median_improvement_percent": 15.87699915878391,
+      "diagnostic_cpu_gate_pass": false
+    },
+    {
+      "dependencies": 100,
+      "bundle_records": 1000,
+      "mode": "exact",
+      "pairs": 5,
+      "equal_pairs": 5,
+      "native_scope": false,
+      "cpu_ms": {
+        "baseline": [
+          55.505223,
+          63.79418,
+          94.804988,
+          80.758392,
+          590.369067
+        ],
+        "candidate": [
+          52.107056,
+          121.304884,
+          50.833261,
+          53.058424,
+          64.651587
+        ]
+      },
+      "cpu_median_improvement_percent": 34.29980131352789,
+      "wall_ms": {
+        "baseline": [
+          55.496281,
+          73.626191,
+          95.315915,
+          81.151019,
+          629.736364
+        ],
+        "candidate": [
+          52.171939,
+          146.068679,
+          52.778625,
+          53.582808,
+          64.655539
+        ]
+      },
+      "wall_median_improvement_percent": 33.9714908570649,
+      "diagnostic_cpu_gate_pass": true
+    },
+    {
+      "dependencies": 10000,
+      "bundle_records": 1000,
+      "mode": "absent",
+      "pairs": 5,
+      "equal_pairs": 5,
+      "native_scope": false,
+      "cpu_ms": {
+        "baseline": [
+          369.162337,
+          324.770929,
+          412.508314,
+          215.676426,
+          194.60957
+        ],
+        "candidate": [
+          217.225702,
+          208.284368,
+          236.185377,
+          192.519527,
+          416.528317
+        ]
+      },
+      "cpu_median_improvement_percent": 33.11417907112,
+      "wall_ms": {
+        "baseline": [
+          369.338671,
+          325.381061,
+          415.708668,
+          230.288175,
+          194.680128
+        ],
+        "candidate": [
+          228.857855,
+          208.367173,
+          236.186768,
+          202.630155,
+          416.667288
+        ]
+      },
+      "wall_median_improvement_percent": 29.664666315658728,
+      "diagnostic_cpu_gate_pass": true
+    }
+  ],
+  "final_sources": {
+    "baseline": {
+      "source_commit": "e79c4bf02bb2cc0b108480313a62c1ce0e9032ba",
+      "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "candidate": {
+      "source_commit": "f0aba7317fa9f25f570543d8575ac91b236d99c3",
+      "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "final_harnesses": {
+    "bench_guard_package_pilot.py": "3bfb3f6e90e462ca8787eaf6e907a553a6280f117df039a882456cb82a7e9dc2",
+    "bench_guard_package_local.py": "11dec504b082e46ccf0d8e8a5e085dabc1ad721ae1002cc3d9dcefa8c349bfda",
+    "bench_guard_package_matrix.py": "d96289f107f7d57755d62c4951ef4b0a977e87fe75612d9885f408776fb559c8",
+    "package_native_pilot.py": "6009e74f244b0e1806e3b859b0099366b97b2df3edcc13ba98cbf8d35b0d65a7"
+  },
+  "final_native_binary_sha256": null,
+  "source_identity_stable": true
+}

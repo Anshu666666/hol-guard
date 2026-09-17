@@ -18,6 +18,7 @@ from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_launcher_input import run_registered_input_corpus
 from scripts.native_slo_mixed import run_mixed_scenario
 from scripts.native_slo_phase_run import measure_installed_phases
+from scripts.native_slo_posture import run_posture_scenarios
 from scripts.native_slo_priority_approval import run_priority_approval_scenarios
 from scripts.native_slo_registered_surfaces_run import SurfaceSession, run_registered_surface_corpus
 
@@ -99,6 +100,13 @@ def run_additional_scenarios(
         report["passed"] = report.get("implemented_scope_passed") is True
         return report
 
+    def postures() -> dict[str, object]:
+        return run_posture_scenarios(
+            runtime,
+            evidence_file=raw_file.with_name(raw_file.stem + "-posture-cases.jsonl"),
+            receipt_profile=receipt_profile,
+        )
+
     return {
         "schema": "hol-guard.additional-installed-scenarios.v1",
         "receipt_profile": receipt_profile,
@@ -127,5 +135,10 @@ def run_additional_scenarios(
             inputs,
             evidence_file=raw_file.with_name(raw_file.stem + "-input-summary.json"),
             scope="priority_input",
+        ),
+        "posture_transitions": _retained_scenario(
+            postures,
+            evidence_file=raw_file.with_name(raw_file.stem + "-posture-summary.json"),
+            scope="ordinary_http_posture_transitions",
         ),
     }

@@ -8,9 +8,9 @@ verified by its title, full conversation, linked documents and implementation
 instruction authorizes this session to take over implementation through GitHub
 on `release/3.2`. The original proposal-only wording does not narrow that scope.
 
-This checkpoint reviews source through `4ea1f8f76049cc8bf5b69b34078da42bb14c6ead` on
-`codex/rsp-takeover-qualification-20260917`, dated 2026-09-17. The ledger records
-**64 DONE, 40 OPEN, 40 BLOCKED and 0 DEFERRED**. These are individual acceptance
+This checkpoint reviews source through `ffec9b2d384e3a5069544d4428d0e4b3ddfaa74b` on
+`codex/rsp-takeover-proof-20260917`, dated 2026-09-17. The ledger records
+**70 DONE, 33 OPEN, 33 BLOCKED and 8 DEFERRED**. These are individual acceptance
 records, not a release-completion percentage. Installed qualification, review
 and rollout remain incomplete. [TAKEAWAY.md](TAKEAWAY.md) is the current execution
 prompt; obsolete checkpoint instructions remain available in Git history.
@@ -34,9 +34,9 @@ justification automatically.
 | Main lineage already carried by release squash | `c996b1d243ddafe8bef04d26ba939615edebb1e7` |
 | Reconciled local foundation | `c4bd916fb0d0f375a4e2de0d1e498a0a533f63c8` |
 | Foundation | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `e449594e86c717e66e14598a4130475de79c536f` |
-| Last published implementation before this checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `5ee52a03e62b9e4940063b348185bedaddf0cb53` |
-| Verified published Git tree | `7580ea94e4847762df8eb8eed6dfefc26a692551`, identical to local `c0445a0db64804b4ee22f96820f357320726036b` |
-| Current source cutoff | `4ea1f8f76049cc8bf5b69b34078da42bb14c6ead` |
+| Last published implementation before this checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `ae33987d0c8675c36a77375e03419aee920825f6` |
+| Verified published Git tree | `f292bc95eb53af29162fcc8ea7e46a4b213803b7`, identical to local `8aa2b63ee33bdebbb170678f500b0405bb3bea58` |
+| Current source cutoff | `ffec9b2d384e3a5069544d4428d0e4b3ddfaa74b` |
 | Package / Rust / diagnostic Python | `3.0.1` / `1.88.0` / CPython `3.12.14`, locked dependencies |
 
 The release branch contains a squash of earlier main changes. Reconciliation
@@ -65,16 +65,16 @@ changed files before acting on any of these PRs.
 | --- | --- | --- |
 | Benchmark integrity | Independent scripts-only Python oracle; intrinsic native verdict and delivered harness response; registered argv; separate kernel/client/ingress/launcher timers; frozen per-route corpus; bounded failed-attempt and resource ledgers | Exact artifact execution and full sampling on every declared platform |
 | Rust core | Typed lifecycle/results, strict bounded parsing, immutable compiled policy, borrowed identities and fewer output copies; [47 allocation components](../native-allocation-performance.md), 30 observations each | Final combined-source validation and installed benefit |
-| Package | Verified immutable bundle indexes, captured bytes, one parse per supported JSON/JSONC/TOML/Yarn/pnpm/Bundler format, atomic evidence; 36-cell matrix completed with 31 comparable pairs and five incomplete pairs retained | Corrected controls and bounded native npm format pilot; no activation claim |
-| Offline scanner | Bounded Git object streams, immutable blob reuse, shared traversal, lazy full-file context; benchmark-only ASCII native span extractor keeps Python rich finding/HMAC/completeness ownership | Full-command pilot comparison is active; small staged controls regress, no global benefit claim |
+| Package | Verified immutable bundle indexes, captured bytes, one parse per supported JSON/JSONC/TOML/Yarn/pnpm/Bundler format and atomic evidence; unique bundle identities validate once | Actual npm lock-v3 source-route pilot fails its benefit gate and remains inactive. Original matrix has 27 full evaluator attempts and nine unversioned API diagnostics; the literal unversioned full-route slice remains open. |
+| Offline scanner | Bounded Git object streams, immutable blob reuse, shared traversal, lazy full-file context and a descriptor-bound working reader with explicit mutation/incomplete behavior | Final 30-pair rich-CLI comparison gives CPU −31.6% and p95 wall +13.5%; standalone span-extraction subprocess remains inactive. Both installed console entrypoints pass28 local pure-wheel cases; actual four-host native-wheel qualification remains pending. |
 | Archive worker | [510 actual isolated calls and 60 profiles](archive-worker-qualification.md); 508 exact outcomes, two fail-closed timeouts plus an earlier warmup timeout retained; 330 hostile cases remain non-clean | Retain current isolated worker in measured scope; no qualified native worker or whole-worker no-go |
-| MCP | Immutable catalog digest, bounded protocol queues/deadlines, real idle notification draining and literal risk prefilters; 41 baseline stdio cells with 3,370 attempts and no unexpected outcomes | Optimized route comparison active; duplicate category derivation remains RSP-100 OPEN |
-| Runtime identity and posture | Verified live Linux generation reuse on supported filesystems, complete validation on replacement/unsupported systems; acknowledged observe avoids a reread | Enforcing posture transfer, signing/frozen artifacts and platform transitions remain separate |
+| MCP | Immutable catalog digest, bounded protocol queues/deadlines, real idle notification draining and literal risk prefilters; 41 baseline stdio cells with 3,370 attempts and no unexpected outcomes | First exact-facts candidate preserves semantics but regresses 128-KiB p95 by 47.79% and CPU by 17.22% against optimized Python. Structural candidate also regresses dense supported shapes. Runtime wiring is restored to optimized Python; explicit facts/native experiments remain active. |
+| Runtime identity and posture | Verified live Linux generation reuse on supported filesystems, complete validation on replacement/unsupported systems; all ordinary native evaluation and delivery consume the same acknowledged posture without config rereads | Signing/frozen artifacts, installed transitions and benefit remain separate |
 | Command extensions | Trusted compiler, bounded typed Rust interpreter, indexed matching and complete observations, authenticated control fence, durable complete receipts; [638 catalog/control combinations](../native-command-matrix-performance.md) | Final activated contribution lifecycle, exact installed benefit and update/downgrade proof |
 | Approval | Codex's genuine waiting process receives fresh native review under the SH control lease and atomic existing local Allow once consumption; authenticated terminal replay, process/deadline checks and restrictive native failures | Four installed fault scenarios implemented and 134 focused tests pass; actual host results remain required |
 | Evidence and inventory | Compact facts, atomic SQL batches, append/checkpoint replay, stable attempts, precise DB/WAL reconciliation, captured inputs and one positive root discovery per call | Installed contention/soak, unavailable VFS measurements and real cloud/Cisco/incremental evidence |
 | Mixed and registered routes | Actual hook/control mutation/ACK/first receipt/inventory/resident recovery; genuine priority/nonpriority registrations, approval and malformed-input helpers integrated | Host activation, whole daemon-process restart, full resources and long soak remain incomplete |
-| Ollama and Builder | Wheel-only contribution and Builder probes, strict build/runtime/package identity, complete receipt binding | Linux/macOS ARM pass the 5ee lifecycle probe; Windows/Intel exceed readiness; no four-platform package/program rollback pass |
+| Ollama and Builder | Wheel-only contribution and Builder probes, strict build/runtime/package identity, complete receipt binding | All four ae hosts pass 22 native Ollama cases and Builder; old-baseline downgrade rejects stronger authority, with compatible rollback still open |
 
 The command catalog has 86 extensions, 291 rules, 304 permissions and 2,242
 nodes: 29 reviewed operations, 26 instantiated matcher families, 249 declarative
@@ -94,13 +94,56 @@ one other baseline harness error and the candidate's separate cell-30 harness
 error; no incomplete pair receives a speedup or parity result. Later passing
 reproductions cannot repair those observations.
 
+The [package selection report](../rsp-package-native-selection.md) retains all
+30 native/control pairs, including 29 complete public-result/evidence comparisons
+and one failed baseline. The primary parser-heavy case regresses CPU by 11.03%
+and wall time by 16.31%; the largest exact case improves CPU by 25.20%, below the
+30% benefit gate. The scoped native parser is not selected. The separate five-pair
+original-baseline deny correction improves CPU by 44.52% and wall by 42.12% using
+arm medians. Neither report supplies installed or cross-platform qualification.
+The [real unversioned-route witness](../rsp-package-unversioned-route.md) preserves
+six actual evaluator calls and three exact original/optimized comparisons. Bare
+npm tokens normalize to `latest`; no production cached-bundle call passes `None`.
+The existing nine name-only API measurements do not satisfy full-route acceptance.
+
 The native scanner experiment is deliberately outside production entry points.
 It supports ASCII documents up to 4 MiB and returns bounded candidate spans;
 Python owns provider classification, context, rich findings, HMAC and completeness.
 Non-ASCII or larger inputs explicitly use the current Python path. An interrupted
 measurement during build-target relocation remains failed and unqualified; later
 cohorts record the changed executable backing separately. No failing or confounded
-sample is silently discarded.
+sample is silently discarded. The final corrected-reader confirmation retains
+30 pairs/60 full CLI calls and all 680 exact rich findings. Mean process-tree CPU
+ratio is 0.684238; p95 wall ratio is 1.134770. Both the point gate and conservative
+interval gate fail, so production keeps the optimized Python scanner. Its
+[decision and coverage](../evidence/rsp-scanner-native-regex-decision-linux.json)
+include paired intervals and explicit installed/platform limits. A separate
+provenance correction records the observed overlay executable device without
+rewriting the raw cohort or attributing an unknown restoration event.
+
+The installed scanner probe binds its case status to complete semantic validation,
+not merely a zero process exit. Its [local installed report](../rsp-scanner-installed-qualification.md)
+retains all28 passing pure-wheel cases and the exact module, probe and wheel hashes,
+as well as the initial build-tool limitation. Both console entrypoints, staged
+bytes, all17 provider formats, default/explicit limits, HMAC, links, encoding,
+history and mutation are covered. The four hosted native-wheel receipts remain
+required; the temporary-file capture limit is a post-exit parsing bound, not a live
+child-output disk quota.
+
+The [installed posture contract](installed-posture-transition-contract.md) now
+exercises four real installed daemon groups under concurrent Claude/Codex Pre/Post
+load: enforce/Watch and resident restart, a first stricter workspace, genuine
+publication-lock timeout with automatic recovery, and short-lived renewal/expiry.
+Every observed decision binds to independently authenticated acknowledged authority
+and a complete durable receipt; intrinsic block and Watch delivery remain distinct.
+The frozen source suite passes111 tests. An earlier95-pass/1-fail attempt and its
+unchanged diagnostic are retained; no actual400ms recovery result is inferred.
+
+The [canary and rollback plan](CANARY_ROLLBACK_PLAN.md) names exact historical
+wheel/build/tree identities, four platform cohorts, original sample and metric
+gates, stop conditions and stopped-transition commands. Its machine manifest keeps
+candidate identity pending and qualification, activation and tested rollback false.
+Live/signing/version transitions and independent final approval remain prerequisites.
 
 ## Production contracts that qualification must preserve
 
@@ -140,29 +183,64 @@ lateness and queue wait; timeout outcomes cannot be replaced by later success.
 
 ## Exact published CI observation and pending verification
 
-At `5ee52a03e62b9e4940063b348185bedaddf0cb53`, all 36 workflows completed:
-**32 successful and four failed**. This is smoke, not frozen full qualification.
-All16 JSON members are retained in [5ee evidence](evidence/takeover-5ee52/manifest.json). Earlier failures remain in [42579 evidence](evidence/takeover-42579/manifest.json).
+At `ae33987d0c8675c36a77375e03419aee920825f6`, all 36 workflows completed:
+**30 successful and six failed**. This is smoke, not frozen full qualification.
+The [installed fixture follow-up](installed-fixture-ae-followup.md) retains all
+eight baseline/candidate failure leaves. The [ae manifest](evidence/takeover-ae33987/manifest.json)
+retains all 47 JSON members from eight exact workflow archives with unchanged
+decoded values, original/retained hashes and five binary-member hashes. Earlier [5ee evidence](evidence/takeover-5ee52/manifest.json)
+and [42579 evidence](evidence/takeover-42579/manifest.json) remain historical.
 
-| Workflow / target | Observed result | Source action after that run |
+| Workflow / target | Observed result | Source action or remaining proof |
 | --- | --- | --- |
-| [Paired qualification 35213401779](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401779), Linux and Windows | Baseline Watch oracle expected fields/reasons that the resident edge does not produce | Correct intrinsic/delivered expectations; retain reason hashes |
-| Same run, macOS ARM and Intel | Baseline HTTPServer construction stalls in `socket.getfqdn`; before/after/cleanup DNS probes time out; exact resolver receives zero packets | Keep 400 ms readiness and baseline unchanged; add read-only resolver configuration/selection and responder self-probe diagnostics |
-| Same run, Ollama | Linux and ARM complete 22 native cases and overall verification; Windows late stale-write readiness 406.0 ms, Intel enabled readiness 430.438 ms; all four Builder probes pass | Preserve completed cases and exact failing phase even when a later readiness bound fails |
-| [Native wheel 35213401455](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401455) | Windows/ARM pass; Linux registered launcher route witness and Intel full-source witness fail | Add bounded actual verdict/reason/route/process/sample/progress JSON; exact cause awaits next host run |
-| [Desktop 35213401527](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401527) and [CI 35213401782](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401782) | Command fixture source bindings stale; CI also records one 48-review scheduler deadline failure | Regenerated only source-binding metadata with unchanged decisions; fix proven idle-wake rebroadcast loop; exact48-way test passes with unchanged budgets; original CI sole cause remains unproven |
+| [Paired qualification 35217841349](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841349), all four candidates | Short-lived expiry renewal omitted the existing protected command binding; runtime correctly rejected removal | Preserve the full existing binding and original budgets; require accepted ACK and authenticated readback. New host evidence remains required. |
+| Same run, Linux baseline | Exact interpreter-permissions integrity rejection | Retain finite reason and read-only mode/ownership classes; no permission repair or baseline change is inferred. |
+| Same run, Windows baseline | Recovery sample 0 fails | Retain serial sample and actual delivery/route evidence through a scoped context; no retry or deadline change. |
+| Same run, both macOS baselines | `getfqdn` stalls; exact root-owned resolver selected, direct UDP probe passes, no libc-origin packets arrive | Baseline and readiness budget unchanged. A bounded read-only owned-child lookup/stack witness is integrated for the next host run; actual cause remains unknown. |
+| Same run, Ollama and Builder | All four hosts pass 22 installed native Ollama cases and Builder | Full changed-program/version/signing/in-progress rollback remains separate. |
+| Same run, artifact transitions | Linux and both macOS hosts pass baseline upgrade and same-candidate reinstall; six receipts survive strict original-baseline downgrade, which then fails readiness; Windows lacks completed initial worker evidence | Preserve stronger command floor, prove failed-start containment and restore candidate; add a third exact compatible prior-candidate wheel for functional rollback. |
+| [Native wheel 35217841356](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841356) | Windows/ARM pass; Linux/Intel fail capacity route conservation | Keep exact conservation; add bounded route, delivery, native-health and transport-error evidence to identify the mismatch. |
+| [CI 35217841260](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841260) | Collection imports the wrong `ci` package; scheduling-sensitive job 105190459240 passes | Remove scanner test's global `sys.path` mutation. Full combined collection now succeeds with 21,035 tests and six existing deselections. |
+| [I/O ownership 35217841406](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841406) and [authority ownership 35217841390](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841390) | Experimental scanner crate lacks an explicit ownership entry | Add benchmark-only ownership without activating any hook route; permanent gate passes against release base. |
+| [Security Gates 35217841449](https://github.com/hashgraph-online/hol-guard/actions/runs/35217841449) | Four source-file SHA-256 values match the generic-key detector | Verify exact published bytes and add only four exact finding fingerprints; Gitleaks 8.24.2 rescans 1,257 commits with zero findings. |
 
-The wheel run's observed build SHA `caf8b4bfa714eba56f30401ef244bbf6a72b7d75`
-is a GitHub test-merge commit. It is not the explicit 5ee checkout used by paired
-qualification; never identify artifacts by PR head without verification.
+The native-wheel run uses a GitHub test-merge build (`a224cc2e01e1eb8d74182fa32d78f46e9b417348`),
+while paired qualification explicitly checks out ae33987. Each artifact must retain
+its observed source/build/tree identity. PR head alone is insufficient.
 
-The stopped artifact transition probe is now integrated with five phases: baseline, candidate upgrade, same-candidate reinstall, baseline artifact rollback and candidate restore. A third isolated environment retains one protected authority, unchanged original registration and complete prior receipts. Exact-build-gated legacy readback handles the baseline without dropping candidate bindings. Every replacement requires witnessed retirement. Both versions are3.0.1; version/program downgrade, live mixed generations, signing and enrollment remain explicitly unqualified pending their own evidence.
+The original baseline has no command-program schema and cannot authenticate the
+candidate's combined protected command floor. Removing that field or resetting
+its floor would invalidate the downgrade test. Its failure remains a retained
+negative result. The [explicit transition acceptance contract](installed-artifact-transition-contract.md)
+requires seven positive phases across two isolated sequences and one strictly
+verified expected-negative legacy downgrade. It checks exact compatible prior
+wheels, registration, all receipts, protected authority and authenticated
+containment before restoring the candidate. The original failed phase and its
+four-of-five positive counter remain false/incomplete; separate suite acceptance
+cannot describe the old baseline as functional. Historical wheel selection runs
+in a separate15-second contained child inside the mandatory transition check.
+Missing, changed or incorrectly identified bytes fail that check; paired, Ollama
+and scanner checks remain independently attempted and aggregate failure is retained.
+Actual new host evidence is pending.
+Both original wheels are version 3.0.1; same-version artifact replacement does
+not establish version/program, signing, enrollment or live-generation rollback.
 
-Current source additionally attempts both arms of a failed pair, retains completed
-opposite-arm evidence and emits an incomplete-pair report without manufacturing
-a comparison. Source tests verify installed failure JSON and flat Codex fault
-proof survive real aggregate sanitization. These repairs require new host runs;
-they do not make the earlier failures pass.
+Current source preserves both attempted arms, bounded failure evidence and every
+incomplete comparison. The new expiry/recovery diagnostics do not make earlier
+failures pass. The acknowledged-posture and exact MCP facts changes also require
+qualification of the final combined artifacts. The latest production type gate has zero errors; its unfiltered diagnostic
+warnings remain explicit in the source validation manifest. Production source is
+unchanged since that type check;
+focused source, pilot and boundary tests retain their own recorded scopes.
+Combined fixture checks pass 149 tests for expiry/recovery/capacity, installed
+transitions and workflow/ownership selection. A separate integrated production
+run passes 68 tests with 55 explicit native-example/environment skips; those skips
+are not native passes. The built pilot's earlier explicit-binary tests remain
+separate evidence. The permanent ownership gate passes against the release base.
+The [combined source validation](evidence/proof-checkpoint/source-validation.json)
+retains the585-pass/eight-failure initial attempt,111 passing corrected checks,
+67 final scanner/ordering checks and64-file Ruff/format verification. The earlier
+collection of21,278 selected tests is collection evidence, not a full-suite pass.
 
 The local environment denies AF_UNIX socket creation. Source tests and builds can
 run here; actual installed daemon/launcher qualification must run on supported

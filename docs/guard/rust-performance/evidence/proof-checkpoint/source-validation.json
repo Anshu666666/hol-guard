@@ -1,0 +1,178 @@
+{
+  "schema": "hol-guard.rsp-proof-checkpoint-source-validation.v1",
+  "source_before_documentation": "ffec9b2d384e3a5069544d4428d0e4b3ddfaa74b",
+  "installed_qualification_complete": false,
+  "original_combined_attempt": {
+    "source_commit": "68c62ad539f63c1ed886d6b97dc3f09914ba0c26",
+    "tests": [
+      "tests/test_native_slo_posture.py",
+      "tests/test_native_slo_posture_controls.py",
+      "tests/test_native_slo_posture_server.py",
+      "tests/test_native_slo_expiry.py",
+      "tests/test_native_slo_recovery_failure.py",
+      "tests/test_native_slo_capacity_routes.py",
+      "tests/test_native_slo_batch.py",
+      "tests/test_native_slo_acceptance.py",
+      "tests/test_installed_artifact_transitions.py",
+      "tests/test_installed_transition_recovery.py",
+      "tests/test_installed_transition_receipts.py",
+      "tests/test_installed_transition_acceptance.py",
+      "tests/test_installed_transition_prior_ordering.py",
+      "tests/test_native_performance_qualification_workflow.py",
+      "tests/test_installed_offline_secrets_probe.py",
+      "tests/test_native_loopback_lookup.py",
+      "tests/test_native_loopback_resolver.py",
+      "tests/test_hook_worker_acknowledged_posture.py",
+      "tests/test_hook_worker_posture_publication.py",
+      "tests/test_mcp_request_risk_facts.py",
+      "tests/test_mcp_risk_prefilter.py",
+      "tests/test_guard_mcp_stdio_profile.py",
+      "tests/test_mcp_catalog_generation_cache.py",
+      "tests/test_mcp_framing_bounds.py",
+      "tests/test_guard_mcp_detectors.py",
+      "tests/test_guard_mcp_protection.py",
+      "tests/test_guard_mcp_sanitization.py",
+      "tests/test_guard_runtime_mcp_saved_blocks.py"
+    ],
+    "steps": [
+      {
+        "name": "focused",
+        "exit_code": 1,
+        "seconds_including_lock_wait": 124.479,
+        "log_sha256": "db9cd20d881404cad3829a815d37542e5aa1e3ccbf9f78926044adc5efae3120",
+        "log_bytes": 17404
+      },
+      {
+        "name": "ruff",
+        "exit_code": 0,
+        "seconds_including_lock_wait": 87.998,
+        "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "log_bytes": 19
+      },
+      {
+        "name": "format",
+        "exit_code": 1,
+        "seconds_including_lock_wait": 0.153,
+        "log_sha256": "55685eea62d1d140d2326b6fbed94ff3c209a459ec656a9308081129800d020c",
+        "log_bytes": 165
+      },
+      {
+        "name": "collection",
+        "exit_code": 0,
+        "seconds_including_lock_wait": 23.423,
+        "log_sha256": "a9e9173ec255c8d01e2c37b248fb30cde33e0e7f2e26b6056fa9875536a86dd2",
+        "log_bytes": 20770912
+      },
+      {
+        "name": "production-types",
+        "exit_code": 0,
+        "seconds_including_lock_wait": 185.057,
+        "log_sha256": "56a5ef944c8f2379148436f0e52b6b23b88b10a68c3dc41883ef4c284cb71c91",
+        "log_bytes": 12285169
+      },
+      {
+        "name": "ownership",
+        "exit_code": 0,
+        "seconds_including_lock_wait": 158.755,
+        "log_sha256": "3dff7509f22d662dbe1f691cbb043840fe6cb805d00af392937bc4886d803045",
+        "log_bytes": 142037
+      },
+      {
+        "name": "semantic-ownership",
+        "exit_code": 0,
+        "seconds_including_lock_wait": 27.373,
+        "log_sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab",
+        "log_bytes": 99
+      },
+      {
+        "name": "diff-check",
+        "exit_code": 2,
+        "seconds_including_lock_wait": 18.59,
+        "log_sha256": "808b0a635bfc4665ca8be8894d63034e9172e9e9f8d283a99996ea31237fa21b",
+        "log_bytes": 160
+      }
+    ],
+    "all_passed": false
+  },
+  "original_focused_result": {
+    "passed": 585,
+    "failed": 8,
+    "seconds": 118.08,
+    "explanation": "Six expectations still required the unselected MCP facts runtime path; two ordering mocks treated the scanner -I argument as the script name. All original failures are retained. No policy mismatch or deadline failure was hidden by these corrections."
+  },
+  "corrections": {
+    "source_commit": "f10751e4d",
+    "pytest": {
+      "passed": 111,
+      "failed": 0,
+      "seconds": 55.58,
+      "evidence": {
+        "file": "corrected-focused.log",
+        "sha256": "3af71d38a35884e80a7ef89d8ddac1a9bc97bd4edccdc70d38d5fd869d3df7e6",
+        "bytes": 181
+      }
+    },
+    "details": [
+      "Restore test expectations to optimized Python B, keep exact facts API tests separate and require current authority recomputation.",
+      "Interpret isolated scanner argv correctly in the independent-probe ordering witness.",
+      "Apply Ruff formatting to two source/test files.",
+      "Preserve exact pstats output bytes with two file-specific blank-at-EOF attributes."
+    ]
+  },
+  "final_installed_probe_source_checks": {
+    "source_commit": "031f7adcce57a97e9d78387b045fabbd8cfe9347",
+    "passed": 67,
+    "failed": 0,
+    "seconds": 1.62,
+    "scope": "All installed scanner probe tests and transition independent-ordering tests, including exact encoding-aware launcher source parsing.",
+    "evidence": {
+      "file": "final-launcher-ordering.log",
+      "sha256": "5895236b4ffca0fda136bf1d94c147ea073f8c70f7ad458511bda5de7ca4e11d",
+      "bytes": 99
+    }
+  },
+  "final_static": {
+    "python_files": 64,
+    "ruff": "passed",
+    "format": "passed",
+    "git_diff_check": "passed",
+    "evidence": {
+      "file": "final-static.log",
+      "sha256": "e437692d8cce4dde49e5270198fb1ea0ed95cbeb23d9f677131ff0c91f8925ca",
+      "bytes": 46
+    }
+  },
+  "collection": {
+    "source_commit": "68c62ad539f63c1ed886d6b97dc3f09914ba0c26",
+    "selected_tests": 21278,
+    "total_tests": 21284,
+    "deselected": 6,
+    "errors": 0,
+    "seconds": 15.45,
+    "scope": "Collection only, before later launcher binding regressions were added. This is not a full-suite execution."
+  },
+  "production_types": {
+    "source_commit": "68c62ad539f63c1ed886d6b97dc3f09914ba0c26",
+    "production_source_tree": "960696dc7264273dda46ecb52c015504e446f67b",
+    "unchanged_at_documentation_source": true,
+    "filesAnalyzed": 1251,
+    "errorCount": 0,
+    "warningCount": 20172,
+    "informationCount": 0,
+    "timeInSec": 182.762,
+    "scope": "Unfiltered basedpyright diagnostic; required CI uses --level error. Nonfatal warnings are retained rather than represented as zero."
+  },
+  "ownership": {
+    "source_commit": "68c62ad539f63c1ed886d6b97dc3f09914ba0c26",
+    "release_base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "permanent_authority_gate": "passed",
+    "python_semantic_callgraph_gate": "passed",
+    "production_src_unchanged": true
+  },
+  "scope_limits": [
+    "Local environment rejects AF_UNIX creation; real installed daemon receipts require hosted execution.",
+    "The first aggregate attempt remains failed. Corrected and later bounded checks retain their own exact scope and counts.",
+    "Private Claude and native MCP pilot work is not included or qualified by this source checkpoint.",
+    "No final release, canary, full performance qualification or independent code-owner approval is claimed."
+  ]
+}

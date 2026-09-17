@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +17,22 @@ from scripts.native_slo_session import AdapterSession
 def test_load_executor_is_fully_started_before_rss_baseline() -> None:
     with ThreadPoolExecutor(max_workers=4) as executor:
         assert capacity._prime_load_executor(executor, 4) == 4
+
+
+def test_capacity_delivery_errors_keep_bounded_digests_without_exception_text() -> None:
+    message = "private fixture body must not appear in exported diagnostics"
+
+    def fail(*_args: object) -> object:
+        raise ValueError(message)
+
+    session = cast(AdapterSession, SimpleNamespace(observe=fail))
+    failures: list[dict[str, object]] = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        observations, errors = capacity._run_concurrent(session, (("codex", "PreToolUse"),), 8, executor, failures)
+    assert observations == [] and errors == 8
+    assert len(failures) == 4
+    assert all(item["diagnostic_digest"] == hashlib.sha256(message.encode()).hexdigest() for item in failures)
+    assert message not in json.dumps(failures)
 
 
 def test_timed_out_capacity_wave_returns_without_waiting_for_running_worker(

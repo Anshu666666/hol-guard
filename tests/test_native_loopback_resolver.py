@@ -42,6 +42,7 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
 
     class Responder:
         port = 54321
+        received = 1
 
         def __enter__(self):
             events.append("responder_start")
@@ -51,12 +52,17 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
             events.append("responder_stop")
 
         def snapshot(self):
-            return {"received": 1, "answered": 1, "rejected": 0, "errors": 0}
+            return {"received": self.received, "answered": self.received, "rejected": 0, "errors": 0}
 
     def helper(operation, port, owner):
         assert port == 54321 and owner == "a" * 32
         events.append(operation)
         return install if operation == "install" else cleanup
+
+    def witness(responder):
+        assert "install" in events and "remove" not in events
+        events.append("lookup_witness")
+        return {"phase": "after_qualification_before_resolver_cleanup"}
 
     probes = iter(
         [
@@ -72,6 +78,7 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
     monkeypatch.setattr(resolver, "responder_probe", lambda port: {"passed": True, "requests": 1})
     monkeypatch.setattr(resolver, "owned_configuration", lambda *_args: {"owned_bytes_match": True})
     monkeypatch.setattr(resolver, "system_configuration", lambda _port: {"exact_resolver_selected": False})
+    monkeypatch.setattr(resolver, "lookup_witness", witness)
     monkeypatch.setattr(resolver.secrets, "token_hex", lambda size: "a" * 32)
     return events
 
@@ -90,12 +97,14 @@ def test_one_environment_encloses_paired_command_and_restores_it(
     monkeypatch.setattr(resolver, "_run_command", run)
     output = tmp_path / "report.json"
     assert resolver.run_wrapped(command, output) == 0
-    assert events == ["responder_start", "install", "both_arms", "remove", "responder_stop"]
+    assert events == ["responder_start", "install", "both_arms", "lookup_witness", "remove", "responder_stop"]
     report = json.loads(output.read_text())
     assert report["before"]["status"] == "deadline_exceeded" and report["after"]["loopback_label"] is True
     assert report["after_cleanup"]["status"] == "deadline_exceeded"
     assert report["configuration_cleanup"] == "completed"
     assert report["configuration_readback"]["owned_bytes_match"] is True
+    assert report["configuration_before_lookup_witness"]["owned_bytes_match"] is True
+    assert report["configuration_after_lookup_witness"]["owned_bytes_match"] is True
     assert report["system_configuration_after_install"]["exact_resolver_selected"] is False
     assert report["responder"]["received"] == 1 and report["resolver_packets_received"] == 0
     assert report["environment_scope"] == "disposable_ci_runner_both_arms"
@@ -122,6 +131,31 @@ def test_command_exception_still_cleans_owned_configuration(
     report = json.loads(output.read_text())
     assert report["configuration_cleanup"] == "completed"
     assert "private-child-diagnostic" not in output.read_text()
+
+
+@pytest.mark.parametrize("command_code", [0, 9])
+def test_lookup_diagnostic_failure_never_changes_command_outcome(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, command_code: int
+) -> None:
+    events = _experiment(monkeypatch)
+    monkeypatch.setattr(resolver, "_run_command", lambda _command: command_code)
+
+    def failed_witness(responder):
+        assert "install" in events and "remove" not in events
+        responder.received += 2
+        raise RuntimeError("private-stuck-child-diagnostic")
+
+    monkeypatch.setattr(resolver, "lookup_witness", failed_witness)
+    output = tmp_path / "report.json"
+    assert resolver.run_wrapped(["both-arms"], output) == command_code
+    report = json.loads(output.read_text())
+    assert report["command_returncode"] == command_code
+    assert report["lookup_witness"] == {"status": "failed", "category": "RuntimeError"}
+    assert report["resolver_packets_received"] == 0
+    assert report["responder_before_lookup_witness"]["received"] == 1
+    assert report["responder"]["received"] == 3
+    assert report["configuration_cleanup"] == "completed"
+    assert "private-stuck-child-diagnostic" not in output.read_text()
 
 
 @pytest.mark.parametrize(
@@ -197,6 +231,6 @@ def test_qualification_path_filters_include_selected_python_routes_and_harness_i
     paths = workflow["on"]["pull_request"]["paths"]
     assert any(fnmatchcase(path, pattern) for pattern in paths)
     assert not any(fnmatchcase("docs/unrelated.md", pattern) for pattern in paths)
-    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["permissions"] == {"contents": "read", "actions": "read"}
     assert "head.repo.full_name == github.repository" in str(workflow)
     assert "github.event.label.name == 'rust-performance-qualification'" in workflow["jobs"]["paired-artifacts"]["if"]

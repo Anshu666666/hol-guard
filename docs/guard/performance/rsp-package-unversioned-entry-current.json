@@ -1,0 +1,372 @@
+{
+  "schema": "rsp050-match-shape-functional-source-witness-v1",
+  "source": {
+    "commit": "7ed18bcbe1ad78c95d1a0a3c46903b39dfc2ffb4",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_status": []
+  },
+  "final_source": {
+    "commit": "7ed18bcbe1ad78c95d1a0a3c46903b39dfc2ffb4",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_status": []
+  },
+  "harness_sha256": "78737ab036b7c899102b830e1b11d0ed45c294e492b66a909e62574e23757212",
+  "source_only": true,
+  "timing_collected": false,
+  "package_execution_claimed": false,
+  "invalid_regular_record_versions": [
+    {
+      "case": "missing",
+      "rejected": true,
+      "error": "Missing required string field: 'version'"
+    },
+    {
+      "case": "null",
+      "rejected": true,
+      "error": "Missing required string field: 'version'"
+    },
+    {
+      "case": "empty",
+      "rejected": true,
+      "error": "Missing required string field: 'version'"
+    },
+    {
+      "case": "whitespace",
+      "rejected": true,
+      "error": "Missing required string field: 'version'"
+    }
+  ],
+  "full_evaluator_cases": [
+    {
+      "case": "literal_star_regular_entry",
+      "signature_verified": true,
+      "api_concrete_version_decision": {
+        "action": "monitor",
+        "bundle_version": "1747612800000-deadbeef",
+        "matched_advisory_ids": [],
+        "reason": "no_cached_match",
+        "stale": false,
+        "recommended_fix_version": null,
+        "emergency_deny": false
+      },
+      "full_lookup_observations": [
+        {
+          "inputs": {
+            "package_name": "anchor",
+            "package_version": "1.0.0",
+            "ecosystem": "npm",
+            "now": 1779148800.0
+          },
+          "decision": {
+            "action": "block",
+            "bundle_version": "1747612800000-deadbeef",
+            "matched_advisory_ids": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reason": "known_malware_or_kev",
+            "stale": false,
+            "recommended_fix_version": null,
+            "emergency_deny": false
+          }
+        },
+        {
+          "inputs": {
+            "package_name": "minimist",
+            "package_version": "1.2.8",
+            "ecosystem": "npm",
+            "now": 1779148800.0
+          },
+          "decision": {
+            "action": "monitor",
+            "bundle_version": "1747612800000-deadbeef",
+            "matched_advisory_ids": [],
+            "reason": "no_cached_match",
+            "stale": false,
+            "recommended_fix_version": null,
+            "emergency_deny": false
+          }
+        }
+      ],
+      "full_result": {
+        "decision": "block",
+        "policy_action": "block",
+        "enforcement": "offline_cached",
+        "entitlement_state": "premium",
+        "cache_status": "miss",
+        "workspace_fingerprint": "8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e",
+        "reasons": [
+          {
+            "advisoryId": "GHSA-vh95-rmgr-6w4m",
+            "code": "known_malware_or_kev",
+            "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+            "severity": "critical",
+            "source": "bundle"
+          }
+        ],
+        "packages": [
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "anchor",
+            "namespace": null,
+            "requestedVersion": "1.0.0",
+            "resolvedVersion": "1.0.0",
+            "recommendedFixVersion": null,
+            "riskScore": 980,
+            "direct": true,
+            "dependencyPath": null,
+            "packageManager": "npm",
+            "redactedCommand": "npm install anchor@1.0.0",
+            "alias": null,
+            "sourceIdentity": null,
+            "sourceRepository": null,
+            "sourceRevisionKind": null,
+            "relatedAdvisoryIds": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reasons": [
+              {
+                "advisoryId": "GHSA-vh95-rmgr-6w4m",
+                "code": "known_malware_or_kev",
+                "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+                "severity": "critical",
+                "source": "bundle"
+              }
+            ],
+            "advisoryAliases": [
+              "GHSA-VH95-RMGR-6W4M",
+              "CVE-2020-7598"
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          }
+        ],
+        "matched_rule_id": null,
+        "exception_id": null,
+        "risk_summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+        "record_monitor_evidence": false,
+        "external_archive_source_hashes": [],
+        "user_copy": {
+          "title": "Critical install blocked",
+          "summary": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+          "next_step": null,
+          "dashboard_url": null,
+          "harness_message": "HOL Guard blocked `anchor@1.0.0` before install. Reason: Cached bundle flagged anchor@1.0.0 from advisory intelligence."
+        },
+        "package_intent_hash": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+        "policy_version": "policy-hash-1",
+        "bundle_version": "1747612800000-deadbeef",
+        "refresh_required": false,
+        "evidence_ids": [
+          "evidence-8345d9dc94432397"
+        ]
+      },
+      "persisted_evidence": [
+        {
+          "evidence_id": "evidence-8345d9dc94432397",
+          "action_id": "codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "request_id": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install anchor@1.0.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"anchor\", \"namespace\": null, \"requestedVersion\": \"1.0.0\", \"resolvedVersion\": \"1.0.0\", \"recommendedFixVersion\": null, \"riskScore\": 980, \"direct\": true, \"dependencyPath\": null, \"packageManager\": \"npm\", \"redactedCommand\": \"npm install anchor@1.0.0\", \"alias\": null, \"sourceIdentity\": null, \"sourceRepository\": null, \"sourceRevisionKind\": null, \"relatedAdvisoryIds\": [\"GHSA-vh95-rmgr-6w4m\"], \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"advisoryAliases\": [\"GHSA-VH95-RMGR-6W4M\", \"CVE-2020-7598\"], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\", \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "case": "unversioned_emergency_deny",
+      "signature_verified": true,
+      "api_concrete_version_decision": {
+        "action": "block",
+        "bundle_version": "1747612800000-deadbeef",
+        "matched_advisory_ids": [],
+        "reason": "known_malware",
+        "stale": false,
+        "recommended_fix_version": "1.2.9",
+        "emergency_deny": true
+      },
+      "full_lookup_observations": [
+        {
+          "inputs": {
+            "package_name": "anchor",
+            "package_version": "1.0.0",
+            "ecosystem": "npm",
+            "now": 1779148800.0
+          },
+          "decision": {
+            "action": "block",
+            "bundle_version": "1747612800000-deadbeef",
+            "matched_advisory_ids": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reason": "known_malware_or_kev",
+            "stale": false,
+            "recommended_fix_version": null,
+            "emergency_deny": false
+          }
+        },
+        {
+          "inputs": {
+            "package_name": "minimist",
+            "package_version": "1.2.8",
+            "ecosystem": "npm",
+            "now": 1779148800.0
+          },
+          "decision": {
+            "action": "block",
+            "bundle_version": "1747612800000-deadbeef",
+            "matched_advisory_ids": [],
+            "reason": "known_malware",
+            "stale": false,
+            "recommended_fix_version": "1.2.9",
+            "emergency_deny": true
+          }
+        }
+      ],
+      "full_result": {
+        "decision": "block",
+        "policy_action": "block",
+        "enforcement": "offline_cached",
+        "entitlement_state": "premium",
+        "cache_status": "miss",
+        "workspace_fingerprint": "8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e",
+        "reasons": [
+          {
+            "advisoryId": "GHSA-vh95-rmgr-6w4m",
+            "code": "known_malware_or_kev",
+            "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+            "severity": "critical",
+            "source": "bundle"
+          },
+          {
+            "code": "known_malware",
+            "message": "Emergency denylist blocked minimist@1.2.8 for known malware.",
+            "severity": "critical",
+            "source": "bundle"
+          }
+        ],
+        "packages": [
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "anchor",
+            "namespace": null,
+            "requestedVersion": "1.0.0",
+            "resolvedVersion": "1.0.0",
+            "recommendedFixVersion": null,
+            "riskScore": 980,
+            "direct": true,
+            "dependencyPath": null,
+            "packageManager": "npm",
+            "redactedCommand": "npm install anchor@1.0.0",
+            "alias": null,
+            "sourceIdentity": null,
+            "sourceRepository": null,
+            "sourceRevisionKind": null,
+            "relatedAdvisoryIds": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reasons": [
+              {
+                "advisoryId": "GHSA-vh95-rmgr-6w4m",
+                "code": "known_malware_or_kev",
+                "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+                "severity": "critical",
+                "source": "bundle"
+              }
+            ],
+            "advisoryAliases": [
+              "GHSA-VH95-RMGR-6W4M",
+              "CVE-2020-7598"
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          },
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "minimist",
+            "namespace": null,
+            "requestedVersion": "1.2.8",
+            "resolvedVersion": "1.2.8",
+            "recommendedFixVersion": "1.2.9",
+            "riskScore": null,
+            "direct": false,
+            "dependencyPath": "holder/node_modules/minimist",
+            "packageManager": "npm",
+            "redactedCommand": "npm install anchor@1.0.0",
+            "reasons": [
+              {
+                "code": "known_malware",
+                "message": "Emergency denylist blocked minimist@1.2.8 for known malware.",
+                "severity": "critical",
+                "source": "bundle"
+              }
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          }
+        ],
+        "matched_rule_id": null,
+        "exception_id": null,
+        "risk_summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+        "record_monitor_evidence": false,
+        "external_archive_source_hashes": [],
+        "user_copy": {
+          "title": "Critical install blocked",
+          "summary": "Cached bundle flagged anchor@1.0.0 from advisory intelligence. Also flagged: minimist.",
+          "next_step": null,
+          "dashboard_url": null,
+          "harness_message": "HOL Guard blocked `anchor@1.0.0` before install. Reason: Cached bundle flagged anchor@1.0.0 from advisory intelligence."
+        },
+        "package_intent_hash": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+        "policy_version": "policy-hash-1",
+        "bundle_version": "1747612800000-deadbeef",
+        "refresh_required": false,
+        "evidence_ids": [
+          "evidence-8345d9dc94432397",
+          "evidence-5a381b997e1d3971"
+        ]
+      },
+      "persisted_evidence": [
+        {
+          "evidence_id": "evidence-5a381b997e1d3971",
+          "action_id": "codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "request_id": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install anchor@1.0.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"minimist\", \"namespace\": null, \"requestedVersion\": \"1.2.8\", \"resolvedVersion\": \"1.2.8\", \"recommendedFixVersion\": \"1.2.9\", \"riskScore\": null, \"direct\": false, \"dependencyPath\": \"holder/node_modules/minimist\", \"packageManager\": \"npm\", \"redactedCommand\": \"npm install anchor@1.0.0\", \"reasons\": [{\"code\": \"known_malware\", \"message\": \"Emergency denylist blocked minimist@1.2.8 for known malware.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\", \"reasons\": [{\"code\": \"known_malware\", \"message\": \"Emergency denylist blocked minimist@1.2.8 for known malware.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        },
+        {
+          "evidence_id": "evidence-8345d9dc94432397",
+          "action_id": "codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "request_id": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install anchor@1.0.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"anchor\", \"namespace\": null, \"requestedVersion\": \"1.0.0\", \"resolvedVersion\": \"1.0.0\", \"recommendedFixVersion\": null, \"riskScore\": 980, \"direct\": true, \"dependencyPath\": null, \"packageManager\": \"npm\", \"redactedCommand\": \"npm install anchor@1.0.0\", \"alias\": null, \"sourceIdentity\": null, \"sourceRepository\": null, \"sourceRevisionKind\": null, \"relatedAdvisoryIds\": [\"GHSA-vh95-rmgr-6w4m\"], \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"advisoryAliases\": [\"GHSA-VH95-RMGR-6W4M\", \"CVE-2020-7598\"], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\", \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        }
+      ]
+    }
+  ],
+  "assertions_passed": true
+}

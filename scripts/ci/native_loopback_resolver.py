@@ -20,9 +20,11 @@ from pathlib import Path
 if __package__:
     from .native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
     from .native_loopback_dns import LoopbackPTRResponder
+    from .native_loopback_lookup import lookup_witness
 else:
     from native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
     from native_loopback_dns import LoopbackPTRResponder
+    from native_loopback_lookup import lookup_witness
 
 _QUERY = (
     "import json,socket; name=socket.getfqdn('127.0.0.1'); "
@@ -142,6 +144,17 @@ def run_wrapped(command: list[str], output: Path) -> int:
             _write_report(output, report)
             returncode = _run_command(command)
             report["command_returncode"] = returncode
+            # Keep the original qualification resolver counter separate from
+            # these later diagnostic lookups. The exact resolver still exists.
+            counts = responder.snapshot()
+            report["resolver_packets_received"] = max(0, counts["received"] - self_probe_received)
+            report["responder_before_lookup_witness"] = counts
+            report["configuration_before_lookup_witness"] = owned_configuration(responder.port, owner)
+            try:
+                report["lookup_witness"] = lookup_witness(responder)
+            except Exception as error:
+                report["lookup_witness"] = {"status": "failed", "category": type(error).__name__}
+            report["configuration_after_lookup_witness"] = owned_configuration(responder.port, owner)
         finally:
             report["system_configuration_after_command"] = system_configuration(responder.port)
             cleanup = (
@@ -152,7 +165,7 @@ def run_wrapped(command: list[str], output: Path) -> int:
             report["configuration_cleanup"] = cleanup
             counts = responder.snapshot()
             report["responder"] = counts
-            report["resolver_packets_received"] = max(0, counts["received"] - self_probe_received)
+            report.setdefault("resolver_packets_received", max(0, counts["received"] - self_probe_received))
             report["status"] = "experiment_finished"
             _write_report(output, report)
     report["after_cleanup"] = resolver_probe()

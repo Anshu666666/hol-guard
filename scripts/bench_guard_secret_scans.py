@@ -27,8 +27,12 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
-from secret_scan_benchmark_cache import prepare_cache
-from secret_scan_benchmark_fixtures import WORKLOADS, context_examples, create_fixture, provider_examples
+if __package__:
+    from .secret_scan_benchmark_cache import prepare_cache
+    from .secret_scan_benchmark_fixtures import WORKLOADS, context_examples, create_fixture, provider_examples
+else:
+    from secret_scan_benchmark_cache import prepare_cache
+    from secret_scan_benchmark_fixtures import WORKLOADS, context_examples, create_fixture, provider_examples
 
 
 def _git(root: Path, *args: str) -> str:
@@ -40,6 +44,7 @@ def _source_identity(root: Path) -> dict[str, str]:
     digest = hashlib.sha256()
     files = sorted((root / "src/codex_plugin_scanner/guard/secrets").glob("*.py"))
     files.extend(sorted((root / "src/codex_plugin_scanner/checks").glob("security*.py")))
+    files.append(root / "src/codex_plugin_scanner/path_support.py")
     for path in files:
         digest.update(path.relative_to(root).as_posix().encode())
         digest.update(b"\0")

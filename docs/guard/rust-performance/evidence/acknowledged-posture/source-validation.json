@@ -1,0 +1,78 @@
+{
+  "schema": "hol-guard.acknowledged-posture-source-validation.v1",
+  "source_commit": "8952d33191ab6ab490d0689dd42fc788cb25acd4",
+  "installed_native_execution": false,
+  "headline_timing_eligible": false,
+  "all_selected_non_platform_cases_passed": true,
+  "runs": [
+    {
+      "scope": "new posture matrix and existing Watch PreToolUse/PostToolUse response tests",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 35.41
+    },
+    {
+      "scope": "initial public-mutation/ACK/workspace transition fixture",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "elapsed_seconds": 2.8,
+      "failure_stage": "workspace expected an enforcing posture from blocked workspace mode/posture keys",
+      "resolution": "fixture uses an accepted strict sandbox overlay and separately asserts blocked weak posture keys remain ignored; no product rule changed"
+    },
+    {
+      "scope": "corrected real-config/public-mutation/ACK/first-workspace transition fixture",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 1.79
+    },
+    {
+      "scope": "posture, publisher, authenticated readback, expiry, restart, mutation fence, availability and Watch bridge regression batch",
+      "passed": 124,
+      "failed": 2,
+      "skipped": 1,
+      "elapsed_seconds": 27.85,
+      "fixture_root_class": "/dev/shm",
+      "failures": [
+        "test_hook_availability_policy.py::test_workspace_source_read_is_emergency_safe",
+        "test_hook_availability_policy.py::test_rg_and_cat_are_emergency_safe"
+      ],
+      "failure_cause": "the unchanged emergency-safe path policy intentionally rejects /dev/; tmpfs fixture paths therefore do not model ordinary workspace paths",
+      "platform_skip": "test_windows_scope_aliases_share_one_digest_identity: Windows path aliases are platform-specific"
+    },
+    {
+      "scope": "the two path-semantic failures rerun with ordinary scratch workspace fixtures",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.54,
+      "fixture_root_class": "ordinary scratch workspace",
+      "product_changes_between_attempts": false,
+      "budget_changes_between_attempts": false
+    }
+  ],
+  "run_counts_overlap": true,
+  "static_checks": {
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "diff_check": "passed",
+    "type_checked_files": 4,
+    "type_errors": 0,
+    "type_warnings": 138
+  },
+  "operation_count_diagnostics": {
+    "fixtures_per_arm": 7,
+    "calls_per_fixture": 100,
+    "source_candidate_config_loads": 0,
+    "source_candidate_home_config_opens": 0,
+    "source_candidate_workspace_config_opens": 0,
+    "installed_baseline_config_loads": 700,
+    "installed_baseline_home_config_opens": 600,
+    "installed_baseline_workspace_config_opens": 600,
+    "source_and_installed_elapsed_times_comparable": false,
+    "native_decisions_fabricated": false,
+    "native_transport_invoked": false
+  }
+}

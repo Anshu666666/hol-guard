@@ -16,7 +16,9 @@ import os
 import platform
 import sys
 import tempfile
+import time
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from profile_guard_mcp_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
@@ -110,6 +112,7 @@ def verify_facts(baseline: Path) -> dict:
     for token in tokens:
         probes.extend((token, "prefix" + token + "suffix", "_" + token + "_"))
     checked = 0
+    prepared_cases = 0
     trace = hashlib.sha256()
     with tempfile.TemporaryDirectory(prefix="guard-mcp-risk-parity-") as temporary:
         root = Path(temporary)
@@ -135,15 +138,25 @@ def verify_facts(baseline: Path) -> dict:
                     arguments = {key: probe, "sample": 17}
                     results = []
                     for module in (reference, candidate):
+                        facts_arguments = {}
+                        facts = None
+                        if module is candidate and hasattr(module, "prepare_tool_call_risk_facts"):
+                            facts = module.prepare_tool_call_risk_facts(artifact, arguments)
+                            if facts is None:
+                                raise RuntimeError("mcp_comparison_candidate_did_not_prepare_plain_json_facts")
+                            facts_arguments["risk_facts"] = facts
+                            prepared_cases += 1
                         results.append(
                             {
-                                "categories": module.tool_call_risk_categories(artifact, arguments),
+                                "categories": facts.categories
+                                if facts
+                                else module.tool_call_risk_categories(artifact, arguments),
                                 "approval_hash": module.build_tool_call_hash(
-                                    artifact, arguments, workspace=root, config=config
+                                    artifact, arguments, workspace=root, config=config, **facts_arguments
                                 ),
                                 "policy": asdict(
                                     module._evaluate_current_tool_call(
-                                        config=config, artifact=artifact, arguments=arguments
+                                        config=config, artifact=artifact, arguments=arguments, **facts_arguments
                                     )
                                 ),
                             }
@@ -156,26 +169,58 @@ def verify_facts(baseline: Path) -> dict:
     return {
         "cases": checked,
         "mismatches": 0,
+        "candidate_prepared_facts_cases": prepared_cases,
         "compared": ["risk_categories", "approval_hash", "full_policy_decision"],
         "matched_outcome_trace_sha256": trace.hexdigest(),
         "oracle": "frozen_baseline_module_shared_unchanged_authorities",
     }
 
 
-def run_comparison(*, baseline: Path, candidate: Path, output: Path, lock_file: Path, samples: int) -> dict:
+def run_comparison(
+    *,
+    baseline: Path,
+    candidate: Path,
+    output: Path,
+    lock_file: Path,
+    samples: int,
+    comparison_name: str = "risk-prefilter",
+    memory_boundary: bool = False,
+    container_boundary: bool = False,
+) -> dict:
     roots = {"baseline": baseline.resolve(), "candidate": candidate.resolve()}
     identities = {label: source_identity(root) for label, root in roots.items()}
     cases = []
-    for block in range(5):
-        for payload in (1024, 16384, 131072):
+    if memory_boundary or container_boundary:
+        kinds = ("dense-integers", "nested-records", "nested-text") if container_boundary else ("ascii", "unicode")
+        for block, payload_kind in enumerate(kinds):
             for source in ("baseline", "candidate") if block % 2 == 0 else ("candidate", "baseline"):
-                cases.append({"block": block, "source": source, "payload_bytes": payload, "samples": samples})
-    for payload in (1024, 16384, 131072):
-        for source in ("baseline", "candidate"):
-            cases.append({"source": source, "payload_bytes": payload, "samples": min(samples, 20), "profile": True})
+                cases.append(
+                    {
+                        "block": block,
+                        "source": source,
+                        "payload_bytes": 4 * 1024 * 1024 - 512,
+                        "samples": min(samples, 3),
+                        "profile": True,
+                        "compact_result": True,
+                        "payload_kind": payload_kind,
+                    }
+                )
+    else:
+        for block in range(5):
+            for payload in (1024, 16384, 131072):
+                for source in ("baseline", "candidate") if block % 2 == 0 else ("candidate", "baseline"):
+                    cases.append({"block": block, "source": source, "payload_bytes": payload, "samples": samples})
+        for payload in (1024, 16384, 131072):
+            for source in ("baseline", "candidate"):
+                cases.append({"source": source, "payload_bytes": payload, "samples": min(samples, 20), "profile": True})
     report = {
-        "schema": "hol-guard-mcp-risk-prefilter-comparison.v1",
+        "schema": f"hol-guard-mcp-{comparison_name}-comparison.v1",
         "qualification": False,
+        "campaign": "near_frame_ceiling_container_diagnostic"
+        if container_boundary
+        else "near_frame_ceiling_memory_diagnostic"
+        if memory_boundary
+        else "five_alternating_process_blocks",
         "platform": platform.system(),
         "architecture": platform.machine(),
         "python": platform.python_version(),
@@ -211,11 +256,14 @@ def run_comparison(*, baseline: Path, candidate: Path, output: Path, lock_file: 
             source = options.pop("source")
             block = options.pop("block", None)
             os.environ["PYTHONPATH"] = str(roots[source])
+            started_utc = None
             try:
                 if source_identity(roots[source]) != identities[source]:
                     raise ValueError("mcp_comparison_source_changed")
                 with performance_lock(lock_file):
+                    started_utc = datetime.now(timezone.utc).isoformat()
                     result = run_case(**options)
+                    finished_utc = datetime.now(timezone.utc).isoformat()
                 if any(
                     identities[source].get(name) != digest for name, digest in result["loaded_runtime_sha256"].items()
                 ):
@@ -226,11 +274,13 @@ def run_comparison(*, baseline: Path, candidate: Path, output: Path, lock_file: 
                 report["failed_case"] = {
                     "case": index + 1,
                     "scheduled": scheduled,
+                    "started_utc": started_utc,
+                    "failed_utc": datetime.now(timezone.utc).isoformat(),
                     **(error.evidence if isinstance(error, BenchmarkCaseError) else {"reason": type(error).__name__}),
                 }
                 write_checkpoint(output, report)
                 raise
-            result.update({"source": source, "block": block})
+            result.update({"source": source, "block": block, "started_utc": started_utc, "finished_utc": finished_utc})
             report["cases"].append(result)
             report["completed_cases"] = len(report["cases"])
             write_checkpoint(output, report)
@@ -247,6 +297,8 @@ def run_comparison(*, baseline: Path, candidate: Path, output: Path, lock_file: 
                 file=sys.stderr,
                 flush=True,
             )
+            # Give queued sibling workloads a turn after checkpointing a cell.
+            time.sleep(0.1)
     finally:
         if prior_pythonpath is None:
             os.environ.pop("PYTHONPATH", None)
@@ -261,6 +313,7 @@ def run_comparison(*, baseline: Path, candidate: Path, output: Path, lock_file: 
         comparison = {
             "block": old["block"],
             "payload_bytes": old["fixture"]["payload_bytes"],
+            "payload_kind": old["fixture"]["payload_kind"],
             "profile": old["fixture"]["profile"],
             "exact_correctness_parity": parity,
             "roundtrip_p95_change_percent": 100
@@ -282,6 +335,12 @@ def main() -> int:
     parser.add_argument("--candidate-src", type=Path, required=True)
     parser.add_argument("--lock-file", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=100)
+    parser.add_argument(
+        "--comparison-name", choices=("risk-prefilter", "request-facts", "structural-facts"), default="risk-prefilter"
+    )
+    boundary = parser.add_mutually_exclusive_group()
+    boundary.add_argument("--memory-boundary", action="store_true")
+    boundary.add_argument("--container-boundary", action="store_true")
     parser.add_argument("--json", type=Path, required=True)
     args = parser.parse_args()
     if not 1 <= args.samples <= 10000:
@@ -292,6 +351,9 @@ def main() -> int:
         output=args.json,
         lock_file=args.lock_file,
         samples=args.samples,
+        comparison_name=args.comparison_name,
+        memory_boundary=args.memory_boundary,
+        container_boundary=args.container_boundary,
     )
     print(json.dumps({"completed_cases": report["completed_cases"], "qualification": False}))
     return 0

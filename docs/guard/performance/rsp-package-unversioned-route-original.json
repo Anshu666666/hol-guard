@@ -1,0 +1,433 @@
+{
+  "schema": "guard-package-unversioned-route-witness-v1",
+  "source": {
+    "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_status": []
+  },
+  "final_source": {
+    "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_status": []
+  },
+  "harness_sha256": "5ae73a5df3471e03c5d043ed02de7c2c9327c9135046356b9128fcf03740f159",
+  "evaluator_sha256": "290acd61239de3cb7ae0ef0a7df41b83281f561c7e52ded2beef73693890582b",
+  "evaluator_direct_lookup_call_lines": [
+    1761,
+    2615
+  ],
+  "python": "3.12.14",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "timing_scope": "not collected; functional source-route reachability witness only",
+  "api_only_unversioned_decision": {
+    "action": "block",
+    "bundle_version": "1747612800000-deadbeef",
+    "matched_advisory_ids": [
+      "GHSA-vh95-rmgr-6w4m"
+    ],
+    "reason": "known_malware_or_kev",
+    "stale": false,
+    "recommended_fix_version": null,
+    "emergency_deny": false
+  },
+  "api_only_persistence_exercised": false,
+  "full_evaluator_cases": [
+    {
+      "case": "bare_registry_direct",
+      "command": "npm install minimist",
+      "cached_bundle_calls": [
+        {
+          "package_name": "minimist",
+          "package_version": "latest",
+          "ecosystem": "npm"
+        }
+      ],
+      "cached_bundle_decisions": [
+        {
+          "action": "monitor",
+          "bundle_version": "1747612800000-deadbeef",
+          "matched_advisory_ids": [],
+          "reason": "no_cached_match",
+          "stale": false,
+          "recommended_fix_version": null,
+          "emergency_deny": false
+        }
+      ],
+      "result": {
+        "decision": "block",
+        "policy_action": "block",
+        "enforcement": "premium_cloud",
+        "entitlement_state": "premium",
+        "cache_status": "cloud-error",
+        "workspace_fingerprint": "bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71",
+        "reasons": [
+          {
+            "code": "cloud_auth_error",
+            "message": "Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.",
+            "severity": "unknown",
+            "source": "guard-cloud"
+          }
+        ],
+        "packages": [
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "minimist",
+            "namespace": null,
+            "requestedVersion": "latest",
+            "resolvedVersion": null,
+            "recommendedFixVersion": null,
+            "riskScore": null,
+            "direct": true,
+            "dependencyPath": null,
+            "packageManager": "npm",
+            "redactedCommand": "npm install minimist",
+            "alias": null,
+            "sourceIdentity": null,
+            "sourceRepository": null,
+            "sourceRevisionKind": null,
+            "reasons": [
+              {
+                "code": "cloud_auth_error",
+                "message": "Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.",
+                "severity": "critical",
+                "source": "guard-local"
+              }
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          }
+        ],
+        "matched_rule_id": null,
+        "exception_id": null,
+        "risk_summary": "HOL Guard blocked `minimist@latest` before install.",
+        "record_monitor_evidence": false,
+        "external_archive_source_hashes": [],
+        "user_copy": {
+          "title": "Critical install blocked",
+          "summary": "Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection. Guard Cloud needs a fresh sign-in before shared review can resume.",
+          "next_step": "hol-guard connect",
+          "dashboard_url": null,
+          "harness_message": "HOL Guard blocked `minimist@latest` before install. Reason: Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection. Guard kept this request local-only because Guard Cloud authorization expired. Run `hol-guard connect` to restore shared review and sync."
+        },
+        "package_intent_hash": "fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4",
+        "policy_version": "policy-hash-1",
+        "bundle_version": "1747612800000-deadbeef",
+        "refresh_required": false,
+        "evidence_ids": [
+          "evidence-a74d3040dd136940"
+        ]
+      },
+      "persisted_evidence": [
+        {
+          "evidence_id": "evidence-a74d3040dd136940",
+          "action_id": "codex:project:package-request:fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4",
+          "request_id": "fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `minimist@latest` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install minimist\", \"decision\": \"block\", \"enforcement\": \"premium_cloud\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"minimist\", \"namespace\": null, \"requestedVersion\": \"latest\", \"resolvedVersion\": null, \"recommendedFixVersion\": null, \"riskScore\": null, \"direct\": true, \"dependencyPath\": null, \"packageManager\": \"npm\", \"redactedCommand\": \"npm install minimist\", \"alias\": null, \"sourceIdentity\": null, \"sourceRepository\": null, \"sourceRevisionKind\": null, \"reasons\": [{\"code\": \"cloud_auth_error\", \"message\": \"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\", \"severity\": \"critical\", \"source\": \"guard-local\"}], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71\", \"reasons\": [{\"code\": \"cloud_auth_error\", \"message\": \"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\", \"severity\": \"critical\", \"source\": \"guard-local\"}], \"workspace_fingerprint\": \"bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "case": "lockfile_resolved_direct",
+      "command": "npm install minimist@^1.2.0",
+      "cached_bundle_calls": [
+        {
+          "package_name": "minimist",
+          "package_version": "1.2.8",
+          "ecosystem": "npm"
+        }
+      ],
+      "cached_bundle_decisions": [
+        {
+          "action": "block",
+          "bundle_version": "1747612800000-deadbeef",
+          "matched_advisory_ids": [
+            "GHSA-vh95-rmgr-6w4m"
+          ],
+          "reason": "known_malware_or_kev",
+          "stale": false,
+          "recommended_fix_version": null,
+          "emergency_deny": false
+        }
+      ],
+      "result": {
+        "decision": "block",
+        "policy_action": "block",
+        "enforcement": "offline_cached",
+        "entitlement_state": "premium",
+        "cache_status": "miss",
+        "workspace_fingerprint": "58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c",
+        "reasons": [
+          {
+            "advisoryId": "GHSA-vh95-rmgr-6w4m",
+            "code": "known_malware_or_kev",
+            "message": "Cached bundle flagged minimist@1.2.8 from advisory intelligence.",
+            "severity": "critical",
+            "source": "bundle"
+          }
+        ],
+        "packages": [
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "minimist",
+            "namespace": null,
+            "requestedVersion": "^1.2.0",
+            "resolvedVersion": "1.2.8",
+            "recommendedFixVersion": null,
+            "riskScore": 980,
+            "direct": true,
+            "dependencyPath": null,
+            "packageManager": "npm",
+            "redactedCommand": "npm install minimist@^1.2.0",
+            "alias": null,
+            "sourceIdentity": null,
+            "sourceRepository": null,
+            "sourceRevisionKind": null,
+            "relatedAdvisoryIds": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reasons": [
+              {
+                "advisoryId": "GHSA-vh95-rmgr-6w4m",
+                "code": "known_malware_or_kev",
+                "message": "Cached bundle flagged minimist@1.2.8 from advisory intelligence.",
+                "severity": "critical",
+                "source": "bundle"
+              }
+            ],
+            "advisoryAliases": [
+              "GHSA-VH95-RMGR-6W4M",
+              "CVE-2020-7598"
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          }
+        ],
+        "matched_rule_id": null,
+        "exception_id": null,
+        "risk_summary": "HOL Guard blocked `minimist@^1.2.0` before install.",
+        "record_monitor_evidence": false,
+        "external_archive_source_hashes": [],
+        "user_copy": {
+          "title": "Critical install blocked",
+          "summary": "Cached bundle flagged minimist@1.2.8 from advisory intelligence.",
+          "next_step": null,
+          "dashboard_url": null,
+          "harness_message": "HOL Guard blocked `minimist@^1.2.0` before install. Reason: Cached bundle flagged minimist@1.2.8 from advisory intelligence."
+        },
+        "package_intent_hash": "33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b",
+        "policy_version": "policy-hash-1",
+        "bundle_version": "1747612800000-deadbeef",
+        "refresh_required": false,
+        "evidence_ids": [
+          "evidence-c5721d0ef667d951"
+        ]
+      },
+      "persisted_evidence": [
+        {
+          "evidence_id": "evidence-c5721d0ef667d951",
+          "action_id": "codex:project:package-request:33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b",
+          "request_id": "33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `minimist@^1.2.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install minimist@^1.2.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"minimist\", \"namespace\": null, \"requestedVersion\": \"^1.2.0\", \"resolvedVersion\": \"1.2.8\", \"recommendedFixVersion\": null, \"riskScore\": 980, \"direct\": true, \"dependencyPath\": null, \"packageManager\": \"npm\", \"redactedCommand\": \"npm install minimist@^1.2.0\", \"alias\": null, \"sourceIdentity\": null, \"sourceRepository\": null, \"sourceRevisionKind\": null, \"relatedAdvisoryIds\": [\"GHSA-vh95-rmgr-6w4m\"], \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"advisoryAliases\": [\"GHSA-VH95-RMGR-6W4M\", \"CVE-2020-7598\"], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c\", \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"workspace_fingerprint\": \"58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "case": "exact_transitive",
+      "command": "npm install anchor@1.0.0",
+      "cached_bundle_calls": [
+        {
+          "package_name": "anchor",
+          "package_version": "1.0.0",
+          "ecosystem": "npm"
+        },
+        {
+          "package_name": "minimist",
+          "package_version": "1.2.8",
+          "ecosystem": "npm"
+        }
+      ],
+      "cached_bundle_decisions": [
+        {
+          "action": "block",
+          "bundle_version": "1747612800000-deadbeef",
+          "matched_advisory_ids": [
+            "GHSA-vh95-rmgr-6w4m"
+          ],
+          "reason": "known_malware_or_kev",
+          "stale": false,
+          "recommended_fix_version": null,
+          "emergency_deny": false
+        },
+        {
+          "action": "block",
+          "bundle_version": "1747612800000-deadbeef",
+          "matched_advisory_ids": [
+            "GHSA-vh95-rmgr-6w4m"
+          ],
+          "reason": "known_malware_or_kev",
+          "stale": false,
+          "recommended_fix_version": null,
+          "emergency_deny": false
+        }
+      ],
+      "result": {
+        "decision": "block",
+        "policy_action": "block",
+        "enforcement": "offline_cached",
+        "entitlement_state": "premium",
+        "cache_status": "miss",
+        "workspace_fingerprint": "8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e",
+        "reasons": [
+          {
+            "advisoryId": "GHSA-vh95-rmgr-6w4m",
+            "code": "known_malware_or_kev",
+            "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+            "severity": "critical",
+            "source": "bundle"
+          },
+          {
+            "code": "transitive_lockfile_match",
+            "message": "Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.",
+            "severity": "critical",
+            "source": "lockfile"
+          }
+        ],
+        "packages": [
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "anchor",
+            "namespace": null,
+            "requestedVersion": "1.0.0",
+            "resolvedVersion": "1.0.0",
+            "recommendedFixVersion": null,
+            "riskScore": 980,
+            "direct": true,
+            "dependencyPath": null,
+            "packageManager": "npm",
+            "redactedCommand": "npm install anchor@1.0.0",
+            "alias": null,
+            "sourceIdentity": null,
+            "sourceRepository": null,
+            "sourceRevisionKind": null,
+            "relatedAdvisoryIds": [
+              "GHSA-vh95-rmgr-6w4m"
+            ],
+            "reasons": [
+              {
+                "advisoryId": "GHSA-vh95-rmgr-6w4m",
+                "code": "known_malware_or_kev",
+                "message": "Cached bundle flagged anchor@1.0.0 from advisory intelligence.",
+                "severity": "critical",
+                "source": "bundle"
+              }
+            ],
+            "advisoryAliases": [
+              "GHSA-VH95-RMGR-6W4M",
+              "CVE-2020-7598"
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          },
+          {
+            "decision": "block",
+            "ecosystem": "npm",
+            "name": "minimist",
+            "namespace": null,
+            "requestedVersion": "1.2.8",
+            "resolvedVersion": "1.2.8",
+            "recommendedFixVersion": null,
+            "riskScore": 980,
+            "direct": false,
+            "dependencyPath": "holder/node_modules/minimist",
+            "packageManager": "npm",
+            "redactedCommand": "npm install anchor@1.0.0",
+            "reasons": [
+              {
+                "code": "transitive_lockfile_match",
+                "message": "Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.",
+                "severity": "critical",
+                "source": "lockfile"
+              }
+            ],
+            "supportLevel": "protected",
+            "supportLabel": "Protected"
+          }
+        ],
+        "matched_rule_id": null,
+        "exception_id": null,
+        "risk_summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+        "record_monitor_evidence": false,
+        "external_archive_source_hashes": [],
+        "user_copy": {
+          "title": "Critical install blocked",
+          "summary": "Cached bundle flagged anchor@1.0.0 from advisory intelligence. Also flagged: minimist.",
+          "next_step": null,
+          "dashboard_url": null,
+          "harness_message": "HOL Guard blocked `anchor@1.0.0` before install. Reason: Cached bundle flagged anchor@1.0.0 from advisory intelligence."
+        },
+        "package_intent_hash": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+        "policy_version": "policy-hash-1",
+        "bundle_version": "1747612800000-deadbeef",
+        "refresh_required": false,
+        "evidence_ids": [
+          "evidence-8345d9dc94432397",
+          "evidence-5a381b997e1d3971"
+        ]
+      },
+      "persisted_evidence": [
+        {
+          "evidence_id": "evidence-5a381b997e1d3971",
+          "action_id": "codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "request_id": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install anchor@1.0.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"minimist\", \"namespace\": null, \"requestedVersion\": \"1.2.8\", \"resolvedVersion\": \"1.2.8\", \"recommendedFixVersion\": null, \"riskScore\": 980, \"direct\": false, \"dependencyPath\": \"holder/node_modules/minimist\", \"packageManager\": \"npm\", \"redactedCommand\": \"npm install anchor@1.0.0\", \"reasons\": [{\"code\": \"transitive_lockfile_match\", \"message\": \"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\", \"severity\": \"critical\", \"source\": \"lockfile\"}], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\", \"reasons\": [{\"code\": \"transitive_lockfile_match\", \"message\": \"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\", \"severity\": \"critical\", \"source\": \"lockfile\"}], \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        },
+        {
+          "evidence_id": "evidence-8345d9dc94432397",
+          "action_id": "codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "request_id": "c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55",
+          "harness": "codex",
+          "workspace": "project",
+          "signal_id": "block",
+          "category": "supply-chain",
+          "severity": "critical",
+          "confidence": 1.0,
+          "summary": "HOL Guard blocked `anchor@1.0.0` before install.",
+          "details_json": "{\"agent_app\": \"codex\", \"command_shape\": \"npm install anchor@1.0.0\", \"decision\": \"block\", \"enforcement\": \"offline_cached\", \"exception_id\": null, \"harness\": \"codex\", \"matched_rule_id\": null, \"package\": {\"decision\": \"block\", \"ecosystem\": \"npm\", \"name\": \"anchor\", \"namespace\": null, \"requestedVersion\": \"1.0.0\", \"resolvedVersion\": \"1.0.0\", \"recommendedFixVersion\": null, \"riskScore\": 980, \"direct\": true, \"dependencyPath\": null, \"packageManager\": \"npm\", \"redactedCommand\": \"npm install anchor@1.0.0\", \"alias\": null, \"sourceIdentity\": null, \"sourceRepository\": null, \"sourceRevisionKind\": null, \"relatedAdvisoryIds\": [\"GHSA-vh95-rmgr-6w4m\"], \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"advisoryAliases\": [\"GHSA-VH95-RMGR-6W4M\", \"CVE-2020-7598\"], \"supportLevel\": \"protected\", \"supportLabel\": \"Protected\"}, \"package_manager\": \"npm\", \"repo_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\", \"reasons\": [{\"advisoryId\": \"GHSA-vh95-rmgr-6w4m\", \"code\": \"known_malware_or_kev\", \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\", \"severity\": \"critical\", \"source\": \"bundle\"}], \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\"}",
+          "action_identity": null,
+          "created_at": "2026-05-19T00:00:00Z"
+        }
+      ]
+    }
+  ],
+  "assertions_passed": true
+}

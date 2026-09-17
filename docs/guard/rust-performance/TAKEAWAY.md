@@ -6,6 +6,7 @@ The exact conversation, its title and linked PRD/TODO/Takeaway documents were
 reviewed in full. Finish implementation, measurement, validation, concrete review
 and permitted GitHub publication. Do not restart completed work, ask for already
 granted authorization, create GitHub issues or weaken acceptance to fit results.
+The user explicitly requests no questions and continuation until the work is complete.
 The target is `release/3.2`. Required independent approval remains a real gate.
 
 Read the original `PRD.md` and `TODO.md`, then `EXECUTION.md`,
@@ -16,8 +17,8 @@ implementation tasks. Preserve those fields and thresholds when updating status.
 
 ## Establish the actual source and artifact
 
-This documentation checkpoint covers `4ea1f8f76049cc8bf5b69b34078da42bb14c6ead` on
-`codex/rsp-takeover-qualification-20260917`, dated 2026-09-17. Inspect actual
+This documentation checkpoint covers `ffec9b2d384e3a5069544d4428d0e4b3ddfaa74b` on
+`codex/rsp-takeover-proof-20260917`, dated 2026-09-17. Inspect actual
 HEAD, branch, status and worktree ownership before editing; later work may already
 be integrated. Use isolated worktrees and one owner per shared boundary.
 
@@ -28,8 +29,8 @@ contains squashed main lineage; preserve release-only controls/UI and carried
 main authority without blindly re-merging.
 
 The last published implementation preceding this checkpoint is
-`5ee52a03e62b9e4940063b348185bedaddf0cb53`, Git tree
-`7580ea94e4847762df8eb8eed6dfefc26a692551`, verified identical to local c0445a0db.
+`ae33987d0c8675c36a77375e03419aee920825f6`, Git tree
+`f292bc95eb53af29162fcc8ea7e46a4b213803b7`, verified identical to local 8aa2b63ee.
 Foundation #2951 is e449594e86c717e66e14598a4130475de79c536f with normal
 protected auto-merge enabled; approval remains missing. Refresh GitHub heads,
 base, checks, reviews, threads and rules before publication/merge claims. Verify
@@ -41,8 +42,10 @@ Ordinary daemon hooks directly use HookWorker and the persistent native helper.
 The legacy pool remains for compatibility/legacy revalidation; native Codex live
 completion has a direct finalizer. Live Linux image reuse requires a previously
 verified exact generation; replacements and unsupported systems fully validate.
-Acknowledged observe mode avoids one reread; enforcing posture transfer remains
-separate open work. Stat-only identity or cached publication is never authority.
+All ordinary native evaluation and Python delivery use the same acknowledged
+posture without a fresh configuration read. Unacknowledged Watch edits cannot
+weaken enforcement. Actual installed transition/load qualification remains open.
+Stat-only identity or cached publication is never authority.
 
 Command activation requires native program-v1 and control-fence-v1 capabilities,
 verified trust/catalog/program/control identity and the live SH/EX protocol.
@@ -79,44 +82,80 @@ MCP keeps exact input/catalog/authority revalidation, terminal bounded I/O and t
 
 Read current owner commits and checkpoints before redoing any item:
 
-1. Complete package controls and the bounded benchmark-only npm lockfile native
-   pilot against optimized Python. The 36-cell matrix has 31 complete comparable
-   pairs and five incomplete pairs; preserve four baseline 120-second timeouts,
-   the other baseline harness error and candidate cell-30 error. Compare the
-   entire public result and all persisted evidence columns. Keep policy, trust,
-   freshness and evidence authority in Python; include IPC/startup in route cost.
-2. Complete rich scanner full-CLI comparison with the ASCII ≤4 MiB native span
-   extractor. Python retains the full finding/HMAC/context/coverage contract;
-   non-ASCII/large inputs fall back explicitly. Keep small-control regressions,
-   eviction failures and the interrupted relocation sample. Post-relocation
-   executable-backed cohorts must remain separately identified. No activation
-   follows a microbenchmark or unqualified/confounded result.
-3. Complete MCP optimized actual-stdio five-block rebaseline and profiles.
-   RSP-100 remains open because categories are still derived twice for one
-   ordinary request. Any reuse must consume one owned immutable exact-input
-   snapshot, preserve ordering, validate binding and recompute after mutation or
-   fresh authority/catalog preparation. Never cache a policy verdict across wait.
-4. Run the integrated paired driver, Watch fix, both-arm failure accounting,
-   flat Codex fault proofs and full failure diagnostics on actual GitHub hosts.
-   Linux launcher and Intel source-witness failures need their actual sanitized
-   reason/action/route/sample evidence; do not guess or suppress failures.
-5. Diagnose macOS HTTPServer `socket.getfqdn` startup. The previous exact PTR
-   resolver experiment installed/cleaned successfully but received zero packets;
-   all before/after/cleanup lookups timed out. Read-only resolver-selection and
-   self-probe diagnostics are added. Do not patch the baseline, switch production
-   transport, flush/restart services speculatively or raise the 400 ms budget.
-6. Run the integrated installed artifact replacement/rollback probes with exact baseline
-   API/schema handling. The baseline lacks the candidate receipt getter and
-   native command programs; candidate errors must never use a legacy fallback.
-   A third isolated environment may test stopped same-version artifact replacement
-   without altering paired benchmark installations. Version/program downgrade,
-   live mixed generations, in-progress requests, signing and enrollment require
-   their own actual evidence and cannot be inferred from that narrower probe.
-7. Verify the scheduler correction on GitHub: dispatch now broadcasts only after
-   actual admission/expiry progress and still wakes released byte reservations.
-   The deterministic regression failed before the fix; the exact 48-review test
-   passes with unchanged 10-second queue/6-second runner budgets. Preserve the
-   original failed run; its sole cause is not proven by the available counters.
+1. Retain the completed package correction and scoped native parser no-go. All
+   30 pilot/control pairs, 15 correction pairs and five direct original-deny pairs
+   are retained. The primary native workload regresses CPU 11.03% and wall 16.31%.
+   The original 36-cell matrix includes 27 full evaluator attempts and nine separate
+   unversioned API diagnostics; RSP-050's literal full-route unversioned slice stays
+   open. Actual bare npm targets normalize to `latest`, not `None`; preserve the
+   six-call witness and do not invent a name-only production route to close a row.
+2. Retain the scanner's final scoped no-go: 30 corrected-reader pairs preserve
+   all 680 rich findings and improve mean CPU 31.6%, but p95 wall regresses 13.5%.
+   Keep all 24 attempted states, unavailable evictions, interrupted/confounded
+   cohorts and the separate executable-provenance correction. Production keeps
+   the descriptor-bound, size-limited Python reader and explicit incomplete
+   coverage. The final local isolated pure-wheel probe passes28 semantic cases;
+   finish actual installed native-wheel entrypoint checks on all four hosts, with
+   exact launcher/interpreter/wheel origin, staged bytes, limits, exits, links and
+   mutation evidence. Retain the disclosed local build-tool limitation.
+3. Keep the restored optimized Python MCP runtime default while finishing the
+   frozen facts experiments. Commit 88d815e2d removes the candidate runtime wiring;
+   the explicit private facts API/tests remain for measured comparisons.
+   First candidate C preserves semantic parity but regresses 128-KiB p95 47.79%
+   and CPU 17.22% against better Python B; it is not an accepted improvement.
+   Structural candidate D also regresses supported dense containers. Finish its
+   unchanged comparison against B, retaining
+   owned exact-input copies, type/order/signed-zero distinctions, fresh authority,
+   and nested/high-cardinality transient-memory controls. Near-4 MiB ASCII/Unicode leaves material local
+   classification cost, so build the bounded four-predicate private native pilot;
+   retain external 4 MiB framing and Python normalization/policy/approval authority.
+   Include the separate derived-text helper limit and all IPC/memory/CPU costs.
+4. Exercise the repaired expiry renewal on GitHub: preserve acknowledged command
+   controls, require exact accepted ACK and authenticated readback, suspend renewal
+   and prove real expiry under the original 3 s TTL and existing operation budgets.
+   Also execute the four installed posture transition groups under real four-route
+   concurrent load; verify every full authenticated ACK and durable native receipt.
+   Preserve the earlier failed source attempt and the final111-pass source evidence.
+   Also execute the four installed posture transition groups under real four-route
+   concurrent load; verify every full authenticated ACK and durable native receipt.
+   Preserve the earlier failed source attempt and the final111-pass source evidence.
+   Keep every original failure. Recovery, interpreter rejection and capacity now
+   need their bounded actual host evidence; never guess, repair permissions or
+   weaken route conservation to obtain a pass.
+5. Preserve the macOS resolver result. Correct root-owned configuration is selected,
+   direct UDP works, libc produces no observed requests and `getfqdn` still stalls.
+   Do not patch the pinned baseline, change transport, restart/flush services
+   speculatively or raise the 400 ms readiness budget. The new bounded read-only
+   owned-child libc lookup/stack witness runs after qualification and retains the
+   original return, packet counts and resolver state; diagnose from its actual output. The new bounded read-only
+   owned-child libc lookup/stack witness runs after qualification and retains the
+   original return, packet counts and resolver state; diagnose from its actual output.
+6. Run the implemented rejected-downgrade containment and candidate restoration,
+   plus separate functional rollback through an exact compatible prior-candidate wheel.
+   Original baseline rejects the candidate combined command authority schema.
+   Keep all six receipts and stronger floor intact; never remove bindings to make
+   it run. Four pinned prior wheels have actual build a224cc2, distinct from their
+   associated ae PR head. The explicit suite contract requires seven positive
+   phases and one verified expected negative, while retaining the original failed
+   phase and four-of-five positive count. Preserve original registration and prove retirement before replacement.
+   Prior artifact discovery runs inside its mandatory15s contained transition
+   check; missing or changed bytes fail while independent paired/Ollama/scanner
+   checks continue. No mutable latest or rebuild fallback is allowed.
+   Prior artifact discovery runs inside its mandatory15s contained transition
+   check; missing or changed bytes fail while independent paired/Ollama/scanner
+   checks continue. No mutable latest or rebuild fallback is allowed.
+   Windows needs initial worker failure evidence. Same-version stopped transitions
+   cannot qualify changed program/version/signing, enrollment or live generations.
+7. Recheck integrated CI. Full pytest collection succeeds after removing a scanner
+   test's global import-path mutation; the scheduler's actual GitHub job passes.
+   Benchmark-only crate ownership is explicit, and four exact verified Gitleaks
+   source-hash findings have fingerprint-specific exclusions with a clean rescan.
+   Run all required checks on the resulting head, preserving earlier failures.
+8. Finish the private Linux Claude Pre/Post native launcher pilot using the existing
+   runtime distribution. Authenticate package/registration independently of daemon
+   discovery; preserve challenge/POST, response/exit, total deadline, contained
+   recovery and explicit failure disposition. Default and signed Desktop paths
+   remain unchanged until route-specific installed parity and benefit justify use.
 
 The archive investigation is complete for its declared profiling scope: 508/510
 expected results, two restrictive timeouts and an earlier warmup timeout retained,
@@ -126,18 +165,23 @@ worker could never help. Conditional ports follow the original PRD decision rule
 A native pilot is not mandatory for every optional port, but measured coverage and
 predicted benefit must support a deferral; large unmeasured cases remain open.
 
-At 5ee, all 36 workflows completed: 32 successful, four failed. Paired run
-35213401779 failed all targets before complete paired sampling. Linux/macOS ARM
-Ollama overall probes pass with 22 native cases each; Windows late readiness is
-406.0 ms and Intel enabled readiness 430.438 ms. Builder passes all four. Native
-wheel Linux/Intel witnesses fail; Desktop/CI also report stale command-source
-bindings and one scheduler deadline. Source fixes are integrated, not yet passing
-host evidence. Earlier 42579 failures and subsequent artifacts remain retained.
+At ae33987, all 36 workflows completed: 30 successful, six failed. Both arms
+were attempted on all four platforms, with no complete paired comparison. All
+four installed Ollama probes pass 22 cases and all Builder probes pass. Linux
+and both macOS hosts complete upgrade/reinstall, then old-baseline downgrade
+fails readiness while preserving receipts and authority. Windows stops before
+completed worker evidence. Main CI collection, experimental ownership and exact
+Gitleaks fixes are now integrated; Linux/Intel capacity, expiry and original
+baseline failures require new host evidence. Retain ae, 5ee and 42579 records.
 
 Local AF_UNIX creation is denied, so do source tests/builds locally and real
 installed daemon/launcher execution on supported GitHub hosts. Protect benchmark
 provenance: serialize competing CPU/I/O work through the measurement lock; do not
 move executables or caches under an active run. Retain all interrupted attempts.
+
+Read the concrete CANARY_ROLLBACK_PLAN.md and canary-rollback-manifest.json before
+advancing any cohort. Exact prior artifacts and stop conditions are recorded;
+candidate identities, actual qualification/rollback and activation remain pending.
 
 ## Qualify the frozen candidate without weakening the PRD
 
@@ -183,8 +227,9 @@ behavior corrections separately from performance claims.
 Update all 144 task records and regenerate the Markdown ledger with exact evidence,
 counts, unresolved dependencies and original-field integrity. Keep EXECUTION,
 CURRENT_CONTRACT and this prompt aligned with the selected source and dated actual
-GitHub state. At this checkpoint the count is 64 DONE/40 OPEN/40 BLOCKED; those
-numbers do not claim release completion. RSP-144 stays open until final evidence,
+GitHub state. At this checkpoint the count is 70 DONE/33 OPEN/33 BLOCKED/8 DEFERRED; those
+numbers do not claim release completion. Scoped conditional package/scanner
+production ports are deferred after their measured no-go decisions. RSP-144 stays open until final evidence,
 conditional decisions and release state are delivered.
 
 Obtain final Greptile 5/5 and required independent CODEOWNER approval through the

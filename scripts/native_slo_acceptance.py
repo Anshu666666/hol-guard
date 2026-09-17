@@ -150,7 +150,13 @@ def scoped_acceptance(
     # Preserve that result while qualifying the candidate's observed semantic
     # scope separately. Neither side scenario contributes a latency sample.
     side_results: dict[str, Any] = {}
-    for name in ("registered_surfaces", "mixed_contention", "priority_approval", "priority_input"):
+    for name in (
+        "registered_surfaces",
+        "mixed_contention",
+        "priority_approval",
+        "priority_input",
+        "posture_transitions",
+    ):
         observed: dict[str, list[bool]] = {}
         for arm_name, reports in (("baseline", baseline), ("candidate", candidate)):
             outcomes: list[bool] = []

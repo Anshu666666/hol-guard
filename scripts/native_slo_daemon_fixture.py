@@ -31,6 +31,7 @@ from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
+from scripts.native_slo_observation_failure import retain_failed_recovery_observation  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
 from scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402
 
@@ -227,7 +228,7 @@ class DaemonFixture:
             harness, request_payload if request_payload is not None else payload(event, size_class)
         )
         after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
-        return Observation(
+        observation = Observation(
             harness,
             event,
             size_class,
@@ -236,6 +237,8 @@ class DaemonFixture:
             is_allowed(event, response),
             _is_explicit_capacity_response(response),
         )
+        retain_failed_recovery_observation(observation, response, before, after)
+        return observation
 
     def observe_unattributed(self, harness: str, event: str, size_class: str) -> Observation:
         response, latency = self.request(harness, payload(event, size_class))
@@ -371,6 +374,7 @@ def _serve_session(session: Any, fault: Any) -> None:
     profiler: PhaseProfiler | None = None
     mixed = MixedScenarioFixture(session)
     launcher_review = LauncherReviewFixture(session)
+    posture: Any = None
     try:
         _emit(
             {
@@ -415,6 +419,12 @@ def _serve_session(session: Any, fault: Any) -> None:
                 _emit(mixed.dispatch(operation, request))
             elif isinstance(operation, str) and operation.startswith("launcher_approval_"):
                 _emit(launcher_review.dispatch(operation, request))
+            elif isinstance(operation, str) and operation.startswith("posture_"):
+                if posture is None:
+                    from scripts.native_slo_posture_server import PostureScenarioFixture
+
+                    posture = PostureScenarioFixture(session)
+                _emit(posture.dispatch(operation, request))
             elif operation == "close":
                 if profiler is not None:
                     profiler.__exit__(None, None, None)
@@ -425,8 +435,12 @@ def _serve_session(session: Any, fault: Any) -> None:
         try:
             launcher_review.close()
         finally:
-            mixed.close()
-            _emit({"state": "progress", "stage": "cleanup"})
+            try:
+                if posture is not None:
+                    posture.close()
+            finally:
+                mixed.close()
+                _emit({"state": "progress", "stage": "cleanup"})
 
 
 if __name__ == "__main__":

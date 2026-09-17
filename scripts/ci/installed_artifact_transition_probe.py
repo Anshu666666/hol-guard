@@ -27,6 +27,7 @@ from codex_plugin_scanner.guard.adapters.base import HarnessContext  # noqa: E40
 from codex_plugin_scanner.guard.adapters.claude_code import ClaudeCodeHarnessAdapter  # noqa: E402
 from codex_plugin_scanner.guard.adapters.claude_hook_config import claude_managed_settings_path  # noqa: E402
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings  # noqa: E402
+from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer  # noqa: E402
 from codex_plugin_scanner.guard.native_decision_receipt import (  # noqa: E402
     receipt_matches_edge,
@@ -52,10 +53,21 @@ from codex_plugin_scanner.guard.runtime.extension_control_proof import (  # noqa
 )
 from codex_plugin_scanner.guard.store import GuardStore  # noqa: E402
 from codex_plugin_scanner.guard.store_base import EncryptedFileSecretStore  # noqa: E402
-from scripts.ci.installed_transition_receipts import TransitionReceiptReader, same_receipt  # noqa: E402
+from scripts.ci.installed_transition_diagnostics import (  # noqa: E402
+    LEGACY_REJECTION_REASONS,
+    policy_state,
+    process_metadata,
+    publisher_metadata,
+    state_preserved,
+)
+from scripts.ci.installed_transition_receipts import (  # noqa: E402
+    AUDITED_BASELINE_SHA,
+    TransitionReceiptReader,
+    same_receipt,
+)
 from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
 from scripts.native_slo_command_fixture import prepare_empty_command_authority  # noqa: E402
-from scripts.native_slo_contract import assert_privacy_safe  # noqa: E402
+from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import failure_evidence  # noqa: E402
 from scripts.native_slo_launcher import _observe_launcher, registered_claude_argv  # noqa: E402
 from scripts.native_slo_session import AdapterSession  # noqa: E402
@@ -63,6 +75,11 @@ from scripts.native_slo_workloads import configuration_text  # noqa: E402
 
 _STATE_LIMIT = 64 * 1024
 _PHASE_NAMES = ("clean_baseline", "candidate_upgrade", "candidate_reinstall", "baseline_rollback", "candidate_restore")
+_COMPATIBLE_PHASE_NAMES = (
+    "compatible_candidate_start",
+    "compatible_candidate_rollback",
+    "compatible_candidate_restore",
+)
 
 
 def require(condition: object, reason: str) -> None:
@@ -182,8 +199,16 @@ class RetainedSession(AdapterSession):
         self.last_stop_diagnostic = {}
         self._stop_diagnostic_written = False
         self.retirement_confirmed = False
+        self.start_failure = {}
         self.daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
         self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)
+
+    def start(self) -> None:
+        try:
+            super().start()
+        except BaseException:
+            self.start_failure = publisher_metadata(self.daemon._server.hook_worker.policy_snapshot_publisher)
+            raise
 
     def stop_resident(self) -> bool:
         stopped = super().stop_resident()
@@ -200,6 +225,38 @@ class RetainedSession(AdapterSession):
             "contained",
             "already-stopped",
         }
+
+    def verify_failed_start_retirement(self) -> dict:
+        """Ask the exact installed runtime for authenticated idempotent stop proof."""
+        publisher = publisher_metadata(self.daemon._server.hook_worker.policy_snapshot_publisher)
+        evidence = {"publisher_after_close": publisher, "prior_stop": self.last_stop_diagnostic, "verified": False}
+        if publisher.get("thread_alive") is not False or getattr(self.daemon._server, "active_hook_requests", 0) != 0:
+            return evidence
+        environment = dict(os.environ)
+        clear_proof_environment(environment)
+        result = run_isolated_hook_process(
+            (str(self.runtime), "resident-stop", "--state-dir", str(self.guard_home / "native-runtime")),
+            cwd=self.root,
+            environment=environment,
+            input_text="",
+            timeout_seconds=2,
+            output_limit=8192,
+        )
+        evidence.update(process_metadata(result))
+        evidence.update(
+            timed_out=result.timed_out,
+            containment_failed=result.containment_failed,
+            limit_exceeded=result.output_limit_exceeded,
+        )
+        evidence["verified"] = (
+            result.returncode == 0
+            and not result.timed_out
+            and not result.containment_failed
+            and not result.output_limit_exceeded
+            and self.last_stop_diagnostic.get("status") != "contained_client_cleanup_failed"
+        )
+        self.retirement_confirmed = evidence["verified"]
+        return evidence
 
 
 def observe_registered(
@@ -256,20 +313,34 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
         "native_program_downgrade_qualified": False,
     }
     session = None
+    before = {}
+    previous = None
+
+    def stage(value: str) -> None:
+        report["last_stage"] = value
+        print("HOL_GUARD_TRANSITION_STAGE=" + value, file=sys.stderr, flush=True)
+
     try:
+        stage("installed_identity")
         runtime, identity = installed_identity(expected)
         report["identity"] = identity
+        compatible = phase in _COMPATIBLE_PHASE_NAMES
+        sequence = _COMPATIBLE_PHASE_NAMES if compatible else _PHASE_NAMES
+        require(phase in sequence, "phase_invalid")
+        if compatible:
+            require(identity["native_program_supported"], "compatible_program_unsupported")
+        stage("private_history")
         journal = root / "transition-state.json"
         previous = read_private(journal) if journal.exists() else None
-        require((phase == "clean_baseline") == (previous is None), "phase_history_mismatch")
-        require(phase in _PHASE_NAMES, "phase_invalid")
+        require((phase == sequence[0]) == (previous is None), "phase_history_mismatch")
         if previous is not None:
-            require(previous["phase"] == _PHASE_NAMES[_PHASE_NAMES.index(phase) - 1], "phase_history_mismatch")
+            require(previous["phase"] == sequence[sequence.index(phase) - 1], "phase_history_mismatch")
         guard_home = root / ".hol-guard"
         guard_home.mkdir(mode=0o700, exist_ok=True)
         (root / "workspace").mkdir(mode=0o700, exist_ok=True)
         if previous is None:
             (guard_home / "config.toml").write_text(configuration_text("normal"))
+        stage("open_store")
         store = GuardStore(guard_home)
         store._extension_control_authority_secret_store = EncryptedFileSecretStore(guard_home)
         if previous is None:
@@ -279,11 +350,13 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
                 guard_home,
                 {"enabled": True, "new_password": password, "confirm_password": password, "cooldown_seconds": 0},
             )
-            commit_layer(store, password, revision=0, enabled=False)
+            commit_layer(store, password, revision=0, enabled=compatible)
         else:
             password = previous["password"]
+        stage("verify_authority")
         view = authority_view(store, previous)
         old_receipts = previous["receipts"] if previous else []
+        stage("verify_receipts")
         reader = TransitionReceiptReader(store, build_sha=identity["build_sha"])
         require(
             all(reader.preserves_prior(item) for item in old_receipts),
@@ -295,7 +368,8 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
         if phase == "candidate_upgrade":
             commit_layer(store, password, revision=view.revision, enabled=True)
             view = authority_view(store, None)
-        enabled = phase != "clean_baseline"
+        enabled = compatible or phase != "clean_baseline"
+        stage("reject_stale_write")
         # A real password-authorized stale write must still fail before mutation.
         try:
             commit_layer(store, password, revision=max(0, view.revision - 1), enabled=not enabled)
@@ -307,8 +381,16 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
         require(current.revision == view.revision and current.layers == view.layers, "stale_write_changed_authority")
         report["control_revision"] = current.revision
         report["authority_health"] = current.health.value
+        before = policy_state(guard_home)
+        if phase == "baseline_rollback":
+            report["policy_before"] = before
+            require(previous is not None and before == previous.get("policy_state"), "prior_policy_checkpoint_changed")
+            report["prior_policy_checkpoint_verified"] = True
+        stage("construct_daemon")
         session = RetainedSession(runtime, root, store)
+        stage("native_start")
         with session:
+            stage("registered_hooks")
             receipts, registration_digest = observe_registered(session, identity, previous, reader)
             require(
                 len({item["decision_id"] for item in [*old_receipts, *receipts]}) == len(old_receipts) + len(receipts),
@@ -316,10 +398,13 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
             )
             report["registered_native_cases"] = len(receipts)
             report["registration_preserved"] = previous is not None
+            stage("retire")
         require(session.retirement_confirmed, "generation_cleanup_unverified")
         report["cleanup_confirmed"] = True
         _, after = installed_identity(expected)
         require(after == identity, "artifact_changed_during_phase")
+        stage("checkpoint")
+        checkpoint = policy_state(guard_home)
         write_private(
             journal,
             {
@@ -329,13 +414,66 @@ def run_phase(expected: dict, root: Path, phase: str) -> dict:
                 "ollama_state": "enabled" if enabled else "disabled",
                 "receipts": [*old_receipts, *receipts],
                 "registration_sha256": registration_digest,
+                "policy_state": checkpoint,
             },
         )
+        report["restored_after_rejected_legacy"] = previous is not None and previous.get("rejected_legacy") is True
         report["passed"] = True
     except Exception as error:
         report["failure"] = failure_evidence(error)
         if session is not None:
             report["cleanup_confirmed"] = session.retirement_confirmed
+            report["publisher_at_failure"] = session.start_failure
+            report["stop_diagnostic"] = session.last_stop_diagnostic
+            report["policy_after"] = policy_state(session.guard_home)
+            # Preserve a rejected legacy start as a negative result. Continuing
+            # to a candidate restore needs independent retirement and unchanged
+            # candidate authority bytes; an arbitrary startup failure never qualifies.
+            if (
+                phase == "baseline_rollback"
+                and previous is not None
+                and identity["build_sha"] == AUDITED_BASELINE_SHA
+                and identity["native_program_supported"] is False
+                and session.start_failure.get("ready") is False
+                and session.start_failure.get("reason") in LEGACY_REJECTION_REASONS
+                and state_preserved(before, report["policy_after"])
+            ):
+                try:
+                    report["retirement_verification"] = session.verify_failed_start_retirement()
+                    report["cleanup_confirmed"] = session.retirement_confirmed
+                    if session.retirement_confirmed:
+                        preserved = authority_view(store, previous)
+                        require(preserved.revision >= current.revision, "authority_revision_regressed")
+                        require(all(reader.preserves_prior(item) for item in old_receipts), "prior_receipt_changed")
+                        context = HarnessContext(home_dir=root, workspace_dir=session.workspace, guard_home=guard_home)
+                        with claude_managed_settings_path(context).open("rb") as stream:
+                            registration = stream.read(_STATE_LIMIT + 1)
+                        require(len(registration) <= _STATE_LIMIT, "registration_limit")
+                        require(
+                            hashlib.sha256(registration).hexdigest() == previous["registration_sha256"],
+                            "registration_changed",
+                        )
+                        require(state_preserved(before, policy_state(guard_home)), "policy_changed_after_retirement")
+                        _, final_identity = installed_identity(expected)
+                        require(final_identity == identity, "artifact_changed_during_phase")
+                        write_private(
+                            journal,
+                            {
+                                **previous,
+                                "phase": phase,
+                                "revision": preserved.revision,
+                                "rejected_legacy": True,
+                                "policy_state": before,
+                            },
+                        )
+                        report.update(
+                            rejected_legacy_start_verified=True,
+                            persistent_authority_preserved=True,
+                            registration_preserved=True,
+                            control_revision=preserved.revision,
+                        )
+                except Exception as continuation_error:
+                    report["continuation_failure"] = failure_evidence(continuation_error)
     return assert_privacy_safe(report)
 
 
@@ -345,7 +483,7 @@ def main() -> int:
     parser.add_argument("--fixture-root", type=Path, required=True)
     parser.add_argument(
         "--phase",
-        choices=_PHASE_NAMES,
+        choices=(*_PHASE_NAMES, *_COMPATIBLE_PHASE_NAMES),
         required=True,
     )
     args = parser.parse_args()

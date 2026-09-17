@@ -168,6 +168,24 @@ def test_counter_regression_remains_failure(monkeypatch):
         _wave(monkeypatch, [_observation(allowed=True)], {"native_resident": 1}, before={"native_resident": 2})
 
 
+def test_failed_conservation_retains_independent_counts_and_delivery_errors(monkeypatch):
+    with pytest.raises(RuntimeError, match="does not match delivered decisions") as raised:
+        _wave(
+            monkeypatch,
+            [_observation(allowed=True)],
+            {"native_resident": 42, "native_fail_safe": 3},
+            before={"native_resident": 40, "native_fail_safe": 3},
+            errors=1,
+        )
+    detail = raised.value.detail
+    assert detail["concurrency"] == 2
+    assert detail["routes_before"] == {"native_resident": 40, "native_fail_safe": 3}
+    assert detail["routes_after"] == {"native_resident": 42, "native_fail_safe": 3}
+    assert detail["delivered_count"] == detail["delivered_allowed"] == detail["transport_errors"] == 1
+    assert detail["delivered_overloaded"] == 0
+    assert detail["native_overloads_before"] == detail["native_overloads_after"] == 10
+
+
 @pytest.mark.parametrize("native_overloads", [-1, 2])
 def test_invalid_native_overload_delta_remains_failure(monkeypatch, native_overloads):
     with pytest.raises(RuntimeError, match="native overload counters were invalid"):

@@ -1,0 +1,54 @@
+{
+  "finished_utc": "2026-09-17T13:36:48.491149+00:00",
+  "launcher_binding": {
+    "hol-guard": {
+      "interpreter_matches_current_installation": true,
+      "record_verified": true,
+      "uv_pe_resources": false,
+      "windows_embedded_wrapper": false,
+      "wrapper": "uv"
+    },
+    "hol-guard-secrets": {
+      "interpreter_matches_current_installation": true,
+      "record_verified": true,
+      "uv_pe_resources": false,
+      "windows_embedded_wrapper": false,
+      "wrapper": "uv"
+    }
+  },
+  "launcher_sha256": {
+    "hol-guard": "f142432aea1485d2957d51f5693542a4deff1297941655e7a24cb404d2c31749",
+    "hol-guard-secrets": "8f7feca502d6cfaf21d5de5abfcd7da716283b0edaa2fe79a9c657ac3430fbfe"
+  },
+  "local_build_limitations": "The unchanged development pure wheel used existing Hatchling 1.32.0 with dependency checking explicitly skipped; it is not a normal locked native release build. No wheel rebuild, reinstall or entrypoint modification was performed for this replay.",
+  "module_sha256": {
+    "codex_plugin_scanner.cli": "3c3b844c9144cefd850ea64d0ed7b66ef55d8166f017ec18b554c0b905df14e7",
+    "codex_plugin_scanner.guard.secrets.cli": "5f8fd1af6831d64ce53de3c6f64db72036b4ccc365155a2ac67ac7343692de2c",
+    "codex_plugin_scanner.guard.secrets.git_blob_scan_cache": "b3c020b6e2a7e87cbfacbd88781b1a6c4954ae4321dd0927bb7e3c2015c79374",
+    "codex_plugin_scanner.guard.secrets.git_object_reader": "8a298be849cd14277e19acd2f6341f25e47de94b57040716ad05b0364e60c445",
+    "codex_plugin_scanner.guard.secrets.secret_detection": "6b05e8e81dc5a87102d7b6adf62f68e02ada8cd5ff5068804b25c036449d85cc",
+    "codex_plugin_scanner.guard.secrets.secret_repository_scanner": "f442f7066ff737aee8efa889954bafad13a8800188c7d6068d1aaaee2f460d64",
+    "codex_plugin_scanner.guard.secrets.secret_staged_scanner": "14ed586905fe5154054a5a12d641488545619d721089b7335c24c16768c3df99",
+    "codex_plugin_scanner.path_support": "31e84c782514afae8458719b8fdcc70df1c15dd1119b29a1082165232b76248b"
+  },
+  "output_limit": "temporary files; post-exit 2MiB parser/buffer limit; no active child-output disk limit",
+  "platform_scope": "Installed retained-Python Linux only. Windows parser/resource unit fixtures are not hosted execution; actual four-platform native-wheel receipts remain pending.",
+  "prior_receipts": "All prior raw receipts remain unchanged. The preceding launcher-bound receipt uses the parser revision before the encoding-cookie correction and is not the final source revision.",
+  "probe_commit": "0fdd28fc61f067b41638d4348c9b06598022d250",
+  "probe_sha256": "15c266b3fe892a2bdefffade0a386bd1b07d60790d7f7f16a409bdc6f95e22df",
+  "receipt": "rsp-scanner-installed-encoding-bound-linux.json",
+  "receipt_sha256": "7dfcf5278aa8e4ff0a78688c1264ff1b02079e77e1fefa48268ea01f9153b825",
+  "result": "28 actual installed cases passed; no skipped link cases; both launchers have verified bindings",
+  "review_correction": "Parsing a UTF-8-decoded Unicode string ignores a Python encoding cookie, so unicode_escape bytes could hide extra statements from that check. The parser now consumes original source bytes and retains the POSIX shebang to preserve cookie line positions. Neither actual entrypoint nor wheel was modified.",
+  "ruff": "passed",
+  "schema": "guard-scanner-installed-encoding-validation.v1",
+  "started_utc": "2026-09-17T13:36:19.854268+00:00",
+  "tests": {
+    "command": "pytest -q tests/test_installed_offline_secrets_probe.py",
+    "new_regressions": "Seven parse-only cases: UTF-8 cookie and unicode_escape hidden-statement rejection for POSIX, distlib ZIP and uv resource ZIP, plus an ignored third-line POSIX cookie. The witness is parsed with Python bytes and Unicode parsers to establish their semantic difference; it is never executed.",
+    "pytest_seconds": 0.7,
+    "result": "50 passed"
+  },
+  "wheel_module_launcher_bytes_unchanged_from_previous_receipt": true,
+  "wheel_sha256": "f10ef58ad4337699fe3c444f50b1969021610dafcec72d9a027a81742d307654"
+}

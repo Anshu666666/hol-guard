@@ -1,0 +1,69 @@
+{
+  "finished_utc": "2026-09-17T13:27:23.028438+00:00",
+  "launcher_binding": {
+    "hol-guard": {
+      "interpreter_matches_current_installation": true,
+      "record_verified": true,
+      "uv_pe_resources": false,
+      "windows_embedded_wrapper": false,
+      "wrapper": "uv"
+    },
+    "hol-guard-secrets": {
+      "interpreter_matches_current_installation": true,
+      "record_verified": true,
+      "uv_pe_resources": false,
+      "windows_embedded_wrapper": false,
+      "wrapper": "uv"
+    }
+  },
+  "launcher_sha256": {
+    "hol-guard": "f142432aea1485d2957d51f5693542a4deff1297941655e7a24cb404d2c31749",
+    "hol-guard-secrets": "8f7feca502d6cfaf21d5de5abfcd7da716283b0edaa2fe79a9c657ac3430fbfe"
+  },
+  "local_build_limitations": "See rsp-scanner-installed-local-validation-linux.json: development pure wheel used existing Hatchling 1.32.0 with dependency check explicitly skipped; not a normal locked native release build. No wheel rebuild, reinstall or entrypoint modification was performed for this replay.",
+  "module_sha256": {
+    "codex_plugin_scanner.cli": "3c3b844c9144cefd850ea64d0ed7b66ef55d8166f017ec18b554c0b905df14e7",
+    "codex_plugin_scanner.guard.secrets.cli": "5f8fd1af6831d64ce53de3c6f64db72036b4ccc365155a2ac67ac7343692de2c",
+    "codex_plugin_scanner.guard.secrets.git_blob_scan_cache": "b3c020b6e2a7e87cbfacbd88781b1a6c4954ae4321dd0927bb7e3c2015c79374",
+    "codex_plugin_scanner.guard.secrets.git_object_reader": "8a298be849cd14277e19acd2f6341f25e47de94b57040716ad05b0364e60c445",
+    "codex_plugin_scanner.guard.secrets.secret_detection": "6b05e8e81dc5a87102d7b6adf62f68e02ada8cd5ff5068804b25c036449d85cc",
+    "codex_plugin_scanner.guard.secrets.secret_repository_scanner": "f442f7066ff737aee8efa889954bafad13a8800188c7d6068d1aaaee2f460d64",
+    "codex_plugin_scanner.guard.secrets.secret_staged_scanner": "14ed586905fe5154054a5a12d641488545619d721089b7335c24c16768c3df99",
+    "codex_plugin_scanner.path_support": "31e84c782514afae8458719b8fdcc70df1c15dd1119b29a1082165232b76248b"
+  },
+  "output_limit": "temporary files; post-exit 2MiB parser/buffer limit; no active child-output disk limit",
+  "platform_scope": "Installed retained-Python Linux smoke only. Actual native-wheel receipts from Linux, macOS Intel, macOS ARM64 and Windows hosted jobs remain pending.",
+  "prior_receipts": "All three prior raw receipts remain unchanged. They establish observed results and parent module identity, but do not contain the added binding of actual launcher execution to that installation.",
+  "probe_commit": "9ab3cb790865deb767f8739118b7f62e1808a945",
+  "probe_sha256": "fdd81eb74f6a3376b5133f47db10f43838bf5b288d454f899cc170f8dd2cd4d4",
+  "receipt": "rsp-scanner-installed-launcher-bound-linux.json",
+  "receipt_sha256": "f7f80ad9b6bf8de256c204e1e509f0ed757e91847278e5292b7e72a32829b77e",
+  "result": "28 installed cases passed; no skipped link cases; both unchanged actual launchers bound to installed RECORD, supported wrapper and current lexical interpreter path",
+  "review_correction": "Parent module attestation and stable launcher hashes alone did not prove that actual launchers used the attested installation. The corrected probe verifies installed RECORD hash and size, exact supported wrapper AST and lexical absolute current-installation interpreter path before and after scanning; it does not resolve shared venv Python symlinks as identity.",
+  "ruff": "passed",
+  "schema": "guard-scanner-installed-launcher-validation.v1",
+  "started_utc": "2026-09-17T13:27:12.314556+00:00",
+  "tests": {
+    "command": "pytest -q tests/test_installed_offline_secrets_probe.py",
+    "new_regressions": [
+      "POSIX and distlib Windows wrapper acceptance plus wrong lexical environment, wrong module and extra executed statements rejection",
+      "uv Windows resource acceptance plus wrong lexical environment, trampoline kind and size rejection",
+      "replaced launcher rejected against installed RECORD",
+      "Win32 resource loading uses data-only flag and frees handle on success and bounded failure"
+    ],
+    "pytest_seconds": 0.72,
+    "result": "43 passed"
+  },
+  "wheel_module_launcher_bytes_unchanged_from_previous_receipt": true,
+  "wheel_sha256": "f10ef58ad4337699fe3c444f50b1969021610dafcec72d9a027a81742d307654",
+  "windows_support": {
+    "distlib_format": "appended shebang and ZIP with exactly one __main__.py",
+    "local_evidence": "parser fixtures and simulated Win32 API tests only; actual hosted Windows execution remains pending",
+    "primary_sources": [
+      "https://github.com/astral-sh/uv/blob/0.9.26/crates/uv-trampoline-builder/src/lib.rs",
+      "https://github.com/astral-sh/uv/blob/0.9.26/crates/uv-install-wheel/src/wheel.rs"
+    ],
+    "uv_format": "PE RT_RCDATA resources UV_TRAMPOLINE_KIND=1, UV_PYTHON_PATH and UV_SCRIPT_DATA; bounded LOAD_LIBRARY_AS_DATAFILE access without executing native code",
+    "uv_version": "0.9.26"
+  }
+}

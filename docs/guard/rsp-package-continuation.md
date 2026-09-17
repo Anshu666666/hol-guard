@@ -1,5 +1,10 @@
 # Package core completion: text projections and current-source matrix
 
+Follow-up: the [actual native selection and bundle correction](rsp-package-native-selection.md)
+records the completed first-format pilot, the direct repeated deny-regression
+control, and the bounded no-go decision. The measurements and pending-selection
+statements below remain historical records for the frozen source identified here.
+
 Source implementation: `06e97a984`, `040c18f85`, and `e79c4bf02`, based on `fb8d57a8efc3`. Intended integration: `release/3.2`. No native package crate, trust-authority change, or package-manager execution is introduced.
 
 ## RSP-052: one traversal of each supported text input
@@ -14,7 +19,7 @@ The older standalone manifest diff parsers and direct-selector helpers remain us
 
 ## RSP-050 and RSP-054: measured boundaries and comparison contract
 
-The new matrix runner varies dependency and bundle cardinality independently across 100, 1,000 and 10,000, covering absent, exact, unversioned and emergency-deny matching. Twenty-seven cells call the full local production evaluator; nine unversioned cells call the existing cached-bundle API because the production lockfile route resolves exact versions. Every full-route fixture contains a known-blocked direct anchor, with independently varied transitive match cases. The absent cases therefore retain one evidence row; exact/deny cases exercise dependency-sized result and evidence batches. These synthetic blocking fixtures do not establish latency for every package decision class.
+The new matrix runner varies dependency and bundle cardinality independently across 100, 1,000 and 10,000, covering absent, exact, unversioned and emergency-deny matching. Twenty-seven cells call the full local production evaluator; nine unversioned cells call the existing cached-bundle API because the production lockfile route resolves exact versions. The later [real artifact witness](rsp-package-unversioned-route.md) confirms that the full evaluator never passes a None version to that API and preserves RSP-050's literal full-route gap as open. Every full-route fixture contains a known-blocked direct anchor, with independently varied transitive match cases. The absent cases therefore retain one evidence row; exact/deny cases exercise dependency-sized result and evidence batches. These synthetic blocking fixtures do not establish latency for every package decision class.
 
 The local evaluator interval includes workspace reads, complete parsing, cached signed-bundle model construction, matching, policy/result composition, evaluation-cache writes and SQLite evidence persistence. Fixture signing, initialization, cache invalidation, result assertions, output hashing and optional profiling are outside primary timing. Network attempts fail the harness. CLI launch, installed shim transport, human approval, package-manager launch and final execution revalidation are not measured.
 

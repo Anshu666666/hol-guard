@@ -30,7 +30,11 @@ from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
 from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
-from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
+from scripts.native_slo_observation_failure import (
+    contextual_failure,
+    retain_failed_recovery_observation,
+    verdict_evidence,
+)
 from scripts.native_slo_source_witness import source_reference_denial_witness, source_review_witness
 
 _MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -405,7 +409,7 @@ class AdapterSession:
                 observed_semantics=verdict_evidence(response),
             ) from error
         after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        return Observation(
+        observation = Observation(
             harness,
             event,
             size_class,
@@ -414,6 +418,8 @@ class AdapterSession:
             is_allowed(event, response),
             _is_explicit_capacity_response(response),
         )
+        retain_failed_recovery_observation(observation, response, before, after)
+        return observation
 
     def native_overload_count(self) -> int:
         """Return the process-local native overload counter for this session."""

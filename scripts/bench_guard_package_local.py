@@ -31,6 +31,18 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
+try:
+    import resource
+except ImportError:  # Windows baseline measurements retain their previous parent-only scope.
+    resource = None
+
+
+def _reaped_child_cpu_seconds() -> float:
+    if resource is None:
+        return 0.0
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return usage.ru_utime + usage.ru_stime
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -40,6 +52,12 @@ def main() -> int:
     parser.add_argument("--mode", choices=("absent", "exact", "unversioned", "deny"), required=True)
     parser.add_argument("--samples", type=int, default=5)
     parser.add_argument("--profile", action="store_true", help="Profile one additional untimed evaluator sample")
+    parser.add_argument(
+        "--native-pilot-binary", type=Path, help="Explicit experimental npm parser; never a product default"
+    )
+    parser.add_argument(
+        "--allow-native-fallback", action="store_true", help="Measure an explicitly labelled outside-scope control"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.dependencies < 1 or args.bundle_size < 2 or args.samples < 1:
@@ -59,6 +77,15 @@ def main() -> int:
         _bundle_response,
         _package,
     )
+
+    pilot = None
+    if args.native_pilot_binary:
+        if args.mode == "unversioned":
+            parser.error("the unversioned API does not exercise a lockfile parser")
+        from package_native_pilot import NativePackagePilot
+
+        pilot = NativePackagePilot(args.native_pilot_binary)
+        pilot.install()
 
     # Unexpected networking fails the benchmark instead of contaminating local CPU/latency.
     network_attempts = []
@@ -102,7 +129,7 @@ def main() -> int:
         entries[f"node_modules/holder/node_modules/path-{index}"] = {"name": name, "version": "1.0.0"}
     lockfile = json.dumps({"lockfileVersion": 3, "packages": entries}, separators=(",", ":")).encode()
     target = "anchor@1.0.0"
-    wall, cpu, semantic, complete_semantic, evidence_semantic = [], [], [], [], []
+    wall, cpu, parent_cpu, child_cpu, semantic, complete_semantic, evidence_semantic = [], [], [], [], [], [], []
     profiler = cProfile.Profile() if args.profile else None
     load_at_start = os.getloadavg() if hasattr(os, "getloadavg") else None
     with tempfile.TemporaryDirectory(prefix="guard-package-bench-") as temporary:
@@ -127,6 +154,7 @@ def main() -> int:
             )
             if profiling:
                 profiler.enable()
+            child_started = _reaped_child_cpu_seconds()
             cpu_started = time.process_time_ns()
             started = time.perf_counter_ns()
             if args.mode == "unversioned":
@@ -144,7 +172,9 @@ def main() -> int:
                     profiler.disable()
                 else:
                     wall.append((time.perf_counter_ns() - started) / 1_000_000)
-                    cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+                    parent_cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+                    child_cpu.append((_reaped_child_cpu_seconds() - child_started) * 1000)
+                    cpu.append(parent_cpu[-1] + child_cpu[-1])
                 if any(decision.action != "block" for decision in decisions):
                     raise AssertionError("Unversioned bundle lookup lost a known-malware decision")
                 semantic.append(
@@ -162,7 +192,9 @@ def main() -> int:
                 profiler.disable()
             else:
                 wall.append((time.perf_counter_ns() - started) / 1_000_000)
-                cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+                parent_cpu.append((time.process_time_ns() - cpu_started) / 1_000_000)
+                child_cpu.append((_reaped_child_cpu_seconds() - child_started) * 1000)
+                cpu.append(parent_cpu[-1] + child_cpu[-1])
             expected_count = 1 if args.mode == "absent" else args.dependencies + 1
             if result.decision != "block" or len(result.packages) != expected_count:
                 raise AssertionError(f"Unexpected route output: {result.decision}, {len(result.packages)} packages")
@@ -223,7 +255,13 @@ def main() -> int:
         "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "wall_ms": wall,
         "cpu_ms": cpu,
-        "cpu_scope": "current evaluator process; child process CPU is not sampled",
+        "parent_cpu_ms": parent_cpu,
+        "reaped_child_cpu_ms": child_cpu,
+        "cpu_scope": (
+            "evaluator process plus user/system CPU of all children reaped during evaluation"
+            if resource is not None
+            else "evaluator process only; native pilot unavailable on this platform"
+        ),
         "wall_median_ms": statistics.median(wall),
         "cpu_median_ms": statistics.median(cpu),
         "semantic_sha256": semantic,
@@ -240,6 +278,9 @@ def main() -> int:
             "Shared host contention must be excluded before release qualification",
         ],
     }
+    if pilot is not None:
+        output["native_pilot"] = pilot.metadata()
+        output["native_pilot"]["fallback_control"] = args.allow_native_fallback
     if profiler is not None:
         stats = pstats.Stats(profiler)
         functions = []
@@ -272,6 +313,12 @@ def main() -> int:
         }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, indent=2) + "\n")
+    if (
+        pilot is not None
+        and not args.allow_native_fallback
+        and pilot.counts["native_complete"] != args.samples + int(args.profile)
+    ):
+        raise AssertionError("Selected native workload fell back; it cannot qualify as native timing")
     print(
         json.dumps(
             {

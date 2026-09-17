@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 
 from .supply_chain_bundle_base import (
@@ -22,7 +22,6 @@ from .supply_chain_bundle_base import (
     _require_string,
     _require_string_array,
 )
-from .supply_chain_bundle_package_identity import _deduplicate_bundle_packages
 from .supply_chain_package_identity import (
     CanonicalPackageIdentity,
     PackageIdentityError,
@@ -421,7 +420,6 @@ class SupplyChainBundle:
         parsed_packages = tuple(
             SupplyChainBundlePackage.from_dict(item) for item in raw_packages if isinstance(item, dict)
         )
-        packages = _deduplicate_bundle_packages(parsed_packages)
         bundle = SupplyChainBundle(
             advisories=tuple(
                 SupplyChainBundleAdvisory.from_dict(item) for item in raw_advisories if isinstance(item, dict)
@@ -436,7 +434,7 @@ class SupplyChainBundle:
             feed_snapshot_hash=_require_string(data, "feedSnapshotHash"),
             generated_at=_require_string(data, "generatedAt"),
             key_id=_require_string(data, "keyId"),
-            packages=packages,
+            packages=parsed_packages,
             policy_hash=_require_string(data, "policyHash"),
             policy_rules=tuple(
                 SupplyChainBundlePolicyRule.from_dict(item) for item in raw_policy_rules if isinstance(item, dict)
@@ -448,6 +446,12 @@ class SupplyChainBundle:
             tier=_require_string(data, "tier"),
             workspace_id=_require_string(data, "workspaceId"),
         )
+        # Index construction already validates every canonical identity and
+        # rejects conflicting duplicates. Ordinary unique bundles need that
+        # traversal only once. Exact duplicate payloads retain their historical
+        # deduplicated public sequence and compact signed-order positions.
+        if len(bundle.package_index.exact) != len(parsed_packages):
+            bundle = replace(bundle, packages=tuple(bundle.package_index.exact.values()))
         if len(bundle.advisories) != len(raw_advisories):
             raise SupplyChainBundleMalformedError("Bundle advisories must contain only objects")
         if len(bundle.emergency_denylist) != len(raw_emergency_denylist):

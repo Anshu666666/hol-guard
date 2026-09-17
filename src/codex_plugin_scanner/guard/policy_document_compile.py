@@ -281,10 +281,14 @@ def compile_policy_document(document: GuardPolicyDocument) -> tuple[CompiledPoli
     if not isinstance(rules, list):
         raise PolicyCompilationError("invalid_policy_rules", document.metadata.id)
     compiled: list[CompiledPolicyRow] = []
+    seen_rule_ids: set[str] = set()
     for raw_rule in rules:
         if not isinstance(raw_rule, Mapping):
             raise PolicyCompilationError("invalid_policy_rule", document.metadata.id)
         rule_id = str(raw_rule.get("id", "unknown"))
+        if rule_id in seen_rule_ids:
+            raise PolicyCompilationError("duplicate_policy_rule_id", rule_id)
+        seen_rule_ids.add(rule_id)
         enabled = raw_rule.get("enabled")
         if not isinstance(enabled, bool):
             raise PolicyCompilationError("invalid_policy_enabled", rule_id)

@@ -12,6 +12,8 @@ from typing import Protocol, TextIO, cast
 from ...version import __version__
 from ..approval_gate import ApprovalGateError, require_high_risk
 from ..policy_authority import PolicyAuthorityError
+from ..policy_compile_errors import bounded_policy_compile_error, bounded_policy_parse_error
+from ..policy_matcher_capability import published_generic_matcher_capability
 from ..policy_document import policy_document_digest
 from ..policy_document_io import (
     PolicyCompilationError,
@@ -101,7 +103,8 @@ def _run_guard_policy_document_command(
                 {
                     "guard_version": __version__,
                     "policy_schema": "guard.hashgraphonline.com/v1alpha1",
-                    "capabilities": ["command-pattern-expressions.v1"],
+                    "capabilities": ["command-pattern-expressions.v1", "generic-matchers.v1"],
+                    "generic_matchers": published_generic_matcher_capability(),
                     "command_pattern_expressions": {
                         "combinators": ["all", "any"],
                         "operators": [
@@ -393,9 +396,16 @@ def _run_guard_policy_document_command(
         PolicyFileTrustError,
     ) as error:
         code = getattr(error, "code", error.__class__.__name__)
+        payload: dict[str, object]
+        if isinstance(error, PolicyCompilationError):
+            payload = bounded_policy_compile_error(error)
+        elif isinstance(error, PolicyDocumentError):
+            payload = bounded_policy_parse_error(error)
+        else:
+            payload = {"error": str(code), "code": str(code), "message": str(error)}
         _write_payload(
             f"policy {command}",
-            {"error": str(code), "message": str(error)},
+            payload,
             as_json=as_json,
             output_stream=output_stream,
         )

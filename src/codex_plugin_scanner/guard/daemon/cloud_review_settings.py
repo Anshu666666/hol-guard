@@ -7,6 +7,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from ..approval_gate import input_from_mapping, public_config, require_high_risk
+from ..runtime.cloud_review_status_projection import project_cloud_review_status
 from ..runtime.exact_cloud_review import (
     ExactCloudReviewError,
     disable_exact_cloud_review,
@@ -25,38 +26,8 @@ class CloudReviewSettingsError(ValueError):
 
 
 def cloud_review_settings_status(store: GuardStore) -> dict[str, object]:
-    status = exact_cloud_review_status(store)
-    binding = store.get_review_event_oauth_binding()
-    profile = store.get_cloud_sync_profile()
-    delivery_binding = {key: value for key, value in binding.items() if key != "oauth_source"} if binding else None
-    outbox = store.review_event_outbox_status(
-        now=datetime.now(timezone.utc).isoformat(),
-        **(delivery_binding or {}),
-    )
-    sync_key = "guard_cloud_review_sync_state"
-    if store.guard_source != "default":
-        sync_key += f":{store.guard_source}"
-    sync = store.get_sync_payload(sync_key)
-    sync = sync if isinstance(sync, dict) else {}
-    recovery = store.get_sync_payload(_RECOVERY_KEY)
-    recovery = recovery if isinstance(recovery, dict) and recovery.get("binding") == binding else {}
     return {
-        "enabled": status.get("enabled") is True,
-        "connected": profile is not None and binding is not None,
-        "reason": status.get("reason"),
-        "expires_at": status.get("expires_at"),
-        "workspace_id": binding["workspace_id"] if binding else None,
-        "source": binding["oauth_source"] if binding else None,
-        "pending_uploads": outbox.get("depth", 0) if binding else 0,
-        "held_events": store.count_recoverable_unbound_review_events(),
-        "isolated_events": outbox.get("quarantined_depth", 0),
-        "activation_error": recovery.get("error"),
-        "last_synced_at": (
-            sync.get("last_delivery_at")
-            if delivery_binding is not None and sync.get("last_delivery_binding") == delivery_binding
-            else None
-        ),
-        "delivery_state": sync.get("state", "idle"),
+        **project_cloud_review_status(store),
         "approval_gate": public_config(store.guard_home).to_dict(),
     }
 

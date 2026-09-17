@@ -144,6 +144,7 @@ class StorePolicyDocumentMixin:
     ) -> list[tuple[CompiledPolicyRow, str | None, str | None, str | None, str | None]]:
         normalized_rows: list[tuple[CompiledPolicyRow, str | None, str | None, str | None, str | None]] = []
         seen_keys: set[tuple[str, str, str | None, str | None, str | None, str | None]] = set()
+        seen_rule_ids: set[str] = set()
         for compiled in compiled_rows:
             decision = compiled.decision
             validate_policy_write_authority(decision, remote_write_authorized=False)
@@ -157,6 +158,9 @@ class StorePolicyDocumentMixin:
                 workspace,
                 publisher,
             )
+            if compiled.rule_id in seen_rule_ids:
+                raise ValueError(f"duplicate_policy_rule_id:{compiled.rule_id}")
+            seen_rule_ids.add(compiled.rule_id)
             if key in seen_keys:
                 raise ValueError(f"duplicate_policy_selector:{compiled.rule_id}")
             seen_keys.add(key)

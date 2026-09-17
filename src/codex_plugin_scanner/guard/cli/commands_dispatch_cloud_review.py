@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import TextIO
 
 from ..daemon.client import GuardDaemonRequestError, load_guard_surface_daemon_client
+from ..runtime.cloud_review_readiness import project_cloud_review_worker_refresh
+from ..runtime.cloud_review_status_projection import project_cloud_review_status
 from ..runtime.exact_cloud_review import (
     ExactCloudReviewError,
     disable_exact_cloud_review,
@@ -77,14 +79,16 @@ def apply_connect_time_cloud_review_consent(
     except ExactCloudReviewError as error:
         return {**payload, "cloud_review": {"enabled": False, "reason": error.code}}
     worker = _refresh_cloud_review_worker(guard_home)
-    ready = worker.get("status") == "refreshed"
+    readiness = project_cloud_review_worker_refresh(worker)
     return {
         **payload,
         "cloud_review": {
             "capability": capability,
             "capability_enabled": True,
-            "enabled": ready,
-            "reason": None if ready else "worker_restart_required",
+            "enabled": readiness["enabled"],
+            "reason": readiness["reason"],
+            "activation_status": readiness["activation_status"],
+            "delivery_ready": readiness["delivery_ready"],
             "pending_requests_requeued": pending_requests_requeued,
             "pending_request_requeue_status": "requeued",
             "worker": worker,
@@ -111,7 +115,7 @@ def _run_guard_cloud_review_command(
     previously_enabled = False
     capability: dict[str, object] | None = None
     if command == "status":
-        _emit("cloud-review", exact_cloud_review_status(store), bool(getattr(args, "json", False)))
+        _emit("cloud-review", project_cloud_review_status(store), bool(getattr(args, "json", False)))
         return 0
     try:
         if command == "enable":

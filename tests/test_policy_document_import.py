@@ -12,6 +12,7 @@ from codex_plugin_scanner.guard.policy_document_io import (
     build_policy_document_from_rows,
     compile_policy_document,
 )
+from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
 from codex_plugin_scanner.guard.store import GuardStore
 
 
@@ -322,14 +323,8 @@ def test_duplicate_compiled_selector_is_rejected_before_writes(tmp_path: Path) -
     store = GuardStore(tmp_path / "guard")
     document = _document(rule_ids=("rule-1", "rule-1"))
 
-    with pytest.raises(ValueError, match="duplicate_policy_selector"):
-        store.import_policy_document(
-            document,
-            compile_policy_document(document),
-            mode="merge",
-            now="2026-07-16T12:00:00Z",
-            approval_gate_grant=None,
-        )
+    with pytest.raises(PolicyCompilationError, match="duplicate_policy_rule_id"):
+        compile_policy_document(document)
 
     assert _rows(store) == []
 

@@ -64,6 +64,16 @@ This representation release does not change runtime precedence:
 
 The decision fixtures freeze exact-vs-broad, active-vs-expired, once-vs-permanent, and local-vs-remote outcomes. Compilers and representation changes MUST preserve them.
 
+## Effective authority by path (verified)
+
+These examples are the copy source for builder and help. They describe current execution, not a proposed precedence change.
+
+| Example | Authority path | Winner | Shadowed | Reason |
+|---|---|---|---|---|
+| Newer local allow versus generic Cloud block at the same specificity | Generic persisted rows | Local allow | Cloud block | Scope, then constrained-vs-unconstrained, then `updated_at` descending. Source is not a tie-breaker. |
+| Managed disabled permission versus local enabled | Managed extension controls | Managed disabled | Local enabled | `compose_control_layers` uses disable dominance. |
+| Intrinsic native block versus policy allow | Native intrinsic floor | Intrinsic native block | Policy allow | Native enforcement joins the authenticated policy floor with the intrinsic result and does not weaken intrinsic blocks. Observe mode may suppress policy-only denial while retaining intrinsic constraints. |
+
 ## Extensions
 
 An object may contain keys matching `x-[a-z0-9][a-z0-9.-]{0,62}`. Extensions are preserved and participate in canonical hashing/signing. Core enforcement ignores them unless both producer and consumer negotiated that extension contract. An unnegotiated extension cannot affect matching, action, precedence, or lifetime.

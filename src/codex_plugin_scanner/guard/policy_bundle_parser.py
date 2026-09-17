@@ -28,6 +28,7 @@ from .policy_bundle_v2 import (
     POLICY_BUNDLE_MAX_COLLECTION_ITEMS,
     POLICY_BUNDLE_MAX_DEPTH,
     POLICY_BUNDLE_MAX_STRING_LENGTH,
+    POLICY_BUNDLE_V2_CONTRACT,
 )
 from .stable_json import stable_json_serialize
 
@@ -335,12 +336,25 @@ def policy_bundle_daemon_version_supported(policy_bundle: dict[str, object]) -> 
     return current is not None and minimum is not None and current >= minimum
 
 
+def policy_bundle_rollout_state(policy_bundle: dict[str, object]) -> object:
+    """Return the publication-contract rollout state for v1 envelopes or v2 documents."""
+
+    if policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
+        payload = policy_bundle.get("payload")
+        spec = payload.get("spec") if isinstance(payload, dict) else None
+        if isinstance(spec, dict):
+            return spec.get("rolloutState")
+        return None
+    return policy_bundle.get("rolloutState")
+
+
 def policy_bundle_is_enforceable(policy_bundle: dict[str, object]) -> bool:
     """Return whether an authenticated rollout is intended as live authority."""
 
-    if policy_bundle.get("contractVersion") == "guard-policy-bundle.v2":
+    rollout_state = policy_bundle_rollout_state(policy_bundle)
+    if policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT and rollout_state is None:
         return True
-    return policy_bundle.get("rolloutState") in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
+    return rollout_state in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
 
 
 def policy_bundle_acceptance_checkpoint(policy_bundle: dict[str, object]) -> dict[str, object]:
@@ -698,3 +712,4 @@ POLICY_BUNDLE_DEFAULT_ENVIRONMENTS = _POLICY_BUNDLE_DEFAULT_ENVIRONMENTS
 POLICY_BUNDLE_RULE_ACTIONS = _POLICY_BUNDLE_RULE_ACTIONS
 POLICY_BUNDLE_RULE_MATCHER_FAMILIES = _POLICY_BUNDLE_RULE_MATCHER_FAMILIES
 POLICY_BUNDLE_BROWSER_SCOPE_KEYS = _POLICY_BUNDLE_BROWSER_SCOPE_KEYS
+POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES = _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES

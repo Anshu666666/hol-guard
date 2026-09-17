@@ -10,6 +10,7 @@ import shlex
 import subprocess
 import sys
 import threading
+import time
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -76,9 +77,23 @@ from ..runtime.surface_server import GuardSurfaceRuntime
 from ..store import GuardStore
 from ..tool_decision_evidence import tool_decision_scanner_evidence as _tool_decision_scanner_evidence
 from ._env import _build_scrubbed_env
+from .framing import (
+    IO_FAILURES,
+    ByteBoundedQueue,
+    ProxyIoLimitError,
+    admit_response,
+    bounded_operation,
+    count_frame,
+    remaining_timeout,
+    retire_reader,
+    write_message,
+    write_timeout_reply,
+)
 from .stdio import (
     ProxyIoTimeoutError,
     _blocked_tool_response,
+    _io_failure_response,
+    _is_terminal_response,
     _is_timeout_response,
     _quarantine_process,
     _readline_with_timeout,
@@ -605,6 +620,9 @@ class RuntimeMcpGuardProxy:
         self._buffered_child_responses: dict[str, list[dict[str, Any]]] = {}
         self._buffered_client_responses: dict[str, list[dict[str, Any]]] = {}
         self._child_output_queue: queue.Queue[_ChildOutputFrame] | None = None
+        self._child_output_stop = threading.Event()
+        self._io_lifecycle_lock = threading.RLock()
+        self._io_failure: ProxyIoTimeoutError | ProxyIoLimitError | None = None
         self._active_child_stdout: IO[str] | None = None
         self._tools_call_boundary_lock = threading.RLock()
         self._tool_catalog_state: _ToolCatalogState = "unobserved"
@@ -683,17 +701,19 @@ class RuntimeMcpGuardProxy:
                 )
                 if response is not None:
                     responses.append(response)
-                    if _is_timeout_response(response):
+                    if _is_terminal_response(response):
                         events.append(event)
                         break
                 events.append(event)
-            process.stdin.close()
+                if self._io_failure is not None:
+                    break
+            if self._io_failure is None:
+                process.stdin.close()
             process.wait(timeout=5)
         finally:
             self._active_process = None
             if process.poll() is None:
-                process.terminate()
-                process.wait(timeout=5)
+                _quarantine_process(process)
             self._active_executable_identity = None
             self._active_runtime_launch_identity = None
             self._active_server_env_values_hash = None
@@ -717,7 +737,7 @@ class RuntimeMcpGuardProxy:
             child_stdin = process.stdin
             child_stdout = process.stdout
             while True:
-                line = input_stream.readline()
+                line = self._read_idle_client(input_stream)
                 if not line:
                     break
                 message = json.loads(line)
@@ -736,52 +756,110 @@ class RuntimeMcpGuardProxy:
                     ),
                 )
                 if response is not None:
-                    output_stream.write(json.dumps(response) + "\n")
-                    output_stream.flush()
-                    if _is_timeout_response(response):
+                    write_message(
+                        output_stream,
+                        response,
+                        timeout_seconds=self._child_response_timeout_seconds(),
+                        source="client_output",
+                    )
+                    if _is_terminal_response(response):
                         break
-            process.stdin.close()
+                if self._io_failure is not None:
+                    break
+            if self._io_failure is None:
+                process.stdin.close()
             process.wait(timeout=5)
-            return int(process.returncode or 0)
+            return 2 if self._io_failure is not None else int(process.returncode or 0)
+        except IO_FAILURES as error:
+            self._abort_transport(error)
+            return 2
         finally:
             self._active_process = None
             if process.poll() is None:
-                process.terminate()
-                process.wait(timeout=5)
+                _quarantine_process(process)
             self._active_executable_identity = None
             self._active_runtime_launch_identity = None
             self._active_server_env_values_hash = None
             self._active_server_identity = None
             self._deactivate_child_process_io()
+            retire_reader(input_stream)
 
     def _reset_child_process_state(self) -> None:
+        self._deactivate_child_process_io()
+        self._io_failure = None
         self._buffered_child_responses.clear()
         self._buffered_client_responses.clear()
         self._child_output_queue = None
         self._active_child_stdout = None
         self._reset_tools_catalog_unobserved()
 
-    def _deactivate_child_process_io(self) -> None:
-        self._buffered_child_responses.clear()
-        self._buffered_client_responses.clear()
-        self._child_output_queue = None
-        self._active_child_stdout = None
+    def _read_idle_client(self, input_stream: TextIO) -> str:
+        while True:
+            self._check_transport()
+            try:
+                line = _readline_with_timeout(input_stream, 0.1, source="client_input")
+            except ProxyIoTimeoutError:
+                continue
+            self._check_transport()
+            return line
 
-    def _activate_child_output_pump(self, child_stdout: IO[str]) -> None:
-        output_queue: queue.Queue[_ChildOutputFrame] = queue.Queue()
-        self._child_output_queue = output_queue
-        self._active_child_stdout = child_stdout
+    def _deactivate_child_process_io(self) -> None:
+        with self._io_lifecycle_lock:
+            self._child_output_stop.set()
+            child_stdout = self._active_child_stdout
+            self._buffered_child_responses.clear()
+            self._buffered_client_responses.clear()
+            self._child_output_queue = None
+            self._active_child_stdout = None
+        if child_stdout is not None:
+            retire_reader(child_stdout)
+
+    def _activate_child_output_pump(
+        self, child_stdout: IO[str], *, process: subprocess.Popen[str] | None = None
+    ) -> None:
+        output_queue: queue.Queue[_ChildOutputFrame] = ByteBoundedQueue(
+            lambda frame: len(frame.line.encode("utf-8")) if frame.line is not None else 0
+        )
+        stop = threading.Event()
+        with self._io_lifecycle_lock:
+            self._child_output_queue = output_queue
+            self._active_child_stdout = child_stdout
+            self._child_output_stop = stop
+            if process is not None:
+                self._active_process = process
 
         def pump() -> None:
             try:
-                while True:
-                    line = child_stdout.readline()
+                while not stop.is_set():
+                    try:
+                        line = _readline_with_timeout(child_stdout, 0.1, source="child_output")
+                    except ProxyIoTimeoutError:
+                        continue
+                    if stop.is_set():
+                        return
                     if not line:
                         output_queue.put(_ChildOutputFrame())
                         return
                     output_queue.put(_ChildOutputFrame(line=line))
+            except (queue.Full, ProxyIoLimitError) as exc:
+                if stop.is_set():
+                    return
+                failure = (
+                    exc
+                    if isinstance(exc, ProxyIoLimitError)
+                    else ProxyIoLimitError(source="child_output", reason="queue_frame_limit")
+                )
+                self._abort_transport(failure, expected_queue=output_queue)
             except BaseException as exc:  # pragma: no cover - surfaced by the synchronous consumer
-                output_queue.put(_ChildOutputFrame(error=exc))
+                if stop.is_set():
+                    return
+                try:
+                    output_queue.put_nowait(_ChildOutputFrame(error=exc))
+                except (queue.Full, ProxyIoLimitError):
+                    self._abort_transport(
+                        ProxyIoLimitError(source="child_output", reason="queue_frame_limit"),
+                        expected_queue=output_queue,
+                    )
 
         threading.Thread(
             target=pump,
@@ -841,7 +919,7 @@ class RuntimeMcpGuardProxy:
                     "Guard runtime MCP server launch identity changed while the child process was starting."
                 )
             if process.stdout is not None:
-                self._activate_child_output_pump(process.stdout)
+                self._activate_child_output_pump(process.stdout, process=process)
             return process
         except BaseException:
             if process is not None:
@@ -1071,6 +1149,42 @@ class RuntimeMcpGuardProxy:
         )
 
     def _handle_message(
+        self,
+        *,
+        message: dict[str, Any],
+        child_stdin: IO[str],
+        child_stdout: IO[str],
+        client_input: TextIO | None,
+        server_output: TextIO | None,
+        approval_callback: Any | None,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        try:
+            self._check_transport()
+            result = self._handle_message_checked(
+                message=message,
+                child_stdin=child_stdin,
+                child_stdout=child_stdout,
+                client_input=client_input,
+                server_output=server_output,
+                approval_callback=approval_callback,
+            )
+            if result[0] is None or not _is_terminal_response(result[0]):
+                self._check_transport()
+            return result
+        except IO_FAILURES as error:
+            self._abort_transport(error)
+            self._buffered_child_responses.clear()
+            self._buffered_client_responses.clear()
+            self._poison_tools_catalog()
+            response = _io_failure_response(message.get("id"), error) if "id" in message else None
+            return response, {
+                "method": str(message.get("method", "unknown")),
+                "decision": "transport-failed",
+                "reason_code": error.reason,
+                "session_terminal": True,
+            }
+
+    def _handle_message_checked(
         self,
         *,
         message: dict[str, Any],
@@ -2975,10 +3089,37 @@ class RuntimeMcpGuardProxy:
             event["scanner_evidence"] = list(scanner_evidence)
         return response, event
 
-    @staticmethod
-    def _forward_notification(message: dict[str, Any], child_stdin: IO[str]) -> None:
-        child_stdin.write(json.dumps(message) + "\n")
-        child_stdin.flush()
+    def _check_transport(self) -> None:
+        if self._io_failure is not None:
+            raise self._io_failure
+
+    def _abort_transport(
+        self,
+        error: ProxyIoTimeoutError | ProxyIoLimitError,
+        *,
+        expected_queue: queue.Queue[_ChildOutputFrame] | None = None,
+    ) -> None:
+        # The pump may call this while policy evaluation owns the catalog lock.
+        # Mark terminal and stop the child without waiting for that lock.
+        with self._io_lifecycle_lock:
+            if expected_queue is not None and self._child_output_queue is not expected_queue:
+                return
+            self._io_failure = self._io_failure or error
+            self._child_output_stop.set()
+            process = self._active_process
+        if process is not None:
+            _quarantine_process(process)
+
+    def _write_message(self, stream: IO[str], message: dict[str, Any], *, source: str) -> None:
+        self._check_transport()
+        try:
+            write_message(stream, message, timeout_seconds=self._child_response_timeout_seconds(), source=source)
+        except IO_FAILURES as error:
+            self._abort_transport(error)
+            raise
+
+    def _forward_notification(self, message: dict[str, Any], child_stdin: IO[str]) -> None:
+        self._write_message(child_stdin, message, source="child_write")
 
     def _next_child_output_frame(
         self,
@@ -2987,11 +3128,25 @@ class RuntimeMcpGuardProxy:
         timeout_seconds: float,
         required: bool,
     ) -> _ChildOutputFrame | None:
+        self._check_transport()
+        if required:
+            timeout_seconds = remaining_timeout(timeout_seconds, source="child_response")
         output_queue = self._child_output_queue if child_stdout is self._active_child_stdout else None
         if output_queue is not None:
             try:
                 if required:
-                    return output_queue.get(timeout=timeout_seconds)
+                    deadline = time.monotonic() + timeout_seconds
+                    while True:
+                        self._check_transport()
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise queue.Empty
+                        try:
+                            frame = output_queue.get(timeout=min(0.05, remaining))
+                            self._check_transport()
+                            return frame
+                        except queue.Empty:
+                            continue
                 if timeout_seconds > 0:
                     return output_queue.get(timeout=timeout_seconds)
                 return output_queue.get_nowait()
@@ -3006,7 +3161,7 @@ class RuntimeMcpGuardProxy:
         if not required and isinstance(child_stdout, io.StringIO):
             if child_stdout.tell() >= len(child_stdout.getvalue()):
                 return None
-            return _ChildOutputFrame(line=child_stdout.readline())
+            return _ChildOutputFrame(line=_readline_with_timeout(child_stdout, 0.0, source="child_response"))
         try:
             line = _readline_with_timeout(
                 child_stdout,
@@ -3053,9 +3208,9 @@ class RuntimeMcpGuardProxy:
             self._buffer_child_response(payload)
             return
         if server_output is not None:
-            server_output.write(json.dumps(payload) + "\n")
-            server_output.flush()
+            self._write_message(server_output, payload, source="client_output")
 
+    @bounded_operation(lambda self: self._child_response_timeout_seconds(), source="child_drain")
     def _drain_child_messages(
         self,
         *,
@@ -3068,6 +3223,7 @@ class RuntimeMcpGuardProxy:
         """Multiplex every queued child frame and wait for an optional quiet edge."""
 
         while True:
+            remaining_timeout(self._child_response_timeout_seconds(), source="child_drain")
             frame = self._next_child_output_frame(
                 child_stdout,
                 timeout_seconds=quiet_seconds,
@@ -3075,6 +3231,8 @@ class RuntimeMcpGuardProxy:
             )
             if frame is None:
                 return
+            self._check_transport()
+            count_frame(source="child_drain")
             line = self._child_output_line(frame)
             try:
                 payload = json.loads(line)
@@ -3134,6 +3292,7 @@ class RuntimeMcpGuardProxy:
             fingerprint=fingerprint,
         )
 
+    @bounded_operation(lambda self: self._child_response_timeout_seconds(), source="child_response")
     def _forward_message(
         self,
         message: dict[str, Any],
@@ -3164,13 +3323,13 @@ class RuntimeMcpGuardProxy:
             )
         ):
             raise _ToolCatalogBoundaryChangedError(_TOOL_CATALOG_EXECUTION_BOUNDARY_CHANGED)
-        child_stdin.write(json.dumps(message) + "\n")
-        child_stdin.flush()
+        self._write_message(child_stdin, message, source="child_write")
+        timeout_seconds = self._child_response_timeout_seconds()
         while True:
+            count_frame(source="child_response")
             buffered_response = self._pop_buffered_child_response(request_id)
             if buffered_response is not None:
                 return buffered_response
-            timeout_seconds = self._child_response_timeout_seconds()
             try:
                 frame = self._next_child_output_frame(
                     child_stdout,
@@ -3178,9 +3337,7 @@ class RuntimeMcpGuardProxy:
                     required=True,
                 )
             except ProxyIoTimeoutError:
-                active_process = self._active_process
-                if active_process is not None:
-                    _quarantine_process(active_process)
+                self._abort_transport(ProxyIoTimeoutError(source="child_response", timeout_seconds=timeout_seconds))
                 return _timeout_response(
                     request_id,
                     source="child_response",
@@ -3206,9 +3363,15 @@ class RuntimeMcpGuardProxy:
         response_key = _response_key(payload.get("id"))
         if response_key is None:
             return
-        self._buffered_child_responses.setdefault(response_key, []).append(payload)
+        self._check_transport()
+        try:
+            admit_response(self._buffered_child_responses, response_key, payload)
+        except ProxyIoLimitError as error:
+            self._abort_transport(error)
+            raise
 
     def _pop_buffered_child_response(self, request_id: Any) -> dict[str, Any] | None:
+        self._check_transport()
         response_key = _response_key(request_id)
         if response_key is None:
             return None
@@ -3224,9 +3387,15 @@ class RuntimeMcpGuardProxy:
         response_key = _response_key(payload.get("id"))
         if response_key is None:
             return
-        self._buffered_client_responses.setdefault(response_key, []).append(payload)
+        self._check_transport()
+        try:
+            admit_response(self._buffered_client_responses, response_key, payload)
+        except ProxyIoLimitError as error:
+            self._abort_transport(error)
+            raise
 
     def _pop_buffered_client_response(self, request_id: Any) -> dict[str, Any] | None:
+        self._check_transport()
         response_key = _response_key(request_id)
         if response_key is None:
             return None
@@ -3238,6 +3407,41 @@ class RuntimeMcpGuardProxy:
             self._buffered_client_responses.pop(response_key, None)
         return payload
 
+    def _read_client_during_wait(
+        self,
+        *,
+        input_stream: TextIO,
+        output_stream: TextIO,
+        child_stdin: IO[str],
+        child_stdout: IO[str],
+        timeout_seconds: float,
+        source: str,
+    ) -> str:
+        # A pending approval must not stop child notifications/catalog changes
+        # from being consumed. Poll the owned client reader without losing a
+        # partial line, and preserve the enclosing operation's absolute budget.
+        while True:
+            self._check_transport()
+            self._drain_child_messages(
+                child_stdin=child_stdin,
+                child_stdout=child_stdout,
+                client_input=input_stream,
+                server_output=output_stream,
+            )
+            remaining = remaining_timeout(timeout_seconds, source=source)
+            try:
+                line = _readline_with_timeout(
+                    input_stream,
+                    min(0.05, remaining),
+                    source=source,
+                    allow_background_wait=False,
+                )
+                self._check_transport()
+                return line
+            except ProxyIoTimeoutError:
+                remaining_timeout(timeout_seconds, source=source)
+
+    @bounded_operation(lambda self: self._nested_request_timeout_seconds(), source="nested_client_response")
     def _proxy_child_request(
         self,
         *,
@@ -3249,31 +3453,34 @@ class RuntimeMcpGuardProxy:
     ) -> None:
         if client_input is None or server_output is None:
             raise RuntimeError("Guard runtime MCP proxy cannot service nested child requests without a live client.")
-        server_output.write(json.dumps(payload) + "\n")
-        server_output.flush()
+        self._write_message(server_output, payload, source="client_output")
         request_id = payload.get("id")
         while True:
+            count_frame(source="nested_client_response")
             buffered_response = self._pop_buffered_client_response(request_id)
             if buffered_response is not None:
                 self._forward_notification(buffered_response, child_stdin)
                 return
             timeout_seconds = self._nested_request_timeout_seconds()
             try:
-                line = _readline_with_timeout(
-                    client_input,
-                    timeout_seconds,
+                line = self._read_client_during_wait(
+                    input_stream=client_input,
+                    output_stream=server_output,
+                    child_stdin=child_stdin,
+                    child_stdout=child_stdout,
+                    timeout_seconds=timeout_seconds,
                     source="nested_client_response",
-                    allow_background_wait=False,
                 )
             except ProxyIoTimeoutError:
-                self._forward_notification(
+                self._check_transport()
+                write_timeout_reply(
+                    child_stdin,
                     _timeout_response(
                         request_id,
                         source="nested_client_response",
                         timeout_seconds=timeout_seconds,
                         message="Guard runtime MCP proxy timed out waiting for the client response.",
                     ),
-                    child_stdin,
                 )
                 return
             if not line:
@@ -3303,9 +3510,9 @@ class RuntimeMcpGuardProxy:
                 ),
             )
             if response is not None:
-                server_output.write(json.dumps(response) + "\n")
-                server_output.flush()
+                self._write_message(server_output, response, source="client_output")
 
+    @bounded_operation(lambda self: self._inline_approval_timeout_seconds(), source="inline_approval")
     def _request_inline_approval(
         self,
         request: dict[str, Any],
@@ -3316,19 +3523,21 @@ class RuntimeMcpGuardProxy:
         child_stdout: IO[str],
     ) -> dict[str, Any]:
         request_id = request.get("id")
-        output_stream.write(json.dumps(request) + "\n")
-        output_stream.flush()
+        self._write_message(output_stream, request, source="client_output")
         while True:
+            count_frame(source="inline_approval")
             buffered_response = self._pop_buffered_client_response(request_id)
             if buffered_response is not None:
                 return _approval_payload(buffered_response)
             timeout_seconds = self._inline_approval_timeout_seconds()
             try:
-                line = _readline_with_timeout(
-                    input_stream,
-                    timeout_seconds,
+                line = self._read_client_during_wait(
+                    input_stream=input_stream,
+                    output_stream=output_stream,
+                    child_stdin=child_stdin,
+                    child_stdout=child_stdout,
+                    timeout_seconds=timeout_seconds,
                     source="inline_approval",
-                    allow_background_wait=False,
                 )
             except ProxyIoTimeoutError:
                 return {"action": "cancel", "reason": "timeout"}
@@ -3358,8 +3567,7 @@ class RuntimeMcpGuardProxy:
                 ),
             )
             if response is not None:
-                output_stream.write(json.dumps(response) + "\n")
-                output_stream.flush()
+                self._write_message(output_stream, response, source="client_output")
 
     def _build_artifact_payload(
         self,

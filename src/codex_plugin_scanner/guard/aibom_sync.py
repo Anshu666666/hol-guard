@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 from .aibom_models import (
@@ -34,16 +35,58 @@ def _batch_inventory_events(
     if max_batch_size < 1 or max_body_bytes < 1:
         raise ValueError("AIBOM request batch limits must be positive.")
 
+    serializer = api._inventory_events_request_body
+    if serializer is not _inventory_events_request_body:
+        # The public CLI seam can replace the envelope or encoding. Its byte
+        # lengths need not be additive, so retain its original planning path.
+        return _batch_inventory_events_with_serializer(
+            events, serializer, max_batch_size=max_batch_size, max_body_bytes=max_body_bytes
+        )
+
+    # json.dumps uses the same encoding inside a singleton and a larger list.
+    # Count each complete event once, then add the exact envelope and ", "
+    # separators. Do not retain serialized bodies or split an atomic snapshot.
+    envelope_bytes = len(b'{"events": []}')
+    batches: list[list[dict[str, object]]] = []
+    oversized_events: list[dict[str, object]] = []
+    batch: list[dict[str, object]] = []
+    batch_bytes = envelope_bytes
+    for event in events:
+        single_bytes = len(serializer([event]))
+        if single_bytes > max_body_bytes:
+            oversized_events.append(event)
+            continue
+        event_bytes = single_bytes - envelope_bytes
+        candidate_bytes = batch_bytes + event_bytes + (2 if batch else 0)
+        if batch and (len(batch) + 1 > max_batch_size or candidate_bytes > max_body_bytes):
+            batches.append(batch)
+            batch = []
+            candidate_bytes = single_bytes
+        batch.append(event)
+        batch_bytes = candidate_bytes
+    if batch:
+        batches.append(batch)
+    return batches, oversized_events
+
+
+def _batch_inventory_events_with_serializer(
+    events: list[dict[str, object]],
+    serializer: Callable[[list[dict[str, object]]], bytes],
+    *,
+    max_batch_size: int,
+    max_body_bytes: int,
+) -> tuple[list[list[dict[str, object]]], list[dict[str, object]]]:
+    """Preserve count-dependent custom request serializers at the CLI seam."""
     batches: list[list[dict[str, object]]] = []
     oversized_events: list[dict[str, object]] = []
     batch: list[dict[str, object]] = []
     for event in events:
-        if len(api._inventory_events_request_body([event])) > max_body_bytes:
+        if len(serializer([event])) > max_body_bytes:
             oversized_events.append(event)
             continue
 
         candidate = [*batch, event]
-        candidate_too_large = len(api._inventory_events_request_body(candidate)) > max_body_bytes
+        candidate_too_large = len(serializer(candidate)) > max_body_bytes
         if batch and (len(candidate) > max_batch_size or candidate_too_large):
             batches.append(batch)
             batch = [event]

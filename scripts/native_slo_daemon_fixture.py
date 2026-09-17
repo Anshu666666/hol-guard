@@ -29,9 +29,10 @@ from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_proc
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402
-from scripts.native_slo_contract import clear_proof_environment  # noqa: E402
+from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
+from scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402
 
 _CONTROL_LIMIT = 256 * 1024
 
@@ -75,6 +76,7 @@ class DaemonFixture:
         self.startup_ms = 0.0
         self.readiness_ms = 0.0
         self._stage = "spawn"
+        self._startup_stack: list[object] = []
 
     @property
     def pid(self) -> int:
@@ -106,17 +108,38 @@ class DaemonFixture:
             try:
                 line = self._responses.get(timeout=max(0, deadline - time.monotonic()))
             except queue.Empty as error:
+                if self._startup_stack:
+                    detail = failure_evidence(RuntimeError("daemon fixture deadline at " + self._stage))
+                    detail["startup_stack"] = self._startup_stack
+                    raise FixtureFailureError(detail) from error
                 raise RuntimeError("daemon fixture deadline at " + self._stage) from error
             if line is None:
                 raise RuntimeError("daemon fixture stream unavailable at " + self._stage)
             result = json.loads(line)
             if not isinstance(result, Mapping):
                 raise RuntimeError("daemon fixture operation failed")
-            if result.get("state") == "progress":
+            if result.get("state") in {"progress", "startup_diagnostic"}:
                 stage = result.get("stage")
-                if stage not in {"construct", "start", "fault", "serve", "cleanup"}:
+                if stage not in PROGRESS_STAGES:
                     raise RuntimeError("daemon fixture invalid progress stage")
                 self._stage = str(stage)
+                if result.get("state") == "startup_diagnostic":
+                    stack = result.get("stack")
+                    if (
+                        not isinstance(stack, list)
+                        or len(stack) > 8
+                        or any(
+                            not isinstance(item, dict)
+                            or set(item) != {"origin", "line"}
+                            or not isinstance(item["origin"], str)
+                            or not isinstance(item["line"], int)
+                            or isinstance(item["line"], bool)
+                            for item in stack
+                        )
+                    ):
+                        raise RuntimeError("daemon fixture invalid startup evidence")
+                    assert_privacy_safe({"stack": stack})
+                    self._startup_stack = list(stack)
                 continue  # Progress cannot extend the fixed operation deadline.
             if result.get("error"):
                 detail = result.get("detail")
@@ -326,8 +349,9 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
         from scripts.native_slo_workloads import configuration_text
 
         configuration = configuration_text(setup if setup != "none" else policy)
-    _emit({"state": "progress", "stage": "construct"})
-    adapter = AdapterSession(runtime, configuration=configuration)
+    with StartupDiagnostic(_emit) as diagnostic:
+        diagnostic.progress("construct")
+        adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
     _emit({"state": "progress", "stage": "start"})
     with adapter as session:
         _emit({"state": "progress", "stage": "fault"})

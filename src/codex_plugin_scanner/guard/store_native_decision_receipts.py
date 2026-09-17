@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import sqlite3
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
@@ -11,6 +13,12 @@ from typing import Final, Protocol, cast
 from .native_decision_receipt import validate_native_decision_receipt
 
 NATIVE_DECISION_RECEIPT_MIGRATION_VERSION: Final = 26
+NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION: Final = 28
+_MAX_COMMAND_BINDING_CHARACTERS: Final = 2048
+_COMMAND_BINDING_COLUMN: Final = (
+    "command_extensions_json text check (command_extensions_json is null "
+    f"or length(command_extensions_json) between 2 and {_MAX_COMMAND_BINDING_CHARACTERS})"
+)
 
 
 class _ConnectionOwner(Protocol):
@@ -18,7 +26,7 @@ class _ConnectionOwner(Protocol):
 
 
 def native_decision_receipt_schema_statement() -> str:
-    return """
+    return f"""
     create table if not exists native_hook_decision_receipts (
       decision_id text primary key,
       schema text not null check (schema = 'guard-native-hook-decision-receipt.v1'),
@@ -43,6 +51,7 @@ def native_decision_receipt_schema_statement() -> str:
       reviewed_output_sha256 text,
       observe_mode integer not null check (observe_mode in (0, 1)),
       deadline_budget_ms integer,
+      {_COMMAND_BINDING_COLUMN},
       recorded_at text not null
     )
     """
@@ -58,7 +67,18 @@ def native_decision_receipt_index_statements() -> tuple[str, ...]:
 
 
 def native_decision_receipt_migration_versions() -> tuple[int, ...]:
-    return (NATIVE_DECISION_RECEIPT_MIGRATION_VERSION,)
+    return (NATIVE_DECISION_RECEIPT_MIGRATION_VERSION, NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION)
+
+
+def ensure_native_command_receipt_binding_schema(connection: sqlite3.Connection, *, applied_at: str) -> None:
+    """Upgrade legacy receipt rows without inventing a missing command binding."""
+    columns = {str(row[1]) for row in connection.execute("pragma table_info(native_hook_decision_receipts)")}
+    if "command_extensions_json" not in columns:
+        connection.execute("alter table native_hook_decision_receipts add column " + _COMMAND_BINDING_COLUMN)
+    connection.execute(
+        "insert or ignore into schema_migrations (version, applied_at) values (?, ?)",
+        (NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION, applied_at),
+    )
 
 
 def native_decision_receipt_schema_statements(*prefix: str) -> tuple[str, ...]:
@@ -97,6 +117,33 @@ class StoreNativeDecisionReceiptsMixin:
             )
         return int(row["count"]) if row is not None else 0
 
+    def get_native_decision_receipt(self: _ConnectionOwner, decision_id: str) -> dict[str, object] | None:
+        """Read one complete receipt and reject changed identity or binding data."""
+        if re.fullmatch(r"[0-9a-f]{64}", decision_id) is None:
+            return None
+        with self._connect() as connection:
+            row = connection.execute(
+                "select * from native_hook_decision_receipts where decision_id = ?",
+                (decision_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        result = dict(row)
+        result.pop("recorded_at")
+        raw_binding = result.pop("command_extensions_json")
+        if raw_binding is not None:
+            if not isinstance(raw_binding, str) or len(raw_binding) > _MAX_COMMAND_BINDING_CHARACTERS:
+                return None
+            try:
+                result["command_extensions"] = json.loads(raw_binding)
+            except (ValueError, RecursionError):
+                return None
+        for field in ("workspace_bound", "source_ref_external_allowed", "observe_mode"):
+            if result[field] not in (0, 1):
+                return None
+            result[field] = bool(result[field])
+        return validate_native_decision_receipt(result)
+
 
 def _record_native_decision_receipts(
     owner: _ConnectionOwner, receipts: Sequence[Mapping[str, object]]
@@ -108,6 +155,13 @@ def _record_native_decision_receipts(
         validated = validate_native_decision_receipt(receipt)
         if validated is None:
             raise ValueError("native decision receipt is invalid")
+        # The command binding is nested. Detach it before batching so a caller
+        # cannot mutate that mapping after validation and change the stored
+        # binding without changing the receipt identity.
+        detached = json.loads(json.dumps(validated, sort_keys=True, separators=(",", ":"), allow_nan=False))
+        validated = validate_native_decision_receipt(detached)
+        if validated is None:
+            raise ValueError("native decision receipt changed during capture")
         validated_receipts.append(validated)
     if not validated_receipts:
         return ()
@@ -123,8 +177,8 @@ def _record_native_decision_receipts(
                   policy_action, observed_policy_action, reason_code,
                   workspace_bound, source_ref_external_allowed,
                   reviewed_output_sha256, observe_mode, deadline_budget_ms,
-                  recorded_at
-                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                  command_extensions_json, recorded_at
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
             [
                 (
@@ -151,6 +205,11 @@ def _record_native_decision_receipts(
                     validated["reviewed_output_sha256"],
                     int(cast_bool(validated["observe_mode"])),
                     validated["deadline_budget_ms"],
+                    (
+                        json.dumps(validated["command_extensions"], sort_keys=True, separators=(",", ":"))
+                        if "command_extensions" in validated
+                        else None
+                    ),
                     recorded_at,
                 )
                 for validated in validated_receipts
@@ -166,8 +225,10 @@ def cast_bool(value: object) -> bool:
 
 
 __all__ = [
+    "NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION",
     "NATIVE_DECISION_RECEIPT_MIGRATION_VERSION",
     "StoreNativeDecisionReceiptsMixin",
+    "ensure_native_command_receipt_binding_schema",
     "native_decision_receipt_index_statements",
     "native_decision_receipt_migration_versions",
     "native_decision_receipt_schema_statement",

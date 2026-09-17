@@ -86,7 +86,7 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                 or completed.containment_failed
                 or completed.output_limit_exceeded
             ):
-                failure = {
+                failure: dict[str, object] = {
                     "schema": "hol-guard.native-qualification-failure.v1",
                     "reason": "paired_worker_process_failed",
                 }
@@ -103,11 +103,13 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                     timed_out=completed.timed_out,
                     containment_failed=completed.containment_failed,
                 )
+                failure = assert_privacy_safe(failure)
                 (public / f"{run:02d}-{arm}-failure.json").write_text(
                     json.dumps(failure, indent=2) + "\n", encoding="utf-8"
                 )
                 # Raw stderr/tracebacks remain private; expose only bounded
                 # generated failure identifiers from our worker protocol.
+                print(json.dumps(failure, sort_keys=True), file=sys.stderr, flush=True)
                 raise RuntimeError(f"paired block failed: run={run} arm={arm} reason={failure.get('reason')}")
             report = json.loads(completed.stdout)
             if not isinstance(report, dict) or report.get("schema") != "hol-guard.native-qualification-block.v1":

@@ -177,6 +177,17 @@ pipe carries readiness and bounded counters outside request timers. Resource
 samples target the daemon process and descendants, excluding the benchmark
 client. The small fixture control loop is included and disclosed.
 
+Fixture startup has a fixed 30-second control deadline. Progress identifies
+workspace creation, store construction, daemon construction, and workspace
+registration without extending that deadline. A one-shot diagnostic captures
+at most eight shipped source locations if construction remains blocked after
+20 seconds; it never captures frame locals, absolute paths, or response data.
+The diagnostic timer is cancelled before readiness and hook measurements;
+its setup and cleanup are included in full fixture startup. Failed paired
+blocks save and print the same sanitized evidence object, including any bounded
+startup stack, while raw child output stays private. The native readiness
+barrier remains 400 ms.
+
 The development-only pinned psutil collector records RSS, private memory (USS),
 CPU, processes and threads on supported systems. Unix file descriptors and
 Windows handles are separate fields. Unavailable or permission-denied metrics

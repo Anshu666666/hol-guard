@@ -1004,6 +1004,7 @@ class StorePolicyMixin:
                     return reject("managed_controls_authority_key_unavailable", connection)
             previous_revision = 0
             previous_bundle_hash: object = None
+            previous_active: dict[str, object] | None = None
             active_managed_layers = ()
             if revision_row is not None:
                 assert managed_authority_key is not None
@@ -1019,7 +1020,7 @@ class StorePolicyMixin:
                 assert managed_base_authority is not None
                 assert managed_authority_key is not None
                 try:
-                    previous_active = json.loads(str(active_row["payload_json"]))
+                    previous_active = cast(dict[str, object], json.loads(str(active_row["payload_json"])))
                     active_managed_layers, active_revision = managed_controls_layers_from_activation_state(
                         previous_active,
                         catalog_digest=managed_base_authority.catalog_digest,
@@ -1055,6 +1056,15 @@ class StorePolicyMixin:
                     if previous_bundle_hash == policy_bundle.get("bundleHash") and previous_revision > 0
                     else previous_revision + 1
                 )
+                from .store_managed_control_manifest_context import MANAGED_CONTROLS_SOURCE_MANIFEST_FIELD
+
+                # An idempotent delivery retains the originally acknowledged
+                # source contracts. Only a new activation captures new targets.
+                source_manifest = (
+                    previous_active.get(MANAGED_CONTROLS_SOURCE_MANIFEST_FIELD)
+                    if previous_active is not None and previous_bundle_hash == policy_bundle.get("bundleHash")
+                    else self._catalog_target_manifest(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+                )
                 managed_state = build_managed_controls_activation_state(
                     dict(policy_bundle),
                     managed_controls_policy,
@@ -1063,6 +1073,7 @@ class StorePolicyMixin:
                     negotiated_capabilities=managed_controls_negotiated_capabilities,
                     authority_key=managed_authority_key,
                     base_snapshot_digest=managed_base_snapshot[1],
+                    source_target_manifest=cast(Mapping[str, str] | None, source_manifest),
                 )
                 encoded_payloads[MANAGED_CONTROLS_ACTIVE_STATE_KEY] = json.dumps(
                     managed_state,

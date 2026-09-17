@@ -411,9 +411,22 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 renew_after_generation = self._renewal_after_generation
             publish_epoch = self._epoch
         try:
-            # Compile and validate policy asynchronously; failures keep the barrier closed.
-            context = self._publication_context()
-            if context is None:
+            # A cold verified read may itself migrate authenticated catalog
+            # state and close the mutation barrier. Recapture once before IPC;
+            # accepting its previous epoch would also hide concurrent changes.
+            for _ in range(2):
+                with self._condition:
+                    publish_epoch = self._epoch
+                context = self._publication_context()
+                if context is None:
+                    return
+                with self._condition:
+                    if self._closed:
+                        return
+                    if self._epoch == publish_epoch:
+                        break
+                context = None
+            else:
                 return
             identity, capabilities, master_key, config, command_extensions, client = context
             resident_fingerprint_before = self._current_input_fingerprint()[1]

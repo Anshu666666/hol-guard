@@ -55,15 +55,17 @@ def _publish_ready(publisher: NativePolicySnapshotPublisher) -> dict:
     return snapshot
 
 
+@pytest.mark.parametrize("feature", ["native-command-program-v1", "native-command-control-fence-v1"])
 def test_new_capability_is_required_even_with_unrelated_features(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    feature: str,
 ) -> None:
     calls: list[object] = []
     publisher = _publisher(GuardStore(tmp_path), monkeypatch, lambda **kwargs: calls.append(kwargs))
     status = _status()
     status.capabilities.features = (
-        *(feature for feature in status.capabilities.features if feature != "native-command-program-v1"),
+        *(item for item in status.capabilities.features if item != feature),
         "unrelated-new-feature",
     )
     publisher._status_provider = lambda: status
@@ -309,7 +311,13 @@ def test_rolled_back_managed_activation_can_only_republish_the_previous_committe
         with pytest.raises(sqlite3.OperationalError, match="injected activation rollback"):
             activate_managed_bundle(store, second_bundle)
         assert not publisher.is_ready()
-        assert _publish_ready(publisher) == first
+        republished = _publish_ready(publisher)
+        assert republished["generation"] > first["generation"]
+        before, after = first["command_extensions"], republished["command_extensions"]
+        assert {key: value for key, value in before.items() if key != "authority"} == {
+            key: value for key, value in after.items() if key != "authority"
+        }
+        assert after["authority"]["mutation_revision"] > before["authority"]["mutation_revision"]
     finally:
         publisher.close()
 

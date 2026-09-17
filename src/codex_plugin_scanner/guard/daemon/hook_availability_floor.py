@@ -114,46 +114,6 @@ _MUTATING_TOOLS = frozenset(
         "mcp",
     }
 )
-_SAFE_GIT_SUBCOMMANDS = frozenset(
-    {
-        "status",
-        "diff",
-        "log",
-        "show",
-        "rev-parse",
-        "describe",
-        "shortlog",
-        "blame",
-        "ls-files",
-        "ls-tree",
-        "cat-file",
-        "grep",
-        "help",
-        "version",
-    }
-)
-_SAFE_GIT_STASH_SUBCOMMANDS = frozenset({"list", "show"})
-_UNSAFE_GIT_FLAGS = frozenset(
-    {
-        "-d",
-        "-D",
-        "--delete",
-        "--force",
-        "-f",
-        "--hard",
-        "--exec",
-        "--upload-pack",
-        "--receive-pack",
-        "--config",
-        "-c",
-        "--work-tree",
-        "--git-dir",
-        "-C",
-        "--output",
-        "--ext-diff",
-        "--textconv",
-    }
-)
 _SAFE_HOL_GUARD_SUBCOMMANDS = frozenset(
     {
         "status",
@@ -462,23 +422,19 @@ def _command_is_emergency_safe(
     if binary == "find":
         return not any(token in _UNSAFE_FIND_FLAGS or _flag_name(token) in _UNSAFE_INSPECTION_FLAGS for token in args)
     if binary == "git":
-        return _git_command_is_emergency_safe(args)
+        # A path ending in "git" or a case-folded name is not proof that the
+        # caller selected Git's built-in version command.
+        return tokens[0] == "git" and _git_command_is_emergency_safe(args)
     if binary in {"hol-guard", "plugin-guard"}:
         return _hol_guard_command_is_emergency_safe(args)
     return False
 
 
 def _git_command_is_emergency_safe(args: list[str]) -> bool:
-    if not args:
-        return False
-    if args[0] in {"--version", "--help"}:
-        return True
-    subcommand = args[0]
-    if subcommand == "stash":
-        return len(args) > 1 and args[1] in _SAFE_GIT_STASH_SUBCOMMANDS
-    if subcommand not in _SAFE_GIT_SUBCOMMANDS:
-        return False
-    return not any(_flag_name(token) in _UNSAFE_GIT_FLAGS for token in args[1:])
+    # Repository reads can execute configured diff/textconv/fsmonitor helpers
+    # or pagers without an execution flag. This fallback has no configuration
+    # proof and must not load configuration or spawn Git to obtain one.
+    return args in (["--version"], ["version"])
 
 
 def _hol_guard_command_is_emergency_safe(args: list[str]) -> bool:

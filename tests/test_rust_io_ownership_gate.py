@@ -64,6 +64,14 @@ def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path) -> None
         MODULE.validate(tmp_path)
 
 
+def test_floor_codec_exception_does_not_admit_program_or_source_io() -> None:
+    path = "src/codex_plugin_scanner/guard/native_command_control_binding.py"
+    assert MODULE._category(path, "decode", "native_command_control_floor_mac") == "transport_decode"
+    assert MODULE._category(path, "filesystem", "native_command_control_floor_mac") == "unclassified_python_io"
+    assert MODULE._category(path, "decode", "_metadata_from_bytes") == "unclassified_python_content_io"
+    assert MODULE._category(path, "hash", "_metadata_from_bytes") == "unclassified_python_io"
+
+
 def test_gate_rejects_native_branch_semantic_fallback(tmp_path: Path) -> None:
     _copy_gate_sources(tmp_path)
     worker = tmp_path / "src/codex_plugin_scanner/guard/daemon/hook_worker.py"

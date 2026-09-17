@@ -1,0 +1,376 @@
+{
+  "baseline_binary_sha256": null,
+  "optimized_benchmark_binary_sha256": "11ef617a38082067a46abc716c3583739be254bb7cf456a294dbdd720eaa4ee3",
+  "program_digest": "4df5208d0dc05ceaadb1de6a6d8f6d3f9e5395dffcf992640fed87b82a0df1c9",
+  "reference_source_commit": "573c03ca5",
+  "runs": {
+    "baseline": {
+      "measurements": [
+        {
+          "distribution": {
+            "max_us": 1285282.043,
+            "p50_us": 144362.506,
+            "p95_us": 365627.53500000003,
+            "samples": 100
+          },
+          "stage": "cold_program_admission"
+        },
+        {
+          "distribution": {
+            "max_us": 318339.021,
+            "p50_us": 34423.92,
+            "p95_us": 75747.95,
+            "samples": 100
+          },
+          "phase": "canonical_program_digest",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 6524.638,
+            "p50_us": 511.10200000000003,
+            "p95_us": 1689.4830000000002,
+            "samples": 100
+          },
+          "phase": "catalog_validation",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 232320.627,
+            "p50_us": 19571.859,
+            "p95_us": 68190.917,
+            "samples": 100
+          },
+          "phase": "json_value_parse",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 516935.417,
+            "p50_us": 49120.385,
+            "p95_us": 127677.934,
+            "samples": 100
+          },
+          "phase": "matcher_digest_compile",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 21877.891,
+            "p50_us": 1032.53,
+            "p95_us": 4515.129,
+            "samples": 100
+          },
+          "phase": "rule_candidate_indexes",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 265796.806,
+            "p50_us": 21620.314000000002,
+            "p95_us": 50118.409,
+            "samples": 100
+          },
+          "phase": "typed_program_decode",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 226929.706,
+            "p50_us": 14238.636,
+            "p95_us": 42910.298,
+            "samples": 100
+          },
+          "phase": "value_cleanup",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "candidate_rules": 56,
+          "command": "ollama push model",
+          "observe": {
+            "max_us": 161.39600000000002,
+            "p50_us": 20.93,
+            "p95_us": 62.026999999999994,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 58.618,
+            "p50_us": 1.1239999999999999,
+            "p95_us": 2.682,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 56,
+          "command": "ollama push model --help",
+          "observe": {
+            "max_us": 238.61499999999998,
+            "p50_us": 23.71,
+            "p95_us": 79.91499999999999,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 4.528,
+            "p50_us": 1.409,
+            "p95_us": 2.6790000000000003,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 70,
+          "command": "ollama rm first && ollama push second",
+          "observe": {
+            "max_us": 572.269,
+            "p50_us": 52.442,
+            "p95_us": 187.909,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 48.687999999999995,
+            "p50_us": 2.2359999999999998,
+            "p95_us": 4.023000000000001,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 93,
+          "command": "aws s3 rm s3://bucket/key",
+          "observe": {
+            "max_us": 2188.477,
+            "p50_us": 129.10299999999998,
+            "p95_us": 393.598,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 21.651,
+            "p50_us": 1.719,
+            "p95_us": 5.7219999999999995,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 51,
+          "command": "printf caf\u00e9",
+          "observe": {
+            "max_us": 313.374,
+            "p50_us": 15.855999999999998,
+            "p95_us": 62.875,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 43.980000000000004,
+            "p50_us": 1.0210000000000001,
+            "p95_us": 1.926,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        }
+      ],
+      "resources": {
+        "cpu_count": 9,
+        "elapsed_seconds": 20.135554769998635,
+        "exit_code": 0,
+        "max_rss_kib": 43376,
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+        "system_cpu_seconds": 0.227825,
+        "user_cpu_seconds": 19.523217
+      }
+    },
+    "optimized": {
+      "measurements": [
+        {
+          "distribution": {
+            "max_us": 70597.738,
+            "p50_us": 43796.219,
+            "p95_us": 58826.407999999996,
+            "samples": 100
+          },
+          "stage": "cold_program_admission"
+        },
+        {
+          "distribution": {
+            "max_us": 19038.821,
+            "p50_us": 9094.679,
+            "p95_us": 14365.974,
+            "samples": 100
+          },
+          "phase": "canonical_program_digest",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 3867.938,
+            "p50_us": 474.568,
+            "p95_us": 906.424,
+            "samples": 100
+          },
+          "phase": "catalog_validation",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 22370.32,
+            "p50_us": 11149.858,
+            "p95_us": 16214.996999999998,
+            "samples": 100
+          },
+          "phase": "json_value_parse",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 28283.81,
+            "p50_us": 15968.515999999998,
+            "p95_us": 22712.972,
+            "samples": 100
+          },
+          "phase": "matcher_digest_compile",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 2005.7679999999998,
+            "p50_us": 958.491,
+            "p95_us": 1454.421,
+            "samples": 100
+          },
+          "phase": "rule_candidate_indexes",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 13622.884,
+            "p50_us": 5721.973,
+            "p95_us": 9362.906,
+            "samples": 100
+          },
+          "phase": "typed_program_decode",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "distribution": {
+            "max_us": 502.62600000000003,
+            "p50_us": 140.53300000000002,
+            "p95_us": 239.958,
+            "samples": 100
+          },
+          "phase": "value_cleanup",
+          "stage": "cold_program_admission_phase"
+        },
+        {
+          "candidate_rules": 56,
+          "command": "ollama push model",
+          "observe": {
+            "max_us": 233.357,
+            "p50_us": 21.494,
+            "p95_us": 27.262,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 3.342,
+            "p50_us": 1.167,
+            "p95_us": 1.6119999999999999,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 56,
+          "command": "ollama push model --help",
+          "observe": {
+            "max_us": 197.89100000000002,
+            "p50_us": 24.227,
+            "p95_us": 84.74199999999999,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 21.465,
+            "p50_us": 1.354,
+            "p95_us": 2.1799999999999997,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 70,
+          "command": "ollama rm first && ollama push second",
+          "observe": {
+            "max_us": 122.684,
+            "p50_us": 43.843,
+            "p95_us": 63.613,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 66.997,
+            "p50_us": 1.935,
+            "p95_us": 2.77,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 93,
+          "command": "aws s3 rm s3://bucket/key",
+          "observe": {
+            "max_us": 789.4939999999999,
+            "p50_us": 122.81799999999998,
+            "p95_us": 183.752,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 4.523,
+            "p50_us": 1.596,
+            "p95_us": 2.46,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        },
+        {
+          "candidate_rules": 51,
+          "command": "printf caf\u00e9",
+          "observe": {
+            "max_us": 101.191,
+            "p50_us": 16.565,
+            "p95_us": 18.470000000000002,
+            "samples": 100
+          },
+          "parse": {
+            "max_us": 2.794,
+            "p50_us": 1.053,
+            "p95_us": 1.3639999999999999,
+            "samples": 100
+          },
+          "rules": 291,
+          "stage": "warm_native_program"
+        }
+      ],
+      "resources": {
+        "cpu_count": 9,
+        "elapsed_seconds": 5.379082676001417,
+        "exit_code": 0,
+        "max_rss_kib": 24244,
+        "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+        "system_cpu_seconds": 0.170176,
+        "user_cpu_seconds": 5.183622
+      }
+    }
+  },
+  "samples_per_arm": 100,
+  "sampling": "Fresh admitted program per sample in one release benchmark process; retained program destruction excluded from measured admission. Team-local heavy work paused during each arm.",
+  "schema": "guard.native-command-admission-diagnostic.v1",
+  "scope": "Program admission and warm canonical command observations only; excludes process startup, daemon initialization, transport, installed hooks and allocations."
+}

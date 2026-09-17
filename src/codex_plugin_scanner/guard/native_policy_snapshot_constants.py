@@ -64,6 +64,7 @@ _REQUIRED_PUBLISH_FEATURES = frozenset(
         "native-policy-in-memory-v1",
         "native-resident-client-v1",
         "native-command-program-v1",
+        "native-command-control-fence-v1",
     }
 )
 _VALID_ACTIONS = frozenset({"allow", "warn", "review", "require-reapproval", "sandbox-required", "block"})

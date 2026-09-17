@@ -91,6 +91,7 @@ jobs:
           unset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE
           unset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT
           unset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+          .venv/bin/python -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json
           .venv/bin/python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
           .venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json
       - name: Measure installed adapter-to-decision SLOs
@@ -156,6 +157,7 @@ jobs:
           path: |
             native-dist/*.whl
             native-default-auto.json
+            native-installed-identity.json
             installed-pi-output.json
             native-installed-slo.json
             native-soak.json
@@ -246,6 +248,7 @@ jobs:
           unset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE
           unset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT
           unset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+          .venv/bin/python -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json
           .venv/bin/python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
           .venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json
       - name: Measure installed adapter-to-decision SLOs
@@ -294,6 +297,7 @@ jobs:
           path: |
             native-dist/*.whl
             native-default-auto.json
+            native-installed-identity.json
             installed-pi-output.json
             native-installed-slo.json
             native-artifact-evidence.json
@@ -390,6 +394,8 @@ jobs:
           Remove-Item Env:PYTEST_PLUGINS -ErrorAction SilentlyContinue
           Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
           Remove-Item Env:HOL_GUARD_PYTHON_ORACLE -ErrorAction SilentlyContinue
+          .venv\Scripts\python.exe -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           uv run --no-sync python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -397,4 +403,5 @@ jobs:
           path: |
             native-dist/*.whl
             native-default-auto.json
+            native-installed-identity.json
           if-no-files-found: error

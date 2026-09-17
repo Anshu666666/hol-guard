@@ -16,7 +16,7 @@ import tempfile
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import cast
+from typing import Protocol, cast
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -70,6 +70,15 @@ _INSTALLED_WHEEL_OWNERSHIP_CONTRACT = "installed_wheel_ownership_contract"
 
 # Keep historical private imports available to contract tests and downstream tooling.
 _safe_failure_rate = safe_failure_rate
+
+
+class _LifecycleSession(Protocol):
+    workspace: Path
+    guard_home: Path
+
+    def stop_resident(self) -> bool: ...
+
+    def observe(self, harness: str, event: str, size_class: str) -> Observation: ...
 
 
 def _installed_corpus(runtime: Path, expected_routes: int) -> dict[str, int]:
@@ -163,7 +172,7 @@ def _wire_request(workspace: Path, guard_home: Path, request_id: str) -> str:
     )
 
 
-def _run_cold(runtime: Path, session: AdapterSession, iterations: int) -> list[float]:
+def _run_cold(runtime: Path, session: _LifecycleSession, iterations: int) -> list[float]:
     values: list[float] = []
     environment = {
         "HOME": str(session.workspace),
@@ -194,7 +203,7 @@ def _run_cold(runtime: Path, session: AdapterSession, iterations: int) -> list[f
     return values
 
 
-def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
+def _run_recovery(session: _LifecycleSession, iterations: int) -> list[float]:
     values: list[float] = []
     for index in range(iterations):
         _ = session.observe("claude-code", "PostToolUse", "1k")

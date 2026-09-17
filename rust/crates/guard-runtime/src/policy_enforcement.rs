@@ -31,33 +31,9 @@ use policy_enforcement_facts::{
 };
 use policy_enforcement_policy::{policy_map_action, CompiledEffectivePolicy};
 
-/// An immutable authenticated snapshot and the selector indexes derived from
-/// that exact value. No mutable dereference is exposed, so a generation cannot
-/// silently retain indexes from a different effective policy.
-#[derive(Debug)]
-pub(crate) struct AdmittedPolicySnapshot {
-    snapshot: PolicySnapshotV3,
-    compiled: CompiledEffectivePolicy,
-}
-
-impl AdmittedPolicySnapshot {
-    pub(crate) fn new(snapshot: PolicySnapshotV3) -> Result<Self, String> {
-        let compiled = CompiledEffectivePolicy::new(&snapshot.effective_policy)?;
-        Ok(Self { snapshot, compiled })
-    }
-
-    pub(crate) fn snapshot(&self) -> &PolicySnapshotV3 {
-        &self.snapshot
-    }
-}
-
-impl std::ops::Deref for AdmittedPolicySnapshot {
-    type Target = PolicySnapshotV3;
-
-    fn deref(&self) -> &Self::Target {
-        self.snapshot()
-    }
-}
+#[path = "policy_enforcement_admission.rs"]
+mod policy_enforcement_admission;
+pub(crate) use policy_enforcement_admission::AdmittedPolicySnapshot;
 
 #[cfg(test)]
 #[path = "policy_enforcement_tests.rs"]

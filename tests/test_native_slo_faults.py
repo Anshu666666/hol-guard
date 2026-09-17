@@ -67,6 +67,23 @@ def test_byte_fault_exercises_real_scheduler_and_restores_limit(tmp_path: Path) 
     assert scheduler.stats()["retained_bytes_limit"] == 1024
 
 
-def test_unknown_revocation_has_no_fake_success(tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="no witnessed implementation"), FaultFixture(_session(tmp_path), "revoked"):
+def test_unknown_fault_has_no_fake_success(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError, match="no witnessed implementation"), FaultFixture(_session(tmp_path), "unknown"):
         pass
+
+
+def test_integrity_fault_observes_the_handler_local_import_without_faking_rejection(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.runtime import hook_payload_reference
+
+    original = hook_payload_reference.hook_payload_reference_size
+    with FaultFixture(_session(tmp_path), "integrity") as fault:
+        # The real HTTP handler resolves this import when it handles a request.
+        from codex_plugin_scanner.guard.runtime.hook_payload_reference import hook_payload_reference_size
+
+        assert "payload_reference_rejected" not in fault.result()["setup"]
+        assert hook_payload_reference_size({"tool_output": "benign"}) is None
+        assert "payload_reference_rejected" not in fault.result()["setup"]
+        with pytest.raises(hook_payload_reference.HookPayloadReferenceError):
+            hook_payload_reference_size({"guard_payload_ref": {"version": 1}})
+        assert fault.result()["setup"]["payload_reference_rejected"] is True
+    assert hook_payload_reference.hook_payload_reference_size is original

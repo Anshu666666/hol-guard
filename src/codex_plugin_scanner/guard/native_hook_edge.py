@@ -6,7 +6,7 @@ import json
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .native_decision_receipt import receipt_matches_edge
 from .native_resident_client import native_resident_client_request
@@ -153,8 +153,20 @@ def _valid_pre_tool_action(action: dict[str, Any], *, harness: str) -> bool:
 
 
 def _decode_pre_tool_result(result: object, *, harness: str) -> bool:
-    if not isinstance(result, dict) or set(result) != _PRE_TOOL_RESULT_KEYS:
+    if not isinstance(result, dict) or set(result) not in (
+        _PRE_TOOL_RESULT_KEYS,
+        _PRE_TOOL_RESULT_KEYS | {"command_extensions"},
+    ):
         return False
+    if "command_extensions" in result:
+        from .native_command_observations import validate_native_command_observations
+
+        extensions = validate_native_command_observations(result["command_extensions"])
+        if extensions is None:
+            return False
+        binding = cast(dict[str, object], extensions["binding"])
+        if binding["uncertainty_count"] and result.get("minimum_action") != "block":
+            return False
     if not _valid_pre_tool_result_fields(result):
         return False
     action = result.get("action")

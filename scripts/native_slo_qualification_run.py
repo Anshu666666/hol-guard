@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import platform
 import re
 import time
 from collections.abc import Mapping
 from pathlib import Path
+from typing import cast
 
 from codex_plugin_scanner.guard.daemon.hook_process_capacity import effective_cpu_count, physical_memory_bytes
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status
@@ -21,8 +23,9 @@ from scripts.native_slo_adapter import route_matrix
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_corpus_run import run_contract_corpus
 from scripts.native_slo_daemon_fixture import DaemonFixture
+from scripts.native_slo_launcher_corpus import run_registered_contract_corpus
 from scripts.native_slo_load_profiles import measure_load_profiles
-from scripts.native_slo_priority_launchers import launcher_payload, measure_priority_launchers
+from scripts.native_slo_priority_launchers import LauncherSession, launcher_payload, measure_priority_launchers
 from scripts.native_slo_qualification import confidence_summary
 from scripts.native_slo_resources import ResourceSampler
 
@@ -78,7 +81,11 @@ def hardware_summary() -> dict[str, object]:
     }
 
 
-def workload_matrix(routes: tuple[tuple[str, str], ...], corpus: Mapping[str, object]) -> dict[str, object]:
+def workload_matrix(
+    routes: tuple[tuple[str, str], ...],
+    corpus: Mapping[str, object],
+    launcher_corpus: Mapping[str, object] | None = None,
+) -> dict[str, object]:
     """Declare coverage and remaining obligations without inferring missing routes."""
     return {
         "required_platforms": list(_PLATFORMS),
@@ -93,12 +100,28 @@ def workload_matrix(routes: tuple[tuple[str, str], ...], corpus: Mapping[str, ob
         "launcher_routes": [
             f"{harness}.{event}" for harness in ("claude-code", "codex") for event in ("PreToolUse", "PostToolUse")
         ],
-        "launcher_cases_validated": ["allow", "block"],
-        "launcher_sizes_exercised": ["1k"],
+        "launcher_contract_coverage": launcher_corpus.get("coverage", {}) if launcher_corpus else {},
+        "launcher_contract_validated_cases": launcher_corpus.get("validated_cases", 0) if launcher_corpus else 0,
         "remaining_setups": corpus["remaining_setups"],
         "daemon_contract_complete": corpus["complete"],
         "complete": False,
     }
+
+
+def _native_sample_values(measured: Mapping[str, object], expected: int) -> list[float]:
+    values = measured.get("values")
+    if (
+        measured.get("benign_and_block_validated") is not True
+        or not isinstance(values, list)
+        or len(values) != expected
+        or not 1 <= expected <= 100
+        or any(
+            not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or value < 0
+            for value in values
+        )
+    ):
+        raise RuntimeError("native sample preflight or bounded values were not validated")
+    return [float(value) for value in values]
 
 
 def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
@@ -111,6 +134,9 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
     identity = _runtime_summary(runtime)
     routes = route_matrix()
     contract_corpus = run_contract_corpus(runtime)
+    launcher_corpus = run_registered_contract_corpus(
+        runtime, evidence_file=raw_file.with_name(raw_file.stem + "-launcher-contract.jsonl")
+    )
     raw: dict[str, list[float]] = {}
     with DaemonFixture(runtime, policy="normal") as session:
         startup_ms = session.startup_ms
@@ -138,12 +164,11 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
         resource_report["boundary"] = "DAEMON_INGRESS"
         direct_samples: list[float] = []
         while len(direct_samples) < plan["priority_per_run"]:
-            measured = session.control("native_samples", count=min(100, plan["priority_per_run"] - len(direct_samples)))
-            if measured.get("benign_and_block_validated") is not True:
-                raise RuntimeError("native sample preflight was not validated")
-            direct_samples.extend(measured["values"])
+            count = min(100, plan["priority_per_run"] - len(direct_samples))
+            measured = session.control("native_samples", count=count)
+            direct_samples.extend(_native_sample_values(measured, count))
         raw["NATIVE_CLIENT.claude-code.PostToolUse"] = direct_samples
-        launcher, launcher_series = measure_priority_launchers(session, plan)
+        launcher, launcher_series = measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
         raw.update(launcher_series)
         concurrent, offered, capacity_resources = measure_load_profiles(session, routes)
         # Instrumented timings are deliberately separate from the headline samples.
@@ -171,12 +196,13 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
     raw_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     raw_file.write_text(json.dumps(raw, separators=(",", ":")) + "\n", encoding="utf-8")
     raw_file.chmod(0o600)
-    matrix = workload_matrix(routes, contract_corpus)
+    matrix = workload_matrix(routes, contract_corpus, launcher_corpus)
     corpus_definition = {
         "matrix": matrix,
         "manifest_digest": contract_corpus["manifest_digest"],
         "oracle_digest": contract_corpus["oracle_digest"],
         "validated_digest": contract_corpus["validated_digest"],
+        "launcher_validated_digest": launcher_corpus["validated_digest"],
         "fixtures": [workload_payload(event, "1k") for _, event in routes],
         "native_client": [synthetic_payload(0, case=case) for case in ("benign", "secret")],
         "launcher": [
@@ -196,6 +222,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
             "corpus_digest": corpus_digest,
             "matrix": matrix,
             "contract_corpus": contract_corpus,
+            "registered_launcher_contract_corpus": launcher_corpus,
             "measurements": {key: confidence_summary(values) for key, values in raw.items()},
             "daemon_process_start_to_policy_ready_ms": startup_ms,
             "native_readiness_ms": native_readiness_ms,
@@ -207,8 +234,9 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path) -> dict[str, object]:
             "phases": phase_report,
             "qualification_complete": False,
             "remaining": [
-                "standalone_generation_revocation",
                 "nonpriority_registered_launchers",
+                "browser_approval_continuation",
+                "malformed_launcher_input",
                 "native_phase_attribution",
                 "all_platforms",
             ],

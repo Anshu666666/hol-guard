@@ -352,10 +352,12 @@ fn evaluate_validated_envelope(
     }
     let (result, receipt) = match event_name.as_str() {
         "PreToolUse" => {
-            let native = guard_command::pretool::evaluate_pre_tool_envelope(
+            let native = guard_command::pretool::evaluate_pre_tool_envelope_with_extensions(
                 &harness,
                 &event_name,
                 &envelope.raw_payload,
+                policy_snapshot.and_then(|snapshot| snapshot.command_extensions.as_ref()),
+                deadline,
             );
             let evaluated = if let Some(snapshot) = policy_snapshot {
                 crate::policy_enforcement::apply_pre_tool_policy(
@@ -462,6 +464,7 @@ pub(crate) fn evaluate_envelope_with_store_started(
         &envelope.source.guard_home,
         envelope.policy_generation,
     )?;
+    let _command_lease = policy_store.command_authority_lease(snapshot.snapshot())?;
     evaluate_validated_envelope(validated, Some(snapshot.as_ref()))
 }
 

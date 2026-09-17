@@ -148,6 +148,7 @@ class _BatchProcess:
             raise GitObjectReadError("git_object_invalid_terminator")
         # Match Git's stored object format; this checksum does not authenticate
         # a publisher or grant trust. The returned bytes still undergo scanning.
+        # nosemgrep: python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-sha1
         digest = hashlib.sha1(usedforsecurity=False) if len(oid) == 40 else hashlib.sha256()
         digest.update(f"blob {size}\0".encode("ascii"))
         digest.update(data)

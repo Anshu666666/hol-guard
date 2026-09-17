@@ -10,6 +10,7 @@ Other platforms and filesystem types retain full validation.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import os
 import stat
@@ -29,6 +30,7 @@ _MAX_MOUNTINFO_BYTES = 1024 * 1024
 _MAX_MANIFEST_BYTES = 16 * 1024
 _MAX_ATTESTATIONS = 256
 _LOCK = threading.Lock()
+_digest_reuse_suspended = False
 
 
 @dataclass(frozen=True)
@@ -44,12 +46,22 @@ class NativeProcessAttestation:
 
 
 _ATTESTATIONS: dict[int, NativeProcessAttestation] = {}
+# These entries grant no trust. They prevent another child on the same path
+# from enabling digest reuse while an uninspectable client is still live.
+_FULL_VALIDATION_CLIENTS: dict[int, tuple[subprocess.Popen[bytes], Path]] = {}
 
 
 @dataclass(frozen=True)
 class NativeProcessAttestationResult:
     status: Literal["verified", "unsupported", "invalid"]
     attestation: NativeProcessAttestation | None = None
+
+
+@dataclass(frozen=True)
+class NativeProcessImageInspection:
+    status: Literal["verified", "unsupported", "invalid"]
+    path_metadata: tuple[int, ...] | None = None
+    process_start_marker: str | None = None
 
 
 def _metadata_binding(metadata: os.stat_result) -> tuple[int, ...]:
@@ -93,10 +105,28 @@ def _manifest_binding(executable: Path) -> tuple[tuple[int, ...], bytes] | None:
         return None
 
 
-def _process_image(process: subprocess.Popen[bytes], executable: Path) -> tuple[tuple[int, ...], str] | None:
+def _inspect_process_image(process: subprocess.Popen[bytes], executable: Path) -> NativeProcessImageInspection:
+    """Separate an unavailable kernel interface from observed bad identity.
+
+    Only errors from /proc inspection can be unsupported. Missing/unsafe
+    installation metadata and affirmative process/image mismatches are invalid.
+    """
+
     try:
         if process.poll() is not None:
-            return None
+            return NativeProcessImageInspection("invalid")
+        lexical = executable.lstat()
+        if (
+            not stat.S_ISREG(lexical.st_mode)
+            or stat.S_IMODE(lexical.st_mode) & 0o022
+            or lexical.st_uid not in {0, os.getuid()}
+        ):
+            return NativeProcessImageInspection("invalid")
+        metadata = _metadata_binding(lexical)
+    except (OSError, RuntimeError, ValueError):
+        return NativeProcessImageInspection("invalid")
+    start_marker: str | None = None
+    try:
         proc = Path("/proc") / str(process.pid)
         process_stat = (proc / "stat").read_text(encoding="ascii")
         prefix, suffix = process_stat.rsplit(")", 1)
@@ -108,17 +138,64 @@ def _process_image(process: subprocess.Popen[bytes], executable: Path) -> tuple[
             or fields[1] != str(os.getpid())
             or not fields[19].isdigit()
         ):
-            return None
-        lexical = executable.lstat()
+            return NativeProcessImageInspection("invalid")
+        start_marker = fields[19]
         image = (proc / "exe").stat()
-        if not stat.S_ISREG(lexical.st_mode) or not stat.S_ISREG(image.st_mode):
-            return None
-        metadata = _metadata_binding(lexical)
-        if metadata != _metadata_binding(image) or process.poll() is not None:
-            return None
-        return metadata, fields[19]
-    except (OSError, RuntimeError, ValueError):
+        if not stat.S_ISREG(image.st_mode) or metadata != _metadata_binding(image) or process.poll() is not None:
+            return NativeProcessImageInspection("invalid")
+        return NativeProcessImageInspection("verified", metadata, start_marker)
+    except OSError as error:
+        unsupported_errors = {errno.EACCES, errno.EPERM, errno.ENOENT, errno.ENOSYS, errno.ENOTSUP}
+        if error.errno in unsupported_errors and process.poll() is None:
+            return NativeProcessImageInspection("unsupported", metadata, start_marker)
+        return NativeProcessImageInspection("invalid")
+    except (RuntimeError, ValueError):
+        return NativeProcessImageInspection("invalid")
+
+
+def _process_image(process: subprocess.Popen[bytes], executable: Path) -> tuple[tuple[int, ...], str] | None:
+    inspected = _inspect_process_image(process, executable)
+    if inspected.status != "verified" or inspected.path_metadata is None or inspected.process_start_marker is None:
         return None
+    return inspected.path_metadata, inspected.process_start_marker
+
+
+def _prune_finished_clients_locked() -> None:
+    for key, item in tuple(_ATTESTATIONS.items()):
+        if item.process.poll() is not None:
+            _ = _ATTESTATIONS.pop(key, None)
+    for key, (process, _) in tuple(_FULL_VALIDATION_CLIENTS.items()):
+        if process.poll() is not None:
+            _ = _FULL_VALIDATION_CLIENTS.pop(key, None)
+
+
+def _has_full_validation_client_locked(executable: Path) -> bool:
+    for key, (process, path) in tuple(_FULL_VALIDATION_CLIENTS.items()):
+        if path != executable:
+            continue
+        if process.poll() is None:
+            return True
+        _ = _FULL_VALIDATION_CLIENTS.pop(key, None)
+    return False
+
+
+def _registry_slot_available_locked(process: subprocess.Popen[bytes]) -> bool:
+    """Capacity failure disables reuse, never ordinary full admission.
+
+    An untracked live client cannot permit indirect reuse. A process-lifetime
+    latch provides that guarantee without an unbounded overflow registry.
+    """
+
+    global _digest_reuse_suspended
+    _prune_finished_clients_locked()
+    if _digest_reuse_suspended:
+        return False
+    if id(process) in _ATTESTATIONS or id(process) in _FULL_VALIDATION_CLIENTS:
+        return True
+    if len(_ATTESTATIONS) + len(_FULL_VALIDATION_CLIENTS) >= _MAX_ATTESTATIONS:
+        _digest_reuse_suspended = True
+        return False
+    return True
 
 
 def _local_executable_filesystem(process: subprocess.Popen[bytes]) -> bool:
@@ -162,35 +239,51 @@ def attest_native_process(
 
     if sys.platform != "linux" or expected.identity is None or expected.capabilities is None:
         return NativeProcessAttestationResult("unsupported")
-    executable = expected.identity.path
-    before = _process_image(process, executable)
-    if before is None:
+    if not expected.available or not expected.compatible:
         return NativeProcessAttestationResult("invalid")
-    reusable_filesystem = _local_executable_filesystem(process)
+    executable = expected.identity.path
+    before = _inspect_process_image(process, executable)
+    if before.status == "invalid":
+        return NativeProcessAttestationResult("invalid")
+    reusable_filesystem = before.status == "verified" and _local_executable_filesystem(process)
     manifest = _manifest_binding(executable)
     verified = verify()
-    after = _process_image(process, executable)
+    after = _inspect_process_image(process, executable)
     version = package_version()
     if (
-        before != after
+        after.status == "invalid"
+        or before.path_metadata != after.path_metadata
+        or (
+            before.process_start_marker is not None
+            and after.process_start_marker is not None
+            and before.process_start_marker != after.process_start_marker
+        )
         or manifest is None
         or manifest != _manifest_binding(executable)
         or verified != expected
         or version != expected.capabilities.runtime_version
+        or process.poll() is not None
     ):
         return NativeProcessAttestationResult("invalid")
-    if not reusable_filesystem:
-        # Even when reuse is unsupported, a new child must match the freshly
-        # admitted image before it can receive the first hook frame.
+    if not reusable_filesystem or after.status != "verified":
+        # A full pre-launch and post-launch validation remains authoritative
+        # when the kernel cannot expose image/start proof. Never cache that
+        # ambiguity, including indirectly through another child on this path.
+        with _LOCK:
+            if not _registry_slot_available_locked(process):
+                return NativeProcessAttestationResult("unsupported")
+            _ = _ATTESTATIONS.pop(id(process), None)
+            _FULL_VALIDATION_CLIENTS[id(process)] = (process, executable)
         return NativeProcessAttestationResult("unsupported")
     assert version is not None
-    attestation = NativeProcessAttestation(process, expected.identity, before[0], before[1], version, manifest)
+    assert before.path_metadata is not None and before.process_start_marker is not None
+    attestation = NativeProcessAttestation(
+        process, expected.identity, before.path_metadata, before.process_start_marker, version, manifest
+    )
     with _LOCK:
-        expired = [key for key, item in _ATTESTATIONS.items() if item.process.poll() is not None]
-        for key in expired:
-            _ATTESTATIONS.pop(key, None)
-        if len(_ATTESTATIONS) >= _MAX_ATTESTATIONS:
-            return NativeProcessAttestationResult("invalid")
+        if not _registry_slot_available_locked(process):
+            return NativeProcessAttestationResult("unsupported")
+        _ = _FULL_VALIDATION_CLIENTS.pop(id(process), None)
         _ATTESTATIONS[id(process)] = attestation
     return NativeProcessAttestationResult("verified", attestation)
 
@@ -218,20 +311,35 @@ def live_native_identity(
     if sys.platform != "linux":
         return None
     with _LOCK:
+        if _digest_reuse_suspended or _has_full_validation_client_locked(executable):
+            return None
         candidates = tuple(item for item in _ATTESTATIONS.values() if item.identity.path == executable)
     if not candidates:
         return None
     version = package_version()
     for candidate in candidates:
         if attestation_is_current(candidate, package_version=version):
-            return candidate.identity
-        retire_native_process(candidate.process)
+            # A non-reusable client may register while file probes run.
+            with _LOCK:
+                if (
+                    _ATTESTATIONS.get(id(candidate.process)) is candidate
+                    and not _digest_reuse_suspended
+                    and not _has_full_validation_client_locked(executable)
+                ):
+                    return candidate.identity
+            return None
+        with _LOCK:
+            # A concurrent full-validation registration for this process must
+            # keep its path blocker even when an older attestation is stale.
+            if _ATTESTATIONS.get(id(candidate.process)) is candidate:
+                _ = _ATTESTATIONS.pop(id(candidate.process), None)
     return None
 
 
 def retire_native_process(process: subprocess.Popen[bytes]) -> None:
     with _LOCK:
-        _ATTESTATIONS.pop(id(process), None)
+        _ = _ATTESTATIONS.pop(id(process), None)
+        _ = _FULL_VALIDATION_CLIENTS.pop(id(process), None)
 
 
 def retire_native_path(executable: Path) -> None:

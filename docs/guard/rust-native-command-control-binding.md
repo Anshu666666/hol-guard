@@ -7,8 +7,9 @@ revision, managed revision, effective digest, and complete layers reproduce the
 existing Python `ExtensionControlRuntimeSnapshot` projection. Native execution
 still requires the resident to admit that exact packaged program.
 
-The production publisher requires `native-command-program-v1` together with
-the existing snapshot/resident capabilities. A missing capability, missing or
+The production publisher requires `native-command-program-v1` and
+`native-command-control-fence-v1` together with the existing snapshot/resident
+capabilities. A missing capability, missing or
 invalid program, catalog mismatch, invalid control binding, or failed verified
 authority read closes readiness. It does not emit an unbound legacy snapshot as
 a substitute. Direct snapshot builders retain their explicit legacy mode:
@@ -30,38 +31,102 @@ the same pair of revisions, is rejected. Existing degraded/tampered health is
 preserved, and a later unhealthy observation does not erase protected revision
 floors.
 
-Local enrollment, mutation, recovery, resumed transitions, and catalog
-migration invalidate registered native publishers before mutation under the
-authority lock. Managed activation and removal use that same ordering. The
-publisher acquires the authority lock to read committed controls; callers do
-not wait for resident ACKs while holding store locks. An epoch check rejects an
-older in-flight ACK. Readiness reopens only after verified projection,
-authenticated snapshot publication, and a matching resident ACK.
+Local enrollment, mutation, recovery, resumed transitions, managed activation
+and removal, and semantic catalog writes invalidate registered publishers and
+durably close a signed cross-process marker before changing SQL or credentials.
+The retained `extension-control-authority.lock` inode supplies the OS lease:
+writers acquire it exclusively; native admission, evaluation and approval
+finalization acquire an overlapping shared lease without waiting.
 
-DB/WAL metadata remains an invalidation hint. Bounded markers cover the signing
-material, local authority snapshot/latest transition, and managed active/revision
-state. Receipt, activity, and unrelated sync-state churn leave these markers
-unchanged. Periodic reconciliation independently re-verifies authority, and a
-verified read after the resident ACK detects controls changed by another
-process during publication. A database marker never supplies control authority.
+The background publisher verifies unchanged controls under a shared lease,
+allowing native decisions concurrently. A semantic-write intent raises before
+effects, releases the shared lease, and triggers a complete verified read under
+a new exclusive lease. It never upgrades a held shared lease. The immutable
+built-in target manifest is compiled outside these leases and cached by the
+exact registry, frozen extension tuple, and catalog identity. Custom registries
+are not cached. Initial catalog creation can invalidate the publisher's own
+candidate, so it recaptures one stable context before sending any IPC.
 
-This tranche does not provide a cross-process mutation-completion handshake.
-After an independent writer returns, an already acknowledged publisher in
-another process discovers the change through DB/WAL observation or periodic
-verified reconciliation. The default poll interval is 250 ms and the independent
-reconciliation timer is one second; verification and lock waits add time, so
-these intervals are not a hard maximum staleness guarantee. Immediate
-cross-process revocation requires an authenticated resident invalidation or
-authority-epoch protocol.
+Publication writes the matching committed marker under the exclusive lease,
+then releases it before resident push. The resident validates the signed marker
+under its shared lease before accepting even an idempotent push, persists the
+new snapshot and floor, and constructs the ACK. The publisher re-verifies after
+ACK; its mutation token rejects an older in-flight candidate. No caller waits
+for resident IPC while holding the exclusive control lease.
 
-Existing `GuardStore.recover_extension_control_authority` can call
-`_reset_extension_control_authority` and rebootstrap local revision zero. The
-publisher's ordinary verified reader and the resident's persisted protected
-floor deliberately reject that decrease after observing a higher revision.
-`ExtensionControlRuntime.replace_after_recovery` is an explicit in-process
-recovery path; it does not authorize resetting the native resident's durable
-floor. Native readiness after such a reset requires a separately authenticated
-recovery/epoch handoff. Health changes alone never clear an anti-rollback floor.
+DB/WAL metadata remains an invalidation hint. Bounded markers cover signing
+material, the local authority snapshot/latest transition, managed active/revision
+state, and managed manifest context. Receipt and unrelated sync-state churn leave
+these markers unchanged. Periodic reconciliation independently verifies authority;
+a database marker never supplies control authority.
+
+Polling governs how quickly another publisher rebuilds a candidate. It does not
+grant stale native authority: a missing, closed, malformed, mismatched or
+unverifiable marker fails the resident request. A process that dies after closing
+the marker leaves it closed. Background verification can publish only the
+actually committed state after that interruption, with the increased fence
+revision even when SQL rolled back to unchanged controls.
+
+`GuardStore.recover_extension_control_authority` calls
+`_reset_extension_control_authority` through its explicit recovery path; the
+daemon requires its existing action grant before invoking recovery. Before
+resetting local revision zero, it selects the new authority key and signs a new
+epoch linked to the exact MAC-verified prior native control floor. The previous
+epoch, fence revision, key identity and complete floor digest must match that
+retained floor. Ordinary health changes cannot reset either revision floor.
+Recovery evidence is retained across later mutations, and cannot authorize a
+second key change in the same epoch. A publisher whose old in-memory runtime
+missed another publisher's recovery ACK verifies the current authenticated floor
+and its retained predecessor link before catching up.
+
+Missing-key recovery discards catalog manifests authenticated by the lost key
+and rebuilds them from the trusted current registry. It preserves independently
+authenticated managed state; unavailable managed authentication remains
+fail-closed rather than silently removing managed restrictions.
+
+## Marker and recovery wire contract
+
+`native-runtime/command-control-authority.v1.json` is canonical JSON with exact
+fields `schema`, `epoch`, `mutation_revision`, `authority_key_id`, `phase`,
+`effective_digest`, `recovery`, and `mac`. Epoch and mutation revision are
+positive unsigned 64-bit integers. `phase` is `closed` or `committed`;
+`effective_digest` is null while closed and the exact control digest while
+committed. The snapshot's `command_extensions.authority` contains exactly
+`epoch`, `mutation_revision`, `authority_key_id`, and `recovery`.
+
+The MAC is HMAC-SHA256 using the existing derived policy verifier key and
+`hol-guard.native-command-control-authority.v1\0 || canonical unsigned record`.
+The extension authority key identity is
+`SHA256(hol-guard.native-command-control-authority-key.v1\0 || key)`; zeroes
+represent the absence of an enrolled key. An explicit recovery object has schema
+`guard.native-command-control-recovery.v1`, previous epoch/mutation revision/key
+identity, `previous_floor_digest`, and a 32-byte random nonce encoded as hex.
+The prior-floor digest is
+`SHA256(hol-guard.native-command-control-floor-link.v1\0 || canonical complete floor)`.
+Legacy or absent floor authority context uses zeroes. The floor itself remains
+authenticated, including when its expired snapshot is absent.
+
+Unix operations use bounded reads, owner/mode/single-link checks, no-follow
+opens, retained directory descriptors, complete writes, file/directory fsync,
+atomic replacement and identity read-back. Existing owned 0644 lock files are
+tightened through the same open inode. Windows uses the existing verified
+private-handle replacement helpers and overlapping byte-zero locking. The
+reentrant Python lock state is scoped to PID and normalized path, so forked
+children must acquire their own OS lease. Unwinding an inherited child context
+closes its descriptor without releasing the parent's live lock.
+
+## Managed source contracts
+
+New managed activations capture only their configured targets' trusted source
+fingerprints in an authenticated `sourceTargetManifest`. Same-bundle retries
+retain that source. Catalog refreshes keep a bounded authenticated context tied
+to the exact activation digest, and persist a migration intent before advancing
+the protected catalog revision. Repeated reads and interrupted retries cannot
+restore an old managed allow after its matcher contract changes. Existing cloud
+activations and ACKs are not rewritten during projection. A legacy activation
+without authenticated source context conservatively clamps enabled controls
+until a newly authorized activation supplies its source; deleting a newer
+context can only reconstruct the source already authenticated by the activation.
 
 ## Bounds and digest compatibility
 
@@ -74,8 +139,10 @@ recovery/epoch handoff. Health changes alone never clear an anti-rollback floor.
 | Controls | At most 512 per layer; unique `(target_kind, target_id)` within each layer |
 | Targets | ASCII `command.*` identifiers, at most 256 characters, with permission kind matching `.permission.` |
 | Revisions | Independent unsigned 64-bit local and managed counters; booleans are rejected |
+| Control marker | At most 4 KiB, exact canonical authenticated fields, positive epoch and mutation revision |
+| Managed source context | At most 512 configured targets, existing 256-character target limit, 512 KiB complete authenticated record |
 | Snapshot transport | Existing 256 KiB total snapshot/push envelope limit remains; oversized complete projections fail explicitly |
-| Synchronous hook read | Existing small in-memory generation/digest/runtime/mode binding; no artifact, database, registry, or compiler reads |
+| Synchronous hook read | Python uses the small in-memory binding; Rust checks a bounded marker and shared lease, with no artifact, database, registry or compiler reads |
 
 When a binding is present, the policy digest adds
 `command_extensions_digest = SHA256(canonical binding JSON)`. The generation
@@ -85,8 +152,12 @@ The existing HMAC authenticates the whole body, including that binding.
 Rust's combined authority record may also contain `command_control_floor` with
 the highest protected local/managed revisions and effective digest. The Python
 cache reader validates this optional shape and its domain-separated floor MAC.
-The legacy floor MAC remains unchanged when the field is absent. The floor is
-anti-rollback evidence and is never used as a replacement for verified policy.
+The legacy floor MAC remains unchanged when the field is absent. Optional
+`authority` and `previous_floor_digest` authenticate epoch recovery without
+discarding its predecessor link. An authenticated legacy raw v3 snapshot without
+command bindings has no control floor and can enter the resident's migration
+path. The floor is anti-rollback evidence and is never used as a replacement for
+verified policy.
 
 ## Evidence
 
@@ -101,6 +172,20 @@ incomparability, missing-program failure, pre-commit invalidation and ordered
 ACK, control changes during ACK without a local callback, local opt-in together
 with managed restrictions, managed removal/rollback, WAL tampering, and the
 in-memory hook binding boundary.
+
+`tests/test_native_command_control_authority.py` covers exact cross-language
+signed vectors, malformed/oversized fields, private short-write/link faults,
+shared-reader exclusion of mutations, retained-inode replacement, lexical
+reentrancy and fork isolation. `tests/test_native_command_control_authority_publisher.py`
+covers closure-sync failure before SQL effects, a real subprocess exit during
+an uncommitted mutation, exact retained-floor recovery, tampered floors, missing
+keys, stale-publisher recovery catch-up, same-epoch key immutability and
+unchanged shared reconciliation. `tests/test_managed_control_manifest_context.py`
+covers catalog refresh, crash retries, context deletion/tampering, legacy source
+absence and stable source provenance on same-bundle delivery.
+
+Native socket and Windows interoperability qualification must use the compiled
+release runtime in CI; Python fixture ACKs alone are not that evidence.
 
 This establishes the Python publication portion of RSP-115. Installed native
 matcher admission, complete catalog outcome parity, and end-to-end performance

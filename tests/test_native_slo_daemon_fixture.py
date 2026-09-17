@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import subprocess
 import sys
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from scripts import native_slo_daemon_fixture as fixture
+from scripts.native_slo_failure import FixtureFailureError, failure_evidence
 
 
 @pytest.mark.skipif(
@@ -76,3 +78,35 @@ def test_progress_does_not_extend_control_deadline(monkeypatch: pytest.MonkeyPat
     assert session._receive(30.0) == {"state": "ready"}
     assert observed == [29.0, 28.0]
     assert session._stage == "start"
+
+
+def test_startup_stack_survives_fixed_deadline_without_paths_or_raw_output() -> None:
+    session = fixture.DaemonFixture(Path("unused"))
+    stack = [{"origin": "store_connection_schema._initialize_serialized_once", "line": 580}]
+    session._responses.put_nowait(
+        json.dumps({"state": "startup_diagnostic", "stage": "construct_store", "stack": stack}).encode()
+    )
+    with pytest.raises(FixtureFailureError) as failure:
+        session._receive(0.0)
+    evidence = failure_evidence(failure.value)
+    assert evidence["reason"] == "qualification_fixture.daemon_fixture_deadline_at_construct_store"
+    assert evidence["startup_stack"] == stack
+    with pytest.raises(queue.Empty):
+        session._responses.get_nowait()
+
+
+@pytest.mark.parametrize(
+    "stack",
+    (
+        [{"origin": "/home/private/stack.py", "line": 3}],
+        [{"origin": "safe.code", "line": 3, "locals": "private-value"}],
+        [{"origin": "safe.code", "line": 3}] * 9,
+    ),
+)
+def test_startup_diagnostics_reject_paths_frame_data_and_unbounded_stacks(stack: object) -> None:
+    session = fixture.DaemonFixture(Path("unused"))
+    session._responses.put_nowait(
+        json.dumps({"state": "startup_diagnostic", "stage": "construct_store", "stack": stack}).encode()
+    )
+    with pytest.raises((RuntimeError, ValueError)):
+        session._receive(0.0)

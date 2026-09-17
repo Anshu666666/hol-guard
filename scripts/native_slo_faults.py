@@ -41,7 +41,7 @@ class FaultFixture:
 
     def __enter__(self) -> FaultFixture:
         from codex_plugin_scanner.guard import native_hook_edge
-        from codex_plugin_scanner.guard.daemon import server
+        from codex_plugin_scanner.guard.runtime import hook_payload_reference
 
         worker = self.session.daemon._server.hook_worker
         original = worker._review_raw_hook_native
@@ -71,16 +71,21 @@ class FaultFixture:
             self.evidence["native_mode_off"] = native_mode() == "off"
             self.evidence["fault_scope"] = "explicit_off_mode"
         elif self.setup == "integrity":
-            original_size = server.hook_payload_reference_size
+            # The HTTP handler imports this function inside each request. The
+            # defining module is the actual runtime seam; server has no module
+            # attribute with that name in the pinned baseline or candidate.
+            original_size = hook_payload_reference.hook_payload_reference_size
 
             def reference_size(*args: object, **kwargs: object) -> object:
                 try:
                     return original_size(*args, **kwargs)
-                except (OSError, RuntimeError, ValueError):
+                except hook_payload_reference.HookPayloadReferenceError:
                     self.observed["payload_reference_rejected"] = True
                     raise
 
-            self.stack.enter_context(patch.object(server, "hook_payload_reference_size", reference_size))
+            self.stack.enter_context(
+                patch.object(hook_payload_reference, "hook_payload_reference_size", reference_size)
+            )
             self.evidence["fault_scope"] = "malformed_encrypted_reference"
         elif self.setup == "queue_bytes":
             scheduler = self.session.daemon._server.runtime_hook_scheduler
@@ -108,6 +113,11 @@ class FaultFixture:
 
             self.evidence.update(expire_acknowledged_authority(self.session))
             self.evidence["fault_scope"] = "authenticated_short_lived_generation"
+        elif self.setup == "revoked":
+            from scripts.native_slo_revocation import revoke_acknowledged_authority
+
+            self.evidence.update(revoke_acknowledged_authority(self.session))
+            self.evidence["fault_scope"] = "withdrawn_accepted_authority_file"
         elif self.setup not in {"normal", "watch"}:
             raise RuntimeError("qualification fault setup has no witnessed implementation")
         return self

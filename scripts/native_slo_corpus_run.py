@@ -25,6 +25,7 @@ _IMPLEMENTED_SETUPS = frozenset(
         "queue_bytes",
         "review_queue_failed",
         "expired",
+        "revoked",
     }
 )
 

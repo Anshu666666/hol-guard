@@ -18,6 +18,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from .native_command_control_authority import validate_authority_binding, validate_control_floor
 from .native_policy_snapshot_codec import (
     _canonical_json_bytes_v3,
     _generation_floor_mac_v3,
@@ -205,7 +206,10 @@ def validate_native_command_control_binding(value: object) -> None:
     """Apply the exact typed Rust binding contract without authority reads."""
 
     _validate_json_limits_v3(value)
-    binding = _require_fields(value, _BINDING_FIELDS)
+    fields = _BINDING_FIELDS | ({"authority"} if isinstance(value, Mapping) and "authority" in value else set())
+    binding = _require_fields(value, fields)
+    if "authority" in binding:
+        validate_authority_binding(binding["authority"])
     health = binding.get("health")
     if (
         binding.get("schema") != NATIVE_COMMAND_CONTROL_BINDING_SCHEMA
@@ -270,13 +274,7 @@ def native_command_control_floor_mac(generation: int, policy_digest: str, floor:
 
     if floor is None:
         return _generation_floor_mac_v3(generation, policy_digest, verifier_key)
-    value = _require_fields(floor, frozenset({"revision", "managed_revision", "effective_digest"}))
-    for key in ("revision", "managed_revision"):
-        revision = value.get(key)
-        if type(revision) is not int or not 0 <= revision <= _MAX_U64:
-            raise NativePolicySnapshotError("native_command_control_floor_invalid")
-    if not _valid_digest_v3(value.get("effective_digest")):
-        raise NativePolicySnapshotError("native_command_control_floor_invalid")
+    value = validate_control_floor(floor)
     bound = "guard-native-policy-command-control-floor.v1\0" + _canonical_json_bytes_v3(
         {"policy_digest": policy_digest, "command_controls": value}
     ).decode("utf-8")
@@ -312,23 +310,7 @@ def read_native_command_control_binding(
 ) -> tuple[dict[str, object], ExtensionControlRuntime]:
     """Read committed local and managed authority, retaining both revision floors."""
 
-    from .runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
-    from .runtime.extension_control_runtime import ExtensionControlRuntime
+    from .native_command_control_projection import read_control_projection
 
     metadata = load_native_command_program_metadata()
-    registry = BUILT_IN_COMMAND_EXTENSION_REGISTRY
-    if registry.catalog_digest != metadata.catalog_digest:
-        raise NativePolicySnapshotError("native_command_control_catalog_mismatch")
-    # This API verifies the credential-backed local record and independently
-    # authenticated managed activation/revision, including catalog migrations.
-    # Plain persisted-authority reads omit managed controls and are insufficient.
-    authority = store.read_extension_control_authority_for_registry(registry)
-    if runtime is None:
-        runtime = ExtensionControlRuntime(authority)
-        snapshot = runtime.current()
-    else:
-        try:
-            snapshot = runtime.refresh(authority)
-        except ValueError as error:
-            raise NativePolicySnapshotError("native_command_control_revision_regressed") from error
-    return build_native_command_control_binding(snapshot, metadata), runtime
+    return read_control_projection(store, metadata, runtime)

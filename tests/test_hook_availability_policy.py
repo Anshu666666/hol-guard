@@ -30,9 +30,9 @@ def test_env_file_read_is_not_emergency_safe(tmp_path: Path) -> None:
     assert hook_action_is_emergency_safe(payload, workspace=tmp_path, home_dir=tmp_path / "home") is False
 
 
-def test_git_status_is_emergency_safe() -> None:
+def test_git_status_requires_configuration_proof_for_emergency_safety() -> None:
     payload = {"hook_event_name": "PreToolUse", "tool_input": {"command": "git status"}}
-    assert hook_action_is_emergency_safe(payload) is True
+    assert hook_action_is_emergency_safe(payload) is False
 
 
 def test_git_push_is_not_emergency_safe() -> None:

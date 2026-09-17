@@ -10,6 +10,7 @@ from scripts.native_slo_qualification import (
     sampling_gates,
     sampling_plan,
 )
+from scripts.native_slo_qualification_run import _native_sample_values
 
 
 def test_qualification_plan_meets_minima_across_independent_runs() -> None:
@@ -58,3 +59,15 @@ def test_comparison_rejects_mismatched_routes_and_insufficient_actual_samples() 
     assert gates["DAEMON_INGRESS.claude-code.PostToolUse"] is False
     with pytest.raises(ValueError, match="coverage differs"):
         compare_routes(left, [{"another.route": {"count": 2, "p95_ms": 7, "p99_ms": 9}}] * 5)
+
+
+@pytest.mark.parametrize("values", [[], [True], ["2"], [float("nan")], [float("inf")], [-1], [1, 2]])
+def test_native_sample_batch_rejects_malformed_or_missing_actual_observations(values: object) -> None:
+    with pytest.raises(RuntimeError, match="bounded values"):
+        _native_sample_values({"benign_and_block_validated": True, "values": values}, 1)
+
+
+def test_native_sample_batch_requires_semantic_preflight_and_exact_observed_count() -> None:
+    assert _native_sample_values({"benign_and_block_validated": True, "values": [1, 2.5]}, 2) == [1.0, 2.5]
+    with pytest.raises(RuntimeError, match="preflight"):
+        _native_sample_values({"benign_and_block_validated": False, "values": [1]}, 1)

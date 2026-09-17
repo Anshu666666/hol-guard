@@ -6,7 +6,7 @@ Fresh process launches still require full executable validation. Platforms and
 filesystems without the implemented proof keep full validation. This is a
 bounded admission optimization; it is not a new runtime trust root.
 
-The source is `194edcb3b2516d4a76213bec3c3329253a8929da`, based on the integrated
+The measured source is `194edcb3b2516d4a76213bec3c3329253a8929da`, based on the integrated
 candidate `b9352329b`. The installed comparison uses baseline Python/Rust source
 `2e672d2d950c6ec471005ddba46e49bba16dc23b` and candidate Python with the **same
 baseline Rust executable**. That deliberate artifact choice isolates the Python
@@ -24,16 +24,34 @@ Every new bundled Linux `auto` stream follows this sequence:
 
 1. Perform the original full-byte runtime and manifest/capability admission with
    attestation reuse disabled.
-2. Launch the actual child and verify that `/proc/PID/exe` and the installed path
-   identify the same regular executable, with the current parent and start
-   marker.
+2. Launch the actual child and inspect whether `/proc/PID/exe` and the installed
+   path identify the same regular executable, with the current parent and start
+   marker. A typed unavailable inspection is separate from an observed mismatch.
 3. Repeat full admission while the actual executable is pinned. Require the same
-   full status, package version, manifest binding, image metadata and start marker
-   before and after verification. Even an unsupported filesystem must complete
-   this new-child comparison before receiving a hook frame.
+   full status, package version, manifest binding and safe installation metadata
+   before and after verification. Any observed image/start mismatch rejects the
+   child. An unavailable kernel inspection retains full validation and cannot
+   create a reusable proof. Even a fallback child must complete full admission
+   before receiving a hook frame.
 4. Register reusable proof only on an admitted filesystem. Other filesystems
-   retain full status hashing. A registration error closes the child before any
-   frame is sent.
+   retain full status hashing. A failed identity/admission check closes the child
+   before any frame is sent; lack of a reusable cache slot does not deny admission.
+
+`/proc` inspection errors `EACCES`, `EPERM`, `ENOENT`, `ENOSYS` and `ENOTSUP` are
+typed unsupported when the owned child remains live. Errors reading installation
+metadata are never classified this way. Observed PID, parent, start or image
+mismatches, unsafe owner/mode, malformed process metadata, unexpected I/O errors,
+process exit, or failed full manifest/package/executable validation still reject
+the child. An unsupported child is registered only as a blocker for digest reuse
+on its path; it grants no identity authority. A final locked check prevents a
+blocker registered during file probes from permitting a cached return.
+
+Reusable attestations and full-validation blockers share a 256-entry bound. If
+that registry saturates, full admission succeeds and digest reuse is disabled
+for the remaining Python process lifetime. The latch avoids both rejecting a
+fully admitted child and retaining an unbounded overflow registry. Existing
+streams remain usable, but every later status performs full validation, including
+after entries are retired. Only restarting the Python process resets the latch.
 
 An existing attested stream checks its exact registration, process/image/start,
 package version and manifest before dispatch. File probes run without the
@@ -57,6 +75,8 @@ with a Python path cache or count native-unavailable results as evaluated allows
 | --- | --- | --- |
 | Linux ext2/ext3/ext4/xfs/btrfs/tmpfs | Conditional | The actual child pins a fully verified image; its start, image and installation remain bound on each use. The mounted image's filesystem is identified through its opened `/proc/PID/exe` descriptor and mount ID. |
 | Linux overlay, network/FUSE filesystems, unknown mount type | No | Full validation remains. The allowlist intentionally excludes filesystems whose remote or copy-up behavior has not been qualified for this proof. |
+| Linux unavailable `/proc` image/start inspection | No | Full pre-launch and post-launch admission remains; a live fallback client prevents path-level digest reuse. Observed mismatches still reject. |
+| Identity registry saturation | No for the remaining Python process lifetime | Full admission continues. A constant-size latch blocks reuse even for untracked clients; no valid child is rejected to preserve a cache slot. |
 | macOS | No | Full validation remains. No code-signing/process-image lifetime equivalence is claimed or implemented. |
 | Windows | No | Full validation remains. No sharing-mode/process-image lifetime equivalence is claimed or implemented. |
 
@@ -75,7 +95,9 @@ reads a frame, invokes the existing resident transport and writes a response.
 This proof does not attempt to defend against a compromised kernel, privileged
 process tracing or a compromised already executing trusted runtime. It preserves
 the existing package/manifest trust model. A platform permission/proc inspection
-failure cannot manufacture a reusable identity. OS ownership and signing/update
+failure cannot manufacture a reusable identity. The unavailable-inspection
+fallback preserves the prior full-validation admission contract without claiming
+that the kernel established image proof. OS ownership and signing/update
 transitions still require testing on real release targets.
 
 ## Installed measurement method
@@ -172,6 +194,58 @@ gain to unchanged configuration code. The fixtures exercise a strict workspace
 security-level overlay; they do not replace publication or race/load tests.
 
 ## Validation and remaining acceptance
+
+The `Native runtime identity` workflow now selects the Linux live-image and
+unsupported-inspection suites as well as the manifest contracts. A separate
+hosted Linux invocation runs only the copied-executable ownership-transition
+fixture with `sudo`, so an ordinary unprivileged runner does not silently skip
+that transition. The fixture changes its disposable executable, not an installed
+runtime or other host file.
+
+All four existing native-wheel targets (Linux x64, macOS x64/arm64, Windows x64)
+now invoke `ci/native_runtime/probe_installed_runtime_identity.py` with the actual
+wheel interpreter and `-I`. This probe rejects editable imports and native/test
+environment overrides. It counts full validations and actual SHA-256 input bytes
+for three status calls per steady phase, starts real bundled stdio children,
+checks exit/restart, replaces the image with identical bytes and restored mtime,
+rejects manifest build/version mismatches and same-size byte corruption, and
+restores the original artifact before a fresh child starts. macOS and Windows
+must retain full status hashing; Linux reuses a digest only when it obtains an
+eligible live proof. Windows may deny replacement of a live image; in that case
+the probe records the OS denial and requires fresh admission after containment
+and replacement. The fixed corpus accepts at most a 64 MiB executable and a
+16 KiB manifest, and restores modified files in `finally`.
+
+Each wheel job uploads `native-installed-identity.json`. This is an installed
+status/stdio-child check: it sends no hook frame, opens no resident socket and
+claims no latency or signing result. Its replacement/restoration cases use one
+real wheel artifact. Upgrade and rollback between different signed release
+versions remain unqualified until that two-artifact release matrix runs.
+
+The probe's local implementation check passed all 17 recorded cases on Linux
+with an installed tmpfs wheel containing the integrated Python implementation
+from `bdb502bf8` and the unchanged baseline Rust binary from `2e672d2`. Its
+[receipt](performance/rsp-installed-runtime-identity-linux-source-evidence.json)
+binds the exact Python modules, manifest and 6,171,560-byte executable by SHA-256.
+Three warm statuses with an eligible live proof hashed zero executable bytes;
+each new or restarted child required two full validations (12,343,120 bytes).
+Replacement-first status and corruption rejection each hashed all 6,171,560
+bytes. These are operation counts, not new timing results or qualification of
+the later native command program. The selected manifest/live/proc source suite
+passed 60 tests with the existing ownership-fixture skip, and both digest-proxy
+regressions passed. Scoped probe/diagnostic types reported zero errors (56
+warnings), and the workflow policy checker passed. The four hosted target
+results remain pending their next CI run.
+
+The subsequent hardened-Linux and registry-capacity corrections are verified by
+fault-injected `EACCES`/`EPERM`/`ENOENT`/`ENOSYS`/`ENOTSUP` at both process-stat and
+image inspection, actual live children, exact pre/post/warm validation counts,
+concurrent reuse-blocker registration, safe cache saturation, and affirmative
+PID/start/inode/owner/mode rejection. This subsequent focused run passed **86
+tests, with 1 ownership-fixture skip**; Ruff passed and scoped type checking
+reported zero errors (40 warnings). The installed timing evidence above remains
+bound to its recorded source; no updated timing or ordinary-route qualification
+is inferred from these additional fallback tests.
 
 Focused validation at the source commit: **59 passed, 1 skipped**, Ruff passed,
 and scoped type checking reported zero errors (103 warnings).

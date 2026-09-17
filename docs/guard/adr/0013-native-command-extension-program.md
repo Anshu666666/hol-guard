@@ -33,7 +33,7 @@ letter, number, whitespace, and SQL word-boundary semantics. Its differential
 fixtures qualify that profile; they do not establish equivalence to every
 Python 3.10–3.14 Unicode database. Unsupported case conversions are explicit
 matcher uncertainty. Raw literal safety also requires internal parser evidence
-that the original request text exactly equals the normalized command; a
+that the parser-trimmed request text exactly equals the normalized command; a
 deserialized command model cannot supply that proof.
 
 Bounds are explicit: 4 MiB program bytes, 1,024 rules, 16,384 distinct nodes,
@@ -66,6 +66,28 @@ same revision pair with changed effective state is equivocation. Snapshot swaps
 publish one immutable policy/program/control view so a hook cannot mix generations.
 Existing scope, expiry, generation, authority-loss, and approval fences remain.
 
+The separate `native-command-control-fence-v1` capability requires a durable,
+authenticated `native-runtime/command-control-authority.v1.json` marker. Every
+authorized mutation takes the retained exclusive control lock and fsyncs a
+strictly newer closed marker before changing SQL rows, authority keys, or
+anchors. Verified projection commits the resulting effective digest before
+publication; readiness opens only for the matching resident acknowledgement.
+Native admission, including idempotent acknowledgement, checks that exact
+committed marker. Normal decisions and approval creation/claim/consume hold a
+nonblocking shared lease on the same lock through their authoritative callback.
+Missing, closed, tampered, or mismatched markers reject the operation even when
+the daemon is stopped. An old acknowledgement cannot reopen newer controls.
+
+An ordinary health change cannot reset independent revision floors. Explicit
+authority recovery creates a strictly newer authority epoch and mutation
+revision, signed under the retained native policy verifier key. Its proof names
+the prior epoch, mutation revision, authority-key identity, and domain-separated
+hash of the complete retained floor. The resident requires an exact predecessor
+match before accepting reset local or managed revisions. The new durable floor
+retains the predecessor link; expiry, quarantine, and restart cannot erase it.
+Windows shared/exclusive lock interoperability and crash-cut behavior remain
+part of platform qualification, beyond the portable unit proof.
+
 ## Decision semantics
 
 The extension interpreter consumes the same canonical command model as the
@@ -82,6 +104,14 @@ the classified action. Control-layer disable dominance, dependencies, implied
 permissions, non-configurable floors, and authority failure preserve existing
 resolver semantics.
 
+Compatibility attribution is separate from declarative matcher qualification.
+The 42 null-matcher identities and four GitHub permissions without rule IDs
+receive explicit owned observations. Safe Git identities whose default mode is
+disabled remain attribution-only: they preserve the existing intrinsic action
+while an explicit control disable still blocks. Unimplemented context proofs
+produce owned uncertainty and a block floor. This does not certify complete
+Python classifier equivalence or grant permission based on inventory coverage.
+
 Each rule observation retains its base evidence, every matching safe variant,
 uncertainty, and effective segment indexes. A safe variant suppresses only its
 owner's matching segments. It cannot suppress an unrelated rule, native hard
@@ -95,8 +125,12 @@ Evidence contains only bounded segment indexes, sanitized executable basenames,
 owned catalog IDs, and fixed diagnostic text. Raw commands, paths, option values,
 and credentials do not enter observations or receipts. The typed result carries
 the full bounded observations; the compact receipt binds their digest together
-with program/catalog/trust identities and both control revisions. Approval and
-replay identity includes the same policy/program/control domain.
+with program/catalog/trust identities and both control revisions. Native v3/v4 approval and replay identity includes the same
+policy/program/control domain. The ordinary installed approval flow uses local
+review reuse; its stored approval context must separately bind the verified
+receipt policy digest and command program/control binding. Unbound prior rows
+cannot authorize a new bound review. Native v3/v4 API tests do not qualify that
+ordinary installed route.
 
 ## Qualification
 

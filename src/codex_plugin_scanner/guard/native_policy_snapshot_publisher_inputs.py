@@ -15,6 +15,7 @@ from pathlib import Path
 from threading import Condition
 from typing import TYPE_CHECKING, cast
 
+from .native_command_control_authority import AUTHORITY_FILE_NAME
 from .native_command_control_binding import read_native_command_control_binding
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
@@ -75,6 +76,7 @@ class NativePolicySnapshotPublisherInputs:
             self.guard_home / "guard.db-shm",
             self.guard_home / "guard.db-journal",
             self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / NATIVE_POLICY_VERIFIER_KEY_NAME,
+            self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / AUTHORITY_FILE_NAME,
             *self._external_policy_paths(),
             *self._workspace_policy_paths(),
         )
@@ -341,7 +343,7 @@ class NativePolicySnapshotPublisherInputs:
                 rows = connection.execute(
                     "select state_key, substr(cast(payload_json as blob), 1, 1048577) "
                     "from sync_state where state_key in ('policy_integrity', 'managed_controls_active', "
-                    "'managed_controls_revision') order by state_key"
+                    "'managed_controls_revision', 'managed_controls_manifest_context') order by state_key"
                 ).fetchall()
                 values: list[object] = [
                     (
@@ -441,15 +443,22 @@ class NativePolicySnapshotPublisherInputs:
             database_paths = {
                 str(self.guard_home / name) for name in ("guard.db", "guard.db-wal", "guard.db-shm", "guard.db-journal")
             }
-            database_only_change = all(path in database_paths for path in changed_paths)
+            control_marker_path = str(self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / AUTHORITY_FILE_NAME)
+            # The publisher creates/commits this signed marker itself. Its
+            # authoritative content is compared in the verified binding below;
+            # treating its mtime as unconditional change would revoke every
+            # first ACK. Changed/closed/invalid markers still change the binding
+            # or fail verification, while an identical record needs no push.
+            other_changed_paths = changed_paths - {control_marker_path}
+            database_only_change = bool(other_changed_paths) and other_changed_paths <= database_paths
             if database_only_change:
                 marker = self._database_policy_marker()
                 previous_marker = getattr(self, "_database_policy_fingerprint", None)
                 self._database_policy_fingerprint = marker
-                if previous_marker == marker:
+                if previous_marker == marker and control_marker_path not in changed_paths:
                     return False
-                force_republish = previous_marker is not None
-            if not database_only_change:
+                force_republish = previous_marker is not None and previous_marker != marker
+            if other_changed_paths and not database_only_change:
                 # Guard config, workspace overrides, MDM policy files, and
                 # verifier state are effective-input boundaries. Republish before the
                 # resident is used even when this Python projection cannot

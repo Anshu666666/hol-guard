@@ -113,6 +113,10 @@ def scoped_acceptance(
                 "launcher_contracts": all(
                     report.get("launcher", {}).get("contracts_passed") is True for report in candidate
                 ),
+                "registered_fault_contracts": all(
+                    report.get("registered_launcher_contract_corpus", {}).get("implemented_scope_passed") is True
+                    for report in [*baseline, *candidate]
+                ),
             },
         )
     daemon_keys = [key for key in comparison if key.startswith("DAEMON_INGRESS.") and key != "DAEMON_INGRESS.recovery"]
@@ -147,7 +151,8 @@ def scoped_acceptance(
         "remaining_program_evidence": [
             "all_platforms_combined",
             "native_inner_phase_attribution",
-            "standalone_generation_revocation",
             "nonpriority_registered_launchers",
+            "browser_approval_continuation",
+            "malformed_launcher_input",
         ],
     }

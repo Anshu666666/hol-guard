@@ -72,6 +72,7 @@ fn snapshot(policy: EffectiveNativePolicyV3) -> PolicySnapshotV3 {
             workspace_binding: "request-source".into(),
         },
         effective_policy: policy,
+        command_extensions: None,
         issued_at_ms: 1,
         expires_at_ms: 2,
         integrity: SnapshotIntegrityV3 {
@@ -108,6 +109,7 @@ fn generic_result(minimum_action: &str) -> PreToolResultV1 {
         reason_code: "native_test".into(),
         reason: "native test".into(),
         explicitly_benign: minimum_action == "allow",
+        command_extensions: None,
     }
 }
 

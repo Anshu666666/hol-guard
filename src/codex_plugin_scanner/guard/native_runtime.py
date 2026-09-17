@@ -404,10 +404,10 @@ def _python_package_version() -> str | None:
 
 
 def native_runtime_status() -> NativeRuntimeStatus:
-    return _native_runtime_status(allow_attestation=True)
+    return _inspect_native_runtime_status(allow_attestation=True)
 
 
-def _native_runtime_status(*, allow_attestation: bool) -> NativeRuntimeStatus:
+def _inspect_native_runtime_status(*, allow_attestation: bool) -> NativeRuntimeStatus:
     mode = native_mode()
     if mode == "off":
         return NativeRuntimeStatus(
@@ -507,7 +507,7 @@ def native_process_spawn_admission(executable: Path) -> tuple[bool, NativeRuntim
     required = sys.platform == "linux" and native_mode() == "auto" and _is_bundled_candidate(executable)
     if not required:
         return False, None
-    status = _native_runtime_status(allow_attestation=False)
+    status = _inspect_native_runtime_status(allow_attestation=False)
     try:
         resolved = executable.resolve(strict=True)
     except (OSError, RuntimeError):
@@ -529,7 +529,7 @@ def register_native_process_attestation(
     return attest_native_process(
         process,
         expected,
-        verify=lambda: _native_runtime_status(allow_attestation=False),
+        verify=lambda: _inspect_native_runtime_status(allow_attestation=False),
         package_version=_python_package_version,
     )
 

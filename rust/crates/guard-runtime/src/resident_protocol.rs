@@ -63,6 +63,8 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         "resident-command-model-shadow-v1".into(),
         "pre-tool-command-authority-v1".into(),
         "pre-tool-generic-authority-v1".into(),
+        guard_contracts::NATIVE_COMMAND_PROGRAM_CAPABILITY.into(),
+        guard_contracts::NATIVE_COMMAND_CONTROL_FENCE_CAPABILITY.into(),
         "policy-snapshot-v3".into(),
         "policy-snapshot-push-v1".into(),
         "policy-snapshot-resident-generation-v1".into(),

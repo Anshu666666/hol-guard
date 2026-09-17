@@ -45,10 +45,16 @@ ACTIVE_RUST_FILES: Final = (
     Path("rust/crates/guard-runtime/src/managed_resident.rs"),
     Path("rust/crates/guard-runtime/src/managed_resident_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_enforcement.rs"),
+    Path("rust/crates/guard-runtime/src/policy_enforcement_admission.rs"),
     Path("rust/crates/guard-runtime/src/policy_enforcement_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_approval.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_authority.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_request.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_authority.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_authority_tests.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_floor.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_floor_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_tests.rs"),
     Path("rust/crates/guard-runtime/src/resident_protocol.rs"),
 )
@@ -251,8 +257,12 @@ def _check_authority_fence(root: Path) -> None:
         raise RuntimeError("authority fence is not SHA-256 based")
     if "DefaultHasher" in source or "hash_map::DefaultHasher" in source:
         raise RuntimeError("authority fence uses a non-cryptographic hash")
-    if "authority_unchanged_fenced" not in _read(root / Path("rust/crates/guard-runtime/src/policy_store.rs")):
+    request = _read(root / Path("rust/crates/guard-runtime/src/policy_store_request.rs"))
+    approval = _read(root / Path("rust/crates/guard-runtime/src/policy_store_approval.rs"))
+    if "authority_unchanged_fenced" not in request or "validate_request_snapshot_locked" not in approval:
         raise RuntimeError("approval path has no fenced authority recheck")
+    if "command_authority_lease" not in approval:
+        raise RuntimeError("approval path has no command control authority lease")
 
 
 def _check_contracts(root: Path) -> None:

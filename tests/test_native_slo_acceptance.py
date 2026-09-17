@@ -39,7 +39,8 @@ def _reports() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
                 "short_exited_descendants_cpu_complete": True,
             },
             "launcher": {"contracts_passed": True},
-            "contract_corpus": {"implemented_scope_passed": True, "remaining_setups": ["revoked"]},
+            "contract_corpus": {"implemented_scope_passed": True, "remaining_setups": []},
+            "registered_launcher_contract_corpus": {"implemented_scope_passed": True},
         }
         arms.append([deepcopy(report) for _ in range(5)])
     return arms[0], arms[1]
@@ -56,7 +57,7 @@ def test_scopes_can_qualify_without_claiming_unmeasured_program_completion() -> 
     assert all(scope["qualified"] for scope in result["scopes"].values())
     assert result["migration_benefit_go"] is True
     assert result["program_qualification_complete"] is False
-    assert "standalone_generation_revocation" in result["remaining_program_evidence"]
+    assert "browser_approval_continuation" in result["remaining_program_evidence"]
 
 
 def test_unavailable_cpu_does_not_invalidate_an_independently_measured_launcher() -> None:
@@ -82,3 +83,16 @@ def test_slow_route_cannot_hide_inside_fast_routes_or_underfilled_cold_counts() 
     result = scoped_acceptance(baseline, candidate, comparison, sampling_gates(comparison, runs=5))
     assert result["scopes"]["launcher.codex.PostToolUse"]["gates"]["p95_50ms"] is False
     assert result["scopes"]["launcher.claude-code.PreToolUse"]["gates"]["cold_launch_sampling"] is False
+
+
+def test_http_fault_evidence_cannot_qualify_missing_registered_launcher_faults() -> None:
+    baseline, candidate = _reports()
+    del baseline[0]["registered_launcher_contract_corpus"]
+    comparison = compare_routes(
+        [item["measurements"] for item in baseline], [item["measurements"] for item in candidate]
+    )
+    result = scoped_acceptance(baseline, candidate, comparison, sampling_gates(comparison, runs=5))
+    assert result["scopes"]["daemon_ingress_tail_evidence"]["qualified"] is True
+    launcher = result["scopes"]["launcher.claude-code.PreToolUse"]
+    assert launcher["qualified"] is False
+    assert launcher["gates"]["registered_fault_contracts"] is False

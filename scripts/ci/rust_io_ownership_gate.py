@@ -71,6 +71,7 @@ _COMPATIBILITY_PATHS: Final = frozenset(
 _TRANSPORT_IDENTITY_PATHS: Final = frozenset(
     {
         "src/codex_plugin_scanner/guard/native_runtime.py",
+        "src/codex_plugin_scanner/guard/native_runtime_identity.py",
         "src/codex_plugin_scanner/guard/native_resident_client.py",
         "src/codex_plugin_scanner/guard/native_runtime_resident.py",
         "src/codex_plugin_scanner/guard/native_runtime_resilience.py",
@@ -97,6 +98,17 @@ _ASYNC_POLICY_PATHS: Final = frozenset(
         "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
         "src/codex_plugin_scanner/guard/config.py",
         "src/codex_plugin_scanner/guard/runtime/command_activity_correlation.py",
+    }
+)
+# This pure floor codec decodes already-canonical bounded in-memory JSON. Keep
+# the exception function-scoped so program loading and source decoding in the
+# same module cannot silently become synchronous hook work.
+_TRANSPORT_CODEC_FUNCTIONS: Final = frozenset(
+    {
+        (
+            "src/codex_plugin_scanner/guard/native_command_control_binding.py",
+            "native_command_control_floor_mac",
+        ),
     }
 )
 _PERSISTENCE_PATH_PREFIXES: Final = (
@@ -246,14 +258,23 @@ def _calls(record: FunctionRecord) -> tuple[str, ...]:
     return tuple(names)
 
 
-def _category(path: str, kind: str) -> str:
+def _category(path: str, kind: str, function: str = "") -> str:
     if path in _COMPATIBILITY_PATHS:
         return "compatibility_only"
     if path in _TRANSPORT_IDENTITY_PATHS:
         return "transport_identity"
     if path in _TRANSPORT_DECODE_PATHS and kind == "decode":
         return "transport_decode"
-    if path == "src/codex_plugin_scanner/guard/native_decision_receipt.py" and kind == "hash":
+    if (path, function) in _TRANSPORT_CODEC_FUNCTIONS and kind == "decode":
+        return "transport_decode"
+    if (
+        path
+        in {
+            "src/codex_plugin_scanner/guard/native_decision_receipt.py",
+            "src/codex_plugin_scanner/guard/native_command_observations.py",
+        }
+        and kind == "hash"
+    ):
         return "transport_integrity"
     if path in _ASYNC_POLICY_PATHS:
         return "asynchronous_policy"
@@ -285,7 +306,7 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
             elif name in _ARCHIVE_MODULES:
                 kind, operation = "archive", name
             if kind is not None and operation is not None:
-                yield IoObservation(path, node.lineno, operation, kind, _category(path, kind), True)
+                yield IoObservation(path, node.lineno, operation, kind, _category(path, kind, record.name), True)
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".", maxsplit=1)[0]

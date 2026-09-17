@@ -23,6 +23,8 @@ from codex_plugin_scanner.guard.codex_config import dump_toml
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
 from scripts import native_slo_priority_launchers as module
 from scripts.native_slo_adapter import Observation
+from scripts.native_slo_contract import assert_privacy_safe
+from scripts.native_slo_failure import FixtureFailureError
 from scripts.native_slo_priority_launchers import LauncherSession, RegisteredLauncher
 
 
@@ -245,6 +247,26 @@ def test_process_failure_is_not_a_fast_semantic_sample(
     monkeypatch.setattr(module, "run_isolated_hook_process", lambda *_args, **_kwargs: replace(result, **changes))
     with pytest.raises(RuntimeError, match="priority_launcher_"):
         module.observe_priority_launcher(session, item, sample=1)
+
+
+def test_unexpected_launcher_reason_retains_only_closed_delivered_semantics(
+    session: LauncherSession, registrations: tuple[RegisteredLauncher, ...], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    item = next(item for item in registrations if item.harness == "claude-code" and item.event == "PostToolUse")
+    response = _response(item, "benign")
+    response["reason_code"] = "unknown private /workspace/example"
+    response["private_note"] = "raw synthetic response must stay private"
+    completed = BoundedHookProcessResult(0, json.dumps(response), False, False)
+    calls = []
+    monkeypatch.setattr(module, "run_isolated_hook_process", lambda *_args, **_kwargs: calls.append(1) or completed)
+    with pytest.raises(FixtureFailureError) as caught:
+        module.observe_priority_launcher(session, item, sample=11)
+    safe = assert_privacy_safe({"failure": caught.value.detail})["failure"]
+    assert "priority_launcher_unexpected_reason" in safe["reason"]
+    assert safe["observed_semantics"]["delivered"]["policy_action"] == "allow"
+    assert "reason_code_digest" in safe["observed_semantics"]["delivered"]
+    assert "unknown private" not in json.dumps(safe) and "raw synthetic" not in json.dumps(safe)
+    assert calls == [1]
 
 
 def test_registered_environment_applies_only_to_child(

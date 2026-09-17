@@ -11,6 +11,7 @@ import io
 import json
 import sys
 import zipfile
+from pathlib import PureWindowsPath
 from types import SimpleNamespace
 
 import pytest
@@ -166,6 +167,78 @@ def test_enospc_is_not_silently_classified_as_unsupported_symlink():
     assert probe._unsupported_link(OSError(errno.EPERM, "permission"))
     assert probe._unsupported_link(NotImplementedError())
     assert not probe._unsupported_link(OSError(errno.ENOSPC, "storage full"))
+
+
+def test_link_fixture_keeps_invalid_bytes_without_windows_device_names():
+    assert PureWindowsPath("nul.ts").is_reserved()
+    fixture = probe._links_fixture(b"a realistic credential line\n")
+    assert len(fixture) == 3
+    assert all(not PureWindowsPath(name).is_reserved() for name in fixture)
+    assert sorted(fixture.values()) == sorted([b"a realistic credential line\n", b"\xff\xfe", b"\0TOKEN=ordinary"])
+
+
+def test_git_setup_failure_has_its_own_stage_and_private_diagnostics(monkeypatch, tmp_path):
+    checkpoints = []
+    instance = probe.Probe({}, tmp_path, lambda: checkpoints.append(copy.deepcopy(instance.cases)))
+    completed = {
+        "case": "explicit_history_commit_bound",
+        "status": "passed",
+        "validation": "independent_history_bounds",
+    }
+    instance.cases.append(completed.copy())
+    private_output = str(tmp_path).encode() + b" " + probe._BODY.encode()
+    monkeypatch.setattr(
+        probe.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=128, stdout=b"", stderr=private_output),
+    )
+    with pytest.raises(probe.ProbeError, match="fixture_git_setup"):
+        instance.git(tmp_path / "links", "add", ".")
+    assert instance.cases[0] == completed
+    assert instance.cases[1]["case"] == "fixture_git_setup"
+    assert instance.cases[1]["fixture"] == "links"
+    assert instance.cases[1]["operation"] == "add"
+    assert instance.cases[1]["exit_code"] == 128
+    assert instance.cases[1]["stderr_sha256"] == probe._digest(private_output)
+    assert private_output not in json.dumps(instance.cases).encode()
+    assert checkpoints[-1][-1]["status"] == "failed"
+
+
+@pytest.mark.parametrize("failure_stage", ["exercise", "final_attestation"])
+def test_later_probe_failure_does_not_relabel_completed_history(monkeypatch, tmp_path, failure_stage):
+    destination = tmp_path / "receipt.json"
+    completed = {
+        "case": "explicit_history_commit_bound",
+        "status": "passed",
+        "validation": "independent_history_bounds",
+    }
+    attest_calls = []
+
+    def attest(*args):
+        attest_calls.append(True)
+        if len(attest_calls) == 2:
+            raise probe.ProbeError("installed_artifact_changed_during_probe")
+        return {"source_sha": "fixture"}, {}
+
+    def exercise(instance, *args):
+        instance.cases.append(completed.copy())
+        if failure_stage == "exercise":
+            raise probe.ProbeError("fixture_git_setup")
+
+    monkeypatch.setattr(probe, "_attest", attest)
+    monkeypatch.setattr(probe, "_exercise", exercise)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["probe", "--wheel", str(tmp_path / "fixture.whl"), "--source-sha", "fixture", "--json", str(destination)],
+    )
+    assert probe.main() == 1
+    receipt = json.loads(destination.read_bytes())
+    assert receipt["status"] == "failed" and receipt["run_complete"] is False
+    assert receipt["cases"][0] == completed
+    assert receipt["cases"][1]["status"] == "failed"
+    assert receipt["cases"][1]["stage"] == failure_stage
+    assert receipt["failure_stage"] == failure_stage
 
 
 def test_source_interpreter_cannot_claim_installed_qualification(monkeypatch, tmp_path):

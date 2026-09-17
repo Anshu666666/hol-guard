@@ -2,279 +2,347 @@
 
 Continue the user's authorized takeover of [Rust Migration PRD Review](https://chatgpt.com/c/6aab4df1-1bec-83ea-9203-010d1c05f2e1)
 and implementation [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954).
-The exact conversation, its title and linked PRD/TODO/Takeaway documents were
-reviewed in full. Finish implementation, measurement, validation, concrete review
-and permitted GitHub publication. Do not restart completed work, ask for already
+The exact conversation, title and linked PRD/TODO/Takeaway documents were reviewed
+in full. Finish implementation, measurement, validation, concrete review and
+permitted GitHub publication. Do not restart completed work, ask for already
 granted authorization, create GitHub issues or weaken acceptance to fit results.
-The user explicitly requests no questions and continuation until the work is complete.
-The target is `release/3.2`. Required independent approval remains a real gate.
+The user requests no questions and continuation until the work is complete.
+The target is `release/3.2`; required independent approval remains a real gate.
 
-Read the original `PRD.md` and `TODO.md`, then `EXECUTION.md`,
-`CURRENT_CONTRACT.md`, `EXECUTION_LEDGER.md`, `execution-ledger.json` and relevant
-linked workstream evidence. All 144 original requirements remain intact. Their
-full dependency prose is in `original_dependencies`; RSP-134 includes all selected
-implementation tasks. Preserve those fields and thresholds when updating status.
+Read original `PRD.md` and `TODO.md`, then `EXECUTION.md`, `CURRENT_CONTRACT.md`,
+`EXECUTION_LEDGER.md`, `execution-ledger.json` and the named workstream reports.
+All 144 original titles, acceptances, dependency IDs and full dependency prose
+remain intact. RSP-134 includes all selected implementation tasks. Preserve those
+fields, their projection hashes and every original threshold when updating status.
 
-## Establish the actual source and artifact
+## Establish the source and artifact
 
-This documentation checkpoint covers `7befd329a00f9689b6d648750e64f58082e8986d` on
-`codex/rsp-takeover-pilots-20260917`, dated 2026-09-17. Inspect actual
-HEAD, branch, status and worktree ownership before editing; later work may already
-be integrated. Use isolated worktrees and one owner per shared boundary.
+This documentation checkpoint covers `1061f304970555b48682fb1b475c0a67022a4e62` on
+`codex/rsp-takeover-hosted-20260917`, dated 2026-09-17; its isolated documentation
+branch is `rsp-config-execution-20260917`. Inspect actual HEAD, branch, worktree ownership
+and pending changes before editing. Later owner work may already be integrated.
 
-Baseline is `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1,
+The audited baseline is `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1,
 Rust 1.88.0 and diagnostic CPython 3.12.14 with locked dependencies. Original
 release target is `4b89e0d2d496a85f04922b2e019a4aea15326bb9`. Release already
-contains squashed main lineage; preserve release-only controls/UI and carried
-main authority without blindly re-merging.
+contains squashed main lineage; preserve release-only controls/UI and main
+security authority without blindly merging it again.
 
-The last published implementation preceding this checkpoint is
-`abf319d5a345d761d88e26ba787026e98370c26f`, Git tree
-`62eb319323cc7c9de7513af6ef7f05009d411189`. Paired candidate wheels explicitly
-build abf; actual native-wheel build `70b456e93a77fff48522ee7aa6ddeec6d157f6e6`
-has the same tree. Prior compatible wheels retain their actual a224 build and
-associated ae head separately; never substitute a mutable latest artifact.
-Foundation #2951 is e449594e86c717e66e14598a4130475de79c536f with normal
-protected auto-merge enabled; approval remains missing. Refresh GitHub heads,
-base, checks, reviews, threads and rules before publication/merge claims. Verify
-uploaded Git tree equality; commit metadata alone can change a SHA.
+Latest retained published implementation is
+`9db62e8844c2ba2627f55b6b00e58cb5b175185d`, Git tree
+`47ba580366672b3b92cb46e6bb1d19c670444e94`. Paired candidate wheels build that
+exact head. Native-wheel build `c9859a5b5d04526fa7e663d7c494e442ee4298c4` is a
+GitHub test merge with the same tree and independently verified parents. Prior
+compatible wheels retain actual a224 build, associated ae PR head and exact
+per-target hashes; never select a mutable latest artifact. Read the
+[53-record manifest](evidence/takeover-9db62e/manifest.json) and
+[207-check inventory](evidence/takeover-9db62e/github-check-inventory.json).
 
-## Preserve implemented contracts
+Foundation #2951 now publishes the shared-reader fix at
+`a7b675a84b732ead542cdf77e5153c57b4257d9b`; its new CodeQL analysis fixes old
+343/344 but reports eight new config-reader path findings and two inherited
+Actions findings. Triage and a clean security gate remain pending. The retained
+e449594e86c717e66e14598a4130475de79c536f observation remains historical.
+Refresh actual heads, base, checks, review threads and rules before publication
+or merge claims. GitHub-created commit metadata can change a SHA; verify the
+exact uploaded Git tree and preserve the existing branch without force.
 
-Ordinary daemon hooks directly use HookWorker and the persistent native helper.
-The legacy pool remains for compatibility/legacy revalidation; native Codex live
-completion has a direct finalizer. Live Linux image reuse requires a previously
-verified exact generation; replacements and unsupported systems fully validate.
-All ordinary native evaluation and Python delivery use the same acknowledged
-posture without a fresh configuration read. Unacknowledged Watch edits cannot
-weaken enforcement. Actual installed transition/load qualification remains open.
-Stat-only identity or cached publication is never authority.
+## Preserve the selected contracts
 
-Command activation requires native program-v1 and control-fence-v1 capabilities,
-verified trust/catalog/program/control identity and the live SH/EX protocol.
-Retain immutable inputs, generation/revision floors, complete observations and
-full durable receipt bindings. The catalog has 86 extensions/291 rules/304
-permissions/2,242 nodes, with CPython 3.12/UCD15 semantics and explicit owned
-uncertainty. Read exact program/catalog hashes from EXECUTION.md.
+Ordinary daemon hooks enter HookWorker and the persistent native helper directly.
+The Python pool remains for compatibility/legacy revalidation; native Codex live
+completion has its direct finalizer. Linux image reuse requires a previously
+verified exact live generation; replacement and unsupported systems fully
+validate. Stat-only identity or cached publication is never authority.
 
-Codex's actual browser waiter binds its process/start, home/workspace, immutable
-request and original deadline. Fresh native review and verified receipt precede
-atomic existing local Allow once consumption under the SH lease. Recheck waiter
-and deadline after durable completion; native block/uncertainty remains restrictive.
-Authenticated ambiguous replay cannot create a second claim. Claude resolve/retry
-and the separate native v3/v4 challenge APIs are different paths. The four installed
-expiry/restart/stricter-policy/ambiguous-response scenarios are implemented and
-134 source tests passed; actual host runs remain required. Their expiry case
-covers browser wait, not the separate 15-minute stored approval TTL. Hook fixtures
-do not execute the reviewed Codex tool.
+Native evaluation and Python delivery use the same authenticated acknowledged
+posture. An unacknowledged Watch edit cannot weaken enforcement. Native verdict,
+Watch transformation and availability continuation are distinct observations.
+Resident PostToolUse keeps its intrinsic verdict and plain reason; do not apply
+direct-hook observe prefixes to that edge. Preserve every harness-specific
+availability response instead of converting missing native evaluation into a pass.
 
-Resident PostToolUse Watch reports the intrinsic native verdict/plain reason;
-Python changes delivered allow/warn behavior. Do not apply direct-hook observe
-prefixes to the resident edge. Keep native evaluated allow, review/block, Watch
-delivery and availability continuation separate. Windows source-reference opens
-remain deliberately unsupported/fail-closed in both pinned artifacts. Exact
-refusal evidence cannot pass full source identity/content or timing gates.
+Command activation requires program-v1 and control-fence-v1 capabilities, exact
+trust/catalog/program/control identity and the live SH/EX protocol. Keep immutable
+inputs, revision floors, complete observations and full durable receipt bindings.
+The catalog has 86 extensions, 291 rules, 304 permissions and 2,242 nodes, with
+CPython 3.12/UCD15 semantics and explicit owned uncertainty. Read exact digests
+from EXECUTION.md and attest the actual final artifact separately.
 
-Preserve package verified indexes and one immutable parse/snapshot, Git object
-batching and rich finding occurrence/HMAC/completeness, SQL atomicity and journal
-replay. Queue accepted, journal durable, SQL committed and checkpointed are distinct.
-MCP keeps exact input/catalog/authority revalidation, terminal bounded I/O and the
-5 ms final quiet barrier; human/network waits cannot become a kernel speedup.
+Codex browser continuation binds the original waiting process/start, home,
+workspace, immutable request and deadline. Fresh native review and verified
+receipt precede atomic existing local Allow once consumption under the shared
+lease. Recheck the process and deadline after durable completion; native block
+or uncertainty remains restrictive. Replay cannot create a second claim. Claude
+resolve/retry and native v3/v4 challenge APIs are different routes. The four
+source-tested fault scenarios do not imply all hosted scenarios ran, a 15-minute
+stored-TTL witness, or execution of the reviewed Codex tool.
 
-## Finish the active work and diagnose the next host run
+Keep verified package indexes and one captured parse/snapshot, bounded Git object
+streams, rich scanner occurrence/HMAC/completeness, SQL atomicity and journal
+replay. Memory accepted, journal durable, database committed and checkpointed
+are different states. Windows native full source-reference opens remain
+unsupported/fail-closed in both pinned artifacts. Exact refusal is not successful
+content review or timing coverage; direct pathname fallback is not a repair.
 
-Read current owner commits and checkpoints before redoing any item:
+MCP retains catalog/input/current-authority revalidation, bounded terminal I/O,
+notification delivery and the final 5 ms quiet barrier. Ambiguous writes are never
+retried. Human, network and deliberate waits cannot become claimed kernel savings.
 
-1. Retain the completed package correction and scoped native parser no-go. All
-   30 pilot/control pairs, 15 correction pairs and five direct original-deny pairs
-   are retained. The primary native workload regresses CPU 11.03% and wall 16.31%.
-   The original 36-cell matrix includes 27 full evaluator attempts and nine separate
-   unversioned API diagnostics; RSP-050's literal full-route unversioned slice stays
-   open. Actual bare npm targets normalize to `latest`, not `None`; preserve the
-   six-call witness and do not invent a name-only production route to close a row.
-2. Retain the scanner's final scoped no-go: 30 corrected-reader pairs preserve
-   all 680 rich findings and improve mean CPU 31.6%, but p95 wall regresses 13.5%.
-   Keep all 24 attempted states, unavailable evictions, interrupted/confounded
-   cohorts and the separate executable-provenance correction. Production keeps
-   the descriptor-bound, size-limited Python reader and explicit incomplete
-   coverage. Actual abf native-bundled wheels pass all 28 semantic cases on each
-   of Linux and both macOS hosts: 84 passes with no skips. Windows raises
-   `PackageNotFoundError` at initial attestation, before any identity or case.
-   Preserve its exact CRLF probe digest. Run the source-tested environment/reader
-   corrections on a fresh hosted artifact; do not relabel the failed attempt.
-3. Preserve the completed MCP B/C/D and native experiments. Production retains
-   B; C and universal D regress supported inputs. The native four-category helper
-   completes 68 cells, 1,692 forwards and 34 exact pairs but fails the original
-   30% benefit / 5% nonregression gate. Near-limit Unicode median CPU improves
-   29.711838%, below 30%; adverse blocks and ordinary/early-positive controls
-   remain visible. External 4 MiB framing, the separate 16 MiB whole private
-   packet bound, inherited deadline and all IPC/helper CPU costs remain explicit.
-   RSP-098/103/104/108 are complete in their documented source or decision scope;
-   RSP-105/107 activation and positive qualification are deferred for this tested
-   boundary. RSP-106's existing scope is unchanged. RSP-100 stays OPEN: one
-   private owned-generation implementation attempt is active, with no claimed
-   result. Preserve public copy/match fallback, callback mutation order, exact
-   forwarded params and browser/store/claim authority composition. Review and
-   measure the actual candidate before changing production selection.
-4. Complete actual posture, expiry, recovery and route-conservation qualification
-   on the next hosted artifacts. The four posture groups require full authenticated
-   ACKs and durable receipts under concurrent Claude/Codex Pre/Post load. Retain
-   the earlier failed source attempt and its 111 passing corrected checks as
-   historical snapshots. Abf Windows baseline passes enforce-to-Watch and expiry
-   but fails restart, strict-workspace ACK and blocked-publication witnesses;
-   no candidate all-group pass exists. Keep the original 3 s TTL, operation budgets
-   and protected command binding. Linux baseline correctly rejects the shared
-   interpreter target's mode 0777. The new disposable-venv setup copies identical
-   bytes to a private owned 0755 interpreter, preserves the shared target and
-   pyvenv configuration, and requires real ABI/SQLite/SSL/prefix and unchanged
-   installed-validator checks. Actual hosted proof is pending; do not chmod shared
-   files, alter wheel bytes, weaken validation or relax route conservation.
-5. Preserve the macOS resolver findings. The exact daemon fixture calls
-   `_receive(30.0)` during construction; failure JSON does not record observed
-   elapsed startup time. Separate read-only libc lookup probes each have a
-   five-second bound. Numeric lookup passes, system name lookups time out without
-   responder packets, and selected root-owned resolver configuration is unchanged.
-   `scutil` selection listing does not prove query routing or reachability flags.
-   One ARM stack sample identifies allowlisted lookup frames; three other samples
-   time out. Cleanup passes, but no resolver repair is proven. Do not patch the
-   pinned baseline, speculate about service repair or raise the 400 ms readiness
-   budget. Continue from the retained actual diagnostic output.
-6. Preserve both rollback sequences. Exact candidate/prior-a224/candidate stopped
-   replacement passes all three phases on each Unix host. Original 2e downgrade
-   rejects the candidate's combined protected command schema; all six receipts
-   and authority bytes survive, but legacy stop returns 2 and quiescence remains
-   unverified. Expected-negative acceptance stays false and candidate restore was
-   not attempted. The producer-aware containment certificate remains design work;
-   retiring the outer process alone cannot prove detached native clients and
-   supervisors are gone. Keep protected floors and registration intact. The suite
-   still requires seven positive phases and one verified expected negative.
-   Prior artifact discovery runs inside its mandatory 15-second contained check;
-   independent paired/Ollama/scanner checks retain their own outcomes. Windows
-   has no transition JSON after cleanup and reporter failures. Run its source
-   fixes on new hosts. Same-version stopped transitions do not establish live,
-   in-progress, changed-version/program, signing or enrollment rollback.
-7. Run the resulting head's required checks and the pinned CodeQL diagnostics.
-   Foundation has 179 check records: 159 successful, 19 skipped and one failed
-   external CodeQL check reporting two high alerts. Abf's separate external
-   CodeQL check reports three new high alerts even though its Actions analysis
-   workflow succeeds. Neither alert set has exact source attribution yet; do not
-   assume all were introduced by this PR. The implemented diagnostic selects six
-   source/language jobs across fixed e449 and abf, preserving observed settings
-   and retaining raw SARIF in Actions artifacts with no Code Scanning/database
-   upload. Retrieve actual findings, investigate them and fix any substantiated
-   defects before claiming a clean security gate. The latest local manifest pins
-   42-file Ruff/format passes, 147 passing integration tests and 1,253 production
-   files with zero type errors and 20,229 nonfatal warnings. Preserve the initial
-   formatting refusal and CRLF diff-check failure; the latter's interpretation
-   fix changes no retained artifact bytes. This finite evidence is not a full-suite
-   or installed pass, and older 585/111 snapshots remain separate.
-8. Complete installed qualification of the implemented private Linux Claude
-   Pre/Post launcher. Its authenticated package/registration boundary, original
-   challenge/POST and contained completion exist in the current runtime. The final
-   component snapshot passes 81 Python and 12 Rust tests; later helper corrections
-   and selection checks have separate 43-test and 27-test results. Do not describe
-   those as a full rerun of the earlier snapshot. The installed probe requires
-   actual native transport, exact wheel/daemon receipt identity and route
-   conservation; no installed parity or paired benefit result exists yet. Keep
-   detailed HTTP framing/timeout conformance limits visible. Default registration
-   and signed Desktop selection do not select this pilot.
+## Continue from completed measurements and actual failures
 
-The archive investigation is complete for its declared profiling scope: 508/510
-expected results, two restrictive timeouts and an earlier warmup timeout retained,
-60 profiles and hostile binding/isolation witnesses. Retain the current isolated
-worker; this is neither a successful full SLO run nor proof that an entire native
-worker could never help. Conditional ports follow the original PRD decision rule.
-A native pilot is not mandatory for every optional port, but measured coverage and
-predicted benefit must support a deferral; large unmeasured cases remain open.
+1. Preserve the package correction and bounded native parser no-go. All 30
+   native/control pairs, 15 correction pairs and five direct original-deny pairs
+   remain. The primary native workload regresses CPU 11.03% and wall 16.31%.
+   The 36-cell matrix contains 27 full evaluator attempts and nine unversioned
+   API diagnostics. Six real route calls show bare npm tokens become `latest`;
+   none passes `None` to production bundle matching. RSP-050's literal full-route
+   unversioned slice stays OPEN. Do not invent a name-only route to close it.
+2. Preserve the scanner's final scoped no-go: 30 corrected-reader pairs keep
+   680 findings, improve mean CPU 31.6% and regress p95 wall 13.5%. Retain all
+   24 attempted states, unavailable evictions, interrupted/confounded cohorts
+   and executable provenance. Production keeps the bounded descriptor reader.
+   Latest 9db installed scanner has 28 passes per Unix host, while Windows
+   verifies its wheel and real PE launchers then records 23 passes, one failed
+   row and four unreached cases. Raw totals stay 107/1/4. The old catch-all
+   relabeled completed history after later fixture setup failure; preserve
+   that original status. Reserved `nul.ts` is a likely source-supported fixture
+   trigger, not proven by missing original Git stderr. Run the 54-test-validated
+   filename/phase-accounting repair on a new Windows artifact without changing
+   the provider, link, encoding, mutation, limit or exit expectations.
+3. Retain B as the MCP default. C and universal D regress supported inputs;
+   the 68-cell four-category native experiment also misses its 30%/5% gate.
+   Its 1,692 forwards, 34 pairs and 29.711838% near-limit Unicode median CPU
+   benefit remain attached to that separate source and fixture scope. The
+   subsequent [E experiment](../rust-performance-mcp-owned-preparation.md) is
+   complete: 64 cells, 32 pairs, 1,108 forwards/notifications and exactly 554
+   E admissions, category derivations, completed preparations and bound writes.
+   Those E cells record one selected private authority lifetime and exact
+   forwarding. Its 119 source tests include 96 full-authority cases; the 3,008
+   public-oracle cases and three overlapping harness tests have separate scope.
+   Preserve the initial zero-cell incomplete export and source reconstruction.
+   General E activation is rejected: Unicode/dense medians miss 30%, some blocks
+   regress and large ownership allocations remain. Positive 1 KiB/128 KiB
+   observations are real bounded results, not universal failures or a new
+   selection rule. Ranges are not confidence intervals; large p95 uses three
+   warm samples, tree CPU includes cold plus warm, and filesystem/shared-host
+   limits remain. B still derives categories twice, unsupported/package/busy
+   routes use B, and **RSP-100 stays OPEN**. This was an implemented and measured
+   attempt, not an unattempted design. Later review found E selected its final
+   protected writer from mutable method text. The initial F fork's identical
+   selector actually forwarded a changed plain method and invoked a hostile
+   method callback. Preserve this additional limit and all original E bytes;
+   do not repeat universal pre-forwarding mutation-safety claims. Corrected
+   [F](../mcp-streaming-preparation-pilot-boundary.md) selects the admitted object
+   by identity before full binding/actual-wire checks. Its 44-test/11.39-second
+   gate and finite independent source review include corrected selector cases,
+   nested normal/error restoration and unrelated replies. Earlier failures
+   remain; the 96 authority comparisons are included, not an extra test count.
+   F has only isolated prototype allocation/source evidence, with no route
+   campaign, qualification or activation. B remains default; E/F stay inactive.
+   RSP-098/103/104/108 and conditional
+   RSP-105/107 decisions remain unchanged; do not modify RSP-106's record.
+4. Diagnose actual 9db route and capacity failures with the new bounded observers.
+   Every baseline/candidate first block failed. Linux baseline reaches a Codex
+   benign 1 MiB action mismatch after successful same-byte private-interpreter
+   provisioning; macOS baselines stall in getfqdn; Windows baseline fails cold
+   resident-stop containment. Candidate failures are Linux Cursor empty output,
+   ARM Cursor benign 256 KiB and Windows Cline benign maximum route mismatches,
+   plus Intel initial process capacity. Linux's separate native-wheel wave
+   retains 36 allows (22 resident, 14 fail-safe), 28 explicit overloads and zero
+   native-overload increments. Individual original failure reasons are unknown.
+   Intel fails recovery at 1,120.758 ms against 1,000 ms, resident share and
+   safe corpus; its separate 32-resident/32-bypass capacity wave passes only that
+   gate. Keep strict conservation and all original errors. New edge/capacity
+   collectors observe each original call once, retain bounded facts and do
+   not change admission, deadlines, policy or acceptance. They require actual
+   new hosted observations; their source tests do not explain old failures.
+5. Preserve Linux's successful interpreter fixture repair: both paired and
+   independent transition environments pass same-byte executable, unchanged
+   pyvenv/ABI/SQLite/SSL/prefix and unchanged installed-validator checks. The
+   shared interpreter stays unchanged. Preserve macOS's separate failed resolver
+   experiments: original daemon startup bound 30 seconds, diagnostic libc
+   bounds five seconds, numeric controls/direct UDP self-probes pass, system
+   lookups expire with no responder packets and cleanup passes. A selected
+   scutil block does not prove routing. The new bounded hosts/DNSService
+   diagnostic runs after qualification and awaits hosted results. Do not modify
+   hosts, restart services, flush caches, patch the immutable baseline or raise
+   the original 400 ms readiness budget without a separately justified repair.
+6. Preserve both rollback sequences. All four 9db compatible stopped
+   candidate/prior-a224/candidate sequences pass with protected state,
+   registrations, receipts and authenticated retirement. Every original-baseline
+   sequence still fails strict quiescence after its protected-schema rejection;
+   legacy stop is 2, expected-negative acceptance stays false, and candidate
+   restoration did not run. The whole contract requires seven positive phases
+   and one verified negative. Producer-aware containment is still required;
+   outer process exit alone does not retire detached clients/supervisors. Do
+   not lower floors, remove fields or reopen hidden fallback. These same-version
+   stopped passes do not qualify live, in-progress, changed-version/program,
+   signing, enrollment or cohort rollback.
+7. Continue the private Claude installed comparison from its real failed attempt.
+   Source component history remains 81 Python/12 Rust, later 43 helper tests
+   and 27 builder tests at separate snapshots. At 9db the actual Linux installed
+   candidate completes 30 Python and 30 native PreToolUse launches with exact
+   contracts and resident routes. The next Python PostToolUse cell attempts 11,
+   completes ten and fails unexpected delivered reason. Zero full blocks
+   complete; scope, qualification and activation flags remain false. Preserve
+   completed and partial latency/CPU, missing fault scopes and detailed HTTP
+   framing/timeout limitations. New per-launch diagnostic reset and failure
+   accounting are included in future measurement cost, not pooled with old
+   samples. No default or signed Desktop registration selects the pilot.
+8. Resolve substantiated security defects and run fresh required gates. Latest
+   9db has 34 successful/three failed workflows and 207 check attempts with
+   178 successes, 20 skips and nine failures. Main CI has 110 successful jobs,
+   three skips and one Sonar failure; Desktop, Windows cross-platform and all
+   four Security Gates jobs pass. External CodeQL reports three high alerts;
+   foundation's retained check reports two. Successful Actions analysis is not
+   a clean external CodeQL gate. The actual
+   [PR-reference API record](../security/codeql-pr-alert-correlation.json) now
+   identifies open config-path alerts 343/344 on both PRs and native authority
+   key-ID alert 356 on implementation. Rule/location and exact sink bytes
+   correlate with retained SARIF; API fingerprints/full flows were not provided.
+   The inventory also retains inherited Actions alerts 288/289 separately.
+   A later [verified API disposition](../security/codeql-356-disposition.json)
+   dismisses only 356 as a false positive at 17:38:43Z after the generated-key
+   and continuity-ID review. Fresh PR-2954 merge-ref readback confirms that state;
+   path alerts 343/344 and inherited Actions 288/289 were open at that readback.
+   The global
+   response names a later PR instance with eight relevant source files verified
+   byte-identical to 9db. Preserve the first-capture open state and failed
+   checks; no clean overall security gate is claimed. Preserve the distinct
+   diagnostic source/extraction scope. The first six diagnostic jobs completed, retaining six exact ZIPs
+   with 17/18 Python findings, zero Actions/JavaScript results, 17 matching
+   common fingerprints and one additional implementation key-ID result. The
+   actual Python logs also show extraction of the current outer helper beyond
+   each nested pinned source. Preserve that limit and all original SARIF bytes.
+   The [shared config reader](../security/config-source-confinement.md) and
+   [publisher correction](../security/config-source-publisher-confinement.md)
+   now replace the separate pathname reads. Preserve held directory/file
+   identity, fixed basenames, explicit unsafe/inaccessible-source rejection and
+   immediate ACK withdrawal on home or either workspace capture rejection.
+   The inclusive 1 MiB ordinary TOML limit is new; it matches existing capture
+   bounds and does not change frozen performance thresholds. Directory aliases,
+   logical paths, precedence and managed policy remain supported. Reader and
+   foundation scopes each pass 67 tests/one actual-Windows skip; the overlapping
+   combined publisher scope passes 88/one skip, five-file Ruff/format and
+   three-file types with zero errors/80 warnings. Preserve earlier failures and
+   the successful retry's original fixture location. Actual Windows execution
+   remains required. Fresh
+   [foundation CodeQL](https://github.com/hashgraph-online/hol-guard/actions/runs/35257569810)
+   on merge ref `72ea27ac1d847f5f03a23d956b31261315420000` fixes old 343/344,
+   but reports eight new `config_source_io.py` path findings plus two inherited
+   Actions findings. Preserve those ten open alerts for triage; no clean gate
+   or new implementation analysis is implied.
+   The root-checkout correction stages the collector outside and verifies the
+   actual extractor root, exact workflow/collector and clean pinned source;
+   134 structural tests pass, but corrected hosted extraction is pending.
+   Keep public-checksum, argv-guessing, pathname-race and real legacy-secret
+   verifier limits visible. The 42-finding Sonar review classifies two deterministic
+   fixture generators as tests, retaining test analysis, and proposes six
+   source-bound runtime false positives. A later
+   [inline disposition record](../security/sonar-reviewed-inline-dispositions.json)
+   applies four exact line/rule annotations for these six findings after
+   independent review and verifies unchanged ASTs. Other rules and all authority
+   checks remain enabled. Re-read the actual new-head scan and gate; the source
+   annotations are not external issue-state transitions or a verified passing
+   scan. Do not alter security semantics or remove test vectors to satisfy an
+   analyzer heuristic.
 
-At abf319, all 36 workflows completed: 31 successful and five failed. The separate
-[all-attempt check inventory](evidence/takeover-abf319/github-check-inventory.json)
-has 199 records: 163 successful, 23 skipped, 12 failed and one cancelled. The latest
-197-record view omits two earlier successful Gitar attempts. Legacy CodeRabbit
-explicitly skipped review because the PR is draft. Both arms were attempted on all four platforms, with one completed Windows baseline
-smoke block, every candidate block failed and no complete pair. Linux/ARM pass
-22 Ollama cases each; Intel and Windows retain readiness failures after ten/two
-cases. All four Builder checks pass. The Linux native-wheel SLO smoke and
-100,000-request/250,000-receipt soak pass with zero errors and stable daemon
-identity, while `qualification_complete` remains false. The macOS native-wheel
-source-reference failures, candidate missing-native results, zero-case Windows
-scanner failure and failed legacy quiescence remain independent observations.
-Read the canonical [abf manifest](evidence/takeover-abf319/manifest.json) and keep
-ae, 5ee and 42579 records historical. Use the [reconstruction manifest](reproducibility/manifest.json)
-for exact measured source/harness scopes; historical collector attribution gaps
-remain unresolved. Later source fixes require actual new-head artifacts and checks.
+The archive profiling decision remains scoped: 508/510 exact outcomes, two
+restrictive timeouts plus an earlier warmup timeout, 60 profiles and hostile
+binding/isolation witnesses. Retain the current worker without claiming an
+entire native worker could never help. Conditional ports follow the original PRD
+rule; neither an unbuilt port nor a small-input result automatically justifies
+unmeasured broad deferral.
 
-Local AF_UNIX creation is denied, so do source tests/builds locally and real
-installed daemon/launcher execution on supported GitHub hosts. Protect benchmark
-provenance: serialize competing CPU/I/O work through the measurement lock; do not
-move executables or caches under an active run. Retain all interrupted attempts.
+At 9db, ARM passes 22 installed Ollama cases; Linux/Intel/Windows retain two then
+fail enabled readiness at 400.108/407.413/407 ms. All four Builder checks pass.
+ARM's native-wheel SLO smoke and Windows ordinary installed scope pass, with
+qualification still false; Linux and Intel retain distinct SLO failures.
+Historical abf Linux's 100,000-request/250,000-receipt soak and 84 Unix scanner
+passes remain valid for that earlier source, not substituted for 9db outcomes.
+Read [abf](evidence/takeover-abf319/manifest.json) and older manifests only with
+that distinction. Retain every failed/unreached/interrupted observation.
 
-Read the concrete CANARY_ROLLBACK_PLAN.md and canary-rollback-manifest.json before
-advancing any cohort. Exact prior artifacts and stop conditions are recorded;
-candidate identities, actual qualification/rollback and activation remain pending.
+Serialize competing CPU/I/O work, builds, tests, installs and cleanup through the
+shared measurement lock. Do not move active executables/caches during timing.
+The recorded local native-daemon AF_UNIX limitation does not justify changing
+production transport or treating synthetic listeners as installed qualification.
 
 ## Qualify the frozen candidate without weakening the PRD
 
 Build separately installed locked baseline/candidate artifacts on Linux x64,
-macOS x64, macOS ARM and Windows x64; clear development overrides and prove exact
-source/package/runtime/rule/program/manifest identities, including signing/freeze
-where applicable. Run the committed CLI/workflow arguments rather than guessing
-obsolete helper names. Smoke remains smoke. Apply `rust-performance-qualification`
-only after the candidate is stable; any code/dependency change requires renewed
-qualification on its resulting head.
+macOS x64, macOS ARM and Windows x64. Clear development overrides; prove exact
+source/package/runtime/rule/program/manifest identities and required signing/
+freeze scope. Run committed CLI/workflow arguments. Smoke remains smoke. Apply
+`rust-performance-qualification` only to a stable candidate; any subsequent
+code/dependency change requires qualification of the resulting source.
 
-- Installed warm c1 p95 ≤50 ms/p99 ≤100 ms; c16 p99 ≤200 ms with zero errors.
+- Installed warm c1 p95 ≤50 ms and p99 ≤100 ms; c16 p99 ≤200 ms with zero errors.
 - Native client p95 ≤20 ms; cold native p95 ≤150 ms; readiness ≤400 ms.
 - At least five alternating independent runs; 10,000 priority warm decisions,
   1,000 other-route decisions, 100 priority cold starts, 100 recoveries and
-  30 resource observations in the PRD's specified scopes, with intervals.
+  30 resource observations in their original scopes, with intervals.
 - Selected hot tranche ≥30% p95 or CPU benefit and ≤5% regression in the other
-  primary metric. Optional ingress ≥25% private memory or ≥30% c16 p99 benefit.
-  Preserve existing RSS-growth safeguards.
+  primary metric. Optional ingress ≥25% private-memory or ≥30% c16 p99 benefit;
+  retain existing RSS-growth safeguards.
 
-Retain offered/admitted/completed/failed/rejected/timed-out/late outcomes and
-original terminal outcomes. Scheduled-offer latency includes generator and queue
-wait. Keep routes/platforms independent; no pooling slow cells, baseline edits,
+Keep offered/admitted/completed/failed/rejected/timed-out/late outcomes and their
+original terminal results. Scheduled-offer latency includes generator and queue
+wait. Keep routes/platforms independent; no pooled slow cells, baseline edits,
 unavailable-to-allow substitution or discarded failures. Require actual harness
-JSON/exit, native route/verdict/reason and durable binding-aware receipts. Report
-unsupported metrics explicitly; journal fsync evidence is not SQLite VFS fsync.
-
-Complete actual no-env launchers, aliases, source refs, Watch, malformed input,
-availability and approval, host activation, whole daemon restart, mixed soak,
-saturation/process resources and required signing/update/downgrade transitions.
-Existing 1000 ms diagnostic checks and historical warm/cold gate logic do not
-replace the product thresholds. A qualified subset is not program completion.
+JSON/exit, native route/verdict/reason and durable binding-aware receipts.
+Unsupported metrics are unavailable, not zero; journal fsync is not SQLite VFS
+fsync. Complete actual launchers, aliases, source references, posture, malformed
+input, availability, approval, restart, mixed soak, saturation, resources and
+required signing/update/downgrade transitions. Historical diagnostic thresholds
+cannot replace product gates. A qualified subset is not program completion.
 
 ## Complete review, documentation and release
 
-Run meaningful formatting/lint/type, Rust crate, Python, differential, adversarial,
+Run meaningful formatting/lint/type, Rust, Python, differential, adversarial,
 source mutation, control/floor/approval/receipt recovery, MCP and workflow-selection
-checks appropriate to every selected change on the actual final combined source.
-Inspect exported metrics, errors and receipts for secrets, raw command/output and
-private paths, retaining only necessary bounded proof. Preserve all intentional
-behavior corrections separately from performance claims.
+gates on the final combined selected source. The
+[d4e13547f combined gate](evidence/hosted-integration-d4e13547f.json) passes 317
+tests in 52.59 seconds, 26-file Ruff/format and all 1,253 production type files
+with zero errors/20,232 nonfatal warnings, plus workflow-policy and authority/
+semantic/I/O ownership. It predates the config-source changes and their separate
+88-test gate, and the CodeQL root correction, which has its
+separate 134-test gate. These tests overlap component suites. Earlier bbe742e91
+and every other source snapshot retain their own evidence; do not sum counts
+or call a historical pass current. The config-integrated 5da type gate passes
+1,254 files/zero errors/20,236 warnings and authority/semantic checks pass, but
+the first I/O ownership attempt reports 15 unclassified new reader sites.
+The [correction receipt](evidence/config-integrated-5da39f986.json) retains that
+failure and records six exact function/primitive classifications plus exact-path
+protection. All sites remain visible as synchronous posture/config I/O. The
+46-test I/O/architecture suite passes in 99.32 seconds, including actual current
+inventory and negative cases; static checks/one contract type file pass with
+zero errors/warnings and finite source review is clear. Product source is
+unchanged from 5da. Keep 317/67/88/F44/46 scopes separate; no combined test total
+or hosted qualification is established. Preserve initial failures and successful corrections. Check exported errors/metrics/
+receipts for raw secrets, command/output and private paths; retain bounded proof.
 
-Update all 144 task records and regenerate the Markdown ledger with exact evidence,
-counts, unresolved dependencies and original-field integrity. Keep EXECUTION,
-CURRENT_CONTRACT and this prompt aligned with the selected source and dated actual
-GitHub state. At this checkpoint the count is 74 DONE/31 OPEN/29 BLOCKED/10 DEFERRED; those
-numbers do not claim release completion. Scoped conditional package, scanner and
-MCP production ports are deferred after their measured no-go decisions. RSP-144
-stays open until final evidence,
-conditional decisions and release state are delivered.
+Update all 144 ledger records and render Markdown with exact links, counts,
+unresolved dependencies and unchanged original-field integrity. At this
+checkpoint counts remain **74 DONE, 31 OPEN, 29 BLOCKED, 10 DEFERRED**. They do
+not imply release completion. RSP-144 stays OPEN until final evidence, decisions
+and release state are delivered. Keep EXECUTION, CURRENT_CONTRACT and this prompt
+aligned with actual source and dated hosted results.
 
 Obtain final Greptile 5/5 and required independent CODEOWNER approval through the
-actual review process, resolve threads and required CI on the published head.
-Foundation's protected auto-merge and recorded Greptile 5/5 do not clear its
-CodeQL failure or supply independent last-push CODEOWNER approval. Neither does
-a successful Actions workflow clear abf's separate CodeQL application failure. Never
-fabricate approval, self-approve as the author or bypass the release ruleset.
+real review process, resolve threads and required CI on the actual final head.
+Foundation's protected auto-merge and bot review do not clear its CodeQL failure
+or supply independent last-push approval. Draft-skipped CodeRabbit is not a
+completed review. Never fabricate approval, self-approve as author or bypass
+the release ruleset.
 
-Prepare exact qualified candidate/prior artifact manifests, platform/harness
-canary cohorts, stop conditions and tested rollback. Restore verified package,
-registration and acknowledged policy only after retiring the affected generation.
-Never lower persistent floors or reopen hidden Python fallback; never retry
-ambiguous tool execution automatically. Finish all concrete authorized work before
-reporting an external blocker. Final delivery must link PRs, exact qualified head,
-artifacts, coverage, metrics/intervals/misses, tests and rollback evidence, with
-implementation, qualification, merge and release status stated separately.
+Use [CANARY_ROLLBACK_PLAN.md](CANARY_ROLLBACK_PLAN.md) and its machine manifest
+as concrete preparation: exact prior artifacts, platform/harness cohorts,
+prerequisites and stop conditions are recorded. Its candidate/tested-cohort flags
+remain pending/false despite the separate compatible stopped-transition passes.
+No live cohort is activated. Retire affected generations before restoring verified
+package, registration and acknowledged policy; do not lower floors or replay
+ambiguous tool execution. Finish concrete authorized work before reporting an
+external blocker. Final delivery must distinguish implementation, qualification,
+merge and release, with exact heads/artifacts, metrics, misses, tests and rollback.

@@ -16,6 +16,7 @@ from typing import TypeVar, cast
 
 from codex_plugin_scanner.guard.native_approval_errors import NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
 from codex_plugin_scanner.guard.native_resident_client import native_resident_client_failure_code
+from scripts.native_slo_edge_diagnostic import collect_native_edge_stages
 
 _T = TypeVar("_T")
 _PYTHON_CLIENT_CODES = frozenset(
@@ -110,11 +111,12 @@ def observe_native_call(
     """
     before = _code(native_resident_client_failure_code())
     began = time.monotonic()
-    edge = operation()
-    # This read must precede every health/clock/serialization operation after
-    # the real call. Reading in the collector/main thread loses ContextVar data.
-    after_code = native_resident_client_failure_code()
-    ended = time.monotonic()
+    with collect_native_edge_stages() as stages:
+        edge = operation()
+        # This read must precede every health/clock/serialization operation after
+        # the real call. Reading in the collector/main thread loses ContextVar data.
+        after_code = native_resident_client_failure_code()
+        ended = time.monotonic()
     after = _code(after_code)
     result: dict[str, object] = {
         "schema": "hol-guard.native-call-diagnostic.v1",
@@ -124,6 +126,14 @@ def observe_native_call(
         "client_code_attribution": "context_transition" if before != after else "unchanged_or_stale",
         "policy_binding_supplied": isinstance(policy_snapshot, Mapping),
     }
+    # Source and capacity failures add list/dict layers around this record.
+    # Keep stage facts flat so their scalar values stay inside the unchanged
+    # six-level privacy bound even in the deepest exported failure shape.
+    for stage, fields in stages.items():
+        if type(fields) is dict:
+            result.update((f"edge_{stage}_{key}", value) for key, value in fields.items())
+        else:
+            result["edge_" + stage] = fields
     for phase, code in (("before", before), ("after", after)):
         result.update(("client_" + phase + "_" + key, value) for key, value in code.items())
     effective_deadline = _number(deadline)

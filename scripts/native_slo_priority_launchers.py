@@ -305,7 +305,12 @@ def observe_priority_launcher(
         raise RuntimeError("priority_launcher_stdout_not_json") from error
     if not isinstance(response, Mapping):
         raise RuntimeError("priority_launcher_stdout_not_object")
-    validate_launcher_stdout(launcher, cast(Mapping[str, object], response), case=case)
+    try:
+        validate_launcher_stdout(launcher, cast(Mapping[str, object], response), case=case)
+    except Exception as error:
+        from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
+
+        raise contextual_failure(error, observed_semantics=verdict_evidence(response)) from error
     return Observation(
         launcher.harness,
         launcher.event,

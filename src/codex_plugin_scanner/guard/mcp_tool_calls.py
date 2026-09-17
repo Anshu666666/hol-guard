@@ -405,6 +405,25 @@ def build_tool_call_hash(
     matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
     if matching_snapshot is not None:
         artifact, arguments = matching_snapshot
+    return _build_tool_call_hash_for_categories(
+        artifact,
+        arguments,
+        workspace=workspace,
+        config=config,
+        risk_categories=risk_facts.categories if matching_snapshot is not None and risk_facts is not None else None,
+    )
+
+
+def _build_tool_call_hash_for_categories(
+    artifact: GuardArtifact,
+    arguments: object,
+    *,
+    workspace: Path | str | None,
+    config: GuardConfig | None,
+    risk_categories: tuple[str, ...] | None,
+) -> str:
+    """Private kernel; the caller owns any supplied facts and their inputs."""
+
     browser_intent = normalize_browser_mcp_intent(artifact, arguments)
     content_arguments: object = arguments
     if browser_intent is not None:
@@ -487,9 +506,7 @@ def build_tool_call_hash(
         content=content_hash,
         capabilities={
             "risk_categories": list(
-                risk_facts.categories
-                if matching_snapshot is not None and risk_facts is not None
-                else tool_call_risk_categories(artifact, arguments)
+                risk_categories if risk_categories is not None else tool_call_risk_categories(artifact, arguments)
             ),
             "server_identity": artifact.metadata.get("mcp_server_identity"),
             "tool_catalog_fingerprint": tool_catalog_fingerprint,
@@ -571,6 +588,31 @@ def evaluate_tool_call(
         arguments=arguments,
         risk_facts=risk_facts,
     )
+    return _evaluate_tool_call_with_current(
+        store=store,
+        config=config,
+        artifact=artifact,
+        artifact_hash=artifact_hash,
+        arguments=arguments,
+        current=current,
+        claim_saved_approval=claim_saved_approval,
+        fresh_authority_provider=fresh_authority_provider,
+    )
+
+
+def _evaluate_tool_call_with_current(
+    *,
+    store: GuardStore,
+    config: GuardConfig,
+    artifact: GuardArtifact,
+    artifact_hash: str,
+    arguments: object,
+    current: ToolCallDecision,
+    claim_saved_approval: bool,
+    fresh_authority_provider: Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None = None,
+) -> ToolCallDecision:
+    """Compose a freshly evaluated current result with current saved state."""
+
     current = _apply_temporary_mcp_grant(
         store=store,
         artifact=artifact,
@@ -889,6 +931,32 @@ def _evaluate_current_tool_call(
     )
     current_config_action = configured_override if configured_override is not None else config.default_action
 
+    # Resolve current policy before the public matching/owned-copy boundary.
+    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+    if matching_snapshot is not None and risk_facts is not None:
+        artifact, arguments = matching_snapshot
+        risk_categories = risk_facts.categories
+    else:
+        risk_categories = tool_call_risk_categories(artifact, arguments)
+    return _evaluate_current_tool_call_for_categories(
+        config=config,
+        artifact=artifact,
+        arguments=arguments,
+        current_config_action=current_config_action,
+        risk_categories=risk_categories,
+    )
+
+
+def _evaluate_current_tool_call_for_categories(
+    *,
+    config: GuardConfig,
+    artifact: GuardArtifact,
+    arguments: object,
+    current_config_action: GuardAction,
+    risk_categories: tuple[str, ...],
+) -> ToolCallDecision:
+    """Private kernel, called only after resolving current policy and inputs."""
+
     def with_current_config(decision: ToolCallDecision) -> ToolCallDecision:
         effective_action = most_restrictive_guard_action(decision.action, current_config_action)
         if effective_action == decision.action:
@@ -900,14 +968,6 @@ def _evaluate_current_tool_call(
             summary=("Local Guard's current configuration is stricter than the tool-call-specific recommendation."),
         )
 
-    # Resolve current policy first, then validate facts against the current
-    # inputs. Never match a mutable alias and subsequently analyze that alias.
-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
-    if matching_snapshot is not None and risk_facts is not None:
-        artifact, arguments = matching_snapshot
-        risk_categories = risk_facts.categories
-    else:
-        risk_categories = tool_call_risk_categories(artifact, arguments)
     signals = _tool_call_risk_signals_for_categories(artifact, arguments, risk_categories)
     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
 
@@ -1128,7 +1188,7 @@ def _tool_call_risk_category_set(artifact: GuardArtifact, arguments: object) -> 
     ):
         categories.add("command_execution")
     network_patterns = (
-        _literal_pattern("http://", "https://"),
+        _literal_pattern("http://", "https://"),  # NOSONAR(S5332) Detector literals, without network I/O.
         _token_pattern("curl", "wget", "fetch", "axios", "requests"),
         _literal_pattern("socket", "net", "dns", prefix=r"(?<![a-z0-9_])", suffix=r"\s*[.(]"),
         _literal_pattern(

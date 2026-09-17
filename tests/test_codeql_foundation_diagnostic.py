@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import gzip
 import hashlib
 import json
 import re
@@ -44,14 +46,12 @@ def test_diagnostic_is_bounded_read_only_and_cannot_choose_an_arbitrary_source()
                     "name": "foundation",
                     "label": "Foundation e449",
                     "commit": diagnostic.FOUNDATION_SHA,
-                    "root": "foundation-src",
                     "artifact": "codeql-foundation-e449",
                 },
                 {
                     "name": "implementation",
                     "label": "Implementation abf",
                     "commit": diagnostic.IMPLEMENTATION_SHA,
-                    "root": "implementation-src",
                     "artifact": "codeql-implementation-abf",
                 },
             ],
@@ -62,7 +62,7 @@ def test_diagnostic_is_bounded_read_only_and_cannot_choose_an_arbitrary_source()
     assert all(re.fullmatch(r"[^@]+@[0-9a-f]{40}", step["uses"]) for step in job["steps"] if "uses" in step)
 
 
-def test_executing_workflow_and_each_snapshot_have_separate_checkout_roots() -> None:
+def test_current_definition_is_staged_before_exact_snapshot_replaces_the_extractor_root() -> None:
     steps = _workflow()["jobs"]["snapshot"]["steps"]
     checkouts = [step["with"] for step in steps if step.get("uses", "").startswith("actions/checkout@")]
     assert len(checkouts) == 2
@@ -74,19 +74,26 @@ def test_executing_workflow_and_each_snapshot_have_separate_checkout_roots() -> 
         "/scripts/ci/codeql_foundation_diagnostic.py",
     }
     assert source["ref"] == "${{ matrix.profile.commit }}"
-    assert source["path"] == "${{ matrix.profile.root }}"
+    assert "path" not in source and source["clean"] is True
     assert all(row["repository"] == "hashgraph-online/hol-guard" for row in checkouts)
     assert all(row["persist-credentials"] is False for row in checkouts)
+    stage = steps[1]
+    assert "codeql_foundation_diagnostic.py stage" in stage["run"]
+    assert '--staging-root "$RUNNER_TEMP/codeql-diagnostic-definition"' in stage["run"]
+    assert '--environment-file "$GITHUB_ENV"' in stage["run"]
+    assert steps[2]["with"] is source
+    for step in steps[3:]:
+        if 'diagnostic.py"' in step.get("run", ""):
+            assert step["run"].index("sha256sum --check --status") < step["run"].index("python3 -I")
+            assert '"$DIAGNOSTIC_COLLECTOR_SHA256"' in step["run"]
     init = next(step for step in steps if step.get("id") == "init")
     analyze = next(step for step in steps if step.get("id") == "analyze")
-    assert init["with"]["source-root"] == source["path"]
-    assert analyze["with"]["checkout_path"] == "${{ github.workspace }}/" + source["path"]
-    assert "foundation-src" not in definition["sparse-checkout"]
-    assert "implementation-src" not in definition["sparse-checkout"]
-    verify = next(step for step in steps if "diagnostic.py verify" in step.get("run", ""))
+    assert init["with"]["source-root"] == "."
+    assert analyze["with"]["checkout_path"] == "${{ github.workspace }}"
+    verify = next(step for step in steps if 'diagnostic.py" verify' in step.get("run", ""))
     assert verify["env"]["DIAGNOSTIC_PROFILE"] == "${{ matrix.profile.name }}"
-    assert verify["env"]["DIAGNOSTIC_SOURCE"] == "${{ matrix.profile.root }}"
-    assert '--profile "$DIAGNOSTIC_PROFILE" --source-root "$DIAGNOSTIC_SOURCE"' in verify["run"]
+    assert '--profile "$DIAGNOSTIC_PROFILE" --source-root . --enforce-layout' in verify["run"]
+    assert '"$RUNNER_TEMP/codeql-diagnostic-definition/codeql_foundation_diagnostic.py"' in verify["run"]
 
 
 def test_original_query_scope_is_retained_without_pr2954_filter_or_security_upload() -> None:
@@ -117,7 +124,8 @@ def test_failed_analysis_still_collects_and_uploads_only_results_and_manifest() 
     artifact = next(step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@"))
     assert collect["if"] == artifact["if"] == "${{ always() }}"
     assert collect["env"]["DIAGNOSTIC_PROFILE"] == "${{ matrix.profile.name }}"
-    assert collect["env"]["DIAGNOSTIC_SOURCE"] == "${{ matrix.profile.root }}"
+    assert "--source-root . --enforce-layout" in collect["run"]
+    assert '"$RUNNER_TEMP/codeql-diagnostic-definition/codeql_foundation_diagnostic.py"' in collect["run"]
     assert '--profile "$DIAGNOSTIC_PROFILE"' in collect["run"]
     assert collect["env"]["INIT_OUTCOME"] == "${{ steps.init.outcome }}"
     assert collect["env"]["ANALYZE_OUTCOME"] == "${{ steps.analyze.outcome }}"
@@ -419,3 +427,152 @@ def test_implementation_cli_preserves_failed_phase_and_its_three_unresolved_aler
     assert report["original_security_alerts_resolved"] is False
     assert report["sarif"]["sha256"] == hashlib.sha256(raw).hexdigest()
     assert (tmp_path / "python.sarif").read_bytes() == raw
+
+
+@pytest.fixture
+def isolated_layout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path, Path]:
+    definition = tmp_path / "definition"
+    definition.mkdir()
+    workflow = definition / diagnostic.WORKFLOW_FILE
+    workflow.parent.mkdir(parents=True)
+    _ = workflow.write_bytes(WORKFLOW.read_bytes())
+    environment_file = tmp_path / "environment"
+    staged = tmp_path / "staged"
+    monkeypatch.chdir(definition)
+    captured = diagnostic.stage_definition(definition, staged, environment_file)
+    fields = dict(line.split("=", 1) for line in environment_file.read_text().splitlines())
+    assert captured == {key: value for key, value in fields.items() if key != "CODE_SCANNING_WORKFLOW_FILE"}
+    assert gzip.decompress(base64.b64decode(fields["CODE_SCANNING_WORKFLOW_FILE"])) == WORKFLOW.read_bytes()
+    collector = staged / "codeql_foundation_diagnostic.py"
+    assert collector.read_bytes() == Path(diagnostic.__file__).read_bytes()
+    assert [path.name for path in staged.iterdir()] == [collector.name]
+    for key, value in fields.items():
+        monkeypatch.setenv(key, value)
+    source = tmp_path / "snapshot"
+    source.mkdir()
+    _ = (source / "fixture.py").write_text("VALUE = 1\n")
+    _ = (source / ".gitignore").write_text("ignored.py\n")
+    subprocess.run(["git", "init", "--quiet", str(source)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(source), "add", "."], check=True, capture_output=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(source),
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "--quiet",
+            "-m",
+            "fixture",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    identity = diagnostic.source_identity(source)
+    monkeypatch.setitem(
+        diagnostic.PROFILES,
+        "foundation",
+        replace(
+            diagnostic.PROFILES["foundation"],
+            commit=identity["commit"],
+            tree=identity["tree"],
+        ),
+    )
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(source))
+    monkeypatch.setattr(diagnostic, "__file__", str(collector))
+    monkeypatch.chdir(source)
+    results = tmp_path / "results"
+    results.mkdir()
+    return source, collector, results
+
+
+def test_staged_collector_and_exact_workflow_bytes_survive_root_checkout_and_are_reported(
+    isolated_layout: tuple[Path, Path, Path],
+) -> None:
+    source, collector, results = isolated_layout
+    raw = _write_sarif(results)
+    assert not (source / diagnostic.WORKFLOW_FILE).exists()
+    report = diagnostic.collect(source, results, "python", "2.27.0", "success", "success", enforce_layout=True)
+    assert report["diagnostic_analysis_complete"] is True
+    assert report["extraction_layout"]["verified"] is True
+    assert report["extraction_layout"]["untracked_file_count"] == 0
+    assert report["extraction_layout"]["collector_sha256"] == hashlib.sha256(collector.read_bytes()).hexdigest()
+    assert report["extraction_layout"]["extractor_invocation_log_verified"] is False
+    assert (results / "python.sarif").read_bytes() == raw
+    assert json.loads((results / "diagnostic.json").read_text()) == report
+    assert report["original_security_alerts_resolved"] is False
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "nested_root",
+        "wrong_cwd",
+        "helper_inside",
+        "changed_collector",
+        "changed_workflow",
+        "bad_workflow",
+        "untracked_helper",
+        "ignored_helper",
+        "results_inside",
+        "missing_digest",
+    ],
+)
+def test_scope_drift_is_failed_and_still_retains_original_sarif(
+    isolated_layout: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    source, collector, results = isolated_layout
+    if mutation == "nested_root":
+        source = source / "nested"
+        source.mkdir()
+    elif mutation == "wrong_cwd":
+        monkeypatch.chdir(source.parent)
+    elif mutation == "helper_inside":
+        copied = source / "collector.py"
+        _ = copied.write_bytes(collector.read_bytes())
+        monkeypatch.setattr(diagnostic, "__file__", str(copied))
+    elif mutation == "changed_collector":
+        collector.chmod(0o600)
+        _ = collector.write_bytes(collector.read_bytes() + b"# changed\n")
+    elif mutation == "changed_workflow":
+        monkeypatch.setenv("CODE_SCANNING_WORKFLOW_FILE", base64.b64encode(gzip.compress(b"changed")).decode())
+    elif mutation == "bad_workflow":
+        monkeypatch.setenv("CODE_SCANNING_WORKFLOW_FILE", "invalid")
+    elif mutation == "untracked_helper":
+        _ = (source / "extra.py").write_text("VALUE = 2\n")
+    elif mutation == "ignored_helper":
+        _ = (source / "ignored.py").write_text("VALUE = 2\n")
+    elif mutation == "results_inside":
+        results = source / "results"
+        results.mkdir()
+    else:
+        monkeypatch.delenv("DIAGNOSTIC_COLLECTOR_SHA256")
+    raw = _write_sarif(results)
+    report = diagnostic.collect(source, results, "python", "2.27.0", "success", "success", enforce_layout=True)
+    assert report["diagnostic_analysis_complete"] is False
+    assert "extraction_layout_unproven" in report["errors"]
+    assert report["sarif"]["sha256"] == hashlib.sha256(raw).hexdigest()
+    assert json.loads((results / "diagnostic.json").read_text()) == report
+    assert (results / "python.sarif").read_bytes() == raw
+
+
+def test_staging_cannot_add_current_helper_to_immutable_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match="outside"):
+        diagnostic.stage_definition(tmp_path, tmp_path / "staged", tmp_path / "env")
+
+
+def test_workflow_decompression_is_bounded_and_cannot_claim_layout(
+    isolated_layout: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, _, _ = isolated_layout
+    limit = Path(diagnostic.__file__).stat().st_size + 100
+    monkeypatch.setenv("CODE_SCANNING_WORKFLOW_FILE", base64.b64encode(gzip.compress(b"x" * (limit + 1))).decode())
+    monkeypatch.setattr(diagnostic, "MAX_DEFINITION_BYTES", limit)
+    assert diagnostic.extraction_layout(source)["verified"] is False

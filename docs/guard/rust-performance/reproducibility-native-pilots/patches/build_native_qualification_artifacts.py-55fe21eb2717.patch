@@ -1,0 +1,31 @@
+diff --git a/scripts/build_native_qualification_artifacts.py b/scripts/build_native_qualification_artifacts.py
+index 4d4c1421de7e61fe4c9db62cc7b4a49bf69cf571..8ef55677df7abcb89c17acb742d2b3ff066bde50 100644
+--- a/scripts/build_native_qualification_artifacts.py
++++ b/scripts/build_native_qualification_artifacts.py
+@@ -230,26 +230,6 @@ def main() -> int:
+         ("installed_offline_secrets", offline_secrets),
+     )
+     if args.target == "x86_64-unknown-linux-musl":
+-        # Own exact same-byte copies only in these disposable environments.
+-        # A failed provisioning check remains mandatory while other installed
+-        # probes still run and retain their independent outcomes.
+-        checks = (
+-            (
+-                "qualification_interpreters",
+-                [
+-                    str(candidate_python),
+-                    "-I",
+-                    str(args.candidate.resolve() / "scripts/provision_native_qualification_interpreters.py"),
+-                    "--baseline-python",
+-                    str(baseline_python),
+-                    "--candidate-python",
+-                    str(candidate_python),
+-                    "--json",
+-                    str(destination / "aggregate/qualification-interpreters.json"),
+-                ],
+-            ),
+-            *checks,
+-        )
+         # This private pilot must prove native transport through the actual
+         # installed wheel. Its report never enables a production registration.
+         checks += (

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import sys
+from types import SimpleNamespace
 
 import pytest
 
 from scripts import bench_claude_native_launcher_pilot as probe
 from scripts.native_slo_contract import assert_privacy_safe
+from scripts.native_slo_failure import FixtureFailureError
 
 
 def test_installed_setup_failure_retains_json_and_never_counts_measurements(tmp_path, monkeypatch):
@@ -80,12 +82,41 @@ def test_native_route_mismatch_never_returns_a_successful_series(monkeypatch):
         def __exit__(self, *_args):
             pass
 
-        def report(self, **_kwargs):
-            pytest.fail("route refusal cannot be measured as native execution")
+        def report(self, **kwargs):
+            return {"attempted": kwargs["attempted"], "samples": 1}
 
     monkeypatch.setattr(probe, "ResourceSampler", Sampler)
     monkeypatch.setattr(
         probe, "observe_priority_launcher", lambda *_args, **_kwargs: type("Observation", (), {"latency_ms": 1.0})()
     )
-    with pytest.raises(RuntimeError, match="native_route_mismatch"):
-        probe._series(type("Session", (), {"pid": 123})(), object(), 1)
+    controls = []
+    session = SimpleNamespace(pid=123, control=lambda operation: controls.append(operation) or {})
+    with pytest.raises(FixtureFailureError) as caught:
+        probe._series(session, object(), 1)
+    detail = caught.value.detail
+    assert "native_route_mismatch" in detail["reason"]
+    assert detail["excluded_from_comparison"] is True
+    assert detail["attempted"] == detail["completed"] == 1
+    assert detail["partial_daemon_resources"] == {"attempted": 1, "samples": 1}
+    assert controls == ["case_before", "case_result"]
+    assert "combined_cpu_complete" not in detail and "cpu_ms_per_attempt" not in detail
+
+
+def test_preflight_refusal_retains_only_current_attempt_and_no_measurement(monkeypatch):
+    controls = []
+    evidence = {"native_call_count": 0, "native_completed_call_count": 0, "native_result": None}
+    session = SimpleNamespace(control=lambda op: controls.append(op) or evidence)
+    monkeypatch.setattr(probe, "_route_snapshot", lambda *_args, **_kwargs: {})
+
+    def failed(*_args, **_kwargs):
+        raise RuntimeError("priority_launcher_process_contract_failed")
+
+    monkeypatch.setattr(probe, "observe_priority_launcher", failed)
+    with pytest.raises(FixtureFailureError) as caught:
+        probe._preflight(session, object(), case="benign")
+    detail = caught.value.detail
+    assert controls == ["case_before", "case_result"]
+    assert detail["native_call_count"] == detail["native_completed_call_count"] == 0
+    assert detail["last_native_semantics"] == {"available": False}
+    assert detail["excluded_from_comparison"] is True
+    assert "latency_ms" not in detail

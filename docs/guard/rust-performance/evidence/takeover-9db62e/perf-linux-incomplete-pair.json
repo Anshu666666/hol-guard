@@ -1,0 +1,86 @@
+{
+  "attempted_blocks": 2,
+  "comparison_available": false,
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failed_run": 0,
+  "failures": [
+    {
+      "arm": "baseline",
+      "artifact_sha256": "fd4ac4285719f1d5099b5236595ccb4a4b88354a555885bba395bb48be49ec0b",
+      "case": "codex.PostToolUse.benign.1m",
+      "category": "AssertionError",
+      "containment_failed": false,
+      "diagnostic_digest": "30385708a9cd3dbacb8af0c683363f7cf47b7a5a429ae6129173881b58fb6e50",
+      "field": "field:policy_action",
+      "line": 745,
+      "origin": "native_slo_workloads._validate_projection",
+      "reason": "native_qualification_mismatch",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    },
+    {
+      "arm": "candidate",
+      "artifact_sha256": "b247a9b655bbf58fd8b5d2538ed631abbe742997ff3442b01cd6c7857f33fa4a",
+      "case": "cursor.afterShellExecution.empty-output.empty",
+      "category": "AssertionError",
+      "containment_failed": false,
+      "diagnostic_digest": "850ef72ed2016fa137ee09e7d4ec05f8eaac3ab2ebda28b05855fb226a50d4ed",
+      "field": "route",
+      "line": 758,
+      "native_call_count": 1,
+      "native_call_diagnostic": {
+        "caller_deadline_valid": true,
+        "caller_expired_after": false,
+        "caller_expired_before": false,
+        "caller_remaining_ms_after": 2985.196,
+        "caller_remaining_ms_before": 2990.517,
+        "capture_context": "native_worker_wrapper",
+        "client_after_state": "absent",
+        "client_before_state": "absent",
+        "client_code_attribution": "unchanged_or_stale",
+        "client_code_changed": false,
+        "elapsed_ms": 5.321,
+        "policy_binding_supplied": true,
+        "policy_generation_valid": true,
+        "policy_mode": "enforce",
+        "publisher_acked": true,
+        "publisher_cache": "captured",
+        "publisher_closed": false,
+        "publisher_error_state": "absent",
+        "publisher_failure_count": 0,
+        "publisher_snapshot_present": true,
+        "publisher_started": true,
+        "schema": "hol-guard.native-call-diagnostic.v1"
+      },
+      "native_completed_call_count": 1,
+      "observed_semantics": {
+        "delivered": {
+          "available": true,
+          "policy_action": "allow",
+          "reason_code": "native_post_tool_unavailable",
+          "reason_code_digest": "e48159e09fe2a1c09a7a46ab9587590a08a018d75db874f40d8e5fceb51b5075"
+        },
+        "native": {
+          "available": false
+        }
+      },
+      "origin": "native_slo_workloads.validate_case",
+      "reason": "qualification_fixture.native_qualification_mismatch",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    }
+  ],
+  "planned_runs": 1,
+  "qualification_complete": false,
+  "schema": "hol-guard.native-incomplete-pair.v1",
+  "unattempted_blocks": 0
+}

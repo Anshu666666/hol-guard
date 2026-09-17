@@ -28,8 +28,14 @@ def test_changed_path_gate_accepts_mapped_native_source(monkeypatch: pytest.Monk
     assert changed == ("rust/crates/guard-runtime/src/hook_edge.rs",)
 
 
-def test_changed_path_gate_maps_live_cli_hook_support(monkeypatch: pytest.MonkeyPatch) -> None:
-    path = "src/codex_plugin_scanner/guard/cli/commands_support_interaction.py"
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/codex_plugin_scanner/guard/cli/commands_support_interaction.py",
+        "src/codex_plugin_scanner/guard/config_source_io.py",
+    ],
+)
+def test_changed_path_gate_maps_hook_control_support(monkeypatch: pytest.MonkeyPatch, path: str) -> None:
     monkeypatch.setattr(MODULE, "_changed_files", lambda _base_ref: (path,))
 
     changed = MODULE._changed_path_gate(MODULE._manifest(), "base")

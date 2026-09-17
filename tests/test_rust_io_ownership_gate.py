@@ -45,7 +45,7 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     config_reads = [
         item
         for item in report["inventory"]
-        if item["path"] == "src/codex_plugin_scanner/guard/config.py" and item["operation"] == "open"
+        if item["path"] == "src/codex_plugin_scanner/guard/config_source_io.py" and item["kind"] == "filesystem"
     ]
     assert config_reads
     assert all(item["category"] == "synchronous_posture_config" for item in config_reads)
@@ -59,6 +59,35 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     } <= categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
+
+
+def test_config_reader_inventory_keeps_unreviewed_operations_closed(tmp_path: Path) -> None:
+    path = _write_guard_fixture(
+        tmp_path,
+        "config_source_io",
+        "def _read_descriptor(descriptor, before):\n"
+        "    def unrelated():\n        return open('source.txt').read()\n"
+        "    value = os.read(descriptor, 10)\n"
+        "    return Path('source.txt').read_text()\n",
+    )
+    record = MODULE._function_map(tmp_path)[path, "_read_descriptor"][0]
+    observed = list(MODULE._observations(record))
+    nested = [item for item in observed if item.line == 3]
+    reviewed = [item for item in observed if item.line == 4]
+    new_operation = [item for item in observed if item.line == 5]
+    assert len(nested) == 2 and len(reviewed) == len(new_operation) == 1
+    assert all(item.category == "unclassified_python_io" for item in nested + new_operation)
+    assert reviewed[0].category == "asynchronous_policy"
+    for function in (
+        "_posix_parent_chain",
+        "_read_descriptor",
+        "_capture_in_parent",
+        "_capture_in_parent.metadata",
+        "_verify_missing_parent",
+        "capture_guard_config",
+    ):
+        for kind, operation in (("archive", "tarfile"), ("decode", "loads"), ("hash", "sha256")):
+            assert MODULE._category(path, kind, function, operation).startswith("unclassified_")
 
 
 def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path) -> None:

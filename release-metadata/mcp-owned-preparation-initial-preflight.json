@@ -1,0 +1,42 @@
+{
+  "schema": "hol-guard-mcp-owned-preparation-comparison.v1",
+  "qualification": false,
+  "production_activation": false,
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "python": "3.12.14",
+  "runtime_sources_sha256": {
+    "B": {
+      "proxy/runtime_mcp.py": "9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b",
+      "proxy/framing.py": "e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300",
+      "proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845",
+      "mcp_tool_calls.py": "02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e"
+    },
+    "E": {
+      "proxy/runtime_mcp.py": "0c825302fecb5dce5fc66b9f9be0f7e81f08ddf41d99526c1706df3fc4b06a88",
+      "proxy/framing.py": "334022216568d3c78a1a8196ff806a07058d66c47224cd1dd840f6d522c60092",
+      "proxy/tool_catalog.py": "c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845",
+      "mcp_tool_calls.py": "aa0457b7f60c27277de535c48b5e2443eada1ad8b44a90ddcbc7b4e7dc82f5ad"
+    }
+  },
+  "harness_sources_sha256": {
+    "compare_guard_mcp_owned_preparation.py": "017fcf38a1356b7dfb15e61b6dd376afdcf732eb331f23bfb50d136fbeb279d2",
+    "compare_guard_mcp_risk.py": "7de4df7178e5d34fe521fd70833fe8cc5df06be7c64f88c3431a583bbf770309",
+    "profile_guard_mcp_session.py": "6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932",
+    "guard_mcp_owned_preparation_pilot.py": "2dd0cd0bd2ecf7cd6b9c4bdd5993443918f7a2af18ae46634cb460c828f814f9"
+  },
+  "measurement_lock": "per_case_POSIX_flock",
+  "campaign": "five_alternating_process_blocks_B_vs_explicit_E",
+  "limitations": [
+    "source_only_single_shared_host_c1",
+    "large_blocks_three_warm_samples_not_tail_qualification",
+    "profiles_separate_from_gate",
+    "package_and_unsupported_shapes_use_legacy_B",
+    "no_native_installed_or_platform_qualification"
+  ],
+  "cases": [],
+  "failed_parity_gate": {
+    "reason": "FileNotFoundError",
+    "failure_code": "FileNotFoundError"
+  }
+}

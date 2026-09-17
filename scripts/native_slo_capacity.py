@@ -12,6 +12,7 @@ from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import Observation, process_rss_bytes, route_counts
 from scripts.native_slo_baseline import steady_state_rss_baseline as _steady_state_rss_baseline
 from scripts.native_slo_batch import validate_batch_routes
+from scripts.native_slo_capacity_diagnostic import CapacityDiagnostics
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_observation_failure import contextual_failure
 from scripts.native_slo_session import AdapterSession
@@ -74,12 +75,20 @@ def _run_concurrent(
     concurrency: int,
     executor: ThreadPoolExecutor,
     failures: list[dict[str, object]] | None = None,
+    diagnostics: CapacityDiagnostics | None = None,
 ) -> tuple[list[Observation], int]:
     selected = tuple(routes[index % len(routes)] for index in range(concurrency))
     observations: list[Observation] = []
     errors = 0
     _require(0 < concurrency <= _MAX_CONCURRENCY, "concurrency exceeds bounded benchmark limit")
-    futures = [executor.submit(session.observe, harness, event, "1k") for harness, event in selected]
+
+    def observe(harness: str, event: str) -> Observation:
+        def operation() -> Observation:
+            return session.observe(harness, event, "1k")
+
+        return operation() if diagnostics is None else diagnostics.observe(operation)
+
+    futures = [executor.submit(observe, harness, event) for harness, event in selected]
     _, unfinished = wait(futures, timeout=_CONCURRENT_WAVE_TIMEOUT_SECONDS)
     if unfinished:
         # Every worker is prestarted and AdapterSession transport calls have a
@@ -195,7 +204,12 @@ def _run_capacity_wave(
     before = route_counts(initial)
     overloads_before = session.native_overload_count()
     failures: list[dict[str, object]] = []
-    observations, errors = _run_concurrent(session, routes, concurrency, executor, failures)
+    diagnostics = CapacityDiagnostics(session.daemon._server.hook_worker, concurrency)
+    try:
+        with diagnostics.capture_native():
+            observations, errors = _run_concurrent(session, routes, concurrency, executor, failures, diagnostics)
+    except Exception as error:
+        raise contextual_failure(error, capacity_diagnostic=diagnostics.report()) from error
     overloads_after = session.native_overload_count()
     _require(
         type(overloads_before) is int and type(overloads_after) is int and overloads_before >= 0,
@@ -237,6 +251,7 @@ def _run_capacity_wave(
             transport_failures=failures,
             native_overloads_before=overloads_before,
             native_overloads_after=overloads_after,
+            capacity_diagnostic=diagnostics.report(),
         ) from error
     return CapacityWave(attributed, errors, witnessed, overload_delta)
 

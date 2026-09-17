@@ -375,6 +375,16 @@ def write_message(stream: Any, payload: Mapping[str, Any], *, timeout_seconds: f
     if getattr(stream, "_guard_mcp_write_failed", False):
         raise ProxyIoLimitError(source=source, reason="stream_retired")
     data = encoded_line(payload)
+    _write_encoded_line(stream, data, timeout_seconds=timeout_seconds, source=source)
+
+
+def _write_encoded_line(stream: Any, data: bytes, *, timeout_seconds: float, source: str) -> None:
+    """Write already encoded private bytes without re-reading mutable inputs."""
+
+    if getattr(stream, "_guard_mcp_write_failed", False):
+        raise ProxyIoLimitError(source=source, reason="stream_retired")
+    if type(data) is not bytes or len(data) > MAX_LINE_BYTES or not data.endswith(b"\n"):
+        raise ProxyIoLimitError(source=source, reason="invalid_json_frame")
     timeout_seconds = remaining_timeout(timeout_seconds, source=source)
     deadline = time.monotonic() + timeout_seconds
     descriptor = stream_fileno(stream)

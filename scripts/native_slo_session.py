@@ -28,6 +28,7 @@ from codex_plugin_scanner.guard.native_resident_client import close_native_resid
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
+from scripts.native_slo_capacity_diagnostic import retain_capacity_delivery
 from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
 from scripts.native_slo_observation_failure import (
@@ -394,6 +395,7 @@ class AdapterSession:
                     connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
                 )
                 elapsed_ms = (time.perf_counter() - started) * 1_000.0
+                retain_capacity_delivery(response)
         except Exception as error:
             after = None
             with suppress(Exception):

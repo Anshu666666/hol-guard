@@ -7,6 +7,8 @@ import json
 import os
 import subprocess
 import sys
+import time
+from pathlib import Path
 
 import pytest
 
@@ -15,6 +17,7 @@ from scripts.ci import native_loopback_lookup as lookup
 
 class Responder:
     received = 2
+    port = 53535
 
     def snapshot(self):
         return {"received": self.received}
@@ -143,6 +146,9 @@ def test_witness_uses_only_three_fixed_operations_outside_measurements(monkeypat
         return {"operation": operation}
 
     monkeypatch.setattr(lookup, "lookup_probe", probe)
+    monkeypatch.setattr(lookup, "hosts_mapping_witness", lambda: {"status": "fixture"})
+    monkeypatch.setattr(lookup, "dns_service_probe", lambda _responder: {"status": "fixture"})
+    monkeypatch.setattr(lookup, "_bounded_process", lambda *_args, **_kwargs: ({"status": "fixture"}, b""))
     report = lookup.lookup_witness(Responder())
     assert operations == ["numeric_control", "gethostbyaddr", "getnameinfo"]
     assert report["phase"] == "after_qualification_before_resolver_cleanup"
@@ -152,3 +158,215 @@ def test_witness_uses_only_three_fixed_operations_outside_measurements(monkeypat
     assert all(
         report[key] is False for key in ("qualification_outcomes_changed", "qualification_sample", "baseline_modified")
     )
+    assert report["probe_order"] == [
+        "numeric_control",
+        "gethostbyaddr",
+        "getnameinfo",
+        "hosts_mapping",
+        "matched_resolver",
+        "dns_service_reverse_ptr",
+    ]
+
+
+def test_dns_service_callback_projection_retains_answers_without_exporting_them() -> None:
+    output = b"""DATE: ---private-date---
+Timestamp A/R Flags IF Name Type Class Rdata
+12:01:01.001 Add 2 0 1.0.0.127.in-addr.arpa. PTR IN localhost.
+12:01:01.002 Add 3 0 1.0.0.127.in-addr.arpa PTR IN private-fixture.example.
+12:01:01.003 Add 2 0 1.0.0.127.in-addr.arpa. PTR IN 0.0.0.0    No Such Record
+12:01:01.004 Rmv 0 0 1.0.0.127.in-addr.arpa. PTR IN private-fixture.example.
+12:01:01.005 Add 2 0 private-query.example. PTR IN localhost.
+12:01:01.006 Add 2 0 1.0.0.127.in-addr.arpa. A IN 127.0.0.1
+"""
+    report = lookup.dns_service_summary(output, b"private-stderr")
+    assert report["counts"] == {
+        "callbacks": 4,
+        "positive": 2,
+        "negative": 1,
+        "removed": 1,
+        "unclassified": 0,
+        "loopback_label": 1,
+    }
+    assert report["callback_flags"] == [0, 2, 3]
+    assert "private" not in json.dumps(report)
+    assert "localhost" not in json.dumps(report)
+
+
+@pytest.mark.parametrize(
+    ("stdout", "stderr", "errors", "unsupported"),
+    [
+        (b"...STARTING...\n", b"", [], False),
+        (b"", b"DNSServiceQueryRecord failed -65563 (Service Not Running)\n", [-65563], False),
+        (b"", b"/usr/bin/dns-sd -Q <name> <rrtype> <rrclass> (Generic query)\n", [], True),
+        (b"", b"dns-sd: illegal option -- m\n", [], True),
+    ],
+)
+def test_dns_service_distinguishes_no_captured_callback_api_error_and_unsupported(stdout, stderr, errors, unsupported):
+    report = lookup.dns_service_summary(stdout, stderr)
+    assert report["callback_observation"] == "none_in_captured_output"
+    assert report["api_errors"] == errors
+    assert report["unsupported_syntax_observed"] is unsupported
+
+
+def test_dns_service_keeps_callback_even_when_owned_process_times_out(monkeypatch):
+    responder = Responder()
+
+    def process(argv, **kwargs):
+        assert argv == ["/usr/bin/dns-sd", "-m", "-Q", lookup.REVERSE_NAME, "PTR", "IN"]
+        assert kwargs["timeout"] == 5 and kwargs["limit"] == 128 * 1024
+        responder.received += 1
+        data = b"12:01:01.001 Add 2 0 1.0.0.127.in-addr.arpa. PTR IN localhost.\n"
+        return {
+            "status": "deadline_exceeded",
+            "return_code": -9,
+            "contained": True,
+            "observation": kwargs["output_observer"](data, b""),
+        }, data
+
+    monkeypatch.setattr(lookup, "_bounded_process", process)
+    report = lookup.dns_service_probe(responder)
+    assert report["status"] == "deadline_exceeded"
+    assert report["observation"]["counts"]["positive"] == 1
+    assert report["responder_packet_delta"] == 1
+    assert report["libc_equivalence_claimed"] is False
+    assert "passed" not in report
+
+
+def test_matched_resolver_retains_only_exact_block_reachability_and_allowlisted_flags():
+    data = b"""resolver #1
+ domain : private-network.example
+ nameserver[0] : 192.0.2.80
+ flags : private-flag
+ reach : 0x000000ff (private-state)
+resolver #2
+ domain : 1.0.0.127.in-addr.arpa
+ nameserver[0] : 127.0.0.1
+ port : 53535
+ flags : Supplemental, Request A records, private-flag
+ reach : 0x00000002 (Reachable)
+resolver #3
+ domain : 1.0.0.127.in-addr.arpa
+ nameserver[0] : 127.0.0.1
+ port : 11111
+ reach : 0x000000ff (private-state)
+"""
+    report = lookup.matched_resolver_summary(data, b"private-stderr", 53535)
+    assert report["exact_configuration_match_count"] == 1
+    assert report["matched_blocks"] == [
+        {
+            "reachability_value": 2,
+            "reachability_field_count": 1,
+            "flags": ["Request A records", "Supplemental"],
+            "unknown_flag_count": 1,
+        }
+    ]
+    assert report["actual_query_routing_proven"] is False
+    assert "private" not in json.dumps(report)
+
+
+def test_hosts_projection_counts_exact_tokens_comments_duplicates_and_conflicts():
+    content = b"""# 127.0.0.1 localhost
+127.0.0.1 localhost private-alias
+127.0.0.1 other-label localhost # comment
+127.0.0.1 notlocalhost
+::1 localhost
+0:0:0:0:0:0:0:1 localhost
+192.0.2.8 localhost
+invalid-address localhost
+invalid-record
+\xff localhost
+"""
+    report = lookup.hosts_mapping_summary(content)
+    assert report["ipv4_records"] == 3 and report["ipv4_localhost"] == 2
+    assert report["ipv6_localhost"] == 1 and report["localhost_conflicts"] == 1
+    assert report["duplicate_ipv4_localhost_records"] == 1 and report["malformed"] == 3
+    assert "private" not in json.dumps(report) and "192.0.2.8" not in json.dumps(report)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="held POSIX descriptors")
+def test_hosts_read_is_bounded_held_and_refuses_symlink_fifo_and_replacement(tmp_path, monkeypatch):
+    monkeypatch.setattr(lookup, "_HOSTS_DIRECTORY", tmp_path)
+    path = tmp_path / "hosts"
+    content = b"127.0.0.1 localhost\n"
+    path.write_bytes(content)
+    report = lookup.hosts_mapping_witness()
+    assert report["content_sha256"] == hashlib.sha256(content).hexdigest()
+    assert report["mapping"]["exact_ipv4_localhost_present"] is True
+    assert path.read_bytes() == content
+    monkeypatch.setattr(lookup, "_SYSTEM_OUTPUT_BYTES", 4)
+    assert lookup.hosts_mapping_witness()["status"] == "size_limit"
+    path.unlink()
+    path.symlink_to(tmp_path / "absent")
+    assert lookup.hosts_mapping_witness()["status"] == "unavailable"
+    path.unlink()
+    os.mkfifo(path)
+    assert lookup.hosts_mapping_witness()["status"] == "not_regular"
+    path.unlink()
+    path.write_bytes(content)
+    monkeypatch.setattr(lookup, "_SYSTEM_OUTPUT_BYTES", 1024)
+    original = lookup.os.read
+
+    def read(descriptor, size):
+        data = original(descriptor, size)
+        if path.exists():
+            path.unlink()
+            path.write_bytes(content)
+        return data
+
+    monkeypatch.setattr(lookup.os, "read", read)
+    assert lookup.hosts_mapping_witness()["status"] == "changed_during_read"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="held POSIX descriptors")
+def test_hosts_read_rejects_replaced_canonical_parent(tmp_path, monkeypatch):
+    directory = tmp_path / "canonical"
+    directory.mkdir()
+    content = b"127.0.0.1 localhost\n"
+    (directory / "hosts").write_bytes(content)
+    monkeypatch.setattr(lookup, "_HOSTS_DIRECTORY", directory)
+    original = lookup.os.read
+    moved = False
+
+    def read(descriptor, size):
+        nonlocal moved
+        data = original(descriptor, size)
+        if not moved:
+            moved = True
+            directory.rename(tmp_path / "original")
+            directory.mkdir()
+            (directory / "hosts").write_bytes(content)
+        return data
+
+    monkeypatch.setattr(lookup.os, "read", read)
+    assert lookup.hosts_mapping_witness()["status"] == "changed_during_read"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux source witness checks descendant zombie state through proc")
+@pytest.mark.parametrize("held_pipes", [False, True])
+def test_exited_leader_is_unreaped_until_owned_descendants_are_retired(monkeypatch, held_pipes):
+    real_killpg = os.killpg
+    observed = []
+
+    def killpg(group, signum):
+        terminal = os.waitid(os.P_PID, group, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+        assert terminal is not None and terminal.si_pid == group
+        observed.append(group)
+        real_killpg(group, signum)
+
+    monkeypatch.setattr(lookup.os, "killpg", killpg)
+    code = (
+        "import os,time\nchild=os.fork()\nif child==0:\n"
+        + (" os.close(1);os.close(2)\n" if not held_pipes else "")
+        + " time.sleep(30)\nelse:\n print(child,flush=True)\n os._exit(7)\n"
+    )
+    report, data = lookup._bounded_process([sys.executable, "-I", "-c", code], timeout=0.4, limit=1024)
+    assert report["status"] == ("deadline_exceeded" if held_pipes else "completed")
+    assert report["return_code"] == 7 and report["contained"] is True and len(observed) == 1
+    descendant = int(data)
+    path = Path(f"/proc/{descendant}/stat")
+    for _attempt in range(100):
+        if not path.exists() or path.read_text().split(")", 1)[1].split()[0] == "Z":
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("owned descendant survived process-group retirement")

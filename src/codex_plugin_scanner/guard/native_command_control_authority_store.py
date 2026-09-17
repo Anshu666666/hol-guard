@@ -243,8 +243,8 @@ def read_committed_projection_authority(store: GuardStore, binding: Mapping[str,
     """Read an unchanged committed marker without excluding native readers."""
 
     current = read_command_control_authority(store, _key(store))
-    if (
-        current is None
+    if (  # NOSONAR(S2583) A present authenticated marker can satisfy all retained checks.
+        current is None  # NOSONAR(S2583) Missing markers require mutation; verified present markers return a dict.
         or current["phase"] != "committed"
         or current["effective_digest"] != binding["effective_digest"]
         or current["authority_key_id"] != authority_key_id(store._authority_key(required=False))

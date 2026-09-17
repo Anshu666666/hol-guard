@@ -13,6 +13,7 @@ from unittest.mock import patch
 import pytest
 
 from codex_plugin_scanner.guard.config import load_guard_config
+from codex_plugin_scanner.guard.config_source_io import MAX_GUARD_CONFIG_BYTES, GuardConfigSourceError
 from codex_plugin_scanner.guard.mdm import policy as managed_policy_module
 from codex_plugin_scanner.guard.mdm.contracts import MachinePaths
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
@@ -189,6 +190,84 @@ def test_config_reader_parses_the_hashed_capture_after_path_replacement(tmp_path
     replaced = NativePolicySnapshotPublisher._capture_policy_input(path)
     assert replaced.identity != captured.identity
     assert _captured_config_reader(path, inputs={path: replaced}) == {"default_action": "allow"}
+
+
+@pytest.mark.parametrize("location", ["home", "workspace", "legacy-workspace"])
+@pytest.mark.parametrize("damage", ["symlink", "oversized", "unreadable"])
+def test_config_capture_rejection_immediately_revokes_an_ack_during_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, location: str, damage: str
+) -> None:
+    from codex_plugin_scanner.guard import config_source_io
+
+    home, workspace = tmp_path / "home", tmp_path / "workspace"
+    workspace.mkdir()
+    home.mkdir()
+    (home / "config.toml").write_text('default_action = "block"\n', encoding="utf-8")
+    (workspace / ".hol-guard.toml").write_text('sandbox_analysis = "strict"\n', encoding="utf-8")
+    pushes: list[object] = []
+
+    def client(**kwargs: object) -> bytes:
+        pushes.append(kwargs["payload"])
+        return _ack(kwargs["payload"])
+
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(home), status_provider=_status, client_request=client)
+    try:
+        publisher.register_workspace(workspace)
+        publisher._provision_verifier_key()
+        publisher._publish_once()
+        assert publisher.is_ready()
+        assert publisher.current_snapshot_binding() is not None
+        assert len(pushes) == 1
+        if location == "home":
+            path = home / "config.toml"
+        else:
+            name = ".hol-guard.toml" if location == "workspace" else ".ai-plugin-scanner-guard.toml"
+            path = workspace / name
+        if damage == "symlink":
+            outside = tmp_path / "outside.toml"
+            outside.write_text('default_action = "allow"\n', encoding="utf-8")
+            path.unlink(missing_ok=True)
+            try:
+                path.symlink_to(outside)
+            except OSError:
+                pytest.skip("symlink creation requires runner support")
+        elif damage == "oversized":
+            path.write_bytes(b"#" + b"x" * MAX_GUARD_CONFIG_BYTES)
+        else:
+            path.touch(exist_ok=True)
+            original_capture = config_source_io._capture_in_parent
+
+            def unreadable(candidate: Path, directory: int | None):
+                if candidate == path:
+                    raise PermissionError("fixture config read denied")
+                return original_capture(candidate, directory)
+
+            monkeypatch.setattr(config_source_io, "_capture_in_parent", unreadable)
+        # Do not run the observer first: rejection itself must withdraw the old
+        # ACK, even while a previously valid snapshot is still unexpired.
+        publisher._publish_once()
+        assert publisher.last_error == "guardconfigsourceerror"
+        assert not publisher._acked
+        assert not publisher.is_ready()
+        assert publisher.current_snapshot_binding() is None
+        assert len(pushes) == 1
+        with pytest.raises(GuardConfigSourceError):
+            publisher._compiled_effective_policy()
+    finally:
+        publisher.close()
+
+
+def test_config_capture_uses_the_same_size_limit_as_ordinary_loading(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    prefix = b'default_action = "block"\n#'
+    path.write_bytes(prefix + b"x" * (MAX_GUARD_CONFIG_BYTES - len(prefix)))
+    captured = NativePolicySnapshotPublisher._capture_policy_input(path)
+    assert _captured_config_reader(path, inputs={path: captured}) == {"default_action": "block"}
+    assert load_guard_config(tmp_path).default_action == "block"
+    with path.open("ab") as handle:
+        handle.write(b"x")
+    with pytest.raises(GuardConfigSourceError, match="guard_config_too_large"):
+        NativePolicySnapshotPublisher._capture_policy_input(path)
 
 
 @pytest.mark.parametrize("damage", ["deleted", "tampered"])

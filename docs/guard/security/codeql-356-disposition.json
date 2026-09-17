@@ -1,0 +1,329 @@
+{
+  "schema": "hol-guard.codeql-alert-disposition.v1",
+  "alert_number": 356,
+  "scope": "One source-reviewed false-positive alert; no other finding or security gate is declared resolved.",
+  "request": {
+    "alert_number": 356,
+    "dismissed_comment": "9db62e8: authority_key_id hashes a domain plus a generated 32-byte authority key, not a password. It is a continuity ID inside separately HMAC-authenticated records. Production sources use secrets.token_bytes(32) or the validated persisted key.",
+    "dismissed_reason": "false positive",
+    "owner": "hashgraph-online",
+    "repo": "hol-guard",
+    "state": "dismissed"
+  },
+  "response_alert": {
+    "assignees": [],
+    "created_at": "2026-09-17T08:51:59Z",
+    "dismissal_approved_by": null,
+    "dismissed_at": "2026-09-17T17:38:43Z",
+    "dismissed_by": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6068672?v=4",
+      "events_url": "https://api.github.com/users/kantorcodes/events{/privacy}",
+      "followers_url": "https://api.github.com/users/kantorcodes/followers",
+      "following_url": "https://api.github.com/users/kantorcodes/following{/other_user}",
+      "gists_url": "https://api.github.com/users/kantorcodes/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/kantorcodes",
+      "id": 6068672,
+      "login": "kantorcodes",
+      "node_id": "MDQ6VXNlcjYwNjg2NzI=",
+      "organizations_url": "https://api.github.com/users/kantorcodes/orgs",
+      "received_events_url": "https://api.github.com/users/kantorcodes/received_events",
+      "repos_url": "https://api.github.com/users/kantorcodes/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/kantorcodes/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/kantorcodes/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/kantorcodes",
+      "user_view_type": "public"
+    },
+    "dismissed_comment": "9db62e8: authority_key_id hashes a domain plus a generated 32-byte authority key, not a password. It is a continuity ID inside separately HMAC-authenticated records. Production sources use secrets.token_bytes(32) or the validated persisted key.",
+    "dismissed_reason": "false positive",
+    "fixed_at": null,
+    "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/356",
+    "instances_url": "https://api.github.com/repos/hashgraph-online/hol-guard/code-scanning/alerts/356/instances",
+    "most_recent_instance": {
+      "analysis_key": ".github/workflows/codeql.yml:analyze",
+      "category": "/language:python",
+      "classifications": [],
+      "commit_sha": "c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d",
+      "environment": "{\"language\":\"python\"}",
+      "location": {
+        "end_column": 53,
+        "end_line": 83,
+        "path": "src/codex_plugin_scanner/guard/native_command_control_authority.py",
+        "start_column": 27,
+        "start_line": 83
+      },
+      "message": {
+        "text": "Sensitive data (password) is used in a hashing algorithm (SHA256) that is insecure for password hashing, since it is not a computationally expensive hash function.\nSensitive data (password) is used in a hashing algorithm (SHA256) that is insecure for password hashing, since it is not a computationally expensive hash function."
+      },
+      "ref": "refs/pull/2970/merge",
+      "state": "dismissed"
+    },
+    "number": 356,
+    "rule": {
+      "description": "Use of a broken or weak cryptographic hashing algorithm on sensitive data",
+      "full_description": "Using broken or weak cryptographic hashing algorithms can compromise security.",
+      "help": "# Use of a broken or weak cryptographic hashing algorithm on sensitive data\nUsing a broken or weak cryptographic hash function can leave data vulnerable, and should not be used in security related code.\n\nA strong cryptographic hash function should be resistant to:\n\n* pre-image attacks: if you know a hash value `h(x)`, you should not be able to easily find the input `x`.\n* collision attacks: if you know a hash value `h(x)`, you should not be able to easily find a different input `y` with the same hash value `h(x) = h(y)`.\nIn cases with a limited input space, such as for passwords, the hash function also needs to be computationally expensive to be resistant to brute-force attacks. Passwords should also have an unique salt applied before hashing, but that is not considered by this query.\n\nAs an example, both MD5 and SHA-1 are known to be vulnerable to collision attacks.\n\nSince it's OK to use a weak cryptographic hash function in a non-security context, this query only alerts when these are used to hash sensitive data (such as passwords, certificates, usernames).\n\nUse of broken or weak cryptographic algorithms that are not hashing algorithms, is handled by the `py/weak-cryptographic-algorithm` query.\n\n\n## Recommendation\nEnsure that you use a strong, modern cryptographic hash function:\n\n* such as Argon2, scrypt, bcrypt, or PBKDF2 for passwords and other data with limited input space.\n* such as SHA-2, or SHA-3 in other cases.\n\n## Example\nThe following example shows two functions for checking whether the hash of a certificate matches a known value -- to prevent tampering. The first function uses MD5 that is known to be vulnerable to collision attacks. The second function uses SHA-256 that is a strong cryptographic hashing function.\n\n\n```python\nimport hashlib\n\ndef certificate_matches_known_hash_bad(certificate, known_hash):\n    hash = hashlib.md5(certificate).hexdigest() # BAD\n    return hash == known_hash\n\ndef certificate_matches_known_hash_good(certificate, known_hash):\n    hash = hashlib.sha256(certificate).hexdigest() # GOOD\n    return hash == known_hash\n\n```\n\n## Example\nThe following example shows two functions for hashing passwords. The first function uses SHA-256 to hash passwords. Although SHA-256 is a strong cryptographic hash function, it is not suitable for password hashing since it is not computationally expensive.\n\n\n```python\nimport hashlib\n\ndef get_password_hash(password: str, salt: str):\n    return hashlib.sha256(password + salt).hexdigest() # BAD\n\n```\nThe second function uses Argon2 (through the `argon2-cffi` PyPI package), which is a strong password hashing algorithm (and includes a per-password salt by default).\n\n\n```python\nfrom argon2 import PasswordHasher\n\ndef get_initial_hash(password: str):\n    ph = PasswordHasher()\n    return ph.hash(password) # GOOD\n\ndef check_password(password: str, known_hash):\n    ph = PasswordHasher()\n    return ph.verify(known_hash, password) # GOOD\n\n```\n\n## References\n* OWASP: [Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n* Common Weakness Enumeration: [CWE-328](https://cwe.mitre.org/data/definitions/328.html).\n* Common Weakness Enumeration: [CWE-916](https://cwe.mitre.org/data/definitions/916.html).\n",
+      "id": "py/weak-sensitive-data-hashing",
+      "name": "py/weak-sensitive-data-hashing",
+      "security_severity_level": "high",
+      "severity": "warning",
+      "tags": [
+        "external/cwe/cwe-327",
+        "external/cwe/cwe-328",
+        "external/cwe/cwe-916",
+        "security"
+      ]
+    },
+    "state": "dismissed",
+    "tool": {
+      "guid": null,
+      "name": "CodeQL",
+      "version": "2.27.0"
+    },
+    "updated_at": "2026-09-17T17:38:43Z",
+    "url": "https://api.github.com/repos/hashgraph-online/hol-guard/code-scanning/alerts/356"
+  },
+  "response_retention": "Decoded alert object from the successful supported API mutation, with values unchanged; connector telemetry is omitted.",
+  "before_evidence": "codeql-pr-alerts-before.json",
+  "source_correlation": "codeql-pr-alert-correlation.json",
+  "readback": {
+    "source_sha256": "4f1974c2144a79dcc3e1bacf428916183edf910693816289acca9be526f215fb",
+    "source_bytes": 149949,
+    "rows": [
+      {
+        "number": 356,
+        "state": "dismissed",
+        "rule": {
+          "id": "py/weak-sensitive-data-hashing",
+          "name": "py/weak-sensitive-data-hashing",
+          "security_severity_level": "high"
+        },
+        "most_recent_instance": {
+          "analysis_key": ".github/workflows/codeql.yml:analyze",
+          "category": "/language:python",
+          "classifications": [],
+          "commit_sha": "c9859a5b5d04526fa7e663d7c494e442ee4298c4",
+          "environment": "{\"language\":\"python\"}",
+          "location": {
+            "end_column": 53,
+            "end_line": 83,
+            "path": "src/codex_plugin_scanner/guard/native_command_control_authority.py",
+            "start_column": 27,
+            "start_line": 83
+          },
+          "message": {
+            "text": "Sensitive data (password) is used in a hashing algorithm (SHA256) that is insecure for password hashing, since it is not a computationally expensive hash function.\nSensitive data (password) is used in a hashing algorithm (SHA256) that is insecure for password hashing, since it is not a computationally expensive hash function."
+          },
+          "ref": "refs/pull/2954/merge",
+          "state": "dismissed"
+        },
+        "dismissed_at": "2026-09-17T17:38:43Z",
+        "dismissed_reason": "false positive",
+        "dismissed_comment": "9db62e8: authority_key_id hashes a domain plus a generated 32-byte authority key, not a password. It is a continuity ID inside separately HMAC-authenticated records. Production sources use secrets.token_bytes(32) or the validated persisted key.",
+        "updated_at": "2026-09-17T17:38:43Z",
+        "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/356"
+      },
+      {
+        "number": 344,
+        "state": "open",
+        "rule": {
+          "id": "py/path-injection",
+          "name": "py/path-injection",
+          "security_severity_level": "high"
+        },
+        "most_recent_instance": {
+          "analysis_key": ".github/workflows/codeql.yml:analyze",
+          "category": "/language:python",
+          "classifications": [],
+          "commit_sha": "c9859a5b5d04526fa7e663d7c494e442ee4298c4",
+          "environment": "{\"language\":\"python\"}",
+          "location": {
+            "end_column": 18,
+            "end_line": 498,
+            "path": "src/codex_plugin_scanner/guard/config.py",
+            "start_column": 14,
+            "start_line": 498
+          },
+          "message": {
+            "text": "This path depends on a user-provided value.\nThis path depends on a user-provided value."
+          },
+          "ref": "refs/pull/2954/merge",
+          "state": "open"
+        },
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_comment": null,
+        "updated_at": "2026-09-17T04:37:09Z",
+        "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/344"
+      },
+      {
+        "number": 343,
+        "state": "open",
+        "rule": {
+          "id": "py/path-injection",
+          "name": "py/path-injection",
+          "security_severity_level": "high"
+        },
+        "most_recent_instance": {
+          "analysis_key": ".github/workflows/codeql.yml:analyze",
+          "category": "/language:python",
+          "classifications": [],
+          "commit_sha": "c9859a5b5d04526fa7e663d7c494e442ee4298c4",
+          "environment": "{\"language\":\"python\"}",
+          "location": {
+            "end_column": 16,
+            "end_line": 495,
+            "path": "src/codex_plugin_scanner/guard/config.py",
+            "start_column": 12,
+            "start_line": 495
+          },
+          "message": {
+            "text": "This path depends on a user-provided value.\nThis path depends on a user-provided value."
+          },
+          "ref": "refs/pull/2954/merge",
+          "state": "open"
+        },
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_comment": null,
+        "updated_at": "2026-09-17T04:37:09Z",
+        "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/343"
+      },
+      {
+        "number": 289,
+        "state": "open",
+        "rule": {
+          "id": "actions/cache-poisoning/poisonable-step",
+          "name": "actions/cache-poisoning/poisonable-step",
+          "security_severity_level": "high"
+        },
+        "most_recent_instance": {
+          "analysis_key": ".github/workflows/codeql.yml:analyze",
+          "category": "/language:actions",
+          "classifications": [],
+          "commit_sha": "c9859a5b5d04526fa7e663d7c494e442ee4298c4",
+          "environment": "{\"language\":\"actions\"}",
+          "location": {
+            "end_column": 7,
+            "end_line": 754,
+            "path": ".github/workflows/publish.yml",
+            "start_column": 9,
+            "start_line": 725
+          },
+          "message": {
+            "text": "Potential cache poisoning in the context of the default branch due to privilege checkout of untrusted code from needs.build.outputs.source_sha. (workflow_dispatch)."
+          },
+          "ref": "refs/pull/2954/merge",
+          "state": "open"
+        },
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_comment": null,
+        "updated_at": "2026-09-17T04:32:27Z",
+        "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/289"
+      },
+      {
+        "number": 288,
+        "state": "open",
+        "rule": {
+          "id": "actions/cache-poisoning/poisonable-step",
+          "name": "actions/cache-poisoning/poisonable-step",
+          "security_severity_level": "high"
+        },
+        "most_recent_instance": {
+          "analysis_key": ".github/workflows/codeql.yml:analyze",
+          "category": "/language:actions",
+          "classifications": [],
+          "commit_sha": "c9859a5b5d04526fa7e663d7c494e442ee4298c4",
+          "environment": "{\"language\":\"actions\"}",
+          "location": {
+            "end_column": 7,
+            "end_line": 695,
+            "path": ".github/workflows/publish.yml",
+            "start_column": 9,
+            "start_line": 683
+          },
+          "message": {
+            "text": "Potential cache poisoning in the context of the default branch due to privilege checkout of untrusted code from needs.build.outputs.source_sha. (workflow_dispatch)."
+          },
+          "ref": "refs/pull/2954/merge",
+          "state": "open"
+        },
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_comment": null,
+        "updated_at": "2026-09-17T04:32:27Z",
+        "html_url": "https://github.com/hashgraph-online/hol-guard/security/code-scanning/288"
+      }
+    ],
+    "other_preexisting_dismissed_alerts_excluded": 15
+  },
+  "review_basis": [
+    "All production authority_key_id callers pass a generated 32-byte authority key, a validated persisted instance of that key, or the explicit absent-key sentinel.",
+    "Initial creation and recovery use secrets.token_bytes(32); the scoped SecretStore reader rejects invalid decoded key lengths.",
+    "SHA-256 produces a domain-separated continuity identifier inside separately authenticated records; the identifier is not used as a human-password verifier.",
+    "Independent review checked the SARIF source paths, key generation/storage and Python/Rust authenticated consumers before mutation."
+  ],
+  "limitations": [
+    "The REST alert identity is correlated by exact source bytes and unique rule/location; its SARIF fingerprint is not exposed by the REST list.",
+    "An alert disposition is repository-wide. The mutation response names the latest instance in PR2970; its relevant source files are separately verified byte-identical below.",
+    "Config path-injection alerts 343/344 remain open, as do inherited Actions alerts 288/289.",
+    "Existing dismissed alerts were read for verification but were not changed by this operation.",
+    "The inherited legacy credential-fingerprint compatibility limit in store_base.py is separate and remains recorded."
+  ],
+  "latest_instance_source_check": {
+    "commit": "c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d",
+    "files": [
+      {
+        "path": "src/codex_plugin_scanner/guard/native_command_control_authority.py",
+        "bytes": 6276,
+        "sha256": "a3c02ce10f5aa826f126cb8485b900497ebf14526fc9351257c0a5063597ed37",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_command_control_authority_store.py",
+        "bytes": 11164,
+        "sha256": "e1bd20fc6aed1326e26c58cf70c4cc1bcdc7ce4d434e68b306ffcfa706ba1292",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_command_control_binding.py",
+        "bytes": 13914,
+        "sha256": "8bfc29ea477164a9d8f3fb16014d1f2c902c05e7aa346208295e74f46242f86b",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_command_control_projection.py",
+        "bytes": 6821,
+        "sha256": "0fe3ad6ea0268557647a71e890854187390bacb784d1e5c2825d342033345353",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_extension_control_authority.py",
+        "bytes": 62056,
+        "sha256": "33c815b1194bd30c7cced7da22a0594eabb7afa1325c3b390bdf9bc77d962ae8",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_extension_control_authority_support.py",
+        "bytes": 14867,
+        "sha256": "4192976caf0c97949b379c04a27ca1016c504a46a02e074b3f24de2553c76499",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py",
+        "bytes": 9844,
+        "sha256": "19bb41f320ab6bacca840fc8bc96c4052b0fc298129b290a494467568e5ef820",
+        "equals_9db": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base.py",
+        "bytes": 62798,
+        "sha256": "b9e65beb32cb567bbd8ff11582648e2c4d6dc63770f99cb28f61751359ff088f",
+        "equals_9db": true
+      }
+    ]
+  }
+}

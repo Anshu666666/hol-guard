@@ -1,5 +1,11 @@
 # Request-local facts: remaining ownership requirement
 
+The following ownership diagnosis was frozen before the E experiment. The
+[completed E implementation and comparison](rust-performance-mcp-owned-preparation.md)
+now exercises that private owner with actual forwarding. Its 64 cells pass
+parity but do not support general activation; B remains active and RSP-100 OPEN.
+The historical C/D reasoning below is retained.
+
 RSP-100 remains OPEN in the retained runtime. Its original acceptance is:
 "Compute categories/signals once for unchanged exact inputs; recompute after
 any authority/catalog/input change." B still derives categories once for the
@@ -96,7 +102,7 @@ acceptance criteria.
 | Row | Recommended state and exact scope |
 | --- | --- |
 | RSP-098 | DONE for the named source startup/phase/wait measurements. Retain the initial41-cell historical harness-attribution gap and separate installed/qualification requirements. |
-| RSP-100 | OPEN: the retained runtime still derives categories twice; the safe private owner/consumer correction is not implemented or rebaselined. |
+| RSP-100 | OPEN: the retained runtime still derives categories twice. The later E private owner is implemented and rebaselined in its separate completed report, but general activation is not selected. |
 | RSP-103 | DONE for actual optimized source proxy overhead/memory measurement and the scoped native decision. RSP-100 remains separately OPEN; that dependency does not make completed measurements still active. |
 | RSP-104 | DONE for the justified, bounded experimental four-predicate request/reply and identity contract. Catalog hashing and all policy/credential/approval ownership remain in Python. No production native session schema is implied. |
 | RSP-105 | DEFERRED for activation of this tested boundary after its measured no-go. A compiled prototype is integrated with the real source proxy in the explicit benchmark; no selected production kernel or installed activation is delivered. |

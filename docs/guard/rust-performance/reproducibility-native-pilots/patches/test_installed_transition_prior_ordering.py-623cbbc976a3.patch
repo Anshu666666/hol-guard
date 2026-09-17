@@ -1,0 +1,12 @@
+diff --git a/tests/test_installed_transition_prior_ordering.py b/tests/test_installed_transition_prior_ordering.py
+index 79a336b1b6bd056772c018bb0dd42a16e6d9565c..e412b316e868eecf7c4675c1bb986c7c739fc1a3 100644
+--- a/tests/test_installed_transition_prior_ordering.py
++++ b/tests/test_installed_transition_prior_ordering.py
+@@ -140,7 +140,6 @@ def test_missing_prior_download_fails_only_its_independent_required_check(monkey
+     with pytest.raises(RuntimeError, match="installed_artifact_transitions"):
+         builds.main()
+     assert seen == [
+-        "provision_native_qualification_interpreters.py",
+         "qualify_guard_native.py",
+         "verify_native_ollama_install.py",
+         "verify_installed_artifact_transitions.py",

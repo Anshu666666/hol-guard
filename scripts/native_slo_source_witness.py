@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
 
+from scripts.native_slo_edge_diagnostic import capture_native_edge_stages
 from scripts.native_slo_failure import FixtureFailureError
 from scripts.native_slo_native_diagnostic import observe_native_call
 from scripts.native_slo_observation_failure import verdict_evidence
@@ -58,7 +59,7 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
     # The large-source matrix is sequential. This fixture-only wrapper uses
     # the same raw-edge seam as FaultFixture and preserves the real HTTP path.
     # No source bytes or response body are retained in the witness.
-    with patch.object(worker, "_review_raw_hook_native", capture):
+    with capture_native_edge_stages(), patch.object(worker, "_review_raw_hook_native", capture):
         yield
     if (
         len(observations) != 1

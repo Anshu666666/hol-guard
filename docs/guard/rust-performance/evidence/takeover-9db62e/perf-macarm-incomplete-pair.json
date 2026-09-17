@@ -1,0 +1,112 @@
+{
+  "attempted_blocks": 2,
+  "comparison_available": false,
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failed_run": 0,
+  "failures": [
+    {
+      "arm": "baseline",
+      "artifact_sha256": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+      "category": "RuntimeError",
+      "containment_failed": false,
+      "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+      "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "startup_stack": [
+        {
+          "line": 808,
+          "origin": "socket.getfqdn"
+        },
+        {
+          "line": 138,
+          "origin": "http.server.HTTPServer.server_bind"
+        },
+        {
+          "line": 199,
+          "origin": "bounded_http.__init__"
+        },
+        {
+          "line": 662,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 7907,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 329,
+          "origin": "native_slo_session.__init__"
+        },
+        {
+          "line": 358,
+          "origin": "native_slo_daemon_fixture._serve"
+        }
+      ],
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    },
+    {
+      "arm": "candidate",
+      "artifact_sha256": "75133114098e991b0be326defd8cf631e1f3cfcb25a0b3dc96773c4343257835",
+      "case": "cursor.afterShellExecution.benign.256k",
+      "category": "AssertionError",
+      "containment_failed": false,
+      "diagnostic_digest": "5139fc7c19827c03e62d1f3f4d8b0f33acfe384bb36f09a50edd9d89233fd828",
+      "field": "route",
+      "line": 758,
+      "native_call_count": 1,
+      "native_call_diagnostic": {
+        "caller_deadline_valid": true,
+        "caller_expired_after": false,
+        "caller_expired_before": false,
+        "caller_remaining_ms_after": 2966.129,
+        "caller_remaining_ms_before": 2988.799,
+        "capture_context": "native_worker_wrapper",
+        "client_after_state": "absent",
+        "client_before_state": "absent",
+        "client_code_attribution": "unchanged_or_stale",
+        "client_code_changed": false,
+        "elapsed_ms": 22.67,
+        "policy_binding_supplied": true,
+        "policy_generation_valid": true,
+        "policy_mode": "enforce",
+        "publisher_acked": true,
+        "publisher_cache": "captured",
+        "publisher_closed": false,
+        "publisher_error_state": "absent",
+        "publisher_failure_count": 0,
+        "publisher_snapshot_present": true,
+        "publisher_started": true,
+        "schema": "hol-guard.native-call-diagnostic.v1"
+      },
+      "native_completed_call_count": 1,
+      "observed_semantics": {
+        "delivered": {
+          "available": true,
+          "policy_action": "allow",
+          "reason_code": "native_post_tool_unavailable",
+          "reason_code_digest": "e48159e09fe2a1c09a7a46ab9587590a08a018d75db874f40d8e5fceb51b5075"
+        },
+        "native": {
+          "available": false
+        }
+      },
+      "origin": "native_slo_workloads.validate_case",
+      "reason": "qualification_fixture.native_qualification_mismatch",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    }
+  ],
+  "planned_runs": 1,
+  "qualification_complete": false,
+  "schema": "hol-guard.native-incomplete-pair.v1",
+  "unattempted_blocks": 0
+}

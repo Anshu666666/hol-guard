@@ -1,0 +1,144 @@
+{
+  "schema": "hol-guard.config-source-combined-validation.v1",
+  "source_base": "e91193915f82c8f16516f81b1a8ee546b52aa6da",
+  "source_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/config_source_io.py",
+      "sha256": "f5f7ad2a0321ef754971b41e88879f5fcb9b3b7eb2e91d9746ad7de2b0bb1e8d",
+      "bytes": 8575
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/config.py",
+      "sha256": "da65e352e4b207118e0bc8aa671720e55203777fc86e1b06e11930d77243b53e",
+      "bytes": 61034
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+      "sha256": "0017471490ececbf36867c07fb2aa1ec09a6c7a4692602bb9d5e13889ff2ce6e",
+      "bytes": 25125
+    },
+    {
+      "path": "tests/test_guard_config_source_io.py",
+      "sha256": "85f6b593d55ce2e428d33114bde71f32a2b8db5ba279f7c0589ac5824ed38cfa",
+      "bytes": 13854
+    },
+    {
+      "path": "tests/test_native_policy_input_reconciliation.py",
+      "sha256": "3f7530fa5cbbfb518fd4e2544cbb7776bfdca36a87e12d7c01a87bf0b780bdb2",
+      "bytes": 15321
+    }
+  ],
+  "steps": [
+    {
+      "name": "ruff",
+      "command": [
+        "ruff",
+        "check",
+        "src/codex_plugin_scanner/guard/config_source_io.py",
+        "src/codex_plugin_scanner/guard/config.py",
+        "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+        "tests/test_guard_config_source_io.py",
+        "tests/test_native_policy_input_reconciliation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.032,
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "command": [
+        "ruff",
+        "format",
+        "--check",
+        "src/codex_plugin_scanner/guard/config_source_io.py",
+        "src/codex_plugin_scanner/guard/config.py",
+        "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+        "tests/test_guard_config_source_io.py",
+        "tests/test_native_policy_input_reconciliation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.031,
+      "bytes": 26,
+      "sha256": "f114d83b30c5c657ee43a847a45bafccaea255d82673feb87c26d252c61e29c1"
+    },
+    {
+      "name": "tests",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_guard_config_source_io.py",
+        "tests/test_guard_config_paths.py",
+        "tests/test_native_policy_input_reconciliation.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 13.71,
+      "bytes": 190,
+      "sha256": "92ab9aba4670ae855070421399d9edf87f1906ca6030dfc5daf2de34cf2606e2"
+    },
+    {
+      "name": "types",
+      "command": [
+        "basedpyright",
+        "src/codex_plugin_scanner/guard/config_source_io.py",
+        "src/codex_plugin_scanner/guard/config.py",
+        "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+        "--outputjson"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.546,
+      "bytes": 47998,
+      "sha256": "aa8cdf3e52813a366b560fc69eaf479fdf86654deee7b8fb46485575d279a04b",
+      "summary": {
+        "filesAnalyzed": 3,
+        "errorCount": 0,
+        "warningCount": 80,
+        "informationCount": 0,
+        "timeInSec": 4.205
+      }
+    }
+  ],
+  "platform": "posix",
+  "windows_runtime_verified": false,
+  "scope": "Shared reader, actual config loading and actual publisher renewal/readiness rejection; one Windows-only handle-sharing test requires hosted execution.",
+  "validation_result": {
+    "passed": 88,
+    "skipped": 1,
+    "pytest_seconds": 6.64,
+    "type_errors": 0,
+    "type_warnings": 80,
+    "type_files": 3
+  },
+  "counts_overlap": "The shared-reader 67-test validation and the foundation 67-test validation overlap this combined suite; do not add them together.",
+  "earlier_attempts": [
+    {
+      "result": "9 failed, 12 passed in 4.31s",
+      "kind": "test_assertion_error",
+      "reason": "The new assertion expected GuardConfigSourceError but the existing publisher diagnostic normalizes class names to lowercase guardconfigsourceerror. Only that test expectation was corrected.",
+      "complete_raw_log_available": false,
+      "tool_output_truncated": true,
+      "representative_observed_error": "AssertionError: assert 'guardconfigsourceerror' == 'GuardConfigSourceError'"
+    },
+    {
+      "result": "1 failed, 14 passed, 6 errors in 7.41s",
+      "kind": "environment_failure",
+      "reason": "SQLite reported database or disk is full during GuardStore fixture setup; subsequent pytest temporary-directory creation failed. No product fallback or deadline changed. Retried only after coordinated storage recovery, at the unchanged /tmp location.",
+      "complete_raw_log_available": true,
+      "raw_log": {
+        "path": "evidence/config-source-publisher-disk-full.log",
+        "sha256": "03d251c4df9e09868e35e020c016dda071fe920a9219ccf3720984e4893b1ccc",
+        "bytes": 46914
+      }
+    }
+  ],
+  "independent_source_review": {
+    "result": "No remaining source blocker after dangling-parent classification and immediate ACK withdrawal corrections. Windows behavior still requires actual Windows execution.",
+    "reviewed_files": {
+      "src/codex_plugin_scanner/guard/config_source_io.py": "f5f7ad2a0321ef754971b41e88879f5fcb9b3b7eb2e91d9746ad7de2b0bb1e8d",
+      "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py": "0017471490ececbf36867c07fb2aa1ec09a6c7a4692602bb9d5e13889ff2ce6e",
+      "tests/test_native_policy_input_reconciliation.py": "3f7530fa5cbbfb518fd4e2544cbb7776bfdca36a87e12d7c01a87bf0b780bdb2"
+    }
+  }
+}

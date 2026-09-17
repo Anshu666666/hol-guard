@@ -1,0 +1,73 @@
+{
+  "attempted_blocks": 2,
+  "comparison_available": false,
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failed_run": 0,
+  "failures": [
+    {
+      "arm": "baseline",
+      "artifact_sha256": "be8e062a4491e6f2b95594ab705f84005fe1707cda134f6545e8b15328c4d37c",
+      "category": "RuntimeError",
+      "containment_failed": false,
+      "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+      "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "startup_stack": [
+        {
+          "line": 808,
+          "origin": "socket.getfqdn"
+        },
+        {
+          "line": 138,
+          "origin": "http.server.HTTPServer.server_bind"
+        },
+        {
+          "line": 199,
+          "origin": "bounded_http.__init__"
+        },
+        {
+          "line": 662,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 7907,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 329,
+          "origin": "native_slo_session.__init__"
+        },
+        {
+          "line": 358,
+          "origin": "native_slo_daemon_fixture._serve"
+        }
+      ],
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    },
+    {
+      "arm": "candidate",
+      "artifact_sha256": "083c256152a5293a3896e5875b843f61a7b4e039b1bea0140adb7cf55ff87ade",
+      "category": "RuntimeError",
+      "containment_failed": false,
+      "diagnostic_digest": "81bbb4f24d473bde070c1f20bebbcc946a573697af49c6ec2119b9303a601cc7",
+      "line": 58,
+      "origin": "hook_process_runner_lifecycle.require_initial_capacity",
+      "reason": "qualification_fixture.unclassified_failure",
+      "return_code": 1,
+      "run": 0,
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "timed_out": false,
+      "worker_limit_exceeded": false
+    }
+  ],
+  "planned_runs": 1,
+  "qualification_complete": false,
+  "schema": "hol-guard.native-incomplete-pair.v1",
+  "unattempted_blocks": 0
+}

@@ -13,6 +13,7 @@ from contextlib import ExitStack
 from typing import Any, cast
 from unittest.mock import patch
 
+from scripts.native_slo_edge_diagnostic import capture_native_edge_stages
 from scripts.native_slo_native_diagnostic import observe_native_call
 
 
@@ -55,6 +56,7 @@ class FaultFixture:
 
         worker = self.session.daemon._server.hook_worker
         original = worker._review_raw_hook_native
+        self.stack.enter_context(capture_native_edge_stages())
 
         def capture(**kwargs: object) -> object:
             with self.capture_lock:

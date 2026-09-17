@@ -25,6 +25,7 @@ from .action_lattice import coerce_guard_action, normalize_guard_action
 from .approval_gate import ApprovalGateGrant, public_config, require_settings_write
 from .config_mutation import notify_native_policy_mutation, record_posture_change_if_needed
 from .config_preset_support import apply_named_posture_harness_policy
+from .config_source_io import capture_guard_config
 from .guard_home_state import database_has_custom_extension_state
 from .mdm.contracts import ManagedPolicy, ManagedPolicyState
 from .mdm.policy import apply_managed_policy, fail_closed_managed_policy, load_managed_policy
@@ -492,14 +493,8 @@ def resolve_guard_home_for_user_home(user_home: Path) -> Path:
 
 
 def _read_toml(path: Path) -> dict[str, object]:
-    if not path.is_file():
-        return {}
-    try:
-        with path.open("rb") as handle:
-            payload = tomllib.load(handle)
-        return payload if isinstance(payload, dict) else {}
-    except OSError:
-        return {}
+    payload = tomllib.loads(capture_guard_config(path).content.decode("utf-8"))
+    return payload if isinstance(payload, dict) else {}
 
 
 def _coerce_loaded_receipt_redaction_level(value: object) -> str:

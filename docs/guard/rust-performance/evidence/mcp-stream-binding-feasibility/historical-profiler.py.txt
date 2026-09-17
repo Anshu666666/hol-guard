@@ -1,0 +1,107 @@
+from __future__ import annotations
+
+import gc
+import hashlib
+import json
+import platform
+import sys
+import time
+import tracemalloc
+from datetime import datetime, timezone
+from pathlib import Path
+
+repo = Path('/workspace/scratch/c25672eb4c10/hol-guard-mcp-binding')
+sys.path[:0] = [str(repo / 'scripts'), str(repo / 'src')]
+import guard_mcp_owned_preparation_pilot as original
+from profile_guard_mcp_session import fixture_arguments
+
+
+class Compare:
+    __slots__ = ('reference', 'position', 'same', 'writes', 'maximum_chunk')
+
+    def __init__(self, reference):
+        assert type(reference) is bytes
+        self.reference = reference
+        self.position = 0
+        self.same = True
+        self.writes = 0
+        self.maximum_chunk = 0
+
+    def write(self, value):
+        assert type(value) is bytes
+        end = self.position + len(value)
+        if end > original.MAX_BINDING_BYTES:
+            raise ValueError('owned_preparation_binding_limit')
+        self.same = self.reference.startswith(value, self.position, end) and self.same
+        self.position = end
+        self.writes += 1
+        self.maximum_chunk = max(self.maximum_chunk, len(value))
+        return len(value)
+
+
+def compare(value, reference, topology=False):
+    output = Compare(reference)
+    encoder = original._ExactPickler(output, protocol=4)
+    encoder.fast = True
+    encoder.dump(value)
+    result = output.same and output.position == len(reference)
+    if topology:
+        return {'exact_match': result, 'write_calls': output.writes,
+                'largest_pickler_chunk_bytes': output.maximum_chunk,
+                'serialized_bytes': output.position}
+    return result
+
+
+def measure(function):
+    gc.collect()
+    tracemalloc.start()
+    before = tracemalloc.get_traced_memory()[0]
+    result = function()
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert result
+    return {'traced_current_delta_bytes': current-before,
+            'traced_peak_delta_bytes': peak-before}
+
+
+shapes = [(1024, 'ascii'), (131072, 'ascii')]
+shapes += [(4193792, kind) for kind in ('ascii', 'unicode', 'dense-integers', 'nested-records')]
+report = {
+    'schema': 'hol-guard-mcp-stream-binding-feasibility.v1',
+    'started_utc': datetime.now(timezone.utc).isoformat(),
+    'python': platform.python_version(), 'implementation': platform.python_implementation(),
+    'source_commit': 'bfc124afbb5fe74a29c68c0bf6a0f23fd083f5ca',
+    'original_adapter_sha256': hashlib.sha256((repo/'scripts/guard_mcp_owned_preparation_pilot.py').read_bytes()).hexdigest(),
+    'profiler_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    'scope': 'synthetic_single_binding_comparison_allocation_only_not_route_or_acceptance',
+    'retained_source_and_reference_allocations_excluded': True,
+    'measurement_lock': 'POSIX_flock',
+    'cases': [],
+}
+target = Path('/dev/shm/hol-guard-takeover/mcp-stream-feasibility.json')
+if target.exists():
+    raise RuntimeError('refuse_overwrite')
+for size, kind in shapes:
+    message = {'jsonrpc':'2.0', 'id':7, 'method':'tools/call',
+               'params': {'name':'safe_echo', 'arguments':fixture_arguments(size, kind, 7)}}
+    owned = original.calls._copy_strict_json(message, bytearray(), [])
+    reference = original._exact_binding(owned)
+    topology = compare(message, reference, True)
+    assert topology['exact_match']
+    row = {'payload_bytes':size, 'payload_kind':kind, 'binding_bytes':len(reference),
+           'pickler_output':topology, 'attempts':[]}
+    funcs = {'E': lambda: original._exact_binding(message) == reference,
+             'stream_prototype': lambda: compare(message, reference)}
+    for repeat in range(3):
+        for arm in ('E', 'stream_prototype') if repeat % 2 == 0 else ('stream_prototype', 'E'):
+            observed = measure(funcs[arm])
+            started_cpu = time.process_time_ns()
+            assert funcs[arm]()
+            observed['uninstrumented_one_check_cpu_ns'] = time.process_time_ns()-started_cpu
+            row['attempts'].append({'repeat': repeat, 'arm': arm, **observed})
+    report['cases'].append(row)
+    target.write_text(json.dumps(report, indent=2)+'\n')
+    print(json.dumps({'kind':kind, 'size':size, 'topology':topology, 'attempts':row['attempts']}), flush=True)
+    del message, owned, reference
+report['finished_utc'] = datetime.now(timezone.utc).isoformat()
+target.write_text(json.dumps(report, indent=2)+'\n')

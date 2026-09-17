@@ -1,0 +1,316 @@
+{
+  "source_commit": "d4e13547f0e25f66f32db14012b14c0fad0abf4f",
+  "source_tree": "0a9ddfc0c82a0a9387940064d64c5fcd8c495f0d",
+  "python_files": 26,
+  "steps": [
+    {
+      "name": "ruff",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "ci/native_runtime/probe_installed_offline_secrets.py",
+        "scripts/bench_claude_native_launcher_pilot.py",
+        "scripts/ci/native_loopback_lookup.py",
+        "scripts/compare_guard_mcp_owned_preparation.py",
+        "scripts/guard_mcp_owned_preparation_pilot.py",
+        "scripts/native_slo_capacity.py",
+        "scripts/native_slo_capacity_diagnostic.py",
+        "scripts/native_slo_edge_diagnostic.py",
+        "scripts/native_slo_faults.py",
+        "scripts/native_slo_native_diagnostic.py",
+        "scripts/native_slo_priority_launchers.py",
+        "scripts/native_slo_session.py",
+        "scripts/native_slo_source_witness.py",
+        "scripts/profile_guard_mcp_session.py",
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+        "src/codex_plugin_scanner/guard/proxy/framing.py",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "tests/test_ci_pytest_shard.py",
+        "tests/test_claude_native_launcher_probe.py",
+        "tests/test_installed_offline_secrets_probe.py",
+        "tests/test_mcp_owned_preparation_pilot.py",
+        "tests/test_mcp_request_risk_facts.py",
+        "tests/test_native_loopback_lookup.py",
+        "tests/test_native_slo_capacity_diagnostic.py",
+        "tests/test_native_slo_edge_diagnostic.py",
+        "tests/test_native_slo_priority_launchers.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.087,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "log_bytes": 19
+    },
+    {
+      "name": "format",
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "ci/native_runtime/probe_installed_offline_secrets.py",
+        "scripts/bench_claude_native_launcher_pilot.py",
+        "scripts/ci/native_loopback_lookup.py",
+        "scripts/compare_guard_mcp_owned_preparation.py",
+        "scripts/guard_mcp_owned_preparation_pilot.py",
+        "scripts/native_slo_capacity.py",
+        "scripts/native_slo_capacity_diagnostic.py",
+        "scripts/native_slo_edge_diagnostic.py",
+        "scripts/native_slo_faults.py",
+        "scripts/native_slo_native_diagnostic.py",
+        "scripts/native_slo_priority_launchers.py",
+        "scripts/native_slo_session.py",
+        "scripts/native_slo_source_witness.py",
+        "scripts/profile_guard_mcp_session.py",
+        "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+        "src/codex_plugin_scanner/guard/proxy/framing.py",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "tests/test_ci_pytest_shard.py",
+        "tests/test_claude_native_launcher_probe.py",
+        "tests/test_installed_offline_secrets_probe.py",
+        "tests/test_mcp_owned_preparation_pilot.py",
+        "tests/test_mcp_request_risk_facts.py",
+        "tests/test_native_loopback_lookup.py",
+        "tests/test_native_slo_capacity_diagnostic.py",
+        "tests/test_native_slo_edge_diagnostic.py",
+        "tests/test_native_slo_priority_launchers.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.039,
+      "log_sha256": "cdd24684b33e5200a213c89093e8da4cb81a0de0085a4684d20923e852610123",
+      "log_bytes": 27
+    },
+    {
+      "name": "integration",
+      "argv": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_ci_pytest_shard.py",
+        "tests/test_claude_native_launcher_probe.py",
+        "tests/test_claude_native_launcher_builder.py",
+        "tests/test_installed_offline_secrets_probe.py",
+        "tests/test_mcp_owned_preparation_pilot.py",
+        "tests/test_mcp_request_risk_facts.py",
+        "tests/test_mcp_framing_bounds.py",
+        "tests/test_native_loopback_lookup.py",
+        "tests/test_native_slo_capacity_diagnostic.py",
+        "tests/test_native_slo_edge_diagnostic.py",
+        "tests/test_native_slo_native_diagnostic.py",
+        "tests/test_native_slo_priority_launchers.py",
+        "tests/test_native_slo_source_witness.py",
+        "tests/test_native_slo_faults.py",
+        "tests/test_native_slo_corpus_run.py",
+        "tests/test_native_slo_capacity_routes.py",
+        "tests/test_native_slo_batch.py"
+      ],
+      "exit_code": 0,
+      "seconds": 61.987,
+      "log_sha256": "644b17086252a6de96ce781af226057b3c01261b2b265b9741dbfd5588521fb0",
+      "log_bytes": 421
+    },
+    {
+      "name": "workflow-policy",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/check_privileged_workflows.py"
+      ],
+      "exit_code": 0,
+      "seconds": 12.399,
+      "log_sha256": "5168fa47936c3ea1ac51145f6bfd3c227436a0b295f33465729936332782e58a",
+      "log_bytes": 35
+    },
+    {
+      "name": "production-types",
+      "argv": [
+        ".venv/bin/basedpyright",
+        "--outputjson"
+      ],
+      "exit_code": 0,
+      "seconds": 151.631,
+      "log_sha256": "ccceb475651833e4f9691cbaea0055ba7442ec057c0b6ffde83cb3f78715a78a",
+      "log_bytes": 12321684,
+      "summary": {
+        "filesAnalyzed": 1253,
+        "errorCount": 0,
+        "warningCount": 20232,
+        "informationCount": 0,
+        "timeInSec": 149.889
+      }
+    },
+    {
+      "name": "authority-ownership",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/ci/rust_authority_ownership_gate.py",
+        "--base-ref",
+        "4b89e0d2d496a85f04922b2e019a4aea15326bb9"
+      ],
+      "exit_code": 0,
+      "seconds": 11.957,
+      "log_sha256": "c6c9f8ed842f00202ccd0fd832d65394fd1438e6ab4f21942ebd5f4c19266c95",
+      "log_bytes": 161884
+    },
+    {
+      "name": "semantic-ownership",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/ci/python_hook_semantic_callgraph_gate.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.305,
+      "log_sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab",
+      "log_bytes": 99
+    },
+    {
+      "name": "io-ownership",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/ci/rust_io_ownership_gate.py"
+      ],
+      "exit_code": 0,
+      "seconds": 45.17,
+      "log_sha256": "850363895cbcdff4800794bbc2dd5e87b84e3fb778a4cb0f416ea804dadb1ce6",
+      "log_bytes": 33571
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+        "HEAD"
+      ],
+      "exit_code": 0,
+      "seconds": 0.034,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log_bytes": 0
+    }
+  ],
+  "all_passed": true,
+  "schema": "hol-guard.hosted-integration-validation.v1",
+  "scope": "Local combined validation before the later CodeQL extractor correction; no hosted or release qualification credit.",
+  "original_manifest": {
+    "sha256": "4daea649a150810e67f79888e2c69c00eda98e233a8002be2f6d1d6ca94c0a9e",
+    "bytes": 7041
+  },
+  "command_normalization": "Only the repository-specific absolute executable prefix is replaced by .venv/bin; relative arguments are unchanged.",
+  "measurement_lock": "Each command independently acquired the same exclusive shared validation/measurement lock; wall seconds include acquisition delay.",
+  "tests": {
+    "passed": 317,
+    "pytest_seconds": 52.59,
+    "distinct_from_component_counts": false
+  },
+  "source_files": {
+    "ci/native_runtime/probe_installed_offline_secrets.py": {
+      "sha256": "94a54d6b6dfa5af365c61e823ed759f23f41ed4808becf81e10a0b9c73077416",
+      "bytes": 40538
+    },
+    "scripts/bench_claude_native_launcher_pilot.py": {
+      "sha256": "085994322a9f8331579507ee7bd8e14be8e42f5014e3be96e94aac527df975af",
+      "bytes": 14773
+    },
+    "scripts/ci/native_loopback_lookup.py": {
+      "sha256": "ec2e9f30fd0eddc80c52e03fe09604b576319edd21a8ca66836b9929d841d7fc",
+      "bytes": 20750
+    },
+    "scripts/compare_guard_mcp_owned_preparation.py": {
+      "sha256": "017fcf38a1356b7dfb15e61b6dd376afdcf732eb331f23bfb50d136fbeb279d2",
+      "bytes": 9678
+    },
+    "scripts/guard_mcp_owned_preparation_pilot.py": {
+      "sha256": "2dd0cd0bd2ecf7cd6b9c4bdd5993443918f7a2af18ae46634cb460c828f814f9",
+      "bytes": 11712
+    },
+    "scripts/native_slo_capacity.py": {
+      "sha256": "8558a2dc6ba6d19ca1188a40ee34747c7334d5f130ca14f83ea294f915966cfa",
+      "bytes": 13510
+    },
+    "scripts/native_slo_capacity_diagnostic.py": {
+      "sha256": "dfa2750d430da224e07bf44d0bf6ed504d5882dd8f521dda74740f73df2161ae",
+      "bytes": 7216
+    },
+    "scripts/native_slo_edge_diagnostic.py": {
+      "sha256": "e91bb4942939eb70a30a82c695b23354bfb6e90af9999e77eea3ea6fb95a21d1",
+      "bytes": 6422
+    },
+    "scripts/native_slo_faults.py": {
+      "sha256": "fd11b6aad24d7fe6524aa3af8039d91db6e695f09fc3f9945788646f92056de5",
+      "bytes": 7900
+    },
+    "scripts/native_slo_native_diagnostic.py": {
+      "sha256": "c9763f0a8dc3b6d055c8a99ac2a246117d37847358d4c70689ff460ccb9a5cff",
+      "bytes": 6904
+    },
+    "scripts/native_slo_priority_launchers.py": {
+      "sha256": "98b59f50d86cefadde73487dba9c9ec4dc3edb2a170838cb8326c83f72e56f6a",
+      "bytes": 21318
+    },
+    "scripts/native_slo_session.py": {
+      "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72",
+      "bytes": 21955
+    },
+    "scripts/native_slo_source_witness.py": {
+      "sha256": "bc391412e7f45b7670449179bc4e2e46add14c749f06f180a351b0fbc8f8f3ab",
+      "bytes": 5487
+    },
+    "scripts/profile_guard_mcp_session.py": {
+      "sha256": "6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932",
+      "bytes": 47395
+    },
+    "src/codex_plugin_scanner/guard/mcp_tool_calls.py": {
+      "sha256": "aa0457b7f60c27277de535c48b5e2443eada1ad8b44a90ddcbc7b4e7dc82f5ad",
+      "bytes": 69353
+    },
+    "src/codex_plugin_scanner/guard/proxy/framing.py": {
+      "sha256": "334022216568d3c78a1a8196ff806a07058d66c47224cd1dd840f6d522c60092",
+      "bytes": 22231
+    },
+    "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": {
+      "sha256": "0c825302fecb5dce5fc66b9f9be0f7e81f08ddf41d99526c1706df3fc4b06a88",
+      "bytes": 173482
+    },
+    "tests/test_ci_pytest_shard.py": {
+      "sha256": "011631f0aeb041426555912638fa1656b6f5e9c725e2f03c11c701e182851e6d",
+      "bytes": 4913
+    },
+    "tests/test_claude_native_launcher_probe.py": {
+      "sha256": "de92c33e82bd4021c555ef840cf67ab409d124caf34d473567dd33703d3bd5f2",
+      "bytes": 4846
+    },
+    "tests/test_installed_offline_secrets_probe.py": {
+      "sha256": "e850adaf9ca317532199e3a5dcfb1648ef0184a3948504bd1fb2b8e48181f99d",
+      "bytes": 23928
+    },
+    "tests/test_mcp_owned_preparation_pilot.py": {
+      "sha256": "e4a1013dc16224dcc9b468e436ec6af55f6c62d118b29dcbdc5cc148d1cf9cbe",
+      "bytes": 23265
+    },
+    "tests/test_mcp_request_risk_facts.py": {
+      "sha256": "5d1b8584d9dcc4f008bdd458b48be2566e69a76f8a770a47b86578ce8c081219",
+      "bytes": 17738
+    },
+    "tests/test_native_loopback_lookup.py": {
+      "sha256": "8264b2a7e1e105126d68692e9c00a19098795195d2d72257ea2ce9c2094f7ff2",
+      "bytes": 15342
+    },
+    "tests/test_native_slo_capacity_diagnostic.py": {
+      "sha256": "52588ba4c5be9fc071b53fbecca04e48e67ed96ad5bdedb307f96495631c8bb5",
+      "bytes": 10777
+    },
+    "tests/test_native_slo_edge_diagnostic.py": {
+      "sha256": "e00a319562c8e236eb317f7860571cda71e498c38e7c151aa5df75a15e55dcbf",
+      "bytes": 8865
+    },
+    "tests/test_native_slo_priority_launchers.py": {
+      "sha256": "c630c1db32dd52cccda506c1ae763f886336fc0802eb23dddf4406ba4a03d245",
+      "bytes": 16932
+    }
+  },
+  "limitations": [
+    "Focused tests overlap previously reported component tests; the counts must not be added.",
+    "The full production type check reports 20,232 nonfatal warnings and zero errors; warnings were not filtered.",
+    "No native daemon transport or macOS resolver behavior is established by local source checks.",
+    "The original logs are SHA-256 bound here; this record retains their identities and decoded results, not their full contents."
+  ]
+}

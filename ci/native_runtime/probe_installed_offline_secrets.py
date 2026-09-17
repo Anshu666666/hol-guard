@@ -388,6 +388,11 @@ def _write_files(root: Path, files: dict[str, bytes]) -> None:
         target.write_bytes(content)
 
 
+def _links_fixture(line: bytes) -> dict[str, bytes]:
+    # NUL remains a Windows device name even with a filename extension.
+    return {"original.ts": line, "invalid.ts": b"\xff\xfe", "binary_nul.ts": b"\0TOKEN=ordinary"}
+
+
 def _validate_public(
     public: object,
     *,
@@ -501,15 +506,43 @@ class Probe:
 
     def git(self, root: Path, *arguments: str) -> str:
         # Repository metadata is local test input; do not retain its output.
-        result = subprocess.run(
-            ["git", "-C", str(root), *arguments],
-            cwd=self.root,
-            env=_environment(),
-            capture_output=True,
-            check=False,
-            timeout=20,
-        )
-        _require(result.returncode == 0, "fixture_git_setup")
+        operation = arguments[0] if arguments and arguments[0] in {"init", "config", "add", "commit"} else "other"
+        row: dict[str, object] = {
+            "case": "fixture_git_setup",
+            "stage": "fixture_setup",
+            "operation": operation,
+            "fixture": root.name if root.name in {"rich", "bounds", "many", "history", "links"} else "other",
+            "status": "failed",
+        }
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(root), *arguments],
+                cwd=self.root,
+                env=_environment(),
+                capture_output=True,
+                check=False,
+                timeout=20,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            row.update(error_type=type(error).__name__, reason="fixture_git_setup")
+            self.cases.append(row)
+            self.checkpoint()
+            raise ProbeError("fixture_git_setup") from None
+        if result.returncode != 0:
+            row.update(
+                exit_code=result.returncode,
+                reason="fixture_git_setup",
+                stdout_bytes=len(result.stdout),
+                stderr_bytes=len(result.stderr),
+                stdout_sha256=_digest(result.stdout[:_MAX_OUTPUT]),
+                stderr_sha256=_digest(result.stderr[:_MAX_OUTPUT]),
+                digest_scope="complete"
+                if max(len(result.stdout), len(result.stderr)) <= _MAX_OUTPUT
+                else "bounded_prefix",
+            )
+            self.cases.append(row)
+            self.checkpoint()
+            raise ProbeError("fixture_git_setup")
         return result.stdout.decode().strip()
 
     def repository(self, root: Path, files: dict[str, bytes]) -> None:
@@ -784,7 +817,7 @@ def _exercise(probe: Probe, wheel: Path, source_sha: str) -> None:
     probe.checkpoint()
 
     links = probe.root / "links"
-    probe.repository(links, {"original.ts": line, "invalid.ts": b"\xff\xfe", "nul.ts": b"\0TOKEN=ordinary"})
+    probe.repository(links, _links_fixture(line))
     link_expected = [("github-token", "original.ts", 1)]
     files = 3
     for name, operation in (
@@ -886,23 +919,35 @@ def main() -> int:
         os.replace(temporary, destination)
 
     checkpoint()
+    failure_stage = "initial_attestation"
     try:
         identity, launchers = _attest(arguments.wheel.resolve(), arguments.source_sha)
         receipt["identity"] = identity
+        failure_stage = "fixture_setup"
         with tempfile.TemporaryDirectory(prefix="guard-installed-secrets-") as temporary:
             probe = Probe(launchers, Path(temporary).resolve(), checkpoint)
             receipt["cases"] = probe.cases
+            failure_stage = "exercise"
             _exercise(probe, arguments.wheel.resolve(), arguments.source_sha)
+            failure_stage = "final_attestation"
             final_identity, _ = _attest(arguments.wheel.resolve(), arguments.source_sha)
             _require(final_identity == identity, "installed_artifact_changed_during_probe")
+            failure_stage = "fixture_cleanup"
         receipt.update(run_complete=True, status="passed", finished_utc=datetime.now(UTC).isoformat())
     except Exception as error:
-        if receipt["cases"]:
-            receipt["cases"][-1]["status"] = "failed"
+        reason = str(error) if isinstance(error, ProbeError) else "unexpected_probe_error"
+        cases = receipt["cases"]
+        if cases and cases[-1]["status"] in {"running", "command_completed"}:
+            cases[-1].update(status="failed", reason=reason)
+        elif not cases or cases[-1]["status"] != "failed":
+            cases.append(
+                {"case": "probe_" + failure_stage, "stage": failure_stage, "status": "failed", "reason": reason}
+            )
         receipt.update(
             status="failed",
-            reason=str(error) if isinstance(error, ProbeError) else "unexpected_probe_error",
+            reason=reason,
             error_type=type(error).__name__,
+            failure_stage=failure_stage,
         )
         checkpoint()
         print("installed_offline_secrets_failed", file=sys.stderr)

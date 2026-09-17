@@ -70,6 +70,40 @@ as unsupported full-source coverage and excludes it from successful content-revi
 timings. Passing Windows inline hooks or package identity checks does not close
 that gap. Direct pathname opening is not an acceptable performance workaround.
 
+## Guard TOML capture and publication readiness
+
+Ordinary loading and native publication now share the same
+[config-source reader](../security/config-source-confinement.md). It accepts only
+`config.toml`, `.ai-plugin-scanner-guard.toml` and `.hol-guard.toml`, resolves an
+intentional directory alias at the scope boundary, then retains directory and
+regular-file identity while reading. POSIX uses descriptor-relative no-follow
+opens; Windows uses the existing no-reparse directory handles and locked file
+descriptor. Unsupported secure access has no pathname fallback.
+
+Missing files or workspace directories still add no override. Unsafe or
+inaccessible existing sources raise `GuardConfigSourceError`; they cannot silently
+become default policy. Linked, non-regular, changed or incompletely read sources
+are rejected. Malformed TOML and invalid UTF-8 still raise. Logical path spelling,
+config precedence, blocked workspace keys and managed-policy application remain
+unchanged; no new owner/permission/ACL condition is added to ordinary config files.
+The reader does not authenticate a workspace or prevent an already authorized
+actor from changing it before capture starts.
+
+The inclusive **1,048,576-byte (1 MiB)** ceiling is a new input acceptance bound
+for ordinary Guard TOML, which previously had no byte limit. It matches the
+existing safe-file and publisher capture ceilings. Oversize or growing sources
+are rejected without parsing a truncated prefix or using an unbounded fallback.
+This security bound does not revise any frozen performance threshold.
+
+The [publisher](../security/config-source-publisher-confinement.md) hashes and
+parses those same captured bytes. A home or either workspace config rejection
+clears `_acked` under its condition lock and notifies waiters before re-raising,
+even when no ordinary observer ran and the previous acknowledgement has not
+expired. A generic transient publication failure still has its separate existing
+handling. No weaker default or new client push is generated. Nine publisher-path
+regressions exercise readiness withdrawal after linked, oversized or unreadable
+sources; actual Windows and installed qualification remain unproved.
+
 ## Limits and authority
 
 | Existing boundary | Limit or rule |
@@ -225,11 +259,32 @@ response. External MCP framing stays at 4 MiB. Python keeps normalization, curre
 policy, catalog and approval authority, credentials and exact forwarding. The
 full source-proxy comparison includes IPC and helper CPU and fails the original
 selection gate; the helper is inactive. RSP-100 remains open because production B
-still derives categories for approval identity and fresh policy separately. A
-private owned-generation implementation attempt is active after this source
-cutoff, with no claimed result. Any prepared lifetime must retain public copy/match
-fallback, callback mutation ordering and binding to the exact forwarded request;
-no cache becomes authority through this experiment.
+still derives categories for approval identity and fresh policy separately. The completed
+[owned-preparation E experiment](../rust-performance-mcp-owned-preparation.md)
+records one category tuple per selected immutable lifetime and test coverage for
+current policy/browser/store/claim composition and public callback/fallback
+behavior. Within those tested cases it validates and writes the same encoded
+bytes after the final quiet barrier.
+Its historical 64 measured cells and 32 public pairs pass their selected
+correctness scope; they do not establish general pre-forwarding mutation safety.
+Later independent review found E selects its final protected writer from mutable
+method text. The initial F fork retained that selector: actual child-pipe tests
+showed a changed plain method reaching the child and a hostile method invoking
+its callback. Frozen E source, tests and campaign bytes remain unchanged; the
+previous broad claim that every pre-forwarding change fails closed is withdrawn.
+Unsupported, package and busy paths still use B. General E activation was also
+rejected on measured benefit/regression and memory evidence. Positive narrow
+observations remain historical; B stays default and RSP-100 remains OPEN.
+
+The separate [F source experiment](../mcp-streaming-preparation-pilot-boundary.md)
+selects the admitted frame by object identity and then retains complete binding
+and actual-wire equality checks. Its corrected 44-test gate and finite source
+review cover the two selector regressions, real nested normal/error restoration
+and unrelated replies; the 96 authority comparisons are included in that count.
+The earlier failures are retained. F's streaming comparison has only isolated
+prototype allocation observations and source tests, with no route campaign,
+installed/platform qualification or activation. E and F remain inactive, and no
+private prepared lifetime is saved as authority across later preparations.
 
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
@@ -256,8 +311,13 @@ The anonymous sealed input handoff does not put the request in a persistent file
 or argv. Detailed HTTP
 framing and timeout conformance limits are recorded in the [pilot report](claude-native-launcher-pilot.md).
 Component and later focused integration checks pass in their recorded scopes.
-Actual installed wheel parity, native route conservation and paired benefit are
-pending. No default launcher or signed Desktop registration selects this pilot.
+The actual [9db Linux installed receipt](evidence/takeover-9db62e/perf-linux-installed-claude-launcher-pilot.json)
+binds its wheel/runtime and completes 30 Python plus 30 native PreToolUse launches
+with exact contracts and native-resident routes. The next Python PostToolUse cell
+attempts 11 and completes ten before an unexpected delivered reason. Zero full
+blocks complete; all scope/qualification/activation flags remain false. This is
+partial installed evidence, with complete post/fault/benefit gates still missing.
+No default launcher or signed Desktop registration selects the pilot.
 
 ## Source ownership and proof
 
@@ -271,10 +331,38 @@ Current test suites cover native contracts, malformed/source mutation, separate
 native approval APIs and ordinary local review reuse, Watch/availability,
 policy publication and scanner parity. Those tests
 are necessary but do not establish installed performance or final code-owner
-approval. The [current source validation](evidence/pilots-checkpoint/source-validation.json)
-pins its 147-test integration set, 42-file lint/format checks and unfiltered
-1,253-file type result, including 20,229 nonfatal warnings and retained initial
-failures. Actual abf retained-Python scanner checks pass 84 cases on three Unix
-hosts; Windows fails before its first case. Neither those functional passes nor
-the narrower Linux native-wheel soak completes installed qualification. The
-[execution ledger](EXECUTION_LEDGER.md) records those remaining gates.
+approval. The [combined d4e13547f validation](evidence/hosted-integration-d4e13547f.json)
+passes 317 tests, 26-file lint/format and all 1,253 production type files with
+zero errors and 20,232 nonfatal warnings, plus workflow-policy and the three
+ownership gates. It precedes the separate CodeQL extractor and config-source
+corrections; tests overlap previous component counts and establish no hosted
+qualification.
+The [config/publisher validation](../security/config-source-publisher-validation.json)
+passes 88 tests with one actual-Windows-only skip, five-file Ruff/format and
+three production type files with zero errors/80 nonfatal warnings. That combined
+count includes the shared-reader 67-test suite; the separate foundation 67-test
+application is another overlapping source scope. Original assertion and disk-full
+attempts remain retained. These are source tests, not fresh hosted or CodeQL passes.
+The subsequent 5da39f986 production type gate passes 1,254 files with zero errors
+and 20,236 warnings; authority/semantic checks pass. Its I/O ownership gate
+initially reports 15 unclassified filesystem sites in the new reader. The
+[correction receipt](evidence/config-integrated-5da39f986.json) retains that failure
+and adds six exact function/primitive classifications plus exact helper-path
+protection. I/O remains visible as synchronous posture/config work. The existing
+I/O/architecture suite passes 46 tests/99.32 seconds, including actual inventory
+validation and negative cases; static checks and one contract type file pass
+with zero errors/warnings, with finite independent review clear. Product source
+is unchanged from 5da. These separate source gates are not an aggregate test
+count, installed qualification or a clean external security gate.
+The [earlier source validation](evidence/pilots-checkpoint/source-validation.json)
+keeps its 147-test integration set, 42-file lint/format and 1,253-file type result
+with 20,229 nonfatal warnings at that exact source. Later experiments and fixes
+retain their own gates; they are not a combined full-suite pass. Latest
+[9db hosted evidence](evidence/takeover-9db62e/manifest.json) records 107 passing
+scanner rows, one failed row and four unreached cases, plus four successful
+compatible stopped rollback sequences. Every original-baseline strict quiescence
+sequence still fails. Linux interpreter provisioning now passes its real installed
+same-byte/runtime/validator proof; paired route failures remain separate. These
+partial functional results and the historical narrower Linux soak do not complete
+installed qualification, live rollback or canary acceptance. The
+[execution ledger](EXECUTION_LEDGER.md) records the remaining gates.

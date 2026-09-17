@@ -1,0 +1,134 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding[False] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-458/test_owned_method_change_at_qu0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f20b6ea1d90>
+pilot = <guard_mcp_streaming_preparation_pilot.OwnedPreparationPilot object at 0x7f20b6ea2870>
+custom_method = False
+
+    @pytest.mark.parametrize("custom_method", [False, True])
+    def test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding(
+        tmp_path, monkeypatch, pilot, custom_method
+    ):
+        proxy, messages, marker = _session(tmp_path)
+        # Record any unexpected request method, not just tools/call, so the fixture
+        # can distinguish rejection from forwarding a method it did not recognize.
+        proxy.command[-1] = proxy.command[-1].replace(
+            "if method=='tools/call':", "if method not in {'initialize', 'tools/list'}:"
+        )
+        callbacks = []
+    
+        class HostileMethod(str):
+            def __eq__(self, other):
+                callbacks.append("equality")
+                raise AssertionError
+    
+            def __ne__(self, other):
+                callbacks.append("inequality")
+                raise AssertionError
+    
+            def __reduce_ex__(self, protocol):
+                callbacks.append("reduce")
+                raise AssertionError
+    
+        original_drain = proxy._drain_and_validate_catalog_authority
+    
+        def drain(**kwargs):
+            result = original_drain(**kwargs)
+            if kwargs.get("quiet_seconds") == 0.005:
+                request = pilot.context.get()
+                request.owned_message["method"] = HostileMethod("roots/list") if custom_method else "roots/list"
+            return result
+    
+        monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
+        result = proxy.run_session(messages)
+        assert callbacks == []
+>       assert not marker.exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-root/pytest-458/test_owned_method_change_at_qu0/received.json').exists
+
+tests/test_mcp_streaming_preparation_pilot.py:234: AssertionError
+_ test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding[True] __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-458/test_owned_method_change_at_qu1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f20b6ea1550>
+pilot = <guard_mcp_streaming_preparation_pilot.OwnedPreparationPilot object at 0x7f20b6ea2a50>
+custom_method = True
+
+    @pytest.mark.parametrize("custom_method", [False, True])
+    def test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding(
+        tmp_path, monkeypatch, pilot, custom_method
+    ):
+        proxy, messages, marker = _session(tmp_path)
+        # Record any unexpected request method, not just tools/call, so the fixture
+        # can distinguish rejection from forwarding a method it did not recognize.
+        proxy.command[-1] = proxy.command[-1].replace(
+            "if method=='tools/call':", "if method not in {'initialize', 'tools/list'}:"
+        )
+        callbacks = []
+    
+        class HostileMethod(str):
+            def __eq__(self, other):
+                callbacks.append("equality")
+                raise AssertionError
+    
+            def __ne__(self, other):
+                callbacks.append("inequality")
+                raise AssertionError
+    
+            def __reduce_ex__(self, protocol):
+                callbacks.append("reduce")
+                raise AssertionError
+    
+        original_drain = proxy._drain_and_validate_catalog_authority
+    
+        def drain(**kwargs):
+            result = original_drain(**kwargs)
+            if kwargs.get("quiet_seconds") == 0.005:
+                request = pilot.context.get()
+                request.owned_message["method"] = HostileMethod("roots/list") if custom_method else "roots/list"
+            return result
+    
+        monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
+>       result = proxy.run_session(messages)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_mcp_streaming_preparation_pilot.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:694: in run_session
+    response, event = self._handle_message(
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:1196: in _handle_message
+    result = self._handle_message_checked(
+scripts/guard_mcp_streaming_preparation_pilot.py:291: in handle
+    return original_handle(proxy, message=request.owned_message, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:1232: in _handle_message_checked
+    return self._handle_message_serialized(
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:1602: in _handle_message_serialized
+    return self._allow_and_forward(
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:3087: in _allow_and_forward
+    response = self._forward_message(
+src/codex_plugin_scanner/guard/proxy/framing.py:110: in call
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+src/codex_plugin_scanner/guard/proxy/runtime_mcp.py:3364: in _forward_message
+    self._write_message(child_stdin, message, source="child_write")
+scripts/guard_mcp_streaming_preparation_pilot.py:307: in write
+    if request is None or source != "child_write" or message.get("method") != "tools/call":
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = 'roots/list', other = 'tools/call'
+
+    def __ne__(self, other):
+        callbacks.append("inequality")
+>       raise AssertionError
+E       AssertionError
+
+tests/test_mcp_streaming_preparation_pilot.py:216: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_mcp_streaming_preparation_pilot.py::test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding[False]
+FAILED tests/test_mcp_streaming_preparation_pilot.py::test_owned_method_change_at_quiet_barrier_cannot_bypass_final_binding[True]
+2 failed, 42 deselected in 1.78s

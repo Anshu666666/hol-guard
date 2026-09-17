@@ -1146,21 +1146,8 @@ class RuntimeMcpGuardProxy:
             tool_schema=tool_schema,
             tool_description=tool_description_value if isinstance(tool_description_value, str) else None,
         )
-        artifact_hash = build_tool_call_hash(
-            artifact,
-            arguments,
-            workspace=self.context.workspace_dir or Path.cwd(),
-            config=authority_config,
-        )
-        decision = self._disable_saved_allow_without_complete_catalog(
-            evaluate_tool_call(
-                store=self.store,
-                config=authority_config,
-                artifact=artifact,
-                artifact_hash=artifact_hash,
-                arguments=arguments,
-                claim_saved_approval=False,
-            )
+        artifact, artifact_hash, decision = self._evaluate_tool_call_authority(
+            artifact=artifact, arguments=arguments, config=authority_config
         )
         return _ToolCallAuthority(
             artifact=artifact,
@@ -1170,6 +1157,29 @@ class RuntimeMcpGuardProxy:
             catalog_state=catalog_state,
             catalog_fingerprint=catalog_fingerprint,
         )
+
+    def _evaluate_tool_call_authority(
+        self, *, artifact: GuardArtifact, arguments: object, config: GuardConfig
+    ) -> tuple[GuardArtifact, str, ToolCallDecision]:
+        """Retain the measured Python default; optional pilots override privately."""
+
+        artifact_hash = build_tool_call_hash(
+            artifact,
+            arguments,
+            workspace=self.context.workspace_dir or Path.cwd(),
+            config=config,
+        )
+        decision = self._disable_saved_allow_without_complete_catalog(
+            evaluate_tool_call(
+                store=self.store,
+                config=config,
+                artifact=artifact,
+                artifact_hash=artifact_hash,
+                arguments=arguments,
+                claim_saved_approval=False,
+            )
+        )
+        return artifact, artifact_hash, decision
 
     def _handle_message(
         self,
@@ -2861,6 +2871,9 @@ class RuntimeMcpGuardProxy:
         del decision
         return False
 
+    def _check_tool_call_preparation(self) -> None:
+        """Optional private preparation hook; the default holds no cached facts."""
+
     def _inline_approval_request(self, tool_name: str, summary: str) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -2926,6 +2939,7 @@ class RuntimeMcpGuardProxy:
                     phase="before_saved_approval_claim",
                     package_request=False,
                 )
+            self._check_tool_call_preparation()
             if not self.store.claim_approval_reuse_decisions((pending,), now=_now()):
                 claim_failure_item: dict[str, object] = {
                     "source": "approval_reuse",
@@ -2948,6 +2962,7 @@ class RuntimeMcpGuardProxy:
                     policy_action="require-reapproval",
                 )
 
+            self._check_tool_call_preparation()
             tool_name = str(params.get("name") or artifact.name)
             try:
                 fresh_config = self._claim_boundary_config()

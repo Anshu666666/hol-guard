@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import gzip
 import hashlib
+import io
 import json
 import os
 import subprocess
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -23,6 +27,8 @@ OBSERVED_CLI_BUILD = "b47b3e59262c95aff4eeb84ac72d09e25a9c37e9"
 SARIF_FILES = {"actions": "actions.sarif", "javascript-typescript": "javascript.sarif", "python": "python.sarif"}
 QUERY_PACKS = {"actions": "0.6.35", "javascript-typescript": "2.4.5", "python": "1.8.10"}
 MAX_SARIF_BYTES = 128 * 1024 * 1024
+MAX_DEFINITION_BYTES = 1024 * 1024
+WORKFLOW_FILE = ".github/workflows/codeql-foundation-diagnostic.yml"
 
 
 @dataclass(frozen=True)
@@ -57,6 +63,104 @@ PROFILES = {
         {"actions": 105229666643, "javascript-typescript": 105229666837, "python": 105229666277},
     ),
 }
+
+
+def _definition_bytes(path: Path) -> bytes:
+    """Read the fixed diagnostic definition with a finite allocation bound."""
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("diagnostic definition is not a regular file")
+    with path.open("rb") as stream:
+        raw = stream.read(MAX_DEFINITION_BYTES + 1)
+    if len(raw) > MAX_DEFINITION_BYTES:
+        raise ValueError("diagnostic definition exceeds its size limit")
+    return raw
+
+
+def stage_definition(source_root: Path, staging_root: Path, environment_file: Path) -> dict[str, str]:
+    """Keep only this collector outside the source before the fixed root checkout."""
+    source_root = source_root.resolve()
+    staging_root = staging_root.resolve()
+    if source_root != Path.cwd().resolve() or staging_root.is_relative_to(source_root):
+        raise ValueError("diagnostic staging must be outside the checked-out workspace")
+    raw = _definition_bytes(Path(__file__))
+    workflow = _definition_bytes(source_root / WORKFLOW_FILE)
+    staging_root.mkdir(parents=True, exist_ok=False)
+    staged = staging_root / "codeql_foundation_diagnostic.py"
+    _ = staged.write_bytes(raw)
+    staged.chmod(0o500)
+    digest = hashlib.sha256(raw).hexdigest()
+    if hashlib.sha256(_definition_bytes(staged)).hexdigest() != digest:
+        raise ValueError("diagnostic collector copy changed")
+    fields = {
+        "DIAGNOSTIC_COLLECTOR_SHA256": digest,
+        "DIAGNOSTIC_WORKFLOW_SHA256": hashlib.sha256(workflow).hexdigest(),
+        # The pinned action supports an exact gzip/base64 workflow definition.
+        # Its normal file lookup would fail after checking out the older tree.
+        "CODE_SCANNING_WORKFLOW_FILE": base64.b64encode(gzip.compress(workflow, mtime=0)).decode("ascii"),
+    }
+    with environment_file.open("a", encoding="utf-8") as stream:
+        for key, value in fields.items():
+            _ = stream.write(f"{key}={value}\n")
+    return {key: value for key, value in fields.items() if key != "CODE_SCANNING_WORKFLOW_FILE"}
+
+
+def extraction_layout(source_root: Path, results_root: Path | None = None) -> dict[str, object]:
+    """Prove the configured root/cwd and collector layout without claiming log evidence."""
+    root = source_root.resolve()
+    collector = Path(__file__).resolve()
+    expected_collector = os.environ.get("DIAGNOSTIC_COLLECTOR_SHA256", "")
+    expected_workflow = os.environ.get("DIAGNOSTIC_WORKFLOW_SHA256", "")
+    collector_sha = ""
+    workflow_sha = ""
+    untracked_count: int | None = None
+    try:
+        collector_sha = hashlib.sha256(_definition_bytes(collector)).hexdigest()
+        encoded = os.environ.get("CODE_SCANNING_WORKFLOW_FILE", "")
+        if len(encoded) > MAX_DEFINITION_BYTES * 2:
+            raise ValueError("workflow definition exceeds its size limit")
+        compressed = base64.b64decode(encoded, validate=True)
+        with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
+            workflow = stream.read(MAX_DEFINITION_BYTES + 1)
+        if not workflow or len(workflow) > MAX_DEFINITION_BYTES:
+            raise ValueError("workflow definition exceeds its size limit")
+        workflow_sha = hashlib.sha256(workflow).hexdigest()
+        untracked = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--others", "-z"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        ).stdout
+        untracked_count = len([entry for entry in untracked.split(b"\0") if entry])
+    except (OSError, ValueError, EOFError, zlib.error, subprocess.SubprocessError):
+        pass
+    workspace = os.environ.get("GITHUB_WORKSPACE", "")
+    report: dict[str, object] = {
+        "source_root_is_workspace": bool(workspace) and root == Path(workspace).resolve(),
+        "working_directory_is_source_root": root == Path.cwd().resolve(),
+        "collector_outside_source_root": not collector.is_relative_to(root),
+        "collector_sha256": collector_sha,
+        "collector_matches_captured_sha256": bool(expected_collector) and collector_sha == expected_collector,
+        "workflow_definition_sha256": workflow_sha,
+        "workflow_matches_captured_sha256": bool(expected_workflow) and workflow_sha == expected_workflow,
+        "results_outside_source_root": results_root is None or not results_root.resolve().is_relative_to(root),
+        "untracked_file_count": untracked_count,
+        "extractor_invocation_log_verified": False,
+    }
+    report["verified"] = (
+        all(
+            report[key] is True
+            for key in (
+                "source_root_is_workspace",
+                "working_directory_is_source_root",
+                "collector_outside_source_root",
+                "collector_matches_captured_sha256",
+                "workflow_matches_captured_sha256",
+                "results_outside_source_root",
+            )
+        )
+        and untracked_count == 0
+    )
+    return report
 
 
 def source_identity(root: Path, profile_name: str = "foundation") -> dict[str, object]:
@@ -136,11 +240,15 @@ def collect(
     analyze_outcome: str,
     *,
     profile_name: str = "foundation",
+    enforce_layout: bool = False,
 ) -> dict[str, object]:
     """Always retain an incomplete manifest when setup, analysis or identity fails."""
     profile = PROFILES[profile_name]
     identity = source_identity(source_root, profile_name)
     sarif, errors = sarif_identity(results_root / SARIF_FILES[language])
+    layout = extraction_layout(source_root, results_root) if enforce_layout else {"verified": False, "required": False}
+    if enforce_layout and not layout["verified"]:
+        errors.append("extraction_layout_unproven")
     if not identity["matches_pin"]:
         errors.append(f"{profile_name}_identity_mismatch")
     if observed_version != CODEQL_VERSION:
@@ -153,6 +261,7 @@ def collect(
         "schema": "guard.codeql-snapshot-diagnostic.v1",
         "profile": profile_name,
         "source": identity,
+        "extraction_layout": layout,
         "expected_commit": profile.commit,
         "expected_tree": profile.tree,
         "original_analyzed_merge": profile.analyzed_merge,
@@ -191,6 +300,9 @@ def collect(
 class Arguments(argparse.Namespace):
     phase: str = ""
     source_root: Path = Path(".")
+    staging_root: Path | None = None
+    environment_file: Path | None = None
+    enforce_layout: bool = False
     profile: str = "foundation"
     results_root: Path | None = None
     language: str | None = None
@@ -201,8 +313,11 @@ class Arguments(argparse.Namespace):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    _ = parser.add_argument("phase", choices=("verify", "collect"))
+    _ = parser.add_argument("phase", choices=("stage", "verify", "collect"))
     _ = parser.add_argument("--source-root", type=Path, required=True)
+    _ = parser.add_argument("--staging-root", type=Path)
+    _ = parser.add_argument("--environment-file", type=Path)
+    _ = parser.add_argument("--enforce-layout", action="store_true")
     _ = parser.add_argument("--profile", choices=tuple(PROFILES), default="foundation")
     _ = parser.add_argument("--results-root", type=Path)
     _ = parser.add_argument("--language", choices=tuple(SARIF_FILES))
@@ -211,7 +326,14 @@ def main() -> int:
     _ = parser.add_argument("--analyze-outcome", default="")
     args = Arguments()
     _ = parser.parse_args(namespace=args)
+    if args.phase == "stage":
+        if args.staging_root is None or args.environment_file is None:
+            parser.error("stage requires --staging-root and --environment-file")
+        print(json.dumps(stage_definition(args.source_root, args.staging_root, args.environment_file)))
+        return 0
     if args.phase == "verify":
+        if args.enforce_layout and not extraction_layout(args.source_root)["verified"]:
+            parser.exit(1, "The immutable source is not isolated at the actual extractor working directory.\n")
         if not source_identity(args.source_root, args.profile)["matches_pin"]:
             parser.exit(1, "Source identity does not match the selected immutable diagnostic profile.\n")
         return 0
@@ -225,6 +347,7 @@ def main() -> int:
         args.init_outcome,
         args.analyze_outcome,
         profile_name=args.profile,
+        enforce_layout=args.enforce_layout,
     )
     completion = {"diagnostic_analysis_complete": report["diagnostic_analysis_complete"], "errors": report["errors"]}
     print(json.dumps(completion))

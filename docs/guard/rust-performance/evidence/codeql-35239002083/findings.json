@@ -1,0 +1,1574 @@
+[
+  {
+    "profile": "foundation",
+    "language": "actions",
+    "artifact": 10504128647,
+    "zip_bytes": 104874,
+    "members": [
+      {
+        "name": "actions.sarif",
+        "bytes": 1472348,
+        "sha256": "7eea856aa65f8c661166e67503d7c5eea56edc97aa8d3d1f52e628e7bde25462"
+      },
+      {
+        "name": "diagnostic.json",
+        "bytes": 1670,
+        "sha256": "525047261a06f02183aa5fcf6b61395045458ce55d8c342b4016e07d6dc03a03"
+      }
+    ],
+    "rules": {},
+    "count": 0,
+    "findings": []
+  },
+  {
+    "profile": "foundation",
+    "language": "javascript-typescript",
+    "artifact": 10504898061,
+    "zip_bytes": 170751,
+    "members": [
+      {
+        "name": "diagnostic.json",
+        "bytes": 1686,
+        "sha256": "27bc2bad397daaad61ca3547020783fffb206732051086a40be185d42082f993"
+      },
+      {
+        "name": "javascript.sarif",
+        "bytes": 2086179,
+        "sha256": "a1277f5e3b1119d12bb275d3175cfcb04209cc92e6a0c336d4fce8c718c49ef3"
+      }
+    ],
+    "rules": {},
+    "count": 0,
+    "findings": []
+  },
+  {
+    "profile": "foundation",
+    "language": "python",
+    "artifact": 10504548227,
+    "zip_bytes": 186237,
+    "members": [
+      {
+        "name": "diagnostic.json",
+        "bytes": 1669,
+        "sha256": "f09606dbe087f7266b1af5476411b4aa36457eaed5674b68b1bf64776d7e22c7"
+      },
+      {
+        "name": "python.sarif",
+        "bytes": 2967826,
+        "sha256": "fec36dd4728fa39337d851e6f2a9dc3aa49f872a4d660fdbfb4b753eff001302"
+      }
+    ],
+    "rules": {
+      "py/clear-text-storage-sensitive-data": 2,
+      "py/clear-text-logging-sensitive-data": 1,
+      "py/path-injection": 5,
+      "py/weak-sensitive-data-hashing": 9
+    },
+    "count": 17,
+    "findings": [
+      {
+        "rule": "py/clear-text-storage-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/approval_gate_state.py",
+            63
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            387
+          ],
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            428
+          ],
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            428
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ccec1b0d70be68dd:1",
+          "primaryLocationStartColumnFingerprint": "20"
+        },
+        "flow_count": 3,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The persisted value is a random TOTP lookup identifier. approval_gate.py:387 creates token_urlsafe(12); :388 sends the separate TOTP seed to TotpSecretStore and :389 stores only the identifier. The generated seed and password are absent from state/public JSON in an existing source test. The seed store uses Fernet. Requested POSIX modes do not establish Windows ACLs; state chmod occurs after writing.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/clear-text-storage-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "scripts/bench_guard_hooks.py",
+            187
+          ]
+        ],
+        "sources": [
+          [
+            "scripts/bench_guard_hooks.py",
+            185
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "6aab8a79b540a19d:1",
+          "primaryLocationStartColumnFingerprint": "23"
+        },
+        "flow_count": 1,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "bench_guard_hooks.py writes a fixed BENCH_FIXTURE_CREDENTIAL_VALUE plus fixed padding into a temporary benchmark tree. The traced value has no environment, user credential, or real key source. Results contain timing/case metadata, not that fixture content.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/clear-text-logging-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/cli/commands_dispatch_mdm.py",
+            37
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/mdm/integrity.py",
+            340
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "44b0eb47559de0e2:1",
+          "primaryLocationStartColumnFingerprint": "6"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The log value is the public product.version from mdm/integrity.py. It comes from a healthy verified manifest/native version or public package version, with packaging.Version validation; this trace does not log a device key or TOTP seed.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/approval_scope_support.py",
+            659
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7405
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ba3f9e9d7c181cfb:1",
+          "primaryLocationStartColumnFingerprint": "15"
+        },
+        "flow_count": 2,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "Authenticated approval routes canonicalize workspace metadata for equality with the stored request-derived scope and return the stored target. This resolve call does not open selected content. Canonical aliases are intentional. No unauthenticated arbitrary-content access was established; this is not a held-descriptor filesystem confinement claim.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/config.py",
+            495
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7405
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "24ab6e1adf6101fd:1",
+          "primaryLocationStartColumnFingerprint": "7"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "This is a real config read after canonical workspace validation on an authenticated route, restricted to fixed project config basenames. Policy keys are stripped before managed config is applied. Pathname validation does not prove leaf-symlink or replacement-race confinement; these limits remain explicit.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/config.py",
+            498
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7405
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "aa0ee24362174d46:1",
+          "primaryLocationStartColumnFingerprint": "5"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "This is the matching config open after is_file(), with the same authenticated canonical-workspace and fixed-basename contract. It does not hold a directory/file descriptor through validation and read. No unauthenticated arbitrary read/write was established by the traced flow; leaf symlinks and directory replacement races were not disproved.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/local_temp_paths.py",
+            13
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7405
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7461
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7484
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7540
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "2f573f236b53358e:1",
+          "primaryLocationStartColumnFingerprint": "21"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "The helper first requires an absolute path with no parent traversal and lexical temporary-root containment, then resolves and checks containment again. The caller is authenticated. These checks are pathname-based and do not establish held-descriptor identity during later operations.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7550
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7405
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7461
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7484
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7540
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "3aacd43be809fd0:1",
+          "primaryLocationStartColumnFingerprint": "17"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "The server path flow follows header-token authentication and validates a directory plus current-UID ownership. The reported sink is directory metadata inspection, not an arbitrary-content write. Subsequent pathname races are outside the protection proven by this review.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/approval_context.py",
+            785
+          ]
+        ],
+        "sources": [
+          [
+            "tests/test_guard_external_archive_approval_evidence.py",
+            277
+          ],
+          [
+            "tests/test_guard_external_archive_approval_evidence.py",
+            340
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "3b932db3bd7ac93:1",
+          "primaryLocationStartColumnFingerprint": "22"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_identity_digest_with_guessing_limit",
+        "source_review_reason": "The SARIF sources are synthetic archive URL passwords; production argv may also contain credentials. The complete argv is serialized into a launch identity digest to invalidate approvals after launch changes. It is not a password verifier. A public deterministic digest does not hide guessable argv values; no new disclosure path was established in this bounded trace.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py",
+            133
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            549
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            722
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "2acc4c2fa0e9007d:1",
+          "primaryLocationStartColumnFingerprint": "31"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_authenticated_control_binding",
+        "source_review_reason": "SHA256 binds the canonical extension-control record metadata. The traced generic keyring get_password result is an encoded authority anchor, not a human password. Record verification separately checks a purpose-derived HMAC under a random 32-byte authority key.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py",
+            134
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            549
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            722
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "5c779d4d31b3236b:1",
+          "primaryLocationStartColumnFingerprint": "50"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_authenticated_control_binding",
+        "source_review_reason": "HMAC-SHA256 authenticates the canonical record using a purpose-derived key whose root is generated with secrets.token_bytes(32). This is a random-key control-record MAC, not a password-storage hash. The static flow through the generic secret-store getter does not make the canonical anchor a user password.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/review_event_integrity.py",
+            21
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_review_event_outbox_schema.py",
+            168
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "158ccd54b874961c:1",
+          "primaryLocationStartColumnFingerprint": "46"
+        },
+        "flow_count": 2,
+        "triage": "reviewed_public_binding_checksum",
+        "source_review_reason": "The traced oauth_source is a public guard-source namespace in a review-event payload. The fixed domain and public subject/workspace/machine bindings form the HMAC key. This is a deterministic content/binding checksum, not secret-key authentication against an actor who can rewrite both payload and digest.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            208
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1140
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1144
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ab412c0e2c986ac8:1",
+          "primaryLocationStartColumnFingerprint": "39"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "SHA256 of workspace_id and device_id selects a rollout bucket modulo 100. The traced OAuth metadata contains a workspace identifier, not a credential or persisted password verifier.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4129
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            219
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            309
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            31
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4570
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4739
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4755
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4780
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4922
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4922
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4925
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4934
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4939
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4945
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4947
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            1328
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            1328
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            259
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            259
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            265
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            274
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            274
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            277
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            452
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            455
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            473
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            473
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            532
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            532
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            648
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            648
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            652
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            652
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            670
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            670
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            706
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            706
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            708
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            708
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            716
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            716
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            784
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            784
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            790
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            790
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            793
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            793
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ba994e6f8c629766:1",
+          "primaryLocationStartColumnFingerprint": "14"
+        },
+        "flow_count": 4,
+        "triage": "protocol_required_token_hash",
+        "source_review_reason": "A real access token is ASCII-encoded, SHA256-hashed and base64url-encoded as the RFC 9449 section 4.2 ath claim. The claim is placed in a DPoP proof signed with P-256 ECDSA. Substituting a password KDF would change the required protocol.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/stable_digest.py",
+            15
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            87
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "5a43fc368c77eb2e:1",
+          "primaryLocationStartColumnFingerprint": "24"
+        },
+        "flow_count": 2,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The traced workspace_id enters a decision-memory bundle and then a canonical signed-payload content digest. This SHA256 flow is content identity; the traced value is not a credential.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/stable_digest.py",
+            23
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1140
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1144
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ef17260527bdb41d:1",
+          "primaryLocationStartColumnFingerprint": "41"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The traced workspace_id enters an access-graph snapshot ID or workspace-audit/cache fingerprint. Fixed-public-key HMAC-SHA512 truncation supplies deterministic identity, not password storage or secret authentication.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            392
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "7e138569f0f7def1:1",
+          "primaryLocationStartColumnFingerprint": "14"
+        },
+        "flow_count": 4,
+        "triage": "inherited_legacy_secret_verifier_limit",
+        "source_review_reason": "Real OAuth secret JSON containing refresh token/private DPoP key and optional access token reaches the legacy SHA256 comparison from an existing protected secret store. Current writes use scrypt, while prefix dispatch still accepts PBKDF2 and unprefixed raw SHA256. Successful loads do not unconditionally migrate the hash. No human-password verifier or new raw-SHA256 writer was established. Retirement requires deliberate verified-read migration, atomic metadata/cache updates, recovery and rollback tests; changing the comparison alone strands old records.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      }
+    ]
+  },
+  {
+    "profile": "implementation",
+    "language": "actions",
+    "artifact": 10504902828,
+    "zip_bytes": 113474,
+    "members": [
+      {
+        "name": "actions.sarif",
+        "bytes": 1590441,
+        "sha256": "7086be1e3504e61b2f318c01a4ca9775f99f6274c618c2c4e59ef3b48acadcad"
+      },
+      {
+        "name": "diagnostic.json",
+        "bytes": 1674,
+        "sha256": "37fae830299c33d0b65fe6744b71cec8fae113ef5a828945c5d5d3d12e035b8e"
+      }
+    ],
+    "rules": {},
+    "count": 0,
+    "findings": []
+  },
+  {
+    "profile": "implementation",
+    "language": "javascript-typescript",
+    "artifact": 10504418054,
+    "zip_bytes": 179319,
+    "members": [
+      {
+        "name": "diagnostic.json",
+        "bytes": 1690,
+        "sha256": "dde77db0b206e7f32300ded08f65d78774861078698099ddd2b02ae734655ec7"
+      },
+      {
+        "name": "javascript.sarif",
+        "bytes": 2206074,
+        "sha256": "5e97ce96a2128a8a08a8d4c0008e0310f37bc95beb27fcfc73eb3a428792e9c5"
+      }
+    ],
+    "rules": {},
+    "count": 0,
+    "findings": []
+  },
+  {
+    "profile": "implementation",
+    "language": "python",
+    "artifact": 10504848343,
+    "zip_bytes": 200289,
+    "members": [
+      {
+        "name": "diagnostic.json",
+        "bytes": 1673,
+        "sha256": "db2af6764d9989f791ddd8f77018dff5faf82bd1d8af033b9c455c1f6f518ad9"
+      },
+      {
+        "name": "python.sarif",
+        "bytes": 3195804,
+        "sha256": "89a691e33100d5896d8e9881d8027d29f930ee88827324e009e0339adce69954"
+      }
+    ],
+    "rules": {
+      "py/clear-text-storage-sensitive-data": 2,
+      "py/clear-text-logging-sensitive-data": 1,
+      "py/path-injection": 5,
+      "py/weak-sensitive-data-hashing": 10
+    },
+    "count": 18,
+    "findings": [
+      {
+        "rule": "py/clear-text-storage-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/approval_gate_state.py",
+            63
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            387
+          ],
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            428
+          ],
+          [
+            "src/codex_plugin_scanner/guard/approval_gate.py",
+            428
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ccec1b0d70be68dd:1",
+          "primaryLocationStartColumnFingerprint": "20"
+        },
+        "flow_count": 3,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The persisted value is a random TOTP lookup identifier. approval_gate.py:387 creates token_urlsafe(12); :388 sends the separate TOTP seed to TotpSecretStore and :389 stores only the identifier. The generated seed and password are absent from state/public JSON in an existing source test. The seed store uses Fernet. Requested POSIX modes do not establish Windows ACLs; state chmod occurs after writing.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/clear-text-storage-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "scripts/bench_guard_hooks.py",
+            187
+          ]
+        ],
+        "sources": [
+          [
+            "scripts/bench_guard_hooks.py",
+            185
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "6aab8a79b540a19d:1",
+          "primaryLocationStartColumnFingerprint": "23"
+        },
+        "flow_count": 1,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "bench_guard_hooks.py writes a fixed BENCH_FIXTURE_CREDENTIAL_VALUE plus fixed padding into a temporary benchmark tree. The traced value has no environment, user credential, or real key source. Results contain timing/case metadata, not that fixture content.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/clear-text-logging-sensitive-data",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/cli/commands_dispatch_mdm.py",
+            37
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/mdm/integrity.py",
+            340
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "44b0eb47559de0e2:1",
+          "primaryLocationStartColumnFingerprint": "6"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The log value is the public product.version from mdm/integrity.py. It comes from a healthy verified manifest/native version or public package version, with packaging.Version validation; this trace does not log a device key or TOTP seed.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/approval_scope_support.py",
+            659
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7418
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ba3f9e9d7c181cfb:1",
+          "primaryLocationStartColumnFingerprint": "15"
+        },
+        "flow_count": 2,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "Authenticated approval routes canonicalize workspace metadata for equality with the stored request-derived scope and return the stored target. This resolve call does not open selected content. Canonical aliases are intentional. No unauthenticated arbitrary-content access was established; this is not a held-descriptor filesystem confinement claim.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/config.py",
+            495
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7418
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "24ab6e1adf6101fd:1",
+          "primaryLocationStartColumnFingerprint": "7"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "This is a real config read after canonical workspace validation on an authenticated route, restricted to fixed project config basenames. Policy keys are stripped before managed config is applied. Pathname validation does not prove leaf-symlink or replacement-race confinement; these limits remain explicit.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/config.py",
+            498
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7418
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "aa0ee24362174d46:1",
+          "primaryLocationStartColumnFingerprint": "5"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "This is the matching config open after is_file(), with the same authenticated canonical-workspace and fixed-basename contract. It does not hold a directory/file descriptor through validation and read. No unauthenticated arbitrary read/write was established by the traced flow; leaf symlinks and directory replacement races were not disproved.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/local_temp_paths.py",
+            13
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7418
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7474
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7497
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7553
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "2f573f236b53358e:1",
+          "primaryLocationStartColumnFingerprint": "21"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "The helper first requires an absolute path with no parent traversal and lexical temporary-root containment, then resolves and checks containment again. The caller is authenticated. These checks are pathname-based and do not establish held-descriptor identity during later operations.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/path-injection",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7563
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            2615
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7418
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7474
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7497
+          ],
+          [
+            "src/codex_plugin_scanner/guard/daemon/server.py",
+            7553
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "3aacd43be809fd0:1",
+          "primaryLocationStartColumnFingerprint": "17"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_inherited_path_validation_limits",
+        "source_review_reason": "The server path flow follows header-token authentication and validates a directory plus current-UID ownership. The reported sink is directory metadata inspection, not an arbitrary-content write. Subsequent pathname races are outside the protection proven by this review.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/approval_context.py",
+            785
+          ]
+        ],
+        "sources": [
+          [
+            "tests/test_guard_external_archive_approval_evidence.py",
+            277
+          ],
+          [
+            "tests/test_guard_external_archive_approval_evidence.py",
+            340
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "3b932db3bd7ac93:1",
+          "primaryLocationStartColumnFingerprint": "22"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_identity_digest_with_guessing_limit",
+        "source_review_reason": "The SARIF sources are synthetic archive URL passwords; production argv may also contain credentials. The complete argv is serialized into a launch identity digest to invalidate approvals after launch changes. It is not a password verifier. A public deterministic digest does not hide guessable argv values; no new disclosure path was established in this bounded trace.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py",
+            133
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            549
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            722
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "2acc4c2fa0e9007d:1",
+          "primaryLocationStartColumnFingerprint": "31"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_authenticated_control_binding",
+        "source_review_reason": "SHA256 binds the canonical extension-control record metadata. The traced generic keyring get_password result is an encoded authority anchor, not a human password. Record verification separately checks a purpose-derived HMAC under a random 32-byte authority key.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py",
+            134
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            549
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            722
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "5c779d4d31b3236b:1",
+          "primaryLocationStartColumnFingerprint": "50"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_authenticated_control_binding",
+        "source_review_reason": "HMAC-SHA256 authenticates the canonical record using a purpose-derived key whose root is generated with secrets.token_bytes(32). This is a random-key control-record MAC, not a password-storage hash. The static flow through the generic secret-store getter does not make the canonical anchor a user password.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/native_command_control_authority.py",
+            83
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            549
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            722
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "f93bf79af7d2c8d6:1",
+          "primaryLocationStartColumnFingerprint": "22"
+        },
+        "flow_count": 4,
+        "triage": "reviewed_random_authority_key_identifier",
+        "source_review_reason": "The added implementation result hashes a domain separator plus an exactly 32-byte random authority key to identify that key inside separately MAC-authenticated native control records. The root is generated with secrets.token_bytes(32), loaded through the existing secret-store authority path, and used for rotation/recovery binding. It is not a human-password verifier; no change to this pinned authority contract is justified by the weak-password-hash heuristic.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/review_event_integrity.py",
+            21
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_review_event_outbox_schema.py",
+            168
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "158ccd54b874961c:1",
+          "primaryLocationStartColumnFingerprint": "46"
+        },
+        "flow_count": 2,
+        "triage": "reviewed_public_binding_checksum",
+        "source_review_reason": "The traced oauth_source is a public guard-source namespace in a review-event payload. The fixed domain and public subject/workspace/machine bindings form the HMAC key. This is a deterministic content/binding checksum, not secret-key authentication against an actor who can rewrite both payload and digest.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            208
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1140
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1144
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ab412c0e2c986ac8:1",
+          "primaryLocationStartColumnFingerprint": "39"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "SHA256 of workspace_id and device_id selects a rollout bucket modulo 100. The traced OAuth metadata contains a workspace identifier, not a credential or persisted password verifier.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4129
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            219
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            309
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/cloud_review_sync.py",
+            31
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4570
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4739
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4755
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4780
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4922
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4922
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4925
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4934
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4939
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4945
+          ],
+          [
+            "src/codex_plugin_scanner/guard/runtime/runner.py",
+            4947
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            1328
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            1328
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            259
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            259
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            265
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            274
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            274
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            277
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            452
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            455
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            473
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            473
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            532
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            532
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            648
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            648
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            652
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            652
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            670
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            670
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            706
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            706
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            708
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            708
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            716
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            716
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            784
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            784
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            790
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            790
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            793
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            793
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ba994e6f8c629766:1",
+          "primaryLocationStartColumnFingerprint": "14"
+        },
+        "flow_count": 4,
+        "triage": "protocol_required_token_hash",
+        "source_review_reason": "A real access token is ASCII-encoded, SHA256-hashed and base64url-encoded as the RFC 9449 section 4.2 ath claim. The claim is placed in a DPoP proof signed with P-256 ECDSA. Substituting a password KDF would change the required protocol.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/stable_digest.py",
+            16
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            87
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "5a43fc368c77eb2e:1",
+          "primaryLocationStartColumnFingerprint": "24"
+        },
+        "flow_count": 2,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The traced workspace_id enters a decision-memory bundle and then a canonical signed-payload content digest. This SHA256 flow is content identity; the traced value is not a credential.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/stable_digest.py",
+            24
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1140
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            1144
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "ef17260527bdb41d:1",
+          "primaryLocationStartColumnFingerprint": "41"
+        },
+        "flow_count": 4,
+        "triage": "false_positive_traced_value",
+        "source_review_reason": "The traced workspace_id enters an access-graph snapshot ID or workspace-audit/cache fingerprint. Fixed-public-key HMAC-SHA512 truncation supplies deterministic identity, not password storage or secret authentication.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      },
+      {
+        "rule": "py/weak-sensitive-data-hashing",
+        "severity": "7.5",
+        "locations": [
+          [
+            "src/codex_plugin_scanner/guard/store_base.py",
+            392
+          ]
+        ],
+        "sources": [
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ],
+          [
+            "src/codex_plugin_scanner/guard/store_oauth.py",
+            651
+          ]
+        ],
+        "fingerprints": {
+          "primaryLocationLineHash": "7e138569f0f7def1:1",
+          "primaryLocationStartColumnFingerprint": "14"
+        },
+        "flow_count": 4,
+        "triage": "inherited_legacy_secret_verifier_limit",
+        "source_review_reason": "Real OAuth secret JSON containing refresh token/private DPoP key and optional access token reaches the legacy SHA256 comparison from an existing protected secret store. Current writes use scrypt, while prefix dispatch still accepts PBKDF2 and unprefixed raw SHA256. Successful loads do not unconditionally migrate the hash. No human-password verifier or new raw-SHA256 writer was established. Retirement requires deliberate verified-read migration, atomic metadata/cache updates, recovery and rollback tests; changing the comparison alone strands old records.",
+        "production_patch_justified_by_this_flow": false,
+        "original_external_alert_id_known": false,
+        "original_external_alert_resolved": false
+      }
+    ]
+  }
+]

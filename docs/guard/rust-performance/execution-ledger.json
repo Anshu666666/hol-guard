@@ -3,7 +3,7 @@
   "reviewed_date": "2026-09-17",
   "target_branch": "release/3.2",
   "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
-  "implementation_tree_before_documentation": "7befd329a00f9689b6d648750e64f58082e8986d",
+  "implementation_tree_before_documentation": "1061f304970555b48682fb1b475c0a67022a4e62",
   "qualification_complete": false,
   "status_policy": "DONE means the exact task acceptance has evidence of the required kind; specification, implementation, component measurements and tests do not establish dependent installed/platform/release qualification. OPEN includes active or implemented work with remaining acceptance. BLOCKED identifies a required dependency, artifact, review or selected implementation that is unavailable. DEFERRED is permitted for a conditional migration when scoped measurements and the original PRD decision rule justify retaining the current implementation; an unbuilt native pilot is not an automatic prerequisite for that decision. Unmeasured large workloads, predicted gains without sufficient evidence, and active comparisons remain OPEN or BLOCKED. No native activation is implied by a completed selection/profiling task. Original id, number, title, acceptance and dependency fields remain unchanged. A DONE task does not satisfy its outstanding dependencies; those are reported separately in dependency_audit.",
   "tasks": [
@@ -14,7 +14,7 @@
       "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
       "dependencies": [],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Baseline 2e672d2d, reviewed source 7befd329a00f9689b6d648750e64f58082e8986d and branch codex/rsp-takeover-pilots-20260917 are pinned. Published abf has exact tree 62eb319323cc7c9de7513af6ef7f05009d411189; paired candidate wheels build abf while native-wheel artifacts report test-merge 70b456e93a77fff48522ee7aa6ddeec6d157f6e6 with the same tree. Final changed-source artifacts, signing/frozen identities and complete qualification remain required.",
+      "evidence_or_remaining_work": "Baseline 2e and current source 1061f304970555b48682fb1b475c0a67022a4e62 are pinned on isolated docs branch rsp-config-execution-20260917. Published 9db has Git tree 47ba580366672b3b92cb46e6bb1d19c670444e94; paired wheels build 9db and native-wheel artifacts attest test-merge c9859a5b5d04526fa7e663d7c494e442ee4298c4 with that same tree. Exact records retain all 53 JSON members, five wheel hashes and 207 check attempts. New integrated source/signing/frozen artifacts and full qualification remain required.",
       "evidence_refs": [
         "contract",
         "qualification",
@@ -22,7 +22,9 @@
         "retained_ci_5ee",
         "retained_ci_ae",
         "retained_ci_abf",
-        "reproducibility"
+        "reproducibility",
+        "retained_ci_9db",
+        "9db_check_inventory"
       ],
       "original_dependencies": "None."
     },
@@ -119,10 +121,12 @@
         "RSP-003"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual registered argv/startup/stdout/exit probes and priority/nonpriority scenario integration are implemented, separate from HTTP. Four real Codex fault scenarios have134 passing source tests. Final successful platform delivery and installed measurements remain incomplete.",
+      "evidence_or_remaining_work": "Real registered argv/startup/stdout/exit probes remain distinct from HTTP. Actual 9db Linux private Claude PreToolUse completes 30 Python/30 native launches with exact contracts/routes; the next Python PostToolUse cell attempts 11/completes 10 then fails. All ordinary paired arms fail their first block. These partial installed measurements do not close full platform/route or five-block acceptance.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "claude_installed",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-003."
     },
@@ -256,7 +260,7 @@
         "RSP-014"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Frozen native and delivered expectations cover Watch, availability, integrity/size, permissions, lifecycle and installed stdout/exit contracts. Source .rs fixtures, positional persistence-failure injection and explicit Windows source-refusal expectations are repaired without changing pinned baseline behavior. Actual final platform delivery validation remains open. The 53514c73b correction now asserts the resident edge intrinsic Watch denial/reason separately from Python allow/warn delivery; direct-hook observe-prefixed fixtures cannot substitute for that edge.",
+      "evidence_or_remaining_work": "Frozen native and delivered expectations cover Watch, availability, integrity/size, permissions, lifecycle and installed stdout/exit contracts. Source.rs fixtures, positional persistence-failure injection and explicit Windows source-refusal expectations are repaired without changing pinned baseline behavior. Actual final platform delivery validation remains open. The 53514c73b correction now asserts the resident edge intrinsic Watch denial/reason separately from Python allow/warn delivery; direct-hook observe-prefixed fixtures cannot substitute for that edge.",
       "evidence_refs": [
         "contract",
         "qualification",
@@ -490,11 +494,12 @@
         "RSP-028"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Source replacement defenses and installed identity probes exist. Abf compatible stopped rollback passes three phases on three Unix hosts; original-baseline quiescence and Windows transition fail. Re-sign/freeze, mixed or live generations, changed versions/programs, and the first enforcing hook on every final package remain unqualified.",
+      "evidence_or_remaining_work": "Source replacement defenses and installed identity probes exist. 9db compatible stopped rollback passes all three phases on all four hosts, including corrected Windows environment selection. Original 2e strict quiescence remains failed on every host. Re-sign/freeze, live/mixed generations, changed versions/programs and first enforcing hook coverage remain unqualified.",
       "evidence_refs": [
         "identity",
         "retained_ci_abf",
-        "artifact_transition"
+        "artifact_transition",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-028."
     },
@@ -525,11 +530,14 @@
         "RSP-030"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The existing signed v3 snapshot already carries complete posture. Ordinary native evaluation and Python delivery now consume its same acknowledged mode. The contract and tests cover enforcing/observe edits, failed publication, missing/expired binding, workspace registration and ignored workspace posture overrides; no schema or authority relaxation. Actual loaded transitions remain RSP-034.",
+      "evidence_or_remaining_work": "The existing signed v3 snapshot already carries complete posture. Ordinary native evaluation and Python delivery now consume its same acknowledged mode. The contract and tests cover enforcing/observe edits, failed publication, missing/expired binding, workspace registration and ignored workspace posture overrides; no schema or authority relaxation. Actual loaded transitions remain RSP-034. Config-source rejection now immediately withdraws publisher ACK even before observer/cache comparison; nine publisher-path regressions cover a previous valid ACK. This is source validation, not loaded installed-transition qualification.",
       "evidence_refs": [
         "identity",
         "acknowledged_posture",
-        "installed_posture"
+        "installed_posture",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-020,RSP-030."
     },
@@ -577,14 +585,19 @@
         "RSP-033"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The integrated installed posture fixture checks full authenticated ACK and first bound durable receipt under concurrent Claude/Codex load. The abf Windows baseline passes enforce-to-Watch and expiry but fails restart, strict-workspace ACK and blocked-publication witnesses; five strict-workspace semantic mismatches remain. No candidate posture completion or all-group pass exists. Current corrections require new actual-host execution.",
+      "evidence_or_remaining_work": "The installed posture fixture checks full authenticated ACK and bound durable receipt under concurrent Claude/Codex load. Earlier abf Windows baseline partial posture passes/failures remain historical. 9db fails both arms before any complete qualification block and establishes no candidate all-group posture pass. Original TTL, deadlines and policy/ACK/receipt checks remain intact; new diagnostic execution is pending. Config-source rejection now immediately withdraws publisher ACK even before observer/cache comparison; nine publisher-path regressions cover a previous valid ACK. This is source validation, not loaded installed-transition qualification.",
       "evidence_refs": [
         "identity",
         "approval",
         "mixed",
         "installed_posture",
         "interpreter_provisioning",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "native_edge_diagnostic",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-032,RSP-033."
     },
@@ -1151,11 +1164,12 @@
         "RSP-068"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual native-bundled abf wheels pass 28 retained-Python semantic cases on each of Linux, macOS ARM and macOS Intel: 84 passes with no skips. Both launchers bind RECORD, lexical interpreter, exact encoding-aware wrapper and wheel modules. Windows raises PackageNotFoundError before any identity or scan; retain its zero-case failure and CRLF probe digest. Environment/reader corrections need a fresh hosted attempt. Native extraction remains inactive.",
+      "evidence_or_remaining_work": "Actual 9db wheels pass 28 retained-Python scanner cases per Unix host. Windows attests the exact wheel and both PE launchers, then retains 23 passes, one failed row, four unreached cases: 107/1/4 across hosts. The later fixture failure incorrectly relabeled a completed history row; original status remains unchanged. Probe-only reserved-filename/phase-accounting correction passes 54 tests but needs fresh Windows coverage. Native extraction remains inactive.",
       "evidence_refs": [
         "scanner",
         "installed_scanner",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-068."
     },
@@ -1186,12 +1200,13 @@
         "RSP-070"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Source, local installed and 84 abf hosted retained-Python scanner cases preserve provider/context/HMAC, staged divergence, links, encoding, limits and deterministic mutation behavior. Windows fails attestation before its first case and remains incomplete after source-only setup fixes. Independent hostile archive coverage and its two restrictive timed failures remain separate; neither those results nor Unix passes fill the missing platform scope.",
+      "evidence_or_remaining_work": "Source, local installed and latest 9db scanner cases preserve provider/context/HMAC, staged divergence, bounds and exits. All 28 Unix cases pass; Windows has 23 passing rows, one original failed row and four unreached later cases. Link/encoding/mutation scope there needs the corrected hosted probe. Independent archive coverage and its restrictive timeouts remain separate; no missing platform case is counted as pass or skip.",
       "evidence_refs": [
         "scanner",
         "archive",
         "installed_scanner",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-069,RSP-070."
     },
@@ -1239,11 +1254,12 @@
         "RSP-073"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The private Linux Claude Pre/Post command and boundary contract are implemented in the existing runtime: authenticated exact package/registration ownership, stdin/argv/stdout/exit, one challenge/POST connection, original deadline and contained completion. Final component and later focused helper tests pass. Highest-justified installed route ranking, exact installed conformance and benefit are still missing; no general launcher selection is claimed.",
+      "evidence_or_remaining_work": "Private Linux Claude Pre/Post command and boundary are implemented in the existing runtime with package/registration authentication, stdin/argv/stdout/exit, original challenge/POST and contained completion. Actual 9db installed PreToolUse Python/native cells complete, but PostToolUse fails before a full block. The highest-justified route ranking, complete conformance and selection gate remain unmet; no general launcher selected.",
       "evidence_refs": [
         "surfaces",
         "qualification",
-        "claude_pilot"
+        "claude_pilot",
+        "claude_installed"
       ],
       "original_dependencies": "RSP-024,RSP-073."
     },
@@ -1257,11 +1273,12 @@
         "RSP-015"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The private Claude Pre/Post native launcher is implemented and component-tested: final snapshot 81 Python and 12 Rust tests; later helper fixes 43 focused checks. It remains opt-in inside a private qualification root and default registration/signed Desktop selection is unchanged. Actual installed wheel semantics, native-route conservation and paired benefit remain pending; the experiment does not close route-ranking or platform acceptance.",
+      "evidence_or_remaining_work": "Private Claude native launcher remains opt-in in a qualification root. Original 81 Python/12 Rust component and later 43 helper/27 builder results remain separate. Actual 9db installed PreToolUse completes 30 launches per arm with native routes; next Python PostToolUse 11th attempt fails after 10 completions. Zero full blocks, no complete benefit selection or activation. Default registration/signed Desktop selection is unchanged.",
       "evidence_refs": [
         "surfaces",
         "qualification",
-        "claude_pilot"
+        "claude_pilot",
+        "claude_installed"
       ],
       "original_dependencies": "RSP-074,RSP-015."
     },
@@ -1274,11 +1291,12 @@
         "RSP-075"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Private Claude pilot install/restore/reactivation binds exact installed wheel and configuration ownership and is idempotent in component fixtures. No default or general registration is selected. Actual installed repair/restore, uninstall, signed/frozen ownership and a justified selected launcher remain pending.",
+      "evidence_or_remaining_work": "Private Claude registration binds exact installed wheel/configuration ownership and component fixtures cover install/restore/reactivation/idempotence. 9db actually installs and selects the native pilot between completed PreToolUse arms; the following PostToolUse failure leaves the comparison incomplete. This is not full installed repair/uninstall, signing/frozen or general registration qualification.",
       "evidence_refs": [
         "surfaces",
         "qualification",
-        "claude_pilot"
+        "claude_pilot",
+        "claude_installed"
       ],
       "original_dependencies": "RSP-075."
     },
@@ -1291,13 +1309,15 @@
         "RSP-076"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Wheel probes clear development overrides and bind actual installed module/launcher identities. All four abf native-wheel identity records report test-merge 70b with the same tree as paired candidate abf. Retained-Python scanner launchers pass on three hosts; Windows initial scanner attestation fails before identity. The private Claude installed probe is integrated but unexecuted. Final no-env/registration/frozen/signing selection remains open.",
+      "evidence_or_remaining_work": "All four 9db native-wheel identities attest actual c985 test-merge bytes with the same tree as 9db. All four scanner probes now attest modules and real console launchers, including Windows PE resources/RECORD/interpreter; Windows later case coverage remains incomplete. Linux private Claude uses actual installed registration for its partial comparison. Final no-env/route/frozen/signing qualification remains open.",
       "evidence_refs": [
         "surfaces",
         "qualification",
         "retained_ci_abf",
         "installed_scanner",
-        "claude_pilot"
+        "claude_pilot",
+        "retained_ci_9db",
+        "claude_installed"
       ],
       "original_dependencies": "RSP-076."
     },
@@ -1702,13 +1722,16 @@
         "RSP-099"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "B remains the production runtime and derives categories separately for approval identity and fresh policy, so the literal once-per-unchanged-input acceptance is unmet. C and universal D activation fail their measured regression gates; the completed native text experiment also fails selection. One private owned-generation implementation attempt is now active, with no claimed code/parity/benefit result at this source cutoff. Preserve public copy/match fallback, callback mutation order, browser/store/claim composition, generation freshness and binding to exact forwarded params.",
+      "evidence_or_remaining_work": "E private owned preparation is implemented and measured: 64 cells/32 pairs, 1108 forwards; 554 E admissions/derivations/completions/bound writes, zero selected failure/fallback in timed scope. 119 source tests include 96 full-authority cases; 3008 public-oracle cases remain separate. General activation is rejected: large shapes miss 30%, blocks regress and memory grows; positive 1 KiB/128 KiB observations remain. Default B still derives categories twice; package/unsupported/busy paths also use B. RSP-100 remains OPEN, not an unattempted design. Later independent review finds E selects its protected writer from mutable method text; the initial F fork demonstrates changed-method forwarding and a hostile callback. Historical selected E evidence remains unchanged, not universal mutation proof. Corrected inactive F has 44 source tests and finite review, no route campaign or activation.",
       "evidence_refs": [
         "mcp",
         "mcp_exact_facts",
         "mcp_structural_facts",
         "mcp_native_text",
-        "mcp_ownership"
+        "mcp_ownership",
+        "mcp_owned_preparation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence"
       ],
       "original_dependencies": "RSP-099."
     },
@@ -1755,13 +1778,16 @@
         "RSP-102"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Actual optimized Python source-proxy overhead, phase attribution and memory comparisons are complete: the frozen B/C/D campaigns retain all ordinary, near-limit and dense observations, including D's 49.77 MiB extra dense peak RSS. The subsequent 68-cell native experiment uses B for ordinary controls and D for near-limit text, with the same source in each pair. Deliberate 5 ms and child/network/human waits remain separate. This completes scoped measurement and selection evidence; RSP-100 production ownership and installed/all-platform qualification remain open.",
+      "evidence_or_remaining_work": "Completed B/C/D/native and now E source-proxy comparisons measure actual overhead, phase costs and memory. E retains 64 cells/32 pairs with five alternating blocks plus 14 profiles; tree CPU covers cold+warm proxy/server work and warm client p95 is separate. Deliberate 5 ms wait is included in the route, not claimed as compute savings. Large ownership allocations and shared-host attribution limits remain. This is complete bounded measurement, not installed/all-platform or RSP-100 production completion. Later E selector review and corrected F source tests are separate from these unchanged measurements; F has not been rebaselined.",
       "evidence_refs": [
         "mcp",
         "mcp_exact_facts",
         "mcp_structural_facts",
         "mcp_native_text",
-        "mcp_ownership"
+        "mcp_ownership",
+        "mcp_owned_preparation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence"
       ],
       "original_dependencies": "RSP-100,RSP-101,RSP-102."
     },
@@ -1840,11 +1866,14 @@
         "RSP-107"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The completed source measurements and bounded native experiment do not justify a full proxy rewrite. Record continued deferral of transferring policy, approval and complete transport orchestration to Rust; retain B and the separate open RSP-100 ownership correction. A future positive rewrite decision still needs a separate ADR and full protocol/rollout scope. The decision task is complete; no rewrite implementation or whole-program qualification is claimed.",
+      "evidence_or_remaining_work": "Completed B/C/D/native/E measurements do not justify a full proxy rewrite or general E activation. Retain B and the separate OPEN RSP-100 acceptance; E is a completed private implementation/selection attempt with positive narrow observations and broader regressions. Future whole-proxy migration still requires a separate ADR and complete protocol/rollout scope. No rewrite or whole-program qualification is claimed. The newly found E method-selector gap further limits its tested safety scope; corrected F remains a separate source-only inactive candidate without a campaign.",
       "evidence_refs": [
         "mcp",
         "mcp_native_text",
-        "mcp_ownership"
+        "mcp_ownership",
+        "mcp_owned_preparation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence"
       ],
       "original_dependencies": "RSP-107."
     },
@@ -2017,7 +2046,7 @@
         "RSP-117"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Latest abf Linux and macOS ARM each pass 22 installed Ollama cases; Intel fails disabled readiness at 527.241 ms after 10 cases and Windows enabled readiness at 407 ms after two cases under the unchanged 400 ms budget. All four Builder checks pass. Compatible stopped rollback passes on three Unix hosts, but original legacy quiescence fails and Windows has no completed transition report. Earlier ae successes remain historical; final four-platform and live/version/signing acceptance remain incomplete.",
+      "evidence_or_remaining_work": "Latest 9db ARM passes 22 installed Ollama cases; Linux/Intel/Windows each retain two cases then fail enabled readiness at 400.108/407.413/407 ms against 400 ms. All four Builder checks and compatible stopped rollback sequences pass. Original 2e strict quiescence fails on all four; live/in-progress/version/signing and full lifecycle acceptance remain incomplete. Earlier abf / ae successes stay historical.",
       "evidence_refs": [
         "program",
         "control",
@@ -2027,7 +2056,8 @@
         "retained_ci_5ee",
         "artifact_transition",
         "retained_ci_ae",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-113,RSP-117."
     },
@@ -2060,13 +2090,14 @@
         "RSP-119"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Exact source catalog/program/rule coverage, semantic profile and owned uncertainty are published. Current abf installed Ollama coverage passes 22 cases on Linux/ARM while Intel/Windows retain partial readiness failures; all four Builder checks pass. Complete final activation/lifecycle diagnostics and changed-version/program proof remain open. Source coverage and compatibility outcomes are not measured end-to-end speedups.",
+      "evidence_or_remaining_work": "Exact source catalog/program/rule coverage, semantic profile and owned uncertainty are published. 9db ARM passes 22 installed Ollama cases, other hosts retain enabled-readiness failures after two cases; all four Builder checks pass. Complete final lifecycle/activation and changed-version/program diagnostics remain open. Compatibility and coverage observations are not end-to-end speedups.",
       "evidence_refs": [
         "program",
         "control",
         "ollama",
         "catalog_matrix",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-119."
     },
@@ -2285,13 +2316,22 @@
         "RSP-022"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Workflow dependency selection is audited. Current integrations retain independent installed probes after paired failures and select the private Claude/interpreter checks. The implemented diagnostic selects six immutable source/language CodeQL jobs across foundation e449 and implementation abf, preserving observed settings and capturing raw SARIF in Actions artifacts with no Code Scanning/database upload. Expanded source validation passes 121 tests with zero collector type errors or warnings; initial foundation-only validation remains separate; exact new-host findings and both external security checks remain unresolved.",
+      "evidence_or_remaining_work": "Workflow selection and independent installed checks after paired failure remain implemented. 9db records all 37 workflows/207 check attempts and all 53 uploaded JSON members. New stage/capacity/macOS diagnostics and immutable-source CodeQL capture are separately source-validated; their selection is not evidence of future hosted success. Full security gates and source-extraction qualifications are recorded separately. First hosted CodeQL diagnostics completed six jobs and retained all SARIF; later root-checkout correction addresses observed extra-helper extraction and awaits a new hosted run.",
       "evidence_refs": [
         "qualification",
         "contract",
         "codeql_foundation",
         "claude_pilot",
-        "interpreter_provisioning"
+        "interpreter_provisioning",
+        "retained_ci_9db",
+        "9db_check_inventory",
+        "native_edge_diagnostic",
+        "native_capacity_diagnostic",
+        "macos_dnsservice",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation"
       ],
       "original_dependencies": "RSP-006,RSP-022."
     },
@@ -2304,7 +2344,7 @@
         "RSP-133"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The current validation manifest pins bbe742e91: 42 changed Python files pass Ruff/format, 147 integration tests pass in 7.76 seconds pytest time, and all 1253 production files pass the unfiltered type gate with zero errors and 20229 nonfatal warnings (150.299 seconds tool, 153.987 seconds wall). Authority, semantic, I/O ownership and workflow-policy gates pass. Initial formatting refusal and the later CRLF diff-check failure are preserved; exact artifact bytes remain unchanged and the final diff check passes. Earlier 585-pass/eight-failure and 111/67-test corrections keep their own snapshots. Private RSP-100 work and final selected-source/host acceptance remain open; no full-suite, installed or native-campaign rerun is inferred.",
+      "evidence_or_remaining_work": "Combined d4e13547f validation passes 317 tests in 52.59 seconds, 26-file Ruff/format and unfiltered 1253 production-file type analysis with zero errors/20,232 nonfatal warnings (149.889 tool seconds). Workflow-policy, authority, semantic and I/O ownership gates pass. This predates the CodeQL root-checkout correction, whose separate 134 tests/lint/type/policy pass. Earlier component and 317-test populations overlap and are not additive; old bbe/proof failures remain attached to their own sources. Final selected source, security and hosted qualification remain open. Later config-reader validation passes 67/one actual-Windows skip; foundation application separately passes 67/one skip; overlapping publisher validation passes 88/one skip, five-file Ruff/format and three-file types zero errors/80 warnings. No combined full-source or Windows/hosted result is inferred. Separate corrected F passes 44 focused tests/11.39 seconds and finite source review; historical E and F counts overlap, and no F campaign or whole-source gate is claimed. Config-integrated 5da production types pass 1254 files/zero errors/20236 warnings and authority/semantic checks pass; initial I/O ownership fails 15 unclassified reader sites. The retained correction adds six exact function/primitive classifications and exact-path protection; 46 gate tests/99.32s pass including actual inventory and negative cases, static checks/one contract type file 0 errors/warnings and finite review clear. Product source is unchanged; initial failure and separate overlapping test populations remain.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2319,7 +2359,24 @@
         "claude_pilot",
         "interpreter_provisioning",
         "codeql_foundation",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "mcp_owned_preparation",
+        "native_edge_diagnostic",
+        "native_capacity_diagnostic",
+        "macos_dnsservice",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation",
+        "config_source_confinement",
+        "config_source_validation",
+        "config_foundation_validation",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-133; all selected implementation tasks."
     },
@@ -2333,7 +2390,7 @@
         "RSP-081"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All four abf paired candidate build records and native-wheel identities are retained. Paired builds use abf319d5a345d761d88e26ba787026e98370c26f; native-wheel builds use test-merge 70b456e93a77fff48522ee7aa6ddeec6d157f6e6 with identical tree 62eb319323cc7c9de7513af6ef7f05009d411189. Five original wheel-member digests and exact ZIP identities are recorded. Later reviewed source needs new locked artifacts; signing/frozen manifests and complete distribution transitions remain incomplete.",
+      "evidence_or_remaining_work": "All four 9db paired builds and actual native-wheel identities are retained. Paired source 9db and test-merge c9859a5b5d04526fa7e663d7c494e442ee4298c4 have equal tree 47ba580366672b3b92cb46e6bb1d19c670444e94. Exact ZIP API identities and five original wheel-member digests are preserved. Subsequent E/diagnostic/probe source requires new locked artifacts; post-sign/frozen manifests and full distribution transitions remain incomplete.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2341,7 +2398,8 @@
         "retained_ci_5ee",
         "retained_ci_ae",
         "retained_ci_abf",
-        "reproducibility"
+        "reproducibility",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-134,RSP-081."
     },
@@ -2355,7 +2413,7 @@
         "RSP-015"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual abf registered-route sampling attempted both arms everywhere; only Windows baseline completed a smoke block and every candidate block failed. Three hosted retained-Python scanners pass 84 cases; Windows attestation fails before any case. No-env/alias/source/Watch/availability/approval coverage remains incomplete, and Windows native full-source review is still unsupported. The private Claude installed probe and source fixes require new hosted execution.",
+      "evidence_or_remaining_work": "Every 9db paired baseline/candidate first block fails; no complete pair. Installed scanners retain 107 passing rows, one failure, four unreached cases. Linux private Claude completes both 30-launch PreToolUse arms then fails Python PostToolUse. Actual interpreter provisioning and all four compatible stopped transitions pass in their own scopes. No-env/alias/source/Watch/availability/approval coverage remains incomplete; Windows full native source opens remain unsupported.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2365,7 +2423,9 @@
         "retained_ci_abf",
         "installed_scanner",
         "claude_pilot",
-        "interpreter_provisioning"
+        "interpreter_provisioning",
+        "retained_ci_9db",
+        "claude_installed"
       ],
       "original_dependencies": "RSP-135,RSP-015."
     },
@@ -2379,7 +2439,7 @@
         "RSP-010"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Abf run 35229526455 remains smoke: one Windows baseline block, every candidate failed, no complete pair. Native-wheel Linux SLO smoke and 100,000-request/250000-receipt soak pass within their own scopes; both macOS native-wheel source witnesses fail. No full frozen five-run matching-artifact minima, all-platform result or confidence-qualified release pass exists. Later source corrections and unsupported Windows content review remain separate.",
+      "evidence_or_remaining_work": "9db paired run 35239001782 is smoke: all eight arms fail first attempted blocks, no complete pair. Native-wheel ARM passes SLO smoke with qualification_complete false; Windows passes ordinary installed scope; Linux capacity conservation and Intel recovery/resident/safe-corpus gates fail. Earlier abf Linux 100000/250000 soak remains historical. E and partial Claude results do not meet full frozen sampling, minima, intervals or four-platform qualification.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2388,7 +2448,11 @@
         "retained_ci",
         "retained_ci_5ee",
         "retained_ci_ae",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "mcp_owned_preparation",
+        "claude_installed",
+        "native_capacity_diagnostic"
       ],
       "original_dependencies": "RSP-136,RSP-010."
     },
@@ -2402,12 +2466,14 @@
         "RSP-131"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The abf Linux native-wheel soak completes 100,000 requests and 250,000 receipts with zero errors/health failures and stable daemon identity. This narrower soak does not complete the original mixed offered-load/control mutation/inventory/startup-restart/saturation matrix or all-platform process-tree/private-memory and persistence observations. The mixed runner remains integrated; full acceptance is still blocked.",
+      "evidence_or_remaining_work": "Earlier abf Linux 100000-request/250000-receipt zero-error soak remains attached to its exact artifact. Latest 9db Linux 64-wave has 36 allows (22 resident, 14 fail-safe), 28 overloads and zero native-overload counter increments; Intel separate 64-wave conserves 32 resident/32 explicit-bypass but other SLO gates fail. None completes mixed offered-load, control mutation, inventory, restart, saturation and all-platform resource/persistence acceptance.",
       "evidence_refs": [
         "qualification",
         "contract",
         "capacity",
-        "retained_ci_abf"
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "native_capacity_diagnostic"
       ],
       "original_dependencies": "RSP-137,RSP-131."
     },
@@ -2421,7 +2487,7 @@
         "RSP-138"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Actual abf compatible stopped candidate/prior-a224/candidate sequences pass all three phases on Linux and both macOS hosts. Original 2e sequences preserve six receipts and protected bytes but fail post-rejection quiescence: legacy stop 2 is not a containment certificate, expected-negative acceptance remains false and no candidate restore runs. Windows has no transition JSON after retained cleanup/reporter errors. A bounded producer-aware negative-attempt certificate remains design work. Later setup fixes need new hosts; live/in-progress/signing/version transitions remain unqualified.",
+      "evidence_or_remaining_work": "All four 9db compatible stopped candidate/prior-a224/candidate sequences pass their three phases with protected state and generation retirement. All four original 2e sequences reject protected schema after clean/upgrade/reinstall positives, retain receipts/authority, but fail strict quiescence with legacy stop 2; expected-negative acceptance false and candidate restore absent. Producer-aware containment, live/in-progress/version/signing/enrollment rollback remain unqualified.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2430,7 +2496,8 @@
         "retained_ci_ae",
         "retained_ci_abf",
         "legacy_quiescence",
-        "interpreter_provisioning"
+        "interpreter_provisioning",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-135,RSP-138."
     },
@@ -2444,7 +2511,7 @@
         "RSP-138"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All 51 abf JSON members preserve decoded values with original/retained/archive and five binary-member hashes; eight existing scanner/build copies remain canonical. Finite source reviews cover private helper packet/error output, interpreter metadata/validator hashes, native failure observation and no-upload CodeQL capture. Original failures and zero-case Windows scanner output remain explicit. Final RSP-100/new-head exports and actual later hosted artifacts still require review.",
+      "evidence_or_remaining_work": "All 53 9db JSON members retain decoded values and ZIP/original/retained identities, with eight canonical scanner/build records. E preserves 64 complete cells and its initial zero-cell export failure; timed public traces are not every private authority field. Source reviews and bounded hash-only diagnostics retain exact failures without raw request/output data. Sonar 42-findings review and CodeQL data-role/legacy limits do not imply a clean new external gate. Final new-head export privacy remains open. Six original CodeQL ZIPs and twelve decoded JSON members were inspected and retained with exact hashes; findings preserve actual data-role and inherited legacy-verifier limits. Exclusive first-run pinned-source extraction was not proved. Actual PR-reference alert IDs and exact sink-source correlations are now retained without raw credentials or a false closed-gate claim. E method-selector counterexamples and corrected F source tests remain separately scoped; historical E raw bytes are unchanged and no F campaign/activation is inferred.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2459,7 +2526,24 @@
         "mcp_native_text",
         "interpreter_provisioning",
         "codeql_foundation",
-        "reproducibility"
+        "reproducibility",
+        "retained_ci_9db",
+        "mcp_owned_preparation",
+        "native_edge_diagnostic",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation",
+        "codeql_356_disposition",
+        "sonar_inline_dispositions",
+        "config_source_confinement",
+        "config_source_validation",
+        "config_foundation_validation",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-136,RSP-138."
     },
@@ -2473,7 +2557,7 @@
         "RSP-137"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "CURRENT_CONTRACT, EXECUTION, both ledgers and TAKEAWAY now match source 7befd329a and the actual abf artifact attempts, with original requirements unchanged. Completed scoped package/scanner/MCP no-go decisions, open private RSP-100 ownership, component-only Claude launcher, 84 Unix scanner passes/Windows failure, failed legacy quiescence, Linux narrow soak, exact current source validation, and separate foundation/abf CodeQL and approval blockers are explicit. Historical claims remain dated and never become final SLO or release completion.",
+      "evidence_or_remaining_work": "The five core execution records now match source 1061f304970555b48682fb1b475c0a67022a4e62, actual 9db hosted attempts and completed inactive E. Original 144 requirements and full prose remain intact. Updated scanner/interpreter/Claude/stopped-rollback scope, retained legacy failures, narrow historical soak, security triage and remaining approval/qualification/canary gates are explicit. No historical pass becomes a new-head result. The new inclusive 1 MiB TOML source bound and immediate publisher ACK withdrawal are explicit. The later E method-selector counterexample withdraws broad mutation-safety wording; corrected F is source-only and inactive.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2483,7 +2567,21 @@
         "claude_pilot",
         "codeql_foundation",
         "reproducibility",
-        "pilots_checkpoint_validation"
+        "pilots_checkpoint_validation",
+        "retained_ci_9db",
+        "mcp_owned_preparation",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation",
+        "config_source_confinement",
+        "config_source_validation",
+        "config_foundation_validation",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-136,RSP-137."
     },
@@ -2498,7 +2596,7 @@
         "RSP-141"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Abf has 31 successful/five failed complete workflows. Its all-attempt check inventory has 199 records: 163 success, 23 skipped, 12 failure and one cancelled, including external CodeQL with three new high alerts. The latest 197-check view omits two earlier successful Gitar attempts. Legacy CodeRabbit explicitly skipped draft review. Foundation e449 has 179 check records: 159 success, 19 skipped, one CodeQL failure reporting two high alerts. Exact source attribution for both sets remains unknown. Foundation Greptile 5/5 and protected auto-merge do not supply independent last-push CODEOWNER approval. Six fixed-source/language no-upload diagnostic jobs, actual findings, any required remediation and final implementation CI/review/approval remain outstanding.",
+      "evidence_or_remaining_work": "9db retains 34 successful/three failed workflows and 207 check attempts (178 success, 20 skipped, nine failed), with external CodeQL and Sonar failures. Actual PR-reference API identifies foundation Python alerts 343/344 (config.py:495/498) and implementation adds 356 (native authority key-ID hash). Exact rule/location/sink-byte correlation is retained; API provides no fingerprint/full flow and no disposition was applied at capture. At 17:38:43Z, the supported API dismissed only 356 as false positive after source review; a fresh PR-2954 merge-ref read verifies that state. Path alerts 343/344 and inherited Actions 288/289 were open at that readback. Original captured check failures remain unchanged; no clean security gate is claimed. Corrected exclusive CodeQL extraction also needs hosted proof. Greptile 5/5/protected auto-merge and bot checks do not supply independent last-push CODEOWNER approval. Shared held-source TOML reading and publisher ACK withdrawal are implemented and source-tested; new foundation analysis fixes old 343/344 but reports eight new reader-path findings plus two inherited Actions findings, all ten open for triage. New implementation analysis remains pending. The new 1 MiB TOML acceptance limit is explicit and original performance gates remain unchanged.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2508,7 +2606,21 @@
         "retained_ci_abf",
         "abf_check_inventory",
         "codeql_foundation",
-        "pilots_checkpoint_validation"
+        "pilots_checkpoint_validation",
+        "retained_ci_9db",
+        "9db_check_inventory",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation",
+        "codeql_356_disposition",
+        "sonar_inline_dispositions",
+        "config_source_confinement",
+        "config_source_validation",
+        "config_foundation_validation",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-134,RSP-140,RSP-141."
     },
@@ -2522,13 +2634,14 @@
         "RSP-142"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The concrete plan pins four exact prior native wheels/build/tree,16 priority cohort cells, original gates and stop/rollback commands. Actual abf compatible stopped rollback passes on three Unix hosts, but legacy quiescence, Windows transition and broader live/signing/version evidence remain incomplete. Candidate fields and final independent approval stay pending; qualification, activation and tested rollback remainfalse in the canary manifest. No cohort has been activated.",
+      "evidence_or_remaining_work": "Concrete plan pins four exact prior wheels/build/tree, 16 priority cohort cells, original gates and stop/rollback commands. 9db compatible stopped rollback now passes all four platforms; all four original-baseline strict quiescence sequences still fail. No live/in-progress/version/signing/enrollment rollback or activated cohort. Historical plan candidate fields remain pending and qualification/activation/tested-cohort flags false; final qualified artifacts and independent approval still required.",
       "evidence_refs": [
         "qualification",
         "contract",
         "canary_plan",
         "retained_ci_abf",
-        "legacy_quiescence"
+        "legacy_quiescence",
+        "retained_ci_9db"
       ],
       "original_dependencies": "RSP-139,RSP-142."
     },
@@ -2547,7 +2660,7 @@
         "RSP-143"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All 144 original requirements and full dependency prose remain intact. The current handoff retains abf/ae/5ee/ 42579 artifacts, exact reconstruction recipes and scoped package/scanner/MCP no-go decisions. RSP-100 ownership is active without a claimed result; the private Claude launcher is component-tested with installed gates pending. Full platform/ posture/mixed-soak/legacy-quiescence qualification, both foundation/abf CodeQL findings, independent approval and canary/release remain incomplete.",
+      "evidence_or_remaining_work": "All 144 original requirements and full dependency prose remain intact. Handoff retains 9db / abf / ae / 5ee / 42579 attempts, exact reconstruction and scoped package/scanner/native-MCP decisions. E is implemented/measured but inactive, default B and RSP-100 OPEN; Claude has actual incomplete installed results. Full platform/posture/mixed-soak/legacy-quiescence qualification, security gates, independent approval and canary/release remain incomplete. First CodeQL SARIF retrieval/triage is complete with explicit extra-helper extraction, public-checksum and legacy-secret-verifier limits; corrected hosted extraction and the overall security gate remain unresolved. Only alert 356 has a source-reviewed, API-verified false-positive disposition; the earlier readback keeps path 343/344 and inherited Actions 288/289 open at that historical point. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Config capture now uses held handles and rejects unsafe sources, with immediate publisher ACK withdrawal and explicit inclusive 1 MiB TOML limit; source scopes pass with actual Windows skipped. Fresh security and platform gates remain required. E method-selector review limits its historical tested boundary; corrected F passes 44 focused tests but has no route campaign, platform qualification or activation.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2560,25 +2673,41 @@
         "mcp_ownership",
         "claude_pilot",
         "codeql_foundation",
-        "reproducibility"
+        "reproducibility",
+        "retained_ci_9db",
+        "mcp_owned_preparation",
+        "claude_installed",
+        "sonar_9db",
+        "codeql_retained",
+        "hosted_integration_d4e",
+        "codeql_alert_correlation",
+        "codeql_356_disposition",
+        "config_source_confinement",
+        "config_source_validation",
+        "config_foundation_validation",
+        "config_publisher_confinement",
+        "config_publisher_validation",
+        "mcp_streaming_boundary",
+        "mcp_streaming_source_evidence",
+        "config_integrated_validation"
       ],
       "original_dependencies": "RSP-137,RSP-138,RSP-139,RSP-140,RSP-141,RSP-142,RSP-143."
     }
   ],
-  "review_scope": "All 144 original requirements and complete dependency prose reviewed through 7befd329a00f9689b6d648750e64f58082e8986d. Exact original conversation and PR #2954 confirmed. The abf checkpoint retains 51 JSON members from eight actual hosted artifact ZIPs. Package/scanner and the four-category MCP experiment have scoped measured no-go decisions. RSP-100 private ownership implementation is active outside this cutoff with no claimed result; the private Claude launcher is component-tested with installed execution pending. Full installed/platform qualification, legacy negative attempt quiescence, independent review and canary/release remain incomplete.",
+  "review_scope": "All 144 original requirements and complete dependency prose reviewed through 1061f304970555b48682fb1b475c0a67022a4e62. Exact original conversation and PR #2954 confirmed. The 9db checkpoint retains all 53 JSON members from eight actual hosted ZIPs and all 207 check attempts. The E owned-preparation experiment is implemented and measured, remains inactive, and does not close RSP-100 in retained B. Installed scanner, interpreter, Claude and stopped-transition observations are recorded at their exact scope. Full installed/platform qualification, original-baseline negative-attempt quiescence, independent review and canary/release remain incomplete. CodeQL API correlation identifies config-path alerts 343/344 and native-authority identifier alert 356 by PR reference, rule/location and exact sink bytes. A supported false-positive disposition and its dated PR-reference readback verify only 356 dismissed, with 343/344 and inherited Actions 288/289 open at that historical point. API fingerprint/full-flow and a clean security gate are not claimed. Shared config capture and immediate publisher ACK withdrawal now have bounded source validation; actual Windows and fresh implementation CodeQL outcomes remain pending. The new 1 MiB TOML input limit does not change original performance thresholds. Later source review found an inherited E mutable-method writer-selection gap, demonstrated by two initial-F child-pipe regressions. Historical E evidence stays unchanged; corrected F has a 44-test source gate and finite review only, with no route campaign or activation. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed.",
   "release_snapshot": {
-    "observation_basis": "Direct GitHub observation supplied for this 2026-09-17 checkpoint: all 36 exact abf319 workflows complete; 31 successful and five failed. Later integrated source requires a new published build and checks.",
+    "observation_basis": "Retained exact 9db hosted observation: 37 Actions workflows completed, 34 successful and three failed; 207 check attempts completed, 178 successful, 20 skipped, nine failed. Later integrated source needs new artifacts/checks.",
     "foundation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2951",
-    "foundation_head": "e449594e86c717e66e14598a4130475de79c536f",
-    "foundation_checks": "Latest direct GitHub observation: foundation e449594e86c717e66e14598a4130475de79c536f has 179 check records: 159 success, 19 skipped and one CodeQL failure reporting two high severity alerts. Normal squash auto-merge remains enabled; Greptile 5/5 and bot reviews do not supply the missing independent last-push CODEOWNER approval. The exact findings await the separate pinned no-upload SARIF diagnostic; no remediation or clean scan is claimed.",
+    "foundation_head": "a7b675a84b732ead542cdf77e5153c57b4257d9b",
+    "foundation_checks": "Current foundation shared-reader head a7b675a84b732ead542cdf77e5153c57b4257d9b is published with exact branch readback. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Retained foundation e449 observation: 179 checks, 159 success, 19 skipped, one external CodeQL failure reporting two high alerts. The earlier PR-reference API identified its Python alerts 343/344 at config.py:495/498; both were open at that earlier capture. Protected squash auto-merge and Greptile 5/5 do not provide independent last-push CODEOWNER approval. Source triage and the shared-reader source correction do not clear the gate; corrected diagnostic extraction, current finding triage and actual Windows validation remain pending.",
     "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
-    "implementation_remote_head": "abf319d5a345d761d88e26ba787026e98370c26f",
-    "implementation_checks": "All 36 exact abf319 workflows complete: 31 successful and five failed. The all-attempt check inventory has 199 records: 163 successful, 23 skipped, 12 failed and one cancelled. The latest view has 197 records, omitting two earlier successful Gitar attempts. Legacy CodeRabbit explicitly skipped review because the PR is draft. The separate external CodeQL check 105229882410 reports three new high severity alerts despite its successful Actions analysis workflow; exact findings and introduction point remain unknown. The paired qualification and native-wheel attempts retain their separate failures. Later interpreter, Windows environment/reader, launcher helper and diagnostic corrections are source-tested only until new actual-head artifacts run.",
-    "qualification_run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35229526455",
+    "implementation_remote_head": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+    "implementation_checks": "All 37 exact 9db Actions workflows complete: 34 successful, three failed. All 207 check attempts: 178 success, 20 skipped, nine failed. Main CI has 110 successful jobs, three skipped and one failed Sonar job; Desktop, Windows cross-platform and all four Security Gates jobs pass. CodeQL app 105262485275 reports three high alerts while its Actions workflow succeeds. Sonar app 105267394714 reports new security/reliability C against required A. Legacy CodeRabbit explicitly skipped draft review. Source triage and subsequent corrections do not constitute fresh passing hosted gates.",
+    "qualification_run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35239001782",
     "qualification_mode": "smoke",
-    "qualification_observation": "Both arms attempted on all four platforms. Only Windows baseline completed one smoke block; every candidate block failed and no complete pair exists. Linux baseline rejected a symlink target at mode 0777; macOS baselines stalled in getfqdn within a fixture using _receive(30.0); the failure JSON does not record elapsed construction time. Candidate failures were Linux omp.PostToolUse.block.max without a native result, ARM cursor.afterShellExecution.block.max without a native result, Intel hook-process-capacity startup deadline, and Windows claude-code.afterWriteFile.alias.1k without a native result. Original failures remain unchanged.",
-    "ollama_observation": "At abf, Linux and macOS ARM each pass all 22 installed Ollama cases. Intel fails the disabled-phase 400 ms readiness budget at 527.241 ms after 10 cases; Windows fails enabled readiness at 407 ms after two cases. All four Builder checks pass. The earlier ae four-host 22-case successes remain historical and do not replace the current failures.",
-    "retained_artifacts": "evidence/takeover-abf319/manifest.json retains all 51 JSON members from eight exact workflow ZIPs, unchanged decoded values, original/retained hashes and five binary-member hashes; eight scanner/build records use canonical copies. Paired candidate source is abf319d5a345d761d88e26ba787026e98370c26f; native-wheel actual build is 70b456e93a77fff48522ee7aa6ddeec6d157f6e6, with identical Git tree 62eb319323cc7c9de7513af6ef7f05009d411189. Earlier ae, 5ee and 42579 records remain unchanged.",
+    "qualification_observation": "Both arms attempted on all four platforms; all eight fail their first attempted block and no complete pair exists. Baseline failures: Linux codex.PostToolUse.benign.1m action mismatch; macOS ARM/Intel getfqdn startup deadline; Windows cold resident stop containment. Candidate failures: Linux cursor.afterShellExecution.empty-output.empty; ARM cursor.afterShellExecution.benign.256k; Windows cline.PostToolUse.benign.max route mismatches; Intel hook-process capacity unavailable during construction. The unchanged macOS fixture bound is 30 seconds, separate lookup probes 5 seconds.",
+    "ollama_observation": "At 9db macOS ARM passes 22 installed Ollama cases. Linux/Intel/Windows each retain two cases then fail enabled readiness at 400.108/407.413/407 ms against unchanged 400 ms. All four Builder installation checks pass. Earlier abf and ae successes stay historical and do not replace these outcomes.",
+    "retained_artifacts": "evidence/takeover-9db62e/manifest.json retains all 53 JSON members from eight API-digest/size-verified ZIPs, unchanged decoded values, eight canonical scanner/build records and five wheel-member hashes. Paired candidate source 9db and actual native-wheel test-merge c9859a5b5d04526fa7e663d7c494e442ee4298c4 have equal Git tree 47ba580366672b3b92cb46e6bb1d19c670444e94. Prior abf / ae / 5ee / 42579 records remain unchanged.",
     "merge_or_release_complete": false,
     "historical_installed_identity_observation": {
       "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35201516674",
@@ -2589,30 +2718,55 @@
       "observed_capability_build_sha": "73f34ba984ff01563257599692cce33098014bdf",
       "scope": "17 installed_status_and_real_stdio_child cases passed on each of Linux and Windows before later default-auto hook failures; no macOS, signing, cross-release rollback or full hook qualification inferred. Package-owner log report; verify against final source/artifacts."
     },
-    "installed_scanner_observation": "Actual abf native-bundled wheels pass 28 retained-Python scanner cases on each of Linux, macOS ARM and macOS Intel: 84 passes, no skips. Windows fails initial PackageNotFoundError attestation before any identity or scanner case. Its CRLF probe digest is retained. The environment correction needs a fresh hosted run.",
-    "artifact_transition_observation": "Compatible stopped candidate/prior-a224/candidate sequences pass all three phases on Linux and both macOS hosts. Original-baseline sequences pass clean baseline, candidate upgrade and reinstall, then reject the protected command binding. Six receipts and authority bytes survive, but legacy stop returns 2 and quiescence is unverified; expected-negative acceptance stays false and candidate restoration was not attempted. Windows uploads no transition JSON after cleanup and exception-reporting failures. Source fixes do not change those observations.",
-    "native_wheel_observation": "Native-wheel run 35229526436 passes its Linux and Windows workflow scopes. Linux installed SLO smoke and the 100000-request/250000-receipt soak pass with zero errors and stable daemon identity, while qualification_complete remains false. Both macOS jobs fail large source-reference witnesses without a native result: ARM pi/PostToolUse/5m sample 23, Intel codex/PostToolUse/5m sample 18.",
+    "installed_scanner_observation": "9db has 28 passes on each Unix host; Windows attests the wheel and both real PE launchers, then records 23 passes, one failed row and four unreached cases. Across hosts 107 rows pass, one fails, four are unreached. The old catch-all mislabels the last completed history row on later fixture_git_setup failure; raw status is retained. Reserved nul.ts is a source-supported likely fixture cause, not proven by absent original Git stderr. Probe-only filename/phase-diagnostic repair passes 54 source tests; new Windows execution is pending.",
+    "artifact_transition_observation": "All four 9db compatible stopped candidate/prior-a224/candidate sequences pass all three phases, preserving protected state, registrations, receipts and authenticated generation retirement. Every original 2e sequence passes clean baseline, upgrade, reinstall then rejects protected binding; legacy stop 2 leaves strict quiescence and expected-negative acceptance false on all four hosts, with no candidate restoration. These are same-version stopped replacements; live, in-progress, signing, version and enrollment rollback remain unqualified.",
+    "native_wheel_observation": "9db native-wheel run 35239001886 passes ordinary Windows installed scope and ARM SLO smoke; qualification_complete remains false. Linux completes corpus, 24 size samples, recovery, pool warmup then fails 64-request capacity conservation: 36 allows (22 native-resident, 14 fail-safe), 28 explicit overloads, zero transport errors and zero native overload increments. Intel fails recovery 1120.758 ms against 1000 ms, resident share and safe corpus with one fail-safe; its separate 64-wave conserves 32 native-resident allows/32 explicit engine bypasses. Missing original individual failure reasons remain unknown; later diagnostics do not rewrite them.",
     "implementation_check_attempt_counts": {
-      "total": 199,
-      "success": 163,
-      "skipped": 23,
-      "failure": 12,
-      "cancelled": 1
+      "total": 207,
+      "success": 178,
+      "skipped": 20,
+      "failure": 9
     },
-    "implementation_latest_view_counts": {
-      "total": 197,
-      "success": 161,
-      "skipped": 23,
-      "failure": 12,
-      "cancelled": 1
+    "check_inventory": "evidence/takeover-9db62e/github-check-inventory.json",
+    "claude_launcher_observation": "9db actual Linux installed pilot attests candidate package/runtime and completes 30 Python plus 30 native PreToolUse launches with exact contracts and native-resident routes. Its next Python PostToolUse cell attempts 11/completes 10 then fails unexpected delivered reason. Zero full blocks complete; scope_complete, qualification_complete and activation_qualified remain false. Partial cells and latency/CPU remain retained, excluded from a complete five-block selection.",
+    "interpreter_provisioning_observation": "9db Linux both paired environments and independent transition environments prove same-byte private 0755 interpreter copies, unchanged pyvenv/runtime ABI/SQLite/SSL/prefix and acceptance by the unchanged installed production validator. Shared interpreter remains unchanged. This fixture repair passes but does not erase the subsequent baseline semantic or candidate route failures.",
+    "historical_abf_observation": {
+      "head": "abf319d5a345d761d88e26ba787026e98370c26f",
+      "manifest": "evidence/takeover-abf319/manifest.json",
+      "workflows": {
+        "total": 36,
+        "success": 31,
+        "failure": 5
+      },
+      "all_check_attempts": {
+        "total": 199,
+        "success": 163,
+        "skipped": 23,
+        "failure": 12,
+        "cancelled": 1
+      },
+      "latest_check_view": {
+        "total": 197,
+        "success": 161,
+        "skipped": 23,
+        "failure": 12,
+        "cancelled": 1
+      },
+      "scope": "Earlier Linux100000-request/250000-receipt soak and84 Unix scanner passes remain attached to abf. Its Windows zero-case scanner failure and missing transition JSON are not current9db observations."
     },
-    "check_inventory": "evidence/takeover-abf319/github-check-inventory.json"
+    "codeql_diagnostic_observation": "First run 35239002083 retains six successful jobs: 17/18 Python findings, zero Actions/JavaScript results, 17 matching common rule/fingerprint pairs and one added authority-key identifier result. Six exact ZIPs preserve all bytes. Python also extracted the current outer helper, so exclusive pinned-tree extraction was not proven. Root-checkout correction passes 134 structural tests; corrected hosted extraction is pending. The first actual PR-reference API capture correlates then-open Python alerts 343/344 (config paths) and 356 (native authority key ID) by rule/location/exact sink bytes, without API fingerprint/full-flow proof or any applied disposition. Subsequent supported API disposition at 17:38:43Z and a fresh PR-2954 merge-ref read verify only 356 dismissed as false positive; 343/344 and inherited Actions 288/289 remain open. The first-capture bytes and failed check remain unchanged.",
+    "codeql_alert_correlation": "../security/codeql-pr-alert-correlation.json",
+    "codeql_356_disposition": "../security/codeql-356-disposition.json",
+    "config_source_observation": "Held-directory/file TOML capture and immediate publisher ACK withdrawal are implemented. Reader/foundation 67-test scopes overlap combined 88-test/one actual-Windows-only skip validation; five-file Ruff/format and three production type files have zero errors/80 warnings. Inclusive 1 MiB TOML ceiling is new, frozen performance gates unchanged. New foundation analysis fixes old 343/344 but has eight new reader-path findings plus two inherited Actions findings; no installed/Windows qualification.",
+    "mcp_f_source_observation": "Corrected F has 44 focused tests/11.39 seconds and a clear finite source review after inherited E-style method-selection counterexamples. It remains source-only and inactive, with no route campaign or installed/platform qualification. Historical E 64 cells/32 pairs/source/report/raw bytes remain unchanged; universal pre-forward mutation safety is not established.",
+    "config_integrated_validation_observation": "At config-integrated 5da, unfiltered production types pass 1254 files/0 errors/20236 warnings in 136.815 tool seconds; authority/semantic pass. Initial 15-site I/O failure is retained. Six exact function/primitive inventory classifications and helper-path protection pass 46 I/O/architecture tests 99.32s, including live validate(ROOT), with static/one contract types 0/0 and finite review clear. Product source remains unchanged; source test populations are separate and overlap, and no installed qualification is claimed.",
+    "foundation_codeql_current_run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35257569810"
   },
   "evidence_catalog": {
     "contract": {
       "path": "CURRENT_CONTRACT.md",
-      "source_commit": "7befd329a00f9689b6d648750e64f58082e8986d",
-      "scope_and_limit": "Current authority, acknowledged posture, optional private pilots, measured selections and remaining original requirements. Source implementation, installed execution and protected release gates remain independent."
+      "source_commit": "1061f304970555b48682fb1b475c0a67022a4e62",
+      "scope_and_limit": "Current authority, acknowledged posture, inactive E/native pilots, measured selection limits and original outstanding requirements. Source implementation, installed observations and protected release gates remain independent."
     },
     "qualification": {
       "path": "../native-qualification-corpus.md",
@@ -2632,7 +2786,7 @@
     "scanner": {
       "path": "../rust-performance-scanner-review.md",
       "source_commit": "37605128c;489e314a0",
-      "scope_and_limit": "Final 30-pair rich-CLI confirmation preserves 680 findings; mean CPU -31.6% and p95 wall +13.5% fails selection. Retain optimized Python and every failed/confounded state. Separate abf installed retained-Python checks pass 84 cases on three hosts; Windows fails before its first case."
+      "scope_and_limit": "Final 30-pair rich CLI confirmation preserves 680 findings; mean CPU-31.6% and p95 wall+13.5% fails selection. Keep optimized Python and all failed/confounded states. Latest 9db installed scanner retains 107 passing rows, one failed row, four unreached cases; no native detector activation."
     },
     "mcp": {
       "path": "../../mcp-framing-bounds.md",
@@ -2656,8 +2810,8 @@
     },
     "ollama": {
       "path": "../installed-native-ollama-qualification.md",
-      "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f",
-      "scope_and_limit": "Historical ae four-host 22-case success is retained. Latest abf Linux/ARM pass 22 cases each; Intel and Windows retain 400 ms readiness failures after 10/two cases. All four Builder checks pass; broader lifecycle, live/version/signing and final platform acceptance remain incomplete."
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "Latest 9db ARM passes all 22 installed Ollama cases; Linux/Intel/Windows retain two cases then fail enabled readiness at 400.108/407.413/407 ms against 400 ms. All four Builder checks and compatible stopped rollback sequences pass; original 2e strict quiescence and broader live/version/signing lifecycle gates remain incomplete. Earlier ae/abf observations remain historical; the actual 9db records are retained_ci_9db."
     },
     "background": {
       "path": "../rust-performance-background.md",
@@ -2736,8 +2890,8 @@
     },
     "artifact_transition": {
       "path": "../../../scripts/ci/verify_installed_artifact_transitions.py",
-      "source_commit": "934507eb48165adbeee515f350925353812fafdf",
-      "scope_and_limit": "Actual abf compatible stopped rollback passes three phases on three Unix hosts using exact a224 wheel bytes. Original legacy rejection retains six receipts/authority but fails quiescence, leaves expected-negative acceptance false and does not restore candidate. Windows transition JSON is absent after retained cleanup/reporter failure. Same-byte interpreter and Windows environment/reporting fixes require new host evidence; live/version/signing remain open."
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "All four 9db compatible stopped candidate/prior-a224/candidate sequences pass three phases using pinned artifacts. All four original-baseline sequences retain failed strict quiescence after protected-schema rejection, legacy stop 2 and no candidate restore. Positive stopped same-version replacement does not qualify live/in-progress/version/signing/enrollment transitions or the whole seven-positive/one-negative contract."
     },
     "acknowledged_posture": {
       "path": "acknowledged-posture-contract.md",
@@ -2747,7 +2901,7 @@
     "package_pilot": {
       "path": "../rsp-package-native-selection.md",
       "source_commit": "8d8dd44bc;2241f763e;56c0330b4;29e04f908",
-      "scope_and_limit": "Whole-input v3 source-route pilot: 30 pairs,29 exact complete-result/all-column comparisons,one baseline failure; primary CPU +11.03%, wall +16.31%, no-go. Fifteen correction pairs and five direct original-deny pairs retained; no installed native activation."
+      "scope_and_limit": "Whole-input v3 source-route pilot: 30 pairs,29 exact complete-result/all-column comparisons, one baseline failure; primary CPU +11.03%, wall +16.31%, no-go. Fifteen correction pairs and five direct original-deny pairs retained; no installed native activation."
     },
     "mcp_exact_facts": {
       "path": "../../../tests/test_mcp_request_risk_facts.py",
@@ -2766,13 +2920,13 @@
     },
     "installed_scanner": {
       "path": "../rsp-scanner-installed-qualification.md",
-      "source_commit": "abf319d5a345d761d88e26ba787026e98370c26f;934507eb48165adbeee515f350925353812fafdf",
-      "scope_and_limit": "Actual native-bundled abf wheels pass all 28 retained-Python cases on Linux and each macOS architecture, totaling 84 with no skips. Windows fails initial distribution attestation with zero cases and exact CRLF probe identity. New environment/reader fixes are source-tested and require hosted execution; native detector remains inactive."
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d;0e2d560cc",
+      "scope_and_limit": "Actual 9db native-bundled wheels pass 28 cases per Unix host. Windows verifies wheel/modules and both PE launchers, then retains 23 passes, one failure, four unreached cases. Original catch-all/history-row labeling is preserved; reserved nul.ts is a likely portability trigger without original failing Git evidence. Probe-only filename and phase-diagnostic repair passes 54 tests; corrected Windows host run is pending. Earlier abf 84/zero-case failure stays historical."
     },
     "macos_lookup": {
       "path": "../../../scripts/ci/native_loopback_lookup.py",
-      "source_commit": "75c8facfe;abf319d5a345d761d88e26ba787026e98370c26f",
-      "scope_and_limit": "Actual abf read-only witnesses preserve selected root-owned unchanged resolver state. Numeric lookup passes; both system name lookups exceed their five-second diagnostic bounds without responder packets. The separate daemon fixture uses _receive(30.0), and scutil selection listing does not establish actual query routing or reachability flags. One ARM stack sample has allowlisted lookup categories; three samples time out. Cleanup succeeds, but no resolver repair or changed readiness budget is justified."
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "9db retains matching root-owned resolver configuration, direct UDP self-probe success, numeric libc success and two five-second system lookup timeouts without responder packets. The immutable fixture startup bound remains 30 seconds. Cleanup passes; scutil selection is not routing proof and no resolver repair is established."
     },
     "mcp_structural_facts": {
       "path": "../rust-performance-mcp-structural-facts.md",
@@ -2806,8 +2960,8 @@
     },
     "mcp_ownership": {
       "path": "../mcp-request-facts-ownership-audit.md",
-      "source_commit": "934507eb48165adbeee515f350925353812fafdf",
-      "scope_and_limit": "RSP-100 remains literal unmet production acceptance: B derives categories for identity and fresh policy separately. A private owned-generation implementation attempt is active after the frozen audit; no implementation, parity or benefit result is claimed at this cutoff. Public copy/match fallback, config callback ordering, browser/store/claim composition and exact forwarding binding remain mandatory."
+      "source_commit": "f40eea1a662b06aecfe2e8f4a0f3e8275cfa4c1c",
+      "scope_and_limit": "Historical E source/testing covers one owned preparation and selected bindings, with unsupported/package/busy B fallbacks. Later independent review found final protected-write selection depends on mutable method text; the same initial F selector demonstrably forwarded a changed method and invoked a hostile callback. Broad pre-forwarding mutation safety is not established. Frozen E remains unchanged/inactive; corrected F has separate source-only evidence. B retains two category derivations."
     },
     "retained_ci_abf": {
       "path": "evidence/takeover-abf319/manifest.json",
@@ -2822,12 +2976,12 @@
     "claude_pilot": {
       "path": "claude-native-launcher-pilot.md",
       "source_commit": "934507eb48165adbeee515f350925353812fafdf",
-      "scope_and_limit": "Private Linux Claude Pre/Post command, authenticated registration and contained Python completion are implemented in the existing distributed runtime. Final component snapshot passes 81 Python/12 Rust tests; later helper integration passes 43 focused tests and 27 builder/runner tests. Exact prior failed snapshots remain retained; actual installed launcher parity, route conservation and benefit are pending, with no default selection."
+      "scope_and_limit": "Private Linux command/component history: 81 Python/12 Rust in original final snapshot; 43 later helper and 27 builder checks remain separate. Actual 9db installed results are in the separate retained_ci_9db and claude_installed entries, superseding this source report's old installed-pending wording. No default registration or general activation."
     },
     "interpreter_provisioning": {
       "path": "qualification-interpreter-provisioning.md",
-      "source_commit": "934507eb48165adbeee515f350925353812fafdf",
-      "scope_and_limit": "Linux disposable venv setup copies identical interpreter bytes to owned 0755, preserves shared target/config, and requires real isolated ABI/SQLite/SSL/prefix and installed-validator probes. 86 source tests pass, including frozen original validator; corpus retains its four pre-existing type errors. Actual new-host setup and candidate missing-native diagnostics remain pending."
+      "source_commit": "d4e13547f0e25f66f32db14012b14c0fad0abf4f",
+      "scope_and_limit": "Source same-byte private interpreter fixture and bounded probes retain original validation history. 9db Linux paired and independent transition environments now pass actual installed same-byte 0755, unchanged pyvenv/ABI/SQLite/SSL/prefix and production-validator checks. No shared chmod, trust relaxation or artifact mutation; subsequent route failures remain distinct."
     },
     "legacy_quiescence": {
       "path": "../rsp-baseline-negative-quiescence-review.md",
@@ -2836,18 +2990,123 @@
     },
     "codeql_foundation": {
       "path": "codeql-foundation-diagnostic.md",
-      "source_commit": "1623b8c0de999001fa58dac2ca7755816909793d",
-      "scope_and_limit": "Foundation check 105075778732 reports two high alerts; separate abf check 105229882410 reports three new high alerts despite successful CodeQL Actions analysis. Exact source attribution remains unknown. The implemented diagnostic selects six fixed-source/language jobs across e449 and abf with original observed settings, raw SARIF/manifest Actions artifacts, upload never and no Code Scanning/database upload. The expanded source suite passes 121 tests, Ruff, workflow policy and collector types with zero errors/warnings. Initial foundation-only validation retains its own scope; hosted runs, finding attribution and remediation remain pending."
+      "source_commit": "acfe08c2e75f561fd863da31e2735e0c9e144424",
+      "scope_and_limit": "The first six fixed-source/language jobs completed but Python extracted the current helper outside the nested pinned tree. Corrected workflow stages the collector outside, preserves exact workflow bytes through the supported definition field, replaces the actual extractor root with the pinned snapshot and verifies root/cwd/source/collector identities plus no untracked files. No exclusions or uploads to Code Scanning/databases. 134 tests pass in 3.64 seconds with lint/type/policy; corrected hosted extraction remains pending."
     },
     "abf_check_inventory": {
       "path": "evidence/takeover-abf319/github-check-inventory.json",
       "source_commit": "57f9da456;4da18ca8a",
-      "scope_and_limit": "Exact abf filter=all inventory retains 199 check attempts: 163 success, 23 skipped, 12 failure, one cancelled. Latest view has 197: 161 success, 23 skipped, 12 failure, one cancelled; two earlier successful Gitar attempts explain the difference. This population is distinct from 36 workflows (31 success/five failure). External CodeQL reports three new high alerts, still unlocated; the Actions analysis succeeds. Legacy CodeRabbit says review skipped for a draft. No approval or clean gate is inferred."
+      "scope_and_limit": "Exact abf filter=all inventory retains 199 check attempts: 163 success, 23 skipped, 12 failure, one cancelled. Latest view has 197: 161 success, 23 skipped, 12 failure, one cancelled; two earlier successful Gitar attempts explain the difference. This population is distinct from 36 workflows (31 success/five failure). At that historical capture, external CodeQL reported three new high alerts without located IDs; the later codeql_alert_correlation entry records current PR-reference identity. Its Actions analysis succeeded. Legacy CodeRabbit says review skipped for a draft. No approval or clean gate is inferred."
     },
     "pilots_checkpoint_validation": {
       "path": "evidence/pilots-checkpoint/source-validation.json",
       "source_commit": "7befd329a00f9689b6d648750e64f58082e8986d",
       "scope_and_limit": "Validation pins bbe742e91ed1ecc407837677f92517e213791114: 42 changed Python files pass Ruff/format, 147 integration tests pass in 7.76 seconds pytest time, and 1253 production files pass the unfiltered type gate with zero errors and 20229 nonfatal warnings (150.299 seconds tool, 153.987 seconds wall). Authority, semantic, I/O ownership and workflow-policy gates pass. Initial formatting refusal and CRLF diff-check failure are retained; file-specific interpretation changes no artifact bytes and final diff check passes. Production source is unchanged afterward. This is finite source validation, not a full-suite, installed or final-code-owner pass."
+    },
+    "retained_ci_9db": {
+      "path": "evidence/takeover-9db62e/manifest.json",
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "All 53 JSON members from eight API-verified hosted ZIPs, eight canonical scanner/build records and five wheel-member hashes. Both arms fail their first attempted block on every host; no complete pair. Four compatible stopped rollbacks pass, original legacy strict quiescence fails everywhere. Independent scanner, Claude, Ollama and native-wheel outcomes retain their exact limits."
+    },
+    "9db_check_inventory": {
+      "path": "evidence/takeover-9db62e/github-check-inventory.json",
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "All 207 check attempts finish: 178 success, 20 skipped, nine failed. Separate 37 workflows: 34 success, three failed. Main CI: 110 pass, three skipped, one Sonar failure. External CodeQL three high alerts and Sonar C security/reliability remain failed; skipped draft CodeRabbit review supplies no approval."
+    },
+    "mcp_owned_preparation": {
+      "path": "../rust-performance-mcp-owned-preparation.md",
+      "source_commit": "f40eea1a662b06aecfe2e8f4a0f3e8275cfa4c1c",
+      "scope_and_limit": "Completed inactive E: 64 cells/32 pairs, 1108 forwards/notifications; 554 E admissions, category derivations, completed preparations and bound writes. General activation rejected; positive 1 KiB/128 KiB observations remain, large shapes miss 30%, blocks regress and memory rises. 119 source tests and separate 3 targeted tests are not 122 unique tests; 3008 public-oracle cases and 96 full-authority cases have separate scopes. Initial zero-cell incomplete export and exact reconstruction are retained. B stays default and RSP-100 OPEN. Later method-selector review identifies a concrete untested boundary; initial-F child-pipe failures substantiate it. This historical report and all 64 selected raw cells remain byte-identical, with no universal mutation-safety or corrected-F timing claim."
+    },
+    "claude_installed": {
+      "path": "evidence/takeover-9db62e/perf-linux-installed-claude-launcher-pilot.json",
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "Actual installed Linux candidate: 30 Python and 30 native PreToolUse launches complete with exact contract and native-resident routes. Next Python PostToolUse cell attempts 11/completes 10 before unexpected delivered reason. Zero complete five-block cohorts; scope/qualification/activation flags false. Completed/partial timing stays retained without a full benefit decision; broader fault/platform/signing scopes remain missing."
+    },
+    "macos_dnsservice": {
+      "path": "macos-dnsservice-diagnostic-contract.md",
+      "source_commit": "645ee401f234aaa4613d1d6b6f2a4e456f41e7fd",
+      "scope_and_limit": "Prepared subsequent diagnostic adds bounded held-descriptor hosts inventory, matching resolver flags and one actual DNSService PTR query after qualification. 56 source tests pass; types 0 errors/46 warnings. No hosts/service/cache/baseline/runtime repair; actual new hosted observations remain pending."
+    },
+    "native_edge_diagnostic": {
+      "path": "native-edge-return-diagnostic.md",
+      "source_commit": "d4e13547f0e25f66f32db14012b14c0fad0abf4f",
+      "scope_and_limit": "Prepared stage observer calls each original function once, keeps bounded allowlisted hash-only failure facts, and preserves original budgets/route acceptance. 83 source tests, Ruff/format and six-script types 0 errors/217 warnings; original validation failures retained. Claude per-attempt reset and failed-series accounting affect future diagnostic scope only. No retrospective explanation or new-host execution."
+    },
+    "native_capacity_diagnostic": {
+      "path": "native-capacity-diagnostic.md",
+      "source_commit": "d4e13547f0e25f66f32db14012b14c0fad0abf4f",
+      "scope_and_limit": "Prepared bounded capacity outcome/stage diagnostics address missing individual 9db failure facts without changing admitted load, policy, routes or gate. Original Linux 36 allows/28 overloads with 14 fail-safes remains failed and unexplained by later instrumentation; new hosted execution is pending."
+    },
+    "sonar_9db": {
+      "path": "../security/sonar-rsp-9db-review.json",
+      "source_commit": "8d90d9ef1f8a1668cabb66cb8fbc7d32cc3f2aae",
+      "scope_and_limit": "All 42 raw issue IDs/bytes and source pins retained. 36 findings are in two deterministic test generators now classified as tests by exact paths, still analyzed. Six runtime false-positive proposals have specific no-I/O/loopback/authenticated-read evidence. 12 existing tests pass; no source suppression, production exclusion, external disposition receipt or new quality-gate pass is claimed."
+    },
+    "codeql_retained": {
+      "path": "evidence/codeql-35239002083/manifest.json",
+      "source_commit": "decb3a3e4e63b14914c068beb9502b66d8a5f669",
+      "scope_and_limit": "Six exact API-verified ZIPs preserve all original SARIF/diagnostic bytes; 954,944 archive bytes and 13,528,734 decoded JSON bytes. 17 foundation/18 implementation Python results, zero in Actions/JavaScript; 17 common rule/fingerprint pairs match, one added authority-key-ID result. Bounded source triage retains public-checksum/argv-guessing/path-race limits and real legacy OAuth-secret SHA256 verification. First-run extra-helper extraction remains a limit; the later codeql_alert_correlation entry records actual PR-reference IDs and exact sink-byte matches without API fingerprint/full-flow proof. The first capture includes no disposition. The later codeql_356_disposition entry records only that reviewed false positive; the overall security gate remains unresolved and source behavior is unchanged."
+    },
+    "hosted_integration_d4e": {
+      "path": "evidence/hosted-integration-d4e13547f.json",
+      "source_commit": "d4e13547f0e25f66f32db14012b14c0fad0abf4f",
+      "scope_and_limit": "Combined local source validation before the later CodeQL extractor correction: 317 tests pass in 52.59 seconds; 26 exact Python files pass Ruff/format; all 1253 production type files have zero errors/20,232 nonfatal warnings (149.889 tool seconds). Workflow-policy, authority, semantic and I/O ownership pass. Tests overlap earlier component suites; logs are hash-bound rather than retained in full. No hosted execution or release qualification."
+    },
+    "codeql_alert_correlation": {
+      "path": "../security/codeql-pr-alert-correlation.json",
+      "source_commit": "1f8331728d60537637f3bf42761e805759f0c1a1",
+      "scope_and_limit": "Actual CodeQL API reads of both PR merge refs identify open Python alerts 343/344 at config.py:495/498 and implementation alert 356 at native_command_control_authority.py:83. Rule/path/line/column and exact sink-file bytes correlate with one retained SARIF result each; API provides no fingerprint or full flow. Additional inherited Actions alerts 288/289 remain separately recorded. No disposition applied at capture; security gates remain open."
+    },
+    "codeql_356_disposition": {
+      "path": "../security/codeql-356-disposition.json",
+      "source_commit": "bfc124afbb5fe74a29c68c0bf6a0f23fd083f5ca",
+      "scope_and_limit": "Supported API request/response at 2026-09-17T17:38:43Z dismisses only authority-key continuity-ID alert 356 as false positive after review of generated 32-byte keys and separately authenticated records. Fresh PR-2954 c985 merge-ref read verifies 356 dismissed, 343/344 and inherited Actions 288/289 open. The API update uses a global latest PR-2970 instance; all eight relevant source files are byte-identical to 9db. Original captured checks/alerts remain historical; no overall CodeQL pass or behavior change."
+    },
+    "sonar_inline_dispositions": {
+      "path": "../security/sonar-reviewed-inline-dispositions.json",
+      "source_commit": "50d31f61513858ff891d4239a5126a5b7bd6c613",
+      "scope_and_limit": "Four exact line/rule annotations address six independently reviewed false positives: two S5332 detector/loopback findings and four S2583 authenticated-marker findings. Three source-file before/after hashes and unchanged ASTs are recorded; Ruff/format pass. Existing source-pinned positive/negative witnesses supply the review basis. No runtime semantics, broad rule exclusion or external issue-state transition changes. A new hosted Sonar scan must confirm syntax, issue scope and quality gate; new_scan_verified remains false."
+    },
+    "config_source_confinement": {
+      "path": "../security/config-source-confinement.md",
+      "source_commit": "a71b9f951",
+      "scope_and_limit": "Shared fixed-basename config reader binds retained directories and regular-file identity; rejects linked, unsafe, inaccessible, changed or incomplete sources without pathname fallback. Inclusive 1 MiB ordinary TOML ceiling is new and matches existing publisher/safe-file bounds; frozen performance thresholds, precedence, logical paths and managed policy remain. POSIX source evidence does not qualify actual Windows handles."
+    },
+    "config_source_validation": {
+      "path": "../security/config-source-validation.json",
+      "source_commit": "a71b9f951",
+      "scope_and_limit": "67 shared-reader/public-loader tests pass with one actual-Windows-only skip; Ruff/format and two production type files pass with zero errors/61 warnings. Source/log hashes and earlier alias-test failure are retained. This overlaps the later 88-test publisher suite; no new hosted or clean security gate."
+    },
+    "config_foundation_validation": {
+      "path": "../security/config-source-foundation-validation.json",
+      "source_commit": "29088826f251f60d9a40f3a2fb48f9853f9b53fb",
+      "scope_and_limit": "Shared reader applied without conflict to foundation e449; 67 tests pass/one actual-Windows-only skip in 2.33 seconds. Exact source and log hashes retained. Publisher-specific changes remain implementation-only; baseline and query configuration unchanged."
+    },
+    "config_publisher_confinement": {
+      "path": "../security/config-source-publisher-confinement.md",
+      "source_commit": "5da39f986de3365613ac0922775ada3d6f66de07",
+      "scope_and_limit": "Native publisher hashes/parses the shared captured bytes. A home/current/legacy workspace config-source rejection immediately clears ACK under the condition lock and notifies before cache comparison/rethrow; no prior observer or new transport call required. Generic non-config capture and transient-publication behavior remain separate. Installed/Windows execution and fresh alerts remain pending."
+    },
+    "config_publisher_validation": {
+      "path": "../security/config-source-publisher-validation.json",
+      "source_commit": "5da39f986de3365613ac0922775ada3d6f66de07",
+      "scope_and_limit": "Combined 88 tests pass/one actual-Windows-only skip in 6.64 seconds; five-file Ruff/format and three production-file types pass with zero errors/80 warnings. Includes nine actual publisher-path readiness regressions and exact/over-limit capture parity. Overlaps earlier 67-test scopes. Assertion-casing and disk-full failures retained; successful retry uses unchanged /tmp fixtures. No new full-source/hosted/CodeQL gate claimed."
+    },
+    "mcp_streaming_boundary": {
+      "path": "../mcp-streaming-preparation-pilot-boundary.md",
+      "source_commit": "ce98191343bbd9df98ec7947a7eafe451abc90a1",
+      "scope_and_limit": "Inactive F fork streams exact binding comparisons and corrects inherited mutable-method writer selection using admitted-frame identity before complete binding/actual-wire checks. Initial F selector regressions establish the frozen E scope limit. Final 44-test/11.39-second source gate and finite review pass; nested restoration/unrelated replies retained. No route campaign, process-RSS/performance benefit, installed/platform qualification or activation."
+    },
+    "mcp_streaming_source_evidence": {
+      "path": "evidence/mcp-stream-binding-feasibility/manifest.json",
+      "source_commit": "ce98191343bbd9df98ec7947a7eafe451abc90a1",
+      "scope_and_limit": "Eight exact artifacts retain initial zero-test collection failure, overlapping 39-test pass, two failed method regressions, corrected 44-test pass and static checks. Earlier prototype 36 allocation observations are extra traced comparison peaks, not final-F route/RSS observations. Two final F source hashes and seven preserved E hashes are pinned; campaign_launched, qualified and default_activation are false. The 96 authority comparisons are included in 44 tests."
+    },
+    "config_integrated_validation": {
+      "path": "evidence/config-integrated-5da39f986.json",
+      "source_commit": "1061f304970555b48682fb1b475c0a67022a4e62",
+      "scope_and_limit": "5da unfiltered production types pass 1254 files/0 errors/20236 warnings; authority/semantic pass. Original 15-site I/O failure is retained verbatim. Six exact function/primitive classifications and exact-path protection retain synchronous_posture_config visibility. Current I/O/architecture 46-test suite passes 99.32s including validate(ROOT)/negative cases; Ruff/format and one contract type file pass 0 errors/warnings, finite independent review clear. Product source unchanged;67/88/F44/46/317 populations overlap and remain separate. No installed or clean external gate."
     }
   },
   "status_counts": {
@@ -3086,11 +3345,11 @@
       },
       {
         "id": "RSP-029",
-        "remaining": "Source replacement defenses and installed identity probes exist. Abf compatible stopped rollback passes three phases on three Unix hosts; original-baseline quiescence and Windows transition fail. Re-sign/freeze, mixed or live generations, changed versions/programs, and the first enforcing hook on every final package remain unqualified."
+        "remaining": "Source replacement defenses and installed identity probes exist. 9db compatible stopped rollback passes all three phases on all four hosts, including corrected Windows environment selection. Original 2e strict quiescence remains failed on every host. Re-sign/freeze, live/mixed generations, changed versions/programs and first enforcing hook coverage remain unqualified."
       },
       {
         "id": "RSP-118",
-        "remaining": "Latest abf Linux and macOS ARM each pass 22 installed Ollama cases; Intel fails disabled readiness at 527.241 ms after 10 cases and Windows enabled readiness at 407 ms after two cases under the unchanged 400 ms budget. All four Builder checks pass. Compatible stopped rollback passes on three Unix hosts, but original legacy quiescence fails and Windows has no completed transition report. Earlier ae successes remain historical; final four-platform and live/version/signing acceptance remain incomplete."
+        "remaining": "Latest 9db ARM passes 22 installed Ollama cases; Linux/Intel/Windows each retain two cases then fail enabled readiness at 400.108/407.413/407 ms against 400 ms. All four Builder checks and compatible stopped rollback sequences pass. Original 2e strict quiescence fails on all four; live/in-progress/version/signing and full lifecycle acceptance remain incomplete. Earlier abf / ae successes stay historical."
       }
     ],
     "dangling_dependencies": [],
@@ -3124,8 +3383,8 @@
         "RSP-071",
         "RSP-072"
       ],
-      "state": "SCOPED_NATIVE_NO_GO_84_HOSTED_PYTHON_PASSES_WINDOWS_FAILED",
-      "owner_report": "Final native experiment remains no-go. Actual abf retained-Python scanner passes 28 cases on each of three Unix hosts, 84 total; Windows PackageNotFoundError precedes any case. Source setup/reader fixes require a fresh hosted attempt."
+      "state": "SCOPED_NATIVE_NO_GO_9DB_INSTALLED_107_PASS_1_FAIL_4_UNREACHED",
+      "owner_report": "Native no-go unchanged. 9db retained-Python installed scanner records 107 passing rows, one failed, four unreached; all Unix 28-case probes pass. Windows attests wheel/PE launchers then hits fixture failure. Source-only probe repair requires new Windows evidence."
     },
     "mcp": {
       "tasks": [
@@ -3137,8 +3396,8 @@
         "RSP-107",
         "RSP-108"
       ],
-      "state": "SCOPED_NATIVE_NO_GO_PRIVATE_RSP100_IMPLEMENTATION_ACTIVE",
-      "owner_report": "Completed B/C/D and 68-cell native comparisons retain all outcomes. Four-category native activation fails 30%/5%; B remains default. RSP-098/103/104/108 source or decision tasks are complete; RSP-105/107 are deferred for this boundary. One private owned-generation RSP-100 implementation attempt is active with no claimed result."
+      "state": "HISTORICAL_E_INACTIVE_WITH_SELECTOR_LIMIT_F_SOURCE_ONLY",
+      "owner_report": "B/C/D/native/E route comparisons remain complete at their exact historical scope. Later review found E mutable-method write selection; initial F actual child-pipe tests demonstrated forwarding/callback gaps. Corrected F has 44 focused tests and finite source review only, with no route campaign/activation. B remains default, E/F inactive and RSP-100 OPEN; statuses and complete RSP-106 unchanged."
     },
     "claude_launcher": {
       "tasks": [
@@ -3150,8 +3409,8 @@
         "RSP-082",
         "RSP-084"
       ],
-      "state": "PRIVATE_IMPLEMENTATION_COMPONENT_TESTED_INSTALLED_PENDING",
-      "owner_report": "Private Linux Pre/Post pilot and independent installed probe are implemented. Final component snapshot 81 Python/12 Rust, later focused 43 checks and 27 builder checks pass. No actual installed parity/benefit, default selection or full platform qualification is claimed."
+      "state": "PRIVATE_INSTALLED_PARTIAL_PRETOOL_PASS_POSTTOOL_FAILURE",
+      "owner_report": "Component 81 Python/12 Rust and later 43/27 source suites remain separate. Actual 9db Linux PreToolUse 30 Python/30 native launches pass exact contract/native routes; Python PostToolUse attempts 11/completes 10 then fails. Zero full blocks; scope/qualification/activation false. Future stage capture is diagnostic only."
     }
   }
 }

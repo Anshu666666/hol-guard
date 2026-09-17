@@ -18,6 +18,7 @@ import json
 import statistics
 import sys
 from pathlib import Path
+from typing import cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -36,7 +37,9 @@ from scripts.native_slo_artifact import installed_package_digest, wheel_package_
 from scripts.native_slo_contract import assert_privacy_safe, summarize
 from scripts.native_slo_daemon_fixture import DaemonFixture
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
 from scripts.native_slo_priority_launchers import (
+    LauncherSession,
     RegisteredLauncher,
     _require_native_count,
     _route_snapshot,
@@ -67,20 +70,60 @@ def _native_launcher(record_path: Path, event: str) -> RegisteredLauncher:
     )
 
 
+def _launcher_session(session: DaemonFixture) -> LauncherSession:
+    # DaemonFixture exposes the same route-metrics protocol through its private
+    # control pipe; its concrete daemon field is a nested SimpleNamespace.
+    return cast(LauncherSession, cast(object, session))
+
+
+def _failed_native_attempt(session: DaemonFixture) -> dict[str, object]:
+    try:
+        evidence = session.control("case_result")
+        return {
+            "native_call_diagnostic": evidence.get("native_call_diagnostic"),
+            "native_call_count": evidence.get("native_call_count"),
+            "native_completed_call_count": evidence.get("native_completed_call_count"),
+            "last_native_semantics": verdict_evidence(native=evidence.get("native_result"))["native"],
+            "routes_after_failure": dict(_route_snapshot(_launcher_session(session))),
+        }
+    except Exception:
+        return {"native_detail_collection_failed": True}
+
+
+def _preflight(session: DaemonFixture, launcher: RegisteredLauncher, *, case: str) -> None:
+    session.control("case_before")
+    measured = _launcher_session(session)
+    before = _route_snapshot(measured)
+    try:
+        observe_priority_launcher(measured, launcher, sample=-1, case=case)
+        after = _route_snapshot(measured, expected=sum(before.values()) + 1)
+        _require_native_count(before, after, 1)
+    except Exception as error:
+        raise contextual_failure(
+            error, excluded_from_comparison=True, routes_before=dict(before), **_failed_native_attempt(session)
+        ) from error
+
+
 def _series(session: DaemonFixture, launcher: RegisteredLauncher, count: int) -> dict[str, object]:
-    before = _route_snapshot(session)
+    measured = _launcher_session(session)
+    before = _route_snapshot(measured)
     observations = []
     attempted = 0
     cpu_before = _children_cpu()
+    daemon: ResourceSampler | None = None
     # The daemon sampler excludes the load generator and launcher children.
     # Linux RUSAGE_CHILDREN includes reaped launchers and contained children.
     try:
         with ResourceSampler(pid=session.pid, interval_seconds=0.01) as daemon:
             for index in range(count):
+                # Reset outside the launcher's timer so a child that fails
+                # before reaching the daemon cannot inherit a prior trace.
+                # Daemon CPU retains this fixture-control overhead in both arms.
+                session.control("case_before")
                 attempted += 1
-                observations.append(observe_priority_launcher(session, launcher, sample=index))
+                observations.append(observe_priority_launcher(measured, launcher, sample=index))
         launch_cpu = _children_cpu() - cpu_before
-        after = _route_snapshot(session, expected=sum(before.values()) + count)
+        after = _route_snapshot(measured, expected=sum(before.values()) + count)
         _require_native_count(before, after, count)
     except Exception as error:
         detail = failure_evidence(error)
@@ -90,8 +133,17 @@ def _series(session: DaemonFixture, launcher: RegisteredLauncher, count: int) ->
             excluded_from_comparison=True,
             partial_latency_ms=[item.latency_ms for item in observations],
             routes_before=dict(before),
+            **_failed_native_attempt(session),
         )
+        try:
+            partial_launch_cpu = _children_cpu() - cpu_before
+            detail["partial_launcher_cpu_seconds"] = partial_launch_cpu if partial_launch_cpu >= 0 else None
+            if daemon is not None:
+                detail["partial_daemon_resources"] = daemon.report(attempted=attempted)
+        except Exception:
+            detail["partial_resource_collection_failed"] = True
         raise FixtureFailureError(detail) from error
+    assert daemon is not None
     resources = daemon.report(attempted=count)
     daemon_cpu = resources.get("cpu_seconds")
     complete_cpu = (
@@ -110,7 +162,7 @@ def _series(session: DaemonFixture, launcher: RegisteredLauncher, count: int) ->
         "launcher_cpu_seconds": launch_cpu,
         "daemon_resources": resources,
         "combined_cpu_complete": complete_cpu,
-        "cpu_ms_per_attempt": (launch_cpu + float(daemon_cpu)) * 1000 / count if complete_cpu else None,
+        "cpu_ms_per_attempt": (launch_cpu + float(cast(float, daemon_cpu))) * 1000 / count if complete_cpu else None,
         "registration_digest": launcher.registration_sha256,
     }
 
@@ -127,14 +179,16 @@ def _comparison(cells: list[dict[str, object]], *, blocks: int) -> dict[str, obj
             result[event] = {"complete": False}
             continue
         totals = {
-            arm: summarize([value for cell in values for value in cell["latency_ms"]]) for arm, values in rows.items()
+            arm: summarize([value for cell in values for value in cast(list[float], cell["latency_ms"])])
+            for arm, values in rows.items()
         }
         ratio = totals["native"]["p95_ms"] / totals["python"]["p95_ms"]
         all_cpu = all(cell["combined_cpu_complete"] is True for values in rows.values() for cell in values)
         cpu_ratio = None
         if all_cpu:
             means = {
-                arm: statistics.mean(cell["cpu_ms_per_attempt"] for cell in values) for arm, values in rows.items()
+                arm: statistics.mean(cast(float, cell["cpu_ms_per_attempt"]) for cell in values)
+                for arm, values in rows.items()
             }
             if means["python"] > 0:
                 cpu_ratio = means["native"] / means["python"]
@@ -156,6 +210,7 @@ def run_probe(wheel: Path, *, blocks: int, samples: int, report: dict[str, objec
     if sys.platform != "linux" or not 1 <= blocks <= 5 or not 1 <= samples <= 100:
         raise ValueError("claude_pilot_probe_scope_invalid")
     report["phase"] = "installed_identity"
+    cells = cast(list[dict[str, object]], report["cells"])
     runtime = _installed_runtime()
     distribution = importlib.metadata.distribution("hol-guard")
     installed_digest = installed_package_digest(distribution)
@@ -174,7 +229,7 @@ def run_probe(wheel: Path, *, blocks: int, samples: int, report: dict[str, objec
     for block in range(blocks):
         report.update(phase="daemon_setup", active_block=block)
         checkpoint()
-        with DaemonFixture(runtime, policy="normal") as session:
+        with DaemonFixture(runtime, setup="normal") as session:
             context = HarnessContext(
                 home_dir=session.root, workspace_dir=session.workspace, guard_home=session.guard_home
             )
@@ -184,24 +239,20 @@ def run_probe(wheel: Path, *, blocks: int, samples: int, report: dict[str, objec
             # Establish the exact existing allow/deny contracts before selection.
             for event in EVENTS:
                 for case in ("benign", "block"):
-                    before = _route_snapshot(session)
-                    observe_priority_launcher(session, baseline[event], sample=-1, case=case)
-                    after = _route_snapshot(session, expected=sum(before.values()) + 1)
-                    _require_native_count(before, after, 1)
+                    report.update(phase="preflight", active_arm="python", active_event=event, active_case=case)
+                    _preflight(session, baseline[event], case=case)
             record = install_private_pilot(context, qualification_root=session.root, require_native_transport=True)
             try:
                 for event in EVENTS:
                     for case in ("benign", "block"):
                         launcher = _native_launcher(record, event)
-                        before = _route_snapshot(session)
-                        observe_priority_launcher(session, launcher, sample=-1, case=case)
-                        after = _route_snapshot(session, expected=sum(before.values()) + 1)
-                        _require_native_count(before, after, 1)
+                        report.update(phase="preflight", active_arm="native", active_event=event, active_case=case)
+                        _preflight(session, launcher, case=case)
                 restore_private_pilot(record)
                 active = False
                 for event in EVENTS:
                     for arm in ("python", "native") if block % 2 == 0 else ("native", "python"):
-                        report.update(phase="paired_series", active_event=event, active_arm=arm)
+                        report.update(phase="paired_series", active_event=event, active_arm=arm, active_case="benign")
                         if arm == "native" and not active:
                             activate_private_pilot(record)
                             active = True
@@ -216,7 +267,7 @@ def run_probe(wheel: Path, *, blocks: int, samples: int, report: dict[str, objec
                         if not active and launcher != baseline[event]:
                             raise RuntimeError("qualification original launcher changed during restore")
                         cell = {"block": block, "event": event, "arm": arm, **_series(session, launcher, samples)}
-                        report["cells"].append(cell)
+                        cells.append(cell)
                         checkpoint()
             finally:
                 current = load_record(record, EVENTS[0], require_registration=False)
@@ -230,7 +281,7 @@ def run_probe(wheel: Path, *, blocks: int, samples: int, report: dict[str, objec
                         raise RuntimeError("qualification original launcher restore failed")
             report["completed_blocks"] = block + 1
             checkpoint()
-    report.update(phase="complete", scope_complete=True, comparison=_comparison(report["cells"], blocks=blocks))
+    report.update(phase="complete", scope_complete=True, comparison=_comparison(cells, blocks=blocks))
 
 
 def main() -> int:

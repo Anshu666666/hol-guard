@@ -185,13 +185,27 @@ def _worker(config_path: Path) -> int:
     from codex_plugin_scanner.guard import mcp_tool_calls as calls
     from codex_plugin_scanner.guard.adapters.base import HarnessContext
     from codex_plugin_scanner.guard.config import GuardConfig
-    from codex_plugin_scanner.guard.proxy import CodexMcpGuardProxy
+    from codex_plugin_scanner.guard.proxy import CodexMcpGuardProxy, framing, tool_catalog
     from codex_plugin_scanner.guard.proxy import runtime_mcp as runtime
     from codex_plugin_scanner.guard.store import GuardStore
 
     imports_ms = (time.perf_counter_ns() - started) / 1e6
     phases = Phases(spec["profile"])
     native_pilot = None
+    owned_pilot = None
+    if spec.get("owned_preparation_pilot"):
+        import guard_mcp_owned_preparation_pilot as owned_adapter
+        from guard_mcp_owned_preparation_pilot import OwnedPreparationPilot
+        from guard_mcp_owned_preparation_pilot import install_adapter as install_owned_adapter
+
+        owned_pilot = OwnedPreparationPilot()
+        install_owned_adapter(runtime, owned_pilot)
+        if spec["profile"]:
+            phases.wrap(owned_pilot, "own_request", "owned_message_snapshot")
+            phases.wrap(owned_adapter, "_exact_binding", "owned_input_binding")
+            phases.wrap(calls, "_build_tool_call_hash_for_categories", "request_identity")
+            phases.wrap(calls, "_evaluate_current_tool_call_for_categories", "policy")
+            phases.wrap(calls, "_evaluate_tool_call_with_current", "policy")
     if spec.get("native_text_helper"):
         from guard_mcp_text_facts_pilot import TextFactsPilot, install_adapter
 
@@ -320,11 +334,17 @@ def _worker(config_path: Path) -> int:
                 "exit_code": exit_code,
                 "worker_failure": worker_failure,
                 "native_text_pilot": native_pilot.evidence() if native_pilot is not None else None,
+                "owned_preparation_pilot": owned_pilot.evidence() if owned_pilot is not None else None,
                 "quiet_barrier_seconds": runtime._TOOLS_CALL_PREWRITE_QUIET_SECONDS,
                 "worker_peak_rss_bytes": worker_peak_rss_bytes,
                 "loaded_runtime_sha256": {
                     name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
-                    for name, module in (("proxy/runtime_mcp.py", runtime), ("mcp_tool_calls.py", calls))
+                    for name, module in (
+                        ("proxy/runtime_mcp.py", runtime),
+                        ("mcp_tool_calls.py", calls),
+                        ("proxy/framing.py", framing),
+                        ("proxy/tool_catalog.py", tool_catalog),
+                    )
                 },
             }
         )
@@ -365,6 +385,7 @@ def run_case(
     payload_kind: str = "ascii",
     native_text_helper: Path | None = None,
     native_minimum_characters: int = 256 * 1024,
+    owned_preparation_pilot: bool = False,
 ) -> dict[str, Any]:
     """Complete ordinary local proxy path; abort on a mismatched result or ID."""
     # Import the client reader before timing worker startup.
@@ -387,6 +408,7 @@ def run_case(
             "payload_kind": payload_kind,
             "native_text_helper": str(native_text_helper) if native_text_helper is not None else None,
             "native_minimum_characters": native_minimum_characters,
+            "owned_preparation_pilot": owned_preparation_pilot,
             "worker_output": str(root / "worker.json"),
         }
         config_path = root / "config.json"
@@ -577,6 +599,7 @@ def run_case(
                 "stderr_policy": "discarded_in_child_no_capture_backpressure",
                 "loaded_runtime_sha256": worker["loaded_runtime_sha256"],
                 "native_text_pilot": worker["native_text_pilot"],
+                "owned_preparation_pilot": worker["owned_preparation_pilot"],
                 "startup": {**startup, "guard_imports_ms": worker["imports_ms"]},
                 "cold_first_tool_ms": timings[0],
                 "client_roundtrip_ms": _summary(timings[1:]),
@@ -653,6 +676,7 @@ def run_case(
                     "notifications": dict(notifications),
                     "errors": 1,
                     "native_text_pilot": failed_worker.get("native_text_pilot"),
+                    "owned_preparation_pilot": failed_worker.get("owned_preparation_pilot"),
                     "worker_failure": failed_worker.get("worker_failure"),
                     "worker_exit_code": process.poll(),
                     "observed_child_forwarded_count": len(child_forwarded),

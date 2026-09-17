@@ -172,9 +172,9 @@ attestation, before recording any identity or running a scan. Its probe hash
 is the exact CRLF conversion of the published LF source, so the different
 hash does not establish a source change. The preceding transition check also
 lost access to an installed module. The common qualification environment
-failure is being corrected separately; the zero-case scanner failure remains
-preserved and Windows needs a corrected hosted attempt. No Windows launcher,
-finding, mutation or CLI acceptance is inferred from this failed attempt.
+failure was corrected for the subsequent attempt below; this original
+zero-case scanner failure remains preserved. No Windows launcher, finding,
+mutation or CLI acceptance is inferred from this first failed attempt.
 
 RSP-069's probe implementation and local installed Python coverage are
 complete. Hosted qualification passes on Linux and both macOS architectures;
@@ -183,6 +183,62 @@ subset with the independent archive qualification. The
 [standalone native regex NO-GO](rsp-scanner-regex-pilot.md) remains unchanged;
 there is no native detector activation or inference of installed native
 scanner parity from these retained-Python checks.
+
+## Subsequent hosted attempt at 9db62e884
+
+[Run 35239001782](https://github.com/hashgraph-online/hol-guard/actions/runs/35239001782)
+used source `9db62e8844c2ba2627f55b6b00e58cb5b175185d`, tree
+`47ba580366672b3b92cb46e6bb1d19c670444e94`. The
+[new manifest](evidence/scanner-installed-9db/manifest.json) retains all four
+original scanner receipts and build metadata, with exact API-verified ZIP
+digests. This is a new source cohort: it includes the Windows path/descriptor
+identity correction. The earlier 84 Unix passes remain attached to `abf`.
+
+| Host | Raw scanner result at 9db |
+| --- | --- |
+| Linux x86-64 | [28 passed; no skips](evidence/scanner-installed-9db/linux-receipt.json) |
+| macOS Intel | [28 passed; no skips](evidence/scanner-installed-9db/macintel-receipt.json) |
+| macOS Apple Silicon | [28 passed; no skips](evidence/scanner-installed-9db/macarm-receipt.json) |
+| Windows x86-64 | [23 passed rows; one failed row; four later cases unreached](evidence/scanner-installed-9db/windows-receipt.json) |
+
+All four probes now attest an actual native-bundled candidate wheel and both
+console entrypoints. Windows verifies the real uv PE resources, their exact
+entrypoint wrapper and interpreter binding, and installed RECORD entries.
+All eight scanner module hashes match the exact source: LF bytes on Unix and
+the exact CRLF conversion on Windows. The probe source itself is unchanged
+from the earlier attempt. Every observed public-result digest except the
+generated history commit identity matches the earlier independent reference.
+The three complete probes retain all 28 case expectations, including links,
+invalid encodings, mutation and incompleteness. These results do not turn the
+four overall paired-job failures into successful jobs.
+
+Windows has progressed beyond the prior missing-distribution failure. Its
+23 passing rows include both real console entrypoints, rich working/staged
+findings, unstaged divergence, installed defaults and caller HMAC, explicit
+limits, and exits 0/2/3. It then records `fixture_git_setup`. Source tracing
+shows that the history bounds and occurrence-source checks had already
+completed: their validation marker and public digest are present. The old
+catch-all subsequently marked that last completed row failed when a later
+fixture setup raised. The raw status is preserved and remains a failed row
+in the reported totals: **107 passed rows, one failed row and four unreached
+cases across this attempt**. No missing case is counted as a skip or pass.
+
+The following links fixture used `nul.ts`, which Python's Windows path rules
+classify as a reserved device name. This is a concrete fixture portability
+defect and a source-supported likely trigger for the Git setup failure.
+The original probe did not retain the failing Git operation or stderr, so
+that exact operating-system cause is not proven by this receipt. The links,
+invalid-encoding and mutation cases need a fresh corrected Windows run.
+
+Probe-only correction `0e2d560cc` changes that binary fixture's filename while
+preserving its NUL bytes, adds an explicit failed setup row with an allowlisted
+Git operation and hash-only diagnostics, and preserves already completed
+cases when later setup or final attestation fails. Scan expectations,
+timeouts and limits are unchanged. **54 source tests passed in 0.60 seconds**
+under the shared lock; Ruff, formatting and whitespace checks passed. No
+installed execution or performance measurement was repeated for this repair.
+The new source checks do not amend the original hosted result. RSP-069's
+four-host installed gate remains incomplete pending corrected Windows coverage.
 
 ```sh
 /absolute/installed/python -I ci/native_runtime/probe_installed_offline_secrets.py \

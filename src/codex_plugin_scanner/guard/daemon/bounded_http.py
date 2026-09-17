@@ -195,7 +195,7 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
         # HTTPServer adds socket.getfqdn() solely for server_name metadata.
         # A local daemon needs the actual bound address, not reverse DNS:
         # resolver stalls must not hold its constructor indefinitely.
-        TCPServer.server_bind(self)
+        TCPServer.server_bind(self)  # NOSONAR(S5332) Authenticated local IPC; verify_request rejects remote peers.
         host, port = self.server_address[:2]
         self.server_name = str(host)
         self.server_port = int(port)

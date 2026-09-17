@@ -79,7 +79,7 @@ def test_one_analysis_supplies_unchanged_hash_and_complete_current_policy(tmp_pa
     assert seen[0][1] is not arguments
 
 
-def test_runtime_default_recomputes_risk_at_every_authority_boundary(tmp_path, monkeypatch):
+def test_retained_default_derives_facts_at_both_authority_consumers(tmp_path, monkeypatch):
     context = HarnessContext(home_dir=tmp_path, workspace_dir=tmp_path, guard_home=tmp_path / "guard")
     proxy = CodexMcpGuardProxy(
         server_name="synthetic",

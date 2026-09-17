@@ -33,8 +33,8 @@ The diagnostic automatically runs only for same-repository PR2954 targeting
 A fixed two-profile by three-language matrix creates six independent Ubuntu
 jobs, with at most three concurrent jobs and a 30-minute limit per job. Both
 profiles scan Actions, JavaScript/TypeScript and Python. The immutable
-foundation is checked out into `foundation-src`; the immutable implementation
-uses `implementation-src`. The helper accepts only the fixed `foundation` and
+snapshot replaces the initial sparse definition checkout at `GITHUB_WORKSPACE`
+itself. Separate matrix jobs keep the two snapshots independent. The helper accepts only the fixed `foundation` and
 `implementation` profile names, with no arbitrary Git ref option. It verifies
 the selected commit and tree before analysis and checks the tracked source
 again when collecting results. A clean checkout of one profile cannot satisfy
@@ -58,12 +58,44 @@ its selected source commit separately from its original analyzed merge.
 | Foundation `e449` | `35181898004` | `105075647482` / `105075647388` / `105075647242` | `105075778732`: two high alerts |
 | Implementation `abf` | `35229526605` | `105229666643` / `105229666837` / `105229666277` | `105229882410`: three high alerts |
 
-The executing diagnostic workflow and its stdlib-only manifest helper are in a
-separate sparse checkout at the workspace root. The pinned CodeQL action reads
-its executing workflow from that root; putting only the older foundation there
-would leave the new workflow file absent. `source-root` and `checkout_path`
-both select the fixed matrix profile's separate source directory, so the
-diagnostic definition is outside either analyzed source. Both checkouts disable persisted credentials.
+The workflow first captures the exact stdlib collector outside the source in
+`RUNNER_TEMP`, verifies the copy's SHA-256, and captures the exact executing
+workflow as gzip/base64 in `CODE_SCANNING_WORKFLOW_FILE`. The pinned action
+[supports that definition field](https://github.com/github/codeql-action/blob/8aad20d150bbac5944a9f9d289da16a4b0d87c1e/src/workflow.ts);
+otherwise its workflow lookup would fail after replacing the checkout with a
+snapshot that predates this diagnostic. The definition field changes neither
+the event nor the permissions and adds no source file to the analyzed tree.
+Only the collector file is staged. Both checkouts disable persisted credentials.
+
+The second checkout uses the fixed snapshot at the workspace root. Both
+`source-root: .` and `checkout_path: github.workspace` now agree with the
+[pinned action's actual `--working-dir`](https://github.com/github/codeql-action/blob/8aad20d150bbac5944a9f9d289da16a4b0d87c1e/src/codeql.ts).
+This matters because the [pinned Python autobuild](https://github.com/github/codeql/blob/codeql-cli/v2.27.0/python/tools/autobuild.sh)
+sets `LGTM_SRC` to its working directory; the extractor's
+[default include root](https://github.com/github/codeql/blob/codeql-cli/v2.27.0/python/extractor/buildtools/index.py)
+comes from that value. No include/exclude override or query change is added.
+
+Before invoking the staged collector, the workflow verifies its captured hash
+with `sha256sum`. Before analysis and during collection, the helper verifies
+that source root, current directory, and `GITHUB_WORKSPACE` are the same,
+that the collector is outside the source, and that its bytes and the workflow
+definition still match the captured hashes. It also rejects untracked files,
+including ignored files, and results written inside the source. The manifest
+retains these finite layout checks. Actual extractor invocation verification
+remains a separate hosted-log observation; the collector does not claim to
+have inspected those logs.
+
+The first actual run, [35239002083](https://github.com/hashgraph-online/hol-guard/actions/runs/35239002083),
+used the earlier nested-checkout layout. Its six successful jobs and exact
+original artifacts remain preserved in
+[evidence/codeql-35239002083](evidence/codeql-35239002083/README.md).
+The Python job logs show extraction of the current diagnostic helper outside
+the pinned snapshot despite `source-root` selecting the nested tree. All
+reported finding sinks are inside the pinned trees, but the first run cannot
+prove exclusive extraction of those trees. This is a concrete correction to
+the earlier source-isolation assumption and independent structural review;
+the initial evidence is not rewritten or discarded. The root-checkout
+correction requires a new hosted cohort to establish its actual extraction.
 
 ## Observed configuration retained
 
@@ -102,15 +134,16 @@ The latter supports the pinned action's [workflow identity lookup](https://githu
 There are no security-event, check, content-write or administrative grants.
 The action may attempt its ordinary status telemetry; its [status reporter](https://github.com/github/codeql-action/blob/8aad20d150bbac5944a9f9d289da16a4b0d87c1e/src/status-report.ts)
 treats permission rejection as a warning. No permission is added to satisfy it.
-Actual hosted coexistence with repository setup remains to be exercised.
+The six jobs in run35239002083 completed alongside repository setup with no
+security/database upload; the corrected checkout layout remains to be exercised.
 
 An always-run collector records its fixed profile, source identity, original
 analysis run/job/merge and security check, expected versus observed CLI version,
-initialization/analysis outcomes, and the exact raw SARIF byte count and
-SHA-256. The schema is `guard.codeql-snapshot-diagnostic.v1`; separate provenance
+initialization/analysis outcomes, verified collector/workflow hashes and source
+layout, and the exact raw SARIF byte count and SHA-256. The schema is `guard.codeql-snapshot-diagnostic.v1`; separate provenance
 prevents one snapshot's successful analysis from covering the other snapshot's
 failure. It never rewrites the SARIF. Missing, invalid, or over-128-MiB SARIF,
-changed source, failed phases, or a different CLI version leave an explicit
+changed source or layout, failed phases, or a different CLI version leave an explicit
 incomplete manifest and a failed job. The bounded reader never labels a prefix
 hash as the full file digest. Valid findings remain in the artifact regardless
 of their severity or count.
@@ -127,11 +160,17 @@ artifact. If initialization or analysis fails, the manifest and accessible job
 log preserve that limitation instead of reporting a clean scan.
 
 This diagnostic can expose other existing findings in either snapshot as well
-as each check's reported alerts. Their exact correspondence, overlap and
-remediation require reviewing the generated SARIF; no speculative rule or
-source attribution is made here. Both original alert-resolution flags remain
-false regardless of diagnostic job success. Local structural and collector validation precedes publication;
-actual hosted execution and retrieval are separate pending evidence.
+as each check's reported alerts. The first results contain 17 foundation and 18 implementation Python findings;
+all 17 common findings have matching rule/fingerprint identities and one
+implementation authority-key identifier adds a new result. Their exact mapping
+to the original external checks was unavailable at first capture. A subsequent
+[PR-reference API correlation](../security/codeql-pr-alert-correlation.json)
+identifies path-injection alerts 343/344 in both PRs and weak-hashing alert 356
+in PR2954, with exact source-file matches. The API does not expose the SARIF
+fingerprints. The retained evidence records the bounded source triage and its
+limitations. Both original alert-resolution flags remain
+false regardless of diagnostic job success. Actual original SARIF retrieval is
+complete for the first run; validation of the corrected extractor root is pending.
 
 The foundation-only predecessor completed local validation under the shared
 measurement lock: **106 tests passed in 2.61 seconds**, covering this workflow/collector and the existing
@@ -153,7 +192,21 @@ scopes, exact per-language run/job/check provenance, rejection of arbitrary
 profile/ref inputs, rejection when one clean snapshot is presented as the
 other, and preservation of the implementation's raw SARIF and three unresolved
 alerts after a failed analysis. These checks do not execute CodeQL or establish
-that either original alert set has been resolved. Hosted execution and artifact
-retrieval remain pending.
+that either original alert set has been resolved. That validation preceded the first successful hosted run and does not conceal
+the root-layout defect subsequently observed in its Python logs.
 
 The exact expanded source-test outcome is retained in the [validation record](evidence/pilots-checkpoint/codeql-dual-validation.json). It does not substitute for hosted SARIF or clear either original alert check.
+
+The root-checkout correction completed **134 tests in 3.64 seconds** under the
+shared measurement lock, plus Ruff formatting/lint, the repository privileged
+workflow policy, and a collector basedpyright result of zero errors/warnings.
+New tests stage exact collector/workflow bytes, retain their identities after
+source replacement, and reject nested roots, wrong working directories,
+collector mutation, workflow mutation, helper files inside the source,
+ignored/untracked extra files, missing captured hashes, and in-tree result
+files. Every failed collection preserves the raw SARIF and an incomplete
+manifest. These tests execute the collector and Git fixtures, not CodeQL.
+The final run also verifies that the captured collector hash is checked in the
+shell before either post-checkout collector invocation. The earlier run of
+these 134 tests took 5.02 seconds; a preceding lint-only attempt caught and
+corrected one import-order issue before tests ran.

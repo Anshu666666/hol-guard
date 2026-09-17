@@ -15,6 +15,7 @@ from pathlib import Path
 from threading import Condition
 from typing import TYPE_CHECKING, cast
 
+from .config_source_io import GUARD_CONFIG_FILENAMES, GuardConfigSourceError, capture_guard_config
 from .native_command_control_authority import AUTHORITY_FILE_NAME
 from .native_command_control_binding import read_native_command_control_binding
 from .native_policy_snapshot_codec import _digest_v3
@@ -33,8 +34,8 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class _CapturedPolicyInput:
     identity: object
-    # None bypasses caching for an input above the capture limit. Ordinary
-    # config loading retains its existing behavior for those larger files.
+    # None bypasses caching for a generic non-config input above the capture
+    # limit. Guard TOML always uses the bounded source reader and raises instead.
     content: bytes | None
 
 
@@ -241,7 +242,7 @@ class NativePolicySnapshotPublisherInputs:
                 self._capture_policy_input(managed_cache_path).identity,
             )
         home_path = self.guard_home / "config.toml"
-        home_input = self._capture_policy_input(home_path)
+        home_input = self._capture_config_policy_input(home_path)
         common = (
             home_input.identity,
             managed.status,
@@ -256,7 +257,7 @@ class NativePolicySnapshotPublisherInputs:
             captured = {home_path: home_input}
             if workspace is not None:
                 captured.update(
-                    (workspace / name, self._capture_policy_input(workspace / name))
+                    (workspace / name, self._capture_config_policy_input(workspace / name))
                     for name in (".ai-plugin-scanner-guard.toml", ".hol-guard.toml")
                 )
             identity = (common, tuple((path, value.identity) for path, value in captured.items()))
@@ -292,8 +293,25 @@ class NativePolicySnapshotPublisherInputs:
             cache.popitem(last=False)
         return _merge_effective_native_policies(tuple(policies))
 
+    def _capture_config_policy_input(self, path: Path) -> _CapturedPolicyInput:
+        try:
+            return self._capture_policy_input(path)
+        except GuardConfigSourceError:
+            # A rejected input may occur before cache-change invalidation.
+            # Withdraw any previous ACK immediately, including during renewal;
+            # generic publication errors can otherwise retain an unexpired ACK.
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            raise
+
     @staticmethod
     def _capture_policy_input(path: Path) -> _CapturedPolicyInput:
+        if path.name in GUARD_CONFIG_FILENAMES:
+            captured = capture_guard_config(path)
+            return _CapturedPolicyInput(
+                (captured.identity, hashlib.sha256(captured.content).hexdigest()), captured.content
+            )
         try:
             entry = path.lstat()
             target = path.stat()

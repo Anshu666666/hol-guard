@@ -76,6 +76,7 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
     public.mkdir(exist_ok=True)
     reports: dict[str, list[dict[str, object]]] = {"baseline": [], "candidate": []}
     for run in range(args.runs):
+        failures: list[dict[str, object]] = []
         for arm in paired_order(run):
             raw_file = private / f"{run:02d}-{arm}.json"
             completed = run_isolated_hook_process(
@@ -120,6 +121,8 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                     artifact_sha256=artifact_digests[arm],
                     timed_out=completed.timed_out,
                     containment_failed=completed.containment_failed,
+                    worker_limit_exceeded=completed.output_limit_exceeded,
+                    return_code=completed.returncode,
                 )
                 failure = assert_privacy_safe(failure)
                 (public / f"{run:02d}-{arm}-failure.json").write_text(
@@ -128,7 +131,8 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                 # Raw stderr/tracebacks remain private; expose only bounded
                 # generated failure identifiers from our worker protocol.
                 print(json.dumps(failure, sort_keys=True), file=sys.stderr, flush=True)
-                raise RuntimeError(f"paired block failed: run={run} arm={arm} reason={failure.get('reason')}")
+                failures.append(failure)
+                continue
             report = json.loads(completed.stdout)
             if not isinstance(report, dict) or report.get("schema") != "hol-guard.native-qualification-block.v1":
                 raise RuntimeError("paired block returned invalid evidence")
@@ -144,6 +148,25 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
             (public / f"{run:02d}-{arm}.json").write_text(json.dumps(safe, indent=2) + "\n", encoding="utf-8")
             reports[arm].append(safe)
             print(f"completed paired block {run + 1}/{args.runs} {arm}", file=sys.stderr, flush=True)
+        if failures:
+            # A baseline failure must not suppress the candidate in that pair.
+            # Stop after both arms have had the same opportunity; never form a
+            # comparison from incomplete pairs or resample a failed block.
+            incomplete = assert_privacy_safe(
+                {
+                    "schema": "hol-guard.native-incomplete-pair.v1",
+                    "failed_run": run,
+                    "planned_runs": args.runs,
+                    "attempted_blocks": 2 * (run + 1),
+                    "unattempted_blocks": 2 * (args.runs - run - 1),
+                    "completed_blocks": {arm: len(items) for arm, items in reports.items()},
+                    "failures": failures,
+                    "comparison_available": False,
+                    "qualification_complete": False,
+                }
+            )
+            (public / "incomplete-pair.json").write_text(json.dumps(incomplete, indent=2) + "\n", encoding="utf-8")
+            raise RuntimeError(f"paired block failed: run={run}; both arms retained; comparison unavailable")
     combined = reports["baseline"] + reports["candidate"]
     if len({_text_field(report, "corpus_digest") for report in combined}) != 1:
         raise RuntimeError("paired artifacts used different corpus definitions")

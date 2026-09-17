@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import ExitStack
 from dataclasses import replace
 from importlib import import_module
@@ -55,9 +55,10 @@ def approved_review_case(case: QualificationCase) -> QualificationCase:
 class LauncherReviewFixture:
     """Bounded sibling control state for one private daemon fixture."""
 
-    def __init__(self, session: Any) -> None:
+    def __init__(self, session: Any, *, before_resolve: Callable[[str], None] | None = None) -> None:
         self.session = session
-        self.controller = LauncherApprovalControl(session)
+        self.controller = LauncherApprovalControl(session, before_resolve=before_resolve)
+        self._fault_fixture: Any = None
         self._before: dict[str, dict[str, int]] = {}
         self._native_before: dict[str, int] = {}
         self._completions: list[dict[str, object]] = []
@@ -138,6 +139,12 @@ class LauncherReviewFixture:
 
     def dispatch(self, operation: str, request: Mapping[str, Any]) -> dict[str, object]:
         try:
+            if operation in {"launcher_approval_fault_begin", "launcher_approval_fault_result"}:
+                if self._fault_fixture is None:
+                    from scripts.native_slo_approval_fault_fixture import LauncherApprovalFaultFixture
+
+                    self._fault_fixture = LauncherApprovalFaultFixture(self.session)
+                return self._fault_fixture.dispatch(operation, request)
             if operation == "launcher_approval_begin":
                 payload = request.get("payload")
                 if not isinstance(payload, Mapping):
@@ -192,7 +199,11 @@ class LauncherReviewFixture:
 
     def close(self) -> None:
         try:
-            self.controller.close()
+            try:
+                if self._fault_fixture is not None:
+                    self._fault_fixture.close()
+            finally:
+                self.controller.close()
         finally:
             if self._patch is not None:
                 self._patch.close()

@@ -100,6 +100,58 @@ def test_paired_failure_prints_the_same_sanitized_evidence_as_its_artifact(
         qualify_guard_native._run_pair(args)
     printed = capsys.readouterr().err
     artifact = args.output_dir / "aggregate" / "00-baseline-failure.json"
-    assert json.loads(printed) == json.loads(artifact.read_text())
-    assert json.loads(printed)["origin"] == "native_slo_faults.__enter__"
+    lines = [json.loads(line) for line in printed.splitlines()]
+    assert lines[0] == json.loads(artifact.read_text())
+    assert lines[0]["origin"] == "native_slo_faults.__enter__"
+    assert [item["arm"] for item in lines] == ["baseline", "candidate"]
+    incomplete = json.loads((args.output_dir / "aggregate" / "incomplete-pair.json").read_text())
+    assert incomplete["qualification_complete"] is False
+    assert incomplete["attempted_blocks"] == 2
+    assert incomplete["completed_blocks"] == {"baseline": 0, "candidate": 0}
+    assert incomplete["failures"] == lines
     assert completed.stderr not in printed
+
+
+def test_failed_baseline_retains_successful_candidate_without_comparing_or_resampling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = []
+
+    def run(argv: tuple[str, ...], **_kwargs: object) -> SimpleNamespace:
+        arm = Path(argv[0]).name
+        calls.append(arm)
+        failed = arm == "baseline"
+        report = {"schema": "hol-guard.native-qualification-block.v1"}
+        if not failed:
+            Path(argv[argv.index("--raw-file") + 1]).write_text("{}")
+        return SimpleNamespace(
+            returncode=1 if failed else 0,
+            timed_out=failed,
+            containment_failed=False,
+            output_limit_exceeded=False,
+            stdout="" if failed else json.dumps(report),
+        )
+
+    monkeypatch.setattr(qualify_guard_native, "run_isolated_hook_process", run)
+    args = argparse.Namespace(
+        baseline_python=tmp_path / "baseline",
+        candidate_python=tmp_path / "candidate",
+        baseline_artifact=None,
+        candidate_artifact=None,
+        runs=3,
+        mode="smoke",
+        output_dir=tmp_path / "reports",
+        block_timeout_seconds=10,
+    )
+    with pytest.raises(RuntimeError, match="both arms retained"):
+        qualify_guard_native._run_pair(args)
+    public = args.output_dir / "aggregate"
+    assert calls == ["baseline", "candidate"]
+    assert json.loads((public / "00-candidate.json").read_text())["schema"] == "hol-guard.native-qualification-block.v1"
+    assert not (public / "comparison.json").exists()
+    incomplete = json.loads((public / "incomplete-pair.json").read_text())
+    assert incomplete["completed_blocks"] == {"baseline": 0, "candidate": 1}
+    assert incomplete["attempted_blocks"] == 2
+    assert incomplete["unattempted_blocks"] == 4
+    assert incomplete["comparison_available"] is incomplete["qualification_complete"] is False
+    assert incomplete["failures"][0]["timed_out"] is True

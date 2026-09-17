@@ -6,6 +6,7 @@ import json
 import os
 import time
 from collections.abc import Mapping
+from contextlib import suppress
 from pathlib import Path
 
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
@@ -20,6 +21,7 @@ from scripts.native_benchmark_oracle import synthetic_payload
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import is_allowed, route_counts, route_delta
 from scripts.native_slo_contract import clear_proof_environment, summarize
+from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
 from scripts.native_slo_session import AdapterSession
 
 
@@ -51,39 +53,74 @@ def _observe_launcher(session: AdapterSession, argv: tuple[str, ...], *, sample:
     encoded = json.dumps(request, separators=(",", ":"))
     metrics = session.daemon._server.hook_worker.metrics
     before = route_counts(metrics.snapshot())
-    # Include executable/interpreter startup, stdin, transport, stdout and exit.
-    started = time.perf_counter()
-    completed = run_isolated_hook_process(
-        argv,
-        input_text=encoded,
-        cwd=session.workspace,
-        environment=environment,
-        timeout_seconds=10.0,
-        output_limit=2 * 1024 * 1024,
-    )
-    elapsed_ms = (time.perf_counter() - started) * 1_000.0
-    if (
-        completed.returncode != 0
-        or completed.timed_out
-        or completed.containment_failed
-        or completed.output_limit_exceeded
-    ):
-        raise RuntimeError("installed launcher did not complete within its contract")
+    completed = None
+    response = None
+    after = None
+    elapsed_ms = None
+    stage = "process"
     try:
-        response = json.loads(completed.stdout)
-    except (ValueError, UnicodeDecodeError) as error:
-        raise RuntimeError("installed launcher did not return harness JSON") from error
-    if not isinstance(response, Mapping):
-        raise RuntimeError("installed launcher did not return a harness object")
-    after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
-    if route_delta(before, after) != "native_resident":
-        raise RuntimeError("installed launcher did not use native resident authority")
-    if case == "benign":
-        if not is_allowed("PostToolUse", response):
-            raise RuntimeError("installed launcher benign fixture failed")
-    elif response.get("reason_code") != "output_secret_match" or response.get("model_output_action") != "block":
-        raise RuntimeError("installed launcher credential fixture failed")
-    return elapsed_ms
+        # Include executable/interpreter startup, stdin, transport, stdout and exit.
+        started = time.perf_counter()
+        completed = run_isolated_hook_process(
+            argv,
+            input_text=encoded,
+            cwd=session.workspace,
+            environment=environment,
+            timeout_seconds=10.0,
+            output_limit=2 * 1024 * 1024,
+        )
+        elapsed_ms = (time.perf_counter() - started) * 1_000.0
+        if (
+            completed.returncode != 0
+            or completed.timed_out
+            or completed.containment_failed
+            or completed.output_limit_exceeded
+        ):
+            raise RuntimeError("installed launcher did not complete within its contract")
+        stage = "decode"
+        try:
+            response = json.loads(completed.stdout)
+        except (ValueError, UnicodeDecodeError) as error:
+            raise RuntimeError("installed launcher did not return harness JSON") from error
+        if not isinstance(response, Mapping):
+            raise RuntimeError("installed launcher did not return a harness object")
+        stage = "route"
+        after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
+        if route_delta(before, after) != "native_resident":
+            raise RuntimeError("installed launcher did not use native resident authority")
+        stage = "semantics"
+        if case == "benign":
+            if not is_allowed("PostToolUse", response):
+                raise RuntimeError("installed launcher benign fixture failed")
+        elif response.get("reason_code") != "output_secret_match" or response.get("model_output_action") != "block":
+            raise RuntimeError("installed launcher credential fixture failed")
+        return elapsed_ms
+    except Exception as error:
+        if after is None:
+            with suppress(Exception):
+                after = route_counts(metrics.snapshot())
+        raise contextual_failure(
+            error,
+            boundary="INSTALLED_LAUNCHER",
+            harness="claude-code",
+            event="PostToolUse",
+            size_class="1k",
+            sample_index=sample,
+            fixture_class="benign" if case == "benign" else "matching" if case == "secret" else "other",
+            stage=stage,
+            elapsed_ms=elapsed_ms,
+            routes_before=before,
+            routes_after=after,
+            route=route_delta(before, after) if after is not None else "unobserved",
+            observed_semantics=verdict_evidence(response),
+            process={
+                "returned": completed is not None,
+                "exit_code": getattr(completed, "returncode", None),
+                "timed_out": getattr(completed, "timed_out", None),
+                "containment_failed": getattr(completed, "containment_failed", None),
+                "stream_limit_exceeded": getattr(completed, "output_limit_exceeded", None),
+            },
+        ) from error
 
 
 def measure_registered_launcher(
@@ -100,9 +137,22 @@ def measure_registered_launcher(
     context = HarnessContext(home_dir=session.root, workspace_dir=session.workspace, guard_home=session.guard_home)
     ClaudeCodeHarnessAdapter().install(context)
     argv = registered_claude_argv(claude_managed_settings_path(context), "PostToolUse")
-    for case in ("benign", "secret"):
-        _observe_launcher(session, argv, sample=-1, case=case)
-    values = [_observe_launcher(session, argv, sample=index, case="benign") for index in range(iterations)]
+    preflight_count = 0
+    values: list[float] = []
+    phase = "launcher_preflight"
+    try:
+        for case in ("benign", "secret"):
+            _observe_launcher(session, argv, sample=-1, case=case)
+            preflight_count += 1
+        phase = "launcher_samples"
+        for index in range(iterations):
+            values.append(_observe_launcher(session, argv, sample=index, case="benign"))
+    except Exception as error:
+        raise contextual_failure(
+            error,
+            sample_phase=phase,
+            completed_sample_counts={"launcher_preflight": preflight_count, "launcher": len(values)},
+        ) from error
     if samples_sink is not None:
         samples_sink.extend(values)
     return {

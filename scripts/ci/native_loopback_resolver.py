@@ -18,8 +18,10 @@ import time
 from pathlib import Path
 
 if __package__:
+    from .native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
     from .native_loopback_dns import LoopbackPTRResponder
 else:
+    from native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
     from native_loopback_dns import LoopbackPTRResponder
 
 _QUERY = (
@@ -125,23 +127,32 @@ def run_wrapped(command: list[str], output: Path) -> int:
         _write_report(output, report)
         return _run_command(command)
     with responder:
+        # This packet is a transport self-check, never evidence that macOS
+        # selected the configuration. Keep its count out of resolver traffic.
+        report["responder_self_probe"] = responder_probe(responder.port)
+        self_probe_received = responder.snapshot()["received"]
         # Removal is attempted even after helper timeout/failure: an interrupted
         # helper may have completed its exclusive create. Exact bytes guard it.
         try:
             report["configuration_install"] = _run_helper("install", responder.port, owner)
+            report["configuration_readback"] = owned_configuration(responder.port, owner)
+            report["system_configuration_after_install"] = system_configuration(responder.port)
             report["after"] = resolver_probe()
             report["status"] = "experiment_running"
             _write_report(output, report)
             returncode = _run_command(command)
             report["command_returncode"] = returncode
         finally:
+            report["system_configuration_after_command"] = system_configuration(responder.port)
             cleanup = (
                 "not_owned"
                 if report.get("configuration_install") == "existing_configuration"
                 else _run_helper("remove", responder.port, owner)
             )
             report["configuration_cleanup"] = cleanup
-            report["responder"] = responder.snapshot()
+            counts = responder.snapshot()
+            report["responder"] = counts
+            report["resolver_packets_received"] = max(0, counts["received"] - self_probe_received)
             report["status"] = "experiment_finished"
             _write_report(output, report)
     report["after_cleanup"] = resolver_probe()

@@ -24,6 +24,7 @@ from collections import Counter
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 
 from secret_scan_benchmark_cache import prepare_cache
@@ -217,6 +218,40 @@ def _worker(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+class CLIExecutionError(RuntimeError):
+    """Keep bounded, non-sensitive evidence when a full command fails."""
+
+    def __init__(self, message: str, evidence: dict[str, object]) -> None:
+        super().__init__(message)
+        self.evidence = evidence
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _command_diagnostics(stdout: bytes, stderr: bytes) -> dict[str, object]:
+    combined = stdout + stderr
+    categories = [
+        category
+        for marker, category in (
+            (b"No such file or directory", "missing-path"),
+            (b"No space left on device", "storage-full"),
+            (b"Permission denied", "permission-denied"),
+            (b"timed out", "timeout-text"),
+        )
+        if marker in combined
+    ]
+    return {
+        "stdout_bytes": len(stdout),
+        "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
+        "stderr_bytes": len(stderr),
+        "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+        "diagnostic_categories": categories,
+        "diagnostic_scope": "fixed text markers only; no inferred root cause or raw command output",
+    }
+
+
 def _full_cli(
     source_root: Path,
     target: Path,
@@ -225,10 +260,18 @@ def _full_cli(
     extra_args: tuple[str, ...] = (),
     expected_exit: int = 0,
     default_bounds: bool = False,
+    native_pilot_binary: Path | None = None,
 ) -> tuple[dict[str, object], dict[str, object] | None]:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(source_root / "src")
     code = "import sys; sys.argv[0]='hol-guard'; from codex_plugin_scanner.cli import main; raise SystemExit(main())"
+    if native_pilot_binary is not None:
+        env["PYTHONPATH"] += os.pathsep + str(Path(__file__).resolve().parent)
+        code = (
+            "import sys; from pathlib import Path; sys.argv[0]='hol-guard'; "
+            "from secret_scan_native_pilot import cli_main; "
+            f"raise SystemExit(cli_main(Path({str(native_pilot_binary)!r})))"
+        )
     command = [sys.executable, "-c", code, "secrets", "scan", str(target), "--json"]
     if not default_bounds:
         command.extend(("--max-findings", "10000"))
@@ -236,24 +279,68 @@ def _full_cli(
         command.append("--" + workflow)
     command.extend(extra_args)
     cpu_before = _cpu_children()
+    started_utc = _utc_now()
     start = time.perf_counter()
-    process = subprocess.run(command, env=env, capture_output=True, timeout=120, check=False)
+    try:
+        process = subprocess.run(command, env=env, capture_output=True, timeout=120, check=False)
+    except subprocess.TimeoutExpired as error:
+        cpu_after = _cpu_children()
+        raise CLIExecutionError(
+            "CLI exceeded 120-second command deadline",
+            {
+                "command_started_utc": started_utc,
+                "command_finished_utc": _utc_now(),
+                "full_cli_wall_ms": (time.perf_counter() - start) * 1000,
+                "full_cli_process_tree_cpu_ms": None
+                if cpu_before is None or cpu_after is None
+                else (cpu_after - cpu_before) * 1000,
+                "expected_exit": expected_exit,
+                "failure_category": "command-timeout",
+                **_command_diagnostics(error.stdout or b"", error.stderr or b""),
+            },
+        ) from error
     elapsed = (time.perf_counter() - start) * 1000
     cpu_after = _cpu_children()
-    if process.returncode != expected_exit:
-        raise RuntimeError(f"CLI exit {process.returncode} differs from expected {expected_exit}")
-    public = json.loads(process.stdout) if process.stdout else None
-    return {
+    sample = {
+        "command_started_utc": started_utc,
+        "command_finished_utc": _utc_now(),
         "full_cli_wall_ms": elapsed,
         "full_cli_process_tree_cpu_ms": None
         if cpu_before is None or cpu_after is None
         else (cpu_after - cpu_before) * 1000,
         "cli_exit": process.returncode,
+    }
+    if process.returncode != expected_exit:
+        raise CLIExecutionError(
+            f"CLI exit {process.returncode} differs from expected {expected_exit}",
+            {
+                **sample,
+                "expected_exit": expected_exit,
+                "failure_category": "unexpected-exit",
+                **_command_diagnostics(process.stdout, process.stderr),
+            },
+        )
+    public = json.loads(process.stdout) if process.stdout else None
+    pilot_stats = {}
+    if native_pilot_binary is not None:
+        prefix = b"GUARD_REGEX_PILOT_STATS="
+        stats = [line[len(prefix) :] for line in process.stderr.splitlines() if line.startswith(prefix)]
+        if len(stats) != 1:
+            raise RuntimeError("native pilot did not report its boundary use")
+        pilot_stats = {"native_pilot_" + key: value for key, value in json.loads(stats[0]).items()}
+    return {
+        **sample,
+        **pilot_stats,
         "cli_result_sha256": _digest(public),
     }, public
 
 
-def _cli_contracts(source_root: Path, target: Path, workflow: str, *, has_findings: bool) -> dict[str, object]:
+def _cli_contracts(
+    source_root: Path, target: Path, workflow: str, *, has_findings: bool, native_pilot_binary: Path | None = None
+) -> dict[str, object]:
+    def cli(*args, **kwargs):
+        return _full_cli(*args, **kwargs, native_pilot_binary=native_pilot_binary)
+
     checks = []
     samples = (
         ("complete", (), 0),
@@ -262,26 +349,26 @@ def _cli_contracts(source_root: Path, target: Path, workflow: str, *, has_findin
         ("byte-limit", ("--max-total-bytes", "1", "--fail-on-findings"), 2),
     )
     for label, options, expected in samples:
-        _, public = _full_cli(source_root, target, workflow, extra_args=options, expected_exit=expected)
+        _, public = cli(source_root, target, workflow, extra_args=options, expected_exit=expected)
         if not isinstance(public, dict) or bool(public["truncated"]) != (expected == 2):
             raise RuntimeError("CLI coverage contract failed: " + label)
         if label == "complete" and bool(public["finding_count"]) != has_findings:
             raise RuntimeError("fixture did not exercise its declared findings class")
         checks.append({"case": label, "exit": expected, "result_sha256": _digest(public)})
     if has_findings:
-        _, limited = _full_cli(
+        _, limited = cli(
             source_root, target, workflow, extra_args=("--max-findings", "1", "--fail-on-findings"), expected_exit=2
         )
         if not isinstance(limited, dict) or not limited["truncated"] or limited["finding_count"] != 1:
             raise RuntimeError("finding limit did not preserve partial-coverage behavior")
         checks.append({"case": "finding-limit", "exit": 2, "result_sha256": _digest(limited)})
-    _, complete = _full_cli(source_root, target, workflow)
+    _, complete = cli(source_root, target, workflow)
     expected_default_exit = 2 if complete["finding_count"] >= 500 else 0
-    _, defaults = _full_cli(source_root, target, workflow, expected_exit=expected_default_exit, default_bounds=True)
+    _, defaults = cli(source_root, target, workflow, expected_exit=expected_default_exit, default_bounds=True)
     if not isinstance(defaults, dict) or bool(defaults["truncated"]) != (expected_default_exit == 2):
         raise RuntimeError("default finding bound changed")
     checks.append({"case": "default-bounds", "exit": expected_default_exit, "result_sha256": _digest(defaults)})
-    _, public = _full_cli(source_root, target / "absent", "working", expected_exit=2)
+    _, public = cli(source_root, target / "absent", "working", expected_exit=2)
     if public is not None:
         raise RuntimeError("missing target unexpectedly produced a scan result")
     return {"checks": checks, "missing_target_exit": 2}

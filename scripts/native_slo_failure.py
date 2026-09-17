@@ -13,9 +13,11 @@ from scripts.native_slo_contract import assert_privacy_safe
 class FixtureFailureError(RuntimeError):
     """Keep bounded child evidence intact across the private control pipe."""
 
-    def __init__(self, detail: Mapping[str, object]) -> None:
+    def __init__(self, detail: Mapping[str, object], *, message: str | None = None) -> None:
         self.detail = assert_privacy_safe(dict(detail))
-        super().__init__("qualification_fixture." + str(self.detail.get("reason", "unclassified_failure")))
+        # A local wrapper may preserve an existing exception's caller-facing
+        # message. Exporters use only the sanitized detail, never this text.
+        super().__init__(message or "qualification_fixture." + str(self.detail.get("reason", "unclassified_failure")))
 
 
 def _location(error: Exception) -> dict[str, object]:

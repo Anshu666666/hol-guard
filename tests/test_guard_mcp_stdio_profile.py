@@ -47,3 +47,41 @@ def test_real_stdio_approval_wait_preserves_outcome_and_no_replay(approval: str)
         assert correctness["accepted"] == 0
     if approval == "invalidate":
         assert correctness["notifications"]["notifications/tools/list_changed"] == 2
+
+
+def test_failed_matrix_cell_retains_attempted_and_completed_counts(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "matrix.json"
+
+    def failed_case(**_options):
+        raise profile.BenchmarkCaseError(
+            {"stage": "tool_call", "attempted_tool_requests": 3, "observed_tool_responses": 2, "errors": 1}
+        )
+
+    monkeypatch.setattr(profile, "run_case", failed_case)
+    with pytest.raises(profile.BenchmarkCaseError):
+        profile.run_matrix(samples=3, output=output)
+    saved = json.loads(output.read_text())
+    assert saved["completed_cases"] == 0
+    assert saved["failed_case"]["attempted_tool_requests"] == 3
+    assert saved["failed_case"]["observed_tool_responses"] == 2
+    # A failed attempt must be resolved explicitly, never counted as a resumed success.
+    with pytest.raises(ValueError, match="failed_attempt_resolution"):
+        profile.run_matrix(samples=3, output=output, resume=True)
+
+
+def test_resume_rejects_fixture_drift_before_running_any_more_cases(tmp_path) -> None:
+    output = tmp_path / "matrix.json"
+    output.write_text(
+        json.dumps(
+            {
+                "schema": "hol-guard-mcp-stdio-rebaseline.v1",
+                "platform": profile.platform.system(),
+                "architecture": profile.platform.machine(),
+                "python": profile.platform.python_version(),
+                "runtime_sources_sha256": profile.runtime_source_identity(),
+                "cases": [{"fixture": {"samples": 999}, "block": 0, "correctness": {"errors": 0}}],
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="resume_fixture_mismatch"):
+        profile.run_matrix(samples=3, output=output, resume=True)

@@ -362,10 +362,11 @@ def approve_review(store: GuardStore, password: str, approval_id: str) -> None:
     )
 
 
-def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
+def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict[str, object]:
     runtime, identity = artifact_identity(expected)
+    progress["identity"] = identity
     session = AdapterSession(runtime, configuration=configuration_text("normal"))
-    results: list[dict[str, object]] = []
+    results: list[dict[str, object]] = progress["cases"]
     entered = False
     try:
         password = prepare_fixture_authority(session.store)
@@ -383,6 +384,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                 ("settings_rollback", control_layer(enabled=True), ACTIVE_CASES),
             )
             for phase, layer, cases in phases:
+                progress["phase"] = phase
                 if layer is not None:
                     revision = commit_controls(session.store, password, layer, revision=revision)
                 snapshot = ready_binding(session, revision, phase=phase)
@@ -393,11 +395,14 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                     record, approval_id = review_case(session, phase, case, snapshot)
                     results.append(record)
                     if phase == "enabled" and case.name == "push":
+                        progress["phase"] = "approved_retry"
                         require(approval_id is not None, "approval_missing")
                         approve_review(session.store, password, cast(str, approval_id))
                         current = ready_binding(session, revision, phase="approved_retry")
                         record, _ = review_case(session, "approved_retry", case, current, approval_reused=True)
                         results.append(record)
+                        progress["phase"] = phase
+            progress["phase"] = "stale_write_rejected"
             try:
                 commit_controls(session.store, password, control_layer(enabled=False), revision=1)
             except ExtensionControlAuthorityError:
@@ -433,6 +438,27 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
     )
 
 
+def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
+    """Retain completed witnesses when a later phase misses its unchanged gate."""
+    progress: dict[str, Any] = {"cases": [], "phase": "identity"}
+    try:
+        return _run_probe(expected, progress)
+    except Exception as error:
+        return assert_privacy_safe(
+            {
+                "schema": "hol-guard.installed-native-ollama.v1",
+                "passed": False,
+                **progress,
+                "completed_case_count": len(progress["cases"]),
+                "completed_phase_count": len({record["phase"] for record in progress["cases"]}),
+                "failure": failure_evidence(error),
+                "retained_scope": "completed_cases_only",
+                "package_downgrade_qualified": False,
+                "native_approval_consume_qualified": False,
+            }
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expected", type=Path, required=True)
@@ -443,7 +469,7 @@ def main() -> int:
         print(json.dumps(failure_evidence(error), sort_keys=True), flush=True)
         return 1
     print(json.dumps(result, sort_keys=True), flush=True)
-    return 0
+    return 0 if result.get("passed") is True else 1
 
 
 if __name__ == "__main__":

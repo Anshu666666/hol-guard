@@ -6,6 +6,7 @@ import json
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
+from functools import lru_cache
 from hashlib import sha256
 from ipaddress import ip_address
 from pathlib import Path, PurePath
@@ -987,18 +988,47 @@ def _tool_call_risk_category_set(artifact: GuardArtifact, arguments: object) -> 
     ) > 0 or _matches_any(
         combined,
         (
-            r"(?<![a-z0-9_])(subprocess|child_process|childprocess|popen|os\.system|runtime\.exec)(?![a-z0-9_])",
-            r"(?<![a-z0-9_])(spawn|execfile|system)(?:_sync)?\s*\(",
+            _literal_pattern(
+                "subprocess",
+                "child_process",
+                "childprocess",
+                "popen",
+                "os.system",
+                "runtime.exec",
+                prefix=r"(?<![a-z0-9_])",
+                suffix=r"(?![a-z0-9_])",
+            ),
+            _literal_pattern("spawn", "execfile", "system", prefix=r"(?<![a-z0-9_])", suffix=r"(?:_sync)?\s*\("),
         ),
     ):
         categories.add("command_execution")
     network_patterns = (
-        r"https?://",
+        _literal_pattern("http://", "https://"),
         _token_pattern("curl", "wget", "fetch", "axios", "requests"),
-        r"(?<![a-z0-9_])(?:socket|net|dns)\s*[.(]",
-        r"(?<![a-z0-9_])(?:create_connection|getaddrinfo|gethostbyname|sendto|recvfrom)\s*\(",
-        r"(?<![a-z0-9_])(?:urllib(?:\.request)?|http\.client|https?)\s*\.",
-        r"(?<![a-z0-9_])(udp|tcp|socks|proxy|tunnel|port_forward|port-forward)(?![a-z0-9_])",
+        _literal_pattern("socket", "net", "dns", prefix=r"(?<![a-z0-9_])", suffix=r"\s*[.(]"),
+        _literal_pattern(
+            "create_connection",
+            "getaddrinfo",
+            "gethostbyname",
+            "sendto",
+            "recvfrom",
+            prefix=r"(?<![a-z0-9_])",
+            suffix=r"\s*\(",
+        ),
+        _literal_pattern(
+            "urllib.request", "urllib", "http.client", "http", "https", prefix=r"(?<![a-z0-9_])", suffix=r"\s*\."
+        ),
+        _literal_pattern(
+            "udp",
+            "tcp",
+            "socks",
+            "proxy",
+            "tunnel",
+            "port_forward",
+            "port-forward",
+            prefix=r"(?<![a-z0-9_])",
+            suffix=r"(?![a-z0-9_])",
+        ),
     )
     if (_matches_any(combined, network_patterns) or _contains_ip_address(combined)) and not is_browser_navigation:
         # Browser navigation intent suppresses generic outbound_network;
@@ -1007,10 +1037,10 @@ def _tool_call_risk_category_set(artifact: GuardArtifact, arguments: object) -> 
     if _matches_any(
         combined,
         (
-            r"(?<![a-z0-9_-])\.env(?![a-z0-9_-])",
-            r"(?<![a-z0-9_-])\.ssh(?![a-z0-9_-])",
-            r"(?<![a-z0-9])(id[_-]?rsa|credentials|token|secret|passwd)(?![a-z0-9])",
-            r"(?<![a-z0-9_-])\.(npmrc|pypirc)(?![a-z0-9_-])",
+            _literal_pattern(".env", prefix=r"(?<![a-z0-9_-])", suffix=r"(?![a-z0-9_-])"),
+            _literal_pattern(".ssh", prefix=r"(?<![a-z0-9_-])", suffix=r"(?![a-z0-9_-])"),
+            _token_pattern("idrsa", "id_rsa", "id-rsa", "credentials", "token", "secret", "passwd"),
+            _literal_pattern(".npmrc", ".pypirc", prefix=r"(?<![a-z0-9_-])", suffix=r"(?![a-z0-9_-])"),
         ),
     ):
         categories.add("secret_access")
@@ -1076,6 +1106,11 @@ def _serialized_tool_arguments(arguments: object) -> str:
 
 
 def _contains_ip_address(value: str) -> bool:
+    # An IPv4 string contains a dot. IPv6 either compresses with :: or has
+    # at least seven colons. Reject only impossible shapes before the exact
+    # existing candidate extraction and ip_address validation.
+    if "." not in value and "::" not in value and value.count(":") < 7:
+        return False
     for match in re.finditer(r"(?<![0-9a-z])\[?([0-9a-f:.]{3,})\]?(?![0-9a-z])", value, flags=re.IGNORECASE):
         candidate = match.group(1)
         if candidate.count(":") == 1 and "." in candidate:
@@ -1088,13 +1123,36 @@ def _contains_ip_address(value: str) -> bool:
     return False
 
 
-def _matches_any(value: str, patterns: tuple[str, ...]) -> bool:
-    return any(re.search(pattern, value) is not None for pattern in patterns)
+@dataclass(frozen=True)
+class _LiteralRiskPattern:
+    literals: tuple[str, ...]
+    expression: str
 
 
-def _token_pattern(*tokens: str) -> str:
+@lru_cache(maxsize=128)
+def _literal_pattern(*tokens: str, prefix: str = "", suffix: str = "") -> _LiteralRiskPattern:
+    # Both the fast necessary-condition check and the authoritative regex
+    # derive from these same literal alternatives. Adding an alternative
+    # cannot leave a separately maintained prefilter behind.
     alternatives = "|".join(re.escape(token) for token in tokens)
-    return rf"(?<![a-z0-9])({alternatives})(?![a-z0-9])"
+    return _LiteralRiskPattern(tokens or ("",), rf"{prefix}({alternatives}){suffix}")
+
+
+def _matches_any(value: str, patterns: tuple[str | _LiteralRiskPattern, ...]) -> bool:
+    for pattern in patterns:
+        if isinstance(pattern, _LiteralRiskPattern):
+            if not any(token in value for token in pattern.literals):
+                continue
+            expression = pattern.expression
+        else:
+            expression = pattern
+        if re.search(expression, value) is not None:
+            return True
+    return False
+
+
+def _token_pattern(*tokens: str) -> _LiteralRiskPattern:
+    return _literal_pattern(*tokens, prefix=r"(?<![a-z0-9])", suffix=r"(?![a-z0-9])")
 
 
 def _argument_key_risk_categories(arguments: object) -> set[str]:
@@ -1579,4 +1637,6 @@ def _risk_match_text(value: str) -> str:
 
 
 def _camel_token_normalized(value: str) -> str:
+    if value.islower():
+        return value
     return re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", value)

@@ -30,6 +30,7 @@ from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
 from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
+from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
 from scripts.native_slo_source_witness import source_reference_denial_witness, source_review_witness
 
 _MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -376,17 +377,33 @@ class AdapterSession:
     ) -> Observation:
         request = request_payload or payload(event, size_class)
         before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        with source_review_witness(self.daemon._server.hook_worker, request):
-            started = time.perf_counter()
-            response = _request(
-                self.daemon,
-                guard_home=self.guard_home,
-                workspace=self.workspace,
+        response = None
+        try:
+            with source_review_witness(self.daemon._server.hook_worker, request):
+                started = time.perf_counter()
+                response = _request(
+                    self.daemon,
+                    guard_home=self.guard_home,
+                    workspace=self.workspace,
+                    harness=harness,
+                    request_payload=request,
+                    connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
+                )
+                elapsed_ms = (time.perf_counter() - started) * 1_000.0
+        except Exception as error:
+            after = None
+            with suppress(Exception):
+                after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+            raise contextual_failure(
+                error,
                 harness=harness,
-                request_payload=request,
-                connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
-            )
-            elapsed_ms = (time.perf_counter() - started) * 1_000.0
+                event=event,
+                size_class=size_class,
+                routes_before=before,
+                routes_after=after,
+                route=route_delta(before, after) if after is not None else "unobserved",
+                observed_semantics=verdict_evidence(response),
+            ) from error
         after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
         return Observation(
             harness,

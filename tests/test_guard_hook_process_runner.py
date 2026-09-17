@@ -671,7 +671,11 @@ def test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denia
             payload_bytes=1,
             deadline=time.monotonic() + 10 * timing_scale,
         )
-        assert admission.permit is not None
+        assert admission.permit is not None, {
+            "admission_reason_code": admission.reason_code,
+            "scheduler_stats": scheduler.stats(),
+            "runner_stats": runner.stats(),
+        }
         with admission.permit:
             return runner.review(
                 payload={"hook_event_name": "SessionStart"},

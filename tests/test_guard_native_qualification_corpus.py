@@ -260,14 +260,25 @@ def test_watch_native_deny_and_delivered_allow_are_independent(cases: tuple[Qual
     assert case.native_expected.decision == "deny"
     assert case.expected.decision == "allow"
     assert case.expected.policy_action == "warn"
-    native = dict(case.native_expected.fields)
+    # Independent resident-edge result, before Python Watch delivery. The
+    # direct HookReviewRequestV1 observe transformation is a different route.
+    native = {
+        "decision": "deny",
+        "model_output_action": "block",
+        "policy_action": "block",
+        "reason_code": "output_secret_match",
+    }
     validate_native_result(case, native)
+    assert "observe_mode" not in case.native_expected.fields
+    assert "observed_policy_action" not in case.native_expected.fields
     delivered = _delivered(case)
     validate_case(case, delivered, case.expected_route)
     with pytest.raises(AssertionError):
         validate_native_result(case, delivered)
     with pytest.raises(AssertionError):
         validate_case(case, native, case.expected_route)
+    with pytest.raises(AssertionError):
+        validate_native_result(case, {**native, "reason_code": "observe_output_secret_match"})
 
 
 def test_unavailable_watch_and_integrity_have_different_results(cases: tuple[QualificationCase, ...]) -> None:

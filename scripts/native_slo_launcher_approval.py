@@ -13,7 +13,7 @@ import re
 import threading
 import time
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -112,9 +112,16 @@ class _Operation:
 class LauncherApprovalControl:
     """One active waiter, at most 32 retained operations, bounded control results."""
 
-    def __init__(self, session: _Session, *, approval_gate_input: ApprovalGateInput | None = None) -> None:
+    def __init__(
+        self,
+        session: _Session,
+        *,
+        approval_gate_input: ApprovalGateInput | None = None,
+        before_resolve: Callable[[str], None] | None = None,
+    ) -> None:
         self.session = session
         self._gate_input = approval_gate_input
+        self._before_resolve = before_resolve
         self._operations: dict[str, _Operation] = {}
         self._lock = threading.Lock()
         self._closed = False
@@ -295,6 +302,11 @@ class LauncherApprovalControl:
                 request_id = self._new_pending(operation)
                 if request_id is not None:
                     identity = self._verify_identity(operation, request_id, status="pending")
+                    durable = {"request_id": request_id, "approval_durable": False}
+                    if self._before_resolve is not None:
+                        self._before_resolve(request_id)
+                        if self._verify_identity(operation, request_id, status="pending") != identity:
+                            raise RuntimeError("qualification_launcher_approval_identity_changed")
                     if operation.cancel.is_set() or time.monotonic() >= operation.deadline:
                         raise TimeoutError("qualification_launcher_approval_deadline")
                     evidence = resolve_launcher_review(

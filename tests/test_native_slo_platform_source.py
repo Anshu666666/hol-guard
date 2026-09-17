@@ -41,7 +41,7 @@ def test_windows_source_cases_prove_existing_platform_denial_without_full_review
         assert not case.semantic_sample
         assert case.native_expected is not None
         assert case.native_expected.decision == "deny"
-        reason = "observe_no_output_to_review" if case.setup == "watch" else "no_output_to_review"
+        reason = "no_output_to_review"
         assert case.native_expected.reason_code == reason
         validate_native_result(case, dict(case.native_expected.fields))
         validate_case(case, _delivered(case), case.expected_route)

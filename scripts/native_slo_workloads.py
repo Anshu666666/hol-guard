@@ -194,9 +194,6 @@ def _post_expected(harness: str, kind: str, reason: str, digest: str | None = No
         )
         if allowed and digest is not None:
             fields["reviewed_output_sha256"] = digest
-        if kind == "watch":
-            fields["observe_mode"] = True
-            fields["observed_policy_action"] = "block"
     else:
         fields["hookSpecificOutput.hookEventName"] = "PostToolUse"
         if not allowed:
@@ -264,8 +261,6 @@ def _native_post(kind: str, reason: str, digest: str) -> ExpectedResponse:
     }
     if kind == "benign":
         fields["reviewed_output_sha256"] = digest
-    if kind == "watch":
-        fields.update(observe_mode=True, observed_policy_action="block")
     return ExpectedResponse(str(fields["decision"]), str(fields["model_output_action"]), kind, fields)
 
 
@@ -578,8 +573,9 @@ def build_cases(workspace: Path, *, system: str | None = None) -> tuple[Qualific
                         if kind == "benign"
                         else ("source_secret_match" if source else "output_secret_match")
                     )
-                    if kind == "watch":
-                        reason = "observe_" + reason
+                    # The resident edge evaluates the intrinsic result with
+                    # observe_mode=False. Python Watch delivery changes only
+                    # the final action/digest; it preserves the native reason.
                     add(
                         harness,
                         event,
@@ -714,7 +710,7 @@ def build_cases(workspace: Path, *, system: str | None = None) -> tuple[Qualific
             # This is a separate denial witness, never full-content coverage.
             watch = case.setup == "watch"
             kind = "watch" if watch else "block"
-            reason = "observe_no_output_to_review" if watch else "no_output_to_review"
+            reason = "no_output_to_review"
             reference = cast(Mapping[str, object], case.payload["guard_source_ref"])
             digest = str(reference["output_sha256"])
             cases[index] = replace(

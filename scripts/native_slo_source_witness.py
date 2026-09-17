@@ -7,6 +7,9 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
 
+from scripts.native_slo_failure import FixtureFailureError
+from scripts.native_slo_observation_failure import verdict_evidence
+
 
 @contextmanager
 def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterator[None]:
@@ -22,7 +25,7 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
     ):
         raise RuntimeError("source SLO reference digest is invalid")
     original = worker._review_raw_hook_native
-    observations: list[tuple[object, object, object, object, object]] = []
+    observations: list[tuple[object, object, object, object, object, object, bool]] = []
 
     def capture(**kwargs: object) -> object:
         edge = original(**kwargs)
@@ -37,10 +40,12 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
                     result.get("model_output_action"),
                     result.get("reviewed_output_sha256"),
                     result.get("reason_code"),
+                    result.get("policy_action"),
+                    True,
                 )
             )
         else:
-            observations.append((None, None, None, None, None))
+            observations.append((None, None, None, None, None, None, False))
         return edge
 
     # The large-source matrix is sequential. This fixture-only wrapper uses
@@ -53,7 +58,34 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
         or observations[0][:4] != ("rust", "allow", "allow_original", digest)
         or observations[0][4] not in {"source_full_scan_allow", "native_policy_warning"}
     ):
-        raise RuntimeError("source SLO did not witness one complete native content review")
+        raise FixtureFailureError(
+            {
+                "schema": "hol-guard.native-qualification-failure.v1",
+                "reason": "reference_review_unproven",
+                "stage": "reference_witness",
+                "native_observations": [
+                    {
+                        "verdict": verdict_evidence(
+                            native={
+                                "decision": item[1],
+                                "model_output_action": item[2],
+                                "reason_code": item[4],
+                                "policy_action": item[5],
+                            }
+                            if item[6]
+                            else None
+                        )["native"],
+                        "rust_authority": item[0] == "rust",
+                        "reference_digest_matches": item[3] == digest,
+                    }
+                    for item in observations
+                ],
+                "observation_count": len(observations),
+                "observation_count_is_lower_bound": len(observations) == 2,
+                "full_review_qualified": False,
+            },
+            message="source SLO did not witness one complete native content review",
+        )
 
 
 @contextmanager

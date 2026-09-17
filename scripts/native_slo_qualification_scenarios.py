@@ -15,10 +15,10 @@ from typing import cast
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_daemon_fixture import DaemonFixture
 from scripts.native_slo_failure import failure_evidence
-from scripts.native_slo_launcher_corpus import run_registered_approval_corpus
 from scripts.native_slo_launcher_input import run_registered_input_corpus
 from scripts.native_slo_mixed import run_mixed_scenario
 from scripts.native_slo_phase_run import measure_installed_phases
+from scripts.native_slo_priority_approval import run_priority_approval_scenarios
 from scripts.native_slo_registered_surfaces_run import SurfaceSession, run_registered_surface_corpus
 
 _BASELINE_SHA = "2e672d2d950c6ec471005ddba46e49bba16dc23b"
@@ -75,8 +75,10 @@ def run_additional_scenarios(
             )
 
     def approvals() -> dict[str, object]:
-        report = run_registered_approval_corpus(
-            runtime, evidence_file=raw_file.with_name(raw_file.stem + "-approval-cases.jsonl")
+        report = run_priority_approval_scenarios(
+            runtime,
+            evidence_file=raw_file.with_name(raw_file.stem + "-approval-cases.jsonl"),
+            receipt_profile=receipt_profile,
         )
         report["passed"] = report.get("implemented_scope_passed") is True
         return report

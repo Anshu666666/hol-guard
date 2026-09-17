@@ -1,0 +1,68 @@
+{
+  "existing_suites_with_native_extraction": {
+    "boundary_use": {
+      "input_bytes": 17093,
+      "native_files": 102,
+      "python_fallback_files": 0,
+      "requests": 103,
+      "response_bytes": 100675
+    },
+    "child_cleanup": "bridge closed and child reaped before successful exit",
+    "passed": 87,
+    "seconds": 5.43,
+    "suites": [
+      "test_guard_secret_detection.py",
+      "test_guard_secret_assignment_precision.py",
+      "test_guard_secret_fixture_precision.py",
+      "test_guard_secret_git_batch.py",
+      "test_guard_secret_redaction.py",
+      "test_guard_secrets_native_cli.py"
+    ]
+  },
+  "native_binary_sha256": "bda6936a350d361b0de0422c54ea57842c9353d9e7de11c554880532bdcebe35",
+  "post_relocation_diagnostics_suite": {
+    "command": "GUARD_OFFLINE_REGEX_PILOT_BINARY=<unchanged-binary> PYTHONPATH=src python -m pytest -q tests/test_guard_secret_native_pilot.py tests/test_guard_secret_benchmark.py --tb=short",
+    "completed_utc": "2026-09-17T11:40:51.707208+00:00",
+    "duration_seconds": 15.96,
+    "files_sha256": {
+      "scripts/bench_guard_secret_native_pilot.py": "c680f46b1e1edb738045545955a31af9c00f7156724ba2966a80f6b2a47e2628",
+      "scripts/bench_guard_secret_scans.py": "e2e5b4f48896f95d11dd8ab92188393fdce18bdea149d756f190f6697111390f",
+      "tests/test_guard_secret_benchmark.py": "a7cbff8a7c9267eb8d44478d8ecdaa8fe1b047072d885db7dec2717a935551cf",
+      "tests/test_guard_secret_native_pilot.py": "6b268dac9a9f0d4bc5c55ec1752e48e28d19306e5836465f3ac89735aaeafa6f"
+    },
+    "head_before_checkpoint_commit": "ea8c7b8eba057e7a6a6c0a7621adb2c133c9972b",
+    "measurement_lock": "held for complete test invocation; no native rebuild",
+    "native_binary_sha256": "bda6936a350d361b0de0422c54ea57842c9353d9e7de11c554880532bdcebe35",
+    "passed": 49,
+    "scope": "working tree adds bounded failure diagnostics, UTC command timestamps and provider ASCII boundary regression; native source, bridge and production detector unchanged from head"
+  },
+  "python_boundary_runner": {
+    "final_guard_focused_checks": {
+      "deselected": 21,
+      "passed": 4,
+      "seconds": 1.75
+    },
+    "note": "Focused checks overlap the preceding suite; do not sum the two counts as independent tests.",
+    "pre_final_guard_suite": {
+      "passed": 45,
+      "seconds": 13.14
+    },
+    "provider_boundary_replay": {
+      "deselected": 25,
+      "documents": 425,
+      "passed": 1,
+      "scope": "all 17 provider formats at ASCII word boundaries and candidate length edges",
+      "seconds": 2.19
+    }
+  },
+  "rust": {
+    "clippy": "all-targets; warnings denied; passed",
+    "locked": true,
+    "offline": true,
+    "profile": "release",
+    "tests_passed": 4
+  },
+  "schema": "guard-offline-regex-pilot-tests.v1",
+  "scope": "Linux test fixtures and source CLI; no installed/native default activation",
+  "source_commit": "ea8c7b8eba057e7a6a6c0a7621adb2c133c9972b"
+}

@@ -1,5 +1,7 @@
 # Package evaluation: algorithm and storage baseline
 
+The [text-projection and cardinality continuation](rsp-package-continuation.md) records the later single-traversal text implementation, complete result/evidence comparisons, bounded matrix continuation, and the scope of the current native decision. The observations below remain historical evidence for the algorithm and storage changes.
+
 This work implements the Python prerequisite for RSP-049 through RSP-054 before selecting a Rust package parser. The implementation starts from `2e672d2d950c6ec471005ddba46e49bba16dc23b` and is intended for integration into `release/3.2`. A native package crate is not activated by this change.
 
 ## Production consumers and measurement boundary

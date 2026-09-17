@@ -184,7 +184,28 @@ def main() -> int:
         "--output",
         str(destination / "aggregate/installed-ollama.json"),
     ]
-    _run_required_checks((("paired_sampling", paired), ("installed_ollama", ollama)), cwd=args.candidate.resolve())
+    transitions = [
+        str(candidate_python),
+        str(args.candidate.resolve() / "scripts/ci/verify_installed_artifact_transitions.py"),
+        "--python",
+        str(candidate_python),
+        "--baseline-wheel",
+        str(baseline_wheel),
+        "--candidate-wheel",
+        str(candidate_wheel),
+        "--baseline-sha",
+        str(baseline["source_sha"]),
+        "--candidate-sha",
+        str(candidate["source_sha"]),
+        "--dependency-root",
+        str(args.candidate.resolve()),
+        "--output",
+        str(destination / "aggregate/installed-artifact-transitions.json"),
+    ]
+    _run_required_checks(
+        (("paired_sampling", paired), ("installed_ollama", ollama), ("installed_artifact_transitions", transitions)),
+        cwd=args.candidate.resolve(),
+    )
     return 0
 
 

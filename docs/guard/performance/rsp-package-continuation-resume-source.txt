@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Resume a package matrix checkpoint with a bounded per-process cutoff.
+
+Existing observations remain unchanged. The original checked-in arm harness and
+comparison function are reused. Every completed or censored pair is checkpointed;
+unlike the initial runner, failures do not omit the remaining cardinalities.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import itertools
+import json
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--baseline-root", required=True, type=Path)
+    parser.add_argument("--candidate-root", required=True, type=Path)
+    parser.add_argument("--measurement-lock", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--timeout", type=float, default=120)
+    args = parser.parse_args()
+    if args.timeout <= 0 or args.timeout > 120:
+        parser.error("Continuation cutoff must be positive and no greater than120seconds")
+    sys.path.insert(0, str(args.candidate_root / "scripts"))
+    from bench_guard_package_matrix import compare_results, run_arm
+    import fcntl
+
+    report = json.loads(args.output.read_text())
+    harness = args.candidate_root / "scripts/bench_guard_package_local.py"
+    if report["harness_sha256"] != hashlib.sha256(harness.read_bytes()).hexdigest():
+        raise ValueError("Cannot resume with a different measurement harness")
+    args.baseline_samples = report["method"]["baseline_samples_per_cell"]
+    args.candidate_samples = report["method"]["candidate_samples_per_cell"]
+    args.profile = True
+    if args.baseline_samples != args.candidate_samples:
+        raise ValueError("Cannot resume unequal timed sample counts")
+    cases = list(itertools.product((100, 1000, 10000), (100, 1000, 10000), ("absent", "exact", "unversioned", "deny")))
+    completed = report["matrix"]
+    if [(row["dependencies"], row["bundle_records"], row["mode"]) for row in completed] != cases[: len(completed)]:
+        raise ValueError("Checkpoint must be an ordered prefix of the complete matrix")
+    report.setdefault("collection_segments", []).append(
+        {
+            "first_cell": len(completed) + 1,
+            "whole_process_cutoff_seconds": args.timeout,
+            "resume_runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "reason": "Bound old quadratic cells while preserving all failed and censored cases",
+        }
+    )
+    for index in range(len(completed), len(cases)):
+        dependencies, bundle_size, mode = cases[index]
+        row = {"dependencies": dependencies, "bundle_records": bundle_size, "mode": mode}
+        arms = ("baseline", "candidate") if (index // 4 + index % 4) % 2 == 0 else ("candidate", "baseline")
+        row["arm_order"] = list(arms)
+        row["whole_process_cutoff_seconds"] = args.timeout
+        with args.measurement_lock.open("a") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            for arm in arms:
+                print(
+                    json.dumps(
+                        {
+                            "event": "started",
+                            "cell": index + 1,
+                            "arm": arm,
+                            "dependencies": dependencies,
+                            "bundle_records": bundle_size,
+                            "mode": mode,
+                        }
+                    ),
+                    flush=True,
+                )
+                row[arm] = run_arm(
+                    args,
+                    root=args.candidate_root if arm == "candidate" else args.baseline_root,
+                    dependencies=dependencies,
+                    bundle_size=bundle_size,
+                    mode=mode,
+                    candidate=arm == "candidate",
+                )
+        row["comparison"] = compare_results(row["baseline"], row["candidate"])
+        completed.append(row)
+        args.output.write_text(json.dumps(report, indent=2) + "\n")
+        print(
+            json.dumps(
+                {
+                    "event": "completed",
+                    "cell": index + 1,
+                    "comparison": row["comparison"],
+                    "baseline_status": row["baseline"]["status"],
+                    "candidate_status": row["candidate"]["status"],
+                }
+            ),
+            flush=True,
+        )
+    return 0 if all(row["comparison"]["status"] == "equal" for row in completed) else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

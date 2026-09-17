@@ -12,8 +12,10 @@ from __future__ import annotations
 import argparse
 import functools
 import hashlib
+import inspect
 import json
 import math
+import os
 import platform
 import statistics
 import subprocess
@@ -255,6 +257,10 @@ def _worker(config_path: Path) -> int:
                 "all_phases": phases.snapshot(),
                 "exit_code": exit_code,
                 "quiet_barrier_seconds": runtime._TOOLS_CALL_PREWRITE_QUIET_SECONDS,
+                "loaded_runtime_sha256": {
+                    name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
+                    for name, module in (("proxy/runtime_mcp.py", runtime), ("mcp_tool_calls.py", calls))
+                },
             }
         )
     )
@@ -471,6 +477,7 @@ def run_case(
                 "boundary": "MCP_STDIO_CLIENT_THROUGH_SERVE_AND_CHILD",
                 "qualification": False,
                 "stderr_policy": "discarded_in_child_no_capture_backpressure",
+                "loaded_runtime_sha256": worker["loaded_runtime_sha256"],
                 "startup": {**startup, "guard_imports_ms": worker["imports_ms"]},
                 "cold_first_tool_ms": timings[0],
                 "client_roundtrip_ms": _summary(timings[1:]),
@@ -512,7 +519,7 @@ def run_case(
                     "catalog_generations": sorted({row["catalog_generation"] for row in worker["observations"]}),
                 },
             }
-        except Exception as error:
+        except (Exception, KeyboardInterrupt) as error:
             code = str(error)
             raise BenchmarkCaseError(
                 {
@@ -618,7 +625,44 @@ def run_remote_case(*, samples: int, server_delay_ms: float, payload_bytes: int 
         worker.join(timeout=2)
 
 
-def run_matrix(*, samples: int, output: Path) -> dict[str, Any]:
+def runtime_source_identity() -> dict[str, str]:
+    root = Path(__file__).resolve().parents[1]
+    names = (
+        "proxy/runtime_mcp.py",
+        "proxy/framing.py",
+        "proxy/tool_catalog.py",
+        "mcp_tool_calls.py",
+    )
+    return {
+        name: hashlib.sha256((root / "src/codex_plugin_scanner/guard" / name).read_bytes()).hexdigest()
+        for name in names
+    }
+
+
+def write_checkpoint(output: Path, report: dict[str, Any]) -> None:
+    # Readers see either the prior complete checkpoint or the next one.
+    temporary = output.with_suffix(output.suffix + ".pending")
+    temporary.write_text(json.dumps(report, indent=2) + "\n")
+    os.replace(temporary, output)
+
+
+@contextmanager
+def performance_lock(lock_file: Path | None):
+    """Serialize one case at a time so independent work can use the host."""
+    if lock_file is None:
+        yield
+        return
+    import fcntl
+
+    with lock_file.open("a") as descriptor:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+
+def run_matrix(*, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:
     """Alternating cache blocks followed by separate attribution/correctness runs."""
     cases: list[dict[str, Any]] = []
     for block in range(5):
@@ -645,6 +689,7 @@ def run_matrix(*, samples: int, output: Path) -> dict[str, Any]:
         "python": platform.python_version(),
         "percentile_estimator": "nearest_rank",
         "remote_network": "loopback_helper_separate_from_stdio",
+        "runtime_sources_sha256": runtime_source_identity(),
         "cases": [],
         "limitations": [
             "source_route_not_installed_cli",
@@ -657,19 +702,45 @@ def run_matrix(*, samples: int, output: Path) -> dict[str, Any]:
         ],
     }
     output.parent.mkdir(parents=True, exist_ok=True)
+    completed_at_resume = 0
+    if resume:
+        existing = json.loads(output.read_text())
+        for key in ("schema", "platform", "architecture", "python", "runtime_sources_sha256"):
+            if existing.get(key) != report[key]:
+                raise ValueError("mcp_benchmark_incompatible_resume_metadata")
+        if any(existing.get(key) is not None for key in ("failed_case", "failed_remote_case")):
+            raise ValueError("mcp_benchmark_resume_requires_failed_attempt_resolution")
+        completed_at_resume = len(existing.get("cases", []))
+        if completed_at_resume > len(cases):
+            raise ValueError("mcp_benchmark_resume_exceeds_schedule")
+        defaults = {name: parameter.default for name, parameter in inspect.signature(run_case).parameters.items()}
+        for completed, scheduled in zip(existing["cases"], cases, strict=False):
+            expected = {**defaults, "samples": samples, **scheduled}
+            block = expected.pop("block", None)
+            if completed.get("fixture") != expected or completed.get("block") != block:
+                raise ValueError("mcp_benchmark_resume_fixture_mismatch")
+            if completed.get("correctness", {}).get("errors") != 0:
+                raise ValueError("mcp_benchmark_resume_contains_failed_case")
+        report = existing
+        report.setdefault("resumed_after_case_counts", []).append(completed_at_resume)
+    report["measurement_lock"] = "per_case_POSIX_flock" if lock_file is not None else "caller_managed"
     for index, case in enumerate(cases):
+        if index < completed_at_resume:
+            continue
         options = {"samples": samples, **case}
         block = options.pop("block", None)
         try:
-            result = run_case(**options)
+            with performance_lock(lock_file):
+                result = run_case(**options)
         except BenchmarkCaseError as error:
             report["failed_case"] = {"case": index + 1, "block": block, "fixture": options, **error.evidence}
             report["completed_cases"] = len(report["cases"])
-            output.write_text(json.dumps(report, indent=2) + "\n")
+            write_checkpoint(output, report)
             raise
         result["block"] = block
         report["cases"].append(result)
-        output.write_text(json.dumps(report, indent=2) + "\n")
+        report["completed_cases"] = len(report["cases"])
+        write_checkpoint(output, report)
         print(
             json.dumps(
                 {
@@ -698,8 +769,11 @@ def run_matrix(*, samples: int, output: Path) -> dict[str, Any]:
                 != uncached["correctness"]["exact_response_trace_sha256"]
             ):
                 raise RuntimeError("mcp_benchmark_cache_mode_trace_mismatch")
+            if cached["correctness"] != uncached["correctness"]:
+                raise RuntimeError("mcp_benchmark_cache_mode_decision_mismatch")
             comparisons.append(
                 {
+                    "exact_decision_notification_generation_parity": True,
                     "block": block,
                     "catalog_size": catalog_size,
                     "exact_trace_parity": True,
@@ -709,10 +783,22 @@ def run_matrix(*, samples: int, output: Path) -> dict[str, Any]:
                     "uncached_tree_cpu_ms_per_call": uncached["tree_cpu_ms_per_call"],
                 }
             )
-    report["remote_cases"] = [run_remote_case(samples=min(samples, 20), server_delay_ms=delay) for delay in (0, 20)]
+    report.setdefault("remote_cases", [])
+    for delay in (0, 20):
+        if any(case["fixture"]["server_delay_ms"] == delay for case in report["remote_cases"]):
+            continue
+        try:
+            with performance_lock(lock_file):
+                remote_result = run_remote_case(samples=min(samples, 20), server_delay_ms=delay)
+        except Exception as error:
+            report["failed_remote_case"] = {"server_delay_ms": delay, "reason": type(error).__name__, "errors": 1}
+            write_checkpoint(output, report)
+            raise
+        report["remote_cases"].append(remote_result)
+        write_checkpoint(output, report)
     report["cache_comparisons"] = comparisons
     report["completed_cases"] = len(cases)
-    output.write_text(json.dumps(report, indent=2) + "\n")
+    write_checkpoint(output, report)
     return report
 
 
@@ -720,6 +806,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--matrix", action="store_true")
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--lock-file", type=Path)
     parser.add_argument("--catalog-size", type=int, default=100)
     parser.add_argument("--payload-bytes", type=int, default=1024)
     parser.add_argument("--samples", type=int, default=100)
@@ -740,10 +828,19 @@ def main() -> int:
     if args.matrix:
         if args.json is None:
             parser.error("--matrix requires --json for per-case checkpoints")
-        result = run_matrix(samples=args.samples, output=args.json)
+        result = run_matrix(samples=args.samples, output=args.json, lock_file=args.lock_file, resume=args.resume)
         print(json.dumps({"completed_cases": result["completed_cases"], "qualification": False}))
         return 0
-    result = run_case(**{key: value for key, value in vars(args).items() if key not in {"worker", "matrix", "json"}})
+    if args.resume:
+        parser.error("--resume requires --matrix")
+    with performance_lock(args.lock_file):
+        result = run_case(
+            **{
+                key: value
+                for key, value in vars(args).items()
+                if key not in {"worker", "matrix", "json", "resume", "lock_file"}
+            }
+        )
     result.update(
         {
             "schema": "hol-guard-mcp-stdio-profile.v1",

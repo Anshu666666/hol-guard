@@ -10,10 +10,10 @@ inspection, a clean result, or source identity verification on Windows.
 The qualification harness preserves this production behavior. Every Windows
 source-reference case retains its original file, payload, route, and case ID.
 It must match the exact existing native refusal and the corresponding harness
-delivery. Watch cases retain their observation behavior with
-`observe_no_output_to_review`; allowing delivery in Watch mode does not prove
-that source bytes were reviewed. Inline cases and Unix source expectations
-remain unchanged.
+delivery. The resident edge preserves the intrinsic `no_output_to_review` denial
+even in Watch. Python delivery changes its final action to allow/warn and
+preserves that reason; it does not add the direct-hook `observe_` prefix or
+observe metadata. Allowing delivery in Watch does not prove source review.
 
 Validated platform refusals are reported separately from semantic coverage.
 They never enter `semantic_observations`, successful size latency series, or

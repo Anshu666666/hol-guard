@@ -41,6 +41,12 @@ def semantic_diagnostic(
             allowed = allowed_codes if key in {"reason_code", "error"} else _ACTIONS
             if isinstance(value, str) and value in allowed:
                 observed[key] = value
+                if key in {"reason_code", "error"}:
+                    # Some frozen codes contain sensitive vocabulary and the
+                    # generic export sanitizer redacts their string. Retain an
+                    # exact identifier without exposing arbitrary error text.
+                    encoded = json.dumps(value, separators=(",", ":")).encode("utf-8")
+                    observed[key + "_digest"] = hashlib.sha256(encoded).hexdigest()
             else:
                 encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
                 observed[key + "_digest"] = hashlib.sha256(encoded).hexdigest()

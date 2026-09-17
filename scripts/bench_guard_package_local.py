@@ -113,7 +113,9 @@ def main() -> int:
         store = GuardStore(directory / "guard")
         store.get_cloud_workspace_id = lambda: WORKSPACE_ID
         store.cache_supply_chain_bundle(WORKSPACE_ID, response, "2026-05-19T00:00:00Z")
-        parsed_response = load_supply_chain_bundle_response(response)
+        # Only the standalone cached-bundle batch needs a preconstructed model.
+        # Full routes load their own model from the synthetic store inside timing.
+        parsed_response = load_supply_chain_bundle_response(response) if args.mode == "unversioned" else None
         for _sample in range(args.samples + int(args.profile)):
             profiling = _sample == args.samples
             artifact = _artifact_for_targets(target, lockfile_paths=("package-lock.json",))
@@ -228,7 +230,9 @@ def main() -> int:
         "complete_result_sha256": complete_semantic,
         "persisted_evidence_sha256": evidence_semantic,
         "semantic_scope": (
-            "Every public result field plus all persisted evidence columns; no normalization or exclusions"
+            "Complete cached-bundle decisions; persistence not exercised"
+            if args.mode == "unversioned"
+            else "Every public result field plus all persisted evidence columns; no normalization or exclusions"
         ),
         "limitations": [
             "Synthetic local source route; no launcher/startup/network/approval wait",

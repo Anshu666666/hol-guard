@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import subprocess
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -92,8 +93,45 @@ def test_small_sample_percentile_preserves_outlier(benchmark: ModuleType) -> Non
 
 
 def test_cli_exit_mismatch_fails_qualification(benchmark: ModuleType, tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="CLI exit 2 differs from expected 0"):
+    with pytest.raises(benchmark.CLIExecutionError, match="CLI exit 2 differs from expected 0") as caught:
         benchmark._full_cli(ROOT, tmp_path / "absent", "working", expected_exit=0)
+    assert caught.value.evidence["cli_exit"] == 2
+    assert caught.value.evidence["stderr_bytes"] > 0
+    assert caught.value.evidence["command_started_utc"] <= caught.value.evidence["command_finished_utc"]
+
+
+def test_failed_cli_evidence_retains_only_bounded_diagnostics(
+    benchmark: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    sensitive = "candidate-fragment-must-never-be-in-evidence"
+    monkeypatch.setattr(
+        benchmark.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            [], 2, b"", f"No such file or directory: {sensitive}".encode()
+        ),
+    )
+    with pytest.raises(benchmark.CLIExecutionError) as caught:
+        benchmark._full_cli(ROOT, tmp_path, "working")
+    evidence = caught.value.evidence
+    assert evidence["diagnostic_categories"] == ["missing-path"]
+    assert evidence["failure_category"] == "unexpected-exit"
+    assert len(evidence["stderr_sha256"]) == 64
+    assert sensitive not in json.dumps(evidence)
+
+
+def test_cli_timeout_preserves_partial_output_digest_without_contents(
+    benchmark: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired([], 120, output=b"private partial result", stderr=b"private error")
+
+    monkeypatch.setattr(benchmark.subprocess, "run", timeout)
+    with pytest.raises(benchmark.CLIExecutionError, match="120-second") as caught:
+        benchmark._full_cli(ROOT, tmp_path, "working")
+    assert caught.value.evidence["failure_category"] == "command-timeout"
+    assert caught.value.evidence["stdout_bytes"] == len(b"private partial result")
+    assert "private" not in json.dumps(caught.value.evidence)
 
 
 def test_measurement_lock_releases_after_failed_workload(benchmark: ModuleType, tmp_path: Path) -> None:

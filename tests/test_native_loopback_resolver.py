@@ -69,6 +69,9 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
     monkeypatch.setattr(resolver, "resolver_probe", lambda: next(probes))
     monkeypatch.setattr(resolver, "LoopbackPTRResponder", Responder)
     monkeypatch.setattr(resolver, "_run_helper", helper)
+    monkeypatch.setattr(resolver, "responder_probe", lambda port: {"passed": True, "requests": 1})
+    monkeypatch.setattr(resolver, "owned_configuration", lambda *_args: {"owned_bytes_match": True})
+    monkeypatch.setattr(resolver, "system_configuration", lambda _port: {"exact_resolver_selected": False})
     monkeypatch.setattr(resolver.secrets, "token_hex", lambda size: "a" * 32)
     return events
 
@@ -92,6 +95,9 @@ def test_one_environment_encloses_paired_command_and_restores_it(
     assert report["before"]["status"] == "deadline_exceeded" and report["after"]["loopback_label"] is True
     assert report["after_cleanup"]["status"] == "deadline_exceeded"
     assert report["configuration_cleanup"] == "completed"
+    assert report["configuration_readback"]["owned_bytes_match"] is True
+    assert report["system_configuration_after_install"]["exact_resolver_selected"] is False
+    assert report["responder"]["received"] == 1 and report["resolver_packets_received"] == 0
     assert report["environment_scope"] == "disposable_ci_runner_both_arms"
     assert all(
         report[key] is False

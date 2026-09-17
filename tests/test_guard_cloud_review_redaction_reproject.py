@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from codex_plugin_scanner.guard.models import GuardApprovalRequest
+from codex_plugin_scanner.guard.review_event_integrity import review_event_payload_digest
 from codex_plugin_scanner.guard.runtime.cloud_review_event_projection import (
     build_cloud_review_event,
     project_cloud_review_event,
@@ -111,3 +115,69 @@ def test_user_facing_projection_errors_never_include_secret(tmp_path: Path) -> N
     assert result is None
     dumped = json.dumps(store.review_event_outbox_status(now=_NOW, **binding))
     assert _SECRET not in dumped
+
+
+@pytest.mark.parametrize("level", ["none", "full"])
+def test_projection_drops_private_snapshot_fields_and_hashes_transmitted_bytes(tmp_path: Path, level: str) -> None:
+    store = GuardStore(tmp_path / "guard")
+    binding = _binding(store)
+    opaque_secret = "opaque-credential-b2e7"
+    request = replace(
+        _request(),
+        scanner_evidence=({"apiKey": opaque_secret, "metadata": {"password": opaque_secret}},),
+        decision_v2_json={"debug": {"Authorization": opaque_secret}},
+        action_envelope_json={
+            "action_type": "shell_command",
+            "command": "echo test",
+            "raw_payload_redacted": {"apiKey": opaque_secret, "nested": {"password": opaque_secret}},
+        },
+    )
+    store.add_approval_request(request, _NOW)
+    row = store.list_ready_review_events(now=_NOW, limit=1, **binding)[0]
+    original_json = row["payload_json"]
+    original_hash = row["payload_hash"]
+    result = project_cloud_review_event(
+        store, outbox_row=row, delivery_binding=binding, redaction_level=level, oauth=None
+    )
+    assert result is not None
+    event = result[1]
+    assert opaque_secret not in json.dumps(event)
+    projected = json.loads(event["eventPayloadJson"])
+    snapshot = projected["requestSnapshot"]
+    assert "scanner_evidence_json" not in snapshot
+    assert "decision_v2_json" not in snapshot
+    assert "config_path" not in snapshot
+    assert snapshot["oauth_source"] == "default"
+    assert snapshot["request_id"] == event["localRequestId"]
+    assert snapshot["harness"] == event["harnessId"]
+    assert snapshot["policy_action"] == event["policyAction"]
+    assert snapshot["recommended_scope"] == event["recommendedScope"]
+    assert event["payloadHash"] == review_event_payload_digest(
+        event["eventPayloadJson"],
+        oauth_source="default",
+        **binding,
+    )
+    stored = store.list_ready_review_events(now=_NOW, limit=1, **binding)[0]
+    assert stored["payload_json"] == original_json
+    assert stored["payload_hash"] == original_hash
+    assert (
+        project_cloud_review_event(
+            store, outbox_row=stored, delivery_binding=binding, redaction_level=level, oauth=None
+        )[1]["payloadHash"]
+        == event["payloadHash"]
+    )
+
+
+def test_tightened_redaction_appends_fresh_snapshot_identity(tmp_path: Path) -> None:
+    store = GuardStore(tmp_path / "guard")
+    binding = _binding(store)
+    _persist_cloud_receipt_redaction_level(store, level="none", synced_at=_NOW)
+    store.add_approval_request(_request(), _NOW)
+    before = store.list_ready_review_events(now=_NOW, limit=8, **binding)
+    _persist_cloud_receipt_redaction_level(store, level="full", synced_at=_NOW)
+    after = store.list_ready_review_events(now=_NOW, limit=8, **binding)
+    assert len(after) == len(before) + 1
+    assert after[-1]["event_type"] == "review.request.snapshot_requeued"
+    assert after[-1]["event_id"] not in {row["event_id"] for row in before}
+    assert after[-1]["request_sequence"] > before[-1]["request_sequence"]
+    assert after[-1]["stream_sequence"] > before[-1]["stream_sequence"]

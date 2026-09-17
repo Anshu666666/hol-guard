@@ -27,7 +27,7 @@ class _JsonResponse:
         return json.dumps(self._payload).encode("utf-8")
 
 
-def _seed(store: GuardStore) -> None:
+def _seed(store: GuardStore, monkeypatch: pytest.MonkeyPatch) -> None:
     dpop = generate_dpop_key_pair()
     store.set_oauth_local_credentials(
         issuer="https://hol.org",
@@ -41,16 +41,20 @@ def _seed(store: GuardStore) -> None:
         workspace_id="workspace-1",
         now="2026-09-17T00:00:00Z",
     )
-    guard_runner_module._test_sync_auth_context_override = {
-        "sync_url": "https://hol.org/api/guard/receipts/sync",
-        "access_token": "demo-token",
-        "dpop_key_material": None,
-    }
+    monkeypatch.setattr(
+        guard_runner_module,
+        "_test_sync_auth_context_override",
+        {
+            "sync_url": "https://hol.org/api/guard/receipts/sync",
+            "access_token": "demo-token",
+            "dpop_key_material": None,
+        },
+    )
 
 
 def test_pain_signal_runtime_error_does_not_unapply_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = GuardStore(tmp_path / "guard-home")
-    _seed(store)
+    _seed(store, monkeypatch)
 
     def _fake_urlopen(request, timeout):
         return _JsonResponse({"syncedAt": "2026-09-17T00:00:10+00:00", "receiptsStored": 0})
@@ -63,8 +67,8 @@ def test_pain_signal_runtime_error_does_not_unapply_policy(tmp_path: Path, monke
     monkeypatch.setattr(guard_runner_module, "sync_pain_signals", _boom)
     summary = guard_runner_module.sync_receipts(store)
     assert summary["pain_signals_uploaded"] == 0
-    assert summary["telemetry_degradation"]["lane"] == "pain_signals"
-    assert summary["pain_signals_status"] == "degraded"
+    assert summary["telemetry_status"] == "degraded"
+    assert summary["pain_signals_upload_status"] == "degraded"
+    assert summary["pain_signals_upload_reason"] == "telemetry_upload_failed"
     retry = guard_runner_module.sync_receipts(store)
-    assert retry.get("telemetry_degradation")
-    guard_runner_module._test_sync_auth_context_override = None
+    assert retry["telemetry_status"] == "degraded"

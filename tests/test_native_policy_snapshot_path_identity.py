@@ -1,33 +1,55 @@
-"""HGP-185: policy identity across macOS and Windows path forms."""
+"""Platform scope aliases preserve identity without collapsing distinct paths."""
 
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
-from codex_plugin_scanner.guard.native_policy_snapshot_policy import _normalize_scope_text_v3, _scope_digest_v3
+import pytest
+
+from codex_plugin_scanner.guard import native_policy_snapshot_policy as policy
 
 
-def test_equivalent_aliases_match_and_siblings_do_not(tmp_path: Path) -> None:
-    macos_private = _normalize_scope_text_v3("/private/var/folders/xx/guard")
-    macos_var = _normalize_scope_text_v3("/var/folders/xx/guard")
-    assert macos_private == macos_var
-    spaced = _normalize_scope_text_v3("/Users/Shared/My Guard/State/")
-    assert spaced == "/Users/Shared/My Guard/State"
-    windows = _normalize_scope_text_v3(r"C:\Users\Guard\State")
-    windows_long = _normalize_scope_text_v3(r"\\?\C:\Users\Guard\State\\")
-    assert windows.casefold() == r"c:\users\guard\state" or windows == "/private/var/folders/xx/guard"
-    if windows.startswith("c:"):
-        assert windows_long == windows
+@pytest.mark.parametrize("platform", ["darwin", "ios"])
+def test_apple_private_alias_matches(monkeypatch: pytest.MonkeyPatch, platform: str) -> None:
+    monkeypatch.setattr(policy, "os", SimpleNamespace(name="posix"))
+    monkeypatch.setattr(policy.sys, "platform", platform)
+    assert policy._normalize_scope_text_v3("/private/var/guard/") == "/var/guard"
+    assert policy._normalize_scope_text_v3("/Users/Shared/My Guard/") == "/Users/Shared/My Guard"
+
+
+@pytest.mark.parametrize("platform", ["linux", "freebsd14"])
+def test_non_apple_private_paths_remain_distinct(monkeypatch: pytest.MonkeyPatch, platform: str) -> None:
+    monkeypatch.setattr(policy, "os", SimpleNamespace(name="posix"))
+    monkeypatch.setattr(policy.sys, "platform", platform)
+    assert policy._normalize_scope_text_v3("/private/var/guard/") == "/private/var/guard"
+    assert policy._normalize_scope_text_v3("/var/guard/") == "/var/guard"
+    assert policy._normalize_scope_text_v3("/") == "/"
+
+
+@pytest.mark.parametrize(
+    ("alias", "canonical"),
+    [
+        (r"C:\Users\Guard\State", r"c:\users\guard\state"),
+        ("\\\\?\\C:\\Users\\Guard\\State\\", r"c:\users\guard\state"),
+        (r"\\?\UNC\Server\Share\Guard", r"\\server\share\guard"),
+        ("C:/Users/Guard/State/", r"c:\users\guard\state"),
+    ],
+)
+def test_windows_aliases_match(monkeypatch: pytest.MonkeyPatch, alias: str, canonical: str) -> None:
+    monkeypatch.setattr(policy, "os", SimpleNamespace(name="nt"))
+    assert policy._normalize_scope_text_v3(alias) == canonical
+
+
+def test_scope_digest_distinguishes_siblings_and_resolves_symlinks(tmp_path: Path) -> None:
     sibling = tmp_path / "guard-a"
     other = tmp_path / "guard-b"
     sibling.mkdir()
     other.mkdir()
-    assert _scope_digest_v3(sibling) != _scope_digest_v3(other)
+    assert policy._scope_digest_v3(sibling) != policy._scope_digest_v3(other)
     linked = tmp_path / "guard-link"
     try:
         linked.symlink_to(sibling, target_is_directory=True)
     except OSError:
-        linked = sibling
-    assert _scope_digest_v3(linked) == _scope_digest_v3(sibling)
-    restarted = _scope_digest_v3(sibling)
-    assert restarted == _scope_digest_v3(sibling)
+        pytest.skip("Creating directory symlinks is unavailable on this runner")
+    assert policy._scope_digest_v3(linked) == policy._scope_digest_v3(sibling)

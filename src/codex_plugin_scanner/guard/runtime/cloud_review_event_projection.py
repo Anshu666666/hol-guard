@@ -16,9 +16,11 @@ from ..review_contracts import (
     GuardReviewOAuthMetadata,
     build_local_review_request_claim,  # pyright: ignore[reportUnknownVariableType]
 )
+from ..review_event_integrity import review_event_payload_digest
 from ..store import GuardStore
 from ..store_review_event_outbox_schema import REVIEW_EVENT_SCHEMA_VERSION
 from .local_request_snapshots import (
+    _bounded_cloud_value,
     _cloud_safe_local_request_payload,  # pyright: ignore[reportPrivateUsage]
     _cloud_scrub_text,
 )
@@ -171,23 +173,23 @@ def project_cloud_review_event(
             **delivery_binding,
         )
         return None
+    payload_json = _cloud_safe_event_payload_json(stored_event.payload_json, redaction_level=redaction_level)
     event.update(
         {
             "eventId": stored_event.event_id,
             "eventSchemaVersion": REVIEW_EVENT_SCHEMA_VERSION,
             "eventType": stored_event.wire_event_type,
-            "eventPayloadJson": _cloud_safe_event_payload_json(
-                stored_event.payload_json,
-                redaction_level=redaction_level,
-            ),
+            "eventPayloadJson": payload_json,
             "localEventSequence": stored_event.request_sequence,
             "localStreamSequence": stored_event.stream_sequence,
-            "payloadHash": stored_event.payload_hash,
+            "payloadHash": review_event_payload_digest(
+                payload_json, oauth_source=outbox_row.get("oauth_source"), **delivery_binding
+            ),
         }
     )
     if terminal_projection is not None:
         terminal_result, terminal_capability, terminal_completed_at = terminal_projection
-        event["continuationResult"] = terminal_result
+        event["continuationResult"] = _bounded_cloud_value(terminal_result)
         event["continuationCapability"] = terminal_capability
         event["localUpdatedAt"] = terminal_completed_at
     return sequence, event
@@ -207,15 +209,25 @@ def _cloud_safe_event_payload_json(payload_json: object, *, redaction_level: str
     snapshot = payload.get("requestSnapshot")
     if isinstance(snapshot, dict):
         safe_snapshot = _cloud_safe_local_request_payload(snapshot, redaction_level=redaction_level)
-        payload["requestSnapshot"] = _scrub_secret_tree({**snapshot, **safe_snapshot})
-    return json.dumps(_scrub_secret_tree(payload), sort_keys=True, separators=(",", ":"))
-
-
-def _scrub_secret_tree(value: object) -> object:
-    if isinstance(value, str):
-        return _cloud_scrub_text(value)
-    if isinstance(value, dict):
-        return {str(key): _scrub_secret_tree(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_scrub_secret_tree(item) for item in value]
-    return value
+        safe_snapshot["oauth_source"] = snapshot.get("oauth_source")
+        payload["requestSnapshot"] = safe_snapshot
+    safe_payload = {
+        key: _bounded_cloud_value(payload[key], field_name=key)
+        for key in (
+            "schema",
+            "localRequestId",
+            "eventType",
+            "occurredAt",
+            "status",
+            "resolutionAction",
+            "resolutionScope",
+            "reason",
+            "oauthSource",
+            "continuationResult",
+        )
+        if key in payload
+    }
+    # The request projection already applies its own field and size bounds.
+    # Reapplying generic mapping limits would drop required identity fields.
+    safe_payload["requestSnapshot"] = payload.get("requestSnapshot")
+    return json.dumps(safe_payload, sort_keys=True, separators=(",", ":"))

@@ -1,0 +1,82 @@
+"""Derive persisted row identities from current authenticated bundle authority."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Protocol
+
+from .models import PolicyDecision
+from .policy_bundle_decisions import build_policy_bundle_decisions
+from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY, verified_policy_materialization_time
+from .runtime.canonical_policy_decisions import build_canonical_policy_bundle_decisions
+from .store_base import _canonical_utc_timestamp
+from .synced_policy import SyncPayloadReader, cached_policy_bundle_validation
+
+
+class PolicyBundleRowStore(SyncPayloadReader, Protocol):
+    def get_device_metadata(self) -> Mapping[str, str]: ...
+
+    def _normalized_policy_keys(
+        self, decision: PolicyDecision
+    ) -> tuple[str | None, str | None, str | None, str | None]: ...
+
+    def _policy_integrity_secret_material(self, *, create: bool) -> tuple[bytes | None, str | None]: ...
+
+
+def current_policy_bundle_row_identities(
+    store: PolicyBundleRowStore, *, now: float | None = None
+) -> frozenset[tuple[object, ...]]:
+    """Authenticate the source before admitting either legacy or canonical rows."""
+
+    validated_bundle, _reason = cached_policy_bundle_validation(store, store.get_sync_payload("policy_bundle"), now=now)
+    if validated_bundle is None:
+        return frozenset()
+    try:
+        device = store.get_device_metadata()
+        builder = (
+            build_canonical_policy_bundle_decisions
+            if validated_bundle.get("contractVersion") == "guard-policy-bundle.v2"
+            else build_policy_bundle_decisions
+        )
+        decisions = builder(
+            validated_bundle,
+            device_id=str(device["installation_id"]),
+            device_name=str(device["device_label"]),
+        )
+        if not decisions:
+            return frozenset()
+        key, key_id = store._policy_integrity_secret_material(create=False)
+        materialized_at = verified_policy_materialization_time(
+            store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY),
+            bundle=validated_bundle,
+            device_id=str(device["installation_id"]),
+            key=key,
+            key_id=key_id,
+        )
+        if materialized_at is None:
+            return frozenset()
+        identities: set[tuple[object, ...]] = set()
+        for decision in decisions:
+            artifact_id, artifact_hash, workspace, publisher = store._normalized_policy_keys(decision)
+            identities.add(
+                (
+                    decision.harness,
+                    decision.scope,
+                    artifact_id,
+                    artifact_hash,
+                    workspace,
+                    publisher,
+                    decision.action,
+                    decision.reason,
+                    decision.owner,
+                    decision.source,
+                    _canonical_utc_timestamp(decision.expires_at) if decision.expires_at is not None else None,
+                    materialized_at,
+                )
+            )
+        return frozenset(identities)
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return frozenset()
+
+
+__all__ = ["PolicyBundleRowStore", "current_policy_bundle_row_identities"]

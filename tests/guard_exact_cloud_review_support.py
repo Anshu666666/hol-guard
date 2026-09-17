@@ -119,6 +119,7 @@ def remote_approval(
     expires_at = expires_at or issued_at + timedelta(minutes=5)
     if authority == "workspace_admin_mfa":
         capability_id = "ab" * 32
+        step_up_expires_at = step_up_expires_at or expires_at
     else:
         assert isinstance(advertisement, dict)
         capability_id = advertisement["capabilityId"]

@@ -23,7 +23,7 @@ def catalog_upgrade_status(
     applied = not resolution.failures
     if digest_mismatch:
         next_action = (
-            f"Update this device to a runtime whose catalog digest is {registry.catalog_digest}, "
+            "Update this device to a runtime that supports the policy's catalog, "
             "or change the Cloud rule so it matches the installed catalog."
         )
     elif unknown_permission:

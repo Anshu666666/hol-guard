@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from codex_plugin_scanner.guard.daemon.cloud_review_settings import (
+    CloudReviewSettingsError,
     change_cloud_review_settings,
     cloud_review_settings_status,
 )
@@ -48,3 +51,21 @@ def test_double_enable_and_retry_delivery_reuse_valid_consent(tmp_path: Path) ->
     assert second["enabled"] is True
     assert retried["enabled"] is True
     assert renewed["enabled"] is True
+
+
+@pytest.mark.parametrize("existing_consent", [False, True])
+def test_delivery_retry_never_issues_missing_or_expired_consent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, existing_consent: bool
+) -> None:
+    from codex_plugin_scanner.guard.daemon import cloud_review_settings as settings
+
+    store = connected_exact_review_store(tmp_path)
+    if existing_consent:
+        change_cloud_review_settings(store, _payload(), refresh_workers=_refresh_workers)
+    original = store.get_sync_payload("guard_exact_cloud_review_capability")
+    monkeypatch.setattr(settings, "exact_cloud_review_status", lambda _store: {"enabled": False})
+    refreshes = []
+    with pytest.raises(CloudReviewSettingsError, match="Enable or renew"):
+        change_cloud_review_settings(store, _payload("retry_delivery"), refresh_workers=lambda: refreshes.append(True))
+    assert store.get_sync_payload("guard_exact_cloud_review_capability") == original
+    assert refreshes == []

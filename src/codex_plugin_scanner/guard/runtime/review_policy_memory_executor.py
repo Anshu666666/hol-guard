@@ -192,6 +192,7 @@ def _decision_from_rule(*, bundle: dict[str, object], rule: dict[str, object], o
         target_payload,
         oauth=oauth,  # type: ignore[arg-type]
         project_identity=project_identity,
+        action=action,
     )
     scope = _local_scope(scope_value, publisher=publisher, workspace=workspace)
     return PolicyDecision(

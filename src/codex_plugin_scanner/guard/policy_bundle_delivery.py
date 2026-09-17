@@ -292,10 +292,16 @@ def effective_policy_bundle_acknowledgement(
         if isinstance(delivered_device_id, str) and delivered_device_id:
             acknowledgement_device_id = delivered_device_id
     generic_applied = activating_new_bundle and not policy_bundle_has_extension_semantics(effective_policy_bundle)
-    if applied is False:
-        generic_applied = False
-    elif applied is True:
+    if applied is True:
         generic_applied = activating_new_bundle and not policy_bundle_has_extension_semantics(effective_policy_bundle)
+    elif applied is False:
+        if (
+            previous is not None
+            and previous.get("status") == "applied"
+            and previous.get("bundleHash") == effective_policy_bundle.get("bundleHash")
+        ):
+            return dict(previous)
+        generic_applied = False
     return policy_bundle_acknowledgement_payload(
         device_id=acknowledgement_device_id,
         device_name=device_name,

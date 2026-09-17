@@ -78,6 +78,10 @@ from ..policy_bundle_trusted_keys import (
     policy_bundle_keyring_payload,
     validate_synced_policy_bundle,
 )
+from ..policy_bundle_generic_ack import (
+    is_generic_policy_bundle_acknowledgement,
+    validated_generic_policy_bundle_acknowledgement,
+)
 from ..policy_bundle_v2 import (
     POLICY_BUNDLE_V2_CONTRACT,
     validate_policy_bundle_v2_transition,
@@ -85,9 +89,14 @@ from ..policy_bundle_v2 import (
 )
 from ..policy_canonical_rollout import (
     POLICY_CANONICAL_ENFORCEMENT_ENV as _POLICY_CANONICAL_ENFORCEMENT_ENV,
+    advertised_required_capability as _advertised_required_capability,
     canonical_policy_enforcement_enabled as _canonical_policy_enforcement_enabled,
     canonical_policy_rollout_percentage as _canonical_policy_rollout_percentage,
     canonical_runtime_posture,
+)
+from ..policy_sync_outcomes import (
+    policy_application_status as _policy_application_status,
+    stored_policy_authority_present as _stored_policy_authority_present,
 )
 from ..policy_document import GuardPolicyDocument
 from ..policy_document_io import PolicyCompilationError, compile_policy_document
@@ -139,6 +148,7 @@ from .managed_controls_sync import (
     managed_controls_negotiated_capabilities as _managed_controls_negotiated_capabilities,
 )
 from .managed_controls_sync import (
+    extension_authority_is_protected as _extension_authority_is_protected,
     managed_controls_runtime_sync_posture as _managed_controls_runtime_sync_posture,
 )
 from .prompt_injection import detect_prompt_injection_requests
@@ -3249,13 +3259,18 @@ def sync_receipts(
             if validated_policy_bundle is not None
             else ("rejected" if policy_bundle_field_provided else "omitted")
         ),
-        "policy_application_status": (
-            "applied"
-            if policy_application_committed and validated_policy_bundle is not None
-            else ("retained" if not policy_bundle_field_provided or activation_last_error else "rejected")
+        "policy_application_status": _policy_application_status(
+            policy_application_committed=policy_application_committed,
+            validated_policy_bundle=validated_policy_bundle,
+            canonical_enforcement=canonical_enforcement,
+            policy_bundle_field_provided=policy_bundle_field_provided,
+            activation_last_error=activation_last_error,
+            retained_authority=_stored_policy_authority_present(
+                current=store.get_sync_payload("policy_bundle"),
+                last_good=store.get_sync_payload("policy_bundle_last_good"),
+            ),
         ),
         "policy_rejection_reason": activation_last_error.get("reason") if activation_last_error else None,
-        "advisories_stored": advisories_stored,
         "advisories_stored": advisories_stored,
         "exceptions_stored": len(deduped_exceptions),
         "cloud_exceptions_stored": len(cloud_exception_items),
@@ -3902,6 +3917,7 @@ def _local_guard_runtime_session(
     *,
     device_id: str = "local-machine",
     workspace_id: str | None = None,
+    store: GuardStore | None = None,
 ) -> dict[str, object]:
     session: dict[str, object] = {
         "harness": "hol-guard",
@@ -3917,10 +3933,22 @@ def _local_guard_runtime_session(
         "policy_contracts": list(_POLICY_CONTRACTS),
         "yaml_import": os.environ.get(_POLICY_YAML_IMPORT_ENV) == "1",
     }
+    protected_authority = False
+    negotiated_capabilities: frozenset[str] = frozenset()
+    if store is not None:
+        protected_authority = _extension_authority_is_protected(store)
+        negotiated_capabilities = _managed_controls_negotiated_capabilities(
+            store,
+            store.get_sync_payload("runtime_session_summary"),
+        )
     session.update(
         canonical_runtime_posture(
             device_id=device_id,
             workspace_id=workspace_id,
+            protected_authority=protected_authority,
+            negotiated_capabilities=negotiated_capabilities,
+            required_capability=_advertised_required_capability(),
+            contract_version=POLICY_BUNDLE_V2_CONTRACT,
         )
     )
     return session
@@ -3949,6 +3977,7 @@ def sync_local_guard_cloud_proof(
             session=_local_guard_runtime_session(
                 device_id=device_id,
                 workspace_id=workspace_id,
+                store=store,
             ),
             auth_context=resolved_auth_context,
         )
@@ -5857,6 +5886,9 @@ def _validated_policy_bundle_acknowledgement(
     if not isinstance(acknowledgement, dict):
         return None
     if acknowledgement.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
+        if is_generic_policy_bundle_acknowledgement(acknowledgement):
+            validated, _error = validated_generic_policy_bundle_acknowledgement(acknowledgement)
+            return validated
         validated, _error = validated_policy_bundle_v2_acknowledgement(acknowledgement)
         return validated
 
@@ -6264,6 +6296,11 @@ def _cloud_runtime_session_payload(store: GuardStore, session: dict[str, object]
     )
     if reason is not None:
         payload["canonicalIncompatibilityReason"] = reason
+    percentage = session.get("canonical_rollout_percentage")
+    if percentage is None:
+        percentage = session.get("canonicalRolloutPercentage")
+    if isinstance(percentage, int) and not isinstance(percentage, bool):
+        payload["canonicalRolloutPercentage"] = percentage
     payload.update(_managed_controls_runtime_sync_posture(store, generated_at=updated_at))
     return payload
 

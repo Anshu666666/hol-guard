@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from .project_identity import is_portable_project_identity
 from .review_oauth_binding import GuardReviewContractError, GuardReviewOAuthMetadata
+
+_MAX_MEMORY_TARGET_IDS = 50
 
 
 def _text_ids(value: object) -> tuple[str, ...]:
@@ -12,6 +15,8 @@ def _text_ids(value: object) -> tuple[str, ...]:
         return ()
     if not isinstance(value, list):
         raise GuardReviewContractError("decision_memory_target_invalid")
+    if len(value) > _MAX_MEMORY_TARGET_IDS:
+        raise GuardReviewContractError("decision_memory_target_partial")
     items = [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
     if len(items) != len(value):
         raise GuardReviewContractError("decision_memory_target_invalid")
@@ -24,20 +29,16 @@ def validate_exact_memory_target(
     oauth: GuardReviewOAuthMetadata,
     project_identity: str | None = None,
 ) -> None:
-    """Refuse sibling or partial multi-target projections before any row is written."""
+    """Accept the portal 0..50 target arrays and refuse only unrepresentable projections."""
 
     workspace_ids = _text_ids(target.get("workspaceIds"))
     machine_ids = _text_ids(target.get("machineIds"))
     project_ids = _text_ids(target.get("projectIds"))
-    if not workspace_ids and not machine_ids and not project_ids:
-        raise GuardReviewContractError("decision_memory_target_invalid")
-    if len(workspace_ids) > 1 or len(machine_ids) > 1 or len(project_ids) > 1:
-        raise GuardReviewContractError("decision_memory_target_partial")
-    if workspace_ids and workspace_ids[0] != oauth.workspace_id:
+    if workspace_ids and oauth.workspace_id not in workspace_ids:
         raise GuardReviewContractError("decision_memory_workspace_mismatch")
-    if machine_ids and machine_ids[0] != oauth.installation_id:
+    if machine_ids and oauth.installation_id not in machine_ids:
         raise GuardReviewContractError("decision_memory_machine_mismatch")
-    if project_ids and (project_identity is None or project_ids[0] != project_identity):
+    if project_ids and (project_identity is None or project_identity not in project_ids):
         raise GuardReviewContractError("decision_memory_project_mismatch")
 
 
@@ -46,22 +47,30 @@ def local_memory_match_fields(
     *,
     oauth: GuardReviewOAuthMetadata,
     project_identity: str | None,
+    action: str | None = None,
 ) -> tuple[str | None, str | None]:
-    """Return exact (workspace, publisher) matcher fields for one accepted target."""
+    """Return matcher fields the local resolver actually compares.
 
-    workspace_ids = _text_ids(target.get("workspaceIds"))
-    machine_ids = _text_ids(target.get("machineIds"))
+    Workspace stays a real workspace or portable project identity. Machine
+    membership is enforced at apply time, not encoded into the workspace key.
+    Portable identities can carry restrictive decisions only.
+    """
+
+    _ = oauth
     project_ids = _text_ids(target.get("projectIds"))
-    parts: list[str] = []
-    if workspace_ids:
-        parts.append(workspace_ids[0])
-    if machine_ids:
-        parts.append(f"machine:{machine_ids[0]}")
+    chosen: str | None = None
     if project_ids:
-        parts.append(f"project:{project_ids[0]}")
-    if not parts:
-        return oauth.workspace_id, None
-    return "|".join(parts), None
+        if project_identity and project_identity in project_ids:
+            chosen = project_identity
+        elif len(project_ids) == 1:
+            chosen = project_ids[0]
+        else:
+            raise GuardReviewContractError("decision_memory_target_partial")
+    elif project_identity and is_portable_project_identity(project_identity):
+        chosen = project_identity
+    if chosen is None or action == "allow":
+        return None, None
+    return chosen, None
 
 
 __all__ = ["local_memory_match_fields", "validate_exact_memory_target"]

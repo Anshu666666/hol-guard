@@ -59,8 +59,15 @@ def test_v2_omitted_rollout_is_compat_and_present_null_is_not_enforceable() -> N
 
 def test_flag_off_lane_is_legacy_and_v2_is_unverified(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", raising=False)
-    posture = canonical_runtime_posture(device_id="device-1", workspace_id="ws")
+    posture = canonical_runtime_posture(
+        device_id="device-1",
+        workspace_id="ws",
+        contract_version=POLICY_BUNDLE_V2_CONTRACT,
+    )
     assert posture["canonical_policy_enforcement_enabled"] is False
+    assert posture["selected_enforcement_lane"] == "unverified"
+    assert posture["canonical_incompatibility_reason"] == "canonical_enforcement_disabled"
+    assert posture["canonical_rollout_percentage"] == 0
     assert "canonical_policy_enforcement" not in posture
     lane, reason = selected_enforcement_lane(
         device_id="device-1",

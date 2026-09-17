@@ -69,12 +69,19 @@ def selected_enforcement_lane(
     return "legacy", None
 
 
+def advertised_required_capability() -> str | None:
+    advertised = ManagedControlsFeatureFlags.from_environment().runtime_capabilities(protected_authority=True)
+    return advertised[0] if advertised else None
+
+
 def canonical_runtime_posture(
     *,
     device_id: str,
     workspace_id: str | None,
     protected_authority: bool = False,
     negotiated_capabilities: frozenset[str] = frozenset(),
+    required_capability: str | None = None,
+    contract_version: str | None = None,
 ) -> dict[str, object]:
     """Advertise advertised vs effective canonical/managed capabilities."""
 
@@ -87,6 +94,8 @@ def canonical_runtime_posture(
         workspace_id=workspace_id,
         protected_authority=protected_authority,
         negotiated_capabilities=negotiated_capabilities,
+        required_capability=required_capability,
+        contract_version=contract_version,
     )
     session: dict[str, object] = {
         "advertised_canonical_capabilities": advertised,

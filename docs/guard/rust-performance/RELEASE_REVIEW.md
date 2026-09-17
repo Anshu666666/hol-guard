@@ -1,238 +1,170 @@
 # Release/3.2 Rust performance review
 
-**Implementation and measured conversion decisions are reviewable; installed
-qualification and release acceptance remain incomplete.** This review covers
-source `d06d8093bb1744ff22fcaf65fcfd1e908c989c2d`, tree `9b2caee188ace6c0bc97379e08708f7f4019d4e0`. Later source repairs
-must earn their own CI results. The original [PRD](PRD.md), all 144 [TODO](TODO.md)
-titles, acceptance conditions, dependencies and thresholds remain unchanged.
-The [release addendum](RELEASE_3_2_PRD.md) defines current scope; the
-[execution ledger](EXECUTION_LEDGER.md) records criterion-level evidence.
+Implementation checkpoint `ab06f959bf58fae9006137a4aa21398110dc2409`, tree `34f22d781012a71723b5d377f6817ba86b5bf1f1`.
+The original [PRD](PRD.md), [TODO](TODO.md) and historical reports remain unchanged.
+The [current ledger](EXECUTION_LEDGER.md) is **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED**; no status is promoted
+by this refresh. The release remains unqualified.
 
-84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED
-
-The [fifth CI checkpoint](FIFTH_CI_EVIDENCE.md) records measured PR head
-`96a69725eab018674174dabc6f205a4087d6ff4b`, tree `7da3dcf25df5dc75b61f773c40a3a4dd96bbf2fa`.
-Its merge `c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d` has the same tree and distinct build identity.
-All 41 workflow instances are terminal: **33 successful and eight failed**.
-Successful authorization-only publish workflows did not publish a release.
-Later source corrections require new CI; earlier
+The [sixth CI checkpoint](SIXTH_CI_EVIDENCE.md) binds measured PR head
+`9d3907a2e6ed1ec201281901cb878836a7dad32d`, tree `833ea191211db2a0613db8520d072f5edf485380`. Its tested merge
+`64164db9cd11e3d05182a99dba100daa6011c83d` has the same tree and a distinct build identity.
+All 41 first-attempt workflow instances are terminal: **35 successful and six failed**.
+Main passed all 96 pytest shards; its remaining failure is the Sonar quality gate.
+Publish to PyPI built and verified distributions and retained hashes/SBOMs, but
+publication, release and container jobs skipped. No release was published.
+The later implementation checkpoint below requires its own CI. Preserve the
 [first](FIRST_CI_EVIDENCE.md), [second](SECOND_CI_EVIDENCE.md),
-[third](THIRD_CI_EVIDENCE.md) and [fourth](FOURTH_CI_EVIDENCE.md)
-cohorts retain their original identities and failed observations.
+[third](THIRD_CI_EVIDENCE.md), [fourth](FOURTH_CI_EVIDENCE.md) and
+[fifth](FIFTH_CI_EVIDENCE.md) cohorts as separate historical evidence.
 
-## What actual CI establishes
+## What sixth CI establishes
 
-| Scope | Fifth-checkpoint observation | Integrated correction or remaining proof |
+| Scope | Exact observation | Meaning and remaining work |
 | --- | --- | --- |
-| Main CI | 19 jobs: nine successful, three failed and seven skipped. Collection failed before any of the 96 pytest shards ran; aggregate CI failed its dependency check. Duration aggregation and Sonar skipped. | Restored the test's temporary helper import path so it no longer shadows the repository ci namespace. Full local collection and 24 protected invariants pass; actual new-source Main CI and quality gate remain required. |
-| Ownership | Both decision-critical I/O and Rust-authority workflows failed because the experimental regex crate was absent from the ownership manifest. | Added a precise benchmark-only owner for its two source files, with no production decision or installer authority. The same-base authority gate and full I/O graph pass locally. |
-| Security and lifecycle | Security passed all four jobs. Daemon-edge and Windows-resident workflows passed their declared scopes. | Preserve the distinction between source/lifecycle checks and installed latency or complete process-tree resources. Successful publish-authorization jobs did not build or publish a release. |
-| Native wheel | Both Macs failed the ignored-child CPU correctness check; Windows failed installed SLO enforcement during assembly. | The Darwin source now rejects ambiguous general CPU totals and retains memory. Windows retained six unclassified responses across c16/c64, with zero observed raw-bridge None returns; their native cause remains unknown. Fifth Linux native-wheel CI passed all 14 installed smoke gates and its 100,000-request/250,000-receipt soak, with zero errors, 18,484 successful health checks, one stable daemon and 3.4097% sampled RSS growth. Its soak p95 was 551.88 ms under the unchanged 4,500 ms soak ceiling; the separate registered Claude PostToolUse smoke had only two observations and p95 354.188 ms. Neither series qualifies the original installed-priority targets. |
-| Indexed qualification | Four immutable wheel builds passed. All four indexed pairs failed; every candidate reached PostToolUse and returned an invalid error object before an accepted receipt, with substantial budget left. Both Mac frozen baselines also timed out in getfqdn. | The observer now recognizes 34 existing public command-control error codes. Unknown values remain redacted. All four ordinary aggregators hit the verified singleton directory-layout defect, now corrected without changing full collection. No completed pair is manufactured. |
-| Installed scenarios | Linux, ARM and Windows each passed all 22 Ollama/Builder native cases. Intel completed ten cases before disabled-control readiness took 523.888 ms against the unchanged 400 ms barrier; Builder passed. | Declared scenario receipts do not qualify every platform, matcher family, installed tail or lifecycle. |
-| Installed Claude experiment | Nine of 20 jobs passed; 11 measurement jobs failed. All archives/final retention succeeded. Six POSIX failures matched the canonical fixed native_post_tool_unavailable response; all five Windows failures matched discovery unavailable. | These exact source-response commitment matches do not reveal the underlying failing subcheck. Read-only Windows object/security preflight and finite native error vocabulary improve the next observation. Production activation remains off. |
-| Nonpriority smoke | Linux pair zero completed both arms with two timed plus two preflight calls each. Windows retained complete workers but failed on missing RAM identity. Both Mac baselines failed DNS; their candidate arms completed. All four aggregates failed. | Windows now reads actual RAM from the already locked psutil dependency. Exact-name downloads preserve the expected smoke directory. The old worker failures and incomplete comparisons remain unchanged. |
-| Package | All ten phase/validation/registry workers completed. Five protect pairs completed; 36 candidate and 23 baseline cardinality cells completed, with 13 censored baselines. Two baseline Composer cases failed. | Keep the separate fifth evidence and fourth-cohort release decision. No native package implementation or failed Rust comparison is claimed. |
-| Scanner | Four Rust tests and 69 actual bridge/collector tests passed. The first smoke failed before source identity and preflight: zero offered/completed, all 24 planned attempts unoffered. All three evidence uploads succeeded. | The executable reader now accepts legitimate immutable toolchain ownership/linking while retaining content/path identity checks. Finite setup stages, attempt-bound names and strict retention need fresh execution. Full 840-attempt selection remains off. |
-| MCP | The component job and every step passed. | Completion only; no fifth numeric recomputation or pooling with the 24ba decision or d0e cohort. |
+| Main, run 35257232478 | 114 jobs: 110 pass, three skip, one fails. All 96 pytest shards, quality, aggregate CI and duration-manifest steps pass. Sonar analysis succeeds; its quality gate fails. | Collection is repaired. There are 96 coverage and 96 duration artifacts. Current numeric gate conditions are unverified; later source needs its own CI. |
+| Security and ownership | All four security jobs pass, as do I/O and Rust-authority workflows. | The precise benchmark-crate ownership correction works in CI. These checks do not establish installed performance. |
+| Native-wheel, run 35257232892 | ARM passes. Linux fails c64; Intel later fails Cline Post source review with `native_command_control_mutation_in_progress`; Windows stops before build on an overlong pytest environment value. | Linux c64 retains 64 responses: 32 native, 15 fail-safe and 17 overload, with 15 raw None returns. Their reason records were truncated. New export and test-ID fixes need execution. |
+| Indexed qualification, run 35257233257 | 27 jobs: 11 pass, 14 fail, two skip. All four immutable builds pass; all four indexed pairs and all four ordinary aggregators fail. | Linux and ARM candidates validate 386 daemon plus 62 priority preflight cases. ARM completes 38 series/136 numeric observations but additional semantic/resource gates fail. No pair qualifies. |
+| Installed scenarios | ARM and Windows complete their declared scenarios. Linux and Intel fail readiness checks against 400 ms. | Narrower phases and causes remain unverified; earlier successful platform cohorts do not qualify these failures. |
+| Claude, run 35257232562 | 20 jobs: 13 pass, seven fail. All five Linux jobs pass; two ARM measurements and all five Windows jobs fail. All 20 public/encrypted/final-retention paths pass. | Windows has eight offered preflights, three complete and five fail, with 432 of 440 planned preflight/timed attempts unoffered. No Windows timed result exists. Native p95 remains above the 50 ms target in every complete series. |
+| Nonpriority tails | Linux and Windows workers and aggregates pass. Both Mac candidates complete; their baselines time out constructing HTTPServer through `socket.getfqdn`. | 12/16 timed observations accepted, four unattempted. Windows RAM is 17,174,360,064 bytes in both arms. Singleton extraction and RAM corrections work; smoke remains unqualified. |
+| Scanner, run 35257232537 | Four Rust and 95 Python tests pass, including five new actual-native cases. Setup fails at `python_executable_identity_failed`. | 24 planned, zero offered/completed, 24 unoffered. Evidence retention succeeds. New reason projection is diagnostic only; native selection remains open. |
+| Package, run 35257232889 | Phase job passes; format and diagnostic jobs fail. Five protect pairs and all ten phase workers complete. | 36 candidate/24 baseline cardinality completions, twelve censored baseline workers; 20 candidate/18 baseline format completions and two frozen Composer failures. Retain the fourth decision and separate v3 cohort. |
+| MCP and lifecycle | MCP, daemon-edge and Windows-resident workflows pass their declared scopes. | Completion is not new numeric analysis or a substitute for incomplete installed/lifecycle resources. |
+| Distribution workflows | PyPI workflow builds/verifies distributions and retains hashes/SBOMs. Actual publication, release/container and desktop-feed publication skip. | Built distributions are recorded; no published release or canary is inferred. |
 
-See the [fifth report](FIFTH_CI_EVIDENCE.md),
-[nonpriority artifact/recovery note](nonpriority-smoke-ci-96a697.md),
-[scanner failure note](scanner-smoke-ci-96a697.md), and
-[Windows discovery diagnostic scope](claude-discovery-diagnostics.md).
-All attempted and unoffered work retains its original classification.
+The [sixth report](SIXTH_CI_EVIDENCE.md) and its
+[manifest](evidence/ci-9d3907/manifest.json) retain run/job/artifact identities,
+failed denominators and the distinction between public observations and authorized
+private recovery. Source and merge commits have equal trees but distinct identities.
 
-The failed indexed candidate cases were Linux omp.PostToolUse.block.1m,
-ARM cursor.afterShellExecution.benign.max, Intel pi.PostToolUse.benign.1k and
-Windows codex.PostToolUse.benign.1k. Their native elapsed times were 9, 33, 55
-and 47 ms with about 2,937–2,985 ms left. None had an accepted receipt. The
-old observer's other classification does not identify a specific native cause.
-Linux and Windows baseline blocks retained 136 numeric observations across
-38 series; Windows separately reported 55 unsupported source-reference denials
-and incomplete corpus coverage. Those refusals do not establish content review.
+Linux's terminal c16 Codex Post batch 36 validates all 16 observations. Its later
+`native_slo_batch.validate_batch_routes:32` failure occurs in load-profile
+measurement; the exact wave, concurrency and counter deltas were not retained.
+It must not be attributed to the completed batch or Intel's lock error.
+Intel's indexed Cline Post block at 16 KiB returns the explicit mutation error
+after 46 ms with 2,939 ms remaining and no receipt. Its native-wheel source case
+returns the same code after 71 ms with 2,976 ms remaining. These are not deadline
+exhaustion. The shared-refresh source defect is established independently; the
+historical holder was not captured.
 
-Mac resolver self-tests and supplementary registration succeeded, but no actual
-OS reverse query reached the fixture. Exact file removal and observed OS
-registration retirement are separate; some immediate cleanup snapshots still
-show the registration. Preserve each attempt's facts. Neither configuration
-visibility nor successful numeric lookup proves the frozen baseline is repaired.
-Do not patch that artifact or enlarge its construction/readiness budget.
+ARM's completed numeric arm is not successful qualification: baseline construction
+fails in DNS, general CPU is unavailable, and Codex continuation, input, registered
+surface and mixed resource/receipt checks fail. Windows candidate construction
+times out in authority bootstrap before corpus execution. Exact failure stages
+and retained details appear in the [indexed follow-up](sixth-indexed-followup.md).
 
-The [native command program](../../../contracts/extensions/native-command-program.v1.json)
-retains schema `guard.native-command-program.v1` and reference profile
-`cpython-3.12-ucd15`, program digest
-`4df5208d0dc05ceaadb1de6a6d8f6d3f9e5395dffcf992640fed87b82a0df1c9` and catalog
-digest `232ff389ca607b805118a02bd9560e972453f9a406188237037138f4834faf11`.
-Its [translation contract](../adr/0013-native-command-extension-program.md) and
-[compatibility inventory](../native-command-compatibility-admission.md) distinguish
-249 declarative rules from 42 null-matcher identities; owned uncertainty is not
-successful empty matching. The fourth and fifth Linux, ARM and Windows scenario receipts
-supply actual installed production-route proof for their declared cases. They do
-not certify every matcher family, Intel readiness or a measured compatibility
-speedup. This is the scope of RSP-120's coverage and diagnostics publication.
+## Corrections ready for their own execution
 
-## Package completeness and approval provenance
+| Correction after sixth CI | Resulting behavior | Evidence still required |
+| --- | --- | --- |
+| Periodic command-control refresh | An unchanged authenticated read retains a shared lease. Only the existing mutation-required sentinel triggers a fresh exclusive read after releasing the shared lease. | Re-execute the installed Intel failures; their exact historical lock holder was not observed. Real mutation remains exclusive. |
+| Windows discovery producers | Newly created key/state files use a private DACL and retained ancestor handles; fresh setup creates missing directories privately. Existing keys are not repaired, rotated or newly attested. | Actual Windows producer and dormant-launcher execution; legacy files may remain unsupported by the pilot. |
+| Windows reader-test identifiers | Finite pytest IDs preserve the complete 65,543-byte fixture without overflowing Windows environment-variable limits. | Actual Windows rerun of the reader and route cases. |
+| Capacity evidence export | The final report retains bounded closed-form None witnesses instead of losing them to nested privacy truncation. | A fresh failing or passing observation; the old 15 reasons cannot be recovered. |
+| Scanner executable admission evidence | The original failing read retains one of 17 public reason codes and bounded private numeric metadata. | Fresh smoke to identify the cause; admission rules, reads, retries and deadlines are unchanged. |
 
-The [format parity correction](package-format-parity-coverage.md) advances current
-parsing to complete-v3. A malformed top-level Bundler spec previously left a
-partial dependency list marked complete; current parsing discards the views and
-requires review. The unsupported Bun binary fallback now avoids a content read
-in manifest target discovery as well as direct/transitive completeness paths.
-The named source-test matrix closes RSP-059 only. Its original dependency remains unchanged; this does not close native or installed qualification. Actual v2-to-v3 saved-approval identity changes are tested. Supported grammar and
-explicit unsupported semantics remain documented; no general Bundler parser or
-native format implementation is claimed. Prior paired performance evidence retains baseline complete-v1 and candidate
-complete-v2; neither measures or qualifies the current complete-v3 interpretation.
+See [control refresh](command-control-refresh-contention.md),
+[Windows producers](windows-discovery-producer.md),
+[capacity witnesses](native-capacity-none-witness.md) and
+[scanner diagnostics](scanner-executable-identity-diagnostic.md).
+The Windows preflight passes directory, bounded reads, authentication and peer
+identity but rejects key/state security admission. This is an independent
+current-object observation, not an atomic trace of the actual Rust request.
+Producer source separately used POSIX modes without a Windows private DACL.
+New files now establish privacy at creation; existing keys retain their original
+read behavior and may remain unsupported by the dormant pilot.
 
-## Working-file integrity and scanner parity
+The integrated 19-module correctness suite passed 617 tests with seven explicit Windows-only skips. The final exception-import follow-up passed 63 tests with four Windows-only skips, and the complete I/O ownership module passed all 30 tests, including current-source graph validation and a content-read rejection regression. These suites overlap and are not added together. Final full collection finds 22,518 cases and all 24 protected invariants. All 24 changed Python files pass Ruff check/format; all 15 changed source/protocol modules have zero type errors at the CI error level. Same-release-base authority, full I/O ownership and privacy gates pass. The exact immutable-source-range Gitleaks scan passes with zero findings. All 394 frozen evaluator source commitments remain unchanged, so the earlier 51,000-case differential evidence needs no regeneration. Independent source and evidence reviews cleared the changes. No local performance workload was run; actual Windows execution, later published-source CI, installed qualification and human approval remain separate.
 
-The [scanner read correction](scanner-working-file-contract.md) binds bounded
-reads to retained descriptors and checks identity again before detection. Files
-that change or fail after admission now produce an incomplete scan and exit 2,
-while retaining earlier findings. Normal exclusions and supported links remain.
-POSIX traversal retains ancestor descriptors; Windows uses compatible handles
-and same-domain metadata comparison. Its documented Windows ancestor limitation
-and pending actual platform execution remain explicit. The source has 93 focused
-passes and a separate 54-pass detector/bridge run with 16 binary-dependent skips;
-the suites overlap. Five new native parity cases are wired into existing CI.
-RSP-071 remains OPEN and the fifth smoke still offered zero of 24 planned attempts.
+Owner and independent source reviews are bounded engineering checks. They do not
+supply actual Windows execution, installed measurements or latest-push human approval.
 
-## Measured decisions and their limits
+## Package, scanner and MCP decisions
 
-The [package decision](package-native-selection-decision.md) retains optimized
-Python and selects **no package Rust implementation or activation for release
-3.2**. Five independent alternating pairs of the exact npm protect source route
-at D=B=1,000 report median wall **8,785.843 → 327.344 ms** and CPU
-**7,739.458 → 319.842 ms**. Median paired reductions are **96.2752% wall and
-95.8662% CPU**. Imports, fixture setup, pre-admitted signed bundle and
-postvalidation remain outside that interval; serialization and evidence
-persistence remain inside. These observations are neither installed CLI tails
-nor a Rust comparison. The separate [fifth package cohort](PACKAGE_FIFTH_CI_EVIDENCE.md)
-reports wall 11,735.251 → 274.568 ms and CPU 5,930.041 → 245.011 ms,
-with median paired reductions of 97.6966% and 95.8707%. Its six profiles assign
-41.9683% protect/53.6792% evaluator exclusive calling-thread CPU to Guard Python
-and zero calls to Pydantic. All 36 candidate cells completed; 23 baseline cells
-completed and 13 were censored. These figures are not pooled with the decision
-cohort, and they do not supply a native comparison or complete format parity.
+The [sixth package note](PACKAGE_SIXTH_CI_EVIDENCE.md) and its
+[16-file manifest](evidence/package-ci-9d3907/manifest.json) bind current complete-v3
+and frozen complete-v1. Five D=B=1,000 protect pairs have wall medians
+8,765.804810 → 320.749072 ms and CPU medians 7,750.150 → 312.036 ms;
+median paired reductions are 96.3404978500% and 95.9716882649%.
+These are separate Python-route observations. The fourth complete-v2 decision
+to retain Python is not replaced or pooled with them.
 
-All 36 candidate cardinality cells completed, against 24 baseline completions
-and 12 censored baseline attempts. Format preflight retained 20 candidate and
-18 baseline completions plus two baseline Composer failures. Censoring has no
-invented route latency, and the Composer coverage correction is not an
-equivalent speedup. None-version highest-risk matching remains a bundle-kernel
-scope. The separate explicit npm `*` pair makes exactly 100 admitted GETs per
-arm and uses the real JSON, retry, semver, evaluator and protect path to select
-2.0.0 over higher-risk 1.0.0. Its synthetic transport does not measure external
-HTTPS latency or change the existing bare-`latest` shortcut.
+All ten phase workers complete. Guard Python exclusive function-origin CPU
+medians are 42.3513% protect and 54.2777% evaluator; Pydantic records zero calls.
+Each route has one parse, one batch and one index. Signed admission precedes the
+route interval; zero in-route verification does not erase admission cost.
+Each synthetic-transport registry arm issues 100 admitted GETs. The three public
+ZIPs and 16 files are verified; producers report 331 encrypted files. No sixth
+package decryption or private recovery is claimed.
 
-The six instrumented route invocations each retain one parse, one immutable
-index construction and one evidence batch, with commitments matching separate
-uninstrumented validations. The disjoint function-origin projection assigns
-**37.31% protect / 51.75% evaluator** exclusive calling-thread CPU to Guard
-Python; Pydantic Python and Pydantic-core recorded zero calls. Existing hash,
-byte and SQLite primitives already use native libraries. Function origin is
-not exact language attribution, inclusive spans overlap, and profiling perturbs
-tiny repeated calls. These fractions cannot establish an attainable speedup
-bound. The authenticated private projection identifies repeated validation,
-normalization and model/result identity work without publishing private records.
+The frozen Composer parser reads valid vendor/package records, then its generic
+transitive identity helper rejects slash-qualified names. Bare names invalidate
+Composer inputs; making all dependencies direct changes the workload. There is
+no honest same-work fixture correction. Keep these two cells noncomparable and
+twelve cardinality workers censored under the unchanged 15-second whole-worker
+limit. Source parity RSP-059 is complete at its literal supported/unsupported
+test boundary, with original dependencies preserved; no native implementation,
+exhaustive grammar or installed qualification is inferred.
 
-RSP-054 can record this measured release decision. Conditional package native
-schemas, implementation and activation remain unselected; unbuilt work is not
-called a failed comparison or a completed implementation. A reopened candidate
-must cover a coarse immutable model/identity/result operation, first account
-for removable Python duplication, preserve original semantics, and demonstrate
-at least 30% real-route p95 or complete process-tree CPU benefit over optimized
-Python with at most 5% regression in the other metric. RSP-050's censored and
-kernel-only limits and RSP-059's parity requirements remain explicit.
+The [scanner decision](scanner-current-decision.md) retains seven earlier clean
+timed states that failed benefit gates and no completed finding-heavy timing.
+Sixth binary correctness is useful but its zero offered smoke cannot decide
+conversion. The 17-code observation preserves admission and private data boundaries.
+The [working-file contract](scanner-working-file-contract.md) has actual Linux and
+both Mac 42-case passes; the finite Windows test ID still needs an actual rerun.
+RSP-071 remains OPEN. Keep the documented Windows ancestor limitation and archive
+coverage separate.
 
-The [MCP decision](mcp-native-selection-decision.md) retains optimized Python on
-its corrected **24ba** evidence: five independent pairs, 30 workers, 240
-sessions, 10,080 calls and 80 complete warm resource windows. Catalog1000 wall
-ratio 0.5380 has 95% interval 0.5288–0.5648; mean parent CPU ratio 0.4468 has
-interval 0.4380–0.4770. Smallest-catalog intervals cross one and sampled peak
-memory increases. Ten lifecycle records remain incomplete, with 16 missing
-samples and descriptor errors in nine records. Its fingerprint/classification
-residuals are about 0.130/0.173 ms exclusive thread CPU per invocation, alongside
-larger store/composition work and the unchanged approximately 5.11 ms barrier.
-This supports the recorded conditional kernel/full-proxy deferrals, not a
-failed native benefit test, formal upper bound or installed target claim.
+The [MCP decision](mcp-native-selection-decision.md) remains bound to corrected
+24ba evidence: five pairs, 10,080 calls and 80 complete warm resource windows.
+Its ten lifecycle windows remain incomplete. Later component success does not
+supply a Rust comparison or repair that resource evidence. Archive profiling
+retains 508 expected outcomes and two fail-closed timeouts among 510 calls; all
+330 hostile/bounded-failure calls remain non-clean. Keep its isolated Python worker.
 
-The separate successful **d0e** cohort reports large-catalog wall ratio
-0.533961 (95% interval 0.508358–0.555922) and mean parent CPU ratio 0.444666
-(0.419106–0.468266). Its 80 warm windows are complete, with 129–326 samples and
-zero missing readings; all ten lifecycle windows remain incomplete, with 18
-missing samples and nine descriptor-error rows. Do not pool those observations
-with the decision cohort or substitute the fourth completion check for them.
+## Release exit
 
-The [scanner/archive decision](scanner-current-decision.md) retains the
-isolated Python archive worker. RSP-070's literal profiling evidence is present:
-510 unmodified inspections and 60 diagnostic children identify interpreter,
-integrity-read, expansion and member-processing costs. The exact-result gate
-still failed at 508/510, with two fail-closed timeouts and one separate warmup
-timeout; all 330 hostile/bounded-failure calls remained non-clean. A parser-only
-archive Rust port is deferred. No equivalent native worker has been measured,
-and no hostile parsing moves into the resident.
+The 42 [individually reviewed Sonar findings](../security/sonar-release-32-review.md)
+remain unapplied. The sixth Sonar analysis succeeded, but the actual quality
+gate failed; fresh numeric conditions and exact remote issue identities have
+not been retrieved. Do not reuse historical gate values as current. Automatic
+approval review rejected the project-specific Sonar lookup because it would
+send private project, PR and issue identifiers to an external service without
+explicit authorization. The specific user permission request for fresh checks
+and verified individual false-positive dispositions remains pending at this
+checkpoint. Do not retry that action through CI or another route without that
+approval. No exclusions, quality thresholds, severity changes or comments are
+part of the proposed disposition.
 
-Rich-scanner selection remains open. The earlier native experiment runs the
-actual fresh source CLI with Rust startup, serialization and child CPU included;
-its seven completed timed states are all clean, and none passes the benefit
-gate. No finding-heavy timed state completed. The integrated [finite collector](scanner-regex-pilot-ci.md) plans
-**24 smoke attempts or 840 full attempts**, with frozen finding,
-context/HMAC, fallback, cache and failure-retention expectations. Its first actual
-smoke failed before any of the 24 planned offers; the corrected setup requires
-new execution. It does not activate native detection or support a blanket
-no-port conclusion.
+| Required scope | Unchanged acceptance |
+| --- | --- |
+| Ordinary 1–16 KiB priority installed hooks, warm c1 | p95 ≤50 ms and p99 ≤100 ms |
+| Ordinary 1–16 KiB priority installed hooks, c16 | p99 ≤200 ms, zero errors and correct decisions |
+| Native client / cold native / readiness | p95 ≤20 ms / p95 ≤150 ms / 400 ms barrier |
+| Independent sampling | At least five alternating independent pairs with required confidence intervals; 10,000 warm priority, 1,000 other, 100 cold/recovery observations and at least 30 valid resource samples per required scope |
+| Selected hot tranche | At least 30% p95 or complete process-tree CPU reduction; at most 5% regression in the other primary metric |
+| Optional ingress | At least 25% private-memory or 30% c16 p99 reduction, preserving containment and decisions |
+| Native package/offline work | At least 30% benefit against the optimized Python real route, including boundary/startup costs and original parity safeguards |
+| Resource growth | Existing 12% short-load and 50% long-soak RSS limits at their actual sampling scopes |
 
-## Source ready to execute and release exit
+Keep native verdict, resident-ACKed posture, availability and final response
+separate. The [ACK contract](acknowledged-posture-contract.md) has source tests;
+RSP-034 still needs installed mixed transitions, invalidation, expiry and races.
+Both Macs' known-child tests now pass their explicit once/twice accounting
+witnesses. General Darwin CPU remains unavailable, with no divisor or widened
+tolerance establishing completeness; RSP-011 stays OPEN.
 
-The [baseline launcher ranking](installed-launcher-baseline-ranking.md) remains
-one descriptive Windows block with 80 actual registered invocations. Ordering
-changes by event and load; Claude is not established as uniformly most expensive.
-No installed usage weighting, missing-platform ranking or qualified tail follows.
-The dormant launcher and its repaired experiment therefore still need an actual
-comparable benefit result before activation.
+All eight tail ZIPs and encrypted bindings were verified. Private Mac recovery
+locates both frozen baseline failures before registration, preflight and numeric
+offering. Resolver registration and UDP self-test pass, but actual OS probes
+send no query and time out. Exact file cleanup and immediate OS registration
+retirement remain different facts. No evidenced environment-only repair has been
+selected. Keep the frozen artifact and existing deadlines.
 
-The [nonpriority companion](nonpriority-installed-tails.md) exposes a selected
-four-platform smoke for cursor.beforeShellExecution.global: four collection
-jobs plus four aggregators, two timed observations per arm after independent
-benign/block preflight. Fifth Linux alone passed its pair worker; none of the
-aggregators passed. Windows complete worker reports cannot bypass its failed
-RAM identity admission, and Mac candidates cannot replace failed baselines.
-The full 16-route × four-platform × five-pair plan remains explicit opt-in at
-320 jobs. Smoke cannot satisfy the 1,000-observation route minimum.
-
-Both actual Mac correctness checks exposed approximately double accumulation
-of ignored-child CPU in the pinned OS counters. The corrected [Darwin reader](darwin-resource-accounting.md)
-therefore reports general process-tree CPU unavailable with
-darwin_reaped_cpu_ambiguous. Parent/child endpoint snapshots cannot distinguish
-historical once-versus-twice accumulation. Memory and private raw diagnostics
-remain available; neither dividing all counters by two nor loosening tolerances
-is permitted. Bounded known-child witnesses retain the original 2 ms lower/20 ms upper discrepancy bounds
-and distinguish the observed accounting behavior; they do not qualify general
-tree CPU. RSP-011 remains OPEN.
-
-The integrated [ACK-only posture correction](acknowledged-posture-contract.md)
-samples one authenticated request binding for native evaluation, the shared
-command-control lease and final Watch delivery. Local Watch becomes effective
-only after the correct resident ACK; a pending local update cannot weaken an
-enforcing result. Native decisions/receipts and unchanged availability responses
-remain separate. The source run passed 24 new and 153 adjacent tests, with one
-platform skip. This supports RSP-031's authenticated visibility contract, while
-RSP-034's actual mixed-transition and installed qualification remain open.
-Historical measurements do not qualify this new behavior.
-
-Run the coherent corrected source and inspect exact admission and failure
-observations. Restore required Main CI and the actual quality gate; re-execute
-the selected Claude, nonpriority and scanner diagnostics with all evidence
-retained. Use actual native error codes or current Windows discovery facts to
-choose a production fix only after the failure boundary is known. A passed
-known-child Mac witness does not restore missing general CPU. Every original
-sampling, timing, resource and semantic requirement remains unchanged.
-
-Final acceptance still requires comparable installed performance, exact signed
-and frozen artifacts, live update/rollback, mixed offered-load/mutation/recovery,
-durable receipts, complete final-head validation and independent latest-push
-approval. Source inventory, the recorded package/archive decisions and this
-handoff can close their literal criteria while dependent work stays open or
-conditionally deferred. Original dependencies remain intact; RSP-012 and the
-latest-head release gates do not close through a status refresh. PR #2970 targets
-`release/3.2`; protected merge, canary and release remain incomplete.
+Complete comparable full sampling, selected artifact parity, signed/frozen
+identity, live update/rollback, mixed offered-load/mutation/recovery and durable
+receipts. The stopped transition probe skipped in this cohort. Require final-head
+CI and independent human/code-owner approval of the latest push, then the concrete
+canary and tested rollback. PR #2970 remains draft against `release/3.2`;
+protected merge, canary and release are incomplete.

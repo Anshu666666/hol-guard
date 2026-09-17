@@ -1,6 +1,17 @@
 # Rust performance execution for release/3.2
 
-Current source and validation appear in [RELEASE_REVIEW.md](RELEASE_REVIEW.md), with **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED** in the [execution ledger](EXECUTION_LEDGER.md). The immutable source checkpoint is `d06d8093bb1744ff22fcaf65fcfd1e908c989c2d`, tree `9b2caee188ace6c0bc97379e08708f7f4019d4e0`. Latest measured PR #2970 publication `96a69725eab018674174dabc6f205a4087d6ff4b` completed 41 workflows: 33 successful and eight failed; [FIFTH_CI_EVIDENCE.md](FIFTH_CI_EVIDENCE.md) retains that source and its distinct merge identity. Later collection/ownership/scanner/resource/artifact/diagnostic corrections require new exact-source CI. Package/MCP no-selection decisions retain their original cohorts. Full installed performance, mixed load, signed/frozen/live rollback, independent final review and release remain incomplete. The original [PRD](PRD.md), [TODO](TODO.md) and historical record below are unchanged.
+Current source and validation appear in [RELEASE_REVIEW.md](RELEASE_REVIEW.md),
+with **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED** in the [execution ledger](EXECUTION_LEDGER.md).
+Implementation checkpoint `ab06f959bf58fae9006137a4aa21398110dc2409`, tree `34f22d781012a71723b5d377f6817ba86b5bf1f1`.
+Latest measured PR #2970 publication `9d3907a2e6ed1ec201281901cb878836a7dad32d` has 41 terminal workflows:
+35 successful and six failed. [SIXTH_CI_EVIDENCE.md](SIXTH_CI_EVIDENCE.md) retains
+its exact source and distinct merge identity. Later control-refresh, Windows
+producer, finite test-ID and diagnostic corrections require their own CI.
+All 144 original definitions and prior statuses remain unchanged. Measured
+package/MCP decisions remain bound to their original cohorts. Full installed
+performance, resources, signed/frozen/live rollback, final CI, independent human
+approval and release remain incomplete. Original [PRD](PRD.md), [TODO](TODO.md)
+and the historical record below remain unchanged.
 
 ## Historical integration and evidence record
 

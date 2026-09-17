@@ -6,10 +6,17 @@ import argparse
 import sqlite3
 from pathlib import Path
 
+from ..config import DEFAULT_GUARD_DIRNAME
 from ..daemon.cloud_review_status_reader import read_cloud_review_worker_observation
 from ..runtime.cloud_review_status import cloud_review_status
 from ..runtime.exact_cloud_review import EXACT_CLOUD_REVIEW_OPERATION
 from .commands_support_interaction import _emit
+
+
+def resolve_cloud_review_status_home(args: argparse.Namespace) -> Path:
+    """Select the current storage path without invoking legacy-home migration."""
+    override = getattr(args, "guard_home", None) or getattr(args, "home", None)
+    return Path(override).expanduser().resolve() if override else Path.home() / DEFAULT_GUARD_DIRNAME
 
 
 def run_cloud_review_status_command(args: argparse.Namespace, *, guard_home: Path, allow_system_keyring: bool) -> int:

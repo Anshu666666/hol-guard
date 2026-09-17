@@ -12,7 +12,8 @@ consent, revoke consent, requeue requests, or start workers.
 | `delivery_ready` | `true` requires valid consent, no pending recovery failure, and both current workers running. `false` means a required prerequisite is absent. `null` means current worker readiness is unknown. |
 | `delivery_readiness_reason` | The missing prerequisite or recovery reason. |
 | `last_synced_at` | The last delivery timestamp whose complete identity matches this connection. |
-| `pending_uploads`, `held_events`, `isolated_events` | Current delivery work, requests awaiting explicit recovery, and quarantined events. |
+| `delivery_state` | `unknown`: saved attempt state has no current connection binding. A bound historical delivery timestamp does not establish the identity of later attempts. |
+| `pending_uploads`, `held_events`, `isolated_events` | Current delivery work, requests awaiting explicit recovery, and quarantined events for this connection. Without a connection binding, delivery and quarantined counts are zero. |
 | `activation_error`, `recovery_state` | The saved recovery requirement and current readiness assessment. |
 
 Current daemons observe the decision worker and event upload worker through the
@@ -20,7 +21,9 @@ existing authenticated local status route. The observation must match the source
 and connection identity and be at most five seconds old. A live daemon by itself
 does not prove that both workers are running. Older or unavailable daemons produce
 unknown worker readiness while the local connection and consent status remain
-available.
+available. Historical queue errors and polling timestamps have no proven connection
+binding, so `diagnostics.worker` reports those fields as unavailable. Fresh worker
+liveness remains in the separate `worker` observation.
 
 The CLI reads an already-running daemon through the existing authenticated identity
 check, then requests its status. Each local probe is limited to one second and
@@ -35,10 +38,12 @@ establishes policy application or execution permission.
 
 Status uses one read-only SQLite snapshot and validates the existing private
 OAuth vault against its saved credential hash. Missing OAuth metadata, legacy
-secret envelopes, missing vault keys and missing installation identity remain
+secret envelopes or raw vault keys, missing vault keys and missing installation identity remain
 unavailable until an explicit setup or recovery action. Reading status does not
 restore metadata, migrate secrets, change file permissions or create identity.
 The CLI selects this read path before normal store or policy initialization.
+Without an explicit home, it reads only the current Guard storage directory;
+status does not discover or migrate an older storage directory.
 A missing Guard home, unreadable database or older incomplete schema returns
 `status: unavailable` and unknown delivery readiness without creating or repairing
 storage. Run an explicit setup or repair action when recovery is needed.

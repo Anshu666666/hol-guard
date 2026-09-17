@@ -25,9 +25,9 @@ def reuse_or_issue_cloud_review_consent(
 ) -> dict[str, object]:
     """Call under the OAuth credential lock after the surface's required proof."""
 
-    if type(ttl_seconds) is not int or not 0 < ttl_seconds <= EXACT_CLOUD_REVIEW_MAX_TTL_SECONDS:
-        raise ExactCloudReviewError("cloud_review_capability_ttl_invalid")
     current = exact_cloud_review_status(store)
     if current.get("enabled") is True and not renew:
         return current
+    if type(ttl_seconds) is not int or not 0 < ttl_seconds <= EXACT_CLOUD_REVIEW_MAX_TTL_SECONDS:
+        raise ExactCloudReviewError("cloud_review_capability_ttl_invalid")
     return issue()

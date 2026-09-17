@@ -64,6 +64,14 @@ def _project_cloud_review_status(
     pending_uploads = outbox.get("depth", 0) if binding else 0
     diagnostics = status.get("diagnostics")
     diagnostics = dict(diagnostics) if isinstance(diagnostics, dict) else {}
+    # Queue history has no connection binding; fresh liveness is exposed separately.
+    diagnostics["worker"] = {
+        "last_delivery_error": None,
+        "exact_review_route_error": None,
+        "last_poll_at": None,
+        "last_result_at": None,
+        "state": "unavailable",
+    }
     diagnostics["outbox"] = {
         "depth": pending_uploads,
         "last_delivery_error": outbox.get("last_error") if binding else None,
@@ -82,7 +90,7 @@ def _project_cloud_review_status(
         "connection_binding_id": binding_id,
         "pending_uploads": pending_uploads,
         "held_events": store.count_recoverable_unbound_review_events(),
-        "isolated_events": outbox.get("quarantined_depth", 0),
+        "isolated_events": outbox.get("quarantined_depth", 0) if binding else 0,
         "activation_error": recovery.get("error"),
         "recovery_state": "ready" if readiness is True else readiness_reason,
         "last_synced_at": (
@@ -90,7 +98,7 @@ def _project_cloud_review_status(
             if delivery_binding is not None and sync.get("last_delivery_binding") == delivery_binding
             else None
         ),
-        "delivery_state": sync.get("state", "idle"),
+        "delivery_state": "unknown",  # Saved attempts have no current-connection identity binding.
         "worker": worker,
     }
 

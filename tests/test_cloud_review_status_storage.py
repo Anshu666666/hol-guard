@@ -110,7 +110,7 @@ def test_status_does_not_promote_integrity_secret_from_primary_store(tmp_path, c
     assert all(result["enabled"] is False for result in results)
 
 
-def test_status_reads_raw_existing_vault_key_without_upgrading_it(tmp_path, capsys):
+def test_status_rejects_raw_existing_vault_key_without_upgrading_it(tmp_path, capsys):
     store = connected_exact_review_store(tmp_path)
     from cryptography.fernet import Fernet
 
@@ -137,7 +137,7 @@ def test_status_reads_raw_existing_vault_key_without_upgrading_it(tmp_path, caps
     results = _both(store, capsys)
 
     assert _snapshot(store) == before
-    assert all(result["connected"] is True for result in results)
+    assert all(result["connected"] is False for result in results)
 
 
 def test_passive_status_snapshot_rejects_writes_and_retains_original_oauth_identity(tmp_path):

@@ -143,3 +143,57 @@ def test_public_status_reads_valid_consent_without_changing_existing_storage(tmp
     assert status["enabled"] is True
     assert status["connected"] is True
     assert status["delivery_ready"] is None
+
+
+@pytest.mark.parametrize("database_bytes", [b"legacy-corrupt-database", b""])
+def test_implicit_status_does_not_migrate_legacy_home(tmp_path, monkeypatch, capsys, database_bytes):
+    from pathlib import Path
+
+    from codex_plugin_scanner.guard import config
+    from codex_plugin_scanner.guard.config import DEFAULT_GUARD_DIRNAME, LEGACY_GUARD_DIRNAMES
+
+    migrations = []
+    original = config._migrate_guard_home_transactionally
+
+    def observe_migration(**kwargs):
+        migrations.append(kwargs)
+        return original(**kwargs)
+
+    monkeypatch.setattr(config, "_migrate_guard_home_transactionally", observe_migration)
+    user_home = tmp_path / "user-home"
+    legacy = user_home / LEGACY_GUARD_DIRNAMES[0]
+    legacy.mkdir(parents=True)
+    (legacy / "guard.db").write_bytes(database_bytes)
+    (legacy / "config.toml").write_text('[guard]\nmode = "enforce"\n')
+    monkeypatch.setattr(Path, "home", lambda: user_home)
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    before = {str(p.relative_to(user_home)): p.read_bytes() for p in user_home.rglob("*") if p.is_file()}
+
+    result = main(["cloud-review", "status", "--json"])
+    status = json.loads(capsys.readouterr().out)
+
+    assert result == 0
+    assert migrations == []
+    assert not (user_home / DEFAULT_GUARD_DIRNAME).exists()
+    assert {str(p.relative_to(user_home)): p.read_bytes() for p in user_home.rglob("*") if p.is_file()} == before
+    assert status["status"] == "unavailable"
+
+
+def test_disconnected_named_profile_does_not_report_foreign_isolated_events(tmp_path):
+    from codex_plugin_scanner.guard.runtime.cloud_review_status import cloud_review_status
+    from tests.guard_exact_cloud_review_support import add_review_request, review_request
+
+    store = connected_exact_review_store(tmp_path)
+    add_review_request(store, review_request("foreign-quarantined"))
+    with store._connect() as connection:
+        connection.execute("update guard_review_outbox_events set binding_status = 'quarantined'")
+    before = _snapshot(store)
+    assert store.review_event_outbox_status(now="2026-09-17T00:00:00Z")["quarantined_depth"] > 0
+
+    status = cloud_review_status(store.guard_home, source="unconnected-profile")
+
+    assert status["connected"] is False
+    assert status["pending_uploads"] == 0
+    assert status["held_events"] == 0
+    assert status["isolated_events"] == 0
+    assert _snapshot(store) == before

@@ -37,6 +37,7 @@ from .store_policy_activation_preflight import (
     encoded_policy_activation_payloads,
     policy_checkpoint_rejection,
 )
+from .store_policy_rows import materialized_policy_row_identity, replace_remote_policy_rows_locked
 
 if TYPE_CHECKING:
     from .managed_controls_policy_fields import ParsedManagedControlsPolicy
@@ -49,7 +50,6 @@ from .memory_pattern_fingerprint import (
     build_memory_pattern_fingerprint,
 )
 from .models import GUARD_ACTION_VALUES
-from .policy_integrity import BUNDLE_OWNED_POLICY_SOURCES
 from .runtime.approval_context import approval_context_tokens_validation_reason
 from .store_base import *
 from .store_event_receipts import _local_once_approval_is_reusable, _verify_local_once_approval
@@ -667,21 +667,7 @@ class StorePolicyMixin:
                 )
         return True
 
-    @staticmethod
-    def _materialized_policy_bundle_row_identity(row: sqlite3.Row) -> tuple[object, ...]:
-        return (
-            row["harness"],
-            row["scope"],
-            row["artifact_id"],
-            row["artifact_hash"],
-            row["workspace"],
-            row["publisher"],
-            row["action"],
-            row["reason"],
-            row["owner"],
-            row["source"],
-            row["expires_at"],
-        )
+    _materialized_policy_bundle_row_identity = staticmethod(materialized_policy_row_identity)
 
     def _runtime_policy_row_is_eligible(
         self,
@@ -1341,30 +1327,7 @@ class StorePolicyMixin:
             )
         return normalized_now, rows
 
-    @staticmethod
-    def _replace_remote_policy_rows_locked(
-        connection: sqlite3.Connection,
-        rows: Sequence[tuple[object, ...]],
-        *,
-        sources: Sequence[str] | None = None,
-    ) -> None:
-        selected = tuple(sorted(sources if sources is not None else BUNDLE_OWNED_POLICY_SOURCES))
-        placeholders = "(" + ",".join("?" for _ in selected) + ")"
-        connection.execute(
-            f"delete from policy_decisions where source in {placeholders}",
-            selected,
-        )
-        connection.executemany(
-            """
-            insert into policy_decisions (
-              harness, scope, artifact_id, artifact_hash, workspace, publisher, action, reason, owner, source,
-              expires_at, updated_at, integrity_version, integrity_generation, payload_hash, payload_mac,
-              integrity_key_id, signed_at
-            )
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            rows,
-        )
+    _replace_remote_policy_rows_locked = staticmethod(replace_remote_policy_rows_locked)
 
     def resolve_policy(
         self,

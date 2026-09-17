@@ -180,8 +180,6 @@ def read_existing_vault_text(guard_home: Path, secret_ref: object) -> str | None
         if not isinstance(ciphertext, str):
             return None
         key = key.strip()
-        if len(key) == 32:
-            key = base64.urlsafe_b64encode(key)
         return Fernet(key).decrypt(ciphertext.encode("ascii")).decode("utf-8")
     except (InvalidToken, ValueError, TypeError, UnicodeError):
         return None

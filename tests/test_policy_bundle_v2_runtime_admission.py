@@ -2,19 +2,31 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 from pathlib import Path
-from typing import cast
 
 import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from codex_plugin_scanner.guard.policy_bundle_parser import (
     policy_bundle_is_enforceable,
 )
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import (
+    PolicyBundleVerificationKey,
     validate_synced_policy_bundle,
 )
+from codex_plugin_scanner.guard.policy_bundle_v2 import (
+    POLICY_BUNDLE_V2_CANONICALIZATION,
+    POLICY_BUNDLE_V2_CONTRACT,
+    canonical_policy_bundle_v2_payload,
+    computed_policy_bundle_v2_hash,
+    payload_hash_for_policy_bundle_v2,
+)
+from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument, canonical_json_bytes
+from codex_plugin_scanner.guard.policy_document_yaml import PolicyDocumentError
 from codex_plugin_scanner.guard.runtime import runner as guard_runner
 from codex_plugin_scanner.guard.store import GuardStore
 from codex_plugin_scanner.guard.synced_policy import cached_policy_bundle_validation
@@ -25,34 +37,42 @@ from tests.test_policy_bundle_v2 import (
 )
 
 
-def _generic_v2_payload(*, rollout_state: str, rule_id: str, artifact_id: str) -> dict[str, object]:
+def _generic_v2_payload(
+    *,
+    rule_id: str,
+    artifact_id: str,
+    rollout_state: object = "enforcing",
+    omit_rollout_state: bool = False,
+) -> dict[str, object]:
+    spec: dict[str, object] = {
+        "defaults": {"mode": "prompt", "defaultAction": "warn"},
+        "rules": [
+            {
+                "id": rule_id,
+                "enabled": True,
+                "effect": "block",
+                "match": {
+                    "artifacts": [artifact_id],
+                    "harnesses": ["codex"],
+                },
+                "lifetime": {"mode": "permanent", "expiresAt": None},
+                "provenance": {
+                    "source": "suggested-memory",
+                    "receiptIds": ["receipt-1"],
+                    "suggestionId": "suggestion-1",
+                    "createdAt": "2026-07-15T12:00:00Z",
+                    "createdBy": "owner-1",
+                },
+            }
+        ],
+    }
+    if not omit_rollout_state:
+        spec["rolloutState"] = rollout_state
     return {
         "apiVersion": "guard.hashgraphonline.com/v1alpha1",
         "kind": "GuardPolicy",
         "metadata": {"id": "policy.runtime-admission", "name": "Admission", "revision": 1},
-        "spec": {
-            "defaults": {"mode": "prompt", "defaultAction": "warn"},
-            "rolloutState": rollout_state,
-            "rules": [
-                {
-                    "id": rule_id,
-                    "enabled": True,
-                    "effect": "block",
-                    "match": {
-                        "artifacts": [artifact_id],
-                        "harnesses": ["codex"],
-                    },
-                    "lifetime": {"mode": "permanent", "expiresAt": None},
-                    "provenance": {
-                        "source": "suggested-memory",
-                        "receiptIds": ["receipt-1"],
-                        "suggestionId": "suggestion-1",
-                        "createdAt": "2026-07-15T12:00:00Z",
-                        "createdBy": "owner-1",
-                    },
-                }
-            ],
-        },
+        "spec": spec,
     }
 
 
@@ -103,16 +123,19 @@ def test_v2_publication_contract_matches_live_rollout_states() -> None:
     pending = _signed_bundle(private_key, verification_key, rollout_state="pending_approval")
     published = _signed_bundle(private_key, verification_key, rollout_state="enforcing")
 
+    enforced = _signed_bundle(private_key, verification_key, rollout_state="enforced")
+    rollback = _signed_bundle(private_key, verification_key, rollout_state="rollback_available")
+
     assert policy_bundle_is_enforceable(draft) is False
     assert policy_bundle_is_enforceable(pending) is False
     assert policy_bundle_is_enforceable(published) is True
+    assert policy_bundle_is_enforceable(enforced) is True
+    assert policy_bundle_is_enforceable(rollback) is True
     omitted_payload = _generic_v2_payload(
-        rollout_state="enforcing",
         rule_id="rule.live",
         artifact_id="command:live",
+        omit_rollout_state=True,
     )
-    spec = cast(dict[str, object], omitted_payload["spec"])
-    spec.pop("rolloutState", None)
     omitted = _signed_bundle(private_key, verification_key, payload_base=omitted_payload)
     assert policy_bundle_is_enforceable(omitted) is True
 
@@ -213,3 +236,99 @@ def test_signed_enforcing_generic_v2_bundle_is_admitted(
     assert last_error in (None, {})
     assert "command:published-block" in [row["artifact_id"] for row in store.list_policy_decisions()]
     assert cached_policy_bundle_validation(store, published)[0] == published
+
+
+def _signed_v2_with_rollout_value(
+    private_key: rsa.RSAPrivateKey,
+    verification_key: PolicyBundleVerificationKey,
+    rollout_state: object,
+    *,
+    bundle_version: int = 11,
+) -> dict[str, object]:
+    payload = _generic_v2_payload(
+        rollout_state=rollout_state,
+        rule_id="rule.invalid-rollout",
+        artifact_id="command:invalid-rollout",
+    )
+    try:
+        return _signed_bundle(private_key, verification_key, bundle_version=bundle_version, payload_base=payload)
+    except (PolicyDocumentError, TypeError, ValueError):
+        bundle: dict[str, object] = {
+            "envelopeVersion": 2,
+            "contractVersion": POLICY_BUNDLE_V2_CONTRACT,
+            "bundleVersion": bundle_version,
+            "bundleHash": "",
+            "payloadHash": "",
+            "issuedAt": "2026-07-15T12:00:00Z",
+            "expiresAt": "2030-07-15T12:00:00Z",
+            "workspaceId": "workspace-alpha",
+            "canonicalization": POLICY_BUNDLE_V2_CANONICALIZATION,
+            "verifier": {
+                "algorithm": "rsa-pss-sha256",
+                "keyId": verification_key.key_id,
+                "keyFingerprint": verification_key.fingerprint_sha256,
+                "publicKeyPem": verification_key.public_key_pem,
+                "signature": "",
+            },
+            "payload": payload,
+            "rollback": None,
+        }
+        try:
+            bundle["payloadHash"] = payload_hash_for_policy_bundle_v2(bundle)
+        except (PolicyDocumentError, TypeError, ValueError):
+            digest = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
+            bundle["payloadHash"] = f"sha256:{digest}"
+        bundle["bundleHash"] = computed_policy_bundle_v2_hash(bundle)
+        signature = private_key.sign(
+            canonical_policy_bundle_v2_payload(bundle),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
+        )
+        verifier = bundle["verifier"]
+        assert isinstance(verifier, dict)
+        verifier["signature"] = base64.b64encode(signature).decode("ascii")
+        return bundle
+
+
+@pytest.mark.parametrize("rollout_state", [None, 7, {"state": "enforcing"}])
+def test_signed_v2_present_invalid_rollout_state_is_not_enforceable(rollout_state: object) -> None:
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    verification_key = _verification_key(private_key, workspace_id="workspace-alpha")
+    payload = _generic_v2_payload(
+        rollout_state=rollout_state,
+        rule_id="rule.invalid-rollout",
+        artifact_id="command:invalid-rollout",
+    )
+    with pytest.raises(TypeError, match="validated_policy_document_shape"):
+        GuardPolicyDocument.from_mapping(payload)
+    bundle = _signed_v2_with_rollout_value(private_key, verification_key, rollout_state)
+    assert policy_bundle_is_enforceable(bundle) is False
+    validated, _reason, _keys = validate_synced_policy_bundle(
+        bundle,
+        stored_keyring={"keys": [verification_key.to_dict()]},
+        expected_workspace_id="workspace-alpha",
+    )
+    assert validated is None
+
+
+def test_signed_v2_omitted_rollout_state_remains_enforceable() -> None:
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    verification_key = _verification_key(private_key, workspace_id="workspace-alpha")
+    omitted = _signed_bundle(
+        private_key,
+        verification_key,
+        payload_base=_generic_v2_payload(
+            rule_id="rule.compat",
+            artifact_id="command:compat",
+            omit_rollout_state=True,
+        ),
+    )
+    assert policy_bundle_is_enforceable(omitted) is True
+    validated, reason, _keys = validate_synced_policy_bundle(
+        omitted,
+        stored_keyring={"keys": [verification_key.to_dict()]},
+        expected_workspace_id="workspace-alpha",
+    )
+    assert reason is None
+    assert validated is not None
+    assert policy_bundle_is_enforceable(validated) is True

@@ -57,6 +57,8 @@ _POLICY_BUNDLE_ROLLOUT_STATES = frozenset(
     {"draft", "simulated", "pending_approval", "enforcing", "enforced", "rollback_available"}
 )
 _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES = frozenset({"enforcing", "enforced", "rollback_available"})
+# Sentinel: v2 ``payload.spec.rolloutState`` was omitted (compatibility path).
+_POLICY_BUNDLE_ROLLOUT_STATE_ABSENT = object()
 _POLICY_BUNDLE_BROWSER_SCOPE_KEYS = frozenset(
     {
         "browserIntent",
@@ -337,14 +339,22 @@ def policy_bundle_daemon_version_supported(policy_bundle: dict[str, object]) -> 
 
 
 def policy_bundle_rollout_state(policy_bundle: dict[str, object]) -> object:
-    """Return the publication-contract rollout state for v1 envelopes or v2 documents."""
+    """Return the publication-contract rollout state for v1 envelopes or v2 documents.
+
+    For v2 documents, omitted ``payload.spec.rolloutState`` returns
+    ``_POLICY_BUNDLE_ROLLOUT_STATE_ABSENT``. An explicit JSON null, a non-string
+    value, or a missing/malformed ``payload.spec`` is returned as ``None`` or the
+    provided value so callers can reject the compatibility path.
+    """
 
     if policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
         payload = policy_bundle.get("payload")
         spec = payload.get("spec") if isinstance(payload, dict) else None
-        if isinstance(spec, dict):
-            return spec.get("rolloutState")
-        return None
+        if not isinstance(spec, dict):
+            return None
+        if "rolloutState" not in spec:
+            return _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT
+        return spec["rolloutState"]
     return policy_bundle.get("rolloutState")
 
 
@@ -352,9 +362,12 @@ def policy_bundle_is_enforceable(policy_bundle: dict[str, object]) -> bool:
     """Return whether an authenticated rollout is intended as live authority."""
 
     rollout_state = policy_bundle_rollout_state(policy_bundle)
-    if policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT and rollout_state is None:
+    if (
+        policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT
+        and rollout_state is _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT
+    ):
         return True
-    return rollout_state in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
+    return isinstance(rollout_state, str) and rollout_state in _POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES
 
 
 def policy_bundle_acceptance_checkpoint(policy_bundle: dict[str, object]) -> dict[str, object]:

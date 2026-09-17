@@ -159,3 +159,18 @@ target admission, fresh-worker testing, failure witnesses and bounded follow-up
 experiments need new execution. Signing/frozen identities, full installed
 tails, live update/rollback, mixed-load evidence, final required CI and
 independent latest-push approval remain release gates.
+## Supplemental selection events after the frozen checkpoint
+
+At 16:31:55 UTC on 2026-09-17, the publication owner added
+`rust-nonpriority-tail-smoke` and `scanner-regex-pilot-smoke` before advancing
+the next source. The old source does not admit either label for benchmark
+execution. The [separate event record](evidence/fourth-ci-2ebb/supplemental-label-events.json)
+retains six additional terminal instances: four skipped benchmark workflows
+and two successful empty release-authorization jobs. Both dispatch-only steps
+and every build, publish, canary and release descendant skipped. No benchmark
+offers, release builds or publication occurred.
+
+The head therefore has 46 observed workflow instances after those labels,
+while the frozen measured cohort above remains 40 (35 success, five failure).
+These six event-only instances neither change that cohort nor provide any
+additional qualification. The labels select the next coherent source update.

@@ -199,6 +199,23 @@ pub(super) fn authority_unchanged_fenced(store: &PolicySnapshotStore) -> bool {
     unchanged
 }
 
+pub(super) fn require_current_authority_for_ack(store: &PolicySnapshotStore) -> Result<(), String> {
+    if store.authority_changed.load(Ordering::SeqCst) || !authority_unchanged_fenced(store) {
+        return Err("native_policy_snapshot_context_mismatch".to_owned());
+    }
+    Ok(())
+}
+
+pub(super) fn refresh_authority_for_ack(store: &PolicySnapshotStore) -> Result<(), String> {
+    store
+        .authority_changed
+        .store(!authorities_unchanged(store), Ordering::SeqCst);
+    if store.authority_changed.load(Ordering::SeqCst) {
+        return Err("native_policy_snapshot_context_mismatch".to_owned());
+    }
+    Ok(())
+}
+
 #[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn scope_digest(guard_home: &str) -> String {
     scope_digest_string(&canonical_scope_text(guard_home))

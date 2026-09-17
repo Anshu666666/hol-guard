@@ -310,11 +310,7 @@ impl PolicySnapshotStore {
                 if snapshot_bytes != state.canonical_bytes {
                     return Err("native_policy_snapshot_generation_reused".to_owned());
                 }
-                if self.authority_changed.load(Ordering::SeqCst)
-                    || !policy_store_authority::authority_unchanged_fenced(self)
-                {
-                    return Err("native_policy_snapshot_context_mismatch".to_owned());
-                }
+                policy_store_authority::require_current_authority_for_ack(self)?;
                 return encode_ack(current.as_ref(), true, self.resident_generation);
             }
         } else if request.snapshot.generation <= state.generation_floor {
@@ -349,13 +345,7 @@ impl PolicySnapshotStore {
         state.invalid_on_startup = false;
         *observed = authority_fingerprint(&self.authority_path);
         drop(observed);
-        self.authority_changed.store(
-            !policy_store_authority::authorities_unchanged(self),
-            Ordering::SeqCst,
-        );
-        if self.authority_changed.load(Ordering::SeqCst) {
-            return Err("native_policy_snapshot_context_mismatch".to_owned());
-        }
+        policy_store_authority::refresh_authority_for_ack(self)?;
         encode_ack(&request.snapshot, false, self.resident_generation)
     }
 

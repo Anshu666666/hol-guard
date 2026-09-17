@@ -196,7 +196,7 @@ fn retry_ack_requires_unchanged_durable_authority() {
         store.push(&request).unwrap();
         let file = root.join(SNAPSHOT_FILE_NAME);
         if replaced {
-            fixture_file(&file, b"{}");
+            fs::write(&file, b"{}").unwrap();
         } else {
             fs::remove_file(&file).unwrap();
         }

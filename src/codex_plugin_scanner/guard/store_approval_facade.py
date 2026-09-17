@@ -4,6 +4,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from .store import GuardStore
+
 from .policy_memory_source import bind_persisted_policy_memory_source
 
 # ruff: noqa: F403,F405
@@ -43,7 +48,7 @@ class StoreApprovalsMixin:
                 now,
                 oauth_source=self._guard_source,
             )
-            bind_persisted_policy_memory_source(self, connection, request, request_id, now)
+            bind_persisted_policy_memory_source(cast("GuardStore", self), connection, request, request_id, now)
             bind_review_events_for_request(
                 connection,
                 request_id=request_id,

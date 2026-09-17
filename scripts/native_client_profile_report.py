@@ -19,12 +19,12 @@ STAGES = {
     "complete",
 }
 FIXED = {
-    "schema": "hol-guard.native-client-profile-collection.v1",
+    "schema": "hol-guard.native-client-profile-collection.v2",
     "qualification_complete": False,
     "production_selected": False,
     "headline_timing_eligible": False,
     "span_semantics": "inclusive_do_not_sum",
-    "evaluation_isolated": False,
+    "evaluation_scope": "resident_edge_snapshot_fence_evaluate_receipt_encode",
     "resource_comparison_measured": False,
     "normal_release_runtime_measured": False,
     "request_cases": ["claude_code_post_benign", "claude_code_post_credential_fixture"],
@@ -39,6 +39,7 @@ IDENTITY_HASHES = {
     "observer_sha256",
     "records_sha256",
     "report_sha256",
+    "resident_profile_sha256",
     "lock_sha256",
 }
 
@@ -53,11 +54,15 @@ def validate_report(value: Any, planned: int, source_sha: str) -> dict[str, Any]
         "stage",
         "uncompleted",
         "profiles",
+        "resident_profiles",
+        "evaluation_isolated",
+        "resident_capture_complete",
     }
     require(
         mandatory
         <= set(value)
-        <= mandatory | {"identity", "readiness_ms", "helpers", "native_records", "failure", "cleanup_status"}
+        <= mandatory
+        | {"identity", "readiness_ms", "helpers", "native_records", "resident_records", "failure", "cleanup_status"}
     )
     require(all(type(value[key]) is type(expected) and value[key] == expected for key, expected in FIXED.items()))
     require(count(value["planned"], 200) == planned)
@@ -91,7 +96,7 @@ def validate_report(value: Any, planned: int, source_sha: str) -> dict[str, Any]
         )
     if "readiness_ms" in value:
         _number(value["readiness_ms"])
-    for key in ("helpers", "native_records"):
+    for key in ("helpers", "native_records", "resident_records"):
         if key in value:
             count(value[key], 32 if key == "helpers" else 1024)
     profiles = value["profiles"]
@@ -121,11 +126,32 @@ def validate_report(value: Any, planned: int, source_sha: str) -> dict[str, Any]
                 for key in ("p50_ms", "p95_ms", "p99_ms", "max_ms"):
                     _number(statistics[key])
     require(total == completed)
+    resident = value["resident_profiles"]
+    require(isinstance(resident, dict) and set(resident) == set(profiles))
+    for case, spans in resident.items():
+        require(isinstance(spans, dict) and set(spans) == {"count", "edge_evaluation_ms", "dispatch_encode_ms"})
+        n = count(spans["count"], planned // 2)
+        require(n == profiles[case]["count"])
+        for key in ("edge_evaluation_ms", "dispatch_encode_ms"):
+            statistics = spans[key]
+            require((statistics is None) == (n == 0))
+            if statistics is not None:
+                require(
+                    isinstance(statistics, dict)
+                    and set(statistics) == {"count", "p50_ms", "p95_ms", "p99_ms", "max_ms"}
+                )
+                require(count(statistics["count"], n) == n)
+                for field in ("p50_ms", "p95_ms", "p99_ms", "max_ms"):
+                    _number(statistics[field])
+    require(type(value["evaluation_isolated"]) is bool and value["evaluation_isolated"] == value["collection_complete"])
+    require(type(value["resident_capture_complete"]) is bool)
     if value["collection_complete"]:
         require(completed == planned and failed == 0 and value["stage"] == "complete")
-        require({"identity", "readiness_ms", "helpers", "native_records"} <= set(value))
+        require({"identity", "readiness_ms", "helpers", "native_records", "resident_records"} <= set(value))
         require(value.get("cleanup_status") in {"contained", "already-stopped"})
         require(value["helpers"] > 0 and value["native_records"] >= completed)
+        require(value["resident_records"] >= completed)
+        require(value["resident_capture_complete"])
     require(assert_privacy_safe(value) == value)
     return value
 

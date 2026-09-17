@@ -45,7 +45,7 @@ def test_four_shipping_targets_and_fixed_request_budget_have_independent_bounds(
     assert job["strategy"]["fail-fast"] is False
     assert {item["target"]: item["tag"] for item in matrix["platform"]} == {k: v[0] for k, v in TARGETS.items()}
     assert len(matrix["platform"]) == 4
-    assert sum(step["timeout-minutes"] for step in job["steps"]) == 88 < job["timeout-minutes"] == 100
+    assert sum(step["timeout-minutes"] for step in job["steps"]) == 93 < job["timeout-minutes"] == 100
     build = next(step for step in job["steps"] if "build_native_client_profile_wheel.py" in step.get("run", ""))
     assert '--source-sha "$PROFILE_SOURCE_SHA"' in build["run"] and "--allow-diagnostic" in build["run"]
     rust = next(step for step in job["steps"] if "cargo +1.88.0 test" in step.get("run", ""))
@@ -57,6 +57,16 @@ def test_four_shipping_targets_and_fixed_request_budget_have_independent_bounds(
     assert collect["timeout-minutes"] == 5 and collect["run"].endswith("--count 20")
     assert "--wheel profile-build/native/*.whl" in collect["run"]
     assert collect.get("continue-on-error") is not True
+
+
+def test_windows_companion_capture_tests_are_actually_selected():
+    steps = _workflow()["jobs"]["diagnostic"]["steps"]
+    companion = [step for step in steps if "-p guard-runtime-windows-process" in step.get("run", "")]
+    assert len(companion) == 1
+    step = companion[0]
+    assert step["if"] == "runner.os == 'Windows'" and step["timeout-minutes"] == 5
+    assert "--features diagnostic-native-client native_client_profile_stderr -- --test-threads=1" in step["run"]
+    assert "--locked --release" in step["run"]
 
 
 def _environments(workflow):

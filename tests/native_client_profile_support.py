@@ -16,3 +16,19 @@ def record(*, digest="a" * 64, sequence=1):
         "span_semantics": "inclusive_do_not_sum",
         "headline_timing_eligible": False,
     }
+
+
+def resident_record(*, digest="a" * 64, sequence=1):
+    return {
+        "schema": "hol-guard.native-resident-profile.v1",
+        "sequence": sequence,
+        "generation": 1,
+        "process_id": 123,
+        "request_sha256": digest,
+        "dispatch_encode_nanoseconds": 60,
+        "edge_evaluation": {"calls": 1, "succeeded": 1, "nanoseconds": 40},
+        "outcome": "success",
+        "overflow": False,
+        "span_semantics": "inclusive_do_not_sum",
+        "headline_timing_eligible": False,
+    }

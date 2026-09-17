@@ -27,6 +27,7 @@ if str(_ROOT) not in sys.path:
 
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
+from scripts import native_slo_identity_cold_fixture as cold_identity_fixture  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
 from scripts.native_slo_adapter import (  # noqa: E402
     Observation,
@@ -71,7 +72,14 @@ class _RemoteMetrics:
 class DaemonFixture:
     """Daemon/helper/resident tree independent of the benchmark load generator."""
 
-    def __init__(self, runtime: Path, *, setup: str | None = None, policy: str | None = None) -> None:
+    def __init__(
+        self,
+        runtime: Path,
+        *,
+        setup: str | None = None,
+        policy: str | None = None,
+        cold_identity: Mapping[str, object] | None = None,
+    ) -> None:
         # Assigned only after the existing ready acknowledgement; these
         # annotations deliberately do not create attributes before __enter__.
         self.root: Path
@@ -81,6 +89,7 @@ class DaemonFixture:
         self.runtime = runtime
         self.setup = setup
         self.policy = policy
+        self.cold_identity = cold_identity
         self.process: subprocess.Popen[bytes] | None = None
         self._job: Any = None
         self._lock = threading.Lock()
@@ -202,15 +211,7 @@ class DaemonFixture:
         clear_proof_environment(environment)
         started = time.perf_counter()
         self.process, self._job, _ = _spawn_hook_process(
-            (
-                sys.executable,
-                "-u",
-                str(Path(__file__).resolve()),
-                "--serve",
-                str(self.runtime),
-                self.setup or "none",
-                self.policy or "none",
-            ),
+            cold_identity_fixture.fixture_command(self, str(Path(__file__).resolve())),
             cwd=_ROOT,
             environment=environment,
             allow_windows_breakaway=False,
@@ -239,7 +240,8 @@ class DaemonFixture:
             self._connection = HTTPConnection("127.0.0.1", self.daemon.port, timeout=5)
             self._owner_thread_id = threading.get_ident()
             self.startup_ms = (time.perf_counter() - started) * 1000
-        except BaseException:
+        except BaseException as error:
+            cold_identity_fixture.retain_startup_failure(self, error)
             self.close()
             raise
         return self
@@ -412,6 +414,7 @@ def _serve_session(session: Any, fault: Any) -> None:
     identity_observer: IdentityObserver | None = None
     mixed = MixedScenarioFixture(session)
     launcher_review = LauncherReviewFixture(session)
+    cold_identity_fixture.lifecycle_ready()
     try:
         _emit(
             {
@@ -471,6 +474,7 @@ def _serve_session(session: Any, fault: Any) -> None:
             else:
                 raise RuntimeError("unsupported daemon fixture operation")
     finally:
+        cold_identity_fixture.lifecycle_retiring()
         try:
             if identity_observer is not None:
                 identity_observer.__exit__()
@@ -482,9 +486,7 @@ def _serve_session(session: Any, fault: Any) -> None:
 
 if __name__ == "__main__":
     try:
-        if len(sys.argv) != 5 or sys.argv[1] != "--serve":
-            raise ValueError("private daemon fixture invocation required")
-        raise SystemExit(_serve(Path(sys.argv[2]).resolve(strict=True), sys.argv[3], sys.argv[4]))
+        raise SystemExit(cold_identity_fixture.serve_fixture_entry(_serve, sys.argv))
     except Exception as error:
         _emit({"error": "fixture_failed", "detail": failure_evidence(error)})
         raise SystemExit(1) from None

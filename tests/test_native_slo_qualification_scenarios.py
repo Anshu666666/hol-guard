@@ -79,6 +79,7 @@ def test_utf8_observation_is_separate_from_original_cases_and_headline_samples(t
         "priority_approval",
         "diagnostic_instrumented_run",
         "prepared_resident_first_hook_and_warm",
+        "fresh_process_preparation_first_hook_and_warm",
         "priority_input",
         "priority_utf8_observation",
     ]

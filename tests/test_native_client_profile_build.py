@@ -15,7 +15,7 @@ def _capabilities(target: str) -> dict:
         "build_sha": SHA,
         "target": builder.TARGETS[target][1],
         "rule_digest": DIGEST,
-        "features": ["resident-stream-v1", builder.CAPABILITY],
+        "features": ["resident-stream-v1", builder.CAPABILITY, builder.RESIDENT_CAPABILITY],
     }
 
 
@@ -106,6 +106,9 @@ def test_identity_rejection_precedes_interpreter_mutation_and_build(tmp_path, mo
         ("target", "aarch64-macos"),
         ("rule_digest", "not-a-digest"),
         ("features", []),
+        ("features", [builder.CAPABILITY]),
+        ("features", [builder.RESIDENT_CAPABILITY]),
+        ("features", [builder.CAPABILITY, builder.RESIDENT_CAPABILITY, builder.RESIDENT_CAPABILITY]),
         ("features", [builder.CAPABILITY, builder.CAPABILITY]),
         ("features", [builder.CAPABILITY, {}]),
         ("features", builder.CAPABILITY),

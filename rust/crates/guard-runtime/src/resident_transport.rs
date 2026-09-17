@@ -233,6 +233,8 @@ fn handle_pending_request(
     let mut request = vec![0u8; pending.length];
     request[..prefix_length].copy_from_slice(&pending.payload_prefix);
     let mut disposition = crate::resident_protocol::LifecycleDisposition::Continue;
+    #[cfg(feature = "diagnostic-native-client")]
+    let mut profile_record = None;
     let response = if pending
         .stream
         .read_exact(&mut request[prefix_length..])
@@ -244,13 +246,25 @@ fn handle_pending_request(
         if !constant_time_eq(&digest, &pending.request_digest) {
             crate::resident_protocol::error_response("native_request_digest_mismatch", false)
         } else {
-            match catch_unwind(AssertUnwindSafe(|| {
+            #[cfg(feature = "diagnostic-native-client")]
+            let profile = crate::native_client_profile_resident::Request::begin(&digest);
+            let evaluated = catch_unwind(AssertUnwindSafe(|| {
                 crate::resident_protocol::evaluate_resident_bytes_started(
                     &request,
                     policy_store,
                     pending.accepted_at,
                 )
-            })) {
+            }));
+            #[cfg(feature = "diagnostic-native-client")]
+            {
+                use crate::native_client_profile_resident::Outcome;
+                profile_record = Some(profile.finish(match &evaluated {
+                    Ok(Ok(_)) => Outcome::Success,
+                    Ok(Err(_)) => Outcome::Rejected,
+                    Err(_) => Outcome::Panicked,
+                }));
+            }
+            match evaluated {
                 Ok(Ok(evaluation)) => {
                     disposition = evaluation.disposition;
                     evaluation.response
@@ -268,6 +282,10 @@ fn handle_pending_request(
     let _ = write_bound_response(&mut *pending.stream, &pending.request_id, &response);
     if disposition == crate::resident_protocol::LifecycleDisposition::Shutdown {
         crate::managed_resident::shutdown_response_sent();
+    }
+    #[cfg(feature = "diagnostic-native-client")]
+    if let Some(record) = profile_record {
+        record.emit();
     }
 }
 

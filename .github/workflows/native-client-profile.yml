@@ -53,7 +53,7 @@ jobs:
             tag: win_amd64
             deployment: '11.0'
     runs-on: ${{ matrix.platform.runner }}
-    # At most 88 minutes of individual step budgets plus runner overhead.
+    # At most 93 minutes of individual step budgets plus runner overhead.
     timeout-minutes: 100
     defaults:
       run:
@@ -108,6 +108,13 @@ jobs:
           cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --release
           --target "${{ matrix.platform.target }}" -p hol-guard-runtime
           --features diagnostic-native-client native_client_profile
+      - name: Exercise diagnostic Windows stderr containment
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        run: >-
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --release
+          --target "${{ matrix.platform.target }}" -p guard-runtime-windows-process
+          --features diagnostic-native-client native_client_profile_stderr -- --test-threads=1
       - name: Collect installed diagnostic phases separately from qualification
         id: collect
         timeout-minutes: 5

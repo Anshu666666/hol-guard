@@ -82,7 +82,16 @@ def decode_record(line: bytes) -> dict[str, Any]:
         return result
 
     require(len(line) <= MAX_RECORD_BYTES and line.endswith(b"\n"))
-    return validate_record(json.loads(line, object_pairs_hook=unique))
+    value = json.loads(line, object_pairs_hook=unique)
+    if isinstance(value, dict) and value.get("schema") == "hol-guard.native-resident-profile.v1":
+        from scripts.native_client_profile_resident import validate_resident_record
+
+        return validate_resident_record(value)
+    if isinstance(value, dict) and value.get("schema") == "hol-guard.native-resident-profile-relay.v1":
+        from scripts.native_client_profile_resident import validate_relay_record
+
+        return validate_relay_record(value)
+    return validate_record(value)
 
 
 class Journal:

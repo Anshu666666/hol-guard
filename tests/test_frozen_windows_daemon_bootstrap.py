@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from .windows_failure_witness import retry_status_witness
+
 
 def _run_core(executable: Path, args: list[str], *, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -122,7 +124,8 @@ def test_packaged_windows_core_bootstrap_retry_and_repair(tmp_path: Path) -> Non
         retry_bootstrap = _json_result(_run_core(executable, bootstrap_args, env=env))
         assert retry_bootstrap["schema"] == "guard-desktop-bootstrap.v1"
         retry_status = _json_result(_run_core(executable, status_args, env=env))
-        assert retry_status["running"] is True
+        with retry_status_witness(retry_status):
+            assert retry_status["running"] is True
         retry_pid = retry_status["pid"]
         _stop_and_assert_process_stopped(
             executable,

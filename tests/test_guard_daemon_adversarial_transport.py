@@ -205,14 +205,25 @@ def test_partial_connections_are_bounded_before_handler_threads_start(
     with _running_daemon(tmp_path, monkeypatch) as daemon:
         daemon._server.connection_capacity_limit = 2
         daemon._server.connection_capacity = threading.BoundedSemaphore(2)
+        completed_requests = 0
+        third_dispatch_complete = threading.Event()
+        original_process_request = daemon._server.process_request
+
+        def observe_process_request(request: socket.socket, address: tuple[str, int]) -> None:
+            nonlocal completed_requests
+            original_process_request(request, address)
+            completed_requests += 1
+            if completed_requests == 3:
+                third_dispatch_complete.set()
+
+        monkeypatch.setattr(daemon._server, "process_request", observe_process_request)
         clients = [socket.create_connection(("127.0.0.1", daemon.port), timeout=1) for _ in range(3)]
         try:
             deadline = time.monotonic() + 0.2
-            while time.monotonic() < deadline:
-                with daemon._server.request_capacity_lock:
-                    if daemon._server.active_requests == 2:
-                        break
-                time.sleep(0.01)
+            # Overflow eviction removes its pending entry before releasing
+            # capacity. Observe the completed third admission, not that
+            # intermediate state across two independently locked counters.
+            assert third_dispatch_complete.wait(max(0.0, deadline - time.monotonic()))
             with daemon._server.request_capacity_lock:
                 assert daemon._server.active_requests == 2
             with daemon._server.unclassified_connections_lock:

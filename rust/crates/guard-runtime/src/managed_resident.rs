@@ -389,7 +389,9 @@ pub(crate) fn supervise_managed_for_owner(
             .map_err(|_| "native_resident_runtime_path_failed".to_owned())?;
         let mut child = Command::new(executable);
         child
-            .arg("serve-managed")
+            .arg(crate::native_client_profile_resident::command(
+                "serve-managed",
+            ))
             .arg("--state-dir")
             .arg(state_base)
             .arg("--generation")
@@ -400,7 +402,7 @@ pub(crate) fn supervise_managed_for_owner(
             .arg(expected_digest)
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
-            .stderr(Stdio::null());
+            .stderr(crate::native_client_profile_resident::stderr());
         // The supervisor was launched in its own process group by
         // spawn_managed_for_owner. Leave the serving child in that inherited
         // group so startup timeout containment addresses both processes as
@@ -408,6 +410,10 @@ pub(crate) fn supervise_managed_for_owner(
         let mut child = child
             .spawn()
             .map_err(|_| "native_resident_spawn_failed".to_owned())?;
+        #[cfg(feature = "diagnostic-native-client")]
+        if let Some(reader) = child.stderr.take() {
+            crate::native_client_profile_resident::start_relay(reader, child.id());
+        }
         let mut liveness_writer = child
             .stdin
             .take()

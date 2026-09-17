@@ -236,8 +236,12 @@ def test_indexed_pair_incremental_archive_footprint_and_file_headroom(tmp_path, 
                 and isinstance(node.args[0].right, ast.Constant)
             ):
                 suffixes.add(node.args[0].right.value)
-    # The fixed indexed plan has one raw numeric file plus these 15 named files
-    # per arm, eight extra capture/fact files per arm, and one pair manifest.
-    assert len(suffixes) == 15
+    # The fixed indexed plan has one raw numeric file plus these 20 named files
+    # per arm (including prepared and cold identity diagnostics), eight
+    # extra capture/fact files per arm, and one pair manifest. This checks file
+    # headroom; the byte assertions above cover only the UTF-8 diagnostic.
+    assert {"-identity-cases.jsonl", "-identity-summary.json"} <= suffixes
+    assert {"-identity-cold-cases.jsonl", "-identity-cold-observer.jsonl", "-identity-cold-summary.json"} <= suffixes
+    assert len(suffixes) == 20
     fixed_pair_files = 2 * (1 + len(suffixes) + 8) + 1
-    assert fixed_pair_files == 49 and fixed_pair_files <= MAX_FILES
+    assert fixed_pair_files == 59 and fixed_pair_files <= MAX_FILES

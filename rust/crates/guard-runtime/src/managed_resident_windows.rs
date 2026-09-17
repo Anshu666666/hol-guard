@@ -6,6 +6,19 @@ use guard_runtime_windows_process::{spawn_managed_child, ManagedChild};
 
 use super::containment::hex_token;
 
+fn spawn_child(executable: &Path, arguments: &[&OsStr]) -> std::io::Result<ManagedChild> {
+    #[cfg(feature = "diagnostic-native-client")]
+    if crate::native_client_profile_resident::forwarding() {
+        let mut child =
+            guard_runtime_windows_process::spawn_managed_child_with_stderr(executable, arguments)?;
+        if let Some(reader) = child.take_stderr() {
+            crate::native_client_profile_resident::start_relay(reader, child.id());
+        }
+        return Ok(child);
+    }
+    spawn_managed_child(executable, arguments)
+}
+
 pub(crate) fn spawn_managed(
     state_base: &Path,
     generation: u64,
@@ -16,7 +29,9 @@ pub(crate) fn spawn_managed(
     let executable =
         std::env::current_exe().map_err(|_| "native_resident_runtime_path_failed".to_owned())?;
     let arguments = vec![
-        OsString::from("supervise-managed"),
+        OsString::from(crate::native_client_profile_resident::command(
+            "supervise-managed",
+        )),
         OsString::from("--state-dir"),
         state_base.as_os_str().to_owned(),
         OsString::from("--generation"),
@@ -27,7 +42,7 @@ pub(crate) fn spawn_managed(
         OsString::from(digest),
     ];
     let argument_refs: Vec<&OsStr> = arguments.iter().map(OsString::as_os_str).collect();
-    let mut child = spawn_managed_child(&executable, &argument_refs)
+    let mut child = spawn_child(&executable, &argument_refs)
         .map_err(|_| "native_resident_spawn_failed".to_owned())?;
     let write_result = {
         let Some(mut stdin) = child.take_stdin() else {
@@ -56,7 +71,9 @@ pub(crate) fn supervise_managed(
     let executable =
         std::env::current_exe().map_err(|_| "native_resident_runtime_path_failed".to_owned())?;
     let arguments = vec![
-        OsString::from("serve-managed"),
+        OsString::from(crate::native_client_profile_resident::command(
+            "serve-managed",
+        )),
         OsString::from("--state-dir"),
         state_base.as_os_str().to_owned(),
         OsString::from("--generation"),
@@ -75,7 +92,7 @@ fn supervise_managed_child(
     token: &[u8],
 ) -> Result<(), String> {
     let argument_refs: Vec<&OsStr> = arguments.iter().map(OsString::as_os_str).collect();
-    let mut child = spawn_managed_child(executable, &argument_refs)
+    let mut child = spawn_child(executable, &argument_refs)
         .map_err(|_| "native_resident_spawn_failed".to_owned())?;
     let mut liveness_writer = child.take_stdin().ok_or_else(|| {
         let _ = child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT);

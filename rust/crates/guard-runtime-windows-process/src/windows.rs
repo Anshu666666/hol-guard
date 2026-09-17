@@ -11,11 +11,7 @@ use winapi::shared::minwindef::{DWORD, FALSE, TRUE};
 use winapi::shared::ntdef::HANDLE;
 use winapi::shared::winerror::WAIT_TIMEOUT;
 use winapi::um::errhandlingapi::GetLastError;
-#[cfg(test)]
-use winapi::um::fileapi::GetFileType;
 use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
-#[cfg(test)]
-use winapi::um::handleapi::GetHandleInformation;
 use winapi::um::handleapi::{SetHandleInformation, INVALID_HANDLE_VALUE};
 use winapi::um::minwinbase::SECURITY_ATTRIBUTES;
 use winapi::um::namedpipeapi::CreatePipe;
@@ -24,11 +20,7 @@ use winapi::um::processthreadsapi::{
     InitializeProcThreadAttributeList, OpenProcess, TerminateProcess, UpdateProcThreadAttribute,
     PROCESS_INFORMATION,
 };
-#[cfg(test)]
-use winapi::um::synchapi::CreateEventW;
 use winapi::um::synchapi::WaitForSingleObject;
-#[cfg(test)]
-use winapi::um::winbase::FILE_TYPE_UNKNOWN;
 use winapi::um::winbase::{
     CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, EXTENDED_STARTUPINFO_PRESENT,
     HANDLE_FLAG_INHERIT, STARTF_USESTDHANDLES, STARTUPINFOEXW, WAIT_FAILED, WAIT_OBJECT_0,
@@ -41,6 +33,9 @@ mod directory_binding;
 mod private_files;
 #[path = "process_lifecycle.rs"]
 mod process_lifecycle;
+#[cfg(feature = "diagnostic-native-client")]
+#[path = "profile_stderr.rs"]
+mod profile_stderr;
 #[path = "read_file_identity.rs"]
 mod read_file_identity;
 #[path = "read_file_path.rs"]
@@ -88,9 +83,15 @@ pub struct ManagedChild {
     process: OwnedHandle,
     job: Option<OwnedHandle>,
     stdin: Option<std::fs::File>,
+    #[cfg(feature = "diagnostic-native-client")]
+    stderr: Option<std::fs::File>,
 }
 
 impl ManagedChild {
+    #[cfg(feature = "diagnostic-native-client")]
+    pub fn take_stderr(&mut self) -> Option<std::fs::File> {
+        self.stderr.take()
+    }
     /// Return the process identifier associated with this owned process handle.
     pub fn id(&self) -> u32 {
         // SAFETY: `process` owns a valid process handle until this method returns.
@@ -173,6 +174,22 @@ impl ManagedChild {
 
 /// Spawn a child with only its three standard handles in the inherited list.
 pub fn spawn_managed_child(executable: &Path, args: &[&OsStr]) -> io::Result<ManagedChild> {
+    spawn_managed_child_stderr(executable, args, false)
+}
+
+#[cfg(feature = "diagnostic-native-client")]
+pub fn spawn_managed_child_with_stderr(
+    executable: &Path,
+    args: &[&OsStr],
+) -> io::Result<ManagedChild> {
+    spawn_managed_child_stderr(executable, args, true)
+}
+
+fn spawn_managed_child_stderr(
+    executable: &Path,
+    args: &[&OsStr],
+    capture: bool,
+) -> io::Result<ManagedChild> {
     let executable_w = wide_path(executable)?;
     let command_line = command_line(executable.as_os_str(), args)?;
     let mut command_line_w = command_line;
@@ -184,7 +201,18 @@ pub fn spawn_managed_child(executable: &Path, args: &[&OsStr]) -> io::Result<Man
     };
     let (child_stdin, parent_stdin) = create_stdin_pipe(&mut security)?;
     let child_stdout = create_null_handle(GENERIC_WRITE, &mut security)?;
-    let child_stderr = create_null_handle(GENERIC_WRITE, &mut security)?;
+    #[cfg(feature = "diagnostic-native-client")]
+    let (parent_stderr, child_stderr) = if capture {
+        let (read, write) = profile_stderr::pipe(&mut security)?;
+        (Some(read), write)
+    } else {
+        (None, create_null_handle(GENERIC_WRITE, &mut security)?)
+    };
+    #[cfg(not(feature = "diagnostic-native-client"))]
+    let child_stderr = {
+        let _ = capture;
+        create_null_handle(GENERIC_WRITE, &mut security)?
+    };
 
     let handles = [
         child_stdin.as_raw_handle() as HANDLE,
@@ -250,6 +278,8 @@ pub fn spawn_managed_child(executable: &Path, args: &[&OsStr]) -> io::Result<Man
         process,
         job,
         stdin: Some(stdin),
+        #[cfg(feature = "diagnostic-native-client")]
+        stderr: parent_stderr,
     })
 }
 
@@ -417,56 +447,5 @@ impl Drop for AttributeList {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::env;
-    use std::io::Write;
-
-    const SENTINEL_ENV: &str = "HOL_GUARD_TEST_UNLISTED_HANDLE";
-
-    #[test]
-    fn inherited_handle_is_not_leaked() {
-        if let Ok(raw_handle) = env::var(SENTINEL_ENV) {
-            let handle = raw_handle.parse::<usize>().expect("test handle is numeric") as HANDLE;
-            let mut flags = 0;
-            let inherited = unsafe {
-                GetHandleInformation(handle, &mut flags) != FALSE
-                    && GetFileType(handle) == FILE_TYPE_UNKNOWN
-            };
-            assert!(!inherited, "unlisted parent handle reached managed child");
-            return;
-        }
-
-        let mut security = SECURITY_ATTRIBUTES {
-            nLength: size_of::<SECURITY_ATTRIBUTES>() as DWORD,
-            lpSecurityDescriptor: null_mut(),
-            bInheritHandle: TRUE,
-        };
-        let mut open_handles = Vec::new();
-        for _ in 0..128 {
-            open_handles.push(create_null_handle(GENERIC_WRITE, &mut security).unwrap());
-        }
-        let sentinel = unsafe { CreateEventW(&mut security, FALSE, FALSE, null()) };
-        assert!(!sentinel.is_null());
-        let sentinel = unsafe { OwnedHandle::from_raw_handle(sentinel as RawHandle) };
-        env::set_var(
-            SENTINEL_ENV,
-            (sentinel.as_raw_handle() as usize).to_string(),
-        );
-
-        let executable = env::current_exe().unwrap();
-        let arguments = [
-            OsStr::new("--nocapture"),
-            OsStr::new("inherited_handle_is_not_leaked"),
-        ];
-        let mut child = spawn_managed_child(&executable, &arguments).unwrap();
-        let mut stdin = child.take_stdin().unwrap();
-        stdin.flush().unwrap();
-        drop(stdin);
-        assert!(child
-            .wait_success_with_timeout(std::time::Duration::from_secs(2))
-            .unwrap());
-        env::remove_var(SENTINEL_ENV);
-        drop(open_handles);
-    }
-}
+#[path = "windows_tests.rs"]
+mod tests;

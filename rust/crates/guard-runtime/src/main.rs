@@ -7,6 +7,7 @@ mod edge;
 mod hardening;
 mod managed_resident;
 mod native_client_profile;
+mod native_client_profile_resident;
 mod native_hook_receipt;
 mod oneshot;
 mod policy_enforcement;
@@ -200,7 +201,10 @@ fn run() -> Result<(), String> {
             if command == "resident-client-stream-profile" && flag == "--stdin" =>
         {
             native_client_profile::enable();
-            managed_resident::client_stream(std::path::Path::new(state_dir))
+            native_client_profile_resident::configure(command, 0);
+            let result = managed_resident::client_stream(std::path::Path::new(state_dir));
+            native_client_profile_resident::drain();
+            result
         }
         [command, flag, state_dir] if command == "resident-stop" && flag == "--state-dir" => {
             managed_resident::stop_managed(std::path::Path::new(state_dir))
@@ -230,30 +234,36 @@ fn run() -> Result<(), String> {
             digest_flag,
             digest,
         ]
-            if command == "serve-managed"
+            if native_client_profile_resident::accepts(command, "serve-managed")
                 && state_flag == "--state-dir"
                 && generation_flag == "--generation"
                 && owner_flag == "--owner-process-id"
                 && digest_flag == "--runtime-sha256" =>
         {
+            let generation = managed_resident::parse_generation(generation)?;
+            native_client_profile_resident::configure(command, generation);
             managed_resident::serve_managed(
                 std::path::Path::new(state_dir),
-                managed_resident::parse_generation(generation)?,
+                generation,
                 managed_resident::parse_process_id(owner_process_id)?,
                 digest,
             )
         }
         [command, state_flag, state_dir, generation_flag, generation, digest_flag, digest]
-            if command == "supervise-managed"
+            if native_client_profile_resident::accepts(command, "supervise-managed")
                 && state_flag == "--state-dir"
                 && generation_flag == "--generation"
                 && digest_flag == "--runtime-sha256" =>
         {
-            managed_resident::supervise_managed(
+            native_client_profile_resident::configure(command, 0);
+            let result = managed_resident::supervise_managed(
                 std::path::Path::new(state_dir),
                 managed_resident::parse_generation(generation)?,
                 digest,
-            )
+            );
+            #[cfg(feature = "diagnostic-native-client")]
+            if command == "supervise-managed-profile" { native_client_profile_resident::drain(); }
+            result
         }
         [
             command,
@@ -266,18 +276,22 @@ fn run() -> Result<(), String> {
             digest_flag,
             digest,
         ]
-            if command == "supervise-managed"
+            if native_client_profile_resident::accepts(command, "supervise-managed")
                 && state_flag == "--state-dir"
                 && generation_flag == "--generation"
                 && owner_flag == "--owner-process-id"
                 && digest_flag == "--runtime-sha256" =>
         {
-            managed_resident::supervise_managed_for_owner(
+            native_client_profile_resident::configure(command, 0);
+            let result = managed_resident::supervise_managed_for_owner(
                 std::path::Path::new(state_dir),
                 managed_resident::parse_generation(generation)?,
                 digest,
                 managed_resident::parse_process_id(owner_process_id)?,
-            )
+            );
+            #[cfg(feature = "diagnostic-native-client")]
+            if command == "supervise-managed-profile" { native_client_profile_resident::drain(); }
+            result
         }
         _ => Err(
             "usage: hol-guard-runtime capabilities --json | rule-contract --json | self-test --json | hook --stdin | migrate-policy --state-dir STATE_DIR | prepare-approval-enrollment --state-dir STATE_DIR | enroll-approval-authority --state-dir STATE_DIR --record RECORD | prepare-approval-v4-enrollment --state-dir STATE_DIR --rp-id RP_ID --origin ORIGIN | enroll-approval-v4-authority --state-dir STATE_DIR --record RECORD | hook-client --stdin STATE_DIR | resident-client --stdin STATE_DIR | resident-client-stream --stdin STATE_DIR | command-model --stdin | pre-tool --stdin | serve --socket PATH | serve --tcp-loopback 127.0.0.1:PORT | resident-stop --state-dir STATE_DIR | serve-managed --state-dir STATE_DIR --generation N --owner-process-id PID --runtime-sha256 SHA | supervise-managed --state-dir STATE_DIR --generation N --owner-process-id PID --runtime-sha256 SHA"

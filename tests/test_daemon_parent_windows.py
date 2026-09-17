@@ -16,6 +16,8 @@ from codex_plugin_scanner.guard import native_policy_snapshot_windows_io as wind
 from codex_plugin_scanner.guard import native_policy_snapshot_windows_state as windows_state
 from codex_plugin_scanner.guard.daemon import discovery, discovery_windows, manager
 
+from .windows_failure_witness import WindowsParentWitness
+
 
 @pytest.mark.parametrize(
     "fault",
@@ -278,17 +280,23 @@ def test_windows_parent_provisioning_preserves_inherited_key_and_nested_child(tm
     objects = [(key_path, False), (nested, True), (child, False)]
     before = [_windows_child_snapshot(path, directory=directory) for path, directory in objects]
     parent_identity = _windows_child_snapshot(parent, directory=True)[0]
-    with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
-        api._windows_verify_private_file(key_path)
-    manager._ensure_private_directory(parent)
-    with discovery_windows._directory_binding(parent, verify_existing=True):
-        pass
-    assert _windows_child_snapshot(parent, directory=True)[0] == parent_identity
-    assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
-    assert discovery.ensure_daemon_discovery_key(parent) == "19" * 32
-    assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
-    with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
-        api._windows_verify_private_file(key_path)
+    witness = WindowsParentWitness(objects, before, _windows_child_snapshot)
+    with witness.failure_only():
+        witness.capture("before_key_verification")
+        with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
+            api._windows_verify_private_file(key_path)
+        witness.capture("after_key_verification")
+        manager._ensure_private_directory(parent)
+        witness.capture("after_manager")
+        with discovery_windows._directory_binding(parent, verify_existing=True):
+            pass
+        witness.capture("after_discovery_binding")
+        assert _windows_child_snapshot(parent, directory=True)[0] == parent_identity
+        assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
+        assert discovery.ensure_daemon_discovery_key(parent) == "19" * 32
+        assert [_windows_child_snapshot(path, directory=directory) for path, directory in objects] == before
+        with pytest.raises(api.NativePolicySnapshotError, match="acl_not_private"):
+            api._windows_verify_private_file(key_path)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="actual Windows existing-parent bootstrap publication")

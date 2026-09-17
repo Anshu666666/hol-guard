@@ -35,6 +35,14 @@ pub fn spawn_managed_child(executable: &Path, args: &[&OsStr]) -> io::Result<Man
     windows::spawn_managed_child(executable, args)
 }
 
+#[cfg(all(windows, feature = "diagnostic-native-client"))]
+pub fn spawn_managed_child_with_stderr(
+    executable: &Path,
+    args: &[&OsStr],
+) -> io::Result<ManagedChild> {
+    windows::spawn_managed_child_with_stderr(executable, args)
+}
+
 #[cfg(not(windows))]
 pub struct ManagedChild;
 

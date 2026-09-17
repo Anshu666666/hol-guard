@@ -25,6 +25,7 @@ TARGETS = {
 }
 FEATURE = "diagnostic-native-client"
 CAPABILITY = "native-client-profile-v1"
+RESIDENT_CAPABILITY = "native-resident-profile-v1"
 
 
 def _run(argv: list[str], *, environment: dict[str, str] | None = None) -> str:
@@ -45,6 +46,7 @@ def _validate_capabilities(value: object, source_sha: str, target: str) -> str:
         or not isinstance(features, list)
         or not all(isinstance(feature, str) for feature in features)
         or features.count(CAPABILITY) != 1
+        or features.count(RESIDENT_CAPABILITY) != 1
         or not isinstance(rule_digest, str)
         or re.fullmatch(r"[0-9a-f]{64}", rule_digest) is None
     ):

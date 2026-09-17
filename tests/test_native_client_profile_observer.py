@@ -31,7 +31,7 @@ def test_module_local_command_change_and_exact_request_result(monkeypatch):
     requested = Mock(return_value=output)
     spawned = Mock(
         return_value=SimpleNamespace(
-            stderr=io.BytesIO(json.dumps(record(digest=hashlib.sha256(payload).hexdigest())).encode() + b"\n")
+            pid=111, stderr=io.BytesIO(json.dumps(record(digest=hashlib.sha256(payload).hexdigest())).encode() + b"\n")
         )
     )
     original_module = native_resident_stream.subprocess

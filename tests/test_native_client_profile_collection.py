@@ -12,7 +12,7 @@ from scripts import native_slo_session
 from scripts.ci import measure_native_client_profile as collector
 from scripts.native_client_profile_records import PHASES
 from scripts.native_client_profile_report import IDENTITY_HASHES, validate_report
-from tests.native_client_profile_support import record
+from tests.native_client_profile_support import record, resident_record
 
 SHA = "a" * 40
 
@@ -27,13 +27,16 @@ def identity():
     }
 
 
-def inject_worker(monkeypatch, *, cleanup="already-stopped", missing_phase=None, total=70, wrong_route=False):
+def inject_worker(
+    monkeypatch, *, cleanup="already-stopped", missing_phase=None, total=70, wrong_route=False, resident_failure=None
+):
     profiles = []
 
     class Observer:
         def __init__(self, *_args):
             self.requests = []
             self.records = profiles
+            self.resident_records = []
             self.spawns = 1
             self.failure = False
 
@@ -43,6 +46,10 @@ def inject_worker(monkeypatch, *, cleanup="already-stopped", missing_phase=None,
         def __exit__(self, *_args):
             pass
 
+        def validate_resident_capture(self):
+            if resident_failure == "relay":
+                raise ValueError("native_client_profile_invalid")
+
         def request_profile(self, _before):
             value = record(sequence=len(profiles) + 1)
             value["helper_request_nanoseconds"] = total
@@ -50,6 +57,19 @@ def inject_worker(monkeypatch, *, cleanup="already-stopped", missing_phase=None,
                 value["phases"][missing_phase] = {"calls": 0, "succeeded": 0, "nanoseconds": None}
             profiles.append(value)
             return {"helper": 1, "profile": value}
+
+        def resident_profile(self, digest):
+            if resident_failure == "missing":
+                raise ValueError("native_client_profile_invalid")
+            value = resident_record(digest=digest, sequence=len(self.resident_records) + 1)
+            if resident_failure == "no_edge":
+                value["edge_evaluation"] = {"calls": 0, "succeeded": 0, "nanoseconds": None}
+            elif resident_failure == "overflow":
+                value["overflow"] = True
+            elif resident_failure == "rejected":
+                value["outcome"] = "rejected"
+            self.resident_records.append(value)
+            return {"helper": 1, "resident_profile": value}
 
     class Session:
         def __init__(self, *_args, **_kwargs):
@@ -94,6 +114,8 @@ def test_complete_collection_preserves_actual_routes_and_phase_values(tmp_path, 
     calls = inject_worker(monkeypatch)
     value = collector.worker(wheel=Path("fixture.whl"), source_sha=SHA, private=tmp_path, count=1)
     assert value["collection_complete"] and len(calls) == 2
+    assert value["evaluation_isolated"] is True and value["resident_records"] == 2
+    assert value["resident_profiles"]["benign"]["edge_evaluation_ms"]["p50_ms"] == 0.0
     assert validate_report(value, 2, SHA) == value
     assert value["profiles"]["credential_fixture"]["phases"]["response_read"]["duration_ms"]["count"] == 1
     rows = [json.loads(line) for line in (tmp_path / "attempts.jsonl").read_text().splitlines()]
@@ -103,6 +125,16 @@ def test_complete_collection_preserves_actual_routes_and_phase_values(tmp_path, 
         for row in rows
         if row["status"] == "completed"
     )
+
+
+@pytest.mark.parametrize("failure", ["missing", "no_edge", "overflow", "rejected"])
+def test_client_success_cannot_hide_missing_or_failed_resident_span(tmp_path, monkeypatch, failure):
+    tmp_path.chmod(0o700)
+    calls = inject_worker(monkeypatch, resident_failure=failure)
+    value = collector.worker(wheel=Path("fixture.whl"), source_sha=SHA, private=tmp_path, count=1)
+    assert len(calls) == 1 and not value["collection_complete"]
+    assert value["failed"] == 1 and value["completed"] == 0 and value["evaluation_isolated"] is False
+    assert validate_report(value, 2, SHA) == value
 
 
 @pytest.mark.parametrize("missing", ["connect", "authentication", "request_write", "response_read", "total", "route"])
@@ -128,6 +160,41 @@ def test_fixture_cleanup_failure_keeps_completed_requests_but_fails_collection(t
     assert not value["collection_complete"] and value["completed"] == 2 and value["failed"] == 0
     assert value["stage"] == "fixture_closed"
     assert validate_report(value, 2, SHA) == value
+
+
+def test_missing_relay_terminal_keeps_completed_spans_but_rejects_complete_capture(tmp_path, monkeypatch):
+    tmp_path.chmod(0o700)
+    inject_worker(monkeypatch, resident_failure="relay")
+    value = collector.worker(wheel=Path("fixture.whl"), source_sha=SHA, private=tmp_path, count=1)
+    assert value["completed"] == 2 and value["failed"] == 0
+    assert not value["collection_complete"] and not value["resident_capture_complete"]
+    assert not value["evaluation_isolated"]
+    assert validate_report(value, 2, SHA) == value
+
+
+def test_outer_containment_failure_cannot_keep_worker_complete_attribution(tmp_path, monkeypatch):
+    private_worker = tmp_path / "worker"
+    private_worker.mkdir(mode=0o700)
+    inject_worker(monkeypatch)
+    report = collector.worker(wheel=Path("fixture.whl"), source_sha=SHA, private=private_worker, count=1)
+    monkeypatch.setattr(
+        codex_hook_launch_runtime,
+        "run_isolated_hook_process",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(report),
+            stderr="",
+            timed_out=False,
+            containment_failed=True,
+            output_limit_exceeded=False,
+        ),
+    )
+    value = collector.run(
+        wheel=Path("fixture.whl"), source_sha=SHA, private=tmp_path / "private", output=tmp_path / "public", count=1
+    )
+    assert value["completed"] == 2 and value["worker_summary_available"]
+    assert not value["collection_complete"] and not value["evaluation_isolated"]
+    assert not value["resident_capture_complete"]
 
 
 @pytest.mark.parametrize("change", ["extra", "boolean_count", "fake_complete", "unknown_phase", "source", "cleanup"])

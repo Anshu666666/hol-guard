@@ -94,3 +94,56 @@ neighboring helpers remain unclassified. The existence check does not admit a
 key or establish private ancestry: the producer still verifies and retains its
 parent binding. The exception is imported from its defining constants module,
 preserving its exact class identity while making ownership analysis explicit.
+
+## Ninth attempt and later test diagnostics
+
+The ninth published head was `d33f64d5fb86a3f2baa6848382ce763e2ed9fc59`;
+GitHub tested merge `009c7253ce2e132bffaea837b23b0a36b9bc16c2`, whose tree
+matched the published tree. In installed Claude
+[run 35275855558, attempt 1](https://github.com/hashgraph-online/hol-guard/actions/runs/35275855558/attempts/1),
+all five Windows jobs (`105386195483`, `105386195442`, `105386195367`,
+`105386195341`, `105386195589`) again failed the original first child-snapshot
+comparison: each reported **107 passed, 6 skipped, 1 failed**. These jobs offered
+none of their 440 planned launcher requests. The `NtSetSecurityObject` source
+change therefore has not demonstrated child preservation.
+
+The direct key and nested directory retained file identities, owner/group SID
+bytes and their existing file contents where applicable. The key's ACE flags
+changed from `0x10` to `0x00`, and the nested directory's from `0x13` to `0x03`;
+their descriptor control changed from `0x8004` to `0x9004`. The grandchild's
+snapshot was unchanged. These are observations from the existing
+`GetSecurityInfo` snapshots; they do not identify the operation responsible or
+establish whether a stored-descriptor change, read side effect or representation
+difference explains the failure. No assertion was normalized or waived.
+
+Separately, ninth Main
+[Windows job 105386195146](https://github.com/hashgraph-online/hol-guard/actions/runs/35275855362/job/105386195146)
+passed its cross-platform suite (246 passed, 5 skipped) and Codex bridge smoke
+(2 passed, 14 deselected), then failed the packaged bootstrap regression
+(`1 failed in 30.80s`). Initial bootstrap, the first running-status assertion and
+the first stop passed; the second bootstrap returned the expected schema, but
+its original status reported `running=false`. That attempt did not retain the
+other status fields. It supplies no evidence connecting this separate failure
+to child security, and it does not replace the historical eighth bootstrap pass.
+
+Later test-only commit `9987ab0ea2ac8728e1b10fadf89e1bec04d8212b` preserves
+every original assertion, product call and stopping point. It adds four fixed
+observation stages—before key verification, after key verification, after manager
+provisioning and after discovery binding—for the three fixed children. Each
+stage brackets an added `GetSecurityInfo` snapshot with the documented
+[NtQuerySecurityObject](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntquerysecurityobject)
+read: one 65,536-byte buffer per query, owner/group/DACL only, exact successful
+status, no retry and handle closure on every outcome. At most 12 finite rows
+retain equality predicates, control/revision, ACE flags/counts and query status;
+descriptor bytes, SIDs, contents and paths stay local. Whole-descriptor byte
+inequality alone is not an access-change finding. Missing, invalid and over-cap
+observations remain explicit unknowns.
+
+Both witnesses emit only on the original failure and preserve that exception
+even if emission fails. The packaged test projects only its already-returned
+retry-status object into fixed booleans and closed lifecycle labels; it adds no
+status request, wait, deadline change or retry. Local source validation reported
+107 passed and 7 platform skips, with Ruff check/format and unchanged-original-
+assertion AST checks passing. **These added diagnostics have not executed on
+Windows.** They change no production setter, establish no failure cause and
+provide no new performance or platform qualification evidence.

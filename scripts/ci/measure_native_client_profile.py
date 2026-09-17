@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 from scripts.native_client_profile_observer import ClientObserver  # noqa: E402
 from scripts.native_client_profile_records import PHASES, Journal, require  # noqa: E402
 from scripts.native_client_profile_report import validate_report  # noqa: E402
+from scripts.native_client_profile_resident import require_evaluated, summarize_resident_profiles  # noqa: E402
 from scripts.native_slo_artifact import (  # noqa: E402
     assert_installed_import_origin,
     installed_package_digest,
@@ -46,6 +47,7 @@ def installed_identity(wheel: Path, source_sha: str) -> tuple[Path, dict[str, An
     require(identity is not None and capabilities is not None)
     assert identity is not None and capabilities is not None
     require(capabilities.build_sha == source_sha and list(capabilities.features).count("native-client-profile-v1") == 1)
+    require(list(capabilities.features).count("native-resident-profile-v1") == 1)
     require(identity.path == native_runtime._bundled_runtime_candidate().resolve(strict=True))
     return identity.path, {
         "build_sha": source_sha,
@@ -62,6 +64,9 @@ def installed_identity(wheel: Path, source_sha: str) -> tuple[Path, dict[str, An
         ).hexdigest(),
         "records_sha256": hashlib.sha256((ROOT / "scripts/native_client_profile_records.py").read_bytes()).hexdigest(),
         "report_sha256": hashlib.sha256((ROOT / "scripts/native_client_profile_report.py").read_bytes()).hexdigest(),
+        "resident_profile_sha256": hashlib.sha256(
+            (ROOT / "scripts/native_client_profile_resident.py").read_bytes()
+        ).hexdigest(),
         "lock_sha256": hashlib.sha256((ROOT / "uv.lock").read_bytes()).hexdigest(),
     }
 
@@ -102,7 +107,7 @@ def worker(*, wheel: Path, source_sha: str, private: Path, count: int) -> dict[s
     from scripts.native_slo_workloads import configuration_text
 
     report: dict[str, Any] = {
-        "schema": "hol-guard.native-client-profile-collection.v1",
+        "schema": "hol-guard.native-client-profile-collection.v2",
         "collection_complete": False,
         "qualification_complete": False,
         "production_selected": False,
@@ -113,8 +118,10 @@ def worker(*, wheel: Path, source_sha: str, private: Path, count: int) -> dict[s
         "stage": "identity",
         "span_semantics": "inclusive_do_not_sum",
         "evaluation_isolated": False,
+        "evaluation_scope": "resident_edge_snapshot_fence_evaluate_receipt_encode",
         "resource_comparison_measured": False,
         "normal_release_runtime_measured": False,
+        "resident_capture_complete": False,
         "request_cases": ["claude_code_post_benign", "claude_code_post_credential_fixture"],
         "socket_count_scope": "helper_to_resident_successful_opens_failed_connects_incomplete",
     }
@@ -172,7 +179,11 @@ def worker(*, wheel: Path, source_sha: str, private: Path, count: int) -> dict[s
                                         for p in ("connect", "authentication", "request_write", "response_read")
                                     )
                                 )
-                                completed.append({"case": case, "profile": profile})
+                                resident = observer.resident_profile(profile["request_sha256"])
+                                require_evaluated(resident["resident_profile"])
+                                completed.append(
+                                    {"case": case, "profile": profile, "resident_profile": resident["resident_profile"]}
+                                )
                                 entry.update(
                                     status="completed",
                                     helper=matched["helper"],
@@ -183,6 +194,10 @@ def worker(*, wheel: Path, source_sha: str, private: Path, count: int) -> dict[s
                                     edge_sha256=hashlib.sha256(
                                         json.dumps(edge, sort_keys=True, separators=(",", ":")).encode()
                                     ).hexdigest(),
+                                    resident_process_id=resident["resident_profile"]["process_id"],
+                                    resident_generation=resident["resident_profile"]["generation"],
+                                    resident_sequence=resident["resident_profile"]["sequence"],
+                                    resident_helper=resident["helper"],
                                 )
                                 report["completed"] += 1
                             except BaseException:
@@ -201,15 +216,20 @@ def worker(*, wheel: Path, source_sha: str, private: Path, count: int) -> dict[s
                 require(cleanup in {"contained", "already-stopped"})
             report["helpers"] = observer.spawns
             report["native_records"] = len(observer.records)
+            report["resident_records"] = len(observer.resident_records)
+            observer.validate_resident_capture()
+            report["resident_capture_complete"] = True
             require(not observer.failure)
         _, after = installed_identity(wheel, source_sha)
         require(after == identity)
         report["collection_complete"] = len(completed) == 2 * count
+        report["evaluation_isolated"] = report["collection_complete"]
         report["stage"] = "complete"
     except Exception:
         report["failure"] = "diagnostic_collection_incomplete"
     report["uncompleted"] = report["planned"] - report["completed"]
     report["profiles"] = summarize_profiles(completed)
+    report["resident_profiles"] = summarize_resident_profiles(completed)
     return report
 
 
@@ -233,7 +253,7 @@ def run(*, wheel: Path, source_sha: str, private: Path, output: Path, count: int
     environment.pop("PYTHONPATH", None)
     environment.pop("PYTHONHOME", None)
     report: dict[str, Any] = {
-        "schema": "hol-guard.native-client-profile-collection.v1",
+        "schema": "hol-guard.native-client-profile-collection.v2",
         "collection_complete": False,
         "qualification_complete": False,
         "production_selected": False,
@@ -288,6 +308,8 @@ def run(*, wheel: Path, source_sha: str, private: Path, output: Path, count: int
         report = {**value, **flags, "worker_summary_available": True}
         if result.returncode != 0 or result.timed_out or result.containment_failed or result.output_limit_exceeded:
             report["collection_complete"] = False
+            report["evaluation_isolated"] = False
+            report["resident_capture_complete"] = False
     except Exception:
         report["failure"] = "diagnostic_worker_incomplete"
     require(assert_privacy_safe(report) == report)
@@ -321,7 +343,7 @@ def main() -> int:
         # Fixed failure shape only; filesystem and environment errors may carry
         # private paths. Existing partial files remain for the always-run seal.
         report = {
-            "schema": "hol-guard.native-client-profile-collection.v1",
+            "schema": "hol-guard.native-client-profile-collection.v2",
             "collection_complete": False,
             "qualification_complete": False,
             "production_selected": False,

@@ -15,6 +15,7 @@ from typing import cast
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_daemon_fixture import DaemonFixture
 from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_identity_cold_run import measure_cold_identity
 from scripts.native_slo_identity_run import measure_evaluated_identity
 from scripts.native_slo_launcher_corpus import run_registered_approval_corpus
 from scripts.native_slo_launcher_input import run_registered_input_corpus
@@ -103,6 +104,14 @@ def run_additional_scenarios(
         with DaemonFixture(runtime, setup="normal") as session:
             return measure_evaluated_identity(session, raw_file.with_name(raw_file.stem + "-identity-cases.jsonl"))
 
+    def cold_identity() -> dict[str, object]:
+        return measure_cold_identity(
+            runtime,
+            raw_file.with_name(raw_file.stem + "-identity-cold-cases.jsonl"),
+            raw_file.with_name(raw_file.stem + "-identity-cold-observer.jsonl"),
+            {key: runtime_identity.get(key) for key in ("build_sha", "runtime_sha256", "installed_package_sha256")},
+        )
+
     def raw_utf8() -> dict[str, object]:
         with DaemonFixture(runtime, setup="normal") as session:
             return run_registered_utf8_observation(
@@ -137,6 +146,11 @@ def run_additional_scenarios(
             identity,
             evidence_file=raw_file.with_name(raw_file.stem + "-identity-summary.json"),
             scope="prepared_resident_first_hook_and_warm",
+        ),
+        "runtime_identity_cold": _retained_scenario(
+            cold_identity,
+            evidence_file=raw_file.with_name(raw_file.stem + "-identity-cold-summary.json"),
+            scope="fresh_process_preparation_first_hook_and_warm",
         ),
         "priority_input": _retained_scenario(
             inputs,

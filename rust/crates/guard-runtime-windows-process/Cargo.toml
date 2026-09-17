@@ -9,6 +9,10 @@ rust-version.workspace = true
 name = "guard_runtime_windows_process"
 path = "src/lib.rs"
 
+[features]
+default = []
+diagnostic-native-client = []
+
 [target.'cfg(windows)'.dependencies]
 winapi = { workspace = true, features = [
     "errhandlingapi",

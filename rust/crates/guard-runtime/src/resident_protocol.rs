@@ -95,6 +95,8 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
     features.push("claude-launcher-pilot-v1".into());
     #[cfg(feature = "diagnostic-native-client")]
     features.push("native-client-profile-v1".into());
+    #[cfg(feature = "diagnostic-native-client")]
+    features.push("native-resident-profile-v1".into());
     RuntimeCapabilitiesV1 {
         protocol_version: NATIVE_PROTOCOL_VERSION,
         runtime_version: crate::PACKAGE_VERSION.to_owned(),
@@ -157,7 +159,9 @@ pub(crate) fn evaluate_resident_bytes_started(
         ResidentRequestV1::Edge(request) => {
             let policy_store =
                 policy_store.ok_or_else(|| "native_policy_snapshot_unavailable".to_owned())?;
-            crate::edge::evaluate_envelope_with_store_started(request, policy_store, started_at)
+            crate::native_client_profile_resident::edge(|| {
+                crate::edge::evaluate_envelope_with_store_started(request, policy_store, started_at)
+            })
         }
         ResidentRequestV1::Operation(request) => match *request {
             ResidentOperationV1::CommandModel(request) => {

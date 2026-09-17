@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
@@ -106,6 +107,7 @@ def _run_hook_copilot_pretool(
     fresh_tool_call_authority_provider: (
         Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None
     ) = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> int | None:
     if copilot_runtime_tool_call is None or copilot_hook_stage != "pretooluse":
         return None
@@ -150,6 +152,7 @@ def _run_hook_copilot_pretool(
             risk_summary=decision.summary,
             scanner_evidence=decision_scanner_evidence,
             store=store,
+            config_reader=config_reader,
         )
     # Copilot review/reapproval continues to PermissionRequest, which owns that
     # activity. PreToolUse records only decisions that terminate at this stage.
@@ -254,6 +257,7 @@ def _run_hook_copilot_permission_request(
     fresh_tool_call_authority_provider: (
         Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None
     ) = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> int | None:
     if copilot_permission_request is None:
         return None
@@ -343,6 +347,7 @@ def _run_hook_copilot_permission_request(
             risk_summary=decision.summary,
             scanner_evidence=decision_scanner_evidence,
             store=store,
+            config_reader=config_reader,
         )
     if policy_action in {"allow", "warn"}:
         receipt = allow_tool_call(
@@ -486,6 +491,7 @@ def _run_hook_copilot_permission_request(
             store=store,
             approval_center_url=approval_center_url,
             now=now,
+            config_reader=config_reader,
         )
         _bind_hook_blocked_operation_queue(
             harness=args.harness,

@@ -1,0 +1,74 @@
+[
+  {
+    "name": "boundary-and-remote",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_guard_config_source_io.py",
+      "tests/test_daemon_config_read_scope.py",
+      "tests/test_native_policy_input_reconciliation.py",
+      "tests/test_daemon_remote_config_reader.py",
+      "tests/test_guard_command_queue.py",
+      "tests/test_guard_command_queue_stale_pending_result.py",
+      "--basetemp=/tmp/hol-guard-scope-final-boundary"
+    ],
+    "exit_code": 0,
+    "seconds": 22.149,
+    "bytes": 192,
+    "sha256": "a17beaac8123e9a0d2130cb99e458375bf761d69baa8fce5b96d913035c2543c"
+  },
+  {
+    "name": "server-paths",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_guard_surface_server.py",
+      "-k",
+      "workspace or guard_home or hook_endpoint_rejects",
+      "--basetemp=/tmp/hol-guard-scope-final-server"
+    ],
+    "exit_code": 0,
+    "seconds": 66.558,
+    "bytes": 127,
+    "sha256": "6677c3449e92d4fbca97049cbca97097e7279be556e767e6b96d599f611d4219"
+  },
+  {
+    "name": "ownership",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_rust_io_ownership_gate.py",
+      "tests/test_hook_data_plane_ownership_gate.py",
+      "--basetemp=/tmp/hol-guard-scope-final-ownership"
+    ],
+    "exit_code": 1,
+    "seconds": 68.209,
+    "bytes": 4149,
+    "sha256": "0a33b7a9a017ed0ddd4751167fece787dedbd007e5006d9af65e450b457db725"
+  },
+  {
+    "name": "production-types",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/basedpyright",
+      "src",
+      "--outputjson"
+    ],
+    "exit_code": 0,
+    "seconds": 150.178,
+    "bytes": 12347454,
+    "sha256": "bf74859d4cd3ed06976745fad4fd4ff525d3a8e6cf6596cf9ca8523f2d5b4aee",
+    "summary": {
+      "filesAnalyzed": 1255,
+      "errorCount": 0,
+      "warningCount": 20241,
+      "informationCount": 0,
+      "timeInSec": 147.878
+    }
+  }
+]

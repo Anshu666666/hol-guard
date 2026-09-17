@@ -3,7 +3,7 @@
   "reviewed_date": "2026-09-17",
   "target_branch": "release/3.2",
   "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
-  "implementation_tree_before_documentation": "1061f304970555b48682fb1b475c0a67022a4e62",
+  "implementation_tree_before_documentation": "591d5c81e6bb341c6c3271332f3a6615a01bc748",
   "qualification_complete": false,
   "status_policy": "DONE means the exact task acceptance has evidence of the required kind; specification, implementation, component measurements and tests do not establish dependent installed/platform/release qualification. OPEN includes active or implemented work with remaining acceptance. BLOCKED identifies a required dependency, artifact, review or selected implementation that is unavailable. DEFERRED is permitted for a conditional migration when scoped measurements and the original PRD decision rule justify retaining the current implementation; an unbuilt native pilot is not an automatic prerequisite for that decision. Unmeasured large workloads, predicted gains without sufficient evidence, and active comparisons remain OPEN or BLOCKED. No native activation is implied by a completed selection/profiling task. Original id, number, title, acceptance and dependency fields remain unchanged. A DONE task does not satisfy its outstanding dependencies; those are reported separately in dependency_audit.",
   "tasks": [
@@ -14,7 +14,7 @@
       "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
       "dependencies": [],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Baseline 2e and current source 1061f304970555b48682fb1b475c0a67022a4e62 are pinned on isolated docs branch rsp-config-execution-20260917. Published 9db has Git tree 47ba580366672b3b92cb46e6bb1d19c670444e94; paired wheels build 9db and native-wheel artifacts attest test-merge c9859a5b5d04526fa7e663d7c494e442ee4298c4 with that same tree. Exact records retain all 53 JSON members, five wheel hashes and 207 check attempts. New integrated source/signing/frozen artifacts and full qualification remain required.",
+      "evidence_or_remaining_work": "Baseline 2e and local source 591d5c81e6bb341c6c3271332f3a6615a01bc748 are pinned; the latter has retained scoped-source validation but publication/fresh hosted analysis remain pending. Published 9db has Git tree 47ba580366672b3b92cb46e6bb1d19c670444e94; paired wheels build 9db and native-wheel artifacts attest test-merge c9859a5b5d04526fa7e663d7c494e442ee4298c4 with that same tree. Exact records retain all 53 JSON members, five wheel hashes and 207 check attempts. New integrated source/signing/frozen artifacts and full qualification remain required.",
       "evidence_refs": [
         "contract",
         "qualification",
@@ -24,7 +24,8 @@
         "retained_ci_abf",
         "reproducibility",
         "retained_ci_9db",
-        "9db_check_inventory"
+        "9db_check_inventory",
+        "config_scoped_validation"
       ],
       "original_dependencies": "None."
     },
@@ -1722,7 +1723,7 @@
         "RSP-099"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "E private owned preparation is implemented and measured: 64 cells/32 pairs, 1108 forwards; 554 E admissions/derivations/completions/bound writes, zero selected failure/fallback in timed scope. 119 source tests include 96 full-authority cases; 3008 public-oracle cases remain separate. General activation is rejected: large shapes miss 30%, blocks regress and memory grows; positive 1 KiB/128 KiB observations remain. Default B still derives categories twice; package/unsupported/busy paths also use B. RSP-100 remains OPEN, not an unattempted design. Later independent review finds E selects its protected writer from mutable method text; the initial F fork demonstrates changed-method forwarding and a hostile callback. Historical selected E evidence remains unchanged, not universal mutation proof. Corrected inactive F has 44 source tests and finite review, no route campaign or activation.",
+      "evidence_or_remaining_work": "E private owned preparation is implemented and measured: 64 cells/32 pairs, 1108 forwards; 554 E admissions/derivations/completions/bound writes, zero selected failure/fallback in timed scope. 119 source tests include 96 full-authority cases; 3008 public-oracle cases remain separate. General activation is rejected: large shapes miss 30%, blocks regress and memory grows; positive 1 KiB/128 KiB observations remain. Default B still derives categories twice; package/unsupported/busy paths also use B. RSP-100 remains OPEN, not an unattempted design. Later independent review finds E selects its protected writer from mutable method text; the initial F fork demonstrates changed-method forwarding and a hostile callback. Historical selected E evidence remains unchanged, not universal mutation proof. Corrected F has 44 source tests and finite review. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation.",
       "evidence_refs": [
         "mcp",
         "mcp_exact_facts",
@@ -1731,7 +1732,10 @@
         "mcp_ownership",
         "mcp_owned_preparation",
         "mcp_streaming_boundary",
-        "mcp_streaming_source_evidence"
+        "mcp_streaming_source_evidence",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence"
       ],
       "original_dependencies": "RSP-099."
     },
@@ -1778,7 +1782,7 @@
         "RSP-102"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Completed B/C/D/native and now E source-proxy comparisons measure actual overhead, phase costs and memory. E retains 64 cells/32 pairs with five alternating blocks plus 14 profiles; tree CPU covers cold+warm proxy/server work and warm client p95 is separate. Deliberate 5 ms wait is included in the route, not claimed as compute savings. Large ownership allocations and shared-host attribution limits remain. This is complete bounded measurement, not installed/all-platform or RSP-100 production completion. Later E selector review and corrected F source tests are separate from these unchanged measurements; F has not been rebaselined.",
+      "evidence_or_remaining_work": "Completed B/C/D/native and now E source-proxy comparisons measure actual overhead, phase costs and memory. E retains 64 cells/32 pairs with five alternating blocks plus 14 profiles; tree CPU covers cold+warm proxy/server work and warm client p95 is separate. Deliberate 5 ms wait is included in the route, not claimed as compute savings. Large ownership allocations and shared-host attribution limits remain. This is complete bounded measurement, not installed/all-platform or RSP-100 production completion. Later E selector review and corrected F source tests are separate from these unchanged measurements; F run1 is now a stopped comparison, not a complete rebaseline. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation.",
       "evidence_refs": [
         "mcp",
         "mcp_exact_facts",
@@ -1787,7 +1791,10 @@
         "mcp_ownership",
         "mcp_owned_preparation",
         "mcp_streaming_boundary",
-        "mcp_streaming_source_evidence"
+        "mcp_streaming_source_evidence",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence"
       ],
       "original_dependencies": "RSP-100,RSP-101,RSP-102."
     },
@@ -1866,14 +1873,16 @@
         "RSP-107"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Completed B/C/D/native/E measurements do not justify a full proxy rewrite or general E activation. Retain B and the separate OPEN RSP-100 acceptance; E is a completed private implementation/selection attempt with positive narrow observations and broader regressions. Future whole-proxy migration still requires a separate ADR and complete protocol/rollout scope. No rewrite or whole-program qualification is claimed. The newly found E method-selector gap further limits its tested safety scope; corrected F remains a separate source-only inactive candidate without a campaign.",
+      "evidence_or_remaining_work": "Completed B/C/D/native/E measurements do not justify a full proxy rewrite or general E activation. Retain B and the separate OPEN RSP-100 acceptance; E is a completed private implementation/selection attempt with positive narrow observations and broader regressions. Future whole-proxy migration still requires a separate ADR and complete protocol/rollout scope. No rewrite or whole-program qualification is claimed. The newly found E method-selector gap further limits its tested safety scope; corrected F remains inactive after run1 stopped with 19 completed/one failed/44 never-attempted cells. Its partial cohort supplies no full rewrite, selection or qualification gate; failed forwarding and EOF cause remain unresolved.",
       "evidence_refs": [
         "mcp",
         "mcp_native_text",
         "mcp_ownership",
         "mcp_owned_preparation",
         "mcp_streaming_boundary",
-        "mcp_streaming_source_evidence"
+        "mcp_streaming_source_evidence",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence"
       ],
       "original_dependencies": "RSP-107."
     },
@@ -2344,7 +2353,7 @@
         "RSP-133"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Combined d4e13547f validation passes 317 tests in 52.59 seconds, 26-file Ruff/format and unfiltered 1253 production-file type analysis with zero errors/20,232 nonfatal warnings (149.889 tool seconds). Workflow-policy, authority, semantic and I/O ownership gates pass. This predates the CodeQL root-checkout correction, whose separate 134 tests/lint/type/policy pass. Earlier component and 317-test populations overlap and are not additive; old bbe/proof failures remain attached to their own sources. Final selected source, security and hosted qualification remain open. Later config-reader validation passes 67/one actual-Windows skip; foundation application separately passes 67/one skip; overlapping publisher validation passes 88/one skip, five-file Ruff/format and three-file types zero errors/80 warnings. No combined full-source or Windows/hosted result is inferred. Separate corrected F passes 44 focused tests/11.39 seconds and finite source review; historical E and F counts overlap, and no F campaign or whole-source gate is claimed. Config-integrated 5da production types pass 1254 files/zero errors/20236 warnings and authority/semantic checks pass; initial I/O ownership fails 15 unclassified reader sites. The retained correction adds six exact function/primitive classifications and exact-path protection; 46 gate tests/99.32s pass including actual inventory and negative cases, static checks/one contract type file 0 errors/warnings and finite review clear. Product source is unchanged; initial failure and separate overlapping test populations remain.",
+      "evidence_or_remaining_work": "Combined d4e13547f validation passes 317 tests in 52.59 seconds, 26-file Ruff/format and unfiltered 1253 production-file type analysis with zero errors/20,232 nonfatal warnings (149.889 tool seconds). Workflow-policy, authority, semantic and I/O ownership gates pass. This predates the CodeQL root-checkout correction, whose separate 134 tests/lint/type/policy pass. Earlier component and 317-test populations overlap and are not additive; old bbe/proof failures remain attached to their own sources. Final selected source, security and hosted qualification remain open. Later config-reader validation passes 67/one actual-Windows skip; foundation application separately passes 67/one skip; overlapping publisher validation passes 88/one skip, five-file Ruff/format and three-file types zero errors/80 warnings. No combined full-source or Windows/hosted result is inferred. Separate corrected F passes 44 focused tests/11.39 seconds and finite source review; historical E and F counts overlap, and no whole-source gate follows from that historical F source gate. Config-integrated 5da production types pass 1254 files/zero errors/20236 warnings and authority/semantic checks pass; initial I/O ownership fails 15 unclassified reader sites. The retained correction adds six exact function/primitive classifications and exact-path protection; 46 gate tests/99.32s pass including actual inventory and negative cases, static checks/one contract type file 0 errors/warnings and finite review clear. Product source is unchanged; initial failure and separate overlapping test populations remain. Final scoped-source receipt binds 591d5c81 and 44 artifacts (919,643 stored bytes), manifest SHA-256 a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93. Boundary/remote: 137 passed/one skipped. Server: 12 passed/one skipped/102 deselected. Initial ownership: 46 passed/one failed on exported tomllib-helper classification; corrected actual inventory: one passed; after parser extraction, config/source/reconciliation: 98 passed/one skipped. Native authority and Python semantic gates pass; workflow permission tests: 82 passed. Full typing before the two-file parser extraction: 1,255 production files, zero errors/20,241 warnings. Final two production and two gate files: zero errors/68 warnings; inverse reconstruction proves the other 1,253 production files unchanged. Counts overlap, not a grand total. Initial test/lint failures, 180-second lock timeout and wrong pytest path with no test execution, and initial whitespace-check output remain retained. No hosted or installed qualification.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2376,7 +2385,11 @@
         "config_publisher_validation",
         "mcp_streaming_boundary",
         "mcp_streaming_source_evidence",
-        "config_integrated_validation"
+        "config_integrated_validation",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence",
+        "config_scoped_validation"
       ],
       "original_dependencies": "RSP-133; all selected implementation tasks."
     },
@@ -2511,7 +2524,7 @@
         "RSP-138"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All 53 9db JSON members retain decoded values and ZIP/original/retained identities, with eight canonical scanner/build records. E preserves 64 complete cells and its initial zero-cell export failure; timed public traces are not every private authority field. Source reviews and bounded hash-only diagnostics retain exact failures without raw request/output data. Sonar 42-findings review and CodeQL data-role/legacy limits do not imply a clean new external gate. Final new-head export privacy remains open. Six original CodeQL ZIPs and twelve decoded JSON members were inspected and retained with exact hashes; findings preserve actual data-role and inherited legacy-verifier limits. Exclusive first-run pinned-source extraction was not proved. Actual PR-reference alert IDs and exact sink-source correlations are now retained without raw credentials or a false closed-gate claim. E method-selector counterexamples and corrected F source tests remain separately scoped; historical E raw bytes are unchanged and no F campaign/activation is inferred.",
+      "evidence_or_remaining_work": "All 53 9db JSON members retain decoded values and ZIP/original/retained identities, with eight canonical scanner/build records. E preserves 64 complete cells and its initial zero-cell export failure; timed public traces are not every private authority field. Source reviews and bounded hash-only diagnostics retain exact failures without raw request/output data. Sonar 42-findings review and CodeQL data-role/legacy limits do not imply a clean new external gate. Final new-head export privacy remains open. Six original CodeQL ZIPs and twelve decoded JSON members were inspected and retained with exact hashes; findings preserve actual data-role and inherited legacy-verifier limits. Exclusive first-run pinned-source extraction was not proved. Actual PR-reference alert IDs and exact sink-source correlations are now retained without raw credentials or a false closed-gate claim. E method-selector counterexamples and corrected F source tests remain separately scoped; historical E raw bytes are unchanged. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation. The scoped-config source receipt retains original failures and compressed logs with exact original hashes; fresh external gates remain pending.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2543,7 +2556,11 @@
         "config_publisher_validation",
         "mcp_streaming_boundary",
         "mcp_streaming_source_evidence",
-        "config_integrated_validation"
+        "config_integrated_validation",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence",
+        "config_scoped_validation"
       ],
       "original_dependencies": "RSP-136,RSP-138."
     },
@@ -2557,7 +2574,7 @@
         "RSP-137"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The five core execution records now match source 1061f304970555b48682fb1b475c0a67022a4e62, actual 9db hosted attempts and completed inactive E. Original 144 requirements and full prose remain intact. Updated scanner/interpreter/Claude/stopped-rollback scope, retained legacy failures, narrow historical soak, security triage and remaining approval/qualification/canary gates are explicit. No historical pass becomes a new-head result. The new inclusive 1 MiB TOML source bound and immediate publisher ACK withdrawal are explicit. The later E method-selector counterexample withdraws broad mutation-safety wording; corrected F is source-only and inactive.",
+      "evidence_or_remaining_work": "The five core execution records now match source 591d5c81e6bb341c6c3271332f3a6615a01bc748, actual 9db hosted attempts and completed inactive E. Original 144 requirements and full prose remain intact. Updated scanner/interpreter/Claude/stopped-rollback scope, retained legacy failures, narrow historical soak, security triage and remaining approval/qualification/canary gates are explicit. No historical pass becomes a new-head result. The new inclusive 1 MiB TOML source bound and immediate publisher ACK withdrawal are explicit. The later E method-selector counterexample withdraws broad mutation-safety wording; corrected F remains inactive after its stopped run1. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation. Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2581,7 +2598,11 @@
         "config_publisher_validation",
         "mcp_streaming_boundary",
         "mcp_streaming_source_evidence",
-        "config_integrated_validation"
+        "config_integrated_validation",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence",
+        "config_scoped_validation"
       ],
       "original_dependencies": "RSP-136,RSP-137."
     },
@@ -2596,7 +2617,7 @@
         "RSP-141"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "9db retains 34 successful/three failed workflows and 207 check attempts (178 success, 20 skipped, nine failed), with external CodeQL and Sonar failures. Actual PR-reference API identifies foundation Python alerts 343/344 (config.py:495/498) and implementation adds 356 (native authority key-ID hash). Exact rule/location/sink-byte correlation is retained; API provides no fingerprint/full flow and no disposition was applied at capture. At 17:38:43Z, the supported API dismissed only 356 as false positive after source review; a fresh PR-2954 merge-ref read verifies that state. Path alerts 343/344 and inherited Actions 288/289 were open at that readback. Original captured check failures remain unchanged; no clean security gate is claimed. Corrected exclusive CodeQL extraction also needs hosted proof. Greptile 5/5/protected auto-merge and bot checks do not supply independent last-push CODEOWNER approval. Shared held-source TOML reading and publisher ACK withdrawal are implemented and source-tested; new foundation analysis fixes old 343/344 but reports eight new reader-path findings plus two inherited Actions findings, all ten open for triage. New implementation analysis remains pending. The new 1 MiB TOML acceptance limit is explicit and original performance gates remain unchanged.",
+      "evidence_or_remaining_work": "9db retains 34 successful/three failed workflows and 207 check attempts (178 success, 20 skipped, nine failed), with external CodeQL and Sonar failures. Actual PR-reference API identifies foundation Python alerts 343/344 (config.py:495/498) and implementation adds 356 (native authority key-ID hash). Exact rule/location/sink-byte correlation is retained; API provides no fingerprint/full flow and no disposition was applied at capture. At 17:38:43Z, the supported API dismissed only 356 as false positive after source review; a fresh PR-2954 merge-ref read verifies that state. Path alerts 343/344 and inherited Actions 288/289 were open at that readback. Original captured check failures remain unchanged; no clean security gate is claimed. Corrected exclusive CodeQL extraction also needs hosted proof. Greptile 5/5/protected auto-merge and bot checks do not supply independent last-push CODEOWNER approval. Shared held-source TOML reading and publisher ACK withdrawal are implemented and source-tested; new foundation analysis fixes old 343/344 but reports eight new reader-path findings plus two inherited Actions findings, all ten open for triage. New implementation analysis remains pending. The new 1 MiB TOML acceptance limit is explicit and original performance gates remain unchanged. Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal. Final scoped-source receipt binds 591d5c81 and 44 artifacts (919,643 stored bytes), manifest SHA-256 a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93. Boundary/remote: 137 passed/one skipped. Server: 12 passed/one skipped/102 deselected. Initial ownership: 46 passed/one failed on exported tomllib-helper classification; corrected actual inventory: one passed; after parser extraction, config/source/reconciliation: 98 passed/one skipped. Native authority and Python semantic gates pass; workflow permission tests: 82 passed. Full typing before the two-file parser extraction: 1,255 production files, zero errors/20,241 warnings. Final two production and two gate files: zero errors/68 warnings; inverse reconstruction proves the other 1,253 production files unchanged. Counts overlap, not a grand total. Initial test/lint failures, 180-second lock timeout and wrong pytest path with no test execution, and initial whitespace-check output remain retained. No hosted or installed qualification.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2620,7 +2641,8 @@
         "config_foundation_validation",
         "config_publisher_confinement",
         "config_publisher_validation",
-        "config_integrated_validation"
+        "config_integrated_validation",
+        "config_scoped_validation"
       ],
       "original_dependencies": "RSP-134,RSP-140,RSP-141."
     },
@@ -2660,7 +2682,7 @@
         "RSP-143"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All 144 original requirements and full dependency prose remain intact. Handoff retains 9db / abf / ae / 5ee / 42579 attempts, exact reconstruction and scoped package/scanner/native-MCP decisions. E is implemented/measured but inactive, default B and RSP-100 OPEN; Claude has actual incomplete installed results. Full platform/posture/mixed-soak/legacy-quiescence qualification, security gates, independent approval and canary/release remain incomplete. First CodeQL SARIF retrieval/triage is complete with explicit extra-helper extraction, public-checksum and legacy-secret-verifier limits; corrected hosted extraction and the overall security gate remain unresolved. Only alert 356 has a source-reviewed, API-verified false-positive disposition; the earlier readback keeps path 343/344 and inherited Actions 288/289 open at that historical point. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Config capture now uses held handles and rejects unsafe sources, with immediate publisher ACK withdrawal and explicit inclusive 1 MiB TOML limit; source scopes pass with actual Windows skipped. Fresh security and platform gates remain required. E method-selector review limits its historical tested boundary; corrected F passes 44 focused tests but has no route campaign, platform qualification or activation.",
+      "evidence_or_remaining_work": "All 144 original requirements and full dependency prose remain intact. Handoff retains 9db / abf / ae / 5ee / 42579 attempts, exact reconstruction and scoped package/scanner/native-MCP decisions. E is implemented/measured but inactive, default B and RSP-100 OPEN; Claude has actual incomplete installed results. Full platform/posture/mixed-soak/legacy-quiescence qualification, security gates, independent approval and canary/release remain incomplete. First CodeQL SARIF retrieval/triage is complete with explicit extra-helper extraction, public-checksum and legacy-secret-verifier limits; corrected hosted extraction and the overall security gate remain unresolved. Only alert 356 has a source-reviewed, API-verified false-positive disposition; the earlier readback keeps path 343/344 and inherited Actions 288/289 open at that historical point. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Config capture now uses held handles and rejects unsafe sources, with immediate publisher ACK withdrawal and explicit inclusive 1 MiB TOML limit; source scopes pass with actual Windows skipped. Fresh security and platform gates remain required. E method-selector review limits its historical tested boundary; corrected F passes 44 focused tests and retains its stopped route attempt. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation. Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal. Final scoped-source receipt binds 591d5c81 and 44 artifacts (919,643 stored bytes), manifest SHA-256 a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93. Boundary/remote: 137 passed/one skipped. Server: 12 passed/one skipped/102 deselected. Initial ownership: 46 passed/one failed on exported tomllib-helper classification; corrected actual inventory: one passed; after parser extraction, config/source/reconciliation: 98 passed/one skipped. Native authority and Python semantic gates pass; workflow permission tests: 82 passed. Full typing before the two-file parser extraction: 1,255 production files, zero errors/20,241 warnings. Final two production and two gate files: zero errors/68 warnings; inverse reconstruction proves the other 1,253 production files unchanged. Counts overlap, not a grand total. Initial test/lint failures, 180-second lock timeout and wrong pytest path with no test execution, and initial whitespace-check output remain retained. No hosted or installed qualification.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2689,17 +2711,21 @@
         "config_publisher_validation",
         "mcp_streaming_boundary",
         "mcp_streaming_source_evidence",
-        "config_integrated_validation"
+        "config_integrated_validation",
+        "mcp_streaming_plan",
+        "mcp_streaming_run1",
+        "mcp_streaming_run1_evidence",
+        "config_scoped_validation"
       ],
       "original_dependencies": "RSP-137,RSP-138,RSP-139,RSP-140,RSP-141,RSP-142,RSP-143."
     }
   ],
-  "review_scope": "All 144 original requirements and complete dependency prose reviewed through 1061f304970555b48682fb1b475c0a67022a4e62. Exact original conversation and PR #2954 confirmed. The 9db checkpoint retains all 53 JSON members from eight actual hosted ZIPs and all 207 check attempts. The E owned-preparation experiment is implemented and measured, remains inactive, and does not close RSP-100 in retained B. Installed scanner, interpreter, Claude and stopped-transition observations are recorded at their exact scope. Full installed/platform qualification, original-baseline negative-attempt quiescence, independent review and canary/release remain incomplete. CodeQL API correlation identifies config-path alerts 343/344 and native-authority identifier alert 356 by PR reference, rule/location and exact sink bytes. A supported false-positive disposition and its dated PR-reference readback verify only 356 dismissed, with 343/344 and inherited Actions 288/289 open at that historical point. API fingerprint/full-flow and a clean security gate are not claimed. Shared config capture and immediate publisher ACK withdrawal now have bounded source validation; actual Windows and fresh implementation CodeQL outcomes remain pending. The new 1 MiB TOML input limit does not change original performance thresholds. Later source review found an inherited E mutable-method writer-selection gap, demonstrated by two initial-F child-pipe regressions. Historical E evidence stays unchanged; corrected F has a 44-test source gate and finite review only, with no route campaign or activation. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed.",
+  "review_scope": "All 144 original requirements, dependency prose, statuses and projection hashes are preserved from the prior acceptance audit. This reconciliation covers local source 591d5c81e6bb341c6c3271332f3a6615a01bc748, retained scoped-config validation, and the stopped F run1. Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation. Foundation a7 hosted analysis still records old 343/344 fixed, eight new high-severity Python path findings and two inherited Actions findings open. Only the earlier 356 disposition is recorded; fresh security gates, independent last-push approval, installed qualification and canary/release remain incomplete.",
   "release_snapshot": {
-    "observation_basis": "Retained exact 9db hosted observation: 37 Actions workflows completed, 34 successful and three failed; 207 check attempts completed, 178 successful, 20 skipped, nine failed. Later integrated source needs new artifacts/checks.",
+    "observation_basis": "Retained exact 9db hosted observation: 37 Actions workflows completed, 34 successful and three failed; 207 check attempts completed, 178 successful, 20 skipped, nine failed. Later integrated source needs new artifacts/checks. Current local scoped-config source is 591d5c81e6bb341c6c3271332f3a6615a01bc748; publication and fresh hosted analysis remain pending.",
     "foundation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2951",
     "foundation_head": "a7b675a84b732ead542cdf77e5153c57b4257d9b",
-    "foundation_checks": "Current foundation shared-reader head a7b675a84b732ead542cdf77e5153c57b4257d9b is published with exact branch readback. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Retained foundation e449 observation: 179 checks, 159 success, 19 skipped, one external CodeQL failure reporting two high alerts. The earlier PR-reference API identified its Python alerts 343/344 at config.py:495/498; both were open at that earlier capture. Protected squash auto-merge and Greptile 5/5 do not provide independent last-push CODEOWNER approval. Source triage and the shared-reader source correction do not clear the gate; corrected diagnostic extraction, current finding triage and actual Windows validation remain pending.",
+    "foundation_checks": "Current foundation shared-reader head a7b675a84b732ead542cdf77e5153c57b4257d9b is published with exact branch readback. Fresh foundation analysis 35257569810 on merge ref 72ea27ac1d847f5f03a23d956b31261315420000 reports old config alerts 343/344 fixed, eight new py/path-injection findings in config_source_io.py and two inherited Actions findings: ten open. Triage remains in progress; no clean security gate or fresh implementation analysis is claimed. Retained foundation e449 observation: 179 checks, 159 success, 19 skipped, one external CodeQL failure reporting two high alerts. The earlier PR-reference API identified its Python alerts 343/344 at config.py:495/498; both were open at that earlier capture. Protected squash auto-merge and Greptile 5/5 do not provide independent last-push CODEOWNER approval. Source triage and the shared-reader source correction do not clear the gate; corrected diagnostic extraction, current finding triage and actual Windows validation remain pending. The eight new Python findings are high severity and remain open in that hosted observation. Later local scoped-capture/propagation source has retained validation but needs newly published foundation/implementation analysis; no additional alert is dismissed.",
     "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
     "implementation_remote_head": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
     "implementation_checks": "All 37 exact 9db Actions workflows complete: 34 successful, three failed. All 207 check attempts: 178 success, 20 skipped, nine failed. Main CI has 110 successful jobs, three skipped and one failed Sonar job; Desktop, Windows cross-platform and all four Security Gates jobs pass. CodeQL app 105262485275 reports three high alerts while its Actions workflow succeeds. Sonar app 105267394714 reports new security/reliability C against required A. Legacy CodeRabbit explicitly skipped draft review. Source triage and subsequent corrections do not constitute fresh passing hosted gates.",
@@ -2757,16 +2783,37 @@
     "codeql_diagnostic_observation": "First run 35239002083 retains six successful jobs: 17/18 Python findings, zero Actions/JavaScript results, 17 matching common rule/fingerprint pairs and one added authority-key identifier result. Six exact ZIPs preserve all bytes. Python also extracted the current outer helper, so exclusive pinned-tree extraction was not proven. Root-checkout correction passes 134 structural tests; corrected hosted extraction is pending. The first actual PR-reference API capture correlates then-open Python alerts 343/344 (config paths) and 356 (native authority key ID) by rule/location/exact sink bytes, without API fingerprint/full-flow proof or any applied disposition. Subsequent supported API disposition at 17:38:43Z and a fresh PR-2954 merge-ref read verify only 356 dismissed as false positive; 343/344 and inherited Actions 288/289 remain open. The first-capture bytes and failed check remain unchanged.",
     "codeql_alert_correlation": "../security/codeql-pr-alert-correlation.json",
     "codeql_356_disposition": "../security/codeql-356-disposition.json",
-    "config_source_observation": "Held-directory/file TOML capture and immediate publisher ACK withdrawal are implemented. Reader/foundation 67-test scopes overlap combined 88-test/one actual-Windows-only skip validation; five-file Ruff/format and three production type files have zero errors/80 warnings. Inclusive 1 MiB TOML ceiling is new, frozen performance gates unchanged. New foundation analysis fixes old 343/344 but has eight new reader-path findings plus two inherited Actions findings; no installed/Windows qualification.",
-    "mcp_f_source_observation": "Corrected F has 44 focused tests/11.39 seconds and a clear finite source review after inherited E-style method-selection counterexamples. It remains source-only and inactive, with no route campaign or installed/platform qualification. Historical E 64 cells/32 pairs/source/report/raw bytes remain unchanged; universal pre-forward mutation safety is not established.",
-    "config_integrated_validation_observation": "At config-integrated 5da, unfiltered production types pass 1254 files/0 errors/20236 warnings in 136.815 tool seconds; authority/semantic pass. Initial 15-site I/O failure is retained. Six exact function/primitive inventory classifications and helper-path protection pass 46 I/O/architecture tests 99.32s, including live validate(ROOT), with static/one contract types 0/0 and finite review clear. Product source remains unchanged; source test populations are separate and overlap, and no installed qualification is claimed.",
-    "foundation_codeql_current_run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35257569810"
+    "config_source_observation": "Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal.",
+    "mcp_f_source_observation": "The corrected F source gate passed 44 tests in 11.39 seconds, including its 96 authority comparisons; E source/raw evidence remains unchanged. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation.",
+    "config_integrated_validation_observation": "Historical 5da inventory correction remains retained at its original scope. Final scoped-source receipt binds 591d5c81 and 44 artifacts (919,643 stored bytes), manifest SHA-256 a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93. Boundary/remote: 137 passed/one skipped. Server: 12 passed/one skipped/102 deselected. Initial ownership: 46 passed/one failed on exported tomllib-helper classification; corrected actual inventory: one passed; after parser extraction, config/source/reconciliation: 98 passed/one skipped. Native authority and Python semantic gates pass; workflow permission tests: 82 passed. Full typing before the two-file parser extraction: 1,255 production files, zero errors/20,241 warnings. Final two production and two gate files: zero errors/68 warnings; inverse reconstruction proves the other 1,253 production files unchanged. Counts overlap, not a grand total. Initial test/lint failures, 180-second lock timeout and wrong pytest path with no test execution, and initial whitespace-check output remain retained. No hosted or installed qualification.",
+    "foundation_codeql_current_run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35257569810",
+    "mcp_f_run1": {
+      "source_commit": "5a5ad6d3873d83ac6411bf9204f704c449580c41",
+      "report_commit": "d993fac80a14347b2efcd089407f96cd91fe3634",
+      "completed_cells": 19,
+      "failed_cells": 1,
+      "never_attempted_cells": 44,
+      "attempted_calls": 401,
+      "verified_completed_forwards": 400,
+      "independently_checked_pairs": 9,
+      "collector_comparisons": 0,
+      "profile_cells": 0,
+      "failed_forwarding_proven_absent": false,
+      "EOF_cause_known": false,
+      "qualified": false,
+      "activation": false,
+      "raw_sha256": "ffb06c3889fc1895a04a0bb7dd4d3df4b25cc1d950c8f636bbe13c2458085865"
+    },
+    "local_scoped_source_commit": "591d5c81e6bb341c6c3271332f3a6615a01bc748",
+    "local_scoped_validation": "../evidence/daemon-scoped-config-validation/manifest.json",
+    "local_scoped_validation_manifest_sha256": "a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93",
+    "new_scoped_source_publication_or_hosted_pass_claimed": false
   },
   "evidence_catalog": {
     "contract": {
       "path": "CURRENT_CONTRACT.md",
-      "source_commit": "1061f304970555b48682fb1b475c0a67022a4e62",
-      "scope_and_limit": "Current authority, acknowledged posture, inactive E/native pilots, measured selection limits and original outstanding requirements. Source implementation, installed observations and protected release gates remain independent."
+      "source_commit": "591d5c81e6bb341c6c3271332f3a6615a01bc748",
+      "scope_and_limit": "Local scoped canonical-path capture and propagated readers; acknowledged posture/authority boundaries; unchanged E and incomplete F run1; retained validation with overlapping scopes. Hosted publication, installed qualification and independent approval remain separate."
     },
     "qualification": {
       "path": "../native-qualification-corpus.md",
@@ -3096,17 +3143,37 @@
     "mcp_streaming_boundary": {
       "path": "../mcp-streaming-preparation-pilot-boundary.md",
       "source_commit": "ce98191343bbd9df98ec7947a7eafe451abc90a1",
-      "scope_and_limit": "Inactive F fork streams exact binding comparisons and corrects inherited mutable-method writer selection using admitted-frame identity before complete binding/actual-wire checks. Initial F selector regressions establish the frozen E scope limit. Final 44-test/11.39-second source gate and finite review pass; nested restoration/unrelated replies retained. No route campaign, process-RSS/performance benefit, installed/platform qualification or activation."
+      "scope_and_limit": "Historical corrected F source gate: 44 tests/11.39 seconds with nested restoration, unrelated replies and mutable-method regression coverage. Source-only gate did not establish route performance; subsequent stopped run1 is separate. F remains inactive."
     },
     "mcp_streaming_source_evidence": {
       "path": "evidence/mcp-stream-binding-feasibility/manifest.json",
       "source_commit": "ce98191343bbd9df98ec7947a7eafe451abc90a1",
-      "scope_and_limit": "Eight exact artifacts retain initial zero-test collection failure, overlapping 39-test pass, two failed method regressions, corrected 44-test pass and static checks. Earlier prototype 36 allocation observations are extra traced comparison peaks, not final-F route/RSS observations. Two final F source hashes and seven preserved E hashes are pinned; campaign_launched, qualified and default_activation are false. The 96 authority comparisons are included in 44 tests."
+      "scope_and_limit": "Historical source/feasibility snapshot retains eight exact artifacts, collection failure, overlapping 39-test pass, two failed method regressions and corrected 44-test gate. Its campaign flags describe that earlier snapshot. Prototype allocation is not final-F route RSS. Later run1 is retained separately; E bytes unchanged."
     },
     "config_integrated_validation": {
       "path": "evidence/config-integrated-5da39f986.json",
       "source_commit": "1061f304970555b48682fb1b475c0a67022a4e62",
       "scope_and_limit": "5da unfiltered production types pass 1254 files/0 errors/20236 warnings; authority/semantic pass. Original 15-site I/O failure is retained verbatim. Six exact function/primitive classifications and exact-path protection retain synchronous_posture_config visibility. Current I/O/architecture 46-test suite passes 99.32s including validate(ROOT)/negative cases; Ruff/format and one contract type file pass 0 errors/warnings, finite independent review clear. Product source unchanged;67/88/F44/46/317 populations overlap and remain separate. No installed or clean external gate."
+    },
+    "mcp_streaming_plan": {
+      "path": "mcp-streaming-preparation-plan.json",
+      "source_commit": "5a5ad6d3873d83ac6411bf9204f704c449580c41",
+      "scope_and_limit": "Preregistered 64-cell/32-pair B/F schedule preserves workload, ordering, deadlines, quantiles and resources; common runtime plus independent frozen B oracle. Sixteen stubbed-worker source/accounting tests pass in 0.92 seconds; not measured route cells."
+    },
+    "mcp_streaming_run1": {
+      "path": "../rust-performance-mcp-streaming-preparation.md",
+      "source_commit": "d993fac80a14347b2efcd089407f96cd91fe3634",
+      "scope_and_limit": "F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation."
+    },
+    "mcp_streaming_run1_evidence": {
+      "path": "evidence/mcp-streaming-run1/manifest.json",
+      "source_commit": "d993fac80a14347b2efcd089407f96cd91fe3634",
+      "scope_and_limit": "42 artifacts retain actual partial/adverse outcomes, complete before/after export and dependency proof, 625+1 generated-cache inventories and diagnostic gaps. All 4,635 runtime/4,100 oracle tracked bytes/modes and 69 distributions/12,745 hashed RECORD files remain unchanged. Reconstruction includes all five imported Python files and fixed plan; finite independent review, not CODEOWNER or qualification."
+    },
+    "config_scoped_validation": {
+      "path": "../evidence/daemon-scoped-config-validation/manifest.json",
+      "source_commit": "591d5c81e6bb341c6c3271332f3a6615a01bc748",
+      "scope_and_limit": "Local source 591d5c81 pins trusted configured-home aliases to their construction-time canonical home and rejects retargeted admitted workspace parents before opening a config leaf. Authorization uses held-parent metadata under existing hook-root/owned-temporary rules. The same scoped capture/reader reaches publisher, daemon worker, hook-process CLI, package reload, persisted approval and remote command/resume paths; publisher reuse requires the identical capture object and scoped rejection withdraws ACK. Missing-parent empty-input and standalone unscoped CLI semantics remain. Canonical path/held capture is not inode identity across process launches. Fresh hosted foundation/implementation analysis and actual Windows/installed qualification remain pending; no new dismissal. Final scoped-source receipt binds 591d5c81 and 44 artifacts (919,643 stored bytes), manifest SHA-256 a382bc9e2f75a1e2e15023deefdcffc6acf1ec9d2a68c5494cb1b7762d714c93. Boundary/remote: 137 passed/one skipped. Server: 12 passed/one skipped/102 deselected. Initial ownership: 46 passed/one failed on exported tomllib-helper classification; corrected actual inventory: one passed; after parser extraction, config/source/reconciliation: 98 passed/one skipped. Native authority and Python semantic gates pass; workflow permission tests: 82 passed. Full typing before the two-file parser extraction: 1,255 production files, zero errors/20,241 warnings. Final two production and two gate files: zero errors/68 warnings; inverse reconstruction proves the other 1,253 production files unchanged. Counts overlap, not a grand total. Initial test/lint failures, 180-second lock timeout and wrong pytest path with no test execution, and initial whitespace-check output remain retained. No hosted or installed qualification."
     }
   },
   "status_counts": {
@@ -3396,8 +3463,8 @@
         "RSP-107",
         "RSP-108"
       ],
-      "state": "HISTORICAL_E_INACTIVE_WITH_SELECTOR_LIMIT_F_SOURCE_ONLY",
-      "owner_report": "B/C/D/native/E route comparisons remain complete at their exact historical scope. Later review found E mutable-method write selection; initial F actual child-pipe tests demonstrated forwarding/callback gaps. Corrected F has 44 focused tests and finite source review only, with no route campaign/activation. B remains default, E/F inactive and RSP-100 OPEN; statuses and complete RSP-106 unchanged."
+      "state": "HISTORICAL_E_INACTIVE_F_RUN1_STOPPED_WITH_UNRESOLVED_BASELINE_EOF",
+      "owner_report": "B/C/D/native/E comparisons remain complete at their historical scopes, with E selector limitations retained. F run1 at exact 5a stopped at cell 20: 19 completed, one failed B dense-integer cell and 44 never attempted. Completed cells verify 400 responses/forwards/progress notifications (B 198/F 202); 401 calls were attempted. F records 202 admissions/derivations/preparations/bound writes. Nine pairs independently match; the collector emits zero comparisons because its final loop was not reached. The completed F cell 19 remains unpaired; no profiles or five-block gate ran. Failed-cell zero observed forwards cannot prove no forwarding because ledger availability is unrecorded; discarded stderr, ambiguous worker detail and absent pre-run OOM counters leave the EOF cause unresolved. No retry, resume, E pooling, qualification or activation. B remains default and RSP-100 OPEN; RSP-106 is unchanged."
     },
     "claude_launcher": {
       "tasks": [

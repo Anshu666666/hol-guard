@@ -1,0 +1,45 @@
+{"case": 1, "total": 64, "payload_bytes": 1024, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "B"}
+{"case": 2, "total": 64, "payload_bytes": 1024, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "F"}
+{"case": 3, "total": 64, "payload_bytes": 16384, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "B"}
+{"case": 4, "total": 64, "payload_bytes": 16384, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "F"}
+{"case": 5, "total": 64, "payload_bytes": 131072, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "B"}
+{"case": 6, "total": 64, "payload_bytes": 131072, "payload_kind": "ascii", "samples": 30, "block": 0, "arm": "F"}
+{"case": 7, "total": 64, "payload_bytes": 4193792, "payload_kind": "unicode", "samples": 3, "compact_result": true, "block": 0, "arm": "B"}
+{"case": 8, "total": 64, "payload_bytes": 4193792, "payload_kind": "unicode", "samples": 3, "compact_result": true, "block": 0, "arm": "F"}
+{"case": 9, "total": 64, "payload_bytes": 4193792, "payload_kind": "dense-integers", "samples": 3, "compact_result": true, "block": 0, "arm": "B"}
+{"case": 10, "total": 64, "payload_bytes": 4193792, "payload_kind": "dense-integers", "samples": 3, "compact_result": true, "block": 0, "arm": "F"}
+{"case": 11, "total": 64, "payload_bytes": 1024, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "F"}
+{"case": 12, "total": 64, "payload_bytes": 1024, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "B"}
+{"case": 13, "total": 64, "payload_bytes": 16384, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "F"}
+{"case": 14, "total": 64, "payload_bytes": 16384, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "B"}
+{"case": 15, "total": 64, "payload_bytes": 131072, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "F"}
+{"case": 16, "total": 64, "payload_bytes": 131072, "payload_kind": "ascii", "samples": 30, "block": 1, "arm": "B"}
+{"case": 17, "total": 64, "payload_bytes": 4193792, "payload_kind": "unicode", "samples": 3, "compact_result": true, "block": 1, "arm": "F"}
+{"case": 18, "total": 64, "payload_bytes": 4193792, "payload_kind": "unicode", "samples": 3, "compact_result": true, "block": 1, "arm": "B"}
+{"case": 19, "total": 64, "payload_bytes": 4193792, "payload_kind": "dense-integers", "samples": 3, "compact_result": true, "block": 1, "arm": "F"}
+Traceback (most recent call last):
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/profile_guard_mcp_streaming_session.py", line 539, in run_case
+    response = response_for(request_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/profile_guard_mcp_streaming_session.py", line 467, in response_for
+    message = read(remaining)
+              ^^^^^^^^^^^^^^^
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/profile_guard_mcp_streaming_session.py", line 457, in read
+    raise RuntimeError("mcp_benchmark_unexpected_eof")
+RuntimeError: mcp_benchmark_unexpected_eof
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/compare_guard_mcp_streaming_preparation.py", line 288, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/compare_guard_mcp_streaming_preparation.py", line 282, in main
+    report = run_comparison(args)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/compare_guard_mcp_streaming_preparation.py", line 177, in run_comparison
+    result = run_case(**options, streaming_preparation_pilot=arm == "F")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/hol-guard-takeover/mcp-f-5a5ad6-run1-20260917/runtime-frozen/scripts/profile_guard_mcp_streaming_session.py", line 673, in run_case
+    raise BenchmarkCaseError(
+profile_guard_mcp_streaming_session.BenchmarkCaseError: mcp_benchmark_case_failed

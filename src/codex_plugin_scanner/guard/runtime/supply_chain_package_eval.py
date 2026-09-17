@@ -11,7 +11,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -323,6 +323,7 @@ def evaluate_package_request_artifact(
     now: str | None = None,
     external_archive_network_authorized: bool = False,
     retain_external_archive_blob: bool = False,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> PackageRequestEvaluation:
     cache_token = _LOCKFILE_PARSE_CACHE.set({})
     try:
@@ -335,6 +336,7 @@ def evaluate_package_request_artifact(
                     now=now,
                     external_archive_network_authorized=external_archive_network_authorized,
                     retain_external_archive_blob=retain_external_archive_blob,
+                    config_reader=config_reader,
                 )
             except WorkspaceInputSnapshotError as error:
                 parse_result = incomplete_lockfile_result(
@@ -356,6 +358,7 @@ def evaluate_package_request_artifact(
                     parse_result=parse_result,
                     package_intent_hash=artifact.artifact_id.rsplit(":", 1)[-1],
                     now=now or datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                    config_reader=config_reader,
                 )
     finally:
         _LOCKFILE_PARSE_CACHE.reset(cache_token)
@@ -369,6 +372,7 @@ def _evaluate_package_request_artifact_uncached(
     now: str | None = None,
     external_archive_network_authorized: bool = False,
     retain_external_archive_blob: bool = False,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> PackageRequestEvaluation:
     now_value = now or datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     now_timestamp = _parse_evaluation_timestamp(now_value)
@@ -391,6 +395,7 @@ def _evaluate_package_request_artifact_uncached(
             parse_result=incomplete_lockfile,
             package_intent_hash=package_intent_hash,
             now=now_value,
+            config_reader=config_reader,
         )
     if external_archive_targets:
         # External archives use a deliberately local two-phase evaluation.  In
@@ -637,6 +642,7 @@ def _evaluate_package_request_artifact_uncached(
         bundle_defer_eligible=bundle_defer_eligible,
         bundle_decision=bundle_evaluation.decision if bundle_evaluation is not None else None,
         store=store,
+        config_reader=config_reader,
     )
     if cloud_result is not None and _cloud_result_should_defer_to_bundle(
         cloud_result, bundle_evaluation=bundle_evaluation
@@ -760,7 +766,9 @@ def _evaluate_package_request_artifact_uncached(
         retain_external_archive_blob=retain_external_archive_blob,
     )
     if heuristic is None:
-        fail_closed_unidentified = _unidentified_packages_fail_closed(store=store, workspace_dir=workspace_dir)
+        fail_closed_unidentified = _unidentified_packages_fail_closed(
+            store=store, workspace_dir=workspace_dir, config_reader=config_reader
+        )
         fallback_packages = _fallback_package_results(
             targets=targets,
             artifact=artifact,
@@ -1111,6 +1119,7 @@ def _evaluate_with_cloud(
     bundle_defer_eligible: bool,
     bundle_decision: str | None,
     store: GuardStore,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> tuple[PackageRequestEvaluation | None, dict[str, object] | None]:
     if not targets or workspace_id is None or workspace_fingerprint is None:
         return None, None
@@ -1119,7 +1128,9 @@ def _evaluate_with_cloud(
     def resolve_fail_closed_decision() -> str:
         nonlocal fail_closed_decision
         if fail_closed_decision is None:
-            fail_closed_decision = _cloud_fail_closed_decision(store=store, workspace_dir=workspace_dir)
+            fail_closed_decision = _cloud_fail_closed_decision(
+                store=store, workspace_dir=workspace_dir, config_reader=config_reader
+            )
         result: str = fail_closed_decision
         return result
 
@@ -1690,8 +1701,13 @@ def _cloud_fallback_requires_reconnect_copy(reason: dict[str, object]) -> bool:
     return _optional_string(reason.get("code")) == "cloud_auth_error"
 
 
-def _cloud_fail_closed_decision(*, store: GuardStore, workspace_dir: Path | None) -> str:
-    config = load_guard_config(store.guard_home, workspace=workspace_dir)
+def _cloud_fail_closed_decision(
+    *,
+    store: GuardStore,
+    workspace_dir: Path | None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> str:
+    config = load_guard_config(store.guard_home, workspace=workspace_dir, config_reader=config_reader)
     cloud_action = resolve_risk_action(config, "cloud_advisory", harness=None)
     if config.security_level in {"strict", "paranoid"}:
         return "block"
@@ -1700,8 +1716,13 @@ def _cloud_fail_closed_decision(*, store: GuardStore, workspace_dir: Path | None
     return "ask"
 
 
-def _unidentified_packages_fail_closed(*, store: GuardStore, workspace_dir: Path | None) -> bool:
-    config = load_guard_config(store.guard_home, workspace=workspace_dir)
+def _unidentified_packages_fail_closed(
+    *,
+    store: GuardStore,
+    workspace_dir: Path | None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> bool:
+    config = load_guard_config(store.guard_home, workspace=workspace_dir, config_reader=config_reader)
     return config.security_level in {"strict", "paranoid"}
 
 
@@ -2396,8 +2417,9 @@ def _finalize_incomplete_lockfile_evaluation(
     parse_result: LockfileParseResult,
     package_intent_hash: str,
     now: str,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> PackageRequestEvaluation:
-    config = load_guard_config(store.guard_home, workspace=workspace_dir)
+    config = load_guard_config(store.guard_home, workspace=workspace_dir, config_reader=config_reader)
     decision = (
         "block" if config.security_level in {"strict", "paranoid"} or not parse_result.source_hash_complete else "ask"
     )

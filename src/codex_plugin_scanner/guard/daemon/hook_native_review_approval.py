@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -46,6 +46,7 @@ def pause_native_pre_tool_for_approval(
     guard_home: Path,
     verified_receipt: object = None,
     home_dir: Path | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object]:
     """Pause a native review result and attach any queued approval metadata."""
 
@@ -93,6 +94,7 @@ def pause_native_pre_tool_for_approval(
         policy_binding=binding,
         home_dir=home_dir,
         verified_receipt=verified_receipt,
+        config_reader=config_reader,
     )
     if queued is None:
         failed = dict(native_result)
@@ -123,6 +125,7 @@ def queue_native_pre_tool_review(
     guard_home: Path,
     verified_receipt: object = None,
     home_dir: Path | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object] | None:
     """Persist one native review as an approval-center request."""
 
@@ -142,6 +145,7 @@ def queue_native_pre_tool_review(
         policy_binding=binding,
         home_dir=home_dir,
         verified_receipt=verified_receipt,
+        config_reader=config_reader,
     )
 
 
@@ -156,6 +160,7 @@ def _queue_native_pre_tool_review(
     policy_binding: Mapping[str, object] | None,
     home_dir: Path | None,
     verified_receipt: object,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object] | None:
     persist = getattr(store, "add_approval_request", None)
     lookup = getattr(store, "get_approval_request", None)
@@ -167,7 +172,13 @@ def _queue_native_pre_tool_review(
     now = datetime.now(tz=timezone.utc).isoformat()
     try:
         operation = native_codex_wait_operation(
-            store, harness=harness, payload=payload, workspace=workspace, home_dir=home_dir, now=now
+            store,
+            harness=harness,
+            payload=payload,
+            workspace=workspace,
+            home_dir=home_dir,
+            now=now,
+            config_reader=config_reader,
         )
     except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):
         return None
@@ -228,7 +239,12 @@ def _queue_native_pre_tool_review(
             request = replace(
                 request,
                 continuation_snapshot=continuation_offer_payload(
-                    store, request_row=request.to_dict(), now=now, headless=True, operation=operation
+                    store,
+                    request_row=request.to_dict(),
+                    now=now,
+                    headless=True,
+                    operation=operation,
+                    config_reader=config_reader,
                 ),
                 # Every live hook owns one exact request/authority. Pending queue
                 # deduplication must never retarget or extend another waiter.

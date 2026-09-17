@@ -12,9 +12,14 @@ from typing import Protocol, TypeVar
 class FunctionRecordLike(Protocol):
     """Minimum function-record shape needed by the resolver."""
 
-    path: str
-    qualname: str
-    node: ast.FunctionDef | ast.AsyncFunctionDef
+    @property
+    def path(self) -> str: ...
+
+    @property
+    def qualname(self) -> str: ...
+
+    @property
+    def node(self) -> ast.FunctionDef | ast.AsyncFunctionDef: ...
 
 
 RecordT = TypeVar("RecordT", bound=FunctionRecordLike)

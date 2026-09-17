@@ -97,6 +97,7 @@ def _resolve(store, row, *, action="allow", gate=None):
 class _Worker:
     def __init__(self, store, edge):
         self.store, self.edge = store, edge
+        self.config_reader = None
         self.routes = []
         self.metrics = SimpleNamespace(record_route=self.routes.append)
         self.recorded = []

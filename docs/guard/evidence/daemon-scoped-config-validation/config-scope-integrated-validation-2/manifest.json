@@ -1,0 +1,94 @@
+[
+  {
+    "name": "parser-and-scope",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_guard_config.py",
+      "tests/test_guard_config_source_io.py",
+      "tests/test_daemon_config_read_scope.py",
+      "tests/test_native_policy_input_reconciliation.py",
+      "--basetemp=/tmp/hol-guard-scope-final-parser"
+    ],
+    "exit_code": 4,
+    "seconds": 3.756,
+    "bytes": 87,
+    "sha256": "159787f19e59b299aca80c6f003afc040b0359f9c864d44f0558b68ed5f7d718"
+  },
+  {
+    "name": "ownership-regate",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_rust_io_ownership_gate.py::test_gate_inventories_reachable_io_and_passes_current_sources",
+      "--basetemp=/tmp/hol-guard-scope-final-ownership-regate"
+    ],
+    "exit_code": 0,
+    "seconds": 66.143,
+    "bytes": 109,
+    "sha256": "cae671bcf19e4c00669441708e9b413e62e697ed5071d681d783efaaadb97772"
+  },
+  {
+    "name": "authority-gate",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "scripts/ci/rust_authority_ownership_gate.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.948,
+    "bytes": 29780,
+    "sha256": "f7ebef380b9a0c3ca2555f53a98fc94802514f4abdb7ebff726b8bfcc6c6ca4c"
+  },
+  {
+    "name": "semantic-gate",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "scripts/ci/python_hook_semantic_callgraph_gate.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.217,
+    "bytes": 99,
+    "sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab"
+  },
+  {
+    "name": "workflow-permissions",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_workflow_token_permissions.py",
+      "--basetemp=/tmp/hol-guard-scope-final-workflow"
+    ],
+    "exit_code": 0,
+    "seconds": 3.445,
+    "bytes": 179,
+    "sha256": "fbbc35bb1ab478b538645636d7853f3dd01414c79735dbde0bf937f77ca0a8fd"
+  },
+  {
+    "name": "production-types",
+    "command": [
+      "/dev/shm/hol-guard-takeover/work/hol-guard/.venv/bin/basedpyright",
+      "src/codex_plugin_scanner/guard/config.py",
+      "src/codex_plugin_scanner/guard/daemon/config_read_scope.py",
+      "scripts/ci/rust_io_ownership_gate.py",
+      "scripts/ci/rust_io_ownership_contract.py",
+      "--outputjson"
+    ],
+    "exit_code": 0,
+    "seconds": 2.517,
+    "bytes": 39672,
+    "sha256": "9a69f398befc27a91fc00c5df5723ce45a237639702cbb9443b0d93e86e5099c",
+    "summary": {
+      "filesAnalyzed": 4,
+      "errorCount": 0,
+      "warningCount": 68,
+      "informationCount": 0,
+      "timeInSec": 1.905
+    }
+  }
+]

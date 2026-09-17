@@ -1,0 +1,61 @@
+from __future__ import annotations
+import hashlib
+import json
+import os
+import platform
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+RUNTIME = ROOT / "runtime-frozen"
+ORACLE = ROOT / "oracle-frozen"
+PYTHON = Path("/workspace/scratch/c25672eb4c10/hol-guard/.venv/bin/python")
+LOCK = Path("/workspace/scratch/c911dc702e23/performance-measurement.lock")
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+def write(name, value):
+    path = ROOT / name
+    with path.open("x") as handle:
+        json.dump(value, handle, indent=2)
+        handle.write("\n")
+
+preflight_raw = (ROOT / "preflight.json").read_bytes()
+preflight = json.loads(preflight_raw)
+assert preflight["preflight_passed"] is True
+assert preflight["exports"]["runtime"]["commit"] == "5a5ad6d3873d83ac6411bf9204f704c449580c41"
+assert preflight["exports"]["oracle"]["commit"] == "d811b08f081d72c348b95f0cf9e45349fb1787e6"
+assert platform.python_version() == "3.12.14"
+assert not (ROOT / "comparison.json").exists()
+stat = os.statvfs(ROOT)
+assert stat.f_bavail * stat.f_frsize >= 512 * 1024 * 1024
+argv = [str(PYTHON), str(RUNTIME / "scripts/compare_guard_mcp_streaming_preparation.py"),
+        "--runtime-src", str(RUNTIME / "src"), "--oracle-src", str(ORACLE / "src"),
+        "--samples", "30", "--lock-file", str(LOCK), "--json", str(ROOT / "comparison.json")]
+env = os.environ.copy()
+env["PYTHONPATH"] = str(RUNTIME / "src")
+env["TMPDIR"] = str(ROOT / "fixtures")
+start = {"schema": "hol-guard-mcp-streaming-campaign-launch.v1", "started_utc": now(),
+         "qualification": False, "production_activation": False,
+         "preflight_sha256": hashlib.sha256(preflight_raw).hexdigest(),
+         "argv": argv, "cwd": str(RUNTIME),
+         "environment": {name: env.get(name) for name in ("PYTHONPATH", "TMPDIR", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX", "PYTHONHASHSEED", "TZ")},
+         "bytecode_policy": "inherited unchanged; generated untracked caches inventoried separately after campaign",
+         "case_schedule": "one reviewed 64-cell attempt; no retry, reselection, resume, or E-result pooling",
+         "measurement_lock": "collector preflight and each individual case use shared POSIX flock",
+         "available_tmpfs_bytes": stat.f_bavail * stat.f_frsize}
+write("launch.json", start)
+try:
+    with (ROOT / "campaign.stdout").open("xb") as out, (ROOT / "campaign.stderr").open("xb") as err:
+        child = subprocess.Popen(argv, cwd=RUNTIME, env=env, stdout=out, stderr=err)
+        write("process.json", {"launcher_pid": os.getpid(), "collector_pid": child.pid, "started_utc": now()})
+        status = child.wait()
+except BaseException as error:
+    write("end.json", {"finished_utc": now(), "completed": False, "error_type": type(error).__name__, "qualification": False, "production_activation": False})
+    raise
+write("end.json", {"finished_utc": now(), "exit_code": status, "completed": status == 0, "qualification": False, "production_activation": False})
+print(json.dumps({"exit_code": status, "evidence": str(ROOT)}, sort_keys=True), flush=True)
+raise SystemExit(status)

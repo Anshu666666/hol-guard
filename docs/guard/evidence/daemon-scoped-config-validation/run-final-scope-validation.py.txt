@@ -1,0 +1,39 @@
+from pathlib import Path
+import hashlib, json, os, subprocess, time
+root=Path("/dev/shm/hol-guard-takeover/work/hol-guard")
+out=Path("/dev/shm/hol-guard-takeover/config-scope-integrated-validation-1")
+out.mkdir(exist_ok=False)
+python=str(root / ".venv/bin/python")
+lock="/workspace/scratch/c911dc702e23/performance-measurement.lock"
+commands=[
+("boundary-and-remote",[python,"-m","pytest","-q","tests/test_guard_config_source_io.py","tests/test_daemon_config_read_scope.py","tests/test_native_policy_input_reconciliation.py","tests/test_daemon_remote_config_reader.py","tests/test_guard_command_queue.py","tests/test_guard_command_queue_stale_pending_result.py","--basetemp=/tmp/hol-guard-scope-final-boundary"]),
+("server-paths",[python,"-m","pytest","-q","tests/test_guard_surface_server.py","-k","workspace or guard_home or hook_endpoint_rejects","--basetemp=/tmp/hol-guard-scope-final-server"]),
+("ownership",[python,"-m","pytest","-q","tests/test_rust_io_ownership_gate.py","tests/test_hook_data_plane_ownership_gate.py","--basetemp=/tmp/hol-guard-scope-final-ownership"]),
+("production-types",[str(root/".venv/bin/basedpyright"),"src","--outputjson"])
+]
+def snapshot():
+    return {str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((root/"src").rglob("*.py"))}
+before=snapshot()
+(out/"source-before.json").write_text(json.dumps(before,indent=2)+"\n")
+records=[]
+env=dict(os.environ)
+env.pop("TMPDIR",None)
+env["PYTHONPATH"]=str(root/"src")
+for name,cmd in commands:
+    print("START "+name,flush=True)
+    started=time.monotonic()
+    with (out/(name+".log")).open("wb") as log:
+        result=subprocess.run(["flock","--close","-w","180",lock,*cmd],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
+    raw=(out/(name+".log")).read_bytes()
+    rec={"name":name,"command":cmd,"exit_code":result.returncode,"seconds":round(time.monotonic()-started,3),"bytes":len(raw),"sha256":hashlib.sha256(raw).hexdigest()}
+    if name=="production-types" and raw:
+        try:rec["summary"]=json.loads(raw).get("summary")
+        except ValueError:pass
+    records.append(rec)
+    (out/"manifest.json").write_text(json.dumps(records,indent=2)+"\n")
+    print(json.dumps(rec),flush=True)
+after=snapshot()
+(out/"source-after.json").write_text(json.dumps(after,indent=2)+"\n")
+changed=[p for p in set(before)|set(after) if before.get(p)!=after.get(p)]
+(out/"source-verification.json").write_text(json.dumps({"production_files":len(before),"changed":changed},indent=2)+"\n")
+print("SOURCE_CHANGED "+json.dumps(changed),flush=True)

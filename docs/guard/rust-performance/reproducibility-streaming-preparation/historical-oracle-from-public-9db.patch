@@ -1,0 +1,1958 @@
+diff --git a/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_fallback.py b/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_fallback.py
+deleted file mode 100644
+index 06ca816c6..000000000
+--- a/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_fallback.py
++++ /dev/null
+@@ -1,120 +0,0 @@
+-"""Exact existing bridge completion after a private Linux native pilot attempt.
+-
+-This file is entered with Python -I by exec, with an anonymous-memory stdin.
+-It retains the installed interpreter invocation, process group and absolute
+-CLOCK_MONOTONIC deadline. Request material never enters argv or persistent files.
+-"""
+-
+-from __future__ import annotations
+-
+-import base64
+-import io
+-import json
+-import os
+-import sys
+-import time
+-from pathlib import Path
+-
+-if __package__ in {None, ""}:
+-    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+-
+-from codex_plugin_scanner.guard.adapters import claude_daemon_hook_bridge as bridge
+-from codex_plugin_scanner.guard.adapters.claude_native_pilot_record import load_record
+-
+-
+-def _handoff_integer(handoff: dict[str, object], name: str) -> int:
+-    value = handoff.get(name)
+-    if type(value) is not int:
+-        raise ValueError("claude_pilot_handoff_integer_invalid")
+-    return value
+-
+-
+-def complete(record_path: Path, event: str, handoff: dict[str, object]) -> str:
+-    record = load_record(record_path, event)
+-    deadline_ns = handoff.get("deadline_monotonic_ns")
+-    if type(deadline_ns) is not int or not 0 < deadline_ns <= time.monotonic_ns() + 8_000_000_000:
+-        raise ValueError("claude_pilot_handoff_deadline_invalid")
+-    deadline = deadline_ns / 1_000_000_000
+-    encoded = str(handoff["body_base64"])
+-    raw = base64.b64decode(encoded + "=" * (-len(encoded) % 4), altchars=b"-_", validate=True)
+-    if len(raw) > 4_000_005:
+-        raise ValueError("claude_pilot_handoff_input_limit")
+-    decoded = io.TextIOWrapper(
+-        io.BytesIO(raw),
+-        encoding=sys.stdin.encoding or "utf-8",
+-        errors=sys.stdin.errors or "surrogateescape",
+-        newline="\n",  # Linux sys.stdin preserves CRLF and standalone CR.
+-    ).read(bridge._MAX_HOOK_INPUT_BYTES + 1)
+-    data = decoded.strip() or "{}"
+-    kind = handoff.get("kind")
+-    config = record["bridge"]
+-    if kind == "before_send":
+-        # No native HTTP hook POST occurred. This is the existing bridge with
+-        # the original remaining deadline, not a fresh eight-second attempt.
+-        previous_in, previous_out = sys.stdin, sys.stdout
+-        result = io.StringIO()
+-        previous_budget = bridge._HOOK_DEADLINE_SECONDS
+-        try:
+-            sys.stdin, sys.stdout = io.StringIO(decoded), result
+-            bridge._HOOK_DEADLINE_SECONDS = max(0.0, deadline - time.monotonic())
+-            bridge.main(
+-                state_path=config["state_path"],
+-                fallback_daemon_url=config["fallback_daemon_url"],
+-                fallback_command=tuple(config["fallback_command"]),
+-                query=config["query"],
+-            )
+-        finally:
+-            sys.stdin, sys.stdout = previous_in, previous_out
+-            bridge._HOOK_DEADLINE_SECONDS = previous_budget
+-        return result.getvalue()
+-    if kind == "response":
+-        return bridge._valid_hook_json_or_degraded(
+-            str(handoff["response"]),
+-            reason="daemon returned malformed hook JSON",
+-            data=data,
+-        )
+-    if kind == "http":
+-        error: Exception = bridge._DaemonHTTPError(_handoff_integer(handoff, "status"), str(handoff["detail"]))
+-    elif kind == "identity":
+-        error = ValueError(str(handoff["detail"]))
+-    elif kind == "io":
+-        number = _handoff_integer(handoff, "errno")
+-        error = OSError(number, os.strerror(number))
+-    elif kind == "timeout":
+-        error = TimeoutError(str(handoff["detail"]))
+-    else:
+-        raise ValueError("claude_pilot_handoff_kind_invalid")
+-    reason = bridge._daemon_failure_reason(error)
+-    failure_kind = bridge._daemon_failure_kind(error)
+-    if failure_kind == "authenticated-control-plane-failure":
+-        return bridge._authenticated_control_plane_failure(reason, data)
+-    if bridge._daemon_failure_is_recoverable(error):
+-        return bridge._recover_retry_or_fallback(
+-            reason,
+-            data,
+-            state_path=config["state_path"],
+-            fallback_daemon_url=config["fallback_daemon_url"],
+-            fallback_command=tuple(config["fallback_command"]),
+-            recovery_command=tuple(record["recovery_command"]),
+-            query=config["query"],
+-            deadline=deadline,
+-            failure_kind=failure_kind,
+-        )
+-    return bridge._run_local_fallback(reason, data, tuple(config["fallback_command"]), deadline=deadline)
+-
+-
+-def main() -> int:
+-    if len(sys.argv) != 3:
+-        raise ValueError("claude_pilot_handoff_argv_invalid")
+-    raw = sys.stdin.buffer.read(8_000_001)
+-    if len(raw) > 8_000_000:
+-        raise ValueError("claude_pilot_handoff_limit")
+-    handoff = json.loads(raw)
+-    if not isinstance(handoff, dict):
+-        raise ValueError("claude_pilot_handoff_invalid")
+-    sys.stdout.write(complete(Path(sys.argv[1]), sys.argv[2], handoff))
+-    return 0
+-
+-
+-if __name__ == "__main__":
+-    raise SystemExit(main())
+diff --git a/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_record.py b/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_record.py
+deleted file mode 100644
+index d0c865cf7..000000000
+--- a/src/codex_plugin_scanner/guard/adapters/claude_native_pilot_record.py
++++ /dev/null
+@@ -1,141 +0,0 @@
+-"""Private qualification records; no production installer selects this pilot."""
+-
+-from __future__ import annotations
+-
+-import hashlib
+-import json
+-import os
+-import stat
+-from pathlib import Path
+-from typing import Any
+-
+-from ..codex_hook_integrity import load_hook_secret
+-from ..local_authority_integrity import verify_local_authority_payload
+-
+-SCHEMA = "guard-claude-launcher-pilot.v1"
+-PURPOSE = "claude-native-launcher-pilot"
+-EVENTS = ("PreToolUse", "PostToolUse")
+-
+-
+-def _stamp(value: os.stat_result) -> tuple[int, ...]:
+-    return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_mode, value.st_uid)
+-
+-
+-def file_binding(path: Path, *, invocation: bool = False) -> dict[str, object]:
+-    """Preserve an interpreter invocation symlink independently of its target."""
+-    lexical = Path(os.path.abspath(path))
+-    before = lexical.lstat()
+-    resolved = lexical.resolve(strict=True)
+-    current = resolved.stat()
+-    if (not invocation and stat.S_ISLNK(before.st_mode)) or not stat.S_ISREG(current.st_mode):
+-        raise ValueError("claude_pilot_file_shape_invalid")
+-    if os.name != "nt" and (current.st_uid not in {0, os.getuid()} or current.st_mode & 0o022):
+-        raise ValueError("claude_pilot_file_ownership_invalid")
+-    digest = hashlib.sha256()
+-    descriptor = os.open(
+-        resolved,
+-        os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0),
+-    )
+-    with os.fdopen(descriptor, "rb") as stream:
+-        if _stamp(os.fstat(stream.fileno())) != _stamp(current):
+-            raise ValueError("claude_pilot_file_changed")
+-        total = 0
+-        for chunk in iter(lambda: stream.read(65_536), b""):
+-            total += len(chunk)
+-            if total > 512 * 1024 * 1024:
+-                raise ValueError("claude_pilot_file_limit")
+-            digest.update(chunk)
+-        if total != current.st_size or _stamp(os.fstat(stream.fileno())) != _stamp(current):
+-            raise ValueError("claude_pilot_file_changed")
+-    after = lexical.lstat()
+-    if _stamp(before) != _stamp(after) or _stamp(current) != _stamp(resolved.stat()):
+-        raise ValueError("claude_pilot_file_changed")
+-    return {
+-        "path": str(lexical),
+-        "resolved": str(resolved),
+-        "size": current.st_size,
+-        "sha256": digest.hexdigest(),
+-        "device": current.st_dev,
+-        "inode": current.st_ino,
+-        "mtime_ns": current.st_mtime_ns,
+-        "invocation": invocation,
+-        "link_device": before.st_dev,
+-        "link_inode": before.st_ino,
+-        "link_mtime_ns": before.st_mtime_ns,
+-    }
+-
+-
+-def verify_file(binding: dict[str, Any]) -> None:
+-    if file_binding(Path(binding["path"]), invocation=binding.get("invocation") is True) != binding:
+-        raise ValueError("claude_pilot_file_identity_changed")
+-
+-
+-def bounded_read(path: Path, limit: int = 1_000_000, *, private: bool = False) -> bytes:
+-    parent = path.parent.lstat()
+-    before = path.lstat()
+-    if not stat.S_ISDIR(parent.st_mode) or not stat.S_ISREG(before.st_mode):
+-        raise ValueError("claude_pilot_private_file_invalid")
+-    mask = 0o077 if private else 0o022
+-    owners = ({os.getuid()} if private else {0, os.getuid()}) if os.name != "nt" else set()
+-    if os.name != "nt" and (
+-        parent.st_uid not in owners or before.st_uid not in owners or parent.st_mode & mask or before.st_mode & mask
+-    ):
+-        raise ValueError("claude_pilot_private_file_permissions")
+-    descriptor = os.open(
+-        path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0)
+-    )
+-    with os.fdopen(descriptor, "rb") as stream:
+-        if _stamp(os.fstat(stream.fileno())) != _stamp(before):
+-            raise ValueError("claude_pilot_private_file_changed")
+-        value = stream.read(limit + 1)
+-        if _stamp(os.fstat(stream.fileno())) != _stamp(before):
+-            raise ValueError("claude_pilot_private_file_changed")
+-    if len(value) > limit or _stamp(path.lstat()) != _stamp(before):
+-        raise ValueError("claude_pilot_private_file_changed")
+-    return value
+-
+-
+-def load_record(path: Path, event: str, *, require_registration: bool = True) -> dict[str, Any]:
+-    path = path.absolute()
+-    record = json.loads(bounded_read(path, private=True))
+-    if not isinstance(record, dict) or record.get("schema") != SCHEMA or event not in EVENTS:
+-        raise ValueError("claude_pilot_record_invalid")
+-    guard_home = path.parent.parent.parent
+-    if path != guard_home / "managed" / "claude-pilot" / "launcher.json":
+-        raise ValueError("claude_pilot_record_location_invalid")
+-    secret = load_hook_secret(guard_home)
+-    authentication = record.get("authentication")
+-    if not isinstance(authentication, dict):
+-        raise ValueError("claude_pilot_record_unsigned")
+-    unsigned = {key: value for key, value in record.items() if key != "authentication"}
+-    if (
+-        verify_local_authority_payload(
+-            unsigned,
+-            authentication,
+-            key=secret.key,
+-            key_id=secret.key_id,
+-            purpose=PURPOSE,
+-        ).status
+-        != "valid"
+-    ):
+-        raise ValueError("claude_pilot_record_authentication_failed")
+-    if record.get("guard_home") != str(guard_home) or record.get("installation_id") != secret.installation_id:
+-        raise ValueError("claude_pilot_record_installation_changed")
+-    for binding in record["files"].values():
+-        verify_file(binding)
+-    if not require_registration:
+-        return record
+-    configuration = Path(record["configuration"])
+-    raw = bounded_read(configuration)
+-    if len(raw) > 1_000_000 or hashlib.sha256(raw).hexdigest() != record["registration_sha256"]:
+-        raise ValueError("claude_pilot_registration_changed")
+-    groups = json.loads(raw).get("hooks", {}).get(event, [])
+-    matching = [
+-        handler
+-        for group in groups
+-        for handler in group.get("hooks", [])
+-        if (handler.get("command"), *handler.get("args", [])) == tuple(record["argv"][event])
+-    ]
+-    if len(matching) != 1:
+-        raise ValueError("claude_pilot_registration_missing_or_ambiguous")
+-    return record
+diff --git a/src/codex_plugin_scanner/guard/approvals.py b/src/codex_plugin_scanner/guard/approvals.py
+index 83674644c..4573dd641 100644
+--- a/src/codex_plugin_scanner/guard/approvals.py
++++ b/src/codex_plugin_scanner/guard/approvals.py
+@@ -789,16 +789,6 @@ def apply_approval_resolution(
+     )
+     persisted_rule = persist_policy is True or (persist_policy is None and scope != "artifact")
+     local_once_fallback = False
+-    native_codex_once = (
+-        action == "allow"
+-        and scope == "artifact"
+-        and request.get("harness") == "codex"
+-        and isinstance(request_artifact_id, str)
+-        and request_artifact_id.startswith("codex:native-pretool:")
+-        and requires_local_once_approval(request)
+-        and temporary_mcp_selection is None
+-        and local_tool_selection is None
+-    )
+     if persisted_rule:
+         store.ensure_policy_integrity_ready_for_write(
+             harness=decision.harness if decision.harness != "*" else None,
+@@ -814,7 +804,7 @@ def apply_approval_resolution(
+                 harness=_approval_policy_harness(request),
+                 created_at=resolved_at,
+             )
+-    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None and not native_codex_once:
++    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None:
+         once_decision = replace(
+             decision,
+             expires_at=_approval_once_policy_expires_at(resolved_at),
+@@ -837,24 +827,6 @@ def apply_approval_resolution(
+                 harness=_approval_policy_harness(request),
+                 created_at=resolved_at,
+             )
+-    elif native_codex_once:
+-        # A live native waiter needs signed, exact one-use authority even
+-        # when the reviewer chooses not to save a policy. Keep its original
+-        # artifact and workspace; runtime selectors must not broaden it.
+-        local_once_fallback = _record_local_once_approval(
+-            store,
+-            request_id=request_id,
+-            decision=replace(
+-                decision,
+-                artifact_id=request_artifact_id,
+-                artifact_hash=request_artifact_hash,
+-                workspace=_string_or_none(request.get("workspace")),
+-                publisher=request_publisher,
+-                expires_at=_approval_once_policy_expires_at(resolved_at),
+-            ),
+-            harness="codex",
+-            created_at=resolved_at,
+-        )
+ 
+     temporary_mcp_result: dict[str, object] | None = None
+     temporary_mcp_resolved_ids: list[str] = []
+diff --git a/src/codex_plugin_scanner/guard/codex_live_decision.py b/src/codex_plugin_scanner/guard/codex_live_decision.py
+index 3349d4867..e8fff9624 100644
+--- a/src/codex_plugin_scanner/guard/codex_live_decision.py
++++ b/src/codex_plugin_scanner/guard/codex_live_decision.py
+@@ -17,7 +17,6 @@ def complete_codex_live_decision(
+     request_id: str,
+     now: str,
+     fresh_allow_authorized: bool = False,
+-    require_consumed_once_for_replay: bool = False,
+ ) -> dict[str, object]:
+     """Consume exact authority and persist terminal continuation evidence."""
+ 
+@@ -39,12 +38,6 @@ def complete_codex_live_decision(
+         if not fresh_allow_authorized:
+             return _failure("fresh_policy_revalidation_failed")
+         if isinstance(previous, dict) and _terminal_resume_matches(previous, action=action):
+-            if (
+-                require_consumed_once_for_replay
+-                and resolve_codex_consumed_allow_authority(store, request=request, request_id=request_id, now=now)
+-                is None
+-            ):
+-                return _failure("exact_approval_authority_missing")
+             return {"action": action, "completed": True, "continuation": previous, "replayed": True}
+         approval_decision = resolve_codex_live_allow_authority(
+             store,
+@@ -94,22 +87,6 @@ def resolve_codex_live_allow_authority(
+     return {str(key): value for key, value in decision.items()}
+ 
+ 
+-def resolve_codex_consumed_allow_authority(
+-    store: GuardStore, *, request: Mapping[str, object], request_id: str, now: str
+-) -> dict[str, object] | None:
+-    """Verify the MAC-bound consumed once record before native terminal replay."""
+-    decision = store.peek_consumed_local_once_approval(
+-        request_id=request_id,
+-        harness="codex",
+-        artifact_id=_optional_text(request.get("artifact_id")),
+-        artifact_hash=_optional_text(request.get("artifact_hash")),
+-        workspace=_optional_text(request.get("workspace")),
+-        publisher=_optional_text(request.get("publisher")),
+-        now=now,
+-    )
+-    return decision if _exact_request_authority(decision, request_id=request_id) else None
+-
+-
+ def _exact_request_authority(value: object, *, request_id: str) -> bool:
+     if not isinstance(value, Mapping):
+         return False
+diff --git a/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py b/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py
+deleted file mode 100644
+index dd99410a3..000000000
+--- a/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py
++++ /dev/null
+@@ -1,215 +0,0 @@
+-"""Revalidate a native Codex browser approval while retaining its control fence."""
+-
+-from __future__ import annotations
+-
+-import json
+-import sqlite3
+-import time
+-from collections.abc import Mapping
+-from datetime import datetime, timezone
+-from pathlib import Path
+-from typing import TYPE_CHECKING
+-
+-from ..codex_live_decision import (
+-    complete_codex_live_decision,
+-    resolve_codex_consumed_allow_authority,
+-    resolve_codex_live_allow_authority,
+-)
+-from ..codex_live_hook_target import codex_live_hook_wait_deadline
+-from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY, process_identity_matches
+-from ..native_decision_receipt import receipt_matches_edge, validate_native_decision_receipt
+-from ..native_runtime import native_mode
+-from ..store import GuardStore
+-from .hook_native_review_binding import (
+-    NATIVE_REVIEW_BINDING_FIELD,
+-    NATIVE_REVIEW_REQUEST_DIGEST_FIELD,
+-    native_review_binding_matches,
+-    native_review_policy_binding,
+-)
+-from .hook_native_review_fence import native_review_fence
+-
+-if TYPE_CHECKING:
+-    from .hook_worker import HookWorker
+-
+-
+-def is_native_codex_review(request: object) -> bool:
+-    if not isinstance(request, Mapping) or request.get("harness") != "codex":
+-        return False
+-    artifact_id = request.get("artifact_id")
+-    return isinstance(artifact_id, str) and artifact_id.startswith("codex:native-pretool:")
+-
+-
+-def _decode_hook_input(payload: Mapping[str, object]) -> dict[str, object] | None:
+-    """Decode bounded transport only; Rust's request digest binds exact action identity."""
+-    raw = payload.get("hook_input")
+-    if not isinstance(raw, str) or len(raw.encode("utf-8")) > 1_000_000:
+-        return None
+-    decoded = json.loads(raw)
+-    if not isinstance(decoded, dict) or decoded.get("hook_event_name") != "PreToolUse":
+-        return None
+-    return decoded
+-
+-
+-def _now() -> str:
+-    return datetime.now(timezone.utc).isoformat()
+-
+-
+-def _original_hook_is_live(store: GuardStore, request_id: str, hook_input: Mapping[str, object]) -> bool:
+-    operation = store.get_guard_operation_for_approval_request(request_id)
+-    if not isinstance(operation, Mapping) or operation.get("status") not in {"waiting_on_approval", "resumed"}:
+-        return False
+-    metadata = operation.get("metadata")
+-    if not isinstance(metadata, Mapping):
+-        return False
+-    identity = hook_input.get(CODEX_BROWSER_WAIT_PROCESS_KEY)
+-    if identity != metadata.get("codex_browser_wait_process") or not process_identity_matches(identity):
+-        return False
+-    # A terminal record may be replayed by the same still-live bridge, without
+-    # extending its original deadline or moving authority to another process.
+-    waiting = {**operation, "status": "waiting_on_approval"}
+-    deadline = codex_live_hook_wait_deadline(store, operation=waiting, metadata=metadata)
+-    return deadline is not None and deadline > datetime.now(timezone.utc)
+-
+-
+-def _original_hook_home(store: GuardStore, request_id: str) -> Path | None:
+-    operation = store.get_guard_operation_for_approval_request(request_id)
+-    metadata = operation.get("metadata") if isinstance(operation, Mapping) else None
+-    value = metadata.get("native_hook_home_dir") if isinstance(metadata, Mapping) else None
+-    if not isinstance(value, str) or not value or len(value) > 32_768 or "\x00" in value:
+-        return None
+-    home = Path(value)
+-    return home if home.is_absolute() else None
+-
+-
+-def complete_native_codex_live_decision(
+-    store: GuardStore,
+-    *,
+-    worker: HookWorker,
+-    request_id: str,
+-    payload: Mapping[str, object],
+-    deadline: float,
+-) -> dict[str, object]:
+-    """Keep the real native result and exact local-once consume in one SH lease.
+-
+-    Publication occurs before acquiring SH, avoiding a publisher EX upgrade.
+-    This route has no Python semantic reviewer and cannot authorize from an
+-    empty harness response or from an asynchronous receipt-writer cache.
+-    """
+-    failure: dict[str, object] = {"completed": False, "error": "fresh_policy_revalidation_failed"}
+-    try:
+-        request = store.get_approval_request(request_id)
+-        if not isinstance(request, Mapping) or not is_native_codex_review(request):
+-            return failure
+-        if request.get("resolution_action") == "block":
+-            return complete_codex_live_decision(store, request_id=request_id, now=_now())
+-        if request.get("status") != "resolved" or request.get("resolution_action") != "allow":
+-            return failure
+-        workspace_value = request.get("workspace")
+-        workspace = Path(workspace_value) if isinstance(workspace_value, str) and workspace_value else None
+-        hook_input = _decode_hook_input(payload)
+-        original_home = _original_hook_home(store, request_id)
+-        if (
+-            hook_input is None
+-            or original_home is None
+-            or native_mode() not in {"auto", "force"}
+-            or not _original_hook_is_live(store, request_id, hook_input)
+-        ):
+-            return failure
+-        previous = store.get_request_resume(request_id)
+-        replay = (
+-            isinstance(previous, Mapping)
+-            and previous.get("resolution_action") == "allow"
+-            and previous.get("status") in {"resumed", "sent"}
+-        )
+-        authority = resolve_codex_live_allow_authority(store, request=request, request_id=request_id, now=_now())
+-        if authority is None and not replay:
+-            return {"completed": False, "error": "exact_approval_authority_missing"}
+-        if (
+-            replay
+-            and resolve_codex_consumed_allow_authority(store, request=request, request_id=request_id, now=_now())
+-            is None
+-        ):
+-            return {"completed": False, "error": "exact_approval_authority_missing"}
+-        snapshot = worker.prepare_workspace_policy(workspace, deadline=deadline)
+-        if snapshot is None or snapshot.get("mode") != "enforce" or time.monotonic() >= deadline:
+-            return failure
+-        with native_review_fence(
+-            policy_snapshot=snapshot,
+-            event_name="PreToolUse",
+-            recording_only=False,
+-            guard_home=store.guard_home,
+-            deadline=deadline,
+-        ) as fenced:
+-            stored_envelope = request.get("action_envelope_json")
+-            if isinstance(stored_envelope, Mapping) and NATIVE_REVIEW_BINDING_FIELD in stored_envelope and not fenced:
+-                return failure
+-            edge = worker._review_raw_hook_native(
+-                payload=hook_input,
+-                harness="codex",
+-                event="PreToolUse",
+-                guard_home=store.guard_home,
+-                home_dir=original_home,
+-                cwd=workspace,
+-                source_ref_external_allowed=False,
+-                observe_mode=False,
+-                deadline=deadline,
+-                policy_snapshot=snapshot,
+-            )
+-            if not isinstance(edge, Mapping):
+-                return failure
+-            receipt = validate_native_decision_receipt(edge.get("receipt"))
+-            result = edge.get("result")
+-            if (
+-                receipt is None
+-                or not receipt_matches_edge(edge, receipt)
+-                or not isinstance(result, Mapping)
+-                or edge.get("harness") != "codex"
+-                or edge.get("event_name") != "PreToolUse"
+-                or receipt.get("policy_digest") != snapshot.get("policy_digest")
+-                or receipt.get("policy_generation") != snapshot.get("generation")
+-                or receipt.get("runtime_identity") != snapshot.get("runtime_identity")
+-                or receipt.get("observe_mode") is not False
+-            ):
+-                return failure
+-            worker.metrics.record_route("native_resident")
+-            worker._record_native_decision_receipt(receipt)
+-            binding = native_review_policy_binding(harness="codex", native_result=result, verified_receipt=receipt)
+-            if not native_review_binding_matches(request, binding):
+-                return failure
+-            if not isinstance(stored_envelope, Mapping) or receipt.get("request_digest") != stored_envelope.get(
+-                NATIVE_REVIEW_REQUEST_DIGEST_FIELD
+-            ):
+-                return failure
+-            if receipt.get("request_digest") != request.get("artifact_hash"):
+-                return failure
+-            # Review is lifted only by the exact authority consumed below.
+-            # All independent Rust blocks and uncertainty retain their floor.
+-            action = result.get("policy_action")
+-            minimum = result.get("minimum_action")
+-            allowed = action == "allow" and minimum == "allow" and result.get("decision") == "allow"
+-            reviewable = action == "review" and minimum == "review" and result.get("decision") == "deny"
+-            if (
+-                not (allowed or reviewable)
+-                or not _original_hook_is_live(store, request_id, hook_input)
+-                or time.monotonic() >= deadline
+-            ):
+-                return failure
+-            completed = complete_codex_live_decision(
+-                store,
+-                request_id=request_id,
+-                now=_now(),
+-                fresh_allow_authorized=True,
+-                require_consumed_once_for_replay=True,
+-            )
+-        # Database acquisition/finalization and lock retirement consume the
+-        # same absolute budget. A consumed-but-undelivered decision may be
+-        # retried by the original hook; it must never produce a late allow.
+-        # The browser wait can expire or its process can exit while SQLite
+-        # commits, independently of this HTTP request's remaining budget.
+-        # Retain the committed consume for an exact retry, but never deliver
+-        # an allow to an expired or replaced original waiter.
+-        if not _original_hook_is_live(store, request_id, hook_input) or time.monotonic() >= deadline:
+-            return failure
+-        return completed
+-    except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):
+-        return failure
+diff --git a/src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py b/src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py
+index dcff16c0e..7eaba5d19 100644
+--- a/src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py
++++ b/src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py
+@@ -9,24 +9,17 @@ from __future__ import annotations
+ import sqlite3
+ import uuid
+ from collections.abc import Mapping
+-from dataclasses import replace
+ from datetime import datetime, timezone
+ from pathlib import Path
+ from urllib.parse import urlparse
+ 
+-from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY, CODEX_BROWSER_WAIT_TIMEOUT_SECONDS_KEY
+ from ..models import GuardApprovalRequest, format_local_http_origin
+-from ..runtime.actions import normalize_harness_payload
+-from ..store import GuardStore
+ from .hook_native_review_binding import (
+     NATIVE_REVIEW_BINDING_FIELD,
+-    NATIVE_REVIEW_REQUEST_DIGEST_FIELD,
+-    native_codex_request_digest,
+     native_review_action_identity,
+     native_review_binding_matches,
+     native_review_policy_binding,
+ )
+-from .hook_native_review_continuation import attach_native_codex_wait, native_codex_wait_operation
+ from .hook_request_parsing import pre_tool_command
+ from .hook_worker_responses import (
+     harness_json_from_native_pre_tool,
+@@ -45,7 +38,6 @@ def pause_native_pre_tool_for_approval(
+     workspace: Path | None,
+     guard_home: Path,
+     verified_receipt: object = None,
+-    home_dir: Path | None = None,
+ ) -> dict[str, object]:
+     """Pause a native review result and attach any queued approval metadata."""
+ 
+@@ -65,10 +57,7 @@ def pause_native_pre_tool_for_approval(
+             reason="HOL Guard could not bind this review to its native policy.",
+         )
+         return harness_json_from_native_pre_tool(harness, failed)
+-    live_codex_payload = harness == "codex" and (
+-        CODEX_BROWSER_WAIT_PROCESS_KEY in payload or CODEX_BROWSER_WAIT_TIMEOUT_SECONDS_KEY in payload
+-    )
+-    if not live_codex_payload and _native_review_matching_allow(
++    if _native_review_matching_allow(
+         store,
+         harness=harness,
+         tool_name=tool_name,
+@@ -91,8 +80,6 @@ def pause_native_pre_tool_for_approval(
+         workspace=workspace,
+         guard_home=guard_home,
+         policy_binding=binding,
+-        home_dir=home_dir,
+-        verified_receipt=verified_receipt,
+     )
+     if queued is None:
+         failed = dict(native_result)
+@@ -122,7 +109,6 @@ def queue_native_pre_tool_review(
+     workspace: Path | None,
+     guard_home: Path,
+     verified_receipt: object = None,
+-    home_dir: Path | None = None,
+ ) -> dict[str, object] | None:
+     """Persist one native review as an approval-center request."""
+ 
+@@ -140,8 +126,6 @@ def queue_native_pre_tool_review(
+         workspace=workspace,
+         guard_home=guard_home,
+         policy_binding=binding,
+-        home_dir=home_dir,
+-        verified_receipt=verified_receipt,
+     )
+ 
+ 
+@@ -154,8 +138,6 @@ def _queue_native_pre_tool_review(
+     workspace: Path | None,
+     guard_home: Path,
+     policy_binding: Mapping[str, object] | None,
+-    home_dir: Path | None,
+-    verified_receipt: object,
+ ) -> dict[str, object] | None:
+     persist = getattr(store, "add_approval_request", None)
+     lookup = getattr(store, "get_approval_request", None)
+@@ -164,13 +146,6 @@ def _queue_native_pre_tool_review(
+     launch_target = _native_review_launch_target(payload)
+     tool_name = _native_review_tool_name(payload)
+     command = pre_tool_command(payload)
+-    now = datetime.now(tz=timezone.utc).isoformat()
+-    try:
+-        operation = native_codex_wait_operation(
+-            store, harness=harness, payload=payload, workspace=workspace, home_dir=home_dir, now=now
+-        )
+-    except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):
+-        return None
+     request_id = uuid.uuid4().hex
+     artifact_id = _native_review_artifact_id(harness, tool_name)
+     approval_center_url = _native_review_approval_center_url(store)
+@@ -207,38 +182,7 @@ def _queue_native_pre_tool_review(
+         ),
+     )
+     try:
+-        if harness == "codex":
+-            envelope = normalize_harness_payload(
+-                harness, "PreToolUse", payload, workspace=workspace, home_dir=home_dir or guard_home.parent
+-            ).to_dict()
+-            envelope["pre_execution_result"] = "review"
+-            if policy_binding is not None:
+-                envelope[NATIVE_REVIEW_BINDING_FIELD] = dict(policy_binding)
+-            request_digest = native_codex_request_digest(native_result, verified_receipt)
+-            if request_digest is not None:
+-                envelope[NATIVE_REVIEW_REQUEST_DIGEST_FIELD] = request_digest
+-                # The local-once MAC binds this exact native request digest.
+-                request = replace(request, artifact_hash=request_digest)
+-            elif operation is not None:
+-                return None
+-            request = replace(request, action_envelope_json=envelope)
+-        if operation is not None and isinstance(store, GuardStore):
+-            from ..continuation_runtime import continuation_offer_payload
+-
+-            request = replace(
+-                request,
+-                continuation_snapshot=continuation_offer_payload(
+-                    store, request_row=request.to_dict(), now=now, headless=True, operation=operation
+-                ),
+-                # Every live hook owns one exact request/authority. Pending queue
+-                # deduplication must never retarget or extend another waiter.
+-                action_identity=request_id,
+-            )
+-        persisted_id = persist(request, now)
+-        if operation is not None and isinstance(store, GuardStore):
+-            if not isinstance(persisted_id, str) or persisted_id != request_id:
+-                raise ValueError("native_codex_wait_request_deduplicated")
+-            attach_native_codex_wait(store, request_id=persisted_id, operation=operation, workspace=workspace, now=now)
++        persisted_id = persist(request, datetime.now(tz=timezone.utc).isoformat())
+         stored = lookup(persisted_id)
+     except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):
+         return None
+@@ -274,11 +218,6 @@ def _native_review_matching_allow(
+             continue
+         if row.get("resolution_action") != "allow":
+             continue
+-        snapshot = row.get("continuation_snapshot")
+-        if harness == "codex" and isinstance(snapshot, Mapping) and snapshot.get("capability") == "suspended-response":
+-            # Browser continuation consumes its exact local-once authority at
+-            # the live-decision endpoint, never through reusable resolved rows.
+-            continue
+         if row.get("artifact_id") != expected_artifact_id:
+             continue
+         if row.get("artifact_name") != tool_name:
+diff --git a/src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py b/src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py
+index 71efc2725..0b7ba9bbc 100644
+--- a/src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py
++++ b/src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py
+@@ -9,31 +9,9 @@ from collections.abc import Mapping
+ from ..native_decision_receipt import receipt_matches_edge, validate_native_decision_receipt
+ 
+ NATIVE_REVIEW_BINDING_FIELD = "native_review_policy_binding"
+-NATIVE_REVIEW_REQUEST_DIGEST_FIELD = "native_review_request_digest"
+ _SCHEMA = "guard.native-review-policy-binding.v1"
+ 
+ 
+-def native_codex_request_digest(native_result: Mapping[str, object], verified_receipt: object) -> str | None:
+-    """Retain the Rust commitment to exact Codex input, source, and generation.
+-
+-    This is distinct from ordinary reusable-review policy binding. A renewed
+-    policy generation conservatively requires a new browser approval.
+-    """
+-    receipt = validate_native_decision_receipt(verified_receipt)
+-    if receipt is None or not receipt_matches_edge(
+-        {
+-            "harness": "codex",
+-            "event_name": "PreToolUse",
+-            "payload_kind": receipt["payload_kind"],
+-            "result": native_result,
+-        },
+-        receipt,
+-    ):
+-        return None
+-    digest = receipt.get("request_digest")
+-    return digest if isinstance(digest, str) else None
+-
+-
+ def native_review_policy_binding(
+     *, harness: str, native_result: Mapping[str, object], verified_receipt: object
+ ) -> dict[str, object] | None:
+diff --git a/src/codex_plugin_scanner/guard/daemon/hook_native_review_continuation.py b/src/codex_plugin_scanner/guard/daemon/hook_native_review_continuation.py
+deleted file mode 100644
+index 4e7ceef8a..000000000
+--- a/src/codex_plugin_scanner/guard/daemon/hook_native_review_continuation.py
++++ /dev/null
+@@ -1,85 +0,0 @@
+-"""Record the original registered Codex waiter without inventing a resume target."""
+-
+-from __future__ import annotations
+-
+-from collections.abc import Mapping
+-from datetime import datetime, timedelta
+-from pathlib import Path
+-
+-from ..config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS, load_guard_config
+-from ..live_process_identity import (
+-    CODEX_BROWSER_WAIT_PROCESS_KEY,
+-    bound_wait_timeout_seconds,
+-    process_identity_matches,
+-)
+-from ..store import GuardStore
+-
+-
+-def native_codex_wait_operation(
+-    store: object,
+-    *,
+-    harness: str,
+-    payload: Mapping[str, object],
+-    workspace: Path | None,
+-    home_dir: Path | None,
+-    now: str,
+-) -> dict[str, object] | None:
+-    """Accept only an independently live bridge identity and bounded wait budget."""
+-    if harness != "codex" or not isinstance(store, GuardStore) or home_dir is None or not home_dir.is_absolute():
+-        return None
+-    identity = payload.get(CODEX_BROWSER_WAIT_PROCESS_KEY)
+-    timeout = bound_wait_timeout_seconds(payload, maximum=MAX_APPROVAL_WAIT_TIMEOUT_SECONDS)
+-    if not isinstance(identity, Mapping) or not process_identity_matches(identity) or timeout is None:
+-        return None
+-    configured = load_guard_config(store.guard_home, workspace).approval_wait_timeout_seconds
+-    timeout = min(timeout, max(0, configured), MAX_APPROVAL_WAIT_TIMEOUT_SECONDS)
+-    if timeout <= 0:
+-        return None
+-    started = datetime.fromisoformat(now)
+-    return {
+-        "created_at": now,
+-        "updated_at": now,
+-        "harness": harness,
+-        "status": "waiting_on_approval",
+-        "metadata": {
+-            "hook_event_name": "PreToolUse",
+-            "workspace": str(workspace) if workspace is not None else None,
+-            # This came from the validated original ingress, not a resume
+-            # request. The fresh Rust request digest authenticates its reuse.
+-            "native_hook_home_dir": str(home_dir),
+-            "codex_hook_waits_for_browser_approval": True,
+-            "codex_browser_wait_started_at": now,
+-            "codex_browser_wait_deadline_at": (started + timedelta(seconds=timeout)).isoformat(),
+-            "codex_browser_wait_timeout_seconds": timeout,
+-            "codex_browser_wait_process": dict(identity),
+-        },
+-    }
+-
+-
+-def attach_native_codex_wait(
+-    store: GuardStore, *, request_id: str, operation: Mapping[str, object], workspace: Path | None, now: str
+-) -> None:
+-    """Link the newly persisted exact request to an actual local waiting operation."""
+-    # Runtime imports avoid the surface runtime -> approvals -> native queue cycle.
+-    from ..codex_resume import seed_request_resume_record
+-    from ..runtime.surface_server import GuardSurfaceRuntime
+-
+-    if store.get_guard_operation_for_approval_request(request_id) is not None:
+-        raise ValueError("native_codex_wait_already_attached")
+-    metadata = operation.get("metadata")
+-    if not isinstance(metadata, Mapping) or not process_identity_matches(metadata.get("codex_browser_wait_process")):
+-        raise ValueError("native_codex_wait_process_unavailable")
+-    runtime = GuardSurfaceRuntime(store)
+-    session = runtime.start_session(
+-        harness="codex",
+-        surface="harness-adapter",
+-        workspace=str(workspace) if workspace is not None else None,
+-        client_name="codex-native-hook",
+-        capabilities=("approval-resolution",),
+-    )
+-    started = runtime.start_operation(
+-        session_id=str(session["session_id"]), operation_type="tool_call", harness="codex", metadata=dict(metadata)
+-    )
+-    runtime.mark_waiting_on_approval(str(started["operation_id"]), [request_id])
+-    if seed_request_resume_record(store, request_id=request_id, now=now) is None:
+-        raise ValueError("native_codex_wait_resume_missing")
+diff --git a/src/codex_plugin_scanner/guard/daemon/hook_worker_native.py b/src/codex_plugin_scanner/guard/daemon/hook_worker_native.py
+index 46e254702..1a99e8c6d 100644
+--- a/src/codex_plugin_scanner/guard/daemon/hook_worker_native.py
++++ b/src/codex_plugin_scanner/guard/daemon/hook_worker_native.py
+@@ -318,11 +318,9 @@ class HookWorkerNativeMixin:
+         deadline: float | None,
+     ) -> dict[str, object]:
+         policy_snapshot = self._native_policy_snapshot(workspace, deadline=deadline)
+-        # Native evaluation and Python delivery use the same acknowledged
+-        # posture. A local Watch edit cannot weaken an enforcing snapshot
+-        # before its replacement is accepted. A missing binding already takes
+-        # the existing unavailable route, whose response is posture-independent.
+-        recording_only = policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
++        recording_only = (
++            policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
++        ) or hook_review_is_recording_only(guard_home=guard_home, workspace=workspace)
+         fenced: bool | None = None
+         try:
+             with native_review_fence(
+@@ -455,7 +453,6 @@ class HookWorkerNativeMixin:
+                     workspace=workspace,
+                     guard_home=guard_home,
+                     verified_receipt=edge.get("receipt"),
+-                    home_dir=home_dir,
+                 )
+                 return _record_native_pre_activity(self, native_harness, payload, response, accepted_receipt), True
+             return _record_native_pre_activity(
+diff --git a/src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py b/src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py
+index ef6d91ec9..c3e276d0b 100644
+--- a/src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py
++++ b/src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py
+@@ -295,7 +295,6 @@ class RuntimeHookScheduler:
+         self._queued_by_client[item.client_key] = self._queued_by_client.get(item.client_key, 0) + 1
+ 
+     def _dispatch(self) -> None:
+-        queued_before_dispatch = self._queued
+         self._expire_waiters()
+         while self._active < self._active_limit and self._queued > 0:
+             item = self._next_item()
+@@ -310,11 +309,7 @@ class RuntimeHookScheduler:
+             self._active_by_harness[item.harness] = self._active_by_harness.get(item.harness, 0) + 1
+             self._active_by_client[item.client_key] = self._active_by_client.get(item.client_key, 0) + 1
+             self._admitted += 1
+-        # A condition wake with no dispatch/expiry progress must go back to
+-        # sleep. Otherwise queued peers repeatedly wake each other while all
+-        # active slots are busy, competing with the reviews that release them.
+-        if self._queued != queued_before_dispatch:
+-            self._condition.notify_all()
++        self._condition.notify_all()
+ 
+     def _next_item(self) -> QueuedRuntimeHook | None:
+         boosted = self._oldest_aged_eligible()
+@@ -479,10 +474,6 @@ class RuntimeHookScheduler:
+                 self._service_time_by_lane[item.lane].append((finished_at, service_time))
+             self._dispatch()
+ 
+-            # Byte reservations can wait without any queued reviews. Releasing
+-            # a permit must wake them even when dispatch made no progress.
+-            self._condition.notify_all()
+-
+     def _oldest_queued_ms(self, now: float) -> float:
+         oldest = min(
+             (item.queued_at for clients in self._queues.values() for items in clients.values() for item in items),
+diff --git a/src/codex_plugin_scanner/guard/daemon/server.py b/src/codex_plugin_scanner/guard/daemon/server.py
+index ba7cb97b3..4738e0524 100644
+--- a/src/codex_plugin_scanner/guard/daemon/server.py
++++ b/src/codex_plugin_scanner/guard/daemon/server.py
+@@ -5503,19 +5503,6 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
+ 
+     def _handle_codex_live_decision(self, request_id: str, payload: Mapping[str, object]) -> None:
+         request = self.server.store.get_approval_request(request_id)  # type: ignore[attr-defined]
+-        from .codex_native_live_decision import complete_native_codex_live_decision, is_native_codex_review
+-
+-        if is_native_codex_review(request):
+-            daemon_server = self._daemon_server()
+-            result = complete_native_codex_live_decision(
+-                daemon_server.store,
+-                worker=daemon_server.hook_worker,
+-                request_id=request_id,
+-                payload=payload,
+-                deadline=time.monotonic() + _RUNTIME_HOOK_PROCESS_TIMEOUT_SECONDS,
+-            )
+-            self._write_json(result, status=200 if result.get("completed") is True else 409)
+-            return
+         previous = self.server.store.get_request_resume(request_id)  # type: ignore[attr-defined]
+         claimed_hash, claimed_request_id = _codex_live_replay_authority(request, previous)
+         if isinstance(request, Mapping) and request.get("resolution_action") == "allow":
+diff --git a/src/codex_plugin_scanner/guard/mcp_tool_calls.py b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+index 52a0d770a..93b3967c3 100644
+--- a/src/codex_plugin_scanner/guard/mcp_tool_calls.py
++++ b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+@@ -3,10 +3,9 @@
+ from __future__ import annotations
+ 
+ import json
+-import math
+ import re
+ from collections.abc import Callable, Mapping
+-from dataclasses import dataclass, field, fields, replace
++from dataclasses import dataclass, replace
+ from functools import lru_cache
+ from hashlib import sha256
+ from ipaddress import ip_address
+@@ -288,123 +287,13 @@ def build_tool_call_artifact(
+     )
+ 
+ 
+-@dataclass(frozen=True, slots=True)
+-class ToolCallRiskFacts:
+-    """Ordered pure facts bound to one exact, private request snapshot.
+-
+-    This value carries no policy or approval authority. Consumers must match
+-    the complete inputs again and consume their owned matching copy. The
+-    private binding may contain request secrets, so it must never be exported.
+-    """
+-
+-    categories: tuple[str, ...]
+-    _input_binding: tuple[bytes, tuple[str | int, ...]] = field(repr=False)
+-
+-
+-def _copy_strict_json(value: object, shape: bytearray, leaves: list[str | int]) -> object:
+-    """Own containers and bind their exact structure without encoding text.
+-
+-    The private preorder shape has distinct scalar, key, and container tags.
+-    Container closing tags preserve nesting and key tags preserve dict order.
+-    Immutable string/integer leaves can be shared; floats use their exact hex
+-    spelling so that signed zero cannot compare equal. Neither the eventual
+-    bytes shape nor its leaf tuple retains a mutable caller-owned container.
+-    """
+-
+-    kind = type(value)
+-    if value is None:
+-        shape.append(ord("n"))
+-        return value
+-    if kind is bool:
+-        shape.append(ord("t") if value else ord("f"))
+-        return value
+-    if kind is str or kind is int:
+-        shape.append(ord("s") if kind is str else ord("i"))
+-        leaves.append(cast(str | int, value))
+-        return value
+-    if kind is float and math.isfinite(cast(float, value)):
+-        shape.append(ord("d"))
+-        leaves.append(cast(float, value).hex())
+-        return value
+-    if kind is list:
+-        shape.append(ord("["))
+-        owned = [_copy_strict_json(item, shape, leaves) for item in cast(list[object], value)]
+-        shape.append(ord("]"))
+-        return owned
+-    if kind is dict:
+-        shape.append(ord("{"))
+-        result: dict[str, object] = {}
+-        for key, item in cast(dict[object, object], value).items():
+-            if type(key) is not str:
+-                raise ValueError("tool_call_facts_require_string_keys")
+-            shape.append(ord("k"))
+-            leaves.append(cast(str, key))
+-            result[cast(str, key)] = _copy_strict_json(item, shape, leaves)
+-        shape.append(ord("}"))
+-        return result
+-    raise ValueError("tool_call_facts_require_plain_finite_json")
+-
+-
+-def _tool_call_risk_snapshot(
+-    artifact: GuardArtifact, arguments: object
+-) -> tuple[tuple[bytes, tuple[str | int, ...]], GuardArtifact, object] | None:
+-    """Keep unsupported inputs on the existing, uncached analysis path."""
+-
+-    if type(artifact) is not GuardArtifact or type(artifact.args) is not tuple:
+-        return None
+-    if any(type(item) is not str for item in artifact.args):
+-        return None
+-    try:
+-        shape = bytearray()
+-        leaves: list[str | int] = []
+-        owned_fields = {
+-            item.name: _copy_strict_json(getattr(artifact, item.name), shape, leaves)
+-            for item in fields(artifact)
+-            if item.name != "args"
+-        }
+-        # The exact GuardArtifact field order is fixed above. Its args tuple is
+-        # already immutable and validated, but still enters the value binding.
+-        _copy_strict_json(list(artifact.args), shape, leaves)
+-        owned_arguments = _copy_strict_json(arguments, shape, leaves)
+-        binding = bytes(shape), tuple(leaves)
+-        owned_artifact = replace(artifact, **owned_fields)
+-    except (ValueError, TypeError, RecursionError, RuntimeError):
+-        return None
+-    return binding, owned_artifact, owned_arguments
+-
+-
+-def prepare_tool_call_risk_facts(artifact: GuardArtifact, arguments: object) -> ToolCallRiskFacts | None:
+-    """Analyze once for a single authority preparation, never across waits."""
+-
+-    snapshot = _tool_call_risk_snapshot(artifact, arguments)
+-    if snapshot is None:
+-        return None
+-    binding, owned_artifact, owned_arguments = snapshot
+-    return ToolCallRiskFacts(tool_call_risk_categories(owned_artifact, owned_arguments), binding)
+-
+-
+-def _matching_tool_call_risk_snapshot(
+-    artifact: GuardArtifact, arguments: object, facts: ToolCallRiskFacts | None
+-) -> tuple[GuardArtifact, object] | None:
+-    if facts is None:
+-        return None
+-    snapshot = _tool_call_risk_snapshot(artifact, arguments)
+-    if snapshot is None or snapshot[0] != facts._input_binding:
+-        return None
+-    return snapshot[1], snapshot[2]
+-
+-
+ def build_tool_call_hash(
+     artifact: GuardArtifact,
+     arguments: object,
+     *,
+     workspace: Path | str | None = None,
+     config: GuardConfig | None = None,
+-    risk_facts: ToolCallRiskFacts | None = None,
+ ) -> str:
+-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+-    if matching_snapshot is not None:
+-        artifact, arguments = matching_snapshot
+     browser_intent = normalize_browser_mcp_intent(artifact, arguments)
+     content_arguments: object = arguments
+     if browser_intent is not None:
+@@ -486,11 +375,7 @@ def build_tool_call_hash(
+         },
+         content=content_hash,
+         capabilities={
+-            "risk_categories": list(
+-                risk_facts.categories
+-                if matching_snapshot is not None and risk_facts is not None
+-                else tool_call_risk_categories(artifact, arguments)
+-            ),
++            "risk_categories": list(tool_call_risk_categories(artifact, arguments)),
+             "server_identity": artifact.metadata.get("mcp_server_identity"),
+             "tool_catalog_fingerprint": tool_catalog_fingerprint,
+             "tool_identity": artifact.metadata.get("mcp_tool_identity"),
+@@ -563,13 +448,11 @@ def evaluate_tool_call(
+     arguments: object,
+     claim_saved_approval: bool = True,
+     fresh_authority_provider: (Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None) = None,
+-    risk_facts: ToolCallRiskFacts | None = None,
+ ) -> ToolCallDecision:
+     current = _evaluate_current_tool_call(
+         config=config,
+         artifact=artifact,
+         arguments=arguments,
+-        risk_facts=risk_facts,
+     )
+     current = _apply_temporary_mcp_grant(
+         store=store,
+@@ -878,7 +761,6 @@ def _evaluate_current_tool_call(
+     config: GuardConfig,
+     artifact: GuardArtifact,
+     arguments: object,
+-    risk_facts: ToolCallRiskFacts | None = None,
+ ) -> ToolCallDecision:
+     """Evaluate current configuration and call shape without saved state."""
+ 
+@@ -900,14 +782,7 @@ def _evaluate_current_tool_call(
+             summary=("Local Guard's current configuration is stricter than the tool-call-specific recommendation."),
+         )
+ 
+-    # Resolve current policy first, then validate facts against the current
+-    # inputs. Never match a mutable alias and subsequently analyze that alias.
+-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+-    if matching_snapshot is not None and risk_facts is not None:
+-        artifact, arguments = matching_snapshot
+-        risk_categories = risk_facts.categories
+-    else:
+-        risk_categories = tool_call_risk_categories(artifact, arguments)
++    risk_categories = tool_call_risk_categories(artifact, arguments)
+     signals = _tool_call_risk_signals_for_categories(artifact, arguments, risk_categories)
+     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
+ 
+diff --git a/src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py b/src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py
+index c3874712b..bcfa94048 100644
+--- a/src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py
++++ b/src/codex_plugin_scanner/guard/runtime/lockfile_parse_result.py
+@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Protocol
+ 
+ from ..stable_digest import stable_digest_hex
+ from .jsonc import loads_jsonc
+-from .lockfile_text_projection import TextLockfileValidationError, parse_text_lockfile
+ from .package_manifest_diff import _DeadlineExceededError
+ 
+ if TYPE_CHECKING or sys.version_info >= (3, 11):
+@@ -64,7 +63,6 @@ class LockfileParseResult:
+     parser_version: str = LOCKFILE_PARSER_VERSION
+     manifest_dependencies: tuple[tuple[str, str], ...] | None = None
+     direct_version_candidates: tuple[tuple[str, str], ...] = ()
+-    yarn_selector_versions: tuple[tuple[tuple[str, ...], str], ...] = ()
+     source_hash_complete: bool = True
+     source_byte_count: int | None = None
+     source_byte_limit: int | None = None
+@@ -152,21 +150,9 @@ def parse_lockfile_text(
+         lower_name = path.rsplit("/", 1)[-1].lower()
+         if lower_name not in _JSON_LOCKFILES | _JSONC_LOCKFILES | _TOML_LOCKFILES | _TEXT_LOCKFILES:
+             raise _LockfileValidationError("unsupported_format")
+-        document = (
+-            None if lower_name in _TEXT_LOCKFILES else _validate_lockfile_structure(lower_name, text, deadline=deadline)
+-        )
++        document = _validate_lockfile_structure(lower_name, text, deadline=deadline)
+         manifest_dependencies = None
+-        direct_version_candidates = ()
+-        yarn_selector_versions = ()
+-        if lower_name in _TEXT_LOCKFILES:
+-            projection = parse_text_lockfile(lower_name, text, deadline=deadline, max_entries=LOCKFILE_MAX_ENTRIES)
+-            entries = tuple(
+-                LockfileDependencyEntry(package_name, package_name, version, False)
+-                for package_name, version in projection.dependencies
+-            )
+-            direct_version_candidates = projection.direct_versions
+-            yarn_selector_versions = projection.yarn_selector_versions
+-        elif lower_name == "package-lock.json":
++        if lower_name == "package-lock.json":
+             raw_entries = package_lock_parser(text, deadline=deadline, document=document)
+             entries = tuple(LockfileDependencyEntry(*entry) for entry in raw_entries)
+             # The manifest resolver retains its legacy empty-packages fallback.
+@@ -188,8 +174,7 @@ def parse_lockfile_text(
+             manifest_dependencies is not None and len(manifest_dependencies) > LOCKFILE_MAX_ENTRIES
+         ):
+             raise _LockfileValidationError("entry_limit_exceeded")
+-        if lower_name not in _TEXT_LOCKFILES:
+-            direct_version_candidates = _direct_version_candidates(lower_name, document, deadline=deadline)
++        direct_version_candidates = _direct_version_candidates(lower_name, document, deadline=deadline)
+         if len(direct_version_candidates) > LOCKFILE_MAX_ENTRIES:
+             raise _LockfileValidationError("entry_limit_exceeded")
+         _ensure_within_deadline(deadline)
+@@ -202,11 +187,10 @@ def parse_lockfile_text(
+             budget_ms=budget_ms,
+             manifest_dependencies=manifest_dependencies,
+             direct_version_candidates=direct_version_candidates,
+-            yarn_selector_versions=yarn_selector_versions,
+         )
+     except _DeadlineExceededError:
+         error_reason = "deadline_exceeded"
+-    except (_LockfileValidationError, TextLockfileValidationError) as exc:
++    except _LockfileValidationError as exc:
+         error_reason = exc.reason
+     except (json.JSONDecodeError, tomllib.TOMLDecodeError):
+         error_reason = "syntax_error"
+@@ -298,7 +282,8 @@ def _validate_lockfile_structure(name: str, text: str, *, deadline: float) -> di
+         if packages is not None and not isinstance(packages, list):
+             raise _LockfileValidationError("unsupported_shape")
+         return payload
+-    raise _LockfileValidationError("unsupported_format")
++    _validate_text_lockfile(name, text, deadline=deadline)
++    return None
+ 
+ 
+ def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+@@ -352,3 +337,24 @@ def _validate_optional_lists(payload: dict[str, object], keys: tuple[str, ...])
+     for key in keys:
+         if key in payload and not isinstance(payload[key], list):
+             raise _LockfileValidationError("unsupported_shape")
++
++
++def _validate_text_lockfile(name: str, text: str, *, deadline: float) -> None:
++    bracket_depth = 0
++    for raw_line in text.splitlines():
++        _ensure_within_deadline(deadline)
++        if "\x00" in raw_line or ("\t" in raw_line and name == "pnpm-lock.yaml"):
++            raise _LockfileValidationError("syntax_error")
++        stripped = raw_line.strip()
++        if not stripped or stripped.startswith("#"):
++            continue
++        bracket_depth += raw_line.count("[") + raw_line.count("{")
++        bracket_depth -= raw_line.count("]") + raw_line.count("}")
++        if bracket_depth < 0:
++            raise _LockfileValidationError("syntax_error")
++        if name == "pnpm-lock.yaml" and ":" not in stripped and not stripped.startswith("-"):
++            raise _LockfileValidationError("syntax_error")
++        if name == "yarn.lock" and not raw_line.startswith((" ", "\t")) and not stripped.endswith(":"):
++            raise _LockfileValidationError("syntax_error")
++    if bracket_depth != 0:
++        raise _LockfileValidationError("syntax_error")
+diff --git a/src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py b/src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py
+deleted file mode 100644
+index 8e84a18d9..000000000
+--- a/src/codex_plugin_scanner/guard/runtime/lockfile_text_projection.py
++++ /dev/null
+@@ -1,203 +0,0 @@
+-"""Single traversal of the existing bounded Yarn, pnpm and Bundler grammar.
+-
+-This is the existing supported text projection, not a new general YAML parser.
+-Validation, transitive entries and direct-selector data consume the same lines.
+-The immutable projection retains declaration order and distinct selector views.
+-"""
+-
+-from __future__ import annotations
+-
+-import re
+-import time
+-from dataclasses import dataclass
+-
+-from .package_lock_versions import direct_lockfile_version
+-from .package_manifest_diff import (
+-    _DeadlineExceededError,
+-    _exact_dependency_version,
+-    _pnpm_entry_name_version,
+-    _yarn_selector_name,
+-)
+-
+-_YARN_CLASSIC_VERSION_RE = re.compile(r'^version\s+"([^"]+)"$')
+-_YARN_BERRY_VERSION_RE = re.compile(r'^version:\s*"?([^"\s]+)"?$')
+-_GEM_SECTION_RE = re.compile(r"[A-Z][A-Z0-9_ ]+")
+-_GEM_ENTRY_RE = re.compile(r"^\s{4}([A-Za-z0-9_.:-]+) \(([^)]+)\)")
+-
+-
+-class TextLockfileValidationError(ValueError):
+-    def __init__(self, reason: str) -> None:
+-        super().__init__(reason)
+-        self.reason = reason
+-
+-
+-@dataclass(frozen=True, slots=True)
+-class TextLockfileProjection:
+-    dependencies: tuple[tuple[str, str], ...]
+-    direct_versions: tuple[tuple[str, str], ...] = ()
+-    yarn_selector_versions: tuple[tuple[tuple[str, ...], str], ...] = ()
+-
+-
+-class _PnpmProjection:
+-    def __init__(self) -> None:
+-        self.dependencies: dict[str, str] = {}
+-        self.package_versions: dict[str, str] = {}
+-        self.direct_versions: dict[str, str] = {}
+-        self.section: str | None = None
+-        self.snapshot_dependencies = False
+-        self.importer: str | None = None
+-        self.dependency_block: str | None = None
+-        self.dependency_name: str | None = None
+-
+-    def consume(self, raw_line: str, stripped: str) -> None:
+-        indent = len(raw_line) - len(raw_line.lstrip(" "))
+-        if indent == 0:
+-            self.section = stripped.removesuffix(":")
+-            self.snapshot_dependencies = False
+-            self.importer = self.dependency_block = self.dependency_name = None
+-            return
+-        if self.section in {"packages", "snapshots"}:
+-            self._transitive(indent, stripped)
+-        elif self.section in {"dependencies", "devDependencies", "optionalDependencies"}:
+-            self._direct(indent, stripped, name_indent=2)
+-        elif self.section == "importers":
+-            if indent == 2 and stripped.endswith(":"):
+-                self.importer = stripped[:-1].strip('"').strip("'")
+-                self.dependency_block = self.dependency_name = None
+-            elif self.importer in {".", "default"}:
+-                if indent == 4 and stripped.endswith(":"):
+-                    block = stripped.removesuffix(":")
+-                    self.dependency_block = block if "dependencies" in block.lower() else None
+-                    self.dependency_name = None
+-                elif self.dependency_block is not None:
+-                    self._direct(indent, stripped, name_indent=6)
+-
+-    def _transitive(self, indent: int, stripped: str) -> None:
+-        if indent == 2 and stripped.endswith(":"):
+-            self.snapshot_dependencies = False
+-            name, version = _pnpm_entry_name_version(stripped[:-1].strip().strip('"').strip("'"))
+-            if name is not None and version is not None:
+-                self.package_versions[name] = self.dependencies[name] = version
+-            return
+-        if self.section == "snapshots" and indent == 4 and stripped == "dependencies:":
+-            self.snapshot_dependencies = True
+-            return
+-        if self.section == "snapshots" and indent <= 4:
+-            self.snapshot_dependencies = False
+-        if not self.snapshot_dependencies or indent < 6 or ":" not in stripped:
+-            return
+-        name, _, value = stripped.partition(":")
+-        name, value = name.strip().strip('"').strip("'"), value.strip().strip('"').strip("'")
+-        version = self.package_versions.get(name) or _exact_dependency_version(value)
+-        if version is not None:
+-            self.dependencies[name] = version
+-
+-    def _direct(self, indent: int, stripped: str, *, name_indent: int) -> None:
+-        if indent == name_indent and ":" in stripped:
+-            name, _, value = stripped.partition(":")
+-            self.dependency_name = name.strip().strip('"').strip("'")
+-            version = direct_lockfile_version(value.strip().strip('"').strip("'"))
+-            if version is not None:
+-                self.direct_versions[self.dependency_name] = version
+-                self.dependency_name = None
+-        elif self.dependency_name is not None and indent >= name_indent + 2 and stripped.startswith("version:"):
+-            version = direct_lockfile_version(stripped.partition(":")[2].strip().strip('"').strip("'"))
+-            if version is not None:
+-                self.direct_versions[self.dependency_name] = version
+-            self.dependency_name = None
+-
+-
+-def _yarn_header_projection(
+-    header: str, *, deadline: float, max_entries: int
+-) -> tuple[tuple[str, ...], tuple[str, ...]]:
+-    names: dict[str, None] = {}
+-    selectors: list[str] = []
+-    # Avoid an unbounded split list and quadratic list-membership deduplication.
+-    # In particular, versionless headers must obey limits before any next line.
+-    start = 0
+-    while start <= len(header):
+-        if time.monotonic() > deadline:
+-            raise _DeadlineExceededError("deadline_exceeded")
+-        end = header.find(",", start)
+-        part = header[start:] if end < 0 else header[start:end]
+-        selector = part.strip().strip('"').strip("'")
+-        if selector and selector != "__metadata":
+-            selectors.append(selector)
+-            if len(selectors) > max_entries:
+-                raise TextLockfileValidationError("entry_limit_exceeded")
+-            name = _yarn_selector_name(selector)
+-            if name:
+-                names.setdefault(name, None)
+-        if end < 0:
+-            break
+-        start = end + 1
+-    return tuple(names), tuple(selectors)
+-
+-
+-def parse_text_lockfile(name: str, text: str, *, deadline: float, max_entries: int) -> TextLockfileProjection:
+-    """Validate each line and collect all supported views before publishing any."""
+-
+-    dependencies: dict[str, str] = {}
+-    pnpm = _PnpmProjection() if name == "pnpm-lock.yaml" else None
+-    selectors: tuple[str, ...] = ()
+-    names: tuple[str, ...] = ()
+-    yarn_versions: list[tuple[tuple[str, ...], str]] = []
+-    selector_count = 0
+-    declared_selectors = 0
+-    in_specs = False
+-    bracket_depth = 0
+-    for raw_line in text.splitlines():
+-        if time.monotonic() > deadline:
+-            raise _DeadlineExceededError("deadline_exceeded")
+-        if "\x00" in raw_line or ("\t" in raw_line and name == "pnpm-lock.yaml"):
+-            raise TextLockfileValidationError("syntax_error")
+-        stripped = raw_line.strip()
+-        if not stripped or stripped.startswith("#"):
+-            continue
+-        bracket_depth += raw_line.count("[") + raw_line.count("{")
+-        bracket_depth -= raw_line.count("]") + raw_line.count("}")
+-        if bracket_depth < 0:
+-            raise TextLockfileValidationError("syntax_error")
+-        if pnpm is not None:
+-            if ":" not in stripped and not stripped.startswith("-"):
+-                raise TextLockfileValidationError("syntax_error")
+-            pnpm.consume(raw_line, stripped)
+-            dependencies = pnpm.dependencies
+-        elif name == "yarn.lock":
+-            if not raw_line.startswith((" ", "\t")):
+-                if not stripped.endswith(":"):
+-                    raise TextLockfileValidationError("syntax_error")
+-                header = stripped.removesuffix(":")
+-                names, selectors = _yarn_header_projection(
+-                    header, deadline=deadline, max_entries=max_entries - declared_selectors
+-                )
+-                declared_selectors += len(selectors)
+-            elif names or selectors:
+-                match = _YARN_CLASSIC_VERSION_RE.match(stripped) or _YARN_BERRY_VERSION_RE.match(stripped)
+-                if match is not None:
+-                    version = match.group(1)
+-                    for package_name in names:
+-                        dependencies[package_name] = version
+-                    if selectors:
+-                        selector_count += len(selectors)
+-                        yarn_versions.append((selectors, version))
+-        else:
+-            if stripped == "specs:":
+-                in_specs = True
+-            elif _GEM_SECTION_RE.fullmatch(stripped):
+-                in_specs = False
+-            elif in_specs and (match := _GEM_ENTRY_RE.match(raw_line)) is not None:
+-                dependencies[match.group(1)] = match.group(2)
+-        if (
+-            len(dependencies) > max_entries
+-            or (pnpm is not None and len(pnpm.direct_versions) > max_entries)
+-            or selector_count > max_entries
+-        ):
+-            raise TextLockfileValidationError("entry_limit_exceeded")
+-    if bracket_depth != 0:
+-        raise TextLockfileValidationError("syntax_error")
+-    return TextLockfileProjection(
+-        dependencies=tuple(dependencies.items()),
+-        direct_versions=tuple(pnpm.direct_versions.items()) if pnpm is not None else (),
+-        yarn_selector_versions=tuple(yarn_versions),
+-    )
+diff --git a/src/codex_plugin_scanner/guard/runtime/package_lock_versions.py b/src/codex_plugin_scanner/guard/runtime/package_lock_versions.py
+deleted file mode 100644
+index 1a599977d..000000000
+--- a/src/codex_plugin_scanner/guard/runtime/package_lock_versions.py
++++ /dev/null
+@@ -1,29 +0,0 @@
+-"""Shared exact-version projection for package lockfile selectors."""
+-
+-from __future__ import annotations
+-
+-from .npm_source_spec import parse_npm_source_spec
+-
+-
+-def exact_lockfile_version(value: str | None) -> str | None:
+-    normalized = value.strip() if isinstance(value, str) else ""
+-    if not normalized or parse_npm_source_spec(normalized) is not None:
+-        return None
+-    if normalized.startswith(("^", "~", "<", ">", "!", "*")):
+-        return None
+-    if any(token in normalized for token in ("||", " - ", ",")):
+-        return None
+-    return normalized
+-
+-
+-def direct_lockfile_version(value: str) -> str | None:
+-    normalized = value.split("(", 1)[0].strip()
+-    if normalized.startswith("npm:"):
+-        normalized = normalized.partition("npm:")[2]
+-    if "@" in normalized and not normalized.startswith("@"):
+-        candidate = normalized.rsplit("@", 1)[-1]
+-        if exact_lockfile_version(candidate) is not None:
+-            return candidate
+-    if exact_lockfile_version(normalized) is not None:
+-        return normalized
+-    return None
+diff --git a/src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py b/src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py
+index f4b0a095b..5bc8eabcd 100644
+--- a/src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py
++++ b/src/codex_plugin_scanner/guard/runtime/supply_chain_bundle_models.py
+@@ -3,7 +3,7 @@
+ from __future__ import annotations
+ 
+ from collections.abc import Mapping
+-from dataclasses import dataclass, field, replace
++from dataclasses import dataclass, field
+ from types import MappingProxyType
+ 
+ from .supply_chain_bundle_base import (
+@@ -22,6 +22,7 @@ from .supply_chain_bundle_base import (
+     _require_string,
+     _require_string_array,
+ )
++from .supply_chain_bundle_package_identity import _deduplicate_bundle_packages
+ from .supply_chain_package_identity import (
+     CanonicalPackageIdentity,
+     PackageIdentityError,
+@@ -420,6 +421,7 @@ class SupplyChainBundle:
+         parsed_packages = tuple(
+             SupplyChainBundlePackage.from_dict(item) for item in raw_packages if isinstance(item, dict)
+         )
++        packages = _deduplicate_bundle_packages(parsed_packages)
+         bundle = SupplyChainBundle(
+             advisories=tuple(
+                 SupplyChainBundleAdvisory.from_dict(item) for item in raw_advisories if isinstance(item, dict)
+@@ -434,7 +436,7 @@ class SupplyChainBundle:
+             feed_snapshot_hash=_require_string(data, "feedSnapshotHash"),
+             generated_at=_require_string(data, "generatedAt"),
+             key_id=_require_string(data, "keyId"),
+-            packages=parsed_packages,
++            packages=packages,
+             policy_hash=_require_string(data, "policyHash"),
+             policy_rules=tuple(
+                 SupplyChainBundlePolicyRule.from_dict(item) for item in raw_policy_rules if isinstance(item, dict)
+@@ -446,12 +448,6 @@ class SupplyChainBundle:
+             tier=_require_string(data, "tier"),
+             workspace_id=_require_string(data, "workspaceId"),
+         )
+-        # Index construction already validates every canonical identity and
+-        # rejects conflicting duplicates. Ordinary unique bundles need that
+-        # traversal only once. Exact duplicate payloads retain their historical
+-        # deduplicated public sequence and compact signed-order positions.
+-        if len(bundle.package_index.exact) != len(parsed_packages):
+-            bundle = replace(bundle, packages=tuple(bundle.package_index.exact.values()))
+         if len(bundle.advisories) != len(raw_advisories):
+             raise SupplyChainBundleMalformedError("Bundle advisories must contain only objects")
+         if len(bundle.emergency_denylist) != len(raw_emergency_denylist):
+diff --git a/src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py b/src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py
+index 12618f882..d0d4d9de2 100644
+--- a/src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py
++++ b/src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py
+@@ -57,8 +57,6 @@ from .npm_policy_range import (
+ from .npm_source_spec import NpmSourceSpec, parse_npm_source_spec
+ from .offline_archive_inspection import inspect_archive_offline
+ from .package_intent_common import split_python_extras
+-from .package_lock_versions import direct_lockfile_version as _direct_lockfile_version
+-from .package_lock_versions import exact_lockfile_version as _exact_version
+ from .package_manifest_diff import (
+     _DeadlineExceededError,
+     _dependency_map_for_path,
+@@ -3745,14 +3743,15 @@ def _lockfile_dependency_versions(
+         parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
+         if not parse_result.complete:
+             continue
++        lockfile_text = lockfile_source.decode("utf-8")
+         if lockfile_path.name == "package-lock.json":
+             versions.update(_package_lock_target_versions_from_entries(parse_result, targets))
+             continue
+         if lockfile_path.name == "pnpm-lock.yaml":
+-            versions.update(_target_versions_from_direct_map(targets, dict(parse_result.direct_version_candidates)))
++            versions.update(_pnpm_lock_target_versions(lockfile_text, targets))
+             continue
+         if lockfile_path.name == "yarn.lock":
+-            versions.update(_yarn_lock_target_versions_from_entries(parse_result, targets))
++            versions.update(_yarn_lock_target_versions(lockfile_text, targets))
+             continue
+         if lockfile_path.name == "bun.lock":
+             versions.update(_bun_lock_target_versions(parse_result, targets))
+@@ -4106,25 +4105,6 @@ def _yarn_lock_target_versions(
+     return versions
+ 
+ 
+-def _yarn_lock_target_versions_from_entries(
+-    parse_result: LockfileParseResult,
+-    targets: tuple[dict[str, object], ...],
+-) -> dict[tuple[str, str | None], str]:
+-    # A selector's first declaration wins, including when one target has several
+-    # accepted spellings. Dependency-map projection separately remains last-wins.
+-    selector_first: dict[str, tuple[int, str]] = {}
+-    for index, (selectors, version) in enumerate(parse_result.yarn_selector_versions):
+-        for selector in selectors:
+-            selector_first.setdefault(selector, (index, version))
+-    versions: dict[tuple[str, str | None], str] = {}
+-    target_selectors = {_lockfile_target_key(target): _expected_yarn_selectors(target) for target in targets}
+-    for target_key, expected_selectors in target_selectors.items():
+-        matches = [selector_first[selector] for selector in expected_selectors if selector in selector_first]
+-        if matches:
+-            versions[target_key] = min(matches, key=lambda item: item[0])[1]
+-    return versions
+-
+-
+ def _expected_yarn_selectors(target: dict[str, object]) -> tuple[str, ...]:
+     requested = _optional_string(target.get("version")) or _optional_string(target.get("range"))
+     if requested is None:
+@@ -4255,6 +4235,19 @@ def _target_versions_from_direct_map(
+     return versions
+ 
+ 
++def _direct_lockfile_version(value: str) -> str | None:
++    normalized = value.split("(", 1)[0].strip()
++    if normalized.startswith("npm:"):
++        normalized = normalized.partition("npm:")[2]
++    if "@" in normalized and not normalized.startswith("@"):
++        candidate = normalized.rsplit("@", 1)[-1]
++        if _exact_version(candidate) is not None:
++            return candidate
++    if _exact_version(normalized) is not None:
++        return normalized
++    return None
++
++
+ def _lockfile_target_key(target: dict[str, object]) -> tuple[str, str | None]:
+     return str(target["normalized_name"]), _optional_string(target.get("alias"))
+ 
+@@ -4800,6 +4793,19 @@ def _split_namespace_name(value: str, *, ecosystem: str) -> tuple[str | None, st
+     return identity.namespace, identity.name
+ 
+ 
++def _exact_version(value: str | None) -> str | None:
++    normalized = _optional_string(value)
++    if normalized is None:
++        return None
++    if parse_npm_source_spec(normalized) is not None:
++        return None
++    if normalized.startswith(("^", "~", "<", ">", "!", "*")):
++        return None
++    if any(token in normalized for token in ("||", " - ", ",")):
++        return None
++    return normalized
++
++
+ def _npm_source_spec(value: str | None, *, ecosystem: str) -> NpmSourceSpec | None:
+     return parse_npm_source_spec(value) if ecosystem.lower() == "npm" else None
+ 
+diff --git a/src/codex_plugin_scanner/guard/secrets/secret_detection.py b/src/codex_plugin_scanner/guard/secrets/secret_detection.py
+index 7977fa35e..d45ce529e 100644
+--- a/src/codex_plugin_scanner/guard/secrets/secret_detection.py
++++ b/src/codex_plugin_scanner/guard/secrets/secret_detection.py
+@@ -763,29 +763,16 @@ def _provider_match_is_fixture(
+ ) -> bool:
+     if rule.rule_id == "google-api-key" and _path_is_public_client_config(path):
+         return True
++    context = _surrounding_context(text, match_start)
+     unwrapped = candidate.strip().strip("<>[]{}()")
+     explicit_placeholder = (
+         _COMMON_PLACEHOLDER.fullmatch(unwrapped) is not None or _SAMPLE_WORDS.search(candidate) is not None
+     )
+-    sample_fixture = _path_is_sample_fixture(path)
+-    # Surrounding-line materialization splits the entire input. Ordinary
+-    # provider matches do not use it: only placeholder and fixture suppression
+-    # consult neighboring lines. Delay that work until one of those paths needs
+-    # it, keeping the same suppression order even for sensitive fixture paths.
+-    context: str | None = None
+-    if explicit_placeholder:
+-        if sample_fixture:
+-            return True
+-        context = _surrounding_context(text, match_start)
+-        if _SAMPLE_WORDS.search(context) is not None:
+-            return True
++    if explicit_placeholder and (_path_is_sample_fixture(path) or _SAMPLE_WORDS.search(context) is not None):
++        return True
+     if _path_is_high_signal(path):
+         return False
+-    if not sample_fixture:
+-        return False
+-    if context is None:
+-        context = _surrounding_context(text, match_start)
+-    return _TEST_FIXTURE_CONTEXT.search(context) is not None
++    return _path_is_sample_fixture(path) and _TEST_FIXTURE_CONTEXT.search(context) is not None
+ 
+ 
+ def _confidence_label(score: float) -> SecretConfidence:
+diff --git a/src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py b/src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py
+index 5cd89ee3c..bb8863bcb 100644
+--- a/src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py
++++ b/src/codex_plugin_scanner/guard/secrets/secret_repository_scanner.py
+@@ -14,7 +14,6 @@ from dataclasses import dataclass
+ from pathlib import Path
+ from typing import TYPE_CHECKING
+ 
+-from ...path_support import FileChangedDuringReadError, read_bytes_file_within_root
+ from .secret_detection import (
+     SecretFinding,
+     SecretScanSource,
+@@ -249,10 +248,16 @@ def _read_working_file(root: Path, relative_path: str, max_file_bytes: int) -> b
+         resolved.relative_to(root.resolve())
+     except (OSError, ValueError):
+         return None
++    if not resolved.is_file() or resolved.is_symlink():
++        return None
+     try:
+-        return read_bytes_file_within_root(root, resolved, max_bytes=max_file_bytes)
+-    except FileChangedDuringReadError:
+-        raise
++        size = resolved.stat().st_size
++    except OSError:
++        return None
++    if size > max_file_bytes:
++        return None
++    try:
++        return resolved.read_bytes()
+     except OSError:
+         return None
+ 
+@@ -339,13 +344,7 @@ def scan_repository_secrets(
+             truncation_reasons.update(active_reasons)
+             truncated = True
+             break
+-        try:
+-            data = _read_working_file(scan_root, relative_path, max_file_bytes)
+-        except FileChangedDuringReadError:
+-            if "working_tree_file_changed" not in errors:
+-                errors.append("working_tree_file_changed")
+-            truncated = True
+-            continue
++        data = _read_working_file(scan_root, relative_path, max_file_bytes)
+         if data is None:
+             continue
+         if bytes_scanned + len(data) > max_total_bytes:
+diff --git a/src/codex_plugin_scanner/guard/store_consumed_once_authority.py b/src/codex_plugin_scanner/guard/store_consumed_once_authority.py
+deleted file mode 100644
+index 03694e86a..000000000
+--- a/src/codex_plugin_scanner/guard/store_consumed_once_authority.py
++++ /dev/null
+@@ -1,66 +0,0 @@
+-"""Verify retained one-shot consumption without trusting continuation metadata."""
+-
+-from __future__ import annotations
+-
+-import sqlite3
+-from collections.abc import Callable
+-from contextlib import AbstractContextManager
+-
+-from .store_base import _parse_utc_timestamp, _workspace_policy_key
+-from .store_event_receipts import _local_once_approval_payload, _verify_local_once_approval
+-
+-
+-def read_consumed_once_authority(
+-    connect: Callable[[], AbstractContextManager[sqlite3.Connection]],
+-    secret_material: Callable[..., tuple[bytes | None, str | None]],
+-    *,
+-    request_id: str,
+-    harness: str,
+-    artifact_id: str | None,
+-    artifact_hash: str | None,
+-    workspace: str | None,
+-    publisher: str | None,
+-    now: str,
+-) -> dict[str, object] | None:
+-    """Return one exact, unexpired, MAC-verified consumed record, read-only.
+-
+-    This proves a prior grant was consumed. The caller still owns fresh policy,
+-    original waiter identity, deadline, and terminal-operation checks. Null
+-    workspace/publisher values are exact identities, never wildcard authority.
+-    """
+-    if not request_id or not harness or not artifact_id or not artifact_hash:
+-        return None
+-    try:
+-        observed_at = _parse_utc_timestamp(now)
+-    except (TypeError, ValueError):
+-        return None
+-    integrity_key, integrity_key_id = secret_material(create=False)
+-    if integrity_key is None or integrity_key_id is None:
+-        return None
+-    with connect() as connection:
+-        row = connection.execute(
+-            """
+-            select approval_id, request_id, harness, artifact_id, artifact_hash, workspace, publisher, action,
+-                   created_at, expires_at, claimed_at, integrity_version, payload_hash, payload_mac,
+-                   integrity_key_id, signed_at
+-            from guard_local_once_approvals
+-            where request_id = ? and harness = ? and artifact_id = ? and artifact_hash = ?
+-              and workspace is ? and publisher is ? and action = 'allow' and claimed_at is not null
+-            order by created_at desc, approval_id desc
+-            limit 1
+-            """,
+-            (request_id, harness, artifact_id, artifact_hash, _workspace_policy_key(workspace), publisher),
+-        ).fetchone()
+-    if row is None or _verify_local_once_approval(row, key=integrity_key, key_id=integrity_key_id).status != "valid":
+-        return None
+-    # Python comparisons retain microsecond boundaries; SQLite julianday rounds
+-    # more coarsely and could otherwise admit a claim just after the caller's now.
+-    try:
+-        if (
+-            _parse_utc_timestamp(row["claimed_at"]) > observed_at
+-            or _parse_utc_timestamp(row["expires_at"]) <= observed_at
+-        ):
+-            return None
+-    except (TypeError, ValueError):
+-        return None
+-    return _local_once_approval_payload(row)
+diff --git a/src/codex_plugin_scanner/guard/store_event_receipts.py b/src/codex_plugin_scanner/guard/store_event_receipts.py
+index c3acbba53..48f32bac5 100644
+--- a/src/codex_plugin_scanner/guard/store_event_receipts.py
++++ b/src/codex_plugin_scanner/guard/store_event_receipts.py
+@@ -284,32 +284,6 @@ class StoreEventReceiptsMixin:
+                 integrity_key_id=integrity_key_id,
+             )
+ 
+-    def peek_consumed_local_once_approval(
+-        self,
+-        *,
+-        request_id: str,
+-        harness: str,
+-        artifact_id: str | None,
+-        artifact_hash: str | None,
+-        workspace: str | None,
+-        publisher: str | None,
+-        now: str,
+-    ) -> dict[str, object] | None:
+-        """Read exact signed consumption evidence; never grant or consume again."""
+-        from .store_consumed_once_authority import read_consumed_once_authority
+-
+-        return read_consumed_once_authority(
+-            self._connect,
+-            self._policy_integrity_secret_material,
+-            request_id=request_id,
+-            harness=harness,
+-            artifact_id=artifact_id,
+-            artifact_hash=artifact_hash,
+-            workspace=workspace,
+-            publisher=publisher,
+-            now=now,
+-        )
+-
+     def claim_local_once_approval(
+         self,
+         approval_id: str,
+diff --git a/src/codex_plugin_scanner/path_support.py b/src/codex_plugin_scanner/path_support.py
+index 539387dff..ac2c1c37f 100644
+--- a/src/codex_plugin_scanner/path_support.py
++++ b/src/codex_plugin_scanner/path_support.py
+@@ -4,7 +4,6 @@ from __future__ import annotations
+ 
+ import os
+ import stat
+-import sys
+ from pathlib import Path
+ from urllib.parse import urlparse
+ 
+@@ -24,39 +23,14 @@ def path_entry_exists(path: Path) -> bool:
+     return True
+ 
+ 
+-class FileChangedDuringReadError(OSError):
+-    """A checked input no longer names the same stable regular file."""
+-
+-
+-def _read_identity(metadata: os.stat_result) -> tuple[int, ...]:
+-    return (
+-        metadata.st_dev,
+-        metadata.st_ino,
+-        metadata.st_mode,
+-        metadata.st_size,
+-        metadata.st_mtime_ns,
+-        metadata.st_ctime_ns,
+-    )
+-
+-
+-def _path_descriptor_identity(metadata: os.stat_result) -> tuple[int, ...]:
+-    # Windows Python exposes creation time as lstat().st_ctime_ns while
+-    # fstat().st_ctime_ns can contain the distinct metadata change time.
+-    # Compare their explicit birthtime across APIs; retain full change-time
+-    # comparisons between the two observations made with each same API.
+-    # Windows lstat cannot witness a metadata-only change before open when
+-    # creation time, identity, size and modification time all remain unchanged.
+-    if sys.platform != "win32":
+-        return _read_identity(metadata)
+-    return (*_read_identity(metadata)[:-1], getattr(metadata, "st_birthtime_ns", metadata.st_ctime_ns))
+-
+-
+-def read_bytes_file_within_root(
++def read_text_file_within_root(
+     root: Path,
+     candidate: Path,
+     *,
+     max_bytes: int = DEFAULT_SAFE_READ_LIMIT_BYTES,
+-) -> bytes:
++    encoding: str = "utf-8",
++    errors: str = "strict",
++) -> str:
+     """Read a bounded regular file without following symbolic links."""
+     resolved_root = root.resolve(strict=True)
+     metadata = candidate.lstat()
+@@ -70,50 +44,25 @@ def read_bytes_file_within_root(
+     if metadata.st_size > max_bytes:
+         raise OSError(f"file exceeds {max_bytes} bytes: {candidate}")
+ 
+-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+-    try:
+-        descriptor = os.open(candidate, flags)
+-    except OSError as error:
+-        raise FileChangedDuringReadError(f"checked file unavailable while opening: {candidate}") from error
++    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
++    descriptor = os.open(candidate, flags)
+     try:
+         opened = os.fstat(descriptor)
+         if not stat.S_ISREG(opened.st_mode):
+-            raise FileChangedDuringReadError(f"file changed while opening: {candidate}")
+-        if _path_descriptor_identity(opened) != _path_descriptor_identity(metadata):
+-            raise FileChangedDuringReadError(f"file changed while opening: {candidate}")
++            raise OSError(f"not a regular file: {candidate}")
++        if (opened.st_dev, opened.st_ino) != (metadata.st_dev, metadata.st_ino):
++            raise OSError(f"file changed while opening: {candidate}")
++        if opened.st_size > max_bytes:
++            raise OSError(f"file exceeds {max_bytes} bytes: {candidate}")
+         with os.fdopen(descriptor, "rb", closefd=False) as handle:
+-            # Read one byte beyond the observed size to detect growth without
+-            # allocating the entire configured budget for each small file.
+-            raw = handle.read(opened.st_size + 1)
+-        after = os.fstat(descriptor)
+-        try:
+-            path_after = candidate.lstat()
+-        except OSError as error:
+-            raise FileChangedDuringReadError(f"file changed while reading: {candidate}") from error
+-        if (
+-            len(raw) > max_bytes
+-            or len(raw) != opened.st_size
+-            or _read_identity(after) != _read_identity(opened)
+-            or _read_identity(path_after) != _read_identity(metadata)
+-        ):
+-            raise FileChangedDuringReadError(f"file changed while reading: {candidate}")
+-        return raw
++            raw = handle.read(max_bytes + 1)
++        if len(raw) > max_bytes:
++            raise OSError(f"file exceeds {max_bytes} bytes: {candidate}")
++        return raw.decode(encoding, errors=errors)
+     finally:
+         os.close(descriptor)
+ 
+ 
+-def read_text_file_within_root(
+-    root: Path,
+-    candidate: Path,
+-    *,
+-    max_bytes: int = DEFAULT_SAFE_READ_LIMIT_BYTES,
+-    encoding: str = "utf-8",
+-    errors: str = "strict",
+-) -> str:
+-    """Read bounded text from one verified regular-file descriptor."""
+-    return read_bytes_file_within_root(root, candidate, max_bytes=max_bytes).decode(encoding, errors=errors)
+-
+-
+ def is_remote_reference(value: str) -> bool:
+     return value.startswith(REMOTE_PREFIXES)
+ 

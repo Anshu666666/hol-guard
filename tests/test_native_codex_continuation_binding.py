@@ -101,8 +101,8 @@ def test_final_liveness_work_cannot_cross_owned_deadline_then_consume(tmp_path, 
     real = completion._original_hook_is_live
     calls = []
 
-    def liveness(*args):
-        valid = real(*args)
+    def liveness(*args, **kwargs):
+        valid = real(*args, **kwargs)
         calls.append(valid)
         if len(calls) == 2:
             clock[0] = deadline + 1

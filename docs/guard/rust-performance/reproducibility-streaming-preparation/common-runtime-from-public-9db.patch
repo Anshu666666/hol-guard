@@ -1,0 +1,223 @@
+diff --git a/src/codex_plugin_scanner/guard/mcp_tool_calls.py b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+index 52a0d770a..bd95f5d0e 100644
+--- a/src/codex_plugin_scanner/guard/mcp_tool_calls.py
++++ b/src/codex_plugin_scanner/guard/mcp_tool_calls.py
+@@ -405,6 +405,25 @@ def build_tool_call_hash(
+     matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+     if matching_snapshot is not None:
+         artifact, arguments = matching_snapshot
++    return _build_tool_call_hash_for_categories(
++        artifact,
++        arguments,
++        workspace=workspace,
++        config=config,
++        risk_categories=risk_facts.categories if matching_snapshot is not None and risk_facts is not None else None,
++    )
++
++
++def _build_tool_call_hash_for_categories(
++    artifact: GuardArtifact,
++    arguments: object,
++    *,
++    workspace: Path | str | None,
++    config: GuardConfig | None,
++    risk_categories: tuple[str, ...] | None,
++) -> str:
++    """Private kernel; the caller owns any supplied facts and their inputs."""
++
+     browser_intent = normalize_browser_mcp_intent(artifact, arguments)
+     content_arguments: object = arguments
+     if browser_intent is not None:
+@@ -487,9 +506,7 @@ def build_tool_call_hash(
+         content=content_hash,
+         capabilities={
+             "risk_categories": list(
+-                risk_facts.categories
+-                if matching_snapshot is not None and risk_facts is not None
+-                else tool_call_risk_categories(artifact, arguments)
++                risk_categories if risk_categories is not None else tool_call_risk_categories(artifact, arguments)
+             ),
+             "server_identity": artifact.metadata.get("mcp_server_identity"),
+             "tool_catalog_fingerprint": tool_catalog_fingerprint,
+@@ -571,6 +588,31 @@ def evaluate_tool_call(
+         arguments=arguments,
+         risk_facts=risk_facts,
+     )
++    return _evaluate_tool_call_with_current(
++        store=store,
++        config=config,
++        artifact=artifact,
++        artifact_hash=artifact_hash,
++        arguments=arguments,
++        current=current,
++        claim_saved_approval=claim_saved_approval,
++        fresh_authority_provider=fresh_authority_provider,
++    )
++
++
++def _evaluate_tool_call_with_current(
++    *,
++    store: GuardStore,
++    config: GuardConfig,
++    artifact: GuardArtifact,
++    artifact_hash: str,
++    arguments: object,
++    current: ToolCallDecision,
++    claim_saved_approval: bool,
++    fresh_authority_provider: Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None = None,
++) -> ToolCallDecision:
++    """Compose a freshly evaluated current result with current saved state."""
++
+     current = _apply_temporary_mcp_grant(
+         store=store,
+         artifact=artifact,
+@@ -889,6 +931,32 @@ def _evaluate_current_tool_call(
+     )
+     current_config_action = configured_override if configured_override is not None else config.default_action
+ 
++    # Resolve current policy before the public matching/owned-copy boundary.
++    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
++    if matching_snapshot is not None and risk_facts is not None:
++        artifact, arguments = matching_snapshot
++        risk_categories = risk_facts.categories
++    else:
++        risk_categories = tool_call_risk_categories(artifact, arguments)
++    return _evaluate_current_tool_call_for_categories(
++        config=config,
++        artifact=artifact,
++        arguments=arguments,
++        current_config_action=current_config_action,
++        risk_categories=risk_categories,
++    )
++
++
++def _evaluate_current_tool_call_for_categories(
++    *,
++    config: GuardConfig,
++    artifact: GuardArtifact,
++    arguments: object,
++    current_config_action: GuardAction,
++    risk_categories: tuple[str, ...],
++) -> ToolCallDecision:
++    """Private kernel, called only after resolving current policy and inputs."""
++
+     def with_current_config(decision: ToolCallDecision) -> ToolCallDecision:
+         effective_action = most_restrictive_guard_action(decision.action, current_config_action)
+         if effective_action == decision.action:
+@@ -900,14 +968,6 @@ def _evaluate_current_tool_call(
+             summary=("Local Guard's current configuration is stricter than the tool-call-specific recommendation."),
+         )
+ 
+-    # Resolve current policy first, then validate facts against the current
+-    # inputs. Never match a mutable alias and subsequently analyze that alias.
+-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+-    if matching_snapshot is not None and risk_facts is not None:
+-        artifact, arguments = matching_snapshot
+-        risk_categories = risk_facts.categories
+-    else:
+-        risk_categories = tool_call_risk_categories(artifact, arguments)
+     signals = _tool_call_risk_signals_for_categories(artifact, arguments, risk_categories)
+     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
+ 
+diff --git a/src/codex_plugin_scanner/guard/proxy/framing.py b/src/codex_plugin_scanner/guard/proxy/framing.py
+index 61a850fd7..9a8bc2369 100644
+--- a/src/codex_plugin_scanner/guard/proxy/framing.py
++++ b/src/codex_plugin_scanner/guard/proxy/framing.py
+@@ -375,6 +375,16 @@ def write_message(stream: Any, payload: Mapping[str, Any], *, timeout_seconds: f
+     if getattr(stream, "_guard_mcp_write_failed", False):
+         raise ProxyIoLimitError(source=source, reason="stream_retired")
+     data = encoded_line(payload)
++    _write_encoded_line(stream, data, timeout_seconds=timeout_seconds, source=source)
++
++
++def _write_encoded_line(stream: Any, data: bytes, *, timeout_seconds: float, source: str) -> None:
++    """Write already encoded private bytes without re-reading mutable inputs."""
++
++    if getattr(stream, "_guard_mcp_write_failed", False):
++        raise ProxyIoLimitError(source=source, reason="stream_retired")
++    if type(data) is not bytes or len(data) > MAX_LINE_BYTES or not data.endswith(b"\n"):
++        raise ProxyIoLimitError(source=source, reason="invalid_json_frame")
+     timeout_seconds = remaining_timeout(timeout_seconds, source=source)
+     deadline = time.monotonic() + timeout_seconds
+     descriptor = stream_fileno(stream)
+diff --git a/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py b/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
+index 303187496..38ec29f8f 100644
+--- a/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
++++ b/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
+@@ -1146,30 +1146,40 @@ class RuntimeMcpGuardProxy:
+             tool_schema=tool_schema,
+             tool_description=tool_description_value if isinstance(tool_description_value, str) else None,
+         )
++        artifact, artifact_hash, decision = self._evaluate_tool_call_authority(
++            artifact=artifact, arguments=arguments, config=authority_config
++        )
++        return _ToolCallAuthority(
++            artifact=artifact,
++            artifact_hash=artifact_hash,
++            decision=decision,
++            catalog_generation=catalog_generation,
++            catalog_state=catalog_state,
++            catalog_fingerprint=catalog_fingerprint,
++        )
++
++    def _evaluate_tool_call_authority(
++        self, *, artifact: GuardArtifact, arguments: object, config: GuardConfig
++    ) -> tuple[GuardArtifact, str, ToolCallDecision]:
++        """Retain the measured Python default; optional pilots override privately."""
++
+         artifact_hash = build_tool_call_hash(
+             artifact,
+             arguments,
+             workspace=self.context.workspace_dir or Path.cwd(),
+-            config=authority_config,
++            config=config,
+         )
+         decision = self._disable_saved_allow_without_complete_catalog(
+             evaluate_tool_call(
+                 store=self.store,
+-                config=authority_config,
++                config=config,
+                 artifact=artifact,
+                 artifact_hash=artifact_hash,
+                 arguments=arguments,
+                 claim_saved_approval=False,
+             )
+         )
+-        return _ToolCallAuthority(
+-            artifact=artifact,
+-            artifact_hash=artifact_hash,
+-            decision=decision,
+-            catalog_generation=catalog_generation,
+-            catalog_state=catalog_state,
+-            catalog_fingerprint=catalog_fingerprint,
+-        )
++        return artifact, artifact_hash, decision
+ 
+     def _handle_message(
+         self,
+@@ -2861,6 +2871,9 @@ class RuntimeMcpGuardProxy:
+         del decision
+         return False
+ 
++    def _check_tool_call_preparation(self) -> None:
++        """Optional private preparation hook; the default holds no cached facts."""
++
+     def _inline_approval_request(self, tool_name: str, summary: str) -> dict[str, Any]:
+         raise NotImplementedError
+ 
+@@ -2926,6 +2939,7 @@ class RuntimeMcpGuardProxy:
+                     phase="before_saved_approval_claim",
+                     package_request=False,
+                 )
++            self._check_tool_call_preparation()
+             if not self.store.claim_approval_reuse_decisions((pending,), now=_now()):
+                 claim_failure_item: dict[str, object] = {
+                     "source": "approval_reuse",
+@@ -2948,6 +2962,7 @@ class RuntimeMcpGuardProxy:
+                     policy_action="require-reapproval",
+                 )
+ 
++            self._check_tool_call_preparation()
+             tool_name = str(params.get("name") or artifact.name)
+             try:
+                 fresh_config = self._claim_boundary_config()

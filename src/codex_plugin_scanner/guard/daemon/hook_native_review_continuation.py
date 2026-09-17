@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -23,6 +23,7 @@ def native_codex_wait_operation(
     workspace: Path | None,
     home_dir: Path | None,
     now: str,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object] | None:
     """Accept only an independently live bridge identity and bounded wait budget."""
     if harness != "codex" or not isinstance(store, GuardStore) or home_dir is None or not home_dir.is_absolute():
@@ -31,7 +32,9 @@ def native_codex_wait_operation(
     timeout = bound_wait_timeout_seconds(payload, maximum=MAX_APPROVAL_WAIT_TIMEOUT_SECONDS)
     if not isinstance(identity, Mapping) or not process_identity_matches(identity) or timeout is None:
         return None
-    configured = load_guard_config(store.guard_home, workspace).approval_wait_timeout_seconds
+    configured = load_guard_config(
+        store.guard_home, workspace, config_reader=config_reader
+    ).approval_wait_timeout_seconds
     timeout = min(timeout, max(0, configured), MAX_APPROVAL_WAIT_TIMEOUT_SECONDS)
     if timeout <= 0:
         return None

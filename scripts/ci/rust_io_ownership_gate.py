@@ -138,6 +138,13 @@ _POSTURE_ROOT: Final = RootSpec(
     "src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py",
     "hook_review_is_recording_only",
 )
+# These callables are injected as configuration dependencies. A static call
+# graph cannot follow an arbitrary callable argument, so inventory each actual
+# daemon implementation explicitly, including its held-parent callback.
+_CONFIG_SCOPE_ROOTS: Final = tuple(
+    RootSpec("src/codex_plugin_scanner/guard/daemon/config_read_scope.py", name, "HookConfigReadScope")
+    for name in ("read_toml", "__call__", "_validate_held_parent")
+)
 
 ROOTS: Final = (
     RootSpec(
@@ -162,6 +169,7 @@ ROOTS: Final = (
         "try_native_or_source_ref_hook",
     ),
     _POSTURE_ROOT,
+    *_CONFIG_SCOPE_ROOTS,
     RootSpec(
         "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py", "complete_native_codex_live_decision"
     ),
@@ -440,7 +448,7 @@ def validate(root: Path) -> dict[str, object]:
     root = root.resolve()
     records = _function_map(root)
     reachable = _reachable_records(root, records)
-    posture = _reachable_records(root, records, roots=(_POSTURE_ROOT,))
+    posture = _reachable_records(root, records, roots=(_POSTURE_ROOT, *_CONFIG_SCOPE_ROOTS))
     failures = _branch_failures(root, records)
     inventory = _inventory(root, reachable, posture)
     reachable_bad = [item for item in inventory if item.reachable and item.category.startswith("unclassified_python")]

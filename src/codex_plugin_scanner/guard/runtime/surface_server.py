@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import ParseResult, parse_qsl, urlencode, urlparse, urlunparse
 
 from ..approvals import first_approval_url, queue_blocked_approvals
@@ -228,6 +229,7 @@ class GuardSurfaceRuntime:
         open_key: str | None,
         opener: Callable[[str], object],
         redaction_level: str = "full",
+        config_reader: Callable[[Path], dict[str, object]] | None = None,
     ) -> dict[str, object]:
         if self.store.get_guard_session(session_id) is None:
             raise ValueError(f"Unknown guard session: {session_id}")
@@ -248,6 +250,7 @@ class GuardSurfaceRuntime:
             now=queued_at,
             redaction_level=redaction_level,
             continuation_operation=continuation_operation,
+            config_reader=config_reader,
         )
         operation = self.start_operation(
             session_id=session_id,

@@ -8,6 +8,25 @@ _GUARD = "src/codex_plugin_scanner/guard/"
 # Each entry names a complete lexical function and only its observed primitive
 # operations. Siblings, nested functions and new content operations stay closed.
 _SCOPED_IO = {
+    # The injected scope reader decodes only bytes from the shared held capture.
+    # Its temporary exception repeats the existing metadata-only scope policy;
+    # explicit callable roots keep this synchronous posture work inventoried.
+    ("config.py", "_parse_toml", "decode"): (
+        "asynchronous_policy",
+        frozenset({"loads", "decode"}),
+    ),
+    ("runtime/local_temp_paths.py", "trusted_temporary_root_for_path", "filesystem"): (
+        "asynchronous_policy",
+        frozenset({"resolve"}),
+    ),
+    ("runtime/local_temp_paths.py", "_darwin_user_temporary_root", "filesystem"): (
+        "asynchronous_policy",
+        frozenset({"is_dir"}),
+    ),
+    ("runtime/local_temp_paths.py", "_owned_by_current_user", "filesystem"): (
+        "asynchronous_policy",
+        frozenset({"stat"}),
+    ),
     # The held config reader serves both background policy publication and
     # synchronous posture reads. The gate's posture reachability walk promotes
     # these observations to synchronous_posture_config; they are not hidden as

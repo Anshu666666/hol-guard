@@ -1,0 +1,60 @@
+{
+  "schema": "hol-guard.main-ownership-protocol-validation.v1",
+  "base": "5fba21936c734f4a2dc1201c96b210eda0eabdfe",
+  "files_before": {
+    "scripts/ci/rust_io_ownership_contract.py": "e24455258836529ce5be7a3bfad272834984599974e59cc0ec95c2fff946e6d8",
+    "scripts/ci/rust_io_ownership_gate.py": "c3503d262503932b53146b502e1c720d52abed7270c42e9f23f9e53dbe777cbf",
+    "scripts/ci/rust_io_ownership_resolver.py": "c06f04a95fbc657997fb29e2e82563d91a4667a1d964396d97a8858be59512c6"
+  },
+  "files_after": {
+    "scripts/ci/rust_io_ownership_contract.py": "e24455258836529ce5be7a3bfad272834984599974e59cc0ec95c2fff946e6d8",
+    "scripts/ci/rust_io_ownership_gate.py": "c3503d262503932b53146b502e1c720d52abed7270c42e9f23f9e53dbe777cbf",
+    "scripts/ci/rust_io_ownership_resolver.py": "4d26b985a5bebef120680378f68e85b4c1c1afd4cae5bb96dacec2f29785ce25"
+  },
+  "scope": "read-only FunctionRecordLike protocol properties only; no product source or security disposition change",
+  "before": {
+    "type_errors": 1,
+    "type_warnings": 16,
+    "exit_code": 1
+  },
+  "after": {
+    "type_errors": 0,
+    "type_warnings": 16,
+    "exit_code": 0,
+    "ruff": "passed",
+    "format": "passed"
+  },
+  "behavior_tests_repeated": false,
+  "reason": "Complete AST outside the typing protocol declaration is unchanged. No resolver algorithm or runtime behavior changed.",
+  "artifacts": {
+    "raw/annotation-equivalence.json": {
+      "bytes": 452,
+      "sha256": "fbbba9fead3546878fc41287e659c411fed4eb4b37807372ada5cf6ca1a5ff73"
+    },
+    "raw/before-types.log": {
+      "bytes": 10197,
+      "sha256": "04cc083f1fb52cf94ad29881714b782e80d895aa465556826a094bd13ea4b9d7"
+    },
+    "raw/format.log": {
+      "bytes": 25,
+      "sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50"
+    },
+    "raw/manifest.json": {
+      "bytes": 4922,
+      "sha256": "1909f6b0064dbd94ae3d0a5e9f26dc056d9d7f662cdb352e8422cb4e6f67deb9"
+    },
+    "raw/protocol-readonly.patch": {
+      "bytes": 713,
+      "sha256": "50804b840a378ec7bd0dfa38447cc84c30df397659ee2668d288227d405c7a90"
+    },
+    "raw/ruff.log": {
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "raw/types.log": {
+      "bytes": 9217,
+      "sha256": "0ebf88944f4b00aeb84e40e6d568447db0252ee9ac13ddf552edad59112e3ae3"
+    }
+  },
+  "lock": "Every Ruff/format/type command used shared flock --close -w180; no build or benchmark ran."
+}

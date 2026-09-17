@@ -4,6 +4,7 @@ import logging
 import urllib.error
 from collections.abc import Callable
 from functools import partial
+from pathlib import Path
 from typing import Any
 
 from ...version import __version__  # noqa: F401 - public compatibility export
@@ -179,8 +180,14 @@ def _resolve_command_queue_auth_context(
     )
 
 
-def _execute_job(job: dict[str, object], context: HarnessContext, store: GuardStore) -> dict[str, object]:
-    return execute_guard_command_job(job, context=context, store=store, now=_now)
+def _execute_job(
+    job: dict[str, object],
+    context: HarnessContext,
+    store: GuardStore,
+    *,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> dict[str, object]:
+    return execute_guard_command_job(job, context=context, store=store, now=_now, config_reader=config_reader)
 
 
 def _heartbeat(auth_context: dict[str, object], job: dict[str, object]) -> None:
@@ -319,7 +326,12 @@ def _lease_job_with_401_retry(
     return _lease_next_job(store, refreshed_auth_context, state=state)
 
 
-def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[str, object]:
+def poll_command_queue_once(
+    store: GuardStore,
+    context: HarnessContext,
+    *,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> dict[str, object]:
     if not command_queue_should_poll(store):
         state = _load_state(store)
         state.update(
@@ -423,7 +435,11 @@ def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[
             )
             try:
                 _LOGGER.info("Guard command leased.")
-                execution = _execute_job(item, context, store)
+                execution = (
+                    _execute_job(item, context, store)
+                    if config_reader is None
+                    else _execute_job(item, context, store, config_reader=config_reader)
+                )
             except Exception as error:
                 _LOGGER.warning(
                     "Guard command execution failed: error=%s",
@@ -494,13 +510,18 @@ def command_queue_loop(
     context: HarnessContext,
     *,
     stop_event: Any,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> None:
     run_command_queue_loop(
         store,
         context,
         stop_event=stop_event,
         enabled=command_queue_should_poll,
-        poll_once=poll_command_queue_once,
+        poll_once=(
+            poll_command_queue_once
+            if config_reader is None
+            else partial(poll_command_queue_once, config_reader=config_reader)
+        ),
         load_state=_load_state,
         save_state=_save_state,
         format_error=_redacted_error,

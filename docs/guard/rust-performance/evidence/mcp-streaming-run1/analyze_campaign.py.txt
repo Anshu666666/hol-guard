@@ -1,0 +1,183 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import statistics
+from collections import Counter, defaultdict
+from datetime import datetime
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent
+
+
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def range_summary(values):
+    return {'count': len(values), 'median': statistics.median(values), 'min': min(values), 'max': max(values), 'values': values}
+
+
+def difference(candidate, baseline):
+    return 100 * (candidate / baseline - 1)
+
+
+def aggregate():
+    end = json.loads((ROOT / 'end.json').read_text())
+    proof = json.loads((ROOT / 'after-verification.json').read_text())
+    assert proof['passed'] is True
+    raw = (ROOT / 'comparison.json').read_bytes()
+    result = json.loads(raw)
+    assert digest(raw) == proof['comparison_sha256']
+    plan_raw = (ROOT / 'runtime-frozen/docs/guard/rust-performance/mcp-streaming-preparation-plan.json').read_bytes()
+    assert digest(plan_raw) == result['fixed_plan_sha256']
+    plan = json.loads(plan_raw)
+    cells = result['cases']
+    rows = []
+    arm_counts = {arm: {'cells': 0, 'accepted': 0, 'progress_notifications': 0, 'cold_calls': 0, 'warm_calls': 0,
+                        'cancelled': 0, 'invalidated': 0, 'errors': 0, 'counters': Counter()} for arm in ('B', 'F')}
+    max_frame = 0
+    schedule_mismatches = []
+    for index, case in enumerate(cells):
+        expected = plan['cells'][index]
+        actual = {key: case[key] if key in ('arm', 'block') else case['fixture'][key] for key in expected}
+        if actual != expected:
+            schedule_mismatches.append({'index': index + 1, 'expected': expected, 'actual': actual})
+        arm = case['arm']
+        counts = arm_counts[arm]
+        counts['cells'] += 1
+        counts['cold_calls'] += 1
+        counts['warm_calls'] += case['fixture']['samples']
+        correctness = case['correctness']
+        for key in ('accepted', 'cancelled', 'invalidated', 'errors'):
+            counts[key] += correctness[key]
+        counts['progress_notifications'] += correctness['notifications']['notifications/progress']
+        if arm == 'F':
+            counts['counters'].update(case['streaming_preparation_pilot']['counters'])
+        max_frame = max(max_frame, correctness['largest_client_frame_utf8_bytes'])
+    primary = defaultdict(list)
+    profiles = []
+    for offset in range(0, len(cells) - 1, 2):
+        pair = cells[offset:offset + 2]
+        baseline = next(cell for cell in pair if cell['arm'] == 'B')
+        candidate = next(cell for cell in pair if cell['arm'] == 'F')
+        fixture = baseline['fixture']
+        latency_delta = difference(candidate['client_roundtrip_ms']['p95'], baseline['client_roundtrip_ms']['p95'])
+        cpu_delta = difference(candidate['tree_cpu_ms_per_call'], baseline['tree_cpu_ms_per_call'])
+        row = {'pair': offset // 2 + 1, 'block': baseline['block'], 'profile': fixture['profile'],
+               'payload_bytes': fixture['payload_bytes'], 'payload_kind': fixture['payload_kind'],
+               'warm_samples': fixture['samples'], 'order': [cell['arm'] for cell in pair],
+               'exact_correctness_parity': baseline['correctness'] == candidate['correctness'],
+               'roundtrip_p95_change_percent': latency_delta, 'tree_cpu_change_percent': cpu_delta,
+               'arithmetic_30_percent_benefit_and_5_percent_other_metric_limit':
+                   (latency_delta <= -30 and cpu_delta <= 5) or (cpu_delta <= -30 and latency_delta <= 5),
+               'B': {key: baseline[key] for key in ('client_roundtrip_ms', 'tree_cpu_ms_per_call', 'memory')},
+               'F': {key: candidate[key] for key in ('client_roundtrip_ms', 'tree_cpu_ms_per_call', 'memory')}}
+        rows.append(row)
+        if fixture['profile']:
+            for case in (baseline, candidate):
+                phases = case['exclusive_phases']
+                profiles.append({'arm': case['arm'], 'payload_bytes': fixture['payload_bytes'],
+                                 'payload_kind': fixture['payload_kind'], 'warm_samples': fixture['samples'],
+                                 'parent_cpu_ms': case['parent_cpu_ms'], 'tree_cpu_ms_per_call': case['tree_cpu_ms_per_call'],
+                                 'memory': case['memory'],
+                                 'exclusive_phases': {name: {**value, 'calls_per_warm_request': value['calls'] / fixture['samples']}
+                                                      for name, value in phases.items()}})
+        else:
+            primary[(fixture['payload_kind'], fixture['payload_bytes'])].append(row)
+    summaries = []
+    for (kind, size), group in primary.items():
+        summaries.append({'payload_kind': kind, 'payload_bytes': size, 'blocks': len(group),
+                          'roundtrip_p95_change_percent': range_summary([row['roundtrip_p95_change_percent'] for row in group]),
+                          'tree_cpu_change_percent': range_summary([row['tree_cpu_change_percent'] for row in group]),
+                          'pairs_clearing_arithmetic_target': sum(row['arithmetic_30_percent_benefit_and_5_percent_other_metric_limit'] for row in group),
+                          'memory': {arm: {key: range_summary([row[arm]['memory'][key] for row in group])
+                                           for key in ('rss_max_bytes', 'uss_max_bytes', 'worker_peak_rss_bytes')}
+                                     for arm in ('B', 'F')}})
+    collector_pairs = result.get('comparisons', [])
+    comparison_mismatches = []
+    for reported, computed in zip(collector_pairs, rows, strict=False):
+        if any(reported[key] != computed[key] for key in reported):
+            comparison_mismatches.append({'reported': reported, 'computed': computed})
+    complete = end.get('exit_code') == 0 and len(cells) == 64 and len(rows) == 32 and len(collector_pairs) == 32
+    errors = [key for key in ('failed_case', 'failed_parity', 'failed_parity_gate') if key in result]
+    failed = result.get('failed_case')
+    attempted_cells = len(cells) + int(failed is not None)
+    never_attempted = plan['cells'][attempted_cells:]
+    failed_scheduled_requests = failed['scheduled']['samples'] + 1 if failed is not None else 0
+    failed_attempted_requests = failed.get('attempted_tool_requests', 0) if failed is not None else 0
+    if failed is not None:
+        assert failed['index'] == len(cells) + 1
+        assert failed['scheduled'] == plan['cells'][len(cells)]
+    orphan_cells = cells[len(rows) * 2:]
+    if not complete:
+        # Do not turn a stopping-time subset into the declared five-block gate.
+        summaries = []
+        for row in rows:
+            row['arithmetic_30_percent_benefit_and_5_percent_other_metric_limit'] = None
+    output = {'schema': 'hol-guard-mcp-streaming-preparation-decision.v1',
+              'qualification': False, 'production_activation': False, 'product_default': 'B', 'RSP-100': 'OPEN',
+              'comparison_sha256': digest(raw), 'after_verification_sha256': digest((ROOT / 'after-verification.json').read_bytes()),
+              'fixed_plan_sha256': digest(plan_raw), 'campaign_exit_code': end.get('exit_code'),
+              'complete_fixed_campaign': complete, 'completed_cells': len(cells),
+              'failed_cells': int(failed is not None), 'attempted_cells': attempted_cells,
+              'never_attempted_cells': len(never_attempted), 'never_attempted_schedule': never_attempted,
+              'independently_checked_completed_pairs': len(rows), 'collector_emitted_comparisons': len(collector_pairs),
+              'unpaired_completed_cells': orphan_cells,
+              'requests': {
+                  'planned': sum(cell['samples'] + 1 for cell in plan['cells']),
+                  'attempted': sum(counts['cold_calls'] + counts['warm_calls'] for counts in arm_counts.values()) + failed_attempted_requests,
+                  'accepted_completed_cells': sum(counts['accepted'] for counts in arm_counts.values()),
+                  'observed_responses_completed_cells': sum(counts['cold_calls'] + counts['warm_calls'] for counts in arm_counts.values()),
+                  'observed_forwards_completed_cells': sum(counts['accepted'] for counts in arm_counts.values()),
+                  'failed_cell_expected': failed_scheduled_requests,
+                  'failed_cell_attempted': failed_attempted_requests,
+                  'failed_cell_observed_responses': failed.get('observed_tool_responses', 0) if failed is not None else 0,
+                  'failed_cell_observed_forwards': failed.get('observed_child_forwarded_count', 0) if failed is not None else 0,
+                  'unattempted_inside_failed_cell': failed_scheduled_requests - failed_attempted_requests,
+                  'in_never_attempted_cells': sum(cell['samples'] + 1 for cell in never_attempted),
+              },
+              'arm_counts': arm_counts, 'schedule_mismatches': schedule_mismatches,
+              'collector_pair_recomputation_mismatches': comparison_mismatches,
+              'all_completed_pairs_exact_correctness_parity': all(row['exact_correctness_parity'] for row in rows),
+              'failure_fields': {key: result[key] for key in errors}, 'largest_client_frame_utf8_bytes': max_frame,
+              'public_api_facts_parity': result['public_api_facts_parity'],
+              'primary_summaries': summaries, 'pairs': rows, 'profiles': profiles,
+              'limits': ['incomplete_cohort_has_no_primary_gate_summary_or_qualification_inference',
+                         'pairs_are_independent_post_failure_reconstruction_not_collector_campaign_credit',
+                         'single_shared_host_source_c1', 'no_E_result_pooling', 'large_p95_is_three_sample_maximum',
+                         'profile_cells_excluded_from_primary_summary', 'arithmetic_target_is_not_release_qualification',
+                         'tree_RSS_USS_are_response_samples', 'worker_OS_peak_RSS_includes_imports_excludes_children',
+                         'prototype_tracemalloc_does_not_establish_route_RSS', 'B_default_and_all_package_busy_unsupported_fallbacks_remain',
+                         'no_installed_platform_concurrency_soak_or_activation_evidence']}
+    if cells:
+        output['started_utc'] = cells[0]['started_utc']
+        output['finished_utc'] = cells[-1]['finished_utc']
+        output['case_endpoint_window_seconds'] = (datetime.fromisoformat(cells[-1]['finished_utc']) - datetime.fromisoformat(cells[0]['started_utc'])).total_seconds()
+        output['summed_case_lock_intervals_seconds'] = sum((datetime.fromisoformat(case['finished_utc']) - datetime.fromisoformat(case['started_utc'])).total_seconds() for case in cells)
+        if failed is not None:
+            output['failure_utc'] = failed['failed_utc']
+            output['attempt_endpoint_window_seconds'] = (datetime.fromisoformat(failed['failed_utc']) - datetime.fromisoformat(cells[0]['started_utc'])).total_seconds()
+            output['failed_case_interval_seconds'] = (datetime.fromisoformat(failed['failed_utc']) - datetime.fromisoformat(failed['started_utc'])).total_seconds()
+    destination = ROOT / 'decision.json'
+    with destination.open('x') as handle:
+        json.dump(output, handle, indent=2)
+        handle.write('\n')
+    assert not schedule_mismatches and not comparison_mismatches
+    if complete:
+        assert not errors
+        assert all(row['exact_correctness_parity'] for row in rows)
+        for arm, counts in arm_counts.items():
+            assert counts['cells'] == 32 and counts['accepted'] == 554 and counts['progress_notifications'] == 554
+            assert counts['cold_calls'] == 32 and counts['warm_calls'] == 522
+            assert counts['cancelled'] == counts['invalidated'] == counts['errors'] == 0
+            if arm == 'F':
+                assert all(counts['counters'][name] == 554 for name in ('requests_admitted', 'category_derivations', 'preparations_completed', 'bound_forwards'))
+                assert all(counts['counters'][name] == 0 for name in ('selected_failures', 'unsupported_fallback', 'busy_fallback', 'package_fallback'))
+    print(json.dumps({key: output[key] for key in ('complete_fixed_campaign', 'completed_cells', 'failed_cells', 'never_attempted_cells',
+                                                'independently_checked_completed_pairs', 'collector_emitted_comparisons', 'requests', 'arm_counts', 'comparison_sha256')}, indent=2))
+
+
+if __name__ == '__main__':
+    aggregate()

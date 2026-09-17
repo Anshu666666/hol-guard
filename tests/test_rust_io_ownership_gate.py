@@ -49,6 +49,15 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     ]
     assert config_reads
     assert all(item["category"] == "synchronous_posture_config" for item in config_reads)
+    parser_path = "src/codex_plugin_scanner/guard/config.py"
+    parser = MODULE._function_map(ROOT)[parser_path, "_parse_toml"][0]
+    scoped_decodes = [
+        item
+        for item in report["inventory"]
+        if item["path"] == parser_path and parser.node.lineno <= item["line"] <= parser.node.end_lineno
+    ]
+    assert {item["operation"] for item in scoped_decodes} == {"loads", "decode"}
+    assert all(item["category"] == "synchronous_posture_config" for item in scoped_decodes)
     assert "compatibility_only" in all_categories
     assert {
         "continuation_transport_decode",

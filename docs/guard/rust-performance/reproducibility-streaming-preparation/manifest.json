@@ -1,0 +1,59 @@
+{
+  "schema": "hol-guard-mcp-streaming-reconstruction.v1",
+  "public_base_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+  "common_B_F_runtime_commit": "5a5ad6d3873d83ac6411bf9204f704c449580c41",
+  "historical_public_oracle_commit": "d811b08f081d72c348b95f0cf9e45349fb1787e6",
+  "reconstructions": {
+    "common-runtime": {
+      "source_commit": "5a5ad6d3873d83ac6411bf9204f704c449580c41",
+      "patch": {
+        "path": "common-runtime-from-public-9db.patch",
+        "bytes": 9708,
+        "sha256": "5fcb1aecd7915fed82cc63497b0a00bcaa5261d112553e2a763c511c6cb62ffa"
+      },
+      "expected_git_objects": {
+        "src": "ee76be084f3c8b9e6ce12db1b064982e808be503",
+        "contracts": "fad957713888b328c2b0aad33fb13b824fb1f402",
+        "pyproject.toml": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+        "uv.lock": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4"
+      }
+    },
+    "historical-oracle": {
+      "source_commit": "d811b08f081d72c348b95f0cf9e45349fb1787e6",
+      "patch": {
+        "path": "historical-oracle-from-public-9db.patch",
+        "bytes": 90633,
+        "sha256": "7a97f291b0eeea52e833f0c3afeffd03ce65cec34be59df49ca3dc944cdb395b"
+      },
+      "expected_git_objects": {
+        "src": "e0d5cd477ce4dc9a89026ad25d404c5fbaa51ac4",
+        "contracts": "fad957713888b328c2b0aad33fb13b824fb1f402",
+        "pyproject.toml": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+        "uv.lock": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4"
+      }
+    },
+    "explicit-F-harness-and-plan": {
+      "source_commit": "5a5ad6d3873d83ac6411bf9204f704c449580c41",
+      "patch": {
+        "path": "explicit-F-harness-and-plan-from-public-9db.patch",
+        "bytes": 97294,
+        "sha256": "a73e625948faedbc208c4200641e59652b2c4a5a263cfbc88f06852fd49b6c1f"
+      },
+      "expected_files_sha256": {
+        "scripts/compare_guard_mcp_streaming_preparation.py": "a7a56c7264a104c03228365647093ccb24b99d6697fbd84fe68b4d017ef246d6",
+        "scripts/compare_guard_mcp_risk.py": "7de4df7178e5d34fe521fd70833fe8cc5df06be7c64f88c3431a583bbf770309",
+        "scripts/profile_guard_mcp_streaming_session.py": "2e3a9f7401590c1a15e20074d47dacd12d1ef375d11a4562531834aeed6130c2",
+        "scripts/guard_mcp_streaming_preparation_pilot.py": "9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2",
+        "docs/guard/rust-performance/mcp-streaming-preparation-plan.json": "1b4f85eb4233b4c39a06202689c331bafd69eca8523ad2a120ded9bafe39be59",
+        "scripts/profile_guard_mcp_session.py": "6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932"
+      }
+    }
+  },
+  "limits": [
+    "Reconstructs declared complete runtime/contract/project scopes and exact harness/plan, not every unrelated tracked repository file.",
+    "The original complete exports and every tracked byte are separately evidenced by before/after manifests.",
+    "These patches and their verification do not execute workers, resume the stopped attempt, or qualify performance.",
+    "No historical E file or evidence is replaced by this supplement."
+  ],
+  "import_closure_note": "The shared oracle helper imports frozen profile_guard_mcp_session.py; reconstruction includes its exact measured bytes as a fifth Python file without changing E or the four direct plan pins."
+}

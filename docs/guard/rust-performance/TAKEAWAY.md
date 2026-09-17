@@ -17,10 +17,11 @@ fields, their projection hashes and every original threshold when updating statu
 
 ## Establish the source and artifact
 
-This documentation checkpoint covers `1061f304970555b48682fb1b475c0a67022a4e62` on
-`codex/rsp-takeover-hosted-20260917`, dated 2026-09-17; its isolated documentation
-branch is `rsp-config-execution-20260917`. Inspect actual HEAD, branch, worktree ownership
-and pending changes before editing. Later owner work may already be integrated.
+This documentation checkpoint covers local source `591d5c81e6bb341c6c3271332f3a6615a01bc748`,
+dated 2026-09-17, with its scoped-config validation and the stopped F attempt.
+Publication and fresh hosted analysis of that source remain pending. Inspect
+actual HEAD, branch, worktree ownership and pending changes before editing;
+later owner work may already be integrated.
 
 The audited baseline is `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1,
 Rust 1.88.0 and diagnostic CPython 3.12.14 with locked dependencies. Original
@@ -138,8 +139,18 @@ retried. Human, network and deliberate waits cannot become claimed kernel saving
    gate and finite independent source review include corrected selector cases,
    nested normal/error restoration and unrelated replies. Earlier failures
    remain; the 96 authority comparisons are included, not an extra test count.
-   F has only isolated prototype allocation/source evidence, with no route
-   campaign, qualification or activation. B remains default; E/F stay inactive.
+   F's [first fixed route attempt](../rust-performance-mcp-streaming-preparation.md)
+   stopped at 19 completed, one failed B and 44 never-attempted cells. Preserve
+   400 verified completed forwards/notifications (B 198/F 202), 401 attempts,
+   the unpaired F cell and all adverse values. Nine pairs independently match;
+   the collector emitted zero comparisons and no profiles. Its failed-cell
+   zero observed-forward count does not prove absence of forwarding because
+   ledger availability is unknown. EOF cause is also unresolved; discarded
+   stderr and absent pre-run OOM counters cannot be recreated retrospectively.
+   Keep the complete before/after proof and five-Python-source reconstruction.
+   Do not resume, retry, pool E results or infer a partial-cohort gate. Any fresh
+   diagnostic experiment needs a separately reviewed plan. B remains default;
+   E/F stay inactive and unqualified.
    RSP-098/103/104/108 and conditional
    RSP-105/107 decisions remain unchanged; do not modify RSP-106's record.
 4. Diagnose actual 9db route and capacity failures with the new bounded observers.
@@ -231,8 +242,14 @@ retried. Human, network and deliberate waits cannot become claimed kernel saving
    [foundation CodeQL](https://github.com/hashgraph-online/hol-guard/actions/runs/35257569810)
    on merge ref `72ea27ac1d847f5f03a23d956b31261315420000` fixes old 343/344,
    but reports eight new `config_source_io.py` path findings plus two inherited
-   Actions findings. Preserve those ten open alerts for triage; no clean gate
-   or new implementation analysis is implied.
+   Actions findings. Preserve the eight new high-severity Python alerts and
+   both inherited findings as open at that hosted observation. Local source
+   `591d5c81e6bb341c6c3271332f3a6615a01bc748` now pins trusted canonical home
+   and admitted workspace parents before leaf capture, propagates the same
+   reader through publisher/worker/hook-process CLI/package/persisted/remote
+   paths, and keeps immediate ACK withdrawal. Verify the retained scoped-config
+   receipt; publish and obtain fresh foundation/implementation analysis. No
+   additional dismissal or clean external gate is implied by source validation.
    The root-checkout correction stages the collector outside and verifies the
    actual extractor root, exact workflow/collector and clean pinned source;
    134 structural tests pass, but corrected hosted extraction is pending.
@@ -322,6 +339,27 @@ zero errors/warnings and finite source review is clear. Product source is
 unchanged from 5da. Keep 317/67/88/F44/46 scopes separate; no combined test total
 or hosted qualification is established. Preserve initial failures and successful corrections. Check exported errors/metrics/
 receipts for raw secrets, command/output and private paths; retain bounded proof.
+
+The subsequent [591 scoped-source receipt](../evidence/daemon-scoped-config-validation/manifest.json)
+retains 44 artifacts, including the original failed/no-execution attempts.
+
+The retained 591d5c81 source validation records boundary/remote 137 passed and one
+skipped; server scope 12 passed, one skipped and 102 deselected; an initial ownership
+result of 46 passed/one failed on exported tomllib-helper classification, followed by
+one passing actual-inventory correction and 98 passed/one skipped across
+parser/config/source/reconciliation after extraction. Native authority and Python
+semantic gates pass; 82 workflow-permission tests pass. Full production typing before
+the two-file parser extraction covers 1,255 files with zero errors/20,241 warnings.
+Final two production plus two gate files have zero errors/68 warnings; inverse
+reconstruction proves the other 1,253 production files unchanged from the full run.
+These populations overlap and are not summed. Initial failures, a 180-second lock
+timeout with no tests executed, a wrong pytest path with no tests executed, and the
+first verifier lint failure remain retained. Hosted and installed qualification are not
+established.
+
+The core source is locally committed; fresh hosted analysis and artifact
+qualification remain pending. Preserve the historical 5da and d4e observations
+as historical checks, not passes of this later source.
 
 Update all 144 ledger records and render Markdown with exact links, counts,
 unresolved dependencies and unchanged original-field integrity. At this

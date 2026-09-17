@@ -15,7 +15,12 @@ from pathlib import Path
 from threading import Condition
 from typing import TYPE_CHECKING, cast
 
-from .config_source_io import GUARD_CONFIG_FILENAMES, GuardConfigSourceError, capture_guard_config
+from .config_source_io import (
+    GUARD_CONFIG_FILENAMES,
+    GuardConfigCapture,
+    GuardConfigSourceError,
+    capture_guard_config,
+)
 from .native_command_control_authority import AUTHORITY_FILE_NAME
 from .native_command_control_binding import read_native_command_control_binding
 from .native_policy_snapshot_codec import _digest_v3
@@ -52,6 +57,7 @@ class NativePolicySnapshotPublisherInputs:
     """Mixin containing filesystem observation outside synchronous hooks."""
 
     guard_home: Path  # pyright: ignore[reportUninitializedInstanceVariable]
+    config_capture: GuardConfigCapture | None  # pyright: ignore[reportUninitializedInstanceVariable]
     store: GuardStore  # pyright: ignore[reportUninitializedInstanceVariable]
     _command_control_runtime: ExtensionControlRuntime | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _condition: Condition  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -275,7 +281,9 @@ class NativePolicySnapshotPublisherInputs:
                     self.guard_home,
                     workspace=workspace,
                     managed_policy_state=managed,
-                    config_reader=partial(_captured_config_reader, inputs=captured) if cacheable else None,
+                    config_reader=(
+                        partial(_captured_config_reader, inputs=captured) if cacheable else self._uncached_config_reader
+                    ),
                 )
                 policy = effective_native_policy_v3(config) | {"mode": config.mode}
                 if cacheable:
@@ -295,6 +303,11 @@ class NativePolicySnapshotPublisherInputs:
 
     def _capture_config_policy_input(self, path: Path) -> _CapturedPolicyInput:
         try:
+            if self.config_capture is not None:
+                captured = self.config_capture(path)
+                return _CapturedPolicyInput(
+                    (captured.identity, hashlib.sha256(captured.content).hexdigest()), captured.content
+                )
             return self._capture_policy_input(path)
         except GuardConfigSourceError:
             # A rejected input may occur before cache-change invalidation.
@@ -304,6 +317,9 @@ class NativePolicySnapshotPublisherInputs:
                 self._acked = False
                 self._condition.notify_all()
             raise
+
+    def _uncached_config_reader(self, path: Path) -> dict[str, object]:
+        return _captured_config_reader(path, inputs={path: self._capture_config_policy_input(path)})
 
     @staticmethod
     def _capture_policy_input(path: Path) -> _CapturedPolicyInput:

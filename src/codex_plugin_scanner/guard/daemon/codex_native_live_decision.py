@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -54,7 +54,13 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _original_hook_is_live(store: GuardStore, request_id: str, hook_input: Mapping[str, object]) -> bool:
+def _original_hook_is_live(
+    store: GuardStore,
+    request_id: str,
+    hook_input: Mapping[str, object],
+    *,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> bool:
     operation = store.get_guard_operation_for_approval_request(request_id)
     if not isinstance(operation, Mapping) or operation.get("status") not in {"waiting_on_approval", "resumed"}:
         return False
@@ -67,7 +73,7 @@ def _original_hook_is_live(store: GuardStore, request_id: str, hook_input: Mappi
     # A terminal record may be replayed by the same still-live bridge, without
     # extending its original deadline or moving authority to another process.
     waiting = {**operation, "status": "waiting_on_approval"}
-    deadline = codex_live_hook_wait_deadline(store, operation=waiting, metadata=metadata)
+    deadline = codex_live_hook_wait_deadline(store, operation=waiting, metadata=metadata, config_reader=config_reader)
     return deadline is not None and deadline > datetime.now(timezone.utc)
 
 
@@ -101,7 +107,9 @@ def complete_native_codex_live_decision(
         if not isinstance(request, Mapping) or not is_native_codex_review(request):
             return failure
         if request.get("resolution_action") == "block":
-            return complete_codex_live_decision(store, request_id=request_id, now=_now())
+            return complete_codex_live_decision(
+                store, request_id=request_id, now=_now(), config_reader=worker.config_reader
+            )
         if request.get("status") != "resolved" or request.get("resolution_action") != "allow":
             return failure
         workspace_value = request.get("workspace")
@@ -112,7 +120,7 @@ def complete_native_codex_live_decision(
             hook_input is None
             or original_home is None
             or native_mode() not in {"auto", "force"}
-            or not _original_hook_is_live(store, request_id, hook_input)
+            or not _original_hook_is_live(store, request_id, hook_input, config_reader=worker.config_reader)
         ):
             return failure
         previous = store.get_request_resume(request_id)
@@ -190,7 +198,7 @@ def complete_native_codex_live_decision(
             reviewable = action == "review" and minimum == "review" and result.get("decision") == "deny"
             if (
                 not (allowed or reviewable)
-                or not _original_hook_is_live(store, request_id, hook_input)
+                or not _original_hook_is_live(store, request_id, hook_input, config_reader=worker.config_reader)
                 or time.monotonic() >= deadline
             ):
                 return failure
@@ -200,6 +208,7 @@ def complete_native_codex_live_decision(
                 now=_now(),
                 fresh_allow_authorized=True,
                 require_consumed_once_for_replay=True,
+                config_reader=worker.config_reader,
             )
         # Database acquisition/finalization and lock retirement consume the
         # same absolute budget. A consumed-but-undelivered decision may be
@@ -208,7 +217,10 @@ def complete_native_codex_live_decision(
         # commits, independently of this HTTP request's remaining budget.
         # Retain the committed consume for an exact retry, but never deliver
         # an allow to an expired or replaced original waiter.
-        if not _original_hook_is_live(store, request_id, hook_input) or time.monotonic() >= deadline:
+        if (
+            not _original_hook_is_live(store, request_id, hook_input, config_reader=worker.config_reader)
+            or time.monotonic() >= deadline
+        ):
             return failure
         return completed
     except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):

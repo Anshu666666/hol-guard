@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from .config_source_io import GuardConfigCapture
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_MAX_SECONDS,
@@ -50,11 +51,13 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         wall_clock: Callable[[], float] | None = None,
         monotonic_clock: Callable[[], float] | None = None,
         max_workspaces: int = 1_024,
+        config_capture: GuardConfigCapture | None = None,
     ) -> None:
         if not 1 <= max_workspaces <= 1_024:
             raise ValueError("native policy workspace limit must be between 1 and 1024")
         self.store = store
         self.guard_home = Path(store.guard_home)
+        self.config_capture = config_capture
         self._status_provider = status_provider
         self._client_request = client_request
         self._poll_interval_seconds = max(0.05, min(5.0, poll_interval_seconds))

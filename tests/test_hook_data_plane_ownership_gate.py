@@ -33,6 +33,7 @@ def test_changed_path_gate_accepts_mapped_native_source(monkeypatch: pytest.Monk
     [
         "src/codex_plugin_scanner/guard/cli/commands_support_interaction.py",
         "src/codex_plugin_scanner/guard/config_source_io.py",
+        "src/codex_plugin_scanner/guard/daemon/config_read_scope.py",
     ],
 )
 def test_changed_path_gate_maps_hook_control_support(monkeypatch: pytest.MonkeyPatch, path: str) -> None:

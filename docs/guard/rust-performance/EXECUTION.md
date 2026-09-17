@@ -8,8 +8,9 @@ verified by its title, full conversation, linked documents and implementation
 instruction authorizes this session to take over implementation through GitHub
 on `release/3.2`. The original proposal-only wording does not narrow that scope.
 
-This checkpoint reviews source through `1061f304970555b48682fb1b475c0a67022a4e62` on
-`codex/rsp-takeover-hosted-20260917`, dated 2026-09-17. The ledger records
+This checkpoint reconciles local source `591d5c81e6bb341c6c3271332f3a6615a01bc748`, dated
+2026-09-17. That source and its scoped-config validation are not a new published
+artifact or hosted pass; publication and fresh analysis remain pending. The ledger records
 **74 DONE, 31 OPEN, 29 BLOCKED and 10 DEFERRED**. These are individual acceptance
 records, not a release-completion percentage. Installed qualification, review
 and rollout remain incomplete. [TAKEAWAY.md](TAKEAWAY.md) is the current execution
@@ -38,7 +39,7 @@ justification automatically.
 | Last published implementation before this checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `9db62e8844c2ba2627f55b6b00e58cb5b175185d` |
 | Verified published Git tree | `47ba580366672b3b92cb46e6bb1d19c670444e94` |
 | Actual native-wheel build at that checkpoint | GitHub test-merge `c9859a5b5d04526fa7e663d7c494e442ee4298c4`, same Git tree; paired candidate wheels explicitly build `9db62e884` |
-| Current source cutoff | `1061f304970555b48682fb1b475c0a67022a4e62` |
+| Current local source cutoff | `591d5c81e6bb341c6c3271332f3a6615a01bc748`; final scoped-source checks retained, publication and fresh hosted analysis pending |
 | Package / Rust / diagnostic Python | `3.0.1` / `1.88.0` / CPython `3.12.14`, locked dependencies |
 
 The release branch contains a squash of earlier main changes. Reconciliation
@@ -70,7 +71,7 @@ changed files before acting on any of these PRs.
 | Package | Verified immutable bundle indexes, captured bytes, one parse per supported JSON/JSONC/TOML/Yarn/pnpm/Bundler format and atomic evidence; unique bundle identities validate once | Actual npm lock-v3 source-route pilot fails its benefit gate and remains inactive. Original matrix has 27 full evaluator attempts and nine unversioned API diagnostics; the literal unversioned full-route slice remains open. |
 | Offline scanner | Bounded Git streams, shared immutable traversal, lazy context and descriptor-bound working reads preserve rich findings and explicit incompleteness | Native extraction remains inactive after its final CPU −31.6% / p95 wall +13.5% result. Latest 9db installed scanner retains 107 passing rows, one failed row and four unreached cases; corrected Windows fixture execution is pending. |
 | Archive worker | [510 actual isolated calls and 60 profiles](archive-worker-qualification.md); 508 exact outcomes, two fail-closed timeouts plus an earlier warmup timeout retained; 330 hostile cases remain non-clean | Retain current isolated worker in measured scope; no qualified native worker or whole-worker no-go |
-| MCP | Bounded framing, catalog identity, idle notifications and optimized B remain selected. C/D/native and the private owned-preparation E experiments are complete | E records one derivation and exact forwarding in its 64 selected historical cells; later method-selector mutation review limits the broader claim. Corrected F is source-only/inactive, without a campaign. B still derives categories twice; RSP-100 stays OPEN. |
+| MCP | Bounded framing, catalog identity, idle notifications and optimized B remain selected. C/D/native and the private owned-preparation E experiments are complete | E records one derivation and exact forwarding in its 64 selected historical cells; later method-selector mutation review limits the broader claim. F run1 stopped at 19 completed/one failed/44 never-attempted cells; no complete performance gate or activation. B still derives categories twice; RSP-100 stays OPEN. |
 | Private Claude launcher | Existing runtime contains the authenticated private Linux Pre/Post launcher; component snapshots and later integration tests remain separately identified | Actual 9db installed PreToolUse completes 30 Python and 30 native launches; Python PostToolUse then fails its eleventh attempt after ten completions. Zero full blocks, no complete benefit selection or activation; broader conformance and platform/signing gates remain. |
 | Runtime identity and posture | Verified live Linux generation reuse on supported filesystems, complete validation on replacement/unsupported systems; all ordinary native evaluation and delivery consume the same acknowledged posture without config rereads | Signing/frozen artifacts, installed transitions and benefit remain separate |
 | Command extensions | Trusted compiler, bounded typed Rust interpreter, indexed matching and complete observations, authenticated control fence, durable complete receipts; [638 catalog/control combinations](../native-command-matrix-performance.md) | Final activated contribution lifecycle, exact installed benefit and update/downgrade proof |
@@ -182,8 +183,23 @@ found no remaining blocker for this bounded inactive candidate. Initial
 collection failure, 39-test pass and two failed selector regressions remain.
 Its isolated allocation feasibility used an earlier instrumented prototype;
 those observations are neither final-F route timings nor process RSS. There is
-no F route campaign, benefit decision, installed/platform qualification or
-activation. Any forthcoming worker/collector and fixed plan remain separate.
+no installed/platform qualification or activation from that source gate. The
+separately prepared fixed worker/collector has now produced a stopped route attempt.
+
+The [F run1 report](../rust-performance-mcp-streaming-preparation.md) retains
+19 completed cells, one failed baseline dense-integer cell and 44 never attempted.
+Completed cells verify 400 responses/forwards/progress notifications (B 198, F 202)
+from 401 total attempted calls. F records 202 admissions, category derivations,
+preparations and bound writes. Nine complete pairs independently match; the
+collector emitted zero comparisons because its final loop was never reached.
+The last completed F cell remains unpaired. No diagnostic profile or five-block
+gate ran, and no retry, resume or E-result pooling occurred. Failed-cell zero
+observed forwards does not prove no forwarding: missing/unreadable ledgers also
+produce zero. Discarded stderr, ambiguous worker detail and absent pre-run OOM
+counters leave the EOF cause unresolved. Complete before/after export/dependency
+proofs, all adverse cells and exact five-Python-source reconstruction remain in
+the [42-artifact evidence package](evidence/mcp-streaming-run1/manifest.json).
+This attempt uses exact 5a source; it does not measure the later 591 config scope.
 
 General E activation is rejected. Five-block median p95/tree-CPU changes are
 −47.36%/−40.00% at 1 KiB and −54.54%/−9.09% at 128 KiB, preserving real positive
@@ -422,7 +438,9 @@ or additional transport call. This source correction does not close alerts
 on merge ref `72ea27ac1d847f5f03a23d956b31261315420000` reports those two old
 alerts fixed, but introduces eight new `py/path-injection` findings in
 `config_source_io.py`. Together with two inherited Actions findings, ten alerts
-remain open for that reference. Triage is in progress and the gate is not clean.
+remain open for that reference, including eight new high-severity Python findings.
+The later local scoped-capture correction is described below; no new dismissal or
+fresh passing analysis is claimed, and the hosted gate remains unclean.
 The new implementation head still needs its own hosted analysis; earlier 9db
 open-alert observations are retained at their historical scope.
 
@@ -437,6 +455,35 @@ types with zero errors/80 nonfatal warnings. These populations overlap; do not
 sum them or promote them to a new full-source gate. The earlier alias/assertion
 failures and disk-full attempt remain recorded, with the complete disk-full log
 retained. The successful retry kept the original `/tmp` fixture location.
+
+The final local [scoped-config receipt](../evidence/daemon-scoped-config-validation/manifest.json)
+binds source `591d5c81e6bb341c6c3271332f3a6615a01bc748` and 44 retained artifacts.
+
+Local source 591d5c81 pins the trusted configured home alias to its construction-time
+canonical home and compares the admitted workspace parent before opening a config leaf.
+Authorization uses held-parent metadata under existing hook-root/owned-temporary rules.
+The same capture/reader is carried through publisher, daemon worker, hook-process CLI,
+package reload, persisted approval and remote command/resume paths. Publisher reuse
+requires the same capture object; rejected scoped capture withdraws ACK. Missing-parent
+semantics remain empty input, not authorization of an absent path; standalone unscoped
+CLI behavior is unchanged. This binds a canonical path and held directory during
+capture, not an inode across process launches. Fresh foundation/implementation analysis
+and actual Windows/installed qualification remain pending; no new alert dismissal is
+claimed.
+
+The retained 591d5c81 source validation records boundary/remote 137 passed and one
+skipped; server scope 12 passed, one skipped and 102 deselected; an initial ownership
+result of 46 passed/one failed on exported tomllib-helper classification, followed by
+one passing actual-inventory correction and 98 passed/one skipped across
+parser/config/source/reconciliation after extraction. Native authority and Python
+semantic gates pass; 82 workflow-permission tests pass. Full production typing before
+the two-file parser extraction covers 1,255 files with zero errors/20,241 warnings.
+Final two production plus two gate files have zero errors/68 warnings; inverse
+reconstruction proves the other 1,253 production files unchanged from the full run.
+These populations overlap and are not summed. Initial failures, a 180-second lock
+timeout with no tests executed, a wrong pytest path with no tests executed, and the
+first verifier lint failure remain retained. Hosted and installed qualification are not
+established.
 
 The root-checkout correction stages the exact collector outside, preserves the
 workflow definition, places the pinned tree at the actual extractor root and
@@ -492,7 +539,9 @@ large unmeasured workloads cannot inherit a small-workload no-go.
 Foundation #2951 now publishes the shared-reader fix at
 `a7b675a84b732ead542cdf77e5153c57b4257d9b`, with exact branch readback. Its new
 CodeQL analysis fixes old 343/344 but reports eight new path findings and two
-inherited Actions findings; all ten remain open for triage. Earlier e449's
+inherited Actions findings; all ten remain open in that retained hosted observation. Local 591 scoped
+capture and propagation fixes require newly published foundation/implementation
+analysis; no additional alert has been dismissed. Earlier e449's
 179 check records remain **159 successful, 19 skipped and one failed CodeQL
 check** at that historical scope. Protected auto-merge and Greptile 5/5 still do
 not supply the required independent last-push CODEOWNER approval. The separate

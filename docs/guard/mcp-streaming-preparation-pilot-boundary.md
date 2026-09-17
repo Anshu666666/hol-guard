@@ -6,7 +6,10 @@ completed binding buffers during freshness checks with a sequential comparison
 against the same retained immutable binding. It also corrects an inherited
 selection error found during independent review. B remains the product default,
 E's source and all 64 measured cells remain unchanged, and RSP-100 remains OPEN.
-No end-to-end F campaign or activation is claimed here.
+The first preregistered F comparison later stopped at cell 20; its
+[partial result and failure](rust-performance-mcp-streaming-preparation.md)
+retain 19 completed cells, one failed baseline cell and 44 never-attempted cells.
+No completed F campaign or activation is claimed.
 
 ## Exact comparison and retained boundaries
 
@@ -136,9 +139,12 @@ hashes/sizes and all seven frozen E source/evidence hashes. The reviewer read
 the pre-fix failures and final test receipt without running duplicate tests.
 That source review supplies no GitHub CODEOWNER approval or performance gate.
 
-Any next comparison must declare its route, unchanged input schedule, exact
-source/harness identities and measurement lock before starting. It must retain
-all failed and adverse cells and measure F's complete route, including ownership,
-streaming checks, final encoding/decoding and real child forwarding. No 64-cell
-campaign, installed/platform/concurrent qualification, general memory bound or
-release decision follows from this source gate.
+The [fixed first comparison plan](rust-performance/mcp-streaming-preparation-plan.md)
+declared its route, unchanged input schedule, exact source/harness identities and
+measurement lock before starting. That attempt stopped on a baseline-worker EOF
+and preserves all completed, failed and never-attempted cells. Its evidence does
+not identify a unique failure cause, establish a five-block performance gate or
+supply a final-F phase profile. Any later experiment must keep this attempt
+intact and declare a separately reviewed plan. No installed/platform/concurrent
+qualification, general memory bound or release decision follows from the source
+gate or partial campaign.

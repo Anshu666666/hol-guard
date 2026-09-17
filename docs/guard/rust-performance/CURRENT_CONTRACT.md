@@ -86,8 +86,23 @@ become default policy. Linked, non-regular, changed or incompletely read sources
 are rejected. Malformed TOML and invalid UTF-8 still raise. Logical path spelling,
 config precedence, blocked workspace keys and managed-policy application remain
 unchanged; no new owner/permission/ACL condition is added to ordinary config files.
-The reader does not authenticate a workspace or prevent an already authorized
-actor from changing it before capture starts.
+The general reader does not authenticate a workspace. The daemon adds an
+explicit `HookConfigReadScope`: it pins a trusted configured home alias to the
+canonical home chosen at construction, retains an already-admitted canonical
+workspace path, and rejects a changed resolved parent before opening the leaf.
+Authorization examines the held parent and its metadata under the existing hook
+root policy and owned-temporary exception. This is a pathname/held-capture
+boundary, not an inode identity preserved across process launches. A genuinely
+missing parent still supplies empty input; it is not authorization of an absent
+path. Standalone readers without the injected scope retain ordinary CLI semantics.
+
+The same scoped capture/reader now reaches the publisher and worker, hook-process
+CLI, package reloads, persisted approvals and remote command/resume readers.
+Publisher reuse requires the identical capture object, and an uncacheable policy
+reload still uses that capture. Rejection withdraws ACK before an older snapshot
+can be retained. Source `591d5c81e6bb341c6c3271332f3a6615a01bc748` has the
+bounded combined checks recorded below; new hosted analysis and actual Windows
+execution remain pending.
 
 The inclusive **1,048,576-byte (1 MiB)** ceiling is a new input acceptance bound
 for ordinary Guard TOML, which previously had no byte limit. It matches the
@@ -281,10 +296,16 @@ selects the admitted frame by object identity and then retains complete binding
 and actual-wire equality checks. Its corrected 44-test gate and finite source
 review cover the two selector regressions, real nested normal/error restoration
 and unrelated replies; the 96 authority comparisons are included in that count.
-The earlier failures are retained. F's streaming comparison has only isolated
-prototype allocation observations and source tests, with no route campaign,
-installed/platform qualification or activation. E and F remain inactive, and no
-private prepared lifetime is saved as authority across later preparations.
+The earlier failures are retained. F's first [fixed route attempt](../rust-performance-mcp-streaming-preparation.md)
+now retains 19 completed cells, one failed B cell and 44 never attempted. Its
+400 verified completed-cell forwards include 202 F derivations/bound writes;
+401 calls were attempted. Nine complete pairs independently match, while the
+collector produced zero comparisons and no profiles. The unpaired F cell is
+retained. Failed-cell forwarding and the EOF cause remain unresolved because
+the retained zero count lacks a ledger-availability witness and stderr/worker
+detail are missing. No five-block gate, retry, pooled E result, installed/platform
+qualification or activation follows. Both remain inactive; no private prepared
+lifetime is saved as authority across later preparations.
 
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
@@ -354,6 +375,30 @@ validation and negative cases; static checks and one contract type file pass
 with zero errors/warnings, with finite independent review clear. Product source
 is unchanged from 5da. These separate source gates are not an aggregate test
 count, installed qualification or a clean external security gate.
+Later source `591d5c81e6bb341c6c3271332f3a6615a01bc748` adds scoped capture and
+propagation; it is not covered by that earlier inventory-only statement. Its
+[retained validation](../evidence/daemon-scoped-config-validation/manifest.json)
+records the following exact, overlapping populations.
+
+The retained 591d5c81 source validation records boundary/remote 137 passed and one
+skipped; server scope 12 passed, one skipped and 102 deselected; an initial ownership
+result of 46 passed/one failed on exported tomllib-helper classification, followed by
+one passing actual-inventory correction and 98 passed/one skipped across
+parser/config/source/reconciliation after extraction. Native authority and Python
+semantic gates pass; 82 workflow-permission tests pass. Full production typing before
+the two-file parser extraction covers 1,255 files with zero errors/20,241 warnings.
+Final two production plus two gate files have zero errors/68 warnings; inverse
+reconstruction proves the other 1,253 production files unchanged from the full run.
+These populations overlap and are not summed. Initial failures, a 180-second lock
+timeout with no tests executed, a wrong pytest path with no tests executed, and the
+first verifier lint failure remain retained. Hosted and installed qualification are not
+established.
+
+Foundation a7's retained hosted analysis still has eight new high-severity
+Python path findings and two inherited Actions findings; old 343/344 are fixed
+on that foundation. These local source checks do not change alert disposition
+or establish a fresh CodeQL/Sonar pass. Publication/new analysis remain pending.
+
 The [earlier source validation](evidence/pilots-checkpoint/source-validation.json)
 keeps its 147-test integration set, 42-file lint/format and 1,253-file type result
 with 20,229 nonfatal warnings at that exact source. Later experiments and fixes

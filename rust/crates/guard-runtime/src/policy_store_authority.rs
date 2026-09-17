@@ -317,7 +317,7 @@ pub(super) fn load_authority(
         );
     };
     match value.get("schema").and_then(Value::as_str) {
-        Some(AUTHORITY_RECORD_SCHEMA) => load_combined_authority(
+        Some(AUTHORITY_RECORD_SCHEMA | AUTHORITY_RECORD_V4_SCHEMA) => load_combined_authority(
             &value,
             &bytes,
             expected_runtime_identity,
@@ -377,7 +377,10 @@ pub(super) fn load_current_authority(
             migrate: false,
         });
     };
-    if value.get("schema").and_then(Value::as_str) != Some(AUTHORITY_RECORD_SCHEMA) {
+    if !matches!(
+        value.get("schema").and_then(Value::as_str),
+        Some(AUTHORITY_RECORD_SCHEMA | AUTHORITY_RECORD_V4_SCHEMA)
+    ) {
         return Err("native_policy_snapshot_state_invalid".to_owned());
     }
     load_combined_authority(
@@ -398,11 +401,14 @@ pub(super) fn load_combined_authority(
     expected_scope_digest: &str,
     verifier_key: &[u8; VERIFIER_KEY_BYTES],
 ) -> Result<LoadedAuthority, String> {
-    let record: PolicyAuthorityRecordV3 = serde_json::from_value(value.clone())
+    let record: PolicyAuthorityRecord = serde_json::from_value(value.clone())
         .map_err(|_| "native_policy_snapshot_state_invalid".to_owned())?;
     let canonical = canonical_json_bytes(value).map_err(snapshot_error)?;
     if bytes != canonical
-        || record.schema != AUTHORITY_RECORD_SCHEMA
+        || !matches!(
+            record.schema.as_str(),
+            AUTHORITY_RECORD_SCHEMA | AUTHORITY_RECORD_V4_SCHEMA
+        )
         || record.generation_floor == 0
         || !is_lower_hex(&record.policy_digest, 64)
         || !is_lower_hex(&record.floor_mac, 64)
@@ -418,22 +424,27 @@ pub(super) fn load_combined_authority(
     let mut canonical_snapshot = Vec::new();
     let mut invalid_on_startup = false;
     if let Some(candidate) = record.snapshot {
-        if candidate.generation != record.generation_floor
-            || candidate.policy_digest != record.policy_digest
+        if candidate.source_input_digest().is_some()
+            != (record.schema == AUTHORITY_RECORD_V4_SCHEMA)
+        {
+            return Err("native_policy_snapshot_state_invalid".to_owned());
+        }
+        if *candidate.generation() != record.generation_floor
+            || candidate.policy_digest() != &record.policy_digest
         {
             invalid_on_startup = true;
-        } else if validate_v3(
-            &candidate,
-            record.generation_floor,
-            expected_runtime_identity,
-            expected_rule_digest,
-            verifier_key,
-            now_ms()?,
-        )
-        .is_ok()
-            && candidate.scope_contract.scope_digest == expected_scope_digest
+        } else if candidate
+            .validate(
+                record.generation_floor,
+                expected_runtime_identity,
+                expected_rule_digest,
+                verifier_key,
+                now_ms()?,
+            )
+            .is_ok()
+            && candidate.scope_contract().scope_digest == expected_scope_digest
         {
-            canonical_snapshot = snapshot_bytes(&candidate).map_err(snapshot_error)?;
+            canonical_snapshot = candidate.bytes()?;
             snapshot = Some(candidate);
         }
     }

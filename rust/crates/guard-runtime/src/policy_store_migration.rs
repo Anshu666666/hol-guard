@@ -91,7 +91,7 @@ pub(super) fn load_legacy_authority(
         .map(|candidate| candidate.policy_digest.clone())
         .or_else(|| floor.map(|item| item.policy_digest));
     Ok(LoadedAuthority {
-        snapshot,
+        snapshot: snapshot.map(AuthenticatedPolicySnapshot::V3),
         canonical_bytes,
         generation_floor,
         policy_digest,

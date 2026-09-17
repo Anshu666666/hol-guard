@@ -1105,7 +1105,7 @@ class StorePolicyMixin:
                     published_authority,
                     connection.commit,
                 )
-        notify_native_policy_mutation(self.guard_home)
+        notify_native_policy_mutation(self.guard_home, require_source_authority=True)
         persisted_acknowledgement = json.loads(encoded_payloads["policy_bundle_ack"])
         return persisted_acknowledgement if isinstance(persisted_acknowledgement, dict) else None
 
@@ -1251,7 +1251,7 @@ class StorePolicyMixin:
                     connection.commit,
                 )
 
-        notify_native_policy_mutation(self.guard_home)
+        notify_native_policy_mutation(self.guard_home, require_source_authority=True)
 
     def _prepared_remote_policy_rows(
         self,

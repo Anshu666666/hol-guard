@@ -29,6 +29,8 @@ use super::normalize_scope_text;
 mod fault_tests;
 #[path = "policy_store_migration_tests.rs"]
 mod migration_tests;
+#[path = "policy_store_v4_tests.rs"]
+mod v4_tests;
 
 fn policy() -> EffectiveNativePolicyV3 {
     EffectiveNativePolicyV3 {

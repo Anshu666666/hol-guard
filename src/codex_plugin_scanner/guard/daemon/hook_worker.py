@@ -242,6 +242,11 @@ class HookWorker(HookWorkerNativeMixin):
             snapshot = current_snapshot_binding()
             if isinstance(snapshot, dict):
                 return snapshot
+        if (
+            getattr(self.policy_snapshot_publisher, "requires_policy_authority", False) is True
+            or getattr(self.policy_snapshot_publisher, "requires_scoped_authority", False) is True
+        ):
+            return None
         current_snapshot = getattr(self.policy_snapshot_publisher, "current_snapshot", None)
         if callable(current_snapshot):
             snapshot = current_snapshot()

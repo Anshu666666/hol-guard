@@ -146,7 +146,7 @@ pub(super) fn persist_authority(
     path: &Path,
     generation_floor: u64,
     policy_digest: &str,
-    snapshot: Option<&PolicySnapshotV3>,
+    snapshot: Option<&AuthenticatedPolicySnapshot>,
     verifier_key: &[u8; VERIFIER_KEY_BYTES],
 ) -> Result<(), String> {
     let private_root = path
@@ -156,13 +156,18 @@ pub(super) fn persist_authority(
     if generation_floor == 0
         || !is_lower_hex(policy_digest, 64)
         || snapshot.is_some_and(|candidate| {
-            candidate.generation != generation_floor || candidate.policy_digest != policy_digest
+            *candidate.generation() != generation_floor
+                || candidate.policy_digest() != policy_digest
         })
     {
         return Err("native_policy_snapshot_authority_invalid".to_owned());
     }
-    let record = PolicyAuthorityRecordV3 {
-        schema: AUTHORITY_RECORD_SCHEMA.to_owned(),
+    let record = PolicyAuthorityRecord {
+        schema: if snapshot.is_some_and(|candidate| candidate.source_input_digest().is_some()) {
+            AUTHORITY_RECORD_V4_SCHEMA.to_owned()
+        } else {
+            AUTHORITY_RECORD_SCHEMA.to_owned()
+        },
         generation_floor,
         policy_digest: policy_digest.to_owned(),
         snapshot: snapshot.cloned(),

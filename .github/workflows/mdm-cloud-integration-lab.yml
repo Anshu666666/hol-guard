@@ -68,6 +68,7 @@ jobs:
           mkdir -p artifacts/native-policy-activation
           uv run --no-sync pytest -q -m slow \
             tests/test_native_cloud_policy_resident.py \
+            tests/test_native_scoped_policy_resident.py \
             --junitxml=artifacts/native-policy-activation/results.xml
       - name: Validate bounded native assertion evidence
         if: always()
@@ -87,6 +88,8 @@ jobs:
           expected = {
               'test_first_action_after_publish_uses_the_signed_default[1]',
               'test_first_action_after_publish_uses_the_signed_default[2]',
+              'test_signed_exact_policy_is_consumed_by_actual_resident[canonical]',
+              'test_signed_exact_policy_is_consumed_by_actual_resident[memory]',
           }
           passed = len(cases) == len(expected) and {case.get('name') for case in cases} == expected and all(
               all(case.find(tag) is None for tag in ('skipped', 'failure', 'error'))
@@ -108,6 +111,7 @@ jobs:
               'runtime': 'github-hosted-linux',
               'boundary': 'built native runtime with source integration tests',
               'installedWheelCertification': 'not-evaluated',
+              'scopedFeatureNegotiation': 'test-only; production advertisement not evaluated',
               'status': 'pass' if passed else 'fail',
               'assertionCount': len(cases),
               'allAssertionsPassed': passed,
@@ -116,7 +120,7 @@ jobs:
           }
           (directory / 'proof.json').write_text(json.dumps(report, indent=2) + '\n')
           print(json.dumps(report))
-          assert passed, 'Native activation requires both expected assertions to execute and pass against exact clean source.'
+          assert passed, 'Native activation requires all four expected assertions to execute and pass against exact clean source.'
           PY
       - name: Retain native assertion evidence
         if: always()

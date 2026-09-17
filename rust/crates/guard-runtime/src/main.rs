@@ -2,11 +2,14 @@
 
 mod approval;
 mod edge;
+mod edge_v4;
 mod hardening;
 mod managed_resident;
 mod native_hook_receipt;
 mod oneshot;
 mod policy_enforcement;
+mod policy_scoped_enforcement;
+mod policy_scoped_request;
 mod policy_store;
 mod resident_client;
 mod resident_process_identity;

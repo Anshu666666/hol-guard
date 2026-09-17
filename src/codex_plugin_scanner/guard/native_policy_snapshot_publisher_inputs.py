@@ -27,6 +27,8 @@ class NativePolicySnapshotPublisherInputs:
 
     guard_home: Path  # pyright: ignore[reportUninitializedInstanceVariable]
     _condition: Condition  # pyright: ignore[reportUninitializedInstanceVariable]
+    _scoped_publication_enabled: bool  # pyright: ignore[reportUninitializedInstanceVariable]
+    _observed_scoped_digest: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _acked: bool  # pyright: ignore[reportUninitializedInstanceVariable]
     _workspace_paths: set[Path]  # pyright: ignore[reportUninitializedInstanceVariable]
     _published_policy_fingerprint: tuple[str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -238,6 +240,10 @@ class NativePolicySnapshotPublisherInputs:
                 with self._condition:
                     self._acked = False
                     self._condition.notify_all()
+        if self._scoped_publication_enabled:
+            from .native_policy_snapshot_publisher_scoped import scoped_policy_input_changed
+
+            return scoped_policy_input_changed(self, force_republish=force_republish)
         try:
             effective_policy, cloud_inputs = self._compiled_native_policy()
             # ``_compiled_effective_policy`` carries the raw mode beside the

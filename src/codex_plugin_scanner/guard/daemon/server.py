@@ -153,7 +153,6 @@ from ..policy_bundle_trusted_keys import (
     validate_synced_policy_bundle,
 )
 from ..policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
-from ..protection_posture import protection_is_off
 from ..receipts.manager import build_receipt
 from ..runtime.approval_attention import ApprovalAttentionCoordinator
 from ..runtime.cloud_review_sync import CloudReviewSyncWorker, start_cloud_sync_sync_worker, stop_cloud_sync_sync_worker
@@ -5829,44 +5828,16 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         reason_code: str,
         native_authoritative: bool = False,
     ) -> dict[str, object]:
-        runtime_harness = self._optional_string(params.get("runtime-harness", [None])[-1])
-        harness = (runtime_harness or default_harness).strip().lower().replace("_", "-")
-        event = self._optional_string(payload.get("hook_event_name", payload.get("event"))) or "PreToolUse"
-        daemon_server = getattr(self, "server", None)
-        workspace_path, home_path = self._validated_fail_safe_hook_paths(params)
-        guard_home = None if daemon_server is None else cast(_GuardDaemonHttpServer, daemon_server).store.guard_home
-        try:
-            loaded = None if guard_home is None else load_guard_config(guard_home, workspace=workspace_path)
-            observe_mode = loaded is not None and protection_is_off(posture=loaded.protection_posture, mode=loaded.mode)
-        except (OSError, RuntimeError, TypeError, ValueError):
-            observe_mode = False
-        if observe_mode and not native_authoritative:
-            if harness in {"pi", "omp"}:
-                return {"decision": "allow", "reason_code": reason_code, "observed_review_failure": True}
-            if event == "PermissionRequest":
-                return {
-                    "reason_code": reason_code,
-                    "hookSpecificOutput": {"hookEventName": event, "decision": {"behavior": "allow"}},
-                }
-            if event == "PreToolUse":
-                return {
-                    "reason_code": reason_code,
-                    "hookSpecificOutput": {"hookEventName": event, "permissionDecision": "allow"},
-                }
-            return {"continue": True, "reason_code": reason_code, "observed_review_failure": True}
-        from .hook_availability_policy import availability_harness_response
+        from .hook_failure_response import runtime_hook_failure_response
 
-        payload_dict = dict(payload) if isinstance(payload, Mapping) else {}
-        return availability_harness_response(
-            payload_dict,
-            harness=harness,
-            event_name=event,
-            reason_code=reason_code,
+        return runtime_hook_failure_response(
+            self,
+            payload,
+            params,
+            default_harness=default_harness,
             reason=reason,
-            workspace=workspace_path,
-            home_dir=home_path,
-            guard_home=guard_home,
-            recording_only=observe_mode,
+            reason_code=reason_code,
+            native_authoritative=native_authoritative,
         )
 
     def _validated_fail_safe_hook_paths(

@@ -11,6 +11,7 @@ from ..cli.commands_support_command_activity import hook_post_succeeded
 from ..native_mode import python_oracle_surface_enabled
 from ..native_route_receipt import record_python_semantic_hook_route
 from ..native_runtime import NativeRuntimeStatus, native_output_sha256
+from ..native_scoped_result import scoped_result_is_current
 from ..runtime.hook_output_text import extract_payload_output
 from ..runtime.hook_review_types import HookReviewRequest, HookReviewResponse
 from .hook_availability_policy import (
@@ -19,10 +20,12 @@ from .hook_availability_policy import (
     recording_only_pre_tool_response,
 )
 from .hook_native_review_approval import pause_native_pre_tool_for_approval
+from .hook_policy_authority import legacy_source_binding_is_current, policy_authority_required
 from .hook_request_parsing import pre_tool_command
 from .hook_worker_responses import (
     harness_json_from_native_post_tool,
     harness_json_from_native_pre_tool,
+    integrity_fail_closed_pre_tool_response,
 )
 
 _NATIVE_PRE_TOOL_APPROVAL_ACTIONS = frozenset({"review", "require-reapproval"})
@@ -194,6 +197,15 @@ def _record_unavailable_native(
     return response
 
 
+def _scoped_authority_unavailable(host: _HookWorkerNativeHost, harness: str) -> dict[str, object]:
+    host.metrics.record_route("native_fail_safe")
+    return integrity_fail_closed_pre_tool_response(
+        harness,
+        reason="HOL Guard could not verify the current scoped policy authority.",
+        reason_code="native_scoped_authority_unavailable",
+    )
+
+
 class HookWorkerNativeMixin:
     """Native edge and explicit-oracle paths kept out of the worker facade."""
 
@@ -315,22 +327,52 @@ class HookWorkerNativeMixin:
         workspace: Path | None,
         deadline: float | None,
     ) -> dict[str, object]:
-        policy_snapshot = self._native_policy_snapshot(workspace, deadline=deadline)
-        recording_only = hook_review_is_recording_only(guard_home=guard_home, workspace=workspace) or (
-            policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
+        publisher = getattr(self, "policy_snapshot_publisher", None)
+        required = event_name == "PreToolUse" and policy_authority_required(publisher)
+        try:
+            policy_snapshot = self._native_policy_snapshot(workspace, deadline=deadline)
+        except Exception:
+            if required or (event_name == "PreToolUse" and policy_authority_required(publisher)):
+                return _scoped_authority_unavailable(self, harness)
+            raise
+        required = event_name == "PreToolUse" and policy_authority_required(publisher)
+        if required and policy_snapshot is None:
+            return _scoped_authority_unavailable(self, harness)
+        scoped = getattr(publisher, "requires_scoped_authority", False) is True or (
+            policy_snapshot is not None and "source_input_digest" in policy_snapshot
         )
-        edge = self._review_raw_hook_native(
-            payload=payload,
-            harness=harness,
-            event=event_name,
-            guard_home=guard_home,
-            home_dir=home_dir,
-            cwd=workspace,
-            source_ref_external_allowed=default_harness.strip().lower().replace("_", "-") in {"pi", "omp"},
-            observe_mode=recording_only,
-            deadline=deadline,
-            policy_snapshot=policy_snapshot,
+        if scoped and (policy_snapshot is None or "source_input_digest" not in policy_snapshot):
+            return _scoped_authority_unavailable(self, harness)
+        recording_only = not scoped and (
+            hook_review_is_recording_only(guard_home=guard_home, workspace=workspace)
+            or (policy_snapshot is not None and policy_snapshot.get("mode") == "observe")
         )
+        try:
+            edge = self._review_raw_hook_native(
+                payload=payload,
+                harness=harness,
+                event=event_name,
+                guard_home=guard_home,
+                home_dir=home_dir,
+                cwd=workspace,
+                source_ref_external_allowed=default_harness.strip().lower().replace("_", "-") in {"pi", "omp"},
+                observe_mode=recording_only,
+                deadline=deadline,
+                policy_snapshot=policy_snapshot,
+            )
+        except Exception:
+            if required or scoped or (event_name == "PreToolUse" and policy_authority_required(publisher)):
+                return _scoped_authority_unavailable(self, harness)
+            raise
+        required |= event_name == "PreToolUse" and policy_authority_required(publisher)
+        if (
+            required
+            and not scoped
+            and (edge is None or not legacy_source_binding_is_current(publisher, policy_snapshot))
+        ):
+            return _scoped_authority_unavailable(self, harness)
+        if scoped and (edge is None or not scoped_result_is_current(publisher, edge)):
+            return _scoped_authority_unavailable(self, harness)
         if edge is None:
             if event_name == "PostToolUse":
                 self._record_post_tool_activity(

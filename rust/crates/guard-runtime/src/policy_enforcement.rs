@@ -29,6 +29,7 @@ use policy_enforcement_facts::{
     classify_tool_name, collect_fact_maps, payload_facts, preferred_tool_name, risk_classes,
     PolicyFacts, PATH_KEYS,
 };
+pub(crate) use policy_enforcement_policy::configured_pre_tool_policy_action;
 use policy_enforcement_policy::{
     canonical_harness_action, canonical_harness_risk_actions, policy_map_action,
     validate_effective_policy,
@@ -276,16 +277,8 @@ pub(crate) fn apply_pre_tool_policy(
         return Err("native_policy_mode_invalid".to_owned());
     }
     validate_pre_tool_result_matrix(&result)?;
-    let harness = normalized_harness(&result.action.harness);
-    let mut facts = payload_facts(payload, result.action.action_type, &result.reason_code)?;
-    facts.sensitive_target |= result.action.sensitive_target;
-    let policy_floor = policy_floor(
-        &snapshot.effective_policy,
-        &harness,
-        result.action.action_type,
-        &facts,
-        &result.reason_code,
-    )?;
+    let policy_floor =
+        configured_pre_tool_policy_action(&snapshot.effective_policy, payload, &result)?;
     let effective = join_action(&result.minimum_action, &policy_floor)?;
     let policy_raised = action_rank(&effective) > action_rank(&result.minimum_action);
     let mut output = result;

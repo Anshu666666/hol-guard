@@ -118,14 +118,14 @@ impl PolicySnapshotStore {
             .as_ref()
             .ok_or_else(|| "native_policy_snapshot_missing".to_owned())?;
         if state.invalid_on_startup
-            || snapshot.generation != expected.generation
-            || snapshot.policy_digest != expected.policy_digest
-            || snapshot.rule_digest != expected.rule_digest
-            || snapshot.runtime_identity != expected.runtime_identity
+            || *snapshot.generation() != expected.generation
+            || snapshot.policy_digest() != expected.policy_digest
+            || snapshot.rule_digest() != expected.rule_digest
+            || snapshot.runtime_identity() != expected.runtime_identity
         {
             return Err("native_approval_policy_context_mismatch".to_owned());
         }
-        if snapshot.expires_at_ms <= now {
+        if *snapshot.expires_at_ms() <= now {
             return Err("native_approval_receipt_expired".to_owned());
         }
         self.approval_replay_memory
@@ -158,14 +158,14 @@ impl PolicySnapshotStore {
             .as_ref()
             .ok_or_else(|| "native_policy_snapshot_missing".to_owned())?;
         if state.invalid_on_startup
-            || snapshot.generation != expected.generation
-            || snapshot.policy_digest != expected.policy_digest
-            || snapshot.rule_digest != expected.rule_digest
-            || snapshot.runtime_identity != expected.runtime_identity
+            || *snapshot.generation() != expected.generation
+            || snapshot.policy_digest() != expected.policy_digest
+            || snapshot.rule_digest() != expected.rule_digest
+            || snapshot.runtime_identity() != expected.runtime_identity
         {
             return Err("native_approval_policy_context_mismatch".to_owned());
         }
-        if snapshot.expires_at_ms <= now {
+        if *snapshot.expires_at_ms() <= now {
             return Err("native_approval_receipt_expired".to_owned());
         }
         self.approval_replay_memory.consume_and_emit(

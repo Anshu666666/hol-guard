@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from typing import cast
 
+from .config_mutation import notify_native_policy_mutation
 from .policy_integrity import MEMORY_POLICY_SOURCES
 from .review_contracts import validate_decision_memory_bundle_target, validated_decision_memory_bundle
 from .review_memory_ack import build_decision_memory_ack
@@ -161,49 +163,14 @@ class StoreReviewPolicyMemoryMixin:
                 normalized_now,
             )
             _write_state(connection, ACK_KEY, ack, normalized_now)
-            return ack
+        notify_native_policy_mutation(self.guard_home, require_source_authority=True)
+        return ack
 
     def _cached_review_memory_decision_identities(self, *, now: str) -> frozenset[tuple[object, ...]]:
-        """Legacy or tampered rows cannot become authority from their source label."""
-        try:
-            oauth, binding = memory_oauth_authority(self)
-            registry = bound_registry(self.get_sync_payload(REGISTRY_KEY), binding, store=self)
-            version = self.get_sync_payload(VERSION_KEY)
-            if registry is None or not isinstance(version, dict):
-                return frozenset()
-            if any(registry.get(key) != version.get(key) for key in ("policyVersion", "bundleHash")):
-                return frozenset()
-            integrity = registry.get("integrity")
-            signed_at = integrity.get("signed_at") if isinstance(integrity, dict) else None
-            if not isinstance(signed_at, str):
-                return frozenset()
-            # Every retained row is replaced in the same transaction that
-            # signs this registry. Its MAC also authenticates signed_at.
-            materialized_at = _canonical_utc_timestamp(signed_at)
-            entries = registry_entries(registry, store=self, oauth=oauth, binding=binding, now=now)
-        except (GuardReviewContractError, OSError, RuntimeError, TypeError, ValueError):
-            return frozenset()
-        identities = set()
-        for _, decision in entries.values():
-            artifact_id, artifact_hash, workspace, publisher = self._normalized_policy_keys(decision)
-            identities.add(
-                (
-                    decision.harness,
-                    decision.scope,
-                    artifact_id,
-                    artifact_hash,
-                    workspace,
-                    publisher,
-                    decision.exact_command_sha256,
-                    decision.action,
-                    decision.reason,
-                    decision.owner,
-                    decision.source,
-                    _canonical_utc_timestamp(decision.expires_at) if decision.expires_at else None,
-                    materialized_at,
-                )
-            )
-        return frozenset(identities)
+        from .policy_bundle_row_authority import PolicyBundleRowStore
+        from .policy_memory_row_authority import current_review_memory_row_identities
+
+        return current_review_memory_row_identities(cast(PolicyBundleRowStore, cast(object, self)), now=now)
 
     def clear_review_policy_memory_state(self) -> None:
         """Remove only memory owned by this OAuth source during explicit connection reset."""
@@ -213,7 +180,11 @@ class StoreReviewPolicyMemoryMixin:
             binding = registry.get("oauthBinding") if isinstance(registry, dict) else None
             if isinstance(binding, dict) and binding.get("oauthSource") != self._guard_source:
                 return
+            before_changes = connection.total_changes
             self._replace_remote_policy_rows_locked(connection, (), sources=tuple(MEMORY_POLICY_SOURCES))
             connection.executemany(
                 "delete from sync_state where state_key = ?", [(REGISTRY_KEY,), (VERSION_KEY,), (ACK_KEY,)]
             )
+            changed = connection.total_changes > before_changes
+        if changed:
+            notify_native_policy_mutation(self.guard_home, require_source_authority=True)

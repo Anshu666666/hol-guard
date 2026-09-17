@@ -45,6 +45,39 @@ _COMPONENTS = (
         "guard-policy-snapshot-crypto",
         Path("rust/crates/guard-policy-snapshot/src/policy_snapshot_crypto.rs"),
     ),
+    (
+        "guard-command-model",
+        Path("rust/crates/guard-command/src/lib.rs"),
+    ),
+    (
+        "guard-command-exact-command",
+        Path("rust/crates/guard-command/src/exact_command.rs"),
+    ),
+    (
+        "guard-policy-scoped-authority",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority.rs"),
+    ),
+    (
+        "guard-policy-scoped-matcher",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority_match.rs"),
+    ),
+    (
+        "guard-policy-snapshot-v4",
+        Path("rust/crates/guard-policy-snapshot/src/policy_snapshot_v4.rs"),
+    ),
+    (
+        "guard-runtime-policy-store-versioned",
+        Path("rust/crates/guard-runtime/src/policy_store_versioned.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-request",
+        Path("rust/crates/guard-runtime/src/policy_scoped_request.rs"),
+    ),
+    ("guard-runtime-edge-v4", Path("rust/crates/guard-runtime/src/edge_v4.rs")),
+    (
+        "guard-runtime-policy-scoped-enforcement",
+        Path("rust/crates/guard-runtime/src/policy_scoped_enforcement.rs"),
+    ),
 )
 
 

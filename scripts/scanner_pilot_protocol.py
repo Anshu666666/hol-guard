@@ -16,7 +16,12 @@ from typing import Any
 from scripts.native_slo_dependency_identity import dependency_versions_digest
 from scripts.native_slo_evidence_files import atomic_exclusive, read_file
 from scripts.native_slo_evidence_format import canonical, digest
-from scripts.scanner_pilot_identity import IdentityError, executable_digest
+from scripts.scanner_pilot_identity import (
+    ExecutableIdentityError,
+    IdentityError,
+    executable_digest,
+    resolved_executable_digest,
+)
 
 CASES = (
     "working_provider_small",
@@ -77,7 +82,8 @@ def _identity_stage(operation: Any, code: str) -> Any:
     try:
         return operation()
     except (OSError, ValueError) as error:
-        raise IdentityError(code) from error
+        diagnostic = error.diagnostic if isinstance(error, ExecutableIdentityError) else None
+        raise IdentityError(code, diagnostic) from error
 
 
 def _identities(root: Path, binary: Path, expected: str) -> dict[str, Any]:
@@ -108,7 +114,7 @@ def _identities(root: Path, binary: Path, expected: str) -> dict[str, Any]:
         "harness_sha256": digest(canonical({p.relative_to(root).as_posix(): digest(p.read_bytes()) for p in scripts})),
         "dependency_sha256": _identity_stage(dependency_versions_digest, "dependency_identity_failed"),
         "python_sha256": _identity_stage(
-            lambda: executable_digest(Path(sys.executable).resolve()), "python_executable_identity_failed"
+            lambda: resolved_executable_digest(Path(sys.executable)), "python_executable_identity_failed"
         ),
         "binary_sha256": _identity_stage(lambda: executable_digest(binary), "native_executable_identity_failed"),
         "python_version": list(sys.version_info[:3]),

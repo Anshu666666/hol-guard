@@ -23,6 +23,7 @@ from scripts.mcp_rebaseline_public_types import (
 from scripts.native_slo_evidence_format import canonical, digest
 from scripts.native_slo_qualification import paired_ratio_interval
 from scripts.native_slo_statistics import percentile
+from scripts.scanner_pilot_identity import EXECUTABLE_FAILURE_REASONS
 from scripts.scanner_pilot_protocol import ARMS, ATTEMPTS, CASES, PAIRS, RUNS, SCHEMA, STATES, planned
 
 FAILURES = (
@@ -109,8 +110,17 @@ REPORT = fields(
         "installed_qualified": choice(False),
         "commitments_sha256": SHA256,
         "private_files": integer,
-    }
+    },
+    optional_fields={"identity_failure_reason": optional(choice(*EXECUTABLE_FAILURE_REASONS))},
 )
+
+
+def _identity_failure_reason(failure: Any, diagnostic: Any) -> str | None:
+    if diagnostic is None:
+        return None
+    require(isinstance(diagnostic, dict))
+    require(failure in ("python_executable_identity_failed", "native_executable_identity_failed"))
+    return choice(*EXECUTABLE_FAILURE_REASONS)(diagnostic.get("reason"))
 
 
 def _capture(value: Any) -> tuple[int, str]:
@@ -149,6 +159,7 @@ def projection(
         require(digest(canonical({k: v for k, v in fixture.items() if k != "sha256"})) == fixture_digest)
     worker = values.get("worker.json", {})
     failure = choice(*FAILURES)(worker.get("failure"))
+    identity_failure_reason = _identity_failure_reason(failure, worker.get("identity_failure"))
     preflight = values.get("preflight.json", {})
     preflight_passed = preflight.get("passed") is True
     if preflight_passed:
@@ -249,6 +260,7 @@ def projection(
             "preflight_passed": preflight_passed,
             "identity_verified_after": worker.get("identity_verified_after") is True,
             "worker_failure": failure,
+            "identity_failure_reason": identity_failure_reason,
             "collection_complete": complete,
             "installed_qualified": False,
             "commitments_sha256": digest(canonical(commitments)),
@@ -259,6 +271,11 @@ def projection(
 
 def validate_report(value: Any) -> dict[str, Any]:
     report = REPORT(value)
+    reason = report.setdefault("identity_failure_reason", None)
+    require(
+        reason is None
+        or report["worker_failure"] in ("python_executable_identity_failed", "native_executable_identity_failed")
+    )
     require(0 <= report["run"] < RUNS and len(report["observations"]) == ATTEMPTS)
     require(
         [{k: row[k] for k in ("id", "state", "pair", "arm")} for row in report["observations"]]

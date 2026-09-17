@@ -1911,8 +1911,17 @@ def _remove_invalid_daemon_discovery_key(guard_home: Path) -> bool:
 
 
 def _ensure_private_directory(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
+    _create_daemon_directory(path)
     _set_private_mode(path, _GUARD_DAEMON_PRIVATE_DIR_MODE)
+
+
+def _create_daemon_directory(path: Path) -> None:
+    if os.name == "nt":
+        from .discovery_windows import create_private_directory_if_missing
+
+        create_private_directory_if_missing(path)
+        return
+    path.mkdir(parents=True, exist_ok=True)
 
 
 def _write_private_text(path: Path, text: str) -> None:
@@ -1926,6 +1935,11 @@ def _write_private_text(path: Path, text: str) -> None:
 
 
 def _write_private_atomic_text(path: Path, text: str) -> None:
+    if os.name == "nt" and path.name == "daemon-state.json":
+        from .discovery_windows import replace_discovery_state
+
+        replace_discovery_state(path, text)
+        return
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     temporary_path = Path(temporary_name)
     try:
@@ -3062,7 +3076,7 @@ def _guard_daemon_recovery_lock(guard_home: Path, *, timeout_seconds: float | No
     file_locked = False
     try:
         lock_path = guard_home / _GUARD_DAEMON_RECOVERY_LOCK_FILE
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        _create_daemon_directory(lock_path.parent)
         with lock_path.open("a+b") as handle:
             if timeout_seconds is None:
                 _lock_daemon_start_file(handle)
@@ -3099,7 +3113,7 @@ def acquire_guard_daemon_owner_lock(guard_home: Path) -> BinaryIO:
     if any(pid != os.getpid() for pid, _port in inventory):
         raise RuntimeError("A Guard daemon is already active for this Guard home.")
     lock_path = guard_home / _GUARD_DAEMON_OWNER_LOCK_FILE
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    _create_daemon_directory(lock_path.parent)
     handle = lock_path.open("a+b")
     if not _try_lock_daemon_file(handle):
         handle.close()
@@ -3128,7 +3142,7 @@ def _guard_daemon_state_write_lock(guard_home: Path):
         thread_lock = _STATE_WRITE_LOCKS.setdefault(lock_key, threading.Lock())
     with thread_lock:
         lock_path = guard_home / "daemon-state-write.lock"
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        _create_daemon_directory(lock_path.parent)
         with lock_path.open("a+b") as handle:
             _lock_daemon_start_file(handle)
             try:

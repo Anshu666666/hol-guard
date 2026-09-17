@@ -13,6 +13,13 @@ _INITIAL_HEADER_OPERATIONS = frozenset({"gettimeout", "dup", "setblocking", "rec
 # Each entry names a complete lexical function and its observed primitives.
 # Other functions and primitives do not inherit these purpose classifications.
 _SCOPED_IO = {
+    # Generic Windows setup preserves existing directories. This existence
+    # observation neither reads source content nor admits a discovery key;
+    # the producer separately retains and verifies its private parent binding.
+    ("daemon/discovery_windows.py", "create_private_directory_if_missing", "filesystem"): (
+        "synchronous_discovery_setup",
+        frozenset({"is_dir"}),
+    ),
     ("daemon/initial_header_reader.py", "InitialHeaderReader.__init__", "socket_transport"): (
         "initial_header_transport",
         frozenset({"gettimeout", "dup", "setblocking"}),
@@ -97,6 +104,15 @@ def scoped_io_category(path: str, kind: str, function: str, operation: str = "")
 
 def capability_contract(compatibility_modes: Iterable[str]) -> list[dict[str, object]]:
     return [
+        {
+            "id": "windows_discovery_directory_setup",
+            "authority": "python_control_plane",
+            "python_decision_time_disk_io": True,
+            "inventory_category": "synchronous_discovery_setup",
+            "python_semantic_fallback": False,
+            "scope": "existing_directory_observation_before_private_at_birth_setup",
+            "failure": "producer_private_parent_binding_still_required",
+        },
         {
             "id": "initial_http_header_transport",
             "authority": "python_byte_transport",

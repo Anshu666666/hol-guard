@@ -78,6 +78,32 @@ def test_header_transport_scope_cannot_admit_semantic_io_or_other_socket_functio
     assert MODULE._category(path, "socket_transport", "unrelated", "recv_into").startswith("unclassified_")
 
 
+def test_discovery_setup_scope_rejects_content_reads_and_other_functions(tmp_path: Path) -> None:
+    path = _write_guard_fixture(
+        tmp_path,
+        "daemon/discovery_windows",
+        "def create_private_directory_if_missing(path):\n"
+        "    existing = path.is_dir()\n"
+        "    path.read_bytes()\n"
+        "    return existing\n",
+    )
+    record = MODULE._function_map(tmp_path)[path, "create_private_directory_if_missing"][0]
+    observed = list(MODULE._observations(record))
+    assert {(item.operation, item.category) for item in observed} == {
+        ("is_dir", "synchronous_discovery_setup"),
+        ("read_bytes", "unclassified_python_io"),
+    }
+    for function in (
+        "other",
+        "create_private_directory_if_missing.nested",
+        "Owner.create_private_directory_if_missing",
+    ):
+        assert MODULE._category(path, "filesystem", function, "is_dir").startswith("unclassified_")
+    contract = next(item for item in MODULE._capability_contract() if item["id"] == "windows_discovery_directory_setup")
+    assert contract["python_semantic_fallback"] is False
+    assert contract["failure"] == "producer_private_parent_binding_still_required"
+
+
 def test_gate_rejects_content_read_in_header_transport(tmp_path: Path) -> None:
     _copy_gate_sources(tmp_path)
     reader = tmp_path / "src/codex_plugin_scanner/guard/daemon/initial_header_reader.py"

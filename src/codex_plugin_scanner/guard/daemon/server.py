@@ -708,7 +708,16 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             raise
 
     def refresh_extension_control_runtime(self) -> ExtensionControlRuntimeSnapshot:
-        view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+        from ..native_command_control_authority_io import NativeCommandControlMutationRequiredError
+
+        try:
+            view = self.store.read_extension_control_authority_for_registry(
+                BUILT_IN_COMMAND_EXTENSION_REGISTRY, read_only=True
+            )
+        except NativeCommandControlMutationRequiredError:
+            # The shared read exits before any semantic write. Re-read the
+            # complete authenticated state under EX; never upgrade a live SH.
+            view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
         return self.extension_control_runtime.refresh(view)
 
     def process_request(self, request: Any, client_address: Any) -> None:

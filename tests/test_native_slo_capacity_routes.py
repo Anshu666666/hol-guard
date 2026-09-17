@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import threading
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -13,6 +14,8 @@ from scripts import native_slo_session
 from scripts.native_slo_adapter import Observation, route_delta
 from scripts.native_slo_capacity import _run_capacity_wave
 from scripts.native_slo_capacity_routes import capacity_route_evidence
+from scripts.native_slo_capacity_witness import capacity_none_report
+from scripts.native_slo_contract import assert_privacy_safe, sanitize_aggregate
 from scripts.native_slo_reporting import SloMeasurements, slo_gates, slo_result, summarize_measurements
 
 
@@ -264,3 +267,57 @@ def test_report_does_not_qualify_one_observation_as_a_full_concurrency_wave():
     corpus = {"routes": 1, "resident": 1, "oneshot": 0, "fail_safe": 0, "python_semantic_decisions": 0}
     gates = slo_gates(measurements, summarize_measurements(measurements), corpus, 1, include_capacity=True)
     assert not gates["concurrency"] and not gates["concurrency_64_bounded"]
+
+
+@pytest.mark.parametrize("wave,attribute", [("sixteen", "routes_16"), ("sixty_four", "routes_64")])
+def test_final_slo_report_preserves_closed_none_records_without_weakening_privacy(wave, attribute):
+    private = "private arbitrary request /fixture/body"
+    record = {
+        "harness": "codex",
+        "event": "PostToolUse",
+        "snapshot": "positive_generation",
+        "deadline_remaining_after_ms": 17,
+        "client_failure_before": "not_recorded",
+        "client_failure_after": "native_client_timed_out",
+        "payload": private,
+    }
+    diagnostic = {
+        "supported": True,
+        "incomplete": False,
+        "none_returns_capped_at_65": 65,
+        "records": [record] * 63
+        + [{**record, "client_failure_after": private, "deadline_remaining_after_ms": True}, record],
+        "arbitrary": private,
+    }
+    expected = capacity_none_report(diagnostic)
+    # This is the actual former nesting, not a shallow helper-only check.
+    old_shape = {"concurrency": {wave: {"wave_evidence": {"none_witness": expected}}}}
+    prior = sanitize_aggregate(old_shape)["concurrency"][wave]["wave_evidence"]["none_witness"]
+    assert set(prior["records"][0].values()) == {"truncated"}
+
+    measurements = replace(_measurements(), errors_64=1)
+    corpus = {"routes": 1, "resident": 1, "oneshot": 0, "fail_safe": 0, "python_semantic_decisions": 0}
+    summary = summarize_measurements(measurements)
+    gates = slo_gates(measurements, summary, corpus, 1, include_capacity=True)
+    original = slo_result({}, (("codex", "PreToolUse"),), corpus, measurements, summary, gates)
+    assert original["gates"]["concurrency_64_bounded"] is False
+    assert "capacity_none_witnesses" not in original
+    evidence = getattr(measurements, attribute)
+    with_diagnostic = replace(evidence, none_witness=diagnostic)
+    assert with_diagnostic.report()["none_witness"] == expected
+    changed = replace(measurements, **{attribute: with_diagnostic})
+    assert slo_gates(changed, summarize_measurements(changed), corpus, 1, include_capacity=True) == gates
+    report = slo_result({}, (("codex", "PreToolUse"),), corpus, changed, summary, gates)
+    assert "none_witness" not in report["concurrency"][wave]["wave_evidence"]
+    assert report["capacity_none_witnesses"][wave] == expected
+    assert expected["overflow"] is True and expected["incomplete"] is True
+    assert expected["records_retained"] == 64
+    assert expected["records"][-1]["client_failure_after"] == "other"
+    assert expected["records"][-1]["deadline_remaining_after_ms"] is None
+    assert expected["current_request_client_call_proven"] is False
+    assert expected["per_request_native_route_proven"] is False
+    assert json.loads(json.dumps(report)) == report
+    assert assert_privacy_safe(report) == report
+    assert private not in json.dumps(report)
+    assert report.pop("capacity_none_witnesses") == {wave: expected}
+    assert report == original  # All counters, original failed gates and other report fields are unchanged.

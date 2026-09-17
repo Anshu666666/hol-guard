@@ -517,7 +517,12 @@ def load_guard_config(
 ) -> GuardConfig:
     """Load Guard config from home and workspace overrides."""
 
-    guard_home.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "win32":
+        from .daemon.discovery_windows import create_private_directory_if_missing
+
+        create_private_directory_if_missing(guard_home)
+    else:
+        guard_home.mkdir(parents=True, exist_ok=True)
     home_config = (
         _read_toml(guard_home / "config.toml") if config_reader is None else config_reader(guard_home / "config.toml")
     )

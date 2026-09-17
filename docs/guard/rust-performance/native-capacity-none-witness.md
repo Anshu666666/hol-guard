@@ -61,6 +61,36 @@ evidence. It is excluded from dataclass comparison so the existing independently
 reconstructed counter proof is unchanged; absent diagnostics retain the prior
 report shape. Public evidence is projected through the closed schema again.
 
+## Sixth-source serialization correction
+
+At source `9d3907a2e6ed1ec201281901cb878836a7dad32d`, Linux native-wheel job
+`105323757981` recorded 15 actual raw bridge `None` returns and zero unclassified
+responses in its failed concurrency-64 wave. The unchanged six-level aggregate
+privacy bound replaced every record field with `truncated`: the old path was
+`concurrency.sixty_four.wave_evidence.none_witness.records`. The printed report
+and uploaded JSON share that rendering, so neither preserves the lost fields.
+Their values and the underlying native availability cause remain unknown.
+
+The later report correction puts closed-schema diagnostics at
+`capacity_none_witnesses.sixteen` and `capacity_none_witnesses.sixty_four`, omitting
+their deep duplicates from `wave_evidence`. Reports without diagnostics retain
+their prior shape. Standalone wave and warmup-failure reports keep their existing
+schemas. The global depth, redaction, collection and byte limits are unchanged;
+every diagnostic still passes `capacity_none_report` and final privacy admission.
+
+The regression uses the actual final SLO renderer for each wave, demonstrates
+the original truncation, then checks JSON round-trip and repeat privacy admission
+of the shallow records. It retains the 64-record bound, overflow/incomplete flags,
+finite-code projection and non-authoritative attribution; arbitrary fields and
+values cannot escape. All counters, failed gates and other report fields remain
+equal to the report without diagnostics. This is a source-only export correction,
+not recovery of the sixth records or proof of a production cause.
+
+Correction validation passes 64 focused capacity, witness, failure-envelope and
+contract tests. Both changed source modules typecheck with zero errors and zero
+warnings; Ruff check/format and diff checks pass. No installed or performance
+workload was run for this correction.
+
 ## Measurement and qualification limits
 
 The pre-call context read and post-`None` callback execute inside the original

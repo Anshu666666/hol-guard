@@ -36,10 +36,10 @@ class CapacityRouteEvidence:
             and (allow_overload or self.explicit_overloaded == 0)
         )
 
-    def report(self) -> dict[str, object]:
+    def report(self, *, include_none_witness: bool = True) -> dict[str, object]:
         fields = asdict(self)
         fields.pop("none_witness")
-        if self.none_witness is not None:
+        if include_none_witness and self.none_witness is not None:
             fields["none_witness"] = capacity_none_report(self.none_witness)
         return {
             "route_attribution": "isolated_whole_wave_counter_conservation",

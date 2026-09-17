@@ -83,7 +83,12 @@ class StoreSecretPolicyIntegrityMixin:
         source: str = "default",
     ) -> None:
         self.guard_home = guard_home
-        self.guard_home.mkdir(parents=True, exist_ok=True)
+        if os.name == "nt":
+            from .daemon.discovery_windows import create_private_directory_if_missing
+
+            create_private_directory_if_missing(self.guard_home)
+        else:
+            self.guard_home.mkdir(parents=True, exist_ok=True)
         _set_private_mode_compat(self.guard_home, _GUARD_STORE_PRIVATE_DIR_MODE)
         self.__oauth_secret_store = _OAUTH_SECRET_STORE_UNSET
         self.__policy_integrity_secret_store = _POLICY_INTEGRITY_SECRET_STORE_UNSET

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from collections.abc import Generator
@@ -47,7 +48,12 @@ def guard_daemon_start_lock(guard_home: Path, *, deadline: float | None = None) 
             raise RuntimeError("Timed out waiting to start the Guard daemon.")
     try:
         lock_path = guard_home / "daemon-start.lock"
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if sys.platform == "win32":
+            from .discovery_windows import create_private_directory_if_missing
+
+            create_private_directory_if_missing(lock_path.parent)
+        else:
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
         with lock_path.open("a+b") as handle:
             if deadline is None:
                 lock_daemon_file(handle, poll_interval=_POLL_INTERVAL_SECONDS)

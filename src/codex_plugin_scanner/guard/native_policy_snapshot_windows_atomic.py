@@ -121,6 +121,25 @@ def _windows_file_identity(information: Any) -> tuple[int, int, int] | None:
     )
 
 
+def _windows_handle_identity(api: Any, kernel32: Any, handle: Any) -> tuple[int, int, int]:
+    """Read identity from a retained handle, without a pathname lookup."""
+
+    import ctypes
+    from ctypes import wintypes
+
+    information_type = api._windows_file_information_type()
+    information = information_type()
+    get_information = kernel32.GetFileInformationByHandle
+    get_information.argtypes = [wintypes.HANDLE, ctypes.POINTER(information_type)]
+    get_information.restype = wintypes.BOOL
+    if not get_information(handle, ctypes.byref(information)):
+        raise NativePolicySnapshotError("native_policy_windows_parent_identity_failed")
+    identity = _windows_file_identity(information)
+    if identity is None:
+        raise NativePolicySnapshotError("native_policy_windows_parent_identity_failed")
+    return identity
+
+
 def _windows_prepare_replace_destination(
     *,
     api: Any,
@@ -165,23 +184,29 @@ def _windows_rename_releasing_barrier(
     destination_name: str,
     replace_existing: bool,
     directory_handles: list[tuple[Any, Any]] | None,
+    rename_state: list[bool] | None = None,
 ) -> None:
-    """Rename through a share-delete parent after releasing the exclusive barrier."""
+    """Acquire the same rename parent before releasing its no-delete barrier."""
 
     rename_kernel32 = None
     rename_handle = None
     released = False
+    parent_identity = None
     try:
         root_handle = parent_handle
         if directory_handles is not None:
-            exclusive_kernel32, exclusive_handle = directory_handles.pop()
-            released = True
-            api._windows_close_handle(exclusive_kernel32, exclusive_handle)
-            rename_kernel32, rename_handle, _rename_information = api._windows_open_handle(
+            exclusive_kernel32, exclusive_handle = directory_handles[-1]
+            parent_identity = _windows_handle_identity(api, exclusive_kernel32, exclusive_handle)
+            rename_kernel32, rename_handle, rename_information = api._windows_open_handle(
                 parent_path,
                 directory=True,
                 rename_parent=True,
             )
+            if _windows_file_identity(rename_information) != parent_identity:
+                raise NativePolicySnapshotError("native_policy_windows_parent_identity_changed")
+            directory_handles.pop()
+            released = True
+            api._windows_close_handle(exclusive_kernel32, exclusive_handle)
             root_handle = rename_handle
         _windows_rename_file_handle(
             kernel32,
@@ -190,17 +215,23 @@ def _windows_rename_releasing_barrier(
             destination_name,
             replace_if_exists=replace_existing,
         )
+        if rename_state is not None:
+            rename_state[0] = True
     finally:
-        if rename_handle is not None:
-            api._windows_close_handle(rename_kernel32, rename_handle)
-        if released and directory_handles is not None:
-            restored_kernel32, restored_handle, _restored = api._windows_open_handle(
-                parent_path,
-                directory=True,
-                lock=True,
-                add_file=True,
-            )
-            directory_handles.append((restored_kernel32, restored_handle))
+        try:
+            if released and directory_handles is not None:
+                restored_kernel32, restored_handle, restored = api._windows_open_handle(
+                    parent_path,
+                    directory=True,
+                    lock=True,
+                    add_file=True,
+                )
+                directory_handles.append((restored_kernel32, restored_handle))
+                if _windows_file_identity(restored) != parent_identity:
+                    raise NativePolicySnapshotError("native_policy_windows_parent_identity_changed")
+        finally:
+            if rename_handle is not None:
+                api._windows_close_handle(rename_kernel32, rename_handle)
 
 
 def _windows_commit_private_file_handle(
@@ -217,6 +248,7 @@ def _windows_commit_private_file_handle(
     owner_sid: str,
     kind: str,
     replace_existing: bool = True,
+    repair_destination: bool = True,
     rename_state: list[bool] | None = None,
     directory_handles: list[tuple[Any, Any]] | None = None,
 ) -> None:
@@ -224,16 +256,20 @@ def _windows_commit_private_file_handle(
 
     destination_name = _windows_child_name(destination_name)
     source_identity = _windows_file_identity(source_information)
+    if not repair_destination and source_identity is None:
+        raise NativePolicySnapshotError(f"native_policy_snapshot_{kind}_identity_failed")
     api._windows_verify_private_dacl(source_handle, owner_sid=owner_sid, directory=False)
-    target_path = _windows_prepare_replace_destination(
-        api=api,
-        parent_path=parent_path,
-        destination_name=destination_name,
-        descriptor=descriptor,
-        dacl=dacl,
-        owner_sid=owner_sid,
-        replace_existing=replace_existing,
-    )
+    target_path = parent_path / destination_name
+    if repair_destination:
+        target_path = _windows_prepare_replace_destination(
+            api=api,
+            parent_path=parent_path,
+            destination_name=destination_name,
+            descriptor=descriptor,
+            dacl=dacl,
+            owner_sid=owner_sid,
+            replace_existing=replace_existing,
+        )
     _windows_rename_releasing_barrier(
         api=api,
         kernel32=kernel32,
@@ -243,6 +279,7 @@ def _windows_commit_private_file_handle(
         destination_name=destination_name,
         replace_existing=replace_existing,
         directory_handles=directory_handles,
+        rename_state=rename_state,
     )
     if rename_state is not None:
         rename_state[0] = True
@@ -273,9 +310,15 @@ def _windows_write_private_file_atomic(
     maximum_bytes: int,
     kind: str,
     replace_existing: bool = True,
+    repair_destination: bool = True,
     directory_handles: list[tuple[Any, Any]] | None = None,
 ) -> None:
-    """Create, write, and commit a private file while parent handles remain held."""
+    """Create, write, and commit a private file while parent handles remain held.
+
+    ``repair_destination=False`` never opens the old destination before rename.
+    It publishes wholly new authority bytes and preserves no-clobber semantics
+    through the rename itself, without blessing or repairing an existing file.
+    """
 
     if not payload or len(payload) > maximum_bytes:
         raise NativePolicySnapshotError("native_policy_windows_write_too_large")
@@ -308,6 +351,7 @@ def _windows_write_private_file_atomic(
                 owner_sid=owner_sid,
                 kind=kind,
                 replace_existing=replace_existing,
+                repair_destination=repair_destination,
                 rename_state=renamed,
                 directory_handles=directory_handles,
             )

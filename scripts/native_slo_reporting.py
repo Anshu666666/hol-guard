@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 
 from scripts.native_slo_adapter import Observation
 from scripts.native_slo_capacity_routes import CapacityRouteEvidence, capacity_route_evidence
+from scripts.native_slo_capacity_witness import capacity_none_report
 from scripts.native_slo_contract import (
     MAX_COLD_P95_MS,
     MAX_INSTALLED_ADAPTER_P95_MS,
@@ -386,7 +387,7 @@ def slo_result(
                 if isinstance(measurements.routes_16, CapacityRouteEvidence)
                 else "per_observation",
                 "native_overloads": measurements.native_overloads_16,
-                "wave_evidence": measurements.routes_16.report()
+                "wave_evidence": measurements.routes_16.report(include_none_witness=False)
                 if isinstance(measurements.routes_16, CapacityRouteEvidence)
                 else None,
                 "deadline_ms": MAX_INSTALLED_ADAPTER_P99_MS,
@@ -401,7 +402,7 @@ def slo_result(
                 if isinstance(measurements.routes_64, CapacityRouteEvidence)
                 else "per_observation",
                 "native_overloads": measurements.native_overloads_64,
-                "wave_evidence": measurements.routes_64.report()
+                "wave_evidence": measurements.routes_64.report(include_none_witness=False)
                 if isinstance(measurements.routes_64, CapacityRouteEvidence)
                 else None,
                 "latency_ceiling_ms": None,
@@ -411,6 +412,16 @@ def slo_result(
         "gates": gates,
         "passed": all_gates_pass(gates),
     }
+    # Keep the closed record fields inside the unchanged public depth bound.
+    # Nesting them under concurrency/<wave>/wave_evidence/none_witness reaches
+    # depth seven and silently replaces every field with "truncated".
+    witnesses = {
+        wave: capacity_none_report(evidence.none_witness)
+        for wave, evidence in (("sixteen", measurements.routes_16), ("sixty_four", measurements.routes_64))
+        if isinstance(evidence, CapacityRouteEvidence) and evidence.none_witness is not None
+    }
+    if witnesses:
+        result["capacity_none_witnesses"] = witnesses
     return assert_privacy_safe(result)
 
 

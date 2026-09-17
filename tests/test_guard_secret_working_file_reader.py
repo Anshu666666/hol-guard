@@ -28,8 +28,13 @@ def _fixture(tmp_path, data=b"original bytes"):
     return root, path
 
 
-@pytest.mark.parametrize("data", [b"", b"\xff\xfe\x00raw\x80", b"x" * (64 * 1024 + 7)])
-def test_exact_limit_preserves_bytes_and_observes_eof(tmp_path, monkeypatch, data):
+@pytest.mark.parametrize(
+    "data", [b"", b"\xff\xfe\x00raw\x80", b"x" * (64 * 1024 + 7)], ids=["empty", "invalid_utf8", "multichunk"]
+)
+def test_exact_limit_preserves_bytes_and_observes_eof(tmp_path, monkeypatch, data, request):
+    # Pytest publishes node IDs in PYTEST_CURRENT_TEST. Keep the exact large
+    # input out of that Windows environment variable, not out of the test.
+    assert len(request.node.nodeid) < 512
     root, path = _fixture(tmp_path, data)
     reads = []
 

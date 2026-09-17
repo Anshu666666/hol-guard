@@ -36,7 +36,12 @@ def load_daemon_discovery_key(guard_home: Path) -> str | None:
 
 
 def ensure_daemon_discovery_key(guard_home: Path) -> str:
-    guard_home.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        from .discovery_windows import create_private_directory_if_missing
+
+        create_private_directory_if_missing(guard_home)
+    else:
+        guard_home.mkdir(parents=True, exist_ok=True)
     if os.name != "nt":
         # Semgrep's file-permission rule recommends 0o644, which is unsafe for
         # this secret-bearing directory; owner-only access is intentional.
@@ -51,6 +56,11 @@ def ensure_daemon_discovery_key(guard_home: Path) -> str:
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     try:
+        if os.name == "nt":
+            from .discovery_windows import create_discovery_key
+
+            create_discovery_key(path, encoded.encode("utf-8"))
+            return encoded
         descriptor = os.open(path, flags, _PRIVATE_FILE_MODE)
     except FileExistsError:
         raced = load_daemon_discovery_key(guard_home)

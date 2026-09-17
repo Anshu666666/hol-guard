@@ -5,6 +5,7 @@ import json
 
 import pytest
 
+from scripts.scanner_pilot_identity import EXECUTABLE_FAILURE_REASONS
 from scripts.scanner_pilot_protocol import CASES, planned
 from scripts.scanner_pilot_public import aggregate, projection, validate_report
 from tests.scanner_pilot_fixtures import SOURCE_SHA, encoded, snapshot
@@ -136,3 +137,91 @@ def test_display_rounding_cannot_turn_a_threshold_miss_into_a_benefit():
             assert cohort["comparison"]["independent_runs"]["p95_wall"]["ci95_high"] == 0.7
             assert cohort["comparison"]["independent_runs"]["p95_wall"]["ci95_high_unrounded"] > 0.7
             assert not cohort["benefit_gate_passed"]
+
+
+def identity_failure_snapshot(failure="python_executable_identity_failed", diagnostic=None):
+    original = snapshot(selection="smoke")
+    return {
+        "plan.json": original["plan.json"],
+        "worker.json": {
+            "finished": False,
+            "failure": failure,
+            "identity_verified_after": False,
+            "identity_failure": diagnostic,
+        },
+    }
+
+
+@pytest.mark.parametrize("failure", ["python_executable_identity_failed", "native_executable_identity_failed"])
+@pytest.mark.parametrize("reason", EXECUTABLE_FAILURE_REASONS)
+def test_only_closed_executable_reason_is_public_and_failed_denominator_is_preserved(failure, reason):
+    diagnostic = {
+        "reason": reason,
+        "phase": "private_phase_sentinel",
+        "errno": 13,
+        "bytes_read": 71,
+        "metadata": {"private_path_sentinel": "/private/toolchain/executable"},
+        "cleanup_failed": True,
+    }
+    value = report(selection="smoke", values=identity_failure_snapshot(failure, diagnostic))
+    assert value["identity_failure_reason"] == reason and value["worker_failure"] == failure
+    assert validate_report(value) == value
+    assert value["planned"] == 24 and len(value["observations"]) == 24
+    assert all(row["status"] == "unoffered" for row in value["observations"])
+    assert not value["collection_complete"] and not value["installed_qualified"]
+    public = json.dumps(value)
+    for private in ("private_phase_sentinel", "private_path_sentinel", "/private/toolchain", "bytes_read", "errno"):
+        assert private not in public
+    combined = aggregate([value], selection="smoke", source_sha=SOURCE_SHA)
+    assert combined["planned_attempts"] == 24 and combined["complete_shards"] == 0
+    assert not combined["collection_complete"] and not combined["minimum_independent_runs_met"]
+    assert all(not row["benefit_gate_passed"] and row["comparison"] is None for row in combined["cohorts"])
+
+
+def test_legacy_missing_identity_diagnostic_and_public_field_remain_unknown():
+    values = identity_failure_snapshot()
+    values["worker.json"].pop("identity_failure")
+    value = report(selection="smoke", values=values)
+    assert value["identity_failure_reason"] is None
+    del value["identity_failure_reason"]
+    assert validate_report(value)["identity_failure_reason"] is None
+    assert report()["identity_failure_reason"] is None
+
+
+@pytest.mark.parametrize("reason", ["private_unrecognized_reason", "", 1, True, {}, [], None])
+def test_private_diagnostic_unknown_or_missing_reason_cannot_be_projected(reason):
+    with pytest.raises(ValueError):
+        report(selection="smoke", values=identity_failure_snapshot(diagnostic={"reason": reason}))
+
+
+@pytest.mark.parametrize("diagnostic", ["private raw diagnostic", 1, True, [], {}])
+def test_private_diagnostic_wrong_shape_cannot_be_projected(diagnostic):
+    with pytest.raises(ValueError):
+        report(selection="smoke", values=identity_failure_snapshot(diagnostic=diagnostic))
+
+
+@pytest.mark.parametrize("failure", [None, "source_identity_failed", "dependency_identity_failed", "command_deadline"])
+def test_identity_reason_cannot_be_attached_to_success_or_unrelated_failure(failure):
+    reason = EXECUTABLE_FAILURE_REASONS[0]
+    with pytest.raises(ValueError):
+        report(selection="smoke", values=identity_failure_snapshot(failure, {"reason": reason}))
+    value = report()
+    value.update(worker_failure=failure, collection_complete=False, identity_failure_reason=reason)
+    with pytest.raises(ValueError):
+        validate_report(value)
+
+
+@pytest.mark.parametrize("reason", ["private_unrecognized_reason", "", 1, True, {}, []])
+def test_public_reader_rejects_unknown_identity_reason_or_wrong_type(reason):
+    value = report(selection="smoke", values=identity_failure_snapshot())
+    value["identity_failure_reason"] = reason
+    with pytest.raises(ValueError):
+        validate_report(value)
+
+
+@pytest.mark.parametrize("field", ["identity_failure", "identity_failure_metadata", "raw_diagnostic", "errno"])
+def test_public_reader_rejects_extra_identity_diagnostic_fields(field):
+    value = report(selection="smoke", values=identity_failure_snapshot())
+    value[field] = {"private": "must not survive public admission"}
+    with pytest.raises(ValueError):
+        validate_report(value)

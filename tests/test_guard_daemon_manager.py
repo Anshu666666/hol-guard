@@ -3013,6 +3013,8 @@ def test_malformed_windows_lifecycle_records_are_quarantined_after_two_empty_inv
     tmp_path,
     monkeypatch,
 ) -> None:
+    from codex_plugin_scanner.guard.daemon import discovery_windows
+
     guard_home = tmp_path / "guard-home"
     guard_home.mkdir()
     state_path = daemon_manager_module._state_path(guard_home)
@@ -3026,6 +3028,11 @@ def test_malformed_windows_lifecycle_records_are_quarantined_after_two_empty_inv
     monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_process_inventory_for_guard_home", inventory)
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_state_write_lock", lambda _home: nullcontext())
+    # This lifecycle test simulates Windows on any host; native ACL/rename
+    # behavior is exercised by the focused discovery producer tests.
+    monkeypatch.setattr(
+        discovery_windows, "replace_discovery_state", lambda path, text: path.write_text(text, encoding="utf-8")
+    )
 
     assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
     assert state_path.read_bytes() == b"{}"

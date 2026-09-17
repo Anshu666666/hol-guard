@@ -189,6 +189,7 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
         raise ValueError("scanner_plan_changed")
     source = None
     failure = None
+    identity_failure = None
     cache_unavailable = []
     previous = signal.getsignal(signal.SIGALRM)
 
@@ -272,6 +273,7 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
         failure = error.code
     except IdentityError as error:
         failure = str(error)
+        identity_failure = error.diagnostic
     except BaseException:
         failure = "collector_failed"
     finally:
@@ -283,6 +285,7 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
             {
                 "finished": True,
                 "failure": failure,
+                "identity_failure": identity_failure,
                 "cache_unavailable": cache_unavailable,
                 "identity_verified_after": failure is None and source is not None,
             },

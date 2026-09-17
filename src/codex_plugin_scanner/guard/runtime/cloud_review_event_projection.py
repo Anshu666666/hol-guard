@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from ..continuation_runtime import continuation_offer_payload
@@ -19,6 +20,7 @@ from ..store import GuardStore
 from ..store_review_event_outbox_schema import REVIEW_EVENT_SCHEMA_VERSION
 from .local_request_snapshots import (
     _cloud_safe_local_request_payload,  # pyright: ignore[reportPrivateUsage]
+    _cloud_scrub_text,
 )
 from .review_event_delivery import StoredReviewEventError, decode_stored_review_event
 from .review_event_display import build_display_command, resolve_display_provenance
@@ -165,7 +167,7 @@ def project_cloud_review_event(
         _ = store.quarantine_review_event(
             sequence,
             reason=error.reason,
-            error=str(error),
+            error=_cloud_scrub_text(str(error)),
             **delivery_binding,
         )
         return None
@@ -174,7 +176,10 @@ def project_cloud_review_event(
             "eventId": stored_event.event_id,
             "eventSchemaVersion": REVIEW_EVENT_SCHEMA_VERSION,
             "eventType": stored_event.wire_event_type,
-            "eventPayloadJson": stored_event.payload_json,
+            "eventPayloadJson": _cloud_safe_event_payload_json(
+                stored_event.payload_json,
+                redaction_level=redaction_level,
+            ),
             "localEventSequence": stored_event.request_sequence,
             "localStreamSequence": stored_event.stream_sequence,
             "payloadHash": stored_event.payload_hash,
@@ -186,3 +191,31 @@ def project_cloud_review_event(
         event["continuationCapability"] = terminal_capability
         event["localUpdatedAt"] = terminal_completed_at
     return sequence, event
+
+
+def _cloud_safe_event_payload_json(payload_json: object, *, redaction_level: str) -> str:
+    """Reproject a stored outbox payload so retries never send a less-redacted snapshot."""
+
+    if not isinstance(payload_json, str) or not payload_json:
+        return "{}"
+    try:
+        payload = json.loads(payload_json)
+    except json.JSONDecodeError:
+        return "{}"
+    if not isinstance(payload, dict):
+        return "{}"
+    snapshot = payload.get("requestSnapshot")
+    if isinstance(snapshot, dict):
+        safe_snapshot = _cloud_safe_local_request_payload(snapshot, redaction_level=redaction_level)
+        payload["requestSnapshot"] = _scrub_secret_tree({**snapshot, **safe_snapshot})
+    return json.dumps(_scrub_secret_tree(payload), sort_keys=True, separators=(",", ":"))
+
+
+def _scrub_secret_tree(value: object) -> object:
+    if isinstance(value, str):
+        return _cloud_scrub_text(value)
+    if isinstance(value, dict):
+        return {str(key): _scrub_secret_tree(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_scrub_secret_tree(item) for item in value]
+    return value

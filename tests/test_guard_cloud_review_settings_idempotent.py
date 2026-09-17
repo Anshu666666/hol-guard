@@ -1,0 +1,50 @@
+"""HGP-182: local Cloud Review recovery actions are idempotent."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from codex_plugin_scanner.guard.daemon.cloud_review_settings import (
+    change_cloud_review_settings,
+    cloud_review_settings_status,
+)
+from tests.guard_exact_cloud_review_support import connected_exact_review_store
+
+
+def _payload(action: str = "enable", **changes: object) -> dict[str, object]:
+    return {
+        "action": action,
+        "confirm": f"cloud-review.{action}",
+        "workspace_id": "workspace-1",
+        "source": "default",
+        **changes,
+    }
+
+
+def test_double_enable_and_retry_delivery_reuse_valid_consent(tmp_path: Path) -> None:
+    store = connected_exact_review_store(tmp_path)
+    first = change_cloud_review_settings(store, _payload(), refresh_workers=lambda: {"running": True, "sync_running": True})
+    nonce = store.get_sync_payload("guard_exact_cloud_review_capability")
+    assert isinstance(nonce, dict)
+    second = change_cloud_review_settings(store, _payload(), refresh_workers=lambda: {"running": True, "sync_running": True})
+    reused = store.get_sync_payload("guard_exact_cloud_review_capability")
+    assert isinstance(reused, dict)
+    assert reused["nonce"] == nonce["nonce"]
+    retried = change_cloud_review_settings(
+        store, _payload("retry_delivery"), refresh_workers=lambda: {"running": True, "sync_running": True}
+    )
+    still = store.get_sync_payload("guard_exact_cloud_review_capability")
+    assert isinstance(still, dict)
+    assert still["nonce"] == nonce["nonce"]
+    renewed = change_cloud_review_settings(
+        store, _payload("renew_consent"), refresh_workers=lambda: {"running": True, "sync_running": True}
+    )
+    rotated = store.get_sync_payload("guard_exact_cloud_review_capability")
+    assert isinstance(rotated, dict)
+    assert rotated["nonce"] != nonce["nonce"]
+    status = cloud_review_settings_status(store)
+    assert status["recovery_actions"]["retry_delivery"] == "cloud-review.retry_delivery"
+    assert first["enabled"] is True
+    assert second["enabled"] is True
+    assert retried["enabled"] is True
+    assert renewed["enabled"] is True

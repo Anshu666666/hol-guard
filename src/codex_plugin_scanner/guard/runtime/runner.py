@@ -3249,13 +3249,19 @@ def sync_receipts(
         exceptions=deduped_exceptions,
         now=now,
     )
+    telemetry_degradation: dict[str, object] | None = None
     try:
         pain_signals_uploaded = sync_pain_signals(store, auth_context=resolved_auth_context)
+    except GuardSyncAuthorizationExpiredError:
+        raise
     except RuntimeError as pain_signal_error:
-        if "429" in str(pain_signal_error):
-            pain_signals_uploaded = 0
-        else:
-            raise
+        pain_signals_uploaded = 0
+        telemetry_degradation = {
+            "lane": "pain_signals",
+            "message": _redact_sync_text(str(pain_signal_error)),
+            "policy_application_retained": True,
+            "retryable": True,
+        }
     value_metrics = _build_value_metrics(store)
     weekly_digest = _build_weekly_firewall_digest(metrics=value_metrics, now=now)
     summary: dict[str, object] = {
@@ -3282,6 +3288,9 @@ def sync_receipts(
         "value_metrics": value_metrics,
         "weekly_digest": weekly_digest,
     }
+    if telemetry_degradation is not None:
+        summary["telemetry_degradation"] = telemetry_degradation
+        summary["pain_signals_status"] = "degraded"
     if remote_policy_sync_blocked:
         summary["remote_policy_sync_blocked"] = True
     summary["guard_events_v1"] = sync_guard_events(store, auth_context=resolved_auth_context)

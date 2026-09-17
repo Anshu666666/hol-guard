@@ -350,8 +350,10 @@ def exact_cloud_review_status(store: GuardStore, *, now: str | None = None) -> d
             "enabled": True,
             "expires_at": capability["expiresAt"],
             "issued_at": capability["issuedAt"],
+            "nonce": capability.get("nonce"),
             "operation": EXACT_CLOUD_REVIEW_OPERATION,
             "reason": None,
+            "renew_command": "hol-guard cloud-review enable --renew",
             "workspace_id": capability["workspaceId"],
         },
     )

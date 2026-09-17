@@ -59,7 +59,10 @@ def apply_connect_time_cloud_review_consent(
         return {**payload, "cloud_review": {"enabled": False, "reason": "connect_not_completed"}}
     previously_enabled = exact_cloud_review_status(store).get("enabled") is True
     try:
-        capability = enable_exact_cloud_review(store, issuer="connect-consent")
+        if previously_enabled:
+            capability = exact_cloud_review_status(store)
+        else:
+            capability = enable_exact_cloud_review(store, issuer="connect-consent")
         pending_requests_requeued = _requeue_pending_cloud_review_requests(store)
     except PendingReviewRequeueError:
         return {
@@ -87,6 +90,8 @@ def apply_connect_time_cloud_review_consent(
             "reason": None if ready else "worker_restart_required",
             "pending_requests_requeued": pending_requests_requeued,
             "pending_request_requeue_status": "requeued",
+            "retained_existing_capability": previously_enabled,
+            "recovery_action": "retry_delivery",
             "worker": worker,
         },
     }
@@ -111,17 +116,26 @@ def _run_guard_cloud_review_command(
     previously_enabled = False
     capability: dict[str, object] | None = None
     if command == "status":
+        if bool(getattr(args, "support_export", False)):
+            from ..policy_support_export import build_policy_support_export
+
+            _emit("cloud-review", build_policy_support_export(store), bool(getattr(args, "json", False)))
+            return 0
         _emit("cloud-review", exact_cloud_review_status(store), bool(getattr(args, "json", False)))
         return 0
     try:
         if command == "enable":
             previously_enabled = exact_cloud_review_status(store).get("enabled") is True
-            capability = enable_exact_cloud_review(
-                store,
-                ttl_seconds=int(getattr(args, "expires_in_days", 30)) * 24 * 60 * 60,
-            )
+            renew = bool(getattr(args, "renew", False))
+            if previously_enabled and not renew:
+                capability = exact_cloud_review_status(store)
+            else:
+                capability = enable_exact_cloud_review(
+                    store,
+                    ttl_seconds=int(getattr(args, "expires_in_days", 30)) * 24 * 60 * 60,
+                )
             pending_requests_requeued = _requeue_pending_cloud_review_requests(store)
-            status = "enabled"
+            status = "enabled" if not renew else "renewed"
         elif command == "disable":
             capability = disable_exact_cloud_review(store)
             status = "disabled"
@@ -156,6 +170,10 @@ def _run_guard_cloud_review_command(
                 {
                     "pending_requests_requeued": pending_requests_requeued,
                     "pending_request_requeue_status": "requeued",
+                    "retained_existing_capability": previously_enabled and not bool(getattr(args, "renew", False)),
+                    "recovery_action": (
+                        "renew_consent" if bool(getattr(args, "renew", False)) else "retry_delivery"
+                    ),
                 }
                 if command == "enable"
                 else {}

@@ -193,7 +193,10 @@ def test_projection_uses_frozen_continuation_after_operation_changes(
     assert event["continuationCapability"] == "suspended-response"
     assert event["continuationHookAttached"] is True
     assert event["continuationWaitDeadline"] == "2026-08-24T15:00:00+00:00"
-    assert event["eventPayloadJson"] == frozen_payload
+    uploaded = json.loads(str(event["eventPayloadJson"]))
+    frozen = json.loads(frozen_payload)
+    assert uploaded["localRequestId"] == frozen["localRequestId"]
+    assert uploaded["eventType"] == frozen["eventType"]
 
 
 def test_terminal_continuation_projects_as_a_distinct_authenticated_event(

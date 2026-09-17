@@ -71,6 +71,10 @@ def apply_exact_cloud_review(
         if not isinstance(loaded_capability, dict):
             raise _reject(store, "cloud_review_capability_missing", now=current)
         raw_capability = loaded_capability
+    else:
+        step_up_expires_at = parse_utc_timestamp(envelope.get("stepUpExpiresAt"))
+        if step_up_expires_at is not None and step_up_expires_at <= current:
+            raise _reject(store, "remote_exact_step_up_required", now=current)
     try:
         _ = _oauth_state(store)
     except ExactCloudReviewError as error:

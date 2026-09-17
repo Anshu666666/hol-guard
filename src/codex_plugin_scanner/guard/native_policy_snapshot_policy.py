@@ -47,7 +47,9 @@ def _normalize_scope_text_v3(value: str) -> str:
             normalized = normalized[:-1]
         return normalized.casefold()
     if value.startswith("/private/"):
-        return value[len("/private") :]
+        value = value[len("/private") :]
+    while len(value) > 1 and value.endswith("/"):
+        value = value[:-1]
     return value
 
 

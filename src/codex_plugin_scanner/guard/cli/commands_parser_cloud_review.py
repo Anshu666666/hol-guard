@@ -24,6 +24,11 @@ def configure_guard_cloud_review_parser(
     status = subparsers.add_parser("status", help="Show exact Cloud Review consent status")
     _add_guard_common_args(status)
     status.add_argument("--json", action="store_true")
+    status.add_argument(
+        "--support-export",
+        action="store_true",
+        help="Print a privacy-safe policy delivery incident export",
+    )
 
     enable = subparsers.add_parser(
         "enable",
@@ -35,6 +40,11 @@ def configure_guard_cloud_review_parser(
         type=int,
         default=30,
         help="Consent lifetime from 1 through 365 days (default: 30)",
+    )
+    enable.add_argument(
+        "--renew",
+        action="store_true",
+        help="Mint a new local consent capability instead of retrying delivery with the current one",
     )
     enable.add_argument("--json", action="store_true")
 

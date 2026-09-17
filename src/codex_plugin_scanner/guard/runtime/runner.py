@@ -155,6 +155,8 @@ from .supply_chain_bundle import (
 )
 from .supply_chain_bundle_models import SupplyChainVerificationKey
 from .supply_chain_support import ecosystem_support_matrix
+from .sync_response import InvalidSyncResponseError, read_sync_object
+from .telemetry_upload_progress import persist_pain_signal_cursor, record_guard_events_sync_failure
 
 _POLICY_DOCUMENT_VERSIONS = ("guard.hashgraphonline.com/v1alpha1",)
 _POLICY_BUNDLE_VERSIONS = ("guard-policy-bundle.v1", "guard-policy-bundle.v2")
@@ -3687,36 +3689,54 @@ def sync_guard_events(
                 is_plan, message = _check_plan_restriction_403(error)
                 if is_plan:
                     raise GuardSyncNotAvailableError(message) from error
-                _record_guard_events_sync_failure(
+                record_guard_events_sync_failure(
                     store,
                     total_events=total_events,
                     total_accepted=total_accepted,
                     pending_count=len(pending_events),
                     error_type=type(error).__name__,
+                    recorded_at=_now(),
+                    retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
                     message=message,
                 )
                 raise RuntimeError(message) from error
             message = _sync_http_error_message(error)
-            _record_guard_events_sync_failure(
+            record_guard_events_sync_failure(
                 store,
                 total_events=total_events,
                 total_accepted=total_accepted,
                 pending_count=len(pending_events),
                 error_type=type(error).__name__,
+                recorded_at=_now(),
+                retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
                 message=message,
             )
             raise RuntimeError(_redact_sync_text(message)) from error
         except OSError as error:
             message = _sync_url_error_message(error)
-            _record_guard_events_sync_failure(
+            record_guard_events_sync_failure(
                 store,
                 total_events=total_events,
                 total_accepted=total_accepted,
                 pending_count=len(pending_events),
                 error_type=type(error).__name__,
+                recorded_at=_now(),
+                retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
                 message=message,
             )
             raise RuntimeError(_redact_sync_text(message)) from error
+        except InvalidSyncResponseError as error:
+            record_guard_events_sync_failure(
+                store,
+                total_events=total_events,
+                total_accepted=total_accepted,
+                pending_count=len(pending_events),
+                error_type=type(error).__name__,
+                message=str(error),
+                recorded_at=_now(),
+                retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
+            )
+            raise
         completed_ids = _completed_guard_event_ids(payload)
         synced_at = _sync_timestamp(payload)
         uploaded = store.mark_guard_events_v1_uploaded(completed_ids, synced_at)
@@ -3756,31 +3776,6 @@ def _retry_after_sleep_seconds(error: urllib.error.HTTPError, retry_timeout_seco
 
 def _request_for_gateway_retry(request: urllib.request.Request) -> urllib.request.Request:
     return _refresh_guard_sync_request(request) or request
-
-
-def _record_guard_events_sync_failure(
-    store: GuardStore,
-    *,
-    total_events: int,
-    total_accepted: int,
-    pending_count: int,
-    error_type: str,
-    message: str,
-) -> None:
-    recorded_at = _now()
-    next_retry_after = (datetime.now(timezone.utc) + timedelta(seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS)).isoformat()
-    summary: dict[str, object] = {
-        "synced_at": None,
-        "status": "failed",
-        "events": total_events,
-        "accepted": total_accepted,
-        "pending_events": pending_count,
-        "error_type": error_type,
-        "message": _redact_sync_text(message),
-        "retry_after_seconds": _SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
-        "next_retry_after": next_retry_after,
-    }
-    store.set_sync_payload("guard_events_v1_summary", summary, recorded_at)
 
 
 def _guard_events_endpoint_unavailable_recently(store: GuardStore) -> bool:
@@ -4043,11 +4038,7 @@ def sync_pain_signals(
                 raise PainSignalSyncError(_sync_url_error_message(error), uploaded_count=uploaded_count) from error
             uploaded_count += len(signal_items)
         current_event_id = last_processed_event_id
-        store.set_sync_payload(
-            "pain_signal_cursor",
-            {"event_id": current_event_id},
-            _now(),
-        )
+        persist_pain_signal_cursor(store, event_id=current_event_id, uploaded_count=uploaded_count, now=_now())
         if len(candidates) < 500:
             break
     return uploaded_count
@@ -5262,16 +5253,15 @@ def _urlopen_json_with_timeout_retry(
     timeout_seconds: int,
     retry_timeout_seconds: int,
 ) -> dict[str, object]:
-    payload = _urlopen_with_sync_retries(
-        request=request,
-        timeout_seconds=timeout_seconds,
-        retry_timeout_seconds=retry_timeout_seconds,
-        parse_json_response=True,
-        nonce_fast_path=False,
+    return read_sync_object(
+        lambda: _urlopen_with_sync_retries(
+            request=request,
+            timeout_seconds=timeout_seconds,
+            retry_timeout_seconds=retry_timeout_seconds,
+            parse_json_response=True,
+            nonce_fast_path=False,
+        )
     )
-    if not isinstance(payload, dict):
-        raise RuntimeError("Guard Cloud sync returned an invalid response payload.")
-    return payload
 
 
 def _urlopen_with_timeout_retry(

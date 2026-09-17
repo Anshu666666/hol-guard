@@ -7,6 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+from .sync_response import InvalidSyncResponseError
+from .telemetry_upload_progress import TelemetryProgressError
+
 if TYPE_CHECKING:
     from ..store import GuardStore
 
@@ -70,8 +73,12 @@ def _upload(upload: Callable[[], _T], authorization_errors: tuple[type[BaseExcep
     except (RuntimeError, OSError) as error:
         chain = _exception_chain(error)
         if any(
-            isinstance(item, authorization_errors)
-            or (isinstance(item, urllib.error.HTTPError) and item.code in {401, 403})
+            isinstance(item, (*authorization_errors, TelemetryProgressError))
+            or (
+                isinstance(item, urllib.error.HTTPError)
+                and 400 <= item.code < 500
+                and item.code not in {404, 408, 425, 429}
+            )
             for item in chain
         ):
             raise
@@ -97,6 +104,8 @@ def _exception_chain(error: BaseException) -> list[BaseException]:
 
 
 def _failure_reason(chain: list[BaseException]) -> str:
+    if any(isinstance(error, InvalidSyncResponseError) for error in chain):
+        return "telemetry_invalid_response"
     for error in chain:
         if isinstance(error, urllib.error.HTTPError):
             return {

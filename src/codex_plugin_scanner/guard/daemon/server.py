@@ -222,6 +222,7 @@ from ..store_evidence import (
 from ..store_storage_maintenance import DEFAULT_GUARD_EVENT_LIMIT, DEFAULT_RECEIPT_DETAIL_LIMIT
 from ..supply_chain_repair import coordinate_supply_chain_repair, repair_sync_intelligence
 from .bounded_http import BoundedThreadingHTTPServer
+from .cloud_sync_summary import headless_cloud_sync_summary
 from .command_activity_api import (
     handle_command_activity_analytics,
     handle_command_activity_diagnostics,
@@ -1241,15 +1242,7 @@ def _run_headless_cloud_sync(
             now=recorded_at,
             request_id=request_id if isinstance(request_id, str) and request_id else None,
         )
-        return {
-            "status": "synced",
-            "synced_at": sync_payload.get("synced_at"),
-            "receipts_stored": sync_payload.get("receipts_stored", 0),
-            "runtime_session_id": sync_payload.get("runtime_session_id"),
-            "runtime_session_synced_at": sync_payload.get("runtime_session_synced_at"),
-            "runtime_sessions_visible": sync_payload.get("runtime_sessions_visible"),
-            "supply_chain": supply_chain_payload,
-        }
+        return headless_cloud_sync_summary(sync_payload, supply_chain_payload)
 
     def _safe_storage_repair() -> dict[str, object]:
         try:

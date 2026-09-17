@@ -17,9 +17,21 @@ policy application result.
 Reason codes distinguish an unavailable endpoint (`telemetry_endpoint_unavailable`),
 rate limiting (`telemetry_rate_limited`), service failure
 (`telemetry_service_error`), transport failure (`telemetry_transport_error`),
-and other upload failure (`telemetry_upload_failed`). These summary fields omit
+an invalid response (`telemetry_invalid_response`), and other upload failure
+(`telemetry_upload_failed`). These summary fields omit
 server error bodies and credentials. Ordinary background sync retries pending
 uploads; changing or republishing policy is unnecessary.
+
+The daemon persists the same telemetry status, reason and count fields in its
+background sync snapshot. A completed policy sync and delayed telemetry remain
+separate results in that snapshot.
+
+Permanent request rejections, including HTTP 400 and 413, fail sync instead of
+being reported as an optional service outage. They require correction before
+retrying the same data. A failure to save an accepted pain-signal upload cursor
+also fails sync, preserves the completed count on the error, and requests a local
+storage check. An unsaved cursor cannot prove which data still needs delivery;
+retrying before storage recovery can resend an already accepted page.
 
 Authorization, endpoint trust, and plan failures still fail the sync operation.
 HTTP 401 and 403 remain authorization errors even if an error message happens to

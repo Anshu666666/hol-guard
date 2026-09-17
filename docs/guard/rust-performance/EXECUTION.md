@@ -2,10 +2,10 @@
 
 Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
 with **89 DONE / 20 OPEN / 27 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
-Implementation `8ddf86494e8bb4da50be83d849603195b6b77976`, tree `566d910caaa29b0ec3585803a9f4095b11a5651d`. Eighth measured publication
-`a933921372ddb3772eff8a9d86771fe15da063b1` has 41 terminal first-attempt workflows: 36 successful and 5 failed; its exact tree and distinct merge identity are
-retained in [EIGHTH_CI_EVIDENCE](EIGHTH_CI_EVIDENCE.md).
-Later reviewed source requires its own execution. Four criteria close at their original scopes: RSP-034 concurrent transition correctness, RSP-066 selective scanner comparison/deferral, RSP-072 published full-CLI scanner evidence and RSP-118 installed command.ollama lifecycle. Their original definitions and dependencies remain unchanged. These closures do not establish native activation, complete installed performance/resources, signing, package downgrade or release qualification.
+Implementation `6da76bc591d7bb9c498918673305d7074b2b9b60`, tree `d1391c030154398144a549fd4685facddd69e937`. Ninth measured publication
+`d33f64d5fb86a3f2baa6848382ce763e2ed9fc59` has 42 terminal first-attempt workflows: 36 successful, 5 failed and 1 skipped; its exact tree and distinct merge identity are
+retained in [NINTH_CI_EVIDENCE](NINTH_CI_EVIDENCE.md).
+Later reviewed source requires its own execution. The ninth cohort completes four-platform client-side transport attribution and adds actual prepared/warm hook identity observations. RSP-085 remains OPEN for same-request resident evaluation attribution; RSP-025 remains OPEN for cold-hook measurements. Earlier closures retain their exact historical evidence and scope. No original acceptance, dependency or status is changed in this checkpoint.
 All 144 original definitions/dependencies and the historical record below are
 unchanged. Installed qualification, complete resources, signed/frozen live
 rollback, final CI, human approval and release remain incomplete.

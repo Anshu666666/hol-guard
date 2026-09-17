@@ -1,11 +1,11 @@
 # Rust performance execution for release/3.2
 
 Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
-with **89 DONE / 20 OPEN / 27 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
-Implementation `6da76bc591d7bb9c498918673305d7074b2b9b60`, tree `d1391c030154398144a549fd4685facddd69e937`. Ninth measured publication
-`d33f64d5fb86a3f2baa6848382ce763e2ed9fc59` has 42 terminal first-attempt workflows: 36 successful, 5 failed and 1 skipped; its exact tree and distinct merge identity are
-retained in [NINTH_CI_EVIDENCE](NINTH_CI_EVIDENCE.md).
-Later reviewed source requires its own execution. The ninth cohort completes four-platform client-side transport attribution and adds actual prepared/warm hook identity observations. RSP-085 remains OPEN for same-request resident evaluation attribution; RSP-025 remains OPEN for cold-hook measurements. Earlier closures retain their exact historical evidence and scope. No original acceptance, dependency or status is changed in this checkpoint.
+with **91 DONE / 19 OPEN / 26 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
+Implementation `224cca37a57ea4e068c0c586d2354c15abd887f0`, tree `7c4322a4c243c900bedf1365aa2194d888023f7b`. Tenth measured publication
+`095074cda6a751ffaf12b070ecc46a3091f12471` has 42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped; its exact tree and distinct merge identity are
+retained in [TENTH_CI_EVIDENCE](TENTH_CI_EVIDENCE.md).
+Later reviewed source requires its own execution. RSP-012 closes its literal record/threshold/selection-decision criterion, and RSP-085 closes actual four-target same-request attribution. RSP-011 remains OPEN for complete process-tree resources, RSP-025 remains OPEN for the missing Windows candidate cold and prepared measurements, and RSP-008 remains OPEN for corrected installed config coverage and its other residual phases. All original dependencies are unchanged; these two closures do not promote dependent installed qualification or release criteria.
 All 144 original definitions/dependencies and the historical record below are
 unchanged. Installed qualification, complete resources, signed/frozen live
 rollback, final CI, human approval and release remain incomplete.

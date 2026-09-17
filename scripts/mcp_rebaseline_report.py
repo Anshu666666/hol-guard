@@ -4,30 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
-import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from scripts.mcp_rebaseline_trace import TRACES, catalog_result, digest, messages, trace_identity
-
-
-def summary(values: list[int | float]) -> dict[str, float | int] | None:
-    if not values:
-        return None
-    values = sorted(values)
-    return {
-        "count": len(values),
-        "p50": statistics.median(values),
-        "p95": values[math.ceil(len(values) * 0.95) - 1],
-        "max": values[-1],
-        "sum": sum(values),
-    }
-
-
-def observed_metric(rows: list[dict[str, Any]], key: str) -> dict[str, float | int] | None:
-    return summary([row[key] for row in rows if isinstance(row.get(key), (int, float))])
+from scripts.mcp_rebaseline_network import NETWORK_METRICS, NETWORK_TRACE, validate_network
+from scripts.mcp_rebaseline_resources import _complete as warm_resource_complete
+from scripts.mcp_rebaseline_statistics import independent_summaries, paired_comparisons, summary, trace_summary
+from scripts.mcp_rebaseline_trace import TRACES, calls_for_mode, catalog_result, digest, messages, trace_identity
 
 
 def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[str, Any]:
@@ -51,6 +35,7 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
         failures.append("alternating_run_order")
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for record in records:
+        mode_calls = calls_for_mode(record["mode"], calls)
         payload = record.get("result", {})
         if record.get("returncode") != 0 or payload.get("status") != "passed" or record.get("capture_failure"):
             failures.append(f"worker_failure:{record['block']}:{record['role']}:{record['mode']}")
@@ -58,11 +43,11 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
         if [t.get("trace", {}).get("name") for t in traces] != [trace.name for trace in TRACES]:
             failures.append("trace_inventory")
         for trace, data in zip(TRACES, traces, strict=False):
-            identity = trace_identity(trace, calls)
+            identity = trace_identity(trace, mode_calls)
             if data.get("sha256") != identity["sha256"] or data.get("status") != "passed":
                 failures.append(f"trace_oracle:{trace.name}")
             observed = data.get("observations", [])
-            expected_messages = messages(trace, calls)
+            expected_messages = messages(trace, mode_calls)
             if len(observed) != len(expected_messages):
                 failures.append(f"request_count:{trace.name}")
             generation = 0
@@ -78,11 +63,22 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
                         or row.get("decision") != expected_decision
                     ):
                         failures.append(f"delivered_oracle:{trace.name}")
+                    try:
+                        network = {key: row[key] for key in NETWORK_METRICS if key in row}
+                        validate_network(
+                            {
+                                "child_wall_ns": row.get("child_wall_ns"),
+                                "network": {**network, "requests": 1, "loopback": True} if network else None,
+                            },
+                            expected=trace.name == NETWORK_TRACE,
+                        )
+                    except (TypeError, ValueError):
+                        failures.append(f"network_oracle:{trace.name}")
                 elif message["method"] == "tools/list":
                     generation += 1
                     if row.get("catalog_result_sha256") != digest(catalog_result(trace, generation)):
                         failures.append(f"catalog_oracle:{trace.name}")
-            if len(data.get("approvals", [])) != (calls if trace.approval_delay_ms else 0):
+            if len(data.get("approvals", [])) != (mode_calls if trace.approval_delay_ms else 0):
                 failures.append(f"approval_count:{trace.name}")
             grouped[record["role"], record["mode"], trace.name].append(data)
         if record["mode"] == "diagnostic":
@@ -108,33 +104,28 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
             resource = record.get("resources", {})
             if resource.get("peak", {}).get("processes", 0) < 2 or not resource.get("peak", {}).get("rss_bytes"):
                 failures.append("full_process_memory_unobserved")
-    comparisons = []
-    for (role, mode, name), traces in sorted(grouped.items()):
-        warm = [
-            r for trace in traces for r in trace["observations"] if r["method"] == "tools/call" and r["request_id"] != 3
-        ]
-        cold = [
-            r for trace in traces for r in trace["observations"] if r["method"] == "tools/call" and r["request_id"] == 3
-        ]
-        comparisons.append(
-            {
-                "role": role,
-                "mode": mode,
-                "trace": name,
-                "independent_runs": len(traces),
-                "warm_attempts": len(warm),
-                "cold_attempts": len(cold),
-                "headline_eligible": mode == "plain" and not failures,
-                "warm_wall_ns": observed_metric(warm, "wall_ns"),
-                "warm_process_cpu_ns": observed_metric(warm, "process_cpu_ns"),
-                "first_call_wall_ns": observed_metric(cold, "wall_ns"),
-                "session_wall_ns": summary([t["session"]["wall_ns"] for t in traces]),
-                "construction_wall_ns": summary([t["construction"]["wall_ns"] for t in traces]),
-                "child_service_wall_ns": observed_metric(warm, "child_wall_ns"),
-                "child_observed_wire_bytes": observed_metric(warm, "wire_bytes"),
-                "synthetic_approval_wall_ns": summary([a["wall_ns"] for t in traces for a in t["approvals"]]),
-            }
-        )
+            warm = record.get("warm_resources", [])
+            if (
+                record.get("warm_resource_failure") is not None
+                or len(warm) != len(TRACES)
+                or any(
+                    row.get("trace_index") != index
+                    or row.get("status") != "complete"
+                    or row.get("identity_verified") is not True
+                    or row.get("warm_attempts") != mode_calls - 1
+                    or row.get("expected_warm_attempts") != mode_calls - 1
+                    or row.get("failure") is not None
+                    or not isinstance(row.get("resources"), dict)
+                    or not warm_resource_complete(row["resources"])
+                    for index, row in enumerate(warm)
+                )
+            ):
+                failures.append("warm_resources_incomplete")
+    comparisons = [
+        trace_summary(role, mode, name, traces, eligible=not failures)
+        for (role, mode, name), traces in sorted(grouped.items())
+    ]
+    run_traces = independent_summaries(records, eligible=not failures)
     phases = []
     for role in ("baseline", "candidate"):
         rows: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -156,16 +147,17 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
                 }
             )
     return {
-        "schema": "hol-guard.mcp-rebaseline.v1",
+        "schema": "hol-guard.mcp-rebaseline.v2",
         "status": "passed" if not failures else "failed",
         "qualification": False,
         "native_selection": "not_selected_by_this_component_report",
         "failures": failures,
         "independent_runs_per_revision_and_mode": runs,
         "calls_per_trace": calls,
+        "calls_per_trace_by_mode": {mode: calls_for_mode(mode, calls) for mode in ("plain", "resources", "diagnostic")},
         "expected_worker_attempts": len(expected),
         "observed_worker_attempts": len(records),
-        "expected_tool_call_attempts": len(expected) * len(TRACES) * calls,
+        "expected_tool_call_attempts": sum(calls_for_mode(mode, calls) * len(TRACES) for _, _, mode in expected),
         "observed_tool_call_outcomes": sum(
             len([r for r in t.get("observations", []) if r.get("method") == "tools/call"])
             for record in records
@@ -173,12 +165,20 @@ def aggregate(records: list[dict[str, Any]], *, runs: int, calls: int) -> dict[s
         ),
         "percentile_estimator": "nearest-rank",
         "comparisons": comparisons,
+        "run_trace_summaries": run_traces,
+        "paired_comparisons": paired_comparisons(run_traces, runs=runs, eligible=not failures),
         "diagnostic_phases": phases,
         "interpretation": {
             "phase_rows": "nested wall/thread CPU; inclusive phases overlap and must not be summed",
             "exclusive": "subtracts instrumented same-thread children; residual work is not an isolated phase",
-            "memory": "worker/child process tree sampled at 10ms; peaks are lower bounds; RSS includes shared pages",
-            "network": "not exercised",
+            "memory": (
+                "separate startup-inclusive lifecycle and fixed warm worker/child windows sampled at 10ms; "
+                "incomplete reads retained; peaks lower bounds and RSS includes shared pages"
+            ),
+            "network": (
+                "actual child-owned loopback TCP round trip; separately observed synthetic 10ms service; "
+                "no external remote transport"
+            ),
             "human": "synthetic inline callback delay; no actual human latency",
             "boundary": "production run_session plus real child stdio; excludes outer installed CLI ingress/bootstrap",
         },

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from contextlib import suppress
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -65,7 +66,25 @@ class _WindowsOpenConfiguration(NamedTuple):
     flags: int
 
 
+_WINDOWS_OPEN_FUNCTIONS_LOCK = threading.Lock()
+_cached_windows_open_functions: tuple[Any, Any, _WindowsOpenFunctions] | None = None
+
+
 def _windows_configure_open_functions(api: Any, kernel32: Any) -> _WindowsOpenFunctions:
+    information_type = api._windows_file_information_type()
+    global _cached_windows_open_functions
+    with _WINDOWS_OPEN_FUNCTIONS_LOCK:
+        cached = _cached_windows_open_functions
+        if cached is not None and cached[0] is kernel32 and cached[1] is information_type:
+            return cached[2]
+        functions = _build_windows_open_functions(kernel32, information_type)
+        # One definition tuple, bounded even under façade replacement in tests.
+        # The tuple retains both identities, so Python object-ID reuse is moot.
+        _cached_windows_open_functions = (kernel32, information_type, functions)
+        return functions
+
+
+def _build_windows_open_functions(kernel32: Any, information_type: Any) -> _WindowsOpenFunctions:
     import ctypes
     from ctypes import wintypes
 
@@ -83,7 +102,6 @@ def _windows_configure_open_functions(api: Any, kernel32: Any) -> _WindowsOpenFu
     close_handle = kernel32.CloseHandle
     close_handle.argtypes = [wintypes.HANDLE]
     close_handle.restype = wintypes.BOOL
-    information_type = api._windows_file_information_type()
     get_information = kernel32.GetFileInformationByHandle
     get_information.argtypes = [wintypes.HANDLE, ctypes.POINTER(information_type)]
     get_information.restype = wintypes.BOOL

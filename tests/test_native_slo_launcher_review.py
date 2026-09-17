@@ -287,9 +287,14 @@ def test_ordinary_corpus_retains_review_obligation_without_starting_approval(tmp
         observed.append(case.expected.reason_class)
         return "native_resident", 1.0
 
+    def selected_cases(workspace, *, runtime):
+        assert workspace == tmp_path
+        assert runtime == tmp_path / "runtime"
+        return cases
+
     monkeypatch.setattr(corpus, "DaemonFixture", Fixture)
     monkeypatch.setattr(corpus, "_IMPLEMENTED_SETUPS", {"normal"})
-    monkeypatch.setattr(corpus, "build_cases", lambda *_args: cases)
+    monkeypatch.setattr(corpus, "build_cases", selected_cases)
     monkeypatch.setattr(corpus, "_attempt", attempt)
     monkeypatch.setattr(
         corpus,
@@ -365,9 +370,14 @@ def test_corpus_executes_both_review_flows_and_keeps_failed_attempts(tmp_path, m
             response[key] = "synthetic"
         return response, 1.0
 
+    def selected_cases(workspace, *, runtime):
+        assert workspace == tmp_path
+        assert runtime == tmp_path / "runtime"
+        return cases
+
     monkeypatch.setattr(corpus, "DaemonFixture", Fixture)
     monkeypatch.setattr(corpus, "_IMPLEMENTED_SETUPS", {"normal"})
-    monkeypatch.setattr(corpus, "build_cases", lambda *_args: cases)
+    monkeypatch.setattr(corpus, "build_cases", selected_cases)
     monkeypatch.setattr(corpus, "_run_registered", launch)
     monkeypatch.setattr(
         corpus,

@@ -1,8 +1,17 @@
 """Synthetic complete controller records for publication contract tests only."""
 
+from scripts.mcp_rebaseline_network import NETWORK_TRACE
 from scripts.mcp_rebaseline_public import BASELINE, CALLS, EXPECTED_ORDER
 from scripts.mcp_rebaseline_report import aggregate
-from scripts.mcp_rebaseline_trace import TRACES, catalog_result, digest, messages, trace_identity
+from scripts.mcp_rebaseline_trace import (
+    RESOURCE_CALLS,
+    TRACES,
+    calls_for_mode,
+    catalog_result,
+    digest,
+    messages,
+    trace_identity,
+)
 
 CANDIDATE = "a" * 40
 
@@ -35,11 +44,12 @@ def resource_fixture():
 def complete_report():
     records = []
     for identity in EXPECTED_ORDER:
+        calls = calls_for_mode(identity["mode"], CALLS)
         traces = []
         for trace in TRACES:
             rows = []
             generation = 0
-            for message in messages(trace, CALLS):
+            for message in messages(trace, calls):
                 row = {
                     "request_id": message["id"],
                     "method": message["method"],
@@ -52,18 +62,28 @@ def complete_report():
                     "decision": "inline-approved" if trace.approval_delay_ms else "policy-warn",
                     "policy_action": "allow" if trace.approval_delay_ms else "warn",
                 }
+                if trace.name == NETWORK_TRACE:
+                    row.update(
+                        network_roundtrip_wall_ns=20_000_000,
+                        network_client_thread_cpu_ns=20,
+                        network_service_wall_ns=10_000_000,
+                        network_service_thread_cpu_ns=10,
+                        network_request_bytes=65,
+                        network_response_bytes=180,
+                        child_wall_ns=30_000_000,
+                    )
                 if message["method"] == "tools/list":
                     generation += 1
                     row["catalog_result_sha256"] = digest(catalog_result(trace, generation))
                 rows.append(row)
             traces.append(
                 {
-                    **trace_identity(trace, CALLS),
+                    **trace_identity(trace, calls),
                     "status": "passed",
                     "observations": rows,
                     "session": {"wall_ns": 100},
                     "construction": {"wall_ns": 10},
-                    "approvals": [{"wall_ns": 10}] * (CALLS if trace.approval_delay_ms else 0),
+                    "approvals": [{"wall_ns": 10}] * (calls if trace.approval_delay_ms else 0),
                 }
             )
         phases = []
@@ -111,6 +131,19 @@ def complete_report():
         }
         if identity["mode"] == "resources":
             record["resources"] = resource_fixture()
+            record["warm_resource_failure"] = None
+            record["warm_resources"] = [
+                {
+                    "trace_index": index,
+                    "status": "complete",
+                    "failure": None,
+                    "identity_verified": True,
+                    "expected_warm_attempts": calls - 1,
+                    "warm_attempts": calls - 1,
+                    "resources": resource_fixture(),
+                }
+                for index in range(len(TRACES))
+            ]
         records.append(record)
     report = aggregate(records, runs=5, calls=CALLS)
     assert report["status"] == "passed"
@@ -128,6 +161,7 @@ def complete_report():
         "child_sha256": "e" * 64,
         "harness": {"bench_mcp_rebaseline.py": "f" * 64},
         "traces": [trace_identity(trace, CALLS) for trace in TRACES],
+        "resource_traces": [trace_identity(trace, RESOURCE_CALLS) for trace in TRACES],
         "order": EXPECTED_ORDER,
     }
     report["run_observations"] = [

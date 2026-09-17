@@ -14,6 +14,7 @@ import stat
 import struct
 import sys
 import threading
+import time
 from pathlib import Path
 
 REVERSE_NAME = "1.0.0.127.in-addr.arpa"
@@ -89,15 +90,19 @@ class LoopbackPTRResponder:
         self._stop = threading.Event()
         self._lock = threading.Lock()
         self._counts = {"received": 0, "answered": 0, "rejected": 0, "errors": 0}
+        self._selftest_counts = dict.fromkeys(self._counts, 0)
+        self._selftest_peer: tuple[str, int] | None = None
+        self._selftest_socket: socket.socket | None = None
+        self._selftest_done = threading.Event()
         self._thread = threading.Thread(target=self._serve, name="qualification-loopback-ptr", daemon=True)
 
     def __enter__(self) -> LoopbackPTRResponder:
         self._thread.start()
         return self
 
-    def _increment(self, name: str) -> None:
+    def _increment(self, name: str, *, selftest: bool = False) -> None:
         with self._lock:
-            self._counts[name] += 1
+            (self._selftest_counts if selftest else self._counts)[name] += 1
 
     def _serve(self) -> None:
         while not self._stop.is_set():
@@ -109,25 +114,70 @@ class LoopbackPTRResponder:
                 if not self._stop.is_set():
                     self._increment("errors")
                 return
-            self._increment("received")
+            with self._lock:
+                selftest = peer == self._selftest_peer
+            self._increment("received", selftest=selftest)
             response = ptr_response(packet) if peer[0] == "127.0.0.1" else None
             if response is None:
-                self._increment("rejected")
+                self._increment("rejected", selftest=selftest)
+                if selftest:
+                    self._selftest_done.set()
                 continue
             try:
                 self._socket.sendto(response, peer)
-                self._increment("answered")
+                self._increment("answered", selftest=selftest)
             except OSError:
-                self._increment("errors")
+                self._increment("errors", selftest=selftest)
+            if selftest:
+                self._selftest_done.set()
 
     def snapshot(self) -> dict[str, int]:
         with self._lock:
             return dict(self._counts)
 
+    def self_test(self, *, deadline: float) -> dict[str, object]:
+        """Send one fixed PTR datagram; keep its traffic outside OS-query counts."""
+        started = time.monotonic()
+        report: dict[str, object] = {"status": "failed", "response_verified": False}
+        packet = struct.pack("!6H", 0x4847, 0x0100, 1, 0, 0, 0) + _wire_name(REVERSE_NAME) + struct.pack("!HH", 12, 1)
+        try:
+            if self._selftest_socket is not None:
+                raise ValueError("selftest_already_attempted")
+            client = self._selftest_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            client.bind(("127.0.0.1", 0))
+            until = min(started + 1.0, deadline)
+            remaining = until - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError
+            client.settimeout(remaining)
+            with self._lock:
+                self._selftest_peer = client.getsockname()
+            client.sendto(packet, ("127.0.0.1", self.port))
+            response, peer = client.recvfrom(MAX_QUERY_BYTES + 1)
+            if (
+                peer == ("127.0.0.1", self.port)
+                and response == ptr_response(packet)
+                and self._selftest_done.wait(max(0.0, until - time.monotonic()))
+            ):
+                report.update(status="completed", response_verified=True)
+        except TimeoutError:
+            report["status"] = "deadline_exceeded"
+        except (OSError, ValueError):
+            pass
+        finally:
+            # Keep the bound socket until shutdown: its ephemeral port cannot
+            # be reused by OS queries and late selftest traffic stays separate.
+            with self._lock:
+                report["traffic"] = dict(self._selftest_counts)
+        report["elapsed_ms"] = round((time.monotonic() - started) * 1000, 3)
+        return report
+
     def __exit__(self, *_args: object) -> None:
         self._stop.set()
         self._thread.join(timeout=1.0)
         self._socket.close()
+        if self._selftest_socket is not None:
+            self._selftest_socket.close()
         if self._thread.is_alive():
             raise RuntimeError("loopback_responder_shutdown_failed")
 

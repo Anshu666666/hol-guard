@@ -176,8 +176,9 @@ def test_unsupported_source_probes_continue_and_never_return_latency_observation
     assert {item[2] for item in observed} == {"250k", "1m", "5m"}
 
 
+@pytest.mark.parametrize("rss_sample", [1, 0])
 def test_windows_slo_continues_supported_work_after_refusal_probes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rss_sample: int
 ) -> None:
     completed = []
     ordinary = Observation("pi", "PostToolUse", "1k", 1, "native_resident", True)
@@ -217,7 +218,20 @@ def test_windows_slo_continues_supported_work_after_refusal_probes(
         installed, "measure_registered_launcher", lambda *_args, **_kwargs: completed.append("launcher") or {}
     )
     monkeypatch.setattr(installed, "_readiness_samples", lambda *_args: completed.append("readiness") or [1])
-    monkeypatch.setattr(installed, "process_rss_bytes", lambda: 1)
+    monkeypatch.setattr(installed, "process_rss_bytes", lambda: rss_sample)
+    if rss_sample == 0:
+        with pytest.raises(RuntimeError, match="RSS final sample was unavailable"):
+            installed._measure_slo(
+                tmp_path / "runtime",
+                (("pi", "PostToolUse"),),
+                warm_iterations=1,
+                cold_iterations=1,
+                recovery_iterations=1,
+                readiness_samples=2,
+                include_capacity=True,
+                launcher_iterations=1,
+            )
+        return
     measured = installed._measure_slo(
         tmp_path / "runtime",
         (("pi", "PostToolUse"),),

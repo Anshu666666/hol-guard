@@ -14,6 +14,7 @@ from pathlib import Path
 
 from codex_plugin_scanner.guard.daemon.hook_process_capacity import process_tree_rss_bytes
 from scripts.native_slo_contract import SAFE_ROUTE_NAMES
+from scripts.native_slo_windows_memory import sample_windows_tree_memory
 
 _MAX_CASES = 2_048
 _SIZE_BYTES = {"1k": 1 * 1024, "250k": 250 * 1024, "1m": 1 * 1024 * 1024, "5m": 5 * 1024 * 1024}
@@ -36,15 +37,22 @@ class Observation:
     # True only when the adapter returned an explicit bounded-capacity result;
     # a generic native fail-safe must not be mistaken for accepted overload.
     overloaded: bool = False
+    # Diagnostic only, captured from the response after stopping its timer.
+    reason_code: str = "not_captured"
 
 
 @dataclass(frozen=True, slots=True)
 class ProcessResources:
-    """Current resident resources for one process tree."""
+    """Current process-tree RSS; native residents are only part of that tree."""
 
     rss_bytes: int
     threads: int
     file_descriptors: int
+    # Windows has handles, not POSIX file descriptors. The legacy descriptor
+    # field remains zero/unsupported there; never substitute handle counts.
+    handles: int | None = None
+    private_commit_bytes: int | None = None
+    processes: int | None = None
 
 
 def _single_process_rss_bytes(pid: int) -> int:
@@ -125,6 +133,18 @@ def process_resources(pid: int | None = None) -> ProcessResources | None:
     resolved_pid = os.getpid() if pid is None else pid
     if resolved_pid <= 0:
         return None
+    if sys.platform == "win32":
+        windows = sample_windows_tree_memory(resolved_pid)
+        if windows is None:
+            return None
+        return ProcessResources(
+            rss_bytes=windows.rss_bytes,
+            threads=windows.threads,
+            file_descriptors=0,
+            handles=windows.handles,
+            private_commit_bytes=windows.private_commit_bytes,
+            processes=windows.processes,
+        )
     tree_rss_bytes = process_tree_rss_bytes((resolved_pid,))
     if tree_rss_bytes is None or tree_rss_bytes <= 0:
         # Linux soak evidence must account for every daemon worker.  A root
@@ -223,6 +243,34 @@ def route_delta(before: Counter[str], after: Counter[str]) -> str:
     return changed[0] if len(changed) == 1 else "native_fail_safe"
 
 
+_OBSERVATION_REASONS = frozenset(
+    {
+        "native_policy_not_ready",
+        "native_policy_unavailable",
+        "native_policy_snapshot_not_current",
+        "native_policy_expired",
+        "native_policy_snapshot_expired",
+        "native_hook_edge_unavailable",
+        "native_command_control_fence_unavailable",
+        "native_policy_warning",
+        "native_post_tool_unavailable",
+        "native_review_required",
+        "no_output_to_review",
+        "native_policy_blocked",
+        "output_scan_allow",
+        "native_overloaded",
+        "native_degraded_emergency_safe",
+        "not_captured",
+    }
+)
+
+
+def observation_reason_code(response: Mapping[str, object]) -> str:
+    """Project a closed diagnostic vocabulary; arbitrary response text stays out."""
+    reason = response.get("reason_code")
+    return reason if isinstance(reason, str) and reason in _OBSERVATION_REASONS else "other"
+
+
 def is_allowed(event: str, response: Mapping[str, object]) -> bool:
     if response.get("decision") == "allow":
         return response.get("model_output_action", "allow_original") != "block"
@@ -237,6 +285,7 @@ __all__ = [
     "Observation",
     "ProcessResources",
     "is_allowed",
+    "observation_reason_code",
     "payload",
     "process_resources",
     "process_rss_bytes",

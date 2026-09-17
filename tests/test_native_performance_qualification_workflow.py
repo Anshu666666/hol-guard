@@ -5,91 +5,125 @@ from pathlib import Path
 
 import yaml
 
+from scripts.native_slo_pair_plan import PLATFORMS, matrices
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_paired_workflow_pins_baseline_and_isolates_install_environments() -> None:
-    workflow = yaml.safe_load((ROOT / ".github/workflows/native-performance-qualification.yml").read_text())
-    triggers = workflow.get("on", workflow.get(True))
-    assert "release/3.2" in triggers["pull_request"]["branches"]
-    patterns = triggers["pull_request"]["paths"]
-    for changed in (
-        "scripts/qualify_guard_native.py",
-        "scripts/native_slo_artifact.py",
-        "scripts/build_native_qualification_artifacts.py",
-        "scripts/ci/installed_native_ollama_probe.py",
-        "scripts/ci/native_ollama_contract.py",
-        "src/codex_plugin_scanner/guard/store_native_decision_receipts.py",
-        "src/codex_plugin_scanner/guard/store_connection_schema.py",
-        "src/codex_plugin_scanner/guard/runtime/command_ollama_extensions.py",
-        "src/codex_plugin_scanner/guard/runtime/extension_control_contract.py",
-        "contracts/extensions/native-command-program.v1.json",
-        "contributions/extensions/command.ollama.json",
-        "rust/crates/guard-runtime/src/edge.rs",
-    ):
-        assert any(fnmatch.fnmatch(changed, pattern) for pattern in patterns)
-    job = workflow["jobs"]["paired-artifacts"]
-    targets = {entry["target"] for entry in job["strategy"]["matrix"]["include"]}
-    assert targets == {
+def workflow():
+    return yaml.safe_load((ROOT / ".github/workflows/native-performance-qualification.yml").read_text())
+
+
+def test_fixed_matrices_preserve_all_five_global_indices_and_smoke_is_separate():
+    full = matrices("qualification", "a" * 40)
+    assert len(full["pairs"]["include"]) == 20 and full["runs"] == 5
+    assert len(matrices("smoke", "a" * 40)["pairs"]["include"]) == 4
+    for platform in PLATFORMS:
+        assert [row["pair_index"] for row in full["pairs"]["include"] if row["target"] == platform["target"]] == list(
+            range(5)
+        )
+    assert {row["target"] for row in PLATFORMS} == {
         "x86_64-unknown-linux-musl",
         "x86_64-apple-darwin",
         "aarch64-apple-darwin",
         "x86_64-pc-windows-msvc",
     }
-    checkouts = [step for step in job["steps"] if "actions/checkout@" in step.get("uses", "")]
-    assert {step["with"]["path"] for step in checkouts} == {"baseline-src", "candidate-src"}
-    baseline = next(step for step in checkouts if step["with"]["path"] == "baseline-src")
-    assert baseline["with"]["ref"] == "2e672d2d950c6ec471005ddba46e49bba16dc23b"
-    artifact = next(step for step in job["steps"] if "actions/upload-artifact@" in step.get("uses", ""))
-    assert "private_samples" not in artifact["with"]["path"]
-    assert "aggregate/*.json" in artifact["with"]["path"]
-    assert workflow["permissions"] == {"contents": "read"}
 
 
-def test_full_qualification_is_available_before_merge_only_by_explicit_same_repo_label() -> None:
-    workflow = yaml.safe_load((ROOT / ".github/workflows/native-performance-qualification.yml").read_text())
-    triggers = workflow.get("on", workflow.get(True))
+def test_source_selection_is_immutable_and_full_pr_run_requires_same_repo_label():
+    value = workflow()
+    triggers = value.get("on", value.get(True))
+    assert "release/3.2" in triggers["pull_request"]["branches"]
     assert set(triggers["pull_request"]["types"]) == {"opened", "synchronize", "reopened", "labeled"}
-    job = workflow["jobs"]["paired-artifacts"]
-    assert "github.event.action != 'labeled'" in job["if"]
-    assert "github.event.label.name == 'rust-performance-qualification'" in job["if"]
-    mode = next(
-        step["env"]["QUALIFICATION_MODE"] for step in job["steps"] if "QUALIFICATION_MODE" in step.get("env", {})
+    patterns = triggers["pull_request"]["paths"]
+    for path in (
+        "scripts/native_slo_pair_plan.py",
+        "scripts/native_slo_pair_aggregate.py",
+        "scripts/qualify_guard_native.py",
+        "scripts/ci/installed_native_ollama_probe.py",
+        "rust/crates/guard-runtime/src/edge.rs",
+    ):
+        assert any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+    plan = value["jobs"]["plan"]
+    assert "github.event.label.name == 'rust-performance-qualification'" in plan["if"]
+    mode = plan["steps"][1]["env"]["QUALIFICATION_MODE"]
+    assert (
+        "head.repo.full_name == github.repository" in mode
+        and "contains(github.event.pull_request.labels.*.name" in mode
     )
-    assert "head.repo.full_name == github.repository" in mode
-    assert "contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification')" in mode
     assert "'qualification' || 'smoke'" in mode
-    candidate = next(step for step in job["steps"] if step.get("with", {}).get("path") == "candidate-src")
-    assert "github.event.pull_request.head.sha || github.sha" in candidate["with"]["ref"]
-    assert all(not step.get("with", {}).get("persist-credentials", False) for step in job["steps"])
+    for name, job in value["jobs"].items():
+        for step in job["steps"]:
+            if "actions/checkout@" in step.get("uses", ""):
+                assert step["with"]["persist-credentials"] is False
+                if name != "plan" and step["with"]["path"] == "candidate-src":
+                    assert step["with"]["ref"] == "${{ needs.plan.outputs.sha }}"
+    assert value["permissions"] == {"contents": "read"}
 
 
-def test_private_attempts_are_encrypted_after_sampling_and_only_ciphertext_is_uploaded() -> None:
-    workflow = yaml.safe_load((ROOT / ".github/workflows/native-performance-qualification.yml").read_text())
-    steps = workflow["jobs"]["paired-artifacts"]["steps"]
-    build = next(
-        i for i, step in enumerate(steps) if step.get("name") == "Build isolated wheels and run paired sampling"
+def test_wheels_build_once_and_pairs_share_downloaded_exact_bundle():
+    jobs = workflow()["jobs"]
+    build = jobs["build"]
+    assert build["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.platforms) }}"
+    assert any(step.get("with", {}).get("ref") == "2e672d2d950c6ec471005ddba46e49bba16dc23b" for step in build["steps"])
+    assert any("--build-only" in step.get("run", "") for step in build["steps"])
+    pairs = jobs["pairs"]
+    assert pairs["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.pairs) }}"
+    assert pairs["strategy"]["fail-fast"] is False and pairs["runs-on"] == "${{ matrix.runner }}"
+    assert sum("--action pair" in step.get("run", "") for step in pairs["steps"]) == 1
+    assert not any("cargo " in step.get("run", "") or "--runs 1" in step.get("run", "") for step in pairs["steps"])
+    wheel_name = next(
+        step["with"]["name"]
+        for step in build["steps"]
+        if "upload-artifact@" in step.get("uses", "") and step["with"]["path"] == "qualification-build/bundle/"
     )
-    encrypt = next(i for i, step in enumerate(steps) if step.get("id") == "private-evidence")
-    assert build < encrypt
-    step = steps[encrypt]
-    assert step["if"] == "always()"
-    assert "uv sync --frozen --no-dev --no-install-project --project candidate-src" in step["run"]
-    assert "uv run --frozen --no-sync --project candidate-src" in step["run"]
-    assert "python -I -S" in step["run"] and "failure-receipt" in step["run"]
-    assert '/private_samples"' in step["run"]
-    assert "qualification-recipient.pem" in step["run"]
-    assert "--run-id" in step["run"] and "--run-attempt" in step["run"]
-    assert step["env"]["QUALIFICATION_RECIPIENT"] == "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
-    uploads = [step for step in steps if "actions/upload-artifact@" in step.get("uses", "")]
-    assert len(uploads) == 3
-    for upload in uploads:
-        assert upload["if"] == "always()"
-        assert "private_samples" not in upload["with"]["path"]
-        assert "environments" not in upload["with"]["path"]
-    private = next(step for step in uploads if "encrypted" in step["with"]["name"])
-    receipt = next(step for step in uploads if "archive-receipt" in step["with"]["name"])
-    assert private["with"]["path"] == "qualification-evidence/encrypted/*.hge"
-    assert receipt["with"]["path"] == "qualification-evidence/archive-receipt.json"
-    for artifact in (private, receipt):
-        assert "github.run_id" in artifact["with"]["name"] and "github.run_attempt" in artifact["with"]["name"]
+    assert (
+        next(step["with"]["name"] for step in pairs["steps"] if "download-artifact@" in step.get("uses", ""))
+        == wheel_name
+    )
+
+
+def test_pair_deadlines_reserve_archive_and_upload_after_two_hour_workers():
+    job = workflow()["jobs"]["pairs"]
+    assert all("timeout-minutes" in step for step in job["steps"])
+    assert sum(step["timeout-minutes"] for step in job["steps"]) < job["timeout-minutes"]
+    sampling = next(step for step in job["steps"] if "--action pair" in step.get("run", ""))
+    assert sampling["timeout-minutes"] == 125
+    archive = next(step for step in job["steps"] if step.get("id") == "private-evidence")
+    assert archive["if"] == "always()" and archive["timeout-minutes"] == 15
+    assert "failure-receipt" in archive["run"] and "python -I -S" in archive["run"]
+    assert "--pair-index" in archive["run"] and "--runs '${{ needs.plan.outputs.runs }}'" in archive["run"]
+    assert "--run-id" in archive["run"] and "--run-attempt" in archive["run"]
+    uploads = [step for step in job["steps"] if "upload-artifact@" in step.get("uses", "")]
+    assert len(uploads) == 1 and uploads[0]["if"] == "always()"
+    assert "private_samples" not in uploads[0]["with"]["path"] and "environments" not in uploads[0]["with"]["path"]
+    assert "encrypted/*.hge" in uploads[0]["with"]["path"] and "archive-receipt.json" in uploads[0]["with"]["path"]
+
+
+def test_failed_pair_jobs_still_aggregate_and_candidate_scenarios_remain_independent():
+    jobs = workflow()["jobs"]
+    assert jobs["aggregate"]["needs"] == ["plan", "build", "pairs"]
+    assert "always()" in jobs["aggregate"]["if"]
+    aggregate_steps = jobs["aggregate"]["steps"]
+    collect = next(step for step in aggregate_steps if "native_slo_pair_aggregate.py" in step.get("run", ""))
+    assert collect["if"] == "always()"
+    download = next(step for step in aggregate_steps if "pattern" in step.get("with", {}))
+    assert download["with"]["merge-multiple"] is False
+    assert "github.run_id" in download["with"]["pattern"] and "github.run_attempt" in download["with"]["pattern"]
+    assert jobs["candidate-scenarios"]["needs"] == ["plan", "build"]
+    assert any("--action ollama" in step.get("run", "") for step in jobs["candidate-scenarios"]["steps"])
+
+
+def test_windows_bundle_admission_uses_separate_locked_controller_not_measured_environments():
+    jobs = workflow()["jobs"]
+    for name in ("build", "pairs", "candidate-scenarios"):
+        job = jobs[name]
+        assert job["env"]["UV_PROJECT_ENVIRONMENT"] == "${{ runner.temp }}/qualification-controller-environment"
+        step = next(
+            step
+            for step in job["steps"]
+            if "--build-only" in step.get("run", "") or "--action install" in step.get("run", "")
+        )
+        assert "uv sync --frozen --no-dev --project candidate-src" in step["run"]
+        assert "uv run --frozen --no-sync --project candidate-src" in step["run"]
+        assert "--environments" not in step["run"] or "qualification-controller-environment" not in step["run"]

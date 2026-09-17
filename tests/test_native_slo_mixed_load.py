@@ -163,6 +163,9 @@ def test_resource_setup_failure_closes_started_collection(tmp_path: Path, monkey
     class Fixture:
         pid = 123
 
+        def cpu_accounting_reader(self) -> None:
+            return None
+
         def control(self, operation: str, **_kwargs: object) -> dict[str, object]:
             operations.append(operation)
             return {"status": "completed"}

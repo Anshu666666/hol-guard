@@ -5,7 +5,7 @@ Use [TAKEAWAY.md](TAKEAWAY.md) as the canonical continuation prompt and
 The original [PRD](PRD.md), [144-task TODO](TODO.md) and
 [execution ledger](execution-ledger.json) remain the acceptance authority.
 The current documentation checkpoint is source
-`ce8fce7f504bd67c213d67a60fbca34da724d25e`; its qualification limits are in the
+`c964a61a3a4c19d721358e69c400d6059dfd1156`; its qualification limits are in the
 release review, not inferred from this historical file.
 
 This file previously recorded the takeover through source `b3569bc10`, following

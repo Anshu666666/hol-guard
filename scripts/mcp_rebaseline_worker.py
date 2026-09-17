@@ -16,9 +16,12 @@ from typing import Any
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.mcp_rebaseline_network import NETWORK_TRACE
 from scripts.mcp_rebaseline_phases import Phases
+from scripts.mcp_rebaseline_resources import WorkerResourceHandshake
 from scripts.mcp_rebaseline_trace import (
     CHILD,
+    RESOURCE_CALLS,
     TRACES,
     catalog_result,
     digest,
@@ -38,6 +41,7 @@ def run(
     diagnostic: bool,
     selected: list[str],
     journal: Callable[[dict[str, Any]], None] = lambda record: None,
+    resource_handshake: WorkerResourceHandshake | None = None,
 ) -> dict[str, Any]:
     sys.path.insert(0, str(source / "src"))
     imported_at, imported_cpu = time.perf_counter_ns(), time.process_time_ns()
@@ -59,7 +63,26 @@ def run(
     reports: list[dict[str, Any]] = []
 
     class ObservedProxy(runtime_mcp.CodexMcpGuardProxy):
+        _warm_active = False
+
         def _handle_message(self, **kwargs: Any):
+            try:
+                result = self._handle_observed(**kwargs)
+                request_id = kwargs["message"]["id"]
+                if resource_handshake is not None and request_id == 3:
+                    resource_handshake.begin(_trace_index)
+                    self._warm_active = True
+                elif resource_handshake is not None and request_id == calls + 2 and self._warm_active:
+                    self._warm_active = False
+                    resource_handshake.end(_trace_index)
+                return result
+            except BaseException:
+                if resource_handshake is not None and self._warm_active:
+                    self._warm_active = False
+                    resource_handshake.end(_trace_index, failed=True)
+                raise
+
+        def _handle_observed(self, **kwargs: Any):
             message = kwargs["message"]
             phases.scope = f"{trace.name}/{message['id']}"
             journal(
@@ -111,7 +134,7 @@ def run(
 
     scope = phases.install(runtime_mcp, mcp_tool_calls, GuardStore) if diagnostic else contextlib.nullcontext()
     with scope:
-        for trace in TRACES:
+        for _trace_index, trace in enumerate(TRACES):
             if selected and trace.name not in selected:
                 continue
             observations: list[dict[str, Any]] = []
@@ -150,6 +173,7 @@ def run(
                         str(trace.catalog_size),
                         str(trace.child_delay_ms),
                         str(int(bool(trace.approval_delay_ms))),
+                        str(int(trace.name == NETWORK_TRACE)),
                     ],
                     context=context,
                     store=store,
@@ -212,7 +236,7 @@ def run(
         "waited_child_cpu_seconds": children.ru_utime + children.ru_stime,
         "self_peak_rss_bytes": own.ru_maxrss * scale,
         "largest_waited_child_peak_rss_bytes": children.ru_maxrss * scale,
-        "network_wait": {"status": "not_exercised", "reason": "synthetic_local_stdio_only"},
+        "network_wait": {"status": "loopback_tcp_observed", "external_remote_latency_measured": False},
         "human_wait": {"status": "synthetic_callback_only", "real_human_latency_measured": False},
     }
 
@@ -224,9 +248,15 @@ def main() -> int:
     parser.add_argument("--calls", type=int, default=13)
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--traces", nargs="*", default=[])
+    parser.add_argument("--resource-request-fd", type=int)
+    parser.add_argument("--resource-ack-fd", type=int)
     args = parser.parse_args()
     if not 1 <= args.calls <= 100 or set(args.traces) - {trace.name for trace in TRACES}:
         parser.error("invalid bounded trace selection")
+    if (args.resource_request_fd is None) != (args.resource_ack_fd is None):
+        parser.error("resource control requires both inherited descriptors")
+    if args.resource_request_fd is not None and (args.traces or args.diagnostic or args.calls != RESOURCE_CALLS):
+        parser.error("resource mode requires the complete fixed uninstrumented trace set")
     journal_fd = os.open(args.output.with_suffix(".journal.jsonl"), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     retained = 0
 
@@ -245,7 +275,14 @@ def main() -> int:
 
     try:
         result = run(
-            args.source.resolve(), calls=args.calls, diagnostic=args.diagnostic, selected=args.traces, journal=journal
+            args.source.resolve(),
+            calls=args.calls,
+            diagnostic=args.diagnostic,
+            selected=args.traces,
+            journal=journal,
+            resource_handshake=WorkerResourceHandshake(args.resource_request_fd, args.resource_ack_fd)
+            if args.resource_request_fd is not None
+            else None,
         )
     except Exception as error:
         result = {

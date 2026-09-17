@@ -41,45 +41,57 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  paired-artifacts:
+  plan:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.action != 'labeled' ||
       github.event.label.name == 'rust-performance-qualification'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            platform_tag: manylinux_2_17_x86_64
-            deployment_target: ''
-          - runner: macos-15-intel
-            target: x86_64-apple-darwin
-            platform_tag: macosx_13_0_x86_64
-            deployment_target: '13.0'
-          - runner: macos-15
-            target: aarch64-apple-darwin
-            platform_tag: macosx_11_0_arm64
-            deployment_target: '11.0'
-          - runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            platform_tag: win_amd64
-            deployment_target: ''
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 360
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.plan.outputs.sha }}
+      mode: ${{ steps.plan.outputs.mode }}
+      runs: ${{ steps.plan.outputs.runs }}
+      platforms: ${{ steps.plan.outputs.platforms }}
+      pairs: ${{ steps.plan.outputs.pairs }}
     steps:
-      - name: Check out candidate source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           path: candidate-src
           ref: ${{ github.event_name == 'schedule' && 'release/3.2' || github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Check out audited production baseline
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - id: plan
+        env:
+          QUALIFICATION_MODE: >-
+            ${{ github.event_name == 'pull_request' &&
+                (github.event.pull_request.head.repo.full_name == github.repository &&
+                 contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification') &&
+                 'qualification' || 'smoke') || inputs.mode || 'qualification' }}
+        shell: bash
+        run: |
+          candidate_sha="$(git -C candidate-src rev-parse --verify HEAD)"
+          python candidate-src/scripts/native_slo_pair_plan.py --mode "$QUALIFICATION_MODE" \
+            --candidate-sha "$candidate_sha" --output "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
           path: baseline-src
+          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -97,73 +109,217 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends musl-tools
-      - name: Build isolated wheels and run paired sampling
+      - name: Build both immutable wheels once per platform
+        timeout-minutes: 75
+        shell: bash
         env:
-          QUALIFICATION_MODE: >-
-            ${{ github.event_name == 'pull_request' &&
-                (github.event.pull_request.head.repo.full_name == github.repository &&
-                 contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification') &&
-                 'qualification' || 'smoke') || inputs.mode || 'qualification' }}
           QUALIFICATION_TARGET: ${{ matrix.target }}
           QUALIFICATION_PLATFORM: ${{ matrix.platform_tag }}
           QUALIFICATION_DEPLOYMENT: ${{ matrix.deployment_target }}
+        run: |
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/build_native_qualification_artifacts.py \
+            --baseline baseline-src --candidate candidate-src --build-only \
+            --target "$QUALIFICATION_TARGET" --platform-tag "$QUALIFICATION_PLATFORM" \
+            --deployment-target "$QUALIFICATION_DEPLOYMENT" --output-dir qualification-build
+      - name: Retain compiler and interpreter build provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: build-provenance-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qualification-build/build-metadata.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain immutable wheel and locked dependency bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qualification-build/bundle/
+          if-no-files-found: error
+          retention-days: 30
+
+  pairs:
+    needs: [plan, build]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.pairs) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 200
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        timeout-minutes: 5
+        with:
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        timeout-minutes: 5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        timeout-minutes: 5
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        timeout-minutes: 5
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - name: Verify and install both exact artifacts outside the checkout
+        timeout-minutes: 20
         shell: bash
         run: |
-          python candidate-src/scripts/ci/native_loopback_resolver.py \
-            --output qualification-evidence/aggregate/runner-resolver.json -- \
-            python candidate-src/scripts/build_native_qualification_artifacts.py \
-            --baseline baseline-src --candidate candidate-src \
-            --target "$QUALIFICATION_TARGET" --platform-tag "$QUALIFICATION_PLATFORM" \
-            --deployment-target "$QUALIFICATION_DEPLOYMENT" \
-            --mode "$QUALIFICATION_MODE" --output-dir qualification-evidence
-      - name: Encrypt private qualification observations
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action install \
+            --bundle wheel-bundle --environments "$RUNNER_TEMP/pair-environments" \
+            --target '${{ matrix.target }}' --candidate-sha '${{ needs.plan.outputs.sha }}'
+      - name: Collect one indexed baseline and candidate pair
+        timeout-minutes: 125
+        shell: bash
+        run: |
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action pair \
+            --bundle wheel-bundle --environments "$RUNNER_TEMP/pair-environments" \
+            --target '${{ matrix.target }}' --candidate-sha '${{ needs.plan.outputs.sha }}' \
+            --mode '${{ needs.plan.outputs.mode }}' --pair-index '${{ matrix.pair_index }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --output qualification-evidence
+      - name: Encrypt every completed or interrupted pair
         if: always()
         id: private-evidence
+        timeout-minutes: 15
         shell: bash
         env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-archive-environment
           QUALIFICATION_RECIPIENT: d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
-          QUALIFICATION_TARGET: ${{ matrix.target }}
         run: |
           receipt="$GITHUB_WORKSPACE/qualification-evidence/archive-receipt.json"
-          source_sha="$(git -C candidate-src rev-parse --verify HEAD)"
-          if ! (uv sync --frozen --no-dev --no-install-project --project candidate-src && \
-            uv run --frozen --no-sync --project candidate-src \
-            python candidate-src/scripts/native_slo_evidence_archive.py encrypt \
-            --source "$GITHUB_WORKSPACE/qualification-evidence/private_samples" \
-            --output "$GITHUB_WORKSPACE/qualification-evidence/encrypted/observations.hge" \
-            --public-key "$GITHUB_WORKSPACE/candidate-src/docs/guard/rust-performance/qualification-recipient.pem" \
-            --recipient-id "$QUALIFICATION_RECIPIENT" --receipt "$receipt" \
-            --source-sha "$source_sha" --target "$QUALIFICATION_TARGET" \
-            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"); then
+          if ! (uv sync --frozen --no-dev --project candidate-src && \
+            uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_archive.py \
+            --bundle wheel-bundle --pair-root qualification-evidence \
+            --candidate-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --pair-index '${{ matrix.pair_index }}' --runs '${{ needs.plan.outputs.runs }}' \
+            --mode '${{ needs.plan.outputs.mode }}' \
+            --public-key candidate-src/docs/guard/rust-performance/qualification-recipient.pem \
+            --recipient-id "$QUALIFICATION_RECIPIENT"); then
             if [ ! -e "$receipt" ]; then
-              python -I -S candidate-src/scripts/native_slo_evidence_archive.py \
-                failure-receipt --receipt "$receipt" || true
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py failure-receipt --receipt "$receipt" || true
             fi
             exit 1
           fi
-      - name: Retain aggregate evidence
+      - name: Retain public pair evidence and encrypted observations
         if: always()
+        timeout-minutes: 10
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: native-performance-${{ matrix.target }}
+          name: pair-${{ matrix.target }}-${{ matrix.pair_index }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             qualification-evidence/aggregate/*.json
-            qualification-evidence/build-metadata.json
-          if-no-files-found: warn
+            qualification-evidence/archive-receipt.json
+            qualification-evidence/encrypted/*.hge
+          if-no-files-found: error
           retention-days: 30
-      - name: Retain encrypted private observations
+
+  candidate-scenarios:
+    needs: [plan, build]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/qualification-controller-environment
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - name: Install verified bundle for independent installed lifecycle checks
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action install \
+            --bundle wheel-bundle --environments "$RUNNER_TEMP/scenario-environments" \
+            --target '${{ matrix.target }}' --candidate-sha '${{ needs.plan.outputs.sha }}'
+      - name: Installed Ollama and Builder controls
+        timeout-minutes: 25
+        shell: bash
+        run: |
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_install.py --action ollama \
+            --bundle wheel-bundle --environments "$RUNNER_TEMP/scenario-environments" \
+            --target '${{ matrix.target }}' --candidate-sha '${{ needs.plan.outputs.sha }}' --output scenario-evidence
+      - name: Retain installed lifecycle evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: native-performance-encrypted-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: qualification-evidence/encrypted/*.hge
-          if-no-files-found: warn
+          name: installed-scenarios-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: scenario-evidence/aggregate/*.json
+          if-no-files-found: error
           retention-days: 30
-      - name: Retain public archive receipt
+
+  aggregate:
+    needs: [plan, build, pairs]
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.platforms) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wheel-bundle
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        if: always()
+        with:
+          pattern: pair-${{ matrix.target }}-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: retained-pairs
+          merge-multiple: false
+      - name: Require all global pairs and unchanged acceptance gates
+        if: always()
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          uv sync --frozen --no-dev --project candidate-src
+          uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_pair_aggregate.py \
+            --pairs retained-pairs --bundle wheel-bundle --output aggregate/qualification.json \
+            --candidate-sha '${{ needs.plan.outputs.sha }}' --target '${{ matrix.target }}' \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --mode '${{ needs.plan.outputs.mode }}'
+      - name: Retain complete or failed aggregation
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: native-performance-archive-receipt-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: qualification-evidence/archive-receipt.json
-          if-no-files-found: warn
+          name: native-performance-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: aggregate/*.json
+          if-no-files-found: error
           retention-days: 30

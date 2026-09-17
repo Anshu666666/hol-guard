@@ -140,7 +140,13 @@ def open_archive(encoded: bytes, private_pem: bytes) -> tuple[list[tuple[str, by
 
 
 def encrypt_samples(
-    *, source: Path, output: Path, public_key: Path, recipient_id: str, context: dict[str, object]
+    *,
+    source: Path,
+    output: Path,
+    public_key: Path,
+    recipient_id: str,
+    context: dict[str, object],
+    numeric_commitments: dict[str, dict[str, object]] | None = None,
 ) -> dict[str, object]:
     source = _plain_path(source)
     try:
@@ -150,9 +156,25 @@ def encrypt_samples(
     files = read_samples(source)
     if not files:
         return {"schema": _RECEIPT_SCHEMA, "status": "no_observations", "archive_created": False, "files": 0}
+    if numeric_commitments is not None:
+        require("pair_index" in context and len(numeric_commitments) <= 2)
+        # Check the exact snapshot being sealed, so a later path replacement
+        # cannot turn a retained numeric commitment into unrelated ciphertext.
+        inventory = dict(files)
+        verified = all(
+            name in inventory
+            and len(inventory[name]) == commitment["bytes"]
+            and digest(inventory[name]) == commitment["sha256"]
+            for name, commitment in numeric_commitments.items()
+        )
+        context = {
+            **context,
+            "numeric_commitments_sha256": digest(canonical(numeric_commitments)),
+            "numeric_commitments_verified": verified,
+        }
     encoded = seal(files, read_file(public_key, MAX_KEY_BYTES), recipient_id, context=context)
     atomic_exclusive(output, encoded)
-    return {
+    receipt: dict[str, object] = {
         "schema": _RECEIPT_SCHEMA,
         "status": "encrypted",
         "archive_created": True,
@@ -161,6 +183,24 @@ def encrypt_samples(
         "archive_sha256": digest(encoded),
         "recipient_key_id": recipient_id,
     }
+    if "pair_index" in context:
+        receipt["pair_binding"] = {
+            "build_sha": context["source_sha"],
+            **{
+                key: context[key]
+                for key in (
+                    "target",
+                    "run_id",
+                    "run_attempt",
+                    "pair_index",
+                    "pair_manifest_sha256",
+                    "bundle_sha256",
+                    "numeric_commitments_sha256",
+                    "numeric_commitments_verified",
+                )
+            },
+        }
+    return receipt
 
 
 def decrypt_samples(*, archive: Path, private_key: Path, output: Path) -> dict[str, object]:

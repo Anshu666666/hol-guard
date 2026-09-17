@@ -191,9 +191,7 @@ def test_wait_until_health_ready_retries_until_ready(monkeypatch: pytest.MonkeyP
     stress_runtime.wait_until_health_ready("http://127.0.0.1:1")
 
 
-def test_wait_until_daemon_lifecycle_ready_retries_until_ready(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_wait_until_daemon_lifecycle_ready_retries_until_ready(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     states = iter((False, True))
 
     monkeypatch.setattr(stress_script, "_daemon_lifecycle_is_ready", lambda _home: next(states))
@@ -324,6 +322,7 @@ def test_soak_gate_requires_request_count_resources_and_rss_bound() -> None:
     assert not replace(result, rss_growth=0.51).soak_passed
     assert not replace(result, requests=99_999).soak_passed
     assert not replace(result, receipts=249_999).soak_passed
+    assert not replace(result, max_file_descriptors=0).soak_passed
     isolated_probe_timeouts = replace(result, health_checks=18_932, transient_health_failures=30)
     assert isolated_probe_timeouts.passed
     assert isolated_probe_timeouts.soak_passed

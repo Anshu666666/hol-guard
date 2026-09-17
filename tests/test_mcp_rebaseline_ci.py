@@ -50,7 +50,7 @@ def test_publication_requires_complete_exact_candidate_and_bounded_aggregate(tmp
     if case not in {"valid", "step_failed"}:
         assert observed["measurements"] is None
         assert observed["expected_worker_attempts"] == 30
-        assert observed["expected_tool_call_attempts"] == 2730
+        assert observed["expected_tool_call_attempts"] == 10080
 
 
 def test_archive_reuses_existing_public_recipient_and_retains_partial_attempt(tmp_path):
@@ -87,6 +87,7 @@ def test_actual_worker_retains_request_journal_and_real_default_oracle(tmp_path)
             "--traces",
             "catalog10",
             "inline_approval10ms",
+            "loopback_tcp10ms",
         ],
         capture_output=True,
         timeout=30,
@@ -95,15 +96,47 @@ def test_actual_worker_retains_request_journal_and_real_default_oracle(tmp_path)
     assert process.returncode == 0, process.stderr.decode()
     observed = json.loads(output.read_text())
     assert observed["status"] == "passed"
-    assert observed["phase_counts"]["quiet_frame_wait"] == 4
+    assert observed["phase_counts"]["quiet_frame_wait"] == 6
     journal = output.with_suffix(".journal.jsonl")
     assert journal.stat().st_mode & 0o777 == 0o600
     rows = [json.loads(line) for line in journal.read_text().splitlines()]
     requests = [row for row in rows if row["kind"] == "request"]
-    assert len(requests) == 8
+    assert len(requests) == 12
     calls = [row for row in requests if row["method"] == "tools/call"]
-    assert [row["policy_action"] for row in calls] == ["warn", "warn", "allow", "allow"]
+    assert [row["policy_action"] for row in calls] == ["warn", "warn", "allow", "allow", "warn", "warn"]
     assert all(row["wire_bytes"] > 0 and row["request_sha256"] for row in calls)
+    assert all(row["network_service_wall_ns"] >= 10_000_000 for row in calls[-2:])
+
+
+def test_actual_finalizer_needs_only_isolated_standard_library(tmp_path):
+    private = tmp_path / "private"
+    private.mkdir(mode=0o700)
+    write_private(private / "aggregate.json", _report())
+    output = tmp_path / "public.json"
+    observed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-S",
+            str(ROOT / "scripts/mcp_rebaseline_ci.py"),
+            "--private",
+            str(private),
+            "--public",
+            str(output),
+            "--candidate",
+            CANDIDATE,
+            "--matrix-outcome",
+            "success",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    assert observed.returncode == 0, observed.stderr
+    report = json.loads(output.read_text())
+    assert report["status"] == "passed" and report["schema"] == "hol-guard.mcp-rebaseline.v2"
+    assert len(report["run_trace_summaries"]) == 240 and len(report["paired_comparisons"]) == 8
 
 
 def test_workflow_pins_sources_and_preserves_private_evidence_after_failed_matrix():

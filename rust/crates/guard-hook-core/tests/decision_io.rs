@@ -3,7 +3,16 @@ use guard_hook_core::review_post_tool;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+fn fixture_root(name: &str) -> PathBuf {
+    // macOS temporary roots may contain /var -> /private/var. Resolve the
+    // platform-owned root before adding fixtures; source symlinks stay visible.
+    let temporary_root = fs::canonicalize(std::env::temp_dir()).unwrap();
+    let root = temporary_root.join(format!("guard-hook-core-{name}-{}", std::process::id()));
+    fs::create_dir_all(&root).unwrap();
+    root
+}
 
 fn request(payload: Value) -> NativeHookRequestV1 {
     NativeHookRequestV1 {
@@ -44,11 +53,7 @@ fn source_request(cwd: &Path, output_sha256: String, output_chars: i64) -> Nativ
 
 #[test]
 fn source_replacement_between_observations_is_not_equivalent() {
-    let root = std::env::temp_dir().join(format!(
-        "guard-hook-core-replacement-{}",
-        std::process::id()
-    ));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("replacement");
     let path = root.join("source.rs");
     let original = b"fn original() {}\n";
     fs::write(&path, original).unwrap();
@@ -63,8 +68,7 @@ fn source_replacement_between_observations_is_not_equivalent() {
 
 #[test]
 fn source_growth_after_expected_output_is_not_equivalent() {
-    let root = std::env::temp_dir().join(format!("guard-hook-core-growth-{}", std::process::id()));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("growth");
     let path = root.join("source.rs");
     let original = b"safe";
     fs::write(&path, b"safe growth").unwrap();
@@ -78,9 +82,7 @@ fn source_growth_after_expected_output_is_not_equivalent() {
 
 #[test]
 fn invalid_utf8_source_is_fail_closed_without_materializing_bytes() {
-    let root =
-        std::env::temp_dir().join(format!("guard-hook-core-encoding-{}", std::process::id()));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("encoding");
     let path = root.join("source.rs");
     fs::write(&path, [0xf0_u8, 0x28, 0x8c, 0x28]).unwrap();
 
@@ -96,11 +98,7 @@ fn invalid_utf8_source_is_fail_closed_without_materializing_bytes() {
 #[cfg(any(unix, windows))]
 #[test]
 fn classified_source_is_read_scanned_and_bound_to_exact_digest() {
-    let root = std::env::temp_dir().join(format!(
-        "guard-hook-core-valid-source-{}",
-        std::process::id()
-    ));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("valid-source");
     let path = root.join("source.rs");
     let original = b"fn main() {}\n";
     fs::write(&path, original).unwrap();
@@ -127,11 +125,7 @@ fn classified_source_is_read_scanned_and_bound_to_exact_digest() {
 #[cfg(any(unix, windows))]
 #[test]
 fn source_secret_is_denied_after_successful_secure_read() {
-    let root = std::env::temp_dir().join(format!(
-        "guard-hook-core-secret-source-{}",
-        std::process::id()
-    ));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("secret-source");
     let path = root.join("source.rs");
     let bytes = format!("const TOKEN: &str = \"ghp_{}\";\n", "A".repeat(36));
     fs::write(&path, &bytes).unwrap();
@@ -154,14 +148,41 @@ fn source_secret_is_denied_after_successful_secure_read() {
 #[cfg(unix)]
 #[test]
 fn symlink_source_is_fail_closed() {
-    let root = std::env::temp_dir().join(format!("guard-hook-core-symlink-{}", std::process::id()));
-    fs::create_dir_all(&root).unwrap();
+    let root = fixture_root("symlink");
     let target = root.join("target.rs");
     let source = root.join("source.rs");
     fs::write(&target, b"safe").unwrap();
     std::os::unix::fs::symlink(&target, &source).unwrap();
+    assert!(matches!(
+        guard_secure_fs::read_bounded(&source, 4),
+        Err(guard_secure_fs::SecureReadError::SymlinkInPath)
+    ));
 
     let response = review_post_tool(&source_request(&root, digest(b"safe"), 4));
+
+    assert_eq!(response.decision, "deny");
+    assert_eq!(response.reason_code, "no_output_to_review");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_source_ancestor_is_fail_closed() {
+    let root = fixture_root("symlink-ancestor");
+    let directory = root.join("real");
+    fs::create_dir(&directory).unwrap();
+    fs::write(directory.join("source.rs"), b"safe").unwrap();
+    let alias = root.join("alias");
+    std::os::unix::fs::symlink(&directory, &alias).unwrap();
+    assert!(matches!(
+        guard_secure_fs::read_bounded(&alias.join("source.rs"), 4),
+        Err(guard_secure_fs::SecureReadError::SymlinkInPath)
+    ));
+
+    let mut request = source_request(&root, digest(b"safe"), 4);
+    request.payload["tool_input"]["file_path"] = json!("alias/source.rs");
+    request.payload["guard_source_ref"]["path"] = json!("alias/source.rs");
+    let response = review_post_tool(&request);
 
     assert_eq!(response.decision, "deny");
     assert_eq!(response.reason_code, "no_output_to_review");

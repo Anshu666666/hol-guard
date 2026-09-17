@@ -18,6 +18,17 @@ on:
       - "uv.lock"
       - "tests/conftest.py"
       - "tests/native_*support.py"
+      - "scripts/native_slo_resources.py"
+      - "scripts/native_slo_windows_job_resources.py"
+      - "scripts/native_slo_daemon_fixture.py"
+      - "scripts/native_slo_qualification_run.py"
+      - "scripts/native_slo_load_profiles.py"
+      - "scripts/native_slo_mixed.py"
+      - "tests/test_native_slo_resources.py"
+      - "tests/test_native_slo_resource_accounting.py"
+      - "tests/test_native_slo_windows_job_resources.py"
+      - "tests/test_native_slo_daemon_fixture.py"
+      - "tests/test_native_policy_windows_definition_cache*.py"
   push:
     branches: [main, release/3.2]
     paths:
@@ -36,6 +47,17 @@ on:
       - "uv.lock"
       - "tests/conftest.py"
       - "tests/native_*support.py"
+      - "scripts/native_slo_resources.py"
+      - "scripts/native_slo_windows_job_resources.py"
+      - "scripts/native_slo_daemon_fixture.py"
+      - "scripts/native_slo_qualification_run.py"
+      - "scripts/native_slo_load_profiles.py"
+      - "scripts/native_slo_mixed.py"
+      - "tests/test_native_slo_resources.py"
+      - "tests/test_native_slo_resource_accounting.py"
+      - "tests/test_native_slo_windows_job_resources.py"
+      - "tests/test_native_slo_daemon_fixture.py"
+      - "tests/test_native_policy_windows_definition_cache*.py"
   workflow_dispatch:
 
 permissions:
@@ -61,6 +83,15 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify cached Windows definitions preserve fresh authority reads
+        run: >-
+          uv run --no-sync pytest tests/test_native_policy_windows_definition_cache.py
+          tests/test_native_policy_windows_definition_cache_live.py --tb=short
+      - name: Verify explicit fixture Job Object CPU accounting
+        run: >-
+          uv run --no-sync pytest tests/test_native_slo_windows_job_resources.py
+          tests/test_native_slo_resources.py tests/test_native_slo_resource_accounting.py
+          tests/test_native_slo_daemon_fixture.py --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |

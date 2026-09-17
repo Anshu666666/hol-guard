@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import stat
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -16,6 +17,14 @@ from .native_policy_snapshot_constants import (
     NATIVE_RUNTIME_STATE_DIRECTORY,
     NativePolicySnapshotError,
 )
+
+# Only process-local FFI definitions are retained. Handles, descriptors, SIDs,
+# ACL results and filesystem/authority observations are never cached here.
+_WINDOWS_DEFINITION_LOCK = threading.RLock()
+_cached_windows_dll_context: tuple[int, Any] | None = None
+_WINDOWS_DLLS: dict[str, Any] = {}
+_cached_windows_file_information_type: Any = None
+_cached_windows_security_attributes_type: Any = None
 
 
 def _windows_write_chunks_and_flush(kernel32: Any, handle: Any, payload: bytes) -> None:
@@ -118,7 +127,22 @@ def _windows_dll(name: str) -> Any:
     if not callable(win_dll):
         raise NativePolicySnapshotError("native_policy_windows_acl_unavailable")
     try:
-        return win_dll(name, use_last_error=True)
+        # Keep the old loader behavior for any future non-fixed caller rather
+        # than growing a cache with caller-selected library names.
+        if name not in {"kernel32", "advapi32"}:
+            return win_dll(name, use_last_error=True)
+        global _cached_windows_dll_context
+        with _WINDOWS_DEFINITION_LOCK:
+            process_id = os.getpid()
+            context = _cached_windows_dll_context
+            if context is None or context[0] != process_id or context[1] is not win_dll:
+                _WINDOWS_DLLS.clear()
+                _cached_windows_dll_context = (process_id, win_dll)
+            library = _WINDOWS_DLLS.get(name)
+            if library is None:
+                library = win_dll(name, use_last_error=True)
+                _WINDOWS_DLLS[name] = library
+            return library
     except (OSError, RuntimeError, TypeError, ValueError) as error:
         raise NativePolicySnapshotError("native_policy_windows_acl_unavailable") from error
 
@@ -191,6 +215,16 @@ def _windows_private_descriptor(directory: bool) -> Iterator[tuple[Any, Any, Any
 
 
 def _windows_file_information_type() -> Any:
+    # A shared DLL function must always receive the same pointer class. Merely
+    # caching WinDLL while recreating this class races argtypes across threads.
+    global _cached_windows_file_information_type
+    with _WINDOWS_DEFINITION_LOCK:
+        if _cached_windows_file_information_type is None:
+            _cached_windows_file_information_type = _build_windows_file_information_type()
+        return _cached_windows_file_information_type
+
+
+def _build_windows_file_information_type() -> Any:
     import ctypes
     from ctypes import wintypes
 
@@ -212,6 +246,14 @@ def _windows_file_information_type() -> Any:
 
 
 def _windows_security_attributes_type() -> Any:
+    global _cached_windows_security_attributes_type
+    with _WINDOWS_DEFINITION_LOCK:
+        if _cached_windows_security_attributes_type is None:
+            _cached_windows_security_attributes_type = _build_windows_security_attributes_type()
+        return _cached_windows_security_attributes_type
+
+
+def _build_windows_security_attributes_type() -> Any:
     import ctypes
     from ctypes import wintypes
 

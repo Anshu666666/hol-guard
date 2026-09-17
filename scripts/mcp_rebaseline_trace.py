@@ -7,6 +7,15 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from scripts.mcp_rebaseline_network import NETWORK_CHILD, NETWORK_TRACE, validate_network
+
+PLAIN_CALLS = 13
+RESOURCE_CALLS = 100
+
+
+def calls_for_mode(mode: str, calls: int = PLAIN_CALLS) -> int:
+    return RESOURCE_CALLS if mode == "resources" else calls
+
 
 @dataclass(frozen=True)
 class Trace:
@@ -26,6 +35,7 @@ TRACES = (
     Trace("catalog_refresh", 100, refresh=True),
     Trace("child_delay10ms", 100, child_delay_ms=10),
     Trace("inline_approval10ms", 10, approval_delay_ms=10),
+    Trace(NETWORK_TRACE, 100),
 )
 
 
@@ -113,14 +123,19 @@ def validate_tool_response(message: dict[str, Any], response: object, event: obj
         "child_wall_ns": proof["child_wall_ns"],
         "child_cpu_ns": proof["child_cpu_ns"],
         "wire_bytes": proof["wire_bytes"],
+        **validate_network(proof, expected=trace.name == NETWORK_TRACE),
     }
 
 
-# The child performs no filesystem operation, outbound request, or policy work.
-# Its timing describes fixture service, not transport or real remote latency.
-CHILD = r"""
+# Ordinary traces perform no service I/O. The additional trace performs an
+# actual bounded TCP request to its own fixed loopback-only service.
+CHILD = (
+    r"""
 import hashlib, json, sys, time
-catalog_size, delay_ms, dangerous = map(int, sys.argv[1:])
+catalog_size, delay_ms, dangerous, network_enabled = map(int, sys.argv[1:])
+"""
+    + NETWORK_CHILD
+    + r"""
 generation = 0
 for line in sys.stdin:
     message = json.loads(line)
@@ -138,12 +153,22 @@ for line in sys.stdin:
             time.sleep(delay_ms / 1000)
         identity = hashlib.sha256(json.dumps(message, sort_keys=True, separators=(',', ':'),
                                              ensure_ascii=True, allow_nan=False).encode()).hexdigest()
+        network = network_call(identity) if network_enabled else None
         result = {'content': [{'type': 'text', 'text': 'ok'}], '_fixture': {
             'request_sha256': identity, 'wire_bytes': len(line.encode('utf-8')),
             'child_wall_ns': time.perf_counter_ns() - started,
             'child_cpu_ns': time.process_time_ns() - cpu}}
+        if network is not None:
+            result['_fixture']['network'] = network
     else:
         result = {'protocolVersion': '2025-06-18', 'capabilities': {'tools': {}},
                   'serverInfo': {'name': 'synthetic', 'version': '1'}}
     print(json.dumps({'jsonrpc': '2.0', 'id': message.get('id'), 'result': result}), flush=True)
+if network_enabled:
+    network_stop.set()
+    network_thread.join(timeout=1)
+    network_listener.close()
+    if network_thread.is_alive() or network_errors:
+        raise ValueError('loopback fixture service cleanup incomplete')
 """
+)

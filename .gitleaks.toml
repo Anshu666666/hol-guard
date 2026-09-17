@@ -1,0 +1,29 @@
+title = "HOL Guard secret scanning"
+
+[extend]
+useDefault = true
+
+# Gitleaks 8.24.2 Config.extend copies global regex/path/commit allowances but
+# omits global stopwords. Restore only the two exact embedded defaults so this
+# extension preserves the scanner policy used before a project config existed.
+# https://github.com/gitleaks/gitleaks/blob/v8.24.2/config/config.go
+# https://github.com/gitleaks/gitleaks/blob/v8.24.2/config/gitleaks.toml
+[allowlist]
+stopwords = [
+    "abcdefghijklmnopqrstuvwxyz",
+    "014df517-39d1-4453-b7b3-9930c563627c",
+]
+
+# Public SHA-256 emitted by generate_claude_launcher_fixtures.py from the
+# codex_daemon_hook_auth.py source bytes. It is neither an authentication token
+# nor the fixture signing key. Keep this exact value for historical scans;
+# regenerated source hashes require separate review, never a wildcard.
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Exact public source digest in the generated Claude launcher fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^contracts/launchers/claude-native-launcher\.v1\.fixtures\.json$''']
+regexes = ['''^97efff612c70b1e02f3bd1bf21b600c1095daee5a35cf57114802b693f50ed6b$''']

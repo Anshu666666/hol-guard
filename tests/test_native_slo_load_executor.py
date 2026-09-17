@@ -12,6 +12,17 @@ from scripts import native_slo_capacity as capacity
 from scripts.native_slo_session import AdapterSession
 
 
+@pytest.mark.parametrize("unavailable", [0, -1, None, True])
+def test_capacity_peak_does_not_hide_unavailable_sample_behind_valid_baseline(monkeypatch, unavailable):
+    session = SimpleNamespace(daemon=SimpleNamespace(_server=SimpleNamespace(hook_process_runner=None)))
+    session.daemon._server.hook_process_runner = SimpleNamespace(stats=lambda: {})
+    monkeypatch.setattr(capacity, "_prime_load_executor", lambda *_args: None)
+    monkeypatch.setattr(capacity, "_steady_state_rss_baseline", lambda *_args, **_kwargs: 100)
+    monkeypatch.setattr(capacity, "process_rss_bytes", lambda: unavailable)
+    with pytest.raises(RuntimeError, match="RSS peak sample was unavailable"):
+        capacity._measure_rss_and_c64(session, (), 1, include_capacity=False)
+
+
 def test_load_executor_is_fully_started_before_rss_baseline() -> None:
     with ThreadPoolExecutor(max_workers=4) as executor:
         assert capacity._prime_load_executor(executor, 4) == 4

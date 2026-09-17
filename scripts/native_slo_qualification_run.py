@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import os
@@ -17,18 +16,19 @@ from codex_plugin_scanner.guard.daemon.hook_process_capacity import effective_cp
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status
 from scripts.bench_guard_native_installed_slo import _run_cold, _run_recovery
 from scripts.bench_guard_native_installed_slo_runtime import _clear_proof_overrides, _runtime_summary
-from scripts.native_benchmark_oracle import synthetic_payload
-from scripts.native_slo_adapter import payload as workload_payload
 from scripts.native_slo_adapter import route_matrix
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_corpus_run import run_contract_corpus
 from scripts.native_slo_daemon_fixture import DaemonFixture
+from scripts.native_slo_evidence_files import atomic_exclusive
 from scripts.native_slo_launcher_corpus import run_registered_contract_corpus
 from scripts.native_slo_load_profiles import measure_load_profiles
-from scripts.native_slo_priority_launchers import LauncherSession, launcher_payload, measure_priority_launchers
+from scripts.native_slo_numeric_journal import NumericJournal
+from scripts.native_slo_priority_launchers import LauncherSession, measure_priority_launchers
 from scripts.native_slo_qualification import confidence_summary
 from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
 from scripts.native_slo_resources import ResourceSampler
+from scripts.native_slo_workload_identity import common_workload_digest, semantic_scope_digest
 
 _PLATFORMS = ("linux-x64", "macos-x64", "macos-arm64", "windows-x64")
 _REQUIRED_CASES = (
@@ -143,6 +143,13 @@ def _native_sample_values(measured: Mapping[str, object], expected: int) -> list
 
 def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str = "candidate") -> dict[str, object]:
     """Measure one block using this interpreter's installed default native wheel."""
+    with NumericJournal(raw_file.with_name(raw_file.stem + "-numeric.jsonl")) as journal:
+        return _run_block(plan=plan, raw_file=raw_file, receipt_profile=receipt_profile, journal=journal)
+
+
+def _run_block(
+    *, plan: Mapping[str, int], raw_file: Path, receipt_profile: str, journal: NumericJournal
+) -> dict[str, object]:
     _clear_proof_overrides()
     status = native_runtime_status()
     if status.identity is None:
@@ -160,22 +167,27 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
     raw: dict[str, list[float]] = {}
     with DaemonFixture(runtime, policy="normal") as session:
         startup_ms = session.startup_ms
+        journal.record("DAEMON_PROCESS.startup", [startup_ms])
+        journal.record("NATIVE_CLIENT.policy_readiness", [session.readiness_ms])
         for harness, event in routes:
             observation = session.observe(harness, event, "1k")
             if not observation.allowed or observation.route != "native_resident":
                 raise RuntimeError("qualification warmup changed semantic route")
         attempts = 0
-        with ResourceSampler(pid=session.pid) as resources:
+        with ResourceSampler(pid=session.pid, cpu_reader=session.cpu_accounting_reader()) as resources:
             for harness, event in routes:
                 count = plan["priority_per_run"] if harness in {"claude-code", "codex"} else plan["other_per_run"]
                 values: list[float] = []
-                for _ in range(count):
-                    observation = session.observe(harness, event, "1k")
-                    attempts += 1
-                    if not observation.allowed or observation.route != "native_resident":
-                        raise RuntimeError("qualification warm sample changed semantic route")
-                    values.append(observation.latency_ms)
-                raw[f"DAEMON_INGRESS.{harness}.{event}"] = values
+                name = f"DAEMON_INGRESS.{harness}.{event}"
+                with journal.batch(name, count) as batch:
+                    for _ in range(count):
+                        observation = session.observe(harness, event, "1k")
+                        attempts += 1
+                        batch.record([observation.latency_ms])
+                        if not observation.allowed or observation.route != "native_resident":
+                            raise RuntimeError("qualification warm sample changed semantic route")
+                        values.append(observation.latency_ms)
+                raw[name] = values
             # Ensure a small smoke run still records its requested resource count.
             resource_deadline = time.monotonic() + 10.0
             while resources.samples < plan["resource_samples_per_run"] and time.monotonic() < resource_deadline:
@@ -185,15 +197,22 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
         direct_samples: list[float] = []
         while len(direct_samples) < plan["priority_per_run"]:
             count = min(100, plan["priority_per_run"] - len(direct_samples))
-            measured = session.control("native_samples", count=count)
-            direct_samples.extend(_native_sample_values(measured, count))
+            with journal.batch("NATIVE_CLIENT.claude-code.PostToolUse", count) as batch:
+                measured = session.control("native_samples", count=count)
+                numbers = _native_sample_values(measured, count)
+                batch.record(numbers)
+                direct_samples.extend(numbers)
         raw["NATIVE_CLIENT.claude-code.PostToolUse"] = direct_samples
-        launcher, launcher_series = measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
+        launcher, launcher_series = measure_priority_launchers(
+            cast(LauncherSession, cast(object, session)), plan, journal=journal
+        )
         raw.update(launcher_series)
         concurrent, offered, capacity_resources = measure_load_profiles(session, routes)
         native_readiness_ms = session.readiness_ms
     with DaemonFixture(runtime, policy="normal") as cold_session:
-        cold = _run_cold(runtime, cold_session, plan["cold_per_run"])
+        journal.record("DAEMON_PROCESS.startup", [cold_session.startup_ms])
+        journal.record("NATIVE_CLIENT.policy_readiness", [cold_session.readiness_ms])
+        cold = _run_cold(runtime, cold_session, plan["cold_per_run"], journal=journal)
     recovery: list[float] = []
     readiness = [native_readiness_ms, cold_session.readiness_ms]
     startups = [startup_ms, cold_session.startup_ms]
@@ -201,16 +220,17 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
     # production restart-circuit window. Never reset production circuit state.
     for _ in range(plan["recovery_per_run"]):
         with DaemonFixture(runtime, policy="normal") as recovery_session:
-            recovery.extend(_run_recovery(recovery_session, 1))
+            journal.record("DAEMON_PROCESS.startup", [recovery_session.startup_ms])
+            journal.record("NATIVE_CLIENT.policy_readiness", [recovery_session.readiness_ms])
+            recovery.extend(_run_recovery(recovery_session, 1, journal=journal))
             readiness.append(recovery_session.readiness_ms)
             startups.append(recovery_session.startup_ms)
     raw["NATIVE_CLIENT.cold_oneshot"] = cold
     raw["DAEMON_INGRESS.recovery"] = recovery
     raw["NATIVE_CLIENT.policy_readiness"] = readiness
     raw["DAEMON_PROCESS.startup"] = startups
-    raw_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    raw_file.write_text(json.dumps(raw, separators=(",", ":")) + "\n", encoding="utf-8")
-    raw_file.chmod(0o600)
+    journal.finish(raw)
+    atomic_exclusive(raw_file, (json.dumps(raw, separators=(",", ":")) + "\n").encode("utf-8"))
     additional = run_additional_scenarios(
         runtime,
         raw_file=raw_file,
@@ -219,29 +239,21 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
         phase_count=min(100, plan["priority_per_run"]),
     )
     matrix = workload_matrix(routes, contract_corpus, launcher_corpus)
-    corpus_definition = {
-        "matrix": matrix,
-        "manifest_digest": contract_corpus["manifest_digest"],
-        "oracle_digest": contract_corpus["oracle_digest"],
-        "validated_digest": contract_corpus["validated_digest"],
-        "launcher_validated_digest": launcher_corpus["validated_digest"],
-        "fixtures": [workload_payload(event, "1k") for _, event in routes],
-        "native_client": [synthetic_payload(0, case=case) for case in ("benign", "secret")],
-        "launcher": [
-            launcher_payload(event, 0, case=case)
-            for event in ("PreToolUse", "PostToolUse")
-            for case in ("benign", "block")
-        ],
-    }
-    corpus_digest = hashlib.sha256(
-        json.dumps(corpus_definition, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    workload_digest = common_workload_digest(
+        routes=routes,
+        plan=plan,
+        manifest_digest=cast(str, contract_corpus["manifest_digest"]),
+        oracle_digest=cast(str, contract_corpus["oracle_digest"]),
+    )
     return assert_privacy_safe(
         {
             "schema": "hol-guard.native-qualification-block.v1",
             "runtime": identity,
             "hardware": hardware_summary(),
-            "corpus_digest": corpus_digest,
+            # Retain the field name for consumers, with explicit new semantics.
+            "corpus_digest": workload_digest,
+            "common_workload_digest": workload_digest,
+            "semantic_scope_digest": semantic_scope_digest(matrix, contract_corpus, launcher_corpus),
             "matrix": matrix,
             "contract_corpus": contract_corpus,
             "registered_launcher_contract_corpus": launcher_corpus,

@@ -15,6 +15,15 @@ import pytest
 from scripts.ci import native_loopback_resolver as resolver
 
 
+@pytest.fixture(autouse=True)
+def isolated_scutil(monkeypatch):
+    monkeypatch.setattr(
+        resolver,
+        "scutil_diagnostics",
+        lambda **_kwargs: ({"status": "completed", "exact_zone_present": False}, {"raw": "private-scutil-name"}),
+    )
+
+
 def test_probe_timeout_never_exposes_child_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
     def timeout(arguments: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         assert arguments[1:3] == ["-I", "-c"] and kwargs["timeout"] == 5
@@ -55,6 +64,10 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
         def snapshot(self):
             return {"received": 1, "answered": 1, "rejected": 0, "errors": 0}
 
+        def self_test(self, *, deadline):
+            assert 0 < deadline - time.monotonic() <= 5
+            return {"status": "completed", "response_verified": True, "traffic": {"received": 1, "answered": 1}}
+
     def helper(operation, port, owner):
         assert port == 54321 and owner == "a" * 32
         events.append(operation)
@@ -68,7 +81,7 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
         ]
     )
 
-    def diagnostics():
+    def diagnostics(**_kwargs):
         row = next(probes)
         return {kind: dict(row) for kind in resolver._QUERIES}
 
@@ -88,6 +101,7 @@ def test_one_environment_encloses_paired_command_and_restores_it(
 
     def run(actual):
         assert actual == command
+        assert not (tmp_path / "private_samples").exists()
         events.append("both_arms")
         return 0
 
@@ -105,6 +119,9 @@ def test_one_environment_encloses_paired_command_and_restores_it(
     assert report["after_cleanup"]["status"] == "deadline_exceeded"
     assert report["configuration_cleanup"] == "completed"
     assert report["environment_scope"] == "disposable_ci_runner_both_arms"
+    assert report["private_diagnostics_retained"] is True
+    assert "private-scutil-name" not in output.read_text()
+    assert len(list((tmp_path / "private_samples").glob("resolver-*-scutil.json"))) == 3
     assert all(
         report[key] is False
         for key in ("runtime_patched", "baseline_artifact_modified", "fixture_deadline_changed", "qualification_pass")
@@ -161,7 +178,7 @@ def test_healthy_or_other_platform_execution_does_not_configure_dns(
     monkeypatch.setattr(
         resolver,
         "resolver_diagnostics",
-        lambda: {kind: {"status": "completed", "loopback_label": True} for kind in resolver._QUERIES},
+        lambda **_kwargs: {kind: {"status": "completed", "loopback_label": True} for kind in resolver._QUERIES},
     )
 
     def forbidden(*_args):
@@ -174,13 +191,32 @@ def test_healthy_or_other_platform_execution_does_not_configure_dns(
 
 
 def test_workflow_wraps_the_entire_pair_without_hosts_or_cache_mutation() -> None:
+    import argparse
+
+    from scripts.native_slo_pair_install import command
+
     workflow = Path(".github/workflows/native-performance-qualification.yml").read_text()
     assert "--repair-localhost" not in workflow
-    lines = [line.strip() for line in workflow.splitlines()]
-    start = lines.index("python candidate-src/scripts/ci/native_loopback_resolver.py \\")
-    assert lines[start + 1] == "--output qualification-evidence/aggregate/runner-resolver.json -- \\"
-    assert lines[start + 2] == "python candidate-src/scripts/build_native_qualification_artifacts.py \\"
-    assert "--baseline baseline-src --candidate candidate-src" in workflow
+    arguments = argparse.Namespace(
+        action="pair",
+        environments=Path("isolated"),
+        bundle=Path("bundle"),
+        output=Path("evidence"),
+        mode="qualification",
+        pair_index=3,
+        target="x86_64-apple-darwin",
+        candidate_sha="a" * 40,
+        run_id=1,
+        run_attempt=1,
+    )
+    invocation = command(arguments, {"arms": {arm: {"wheel": arm + ".whl"} for arm in ("baseline", "candidate")}})
+    assert "native_loopback_resolver.py" in invocation[1]
+    wrapped = invocation[invocation.index("--") + 1 :]
+    assert "qualify_guard_native.py" in wrapped[1]
+    assert "--baseline-python" in wrapped and "--candidate-python" in wrapped
+    assert wrapped[wrapped.index("--pair-index") + 1] == "3"
+    assert wrapped[wrapped.index("--runs") + 1] == "5"
+    assert "native_slo_pair_install.py --action pair" in workflow
     source = Path(resolver.__file__).read_text()
     assert all(
         token not in source
@@ -201,20 +237,19 @@ def test_workflow_retains_encryption_recipient_and_excludes_plaintext_uploads() 
         Path(".github/workflows/native-performance-qualification.yml").read_text(), Loader=yaml.BaseLoader
     )
     assert "docs/guard/rust-performance/qualification-recipient.pem" in workflow["on"]["pull_request"]["paths"]
-    steps = workflow["jobs"]["paired-artifacts"]["steps"]
-    encryption = next(step for step in steps if step.get("name") == "Encrypt private qualification observations")
+    steps = workflow["jobs"]["pairs"]["steps"]
+    encryption = next(step for step in steps if step.get("id") == "private-evidence")
     assert encryption["if"] == "always()"
     assert (
         encryption["env"]["QUALIFICATION_RECIPIENT"]
         == "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
     )
-    assert "native_slo_evidence_archive.py encrypt" in encryption["run"]
-    assert "qualification-evidence/private_samples" in encryption["run"]
+    assert "native_slo_pair_archive.py" in encryption["run"]
+    assert "--pair-root qualification-evidence" in encryption["run"]
     uploads = [step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")]
-    assert len(uploads) == 3 and all(step["if"] == "always()" for step in uploads)
+    assert len(uploads) == 1 and all(step["if"] == "always()" for step in uploads)
     assert {path for step in uploads for path in step["with"]["path"].splitlines()} == {
         "qualification-evidence/aggregate/*.json",
-        "qualification-evidence/build-metadata.json",
         "qualification-evidence/encrypted/*.hge",
         "qualification-evidence/archive-receipt.json",
     }
@@ -246,7 +281,7 @@ def test_qualification_path_filters_include_selected_python_routes_and_harness_i
     assert not any(fnmatchcase("docs/unrelated.md", pattern) for pattern in paths)
     assert workflow["permissions"] == {"contents": "read"}
     assert "head.repo.full_name == github.repository" in str(workflow)
-    assert "github.event.label.name == 'rust-performance-qualification'" in workflow["jobs"]["paired-artifacts"]["if"]
+    assert "github.event.label.name == 'rust-performance-qualification'" in workflow["jobs"]["plan"]["if"]
 
 
 @pytest.mark.parametrize("kind", ["legacy_getfqdn", "reverse_getnameinfo", "numeric_getnameinfo"])
@@ -283,10 +318,12 @@ def test_timeout_distinguishes_unstarted_child_from_resolver_call(monkeypatch, s
     assert "private" not in json.dumps(report)
 
 
-def test_three_distinct_probes_run_concurrently_and_keep_all_outcomes(monkeypatch):
-    barrier = threading.Barrier(3)
+def test_four_distinct_probes_run_concurrently_and_keep_all_outcomes(monkeypatch):
+    barrier = threading.Barrier(4)
     deadlines = []
-    statuses = dict(zip(resolver._QUERIES, ("deadline_exceeded", "failed", "completed"), strict=True))
+    statuses = dict(
+        zip(resolver._QUERIES, ("deadline_exceeded", "failed", "completed", "deadline_exceeded"), strict=True)
+    )
 
     def probe(kind, *, deadline):
         deadlines.append(deadline)

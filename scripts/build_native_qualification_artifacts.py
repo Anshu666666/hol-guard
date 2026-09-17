@@ -4,10 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.append(str(_ROOT))
+
+from scripts.native_slo_interpreter import prepare_private_interpreter  # noqa: E402
 
 
 def _run(argv: list[str], *, cwd: Path, environment: dict[str, str] | None = None) -> str:
@@ -39,6 +47,8 @@ def _build(
     environment = dict(os.environ)
     environment["UV_PROJECT_ENVIRONMENT"] = str(environment_root)
     _run(["uv", "sync", "--frozen", "--extra", "dev", "--python", "3.12"], cwd=source, environment=environment)
+    interpreter_proof = prepare_private_interpreter(python, environment_root=environment_root)
+    print(json.dumps({"qualification_interpreter": interpreter_proof}, sort_keys=True), flush=True)
     version = _run([str(python), "scripts/sync_repo_version.py", "--check"], cwd=source).splitlines()[-1]
     sha = _run(["git", "rev-parse", "HEAD"], cwd=source).splitlines()[-1]
     _run([str(python), "-m", "build", "--wheel", "--outdir", "qualification-pure"], cwd=source)
@@ -105,6 +115,7 @@ def _build(
         ["uv", "pip", "install", "--python", str(python), "--no-deps", "--force-reinstall", str(wheels[0])], cwd=source
     )
     metadata: dict[str, object] = {
+        "interpreter": interpreter_proof,
         "source_sha": sha,
         "package_version": version,
         "target": target,
@@ -113,6 +124,7 @@ def _build(
         "cargo": _run(["cargo", "+1.88.0", "--version"], cwd=source),
         "python": _run([str(python), "-c", "import platform; print(platform.python_version())"], cwd=source),
         "build_flags": ["--locked", "--release", "--target", target],
+        "runtime_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),
     }
     return python, wheels[0], metadata
 
@@ -126,6 +138,7 @@ def main() -> int:
     parser.add_argument("--deployment-target", default="")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "qualification"), default="smoke")
+    parser.add_argument("--build-only", action="store_true")
     args = parser.parse_args()
     destination = args.output_dir.resolve()
     destination.mkdir(parents=True, exist_ok=True)
@@ -155,9 +168,25 @@ def main() -> int:
     dependency = "psutil==" + versions.pop()
     for python in (baseline_python, candidate_python):
         _run(["uv", "pip", "install", "--python", str(python), "--no-deps", dependency], cwd=args.candidate.resolve())
+    for python, metadata in ((baseline_python, baseline), (candidate_python, candidate)):
+        metadata["dependency_versions_sha256"] = _run(
+            [str(python), str(args.candidate.resolve() / "scripts/native_slo_dependency_identity.py")],
+            cwd=destination,
+        ).splitlines()[-1]
     (destination / "build-metadata.json").write_text(
         json.dumps({"baseline": baseline, "candidate": candidate}, indent=2) + "\n"
     )
+    if args.build_only:
+        from scripts.native_slo_qualification_bundle import export_bundle
+
+        export_bundle(
+            destination=destination / "bundle",
+            sources={"baseline": args.baseline, "candidate": args.candidate},
+            wheels={"baseline": baseline_wheel, "candidate": candidate_wheel},
+            metadata={"baseline": baseline, "candidate": candidate},
+            run=_run,
+        )
+        return 0
     paired = [
         str(candidate_python),
         str(args.candidate.resolve() / "scripts/qualify_guard_native.py"),

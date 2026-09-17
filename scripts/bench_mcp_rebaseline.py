@@ -25,7 +25,8 @@ if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.mcp_rebaseline_report import aggregate, raw_reference, write_private
-from scripts.mcp_rebaseline_trace import CHILD, TRACES, trace_identity
+from scripts.mcp_rebaseline_resources import ParentResourceObserver, ResourcePipes
+from scripts.mcp_rebaseline_trace import CHILD, RESOURCE_CALLS, TRACES, calls_for_mode, trace_identity
 from scripts.native_slo_resources import ResourceSampler
 
 WORKER = Path(__file__).with_name("mcp_rebaseline_worker.py")
@@ -47,6 +48,11 @@ def source_identity(path: Path) -> dict[str, object]:
 
 def _worker(source: Path, output: Path, *, calls: int, diagnostic: bool, resources: bool = False) -> dict[str, Any]:
     command = [sys.executable, str(WORKER), "--source", str(source), "--output", str(output), "--calls", str(calls)]
+    pipes = ResourcePipes.create() if resources else None
+    if pipes is not None:
+        command.extend(
+            ["--resource-request-fd", str(pipes.worker_request_fd), "--resource-ack-fd", str(pipes.worker_ack_fd)]
+        )
     if diagnostic:
         command.append("--diagnostic")
     env = dict(os.environ)
@@ -57,15 +63,24 @@ def _worker(source: Path, output: Path, *, calls: int, diagnostic: bool, resourc
     captured: dict[str, bytearray] = {"stdout": bytearray(), "stderr": bytearray()}
     totals = {"stdout": 0, "stderr": 0}
     started = time.perf_counter_ns()
-    process = subprocess.Popen(
-        command,
-        cwd=source,
-        env=env,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        start_new_session=True,
-    )
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=source,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+            pass_fds=pipes.worker_fds if pipes is not None else (),
+        )
+    except BaseException:
+        if pipes is not None:
+            pipes.close()
+        raise
+    finally:
+        if pipes is not None:
+            pipes.close_worker_ends()
     assert process.stdout is not None and process.stderr is not None
 
     def drain(stream: Any, name: str) -> None:
@@ -81,13 +96,25 @@ def _worker(source: Path, output: Path, *, calls: int, diagnostic: bool, resourc
         thread.start()
     sampler = None
     sampling = False
+    warm_observer = None
+    warm_reports: list[dict[str, Any]] = []
     failure = None
     try:
         if resources:
             sampler = ResourceSampler(interval_seconds=0.01, pid=process.pid)
             sampler.__enter__()
             sampling = True
-        process.wait(timeout=180)
+            assert pipes is not None
+            warm_observer = ParentResourceObserver(
+                process.pid,
+                pipes.parent_request_fd,
+                pipes.parent_ack_fd,
+                trace_count=len(TRACES),
+                warm_attempts=calls - 1,
+                total_timeout=max(0.001, 180 - (time.perf_counter_ns() - started) / 1e9),
+            )
+            warm_observer.start()
+        process.wait(timeout=max(0.001, 180 - (time.perf_counter_ns() - started) / 1e9))
     except subprocess.TimeoutExpired:
         failure = "worker_deadline"
         with contextlib.suppress(ProcessLookupError):
@@ -99,6 +126,16 @@ def _worker(source: Path, output: Path, *, calls: int, diagnostic: bool, resourc
             os.killpg(process.pid, signal.SIGKILL)
             process.wait(timeout=5)
     finally:
+        if warm_observer is not None:
+            if failure:
+                warm_observer.abort()
+            try:
+                warm_reports = warm_observer.finish()
+            except Exception:
+                failure = "resource_observer_cleanup_incomplete"
+                warm_reports = warm_observer.reports
+        if pipes is not None:
+            pipes.close()
         if sampling and sampler is not None:
             try:
                 sampler.__exit__(None, None, None)
@@ -147,6 +184,11 @@ def _worker(source: Path, output: Path, *, calls: int, diagnostic: bool, resourc
     if sampling and sampler is not None:
         result["resources"] = sampler.report(attempted=calls * len(TRACES))
         result["resources"]["scope"] = "mcp_proxy_worker_and_descendants"
+    if resources:
+        result["warm_resources"] = warm_reports
+        result["warm_resource_failure"] = (
+            warm_observer.failure if warm_observer is not None else "observer_operation_failed"
+        )
     return result
 
 
@@ -173,6 +215,8 @@ def run(
         WORKER,
         *Path(__file__).parent.glob("mcp_rebaseline_*.py"),
         Path(__file__).with_name("native_slo_resources.py"),
+        Path(__file__).with_name("native_slo_qualification.py"),
+        Path(__file__).with_name("native_slo_statistics.py"),
     ]
     manifest: dict[str, Any] = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -184,6 +228,7 @@ def run(
         "harness": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in script_files},
         "child_sha256": hashlib.sha256(CHILD.encode()).hexdigest(),
         "traces": [trace_identity(t, calls) for t in TRACES],
+        "resource_traces": [trace_identity(t, RESOURCE_CALLS) for t in TRACES],
         "order": [
             {"block": block, "role": role, "mode": mode}
             for block in range(runs)
@@ -194,6 +239,7 @@ def run(
     }
     write_private(output / "manifest.json", manifest)
     records = []
+    stop_matrix = False
     with lock.open("a+") as lease:
         fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
         for block in range(runs):
@@ -208,7 +254,7 @@ def run(
                         observation = _worker(
                             baseline if role == "baseline" else candidate,
                             output / f"{name}.raw.json",
-                            calls=calls,
+                            calls=calls_for_mode(mode, calls),
                             diagnostic=mode == "diagnostic",
                             resources=mode == "resources",
                         )
@@ -231,6 +277,16 @@ def run(
                         private_observation["controller_exception_class"] = exception_class
                     write_private(output / f"{name}.observation.json", private_observation)
                     print(json.dumps({**identity, "status": observation["result"].get("status")}), flush=True)
+                    if observation.get("capture_failure") in {
+                        "resource_observer_cleanup_incomplete",
+                        "capture_cleanup_incomplete",
+                    }:
+                        stop_matrix = True
+                        break
+                if stop_matrix:
+                    break
+            if stop_matrix:
+                break
         fcntl.flock(lease, fcntl.LOCK_UN)
     report = aggregate(records, runs=runs, calls=calls)
     report["source_and_environment"] = manifest

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from scripts.mcp_rebaseline_network import NETWORK_METRICS
 from scripts.mcp_rebaseline_public_types import (
     MODE,
     ROLE,
@@ -18,6 +19,7 @@ from scripts.mcp_rebaseline_public_types import (
     require,
     summary,
 )
+from scripts.mcp_rebaseline_statistics import PAIRED_METRICS
 from scripts.mcp_rebaseline_trace import TRACES
 
 TRACE = choice(*(trace.name for trace in TRACES))
@@ -75,6 +77,7 @@ COMPARISON = fields(
                 "child_service_wall_ns",
                 "child_observed_wire_bytes",
                 "synthetic_approval_wall_ns",
+                *NETWORK_METRICS,
             )
         },
     }
@@ -123,6 +126,41 @@ RESOURCE = fields(
         "fixture_control_overhead_included": choice(True),
     }
 )
+WARM_FAILURE = optional(
+    choice(
+        "observer_aborted",
+        "protocol_deadline",
+        "protocol_eof",
+        "protocol_byte_bound",
+        "protocol_frame_invalid",
+        "protocol_short_write",
+        "process_membership_invalid",
+        "process_identity_invalid",
+        "root_identity_changed",
+        "observer_sequence_invalid",
+        "worker_trace_failed",
+        "process_identity_changed",
+        "resource_samples_incomplete",
+        "observer_operation_failed",
+        "observer_report_failed",
+        "observer_cleanup_failed",
+        "observer_shutdown_deadline",
+    )
+)
+WARM_RESOURCES = array(
+    fields(
+        {
+            "trace_index": integer,
+            "status": choice("complete", "incomplete"),
+            "failure": WARM_FAILURE,
+            "identity_verified": boolean,
+            "expected_warm_attempts": integer,
+            "warm_attempts": optional(integer),
+            "resources": optional(RESOURCE),
+        }
+    ),
+    len(TRACES),
+)
 
 
 def return_code(value: Any) -> int | None:
@@ -166,9 +204,50 @@ RUN = fields(
             )
         },
     },
-    optional_fields={"worker_lifecycle_wall_ns": number, "resources": RESOURCE},
+    optional_fields={
+        "worker_lifecycle_wall_ns": number,
+        "resources": RESOURCE,
+        "warm_resources": WARM_RESOURCES,
+        "warm_resource_failure": WARM_FAILURE,
+    },
 )
 
-COMPARISONS = array(COMPARISON, 42)
+
+def run_trace(value: Any) -> dict[str, Any]:
+    require(isinstance(value, dict) and "block" in value)
+    block = integer(value["block"])
+    require(block < 5)
+    result = COMPARISON({key: item for key, item in value.items() if key != "block"})
+    require(result["independent_runs"] == 1)
+    return {"block": block, **result}
+
+
+INTERVAL = fields(
+    {
+        "runs": integer,
+        "median_ratio": number,
+        "ci95_low": number,
+        "ci95_high": number,
+        "interval_method": choice("paired_run_block_bootstrap_2000"),
+        "minimum_runs_met": boolean,
+    }
+)
+PAIRED = array(
+    fields(
+        {
+            "trace": TRACE,
+            "status": choice("complete", "incomplete"),
+            "offered_runs": choice(5),
+            "matched_blocks": array(integer, 5),
+            "resampling_unit": choice("independent_run_pair"),
+            "ratio_direction": choice("candidate_over_baseline"),
+            "tail_qualified": choice(False),
+            "intervals": optional(fields({name: INTERVAL for name in PAIRED_METRICS})),
+        }
+    ),
+    len(TRACES),
+)
+RUN_TRACES = array(run_trace, 30 * len(TRACES))
+COMPARISONS = array(COMPARISON, 2 * 3 * len(TRACES))
 PHASES = array(PHASE, 2 * len(TRACES) * len(PHASE_NAMES))
 RUNS = array(RUN, 30)

@@ -186,6 +186,9 @@ def test_reporting_keeps_engine_counts_and_exact_capacity_denominators_separate(
     assert gates["concurrency"] and gates["concurrency_64_bounded"]
     assert summary.route_counts == {"native_resident": 49, "native_fail_safe": 16, "engine_bypassed": 16}
     report = slo_result({}, (("codex", "PreToolUse"),), corpus, measurements, summary, gates)
+    assert report["corpus"]["rss_scope"] == "in_process_driver_daemon_and_descendants"
+    assert report["corpus"]["rss_metric"] == "sum_current_process_working_sets"
+    assert report["corpus"]["rss_includes_load_generator"] is True
     wave = report["concurrency"]["sixty_four"]
     assert wave["fail_safe"] == 16 and wave["overloaded"] == 32
     assert wave["wave_evidence"]["attempted"] == wave["wave_evidence"]["completed"] == 64

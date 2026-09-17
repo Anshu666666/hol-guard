@@ -319,6 +319,10 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify Windows process-tree memory sampling
+        run: >-
+          uv run --no-sync pytest tests/test_native_slo_windows_memory.py
+          tests/test_native_slo_rss.py --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |

@@ -1,170 +1,170 @@
 # Continue HOL Guard Rust performance work on release/3.2
 
-Continue the user's authorized implementation end to end using GitHub. Deliver
-the original [PRD](PRD.md) and all 144 [TODO](TODO.md) requirements; do not replace
-their acceptance conditions with source tests or a narrower smoke gate. This is
-an implementation continuation, not a new proposal. Complete authorized work
-without repeatedly requesting permission, while respecting protected merges and
-independent code-owner approval. Do not create GitHub issues.
+Complete the user's authorized implementation using GitHub. Deliver the original
+[PRD](PRD.md), its [release addendum](RELEASE_3_2_PRD.md), and all 144 [TODO](TODO.md)
+acceptance conditions. Use the [machine ledger](execution-ledger.json) for current
+status and evidence. Preserve original task IDs, titles, acceptance and
+dependencies. Do not replace unmet acceptance with smaller smoke tests, mark an
+unbuilt conditional port DONE, or claim a release while its gates remain open.
+Do not create GitHub issues. Continue already authorized implementation without
+repeated confirmation; protected merge approval is a separate final requirement.
 
-## Establish the exact starting point
+## Establish the exact state
 
-Read applicable repository instructions, the PRD/TODO, [release review](RELEASE_REVIEW.md),
-[execution ledger](execution-ledger.json), [current contract](CURRENT_CONTRACT.md)
-and workstream evidence before editing. The release review is the latest dated
-checkpoint; [EXECUTION](EXECUTION.md) preserves earlier attempts and provenance.
-Check HEAD, dirty files and agent ownership. Do not overwrite another worker's
-changes or cherry-pick already integrated commits.
+Read repository instructions, [RELEASE_REVIEW](RELEASE_REVIEW.md),
+[CURRENT_CONTRACT](CURRENT_CONTRACT.md), [FIRST_CI_EVIDENCE](FIRST_CI_EVIDENCE.md)
+and the relevant workstream reports. [EXECUTION](EXECUTION.md) preserves older
+attempts; historical uses of “current” belong to their recorded source.
 
-This handoff was reviewed on 2026-09-17 at local integration
-`ce8fce7f504bd67c213d67a60fbca34da724d25e`, tree
-`f1b272cbe8ba4762083ef05ddd5d22ece9d95f82`. Scheduler, Watch, capability,
-Composer, dormant Claude pilot and package/pilot workflows are integrated.
-Later deliveries may exist. The production comparison
-baseline remains `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1;
-use Rust 1.88.0 and locked dependencies. Preserve release-only behavior and the
-reconciled main lineage; a fresh merge of squashed history is not a safe shortcut.
+This handoff's source cutoff is `c964a61a3a4c19d721358e69c400d6059dfd1156`, tree `96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1`, before the
+handoff edits. The integration branch is `work/rsp-performance-finalization-32`.
+The isolated publication is [PR #2970](https://github.com/hashgraph-online/hol-guard/pull/2970),
+branch `codex/release-3.2-rust-finalization`, targeting `release/3.2`.
+Its last measured head is `107606388ad55f924a4e2924b4ff84e5fa08e6ff`, with
+39 terminal workflows: 33 successful and six failed. Refresh the live head and
+CI; never attribute those measurements to a later tree.
 
-Refresh GitHub heads, checks, review threads and approval before publication.
-PR #2954 has another writer and is reported at `ae339`; coordinate or use the coordinator's isolated branch,
-and verify the exact uploaded Git tree before advancing a remote. The latest
-reviewed remote `5ee52a03e62b9e4940063b348185bedaddf0cb53` has **32 successful and
-four failed workflows**, not a qualified release. Foundation PR #2951 still
-requires independent approval at its recorded checkpoint; refresh that status.
-No agent may supply or impersonate the required human approval.
+The frozen baseline remains `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package
+3.0.1. Release base was last checked at `4b89e0d2d496a85f04922b2e019a4aea15326bb9`;
+main at `05fa4760df8401b9710bf098adb4fbb2dc4ff389`. Use Rust 1.88.0 and locked
+dependencies. Preserve release behavior and the reviewed lineage. PR #2954 has
+another writer; selective reviewed reuse is permitted, whole-tree overwrite or
+an unreviewed merge is not. Check dirty files and agent ownership before editing;
+do not cherry-pick already integrated changes.
 
-## Preserve the implemented contracts
+Before publication, compare the exact intended Git tree, refresh the owned
+remote branch, and use a non-forced update. When publishing through Git Data API,
+use the latest owned remote head as parent and verify the returned tree SHA
+against the committed local tree. Historical local ancestry is not automatically
+the intended publication ancestry. Preserve the measured checkpoint and exact
+artifact byte hashes in the first-CI evidence directory.
 
-Ordinary HTTP hooks enter the daemon HookWorker and persistent native helper.
-Compatibility and legacy revalidation retain their Python pool. Native command
-execution has a trusted compiler, 29 reviewed operations, 86 extensions, 291
-rules, 304 permissions and 2,242 nodes, pinned to CPython 3.12/UCD 15 semantics.
-Unsupported/context-heavy behavior is owned uncertainty, never silent no-match.
-Component coverage is not full Python equivalence or installed activation proof.
+## Execute the next work in order
 
-Keep authentication, live process/image identity, exact source content, expiry,
-policy/program/catalog identity and replay protection. Control mutations close
-the authenticated fence before durable effects. Shared request leases exclude
-mutation through finalization; recovery binds the exact previous floor, key and
-epoch. Signed managed source context prevents catalog replacement or deletion
-from restoring an old enabled control. Stat metadata only invalidates authority
-caches; it cannot create authority.
+1. Publish the reviewed source and reconciled documents to PR #2970. Inspect
+   the new main CI, secret scan, four-platform native-wheel and paired smoke
+   results. Integrated corrections cover runtime-keyword/parser/Mac fixtures,
+   authenticated expiry renewal, Windows CPU/RSS and immutable FFI definitions,
+   private POSIX interpreters, failure journaling and indexed pair orchestration.
+   A local correction is not a successful installed rerun.
+2. Diagnose the remaining 24-request locked-storage burst. The original combined
+   batch had 575 passes, seven skips and seven failures. Six PID-fixture failures
+   were repaired with a focused 61-pass/two-skip rerun; the HTTP response timeout
+   at 1.75 seconds remains unresolved. Retain the 1.6-second latency assertion
+   and original production deadlines. Capture the blocking boundary and fix its
+   cause; a passing isolated retry does not erase the original failed batch.
+3. Preserve the unresolved frozen Mac baseline. Earlier diagnostics show legacy
+   and reverse calls entered and timed out while numeric calls took 47–66 ms;
+   no OS query reached the local PTR responder. New registration/libSystem
+   diagnostics are integrated. Inspect their actual results before changing an
+   OS fixture. Do not patch the frozen wheel, substitute candidate semantics,
+   extend a deadline or qualify an incomplete pair. Continue the candidate only
+   after verified containment of the failed baseline worker.
+4. Complete the independently reviewed bounded experiments being prepared:
+   same-wheel optimized-Python versus explicit native Claude registration;
+   optimized package phase attribution; and stopped-artifact transition probes.
+   Check whether newer commits already integrate them. Keep native Claude off
+   by default until real lifecycle, binding, parity and benefit gates pass.
+   Stopped-process artifact replacement is narrower than live upgrade, signing,
+   frozen packaging or changed-program rollback.
+5. Run MCP v2 and the corrected package matrix. MCP v2 includes five independent
+   paired-run intervals, an attributed loopback service and warm resources
+   sampled before teardown. Package comparisons must use optimized Python as
+   the native comparator. Preserve baseline Composer failures and censored
+   cardinality cells. Attribute input/hash, decode/parse/model/index, matching
+   and finalization work without moving setup-only verification into the timed
+   production route. Instrumented phase runs are separate from headline timing.
+6. Once collection and scenario blockers are understood, execute full indexed
+   qualification using the `rust-performance-qualification` PR label or the
+   workflow's manual `qualification` mode. The fixed plan builds each platform
+   once, then runs five same-runner B/C pairs in alternating order. Do not change
+   sample counts, percentile estimators, independent-run requirements, worker
+   deadlines or product thresholds to get a green job. Successful collection,
+   accepted performance and program completion are separate results.
+7. Use actual comparable measurements to implement or defer the remaining
+   conditional Rust tranches. Finish signed/frozen artifacts, first hook after
+   update/rollback, mixed mutation/recovery/receipt evidence, independent review
+   and the concrete canary/rollback plan. Update every affected task with exact
+   source and evidence. Request required human approval only when the final
+   change and its outstanding protected action are concrete and reviewable.
 
-Ordinary resolved approvals and native Codex browser completion bind exact
-request, current policy/runtime/command observations and live waiter context.
-Codex performs fresh native revalidation and verifies signed consumed authority;
-unsigned terminal state cannot authorize replay. Its six-field identity and
-original deadline remain exact. The exported native v3/v4 challenge/claim/consume
-APIs are separate; do not describe ordinary approval reuse as their consumption.
+## Preserve the decision and trust contracts
 
-Preserve evaluated verdict, posture transformation, availability result and
-delivered harness response as four distinct facts. Watch delivery is not a
-native allow. Ordinary unavailable PreToolUse continuation with warning and
-PostToolUse empty output must retain their established harness contracts.
-Do not add a Python semantic fallback or blanket unavailable-deny behavior.
+Keep KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER timing separate.
+The installed launcher starts the actual registered executable and arguments,
+includes startup, writes real stdin and validates stdout and exit. HTTP-only
+observations cannot fill that series. Cold launcher, whole-daemon startup,
+readiness and resident recovery are distinct measurements.
 
-Receipt migration 28 retains command binding. Memory admission, durable journal,
-SQLite commit and checkpoint are distinct milestones; replay deduplicates stable
-attempts without reevaluating decisions. Retain MCP frame/queue bounds, terminal
-uncertain writes, catalog invalidation during approval and the final 5 ms quiet
-barrier. Never replay an ambiguously delivered tool write.
+Ordinary HTTP hooks enter HookWorker and the persistent native helper; verified
+compatibility and legacy revalidation have separate Python paths. Reuse the
+existing Rust decision core, trusted command compiler and bounded scanner. Owned
+uncertainty for unsupported semantics cannot become silent no-match. Preserve
+native verdict, posture transformation, availability outcome and delivered
+response as four facts. Watch is not a native-evaluated allow. Ordinary
+unavailable continuation and PostToolUse empty output keep their harness
+contracts; no new Python semantic fallback or blanket denial is authorized.
 
-## Resolve current failures before broadening scope
+Retain authenticated peer and live process/image identity, exact source content,
+policy/program/catalog binding, generation, expiry and replay protection. Cache
+only within proved authority; stat metadata is an invalidation hint. Mutations
+close the fence before durable effects; finalization rechecks current authority.
+Recovery binds the previous floor, key and epoch. Immutable Windows API metadata
+reuse never caches an owner, ACL, file content or live authorization decision.
 
-1. Resolve the decision-report fresh-process test failure and run final CI.
-   Five tests pass, including exact reproducibility/source binding; one metrics
-   test exceeded its unchanged 60-second deadline in both the batch and isolated
-   rerun. Cause is unproven. Only three runtime source hashes changed; all
-   nonbinding report fields remain identical. Regenerate if bound source changes;
-   do not bypass checks or relabel the failed batch as green.
-2. Rerun the exact scheduler failure. The integrated fix stops unchanged queued
-   waiters from notifying one another and preserves byte-waiter notifications.
-   Partial-header ownership, exact-entry eviction, bounded permit handoff and
-   Windows source-handle corrections are integrated. Focused regressions do not
-   prove the installed load or platform matrix passes.
-3. Rerun installed Watch and capability-dependent source contracts after their
-   integrated corrections. Composer now preserves ASCII vendor-qualified
-   identities, including emergency denies. The frozen baseline's source refusal
-   remains a refusal; the candidate handle-bound path requires its own complete
-   review and identity witness. Never count unsupported reads as successful scan
-   timing. Preserve Linux resident-authority and macOS Intel source-witness
-   failures until the exact repaired artifacts pass.
-4. Keep the macOS baseline DNS stall unresolved. Both latest artifacts prove
-   the PTR experiment installed and cleaned up but received zero packets; all
-   legacy probes timed out. This does not identify the OS resolver defect.
-   Publish the composed call-start/reverse/numeric diagnostics without patching
-   the baseline, changing DNS locally or extending deadlines. The completed audit
-   confirms the existing numeric TCPServer bind fix is integrated; actual macOS
-   efficacy still needs CI. Candidate continuation after a contained baseline
-   failure is also implemented. Retain the failed comparison.
-5. Execute the integrated four-platform dormant Claude correctness workflow and
-   package workflow. All four launcher peer findings are closed; the feature
-   remains off with no registration change. Prove installed behavior and benefit
-   before activation. Finish assigned benchmark corrections for common workload
-   identity versus Windows arm coverage, per-observation private journaling and
-   explicit Windows job CPU accounting. Inspect ownership before editing.
+Approval belongs to the original live waiter, exact request and original
+deadline. Native Codex completion re-evaluates current authority and verifies
+signed consume/replay binding. Unsigned terminal state cannot authorize reuse.
+Ordinary approval handling and exported native challenge/claim/consume APIs
+remain distinct. Never replay an ambiguously delivered MCP write. Preserve
+framing, queue limits, catalog invalidation during approval and the final 5 ms
+freshness barrier.
 
-## Qualify the real boundary and retain every attempt
+Memory admission, durable journal, SQLite commit and checkpoint are distinct
+milestones. Replayed evidence deduplicates the stable attempt without repeating
+authorization. Missing SQLite VFS/fsync/physical-byte measurements stay missing.
 
-Use separately installed release artifacts outside source checkouts on Linux
-x64, macOS x64, macOS arm64 and Windows x64. Remove development overrides.
-Record source, package, target, manifest, runtime, rule/program/catalog, corpus,
-compiler/dependency and host identities, including post-sign/frozen bytes.
-Compare baseline and candidate on the same declared hardware in alternating
-order. Unknown build identity cannot qualify a release.
+## Qualify performance and evidence honestly
 
-The frozen requirements remain:
-
-| Scope | Requirement |
+| Required scope | Unchanged acceptance |
 | --- | --- |
-| Ordinary noninteractive 1–16 KiB installed hooks, warm c1 | p95 ≤50 ms; p99 ≤100 ms |
-| Same installed hooks, c16 | p99 ≤200 ms; zero request errors; correct decisions |
-| Native client warm c1 / cold native / resident readiness | p95 ≤20 ms / p95 ≤150 ms / ≤400 ms |
-| Priority route/platform samples | 10,000 warm decisions across ≥5 independent runs; 100 cold starts per priority launcher; 100 recoveries; 30 steady-state resource samples |
-| Remaining installed routes | At least 1,000 warm samples per route/platform |
-| Selected hot tranche | ≥30% lower p95 or process-tree CPU/request; ≤5% regression in the other primary metric |
-| Optional ingress | ≥25% lower process-tree private memory or ≥30% lower c16 p99, preserving containment and decisions |
-| Resource safeguards | Existing 12% short-load RSS-growth and 50% long-soak growth gates, with their actual sampling scopes |
+| Ordinary 1–16 KiB priority installed hooks, warm c1 | p95 ≤ 50 ms; p99 ≤ 100 ms |
+| Priority installed hooks, c16 | p99 ≤ 200 ms; zero errors and correct decisions |
+| Native client / cold native / readiness | p95 ≤ 20 ms / p95 ≤ 150 ms / 400 ms barrier |
+| Priority samples | 10,000 warm observations across at least five independent alternating runs; 100 cold starts and recoveries; at least 30 steady-state resource samples per required scope |
+| Other installed routes | At least 1,000 warm observations per route/platform |
+| Selected hot tranche | At least 30% p95 or complete process-tree CPU reduction; no more than 5% regression in the other primary metric |
+| Optional ingress | At least 25% private-memory or 30% c16 p99 reduction, preserving containment and decisions |
+| Native package/offline work | At least 30% benefit against the optimized Python real route, with original parity/regression safeguards |
+| Resource growth | Existing 12% short-load and 50% long-soak RSS limits at their actual sampling scopes |
 
-Report confidence intervals and the percentile estimator. Separate KERNEL,
-NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER observations; HTTP requests
-cannot substitute for real registered argv/stdin/stdout/exit execution. Keep
-cold executable start, full daemon startup, readiness and recovery separate.
-Human/network wait and instrumentation need explicit attribution, never silent
-subtraction. Old relative-speedup alternatives and 1,000 ms diagnostic gates do
-not replace these targets.
+Use Linux x64, Mac Intel, Mac ARM and Windows x64 installed wheels outside source
+checkouts, with no development origin override. Bind source, artifact, runtime,
+rule/program/catalog, workload, interpreter, dependencies and host cohort.
+Post-sign/frozen bytes need their own identities. Report percentile estimators
+and required confidence intervals; pooled calls are not independent runs.
 
-Exercise 1 KiB, 16 KiB, 256 KiB, 1 MiB and maximum inputs at c1/c4/c16/c64,
-including closed-loop and offered-rate load. Keep every offered, admitted,
-completed, failed, rejected, timed-out and late attempt. Offered-to-terminal
-latency includes generator/queue delay; late completion cannot overwrite timeout.
-c64 permits bounded overload, not hangs, leaks, cross-request replies or hidden
-errors. Collect daemon/helper/resident resources separately from the driver.
+Exercise 1 KiB, 16 KiB, 256 KiB, 1 MiB and maximum payloads at c1/c4/c16/c64,
+including offered-rate load. Retain every offer, admission, completion, timeout,
+rejection, failure and late result. Offered-to-terminal latency includes queue
+and generator delay. Late completion cannot overwrite timeout. c64 may reject
+bounded overload; it may not hide errors, hang, leak or mix replies.
 
-Join registered surfaces, controlled approvals, malformed inputs, Watch,
-unavailable/integrity/expiry cases, mixed mutation-to-ACK-to-first-enforcing
-receipt, ingestion, inventory and restart/recovery evidence. Resident restart
-does not prove whole-daemon restart. Missing SQLite VFS/fsync/physical-byte
-metrics remain unavailable, not zero. Keep diagnostic phase runs separate from
-headline timing. Upload only bounded public aggregates and encrypted private
-evidence; verify authorized recovery and actual Windows ACL/ABI behavior.
+Separate generator resources from the daemon/helper process tree. Missing CPU,
+RSS, private memory, descriptors or Windows handles cannot become zero or a
+successful resource window. Human/network waits and instrumentation stay
+explicit. The first Linux legacy soak's 528.06 ms p95 and two-observation
+launcher smokes do not satisfy the installed-priority targets.
 
-## Select remaining Rust work from comparable evidence
+Upload bounded reconstructed public aggregates and authenticated encrypted
+private evidence. Retain interrupted numerical journals and bind the exact
+bytes read during aggregation to sealed archive receipts. Verify authorized
+recovery without logging private records or recovery keys; preserve actual
+Windows ACL and process-containment failures. Archive limits remain 256 flat
+files, 32 MiB per file and 128 MiB total. The fixed indexed plan fits those limits;
+custom expanded plans require a fresh capacity check.
 
-Use the optimized Python package matrix, rich scanner/CLI baseline, archive and
-isolated MCP reports linked from the release review. Compare 100/1,000/10,000
-dependencies with independently varied bundle sizes. Preserve 8 MiB inputs,
-100,000 entries, 250,000 nodes, depth 128 and bounded parser deadlines. Include
-serialization/startup amortization and actual full command behavior in any
-native comparison. Composer's frozen baseline omission is a coverage failure,
-not a fast equivalent result.
-
-RSP-052, RSP-062 and RSP-128 source criteria do not close their dependent installed
-gates. RSP-070 remains open: the archive diagnostic retained two unexpected
-timeouts among 510 inspections. Unbuilt package, rich-detector, MCP, inventory,
-spool/compiler or ingress ports need a measured go/no-go; neither DONE nor
-DEFERRED follows from language preference. Preserve regressions, incomplete
-coverage and false-review differences. Finish exact-head CI/review, signed and
-frozen installation/update/rollback, canary scope and rollback evidence before
-claiming release completion. Keep the machine ledger current without rewriting
-the original PRD or TODO criteria.
+Finish by refreshing the PRD addendum, all 144 ledger records and this prompt.
+The current 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED is an honest checkpoint,
+not an acceptable substitute for completion. Keep each unresolved dependency
+explicit. No agent may supply or impersonate independent code-owner approval.

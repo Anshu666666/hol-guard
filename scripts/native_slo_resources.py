@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from scripts.native_slo_windows_job_resources import WindowsJobCpuSnapshot
+
 _MAX_PROCESSES = 4096
 _METRICS = ("rss_bytes", "private_bytes", "cpu_seconds", "processes", "threads", "descriptors", "handles")
 
@@ -135,12 +137,25 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
 class ResourceSampler:
     """Retain bounded aggregates and observed descendant CPU, never process data."""
 
-    def __init__(self, *, interval_seconds: float = 0.1, pid: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        interval_seconds: float = 0.1,
+        pid: int | None = None,
+        cpu_reader: Callable[[], WindowsJobCpuSnapshot] | None = None,
+    ) -> None:
         _psutil()  # A missing dependency is a setup error, not an unsupported OS.
         if not 0.01 <= interval_seconds <= 1.0:
             raise ValueError("resource sample interval out of bounds")
         self.interval = interval_seconds
         self.pid = os.getpid() if pid is None else pid
+        if cpu_reader is not None and self.pid == os.getpid():
+            raise ValueError("fixture job accounting cannot measure the load generator")
+        self._cpu_reader = cpu_reader
+        self._cpu_first: WindowsJobCpuSnapshot | None = None
+        self._cpu_last: WindowsJobCpuSnapshot | None = None
+        self._cpu_failed = False
+        self._cpu_missing = 0
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.samples = 0
@@ -155,7 +170,30 @@ class ResourceSampler:
         self.started = 0.0
         self.stopped = 0.0
 
+    def _sample_job_cpu(self) -> None:
+        if self._cpu_reader is None:
+            return
+        try:
+            value = self._cpu_reader()
+            if not isinstance(value, WindowsJobCpuSnapshot) or type(value.total_ticks) is not int:
+                raise ValueError("job accounting snapshot invalid")
+            if value.total_ticks < 0 or (self._cpu_last is not None and value.total_ticks < self._cpu_last.total_ticks):
+                raise ValueError("job accounting counter regressed")
+        except (OSError, ValueError, RuntimeError):
+            self._cpu_failed = True
+            self._cpu_missing += 1
+            self.unavailable.setdefault("cpu_seconds", Counter())["job_accounting_unavailable"] += 1
+            return
+        self.metric_samples["cpu_seconds"] += 1
+        if self._cpu_first is None:
+            self._cpu_first = value
+        self._cpu_last = value
+
     def _sample(self) -> None:
+        # The job's cumulative CPU counter is independent of a racy psutil
+        # inventory. Never mix its terminated-member totals with observed PID
+        # CPU or allow a later successful query to erase an earlier failure.
+        self._sample_job_cpu()
         value = sample_process_tree(self.pid)
         if value is None:
             self.missing += 1
@@ -166,12 +204,18 @@ class ResourceSampler:
             self._initial_cpu = sum(value.process_cpu.values())
         self.last = value
         for name in _METRICS:
+            if name == "cpu_seconds" and self._cpu_reader is not None:
+                continue
             number = getattr(value, name)
             if number is not None:
                 self.metric_samples[name] += 1
                 self.peaks[name] = max(self.peaks.get(name, 0), number)
         for name, reason in value.unavailable.items():
+            if name == "cpu_seconds" and self._cpu_reader is not None:
+                continue
             self.unavailable.setdefault(name, Counter())[reason] += 1
+        if self._cpu_reader is not None:
+            return
         for identity, cpu in value.process_cpu.items():
             if len(self._observed_cpu) >= _MAX_PROCESSES and identity not in self._observed_cpu:
                 self.unavailable.setdefault("cpu_seconds", Counter())["process_history_bound"] += 1
@@ -201,8 +245,29 @@ class ResourceSampler:
     def report(self, *, attempted: int) -> dict[str, object]:
         elapsed = max(0.0, (self.stopped or time.monotonic()) - self.started)
         cpu = None
-        reaped = self.first is not None and self.last is not None and self.last.cpu_includes_reaped
-        if self.first is not None and self.last is not None and "cpu_seconds" not in self.unavailable:
+        job_complete = (
+            self._cpu_reader is not None
+            and self._cpu_first is not None
+            and self._cpu_last is not None
+            and not self._cpu_failed
+        )
+        reaped = (
+            self._cpu_reader is None
+            and self.first is not None
+            and self.last is not None
+            and self.last.cpu_includes_reaped
+        )
+        if job_complete:
+            assert self._cpu_first is not None and self._cpu_last is not None
+            # Subtract exact 100ns integers before conversion, even for a job
+            # whose cumulative lifetime exceeds float's exact integer range.
+            cpu = (self._cpu_last.total_ticks - self._cpu_first.total_ticks) / 10_000_000
+        elif (
+            self._cpu_reader is None
+            and self.first is not None
+            and self.last is not None
+            and "cpu_seconds" not in self.unavailable
+        ):
             if reaped and self.first.cpu_seconds is not None and self.last.cpu_seconds is not None:
                 difference = self.last.cpu_seconds - self.first.cpu_seconds
             else:
@@ -215,9 +280,16 @@ class ResourceSampler:
             name: self.metric_samples[name] >= 30 and name not in self.unavailable and self.missing == 0
             for name in required
         }
+        if self._cpu_reader is not None:
+            per_metric["cpu_seconds"] = job_complete and self.metric_samples["cpu_seconds"] >= 30
+            collector = "psutil_with_windows_job_cpu"
+        elif reaped:
+            collector = "psutil_with_linux_proc_cpu"
+        else:
+            collector = "psutil_observed_descendants"
         return {
             "scope": "daemon_fixture_process_tree" if self.pid != os.getpid() else "load_generator_process_tree",
-            "collector": "psutil_with_linux_proc_cpu" if reaped else "psutil_observed_descendants",
+            "collector": collector,
             "samples": self.samples,
             "unavailable_samples": self.missing,
             "metric_samples": dict(self.metric_samples),
@@ -232,8 +304,10 @@ class ResourceSampler:
             else None,
             "cpu_seconds": cpu,
             "cpu_ms_per_attempt": round(cpu * 1000 / attempted, 6) if cpu is not None and attempted > 0 else None,
-            "cpu_includes_reaped_descendants": reaped,
-            "short_exited_descendants_cpu_complete": reaped,
+            "cpu_includes_reaped_descendants": reaped or job_complete,
+            "short_exited_descendants_cpu_complete": reaped or job_complete,
+            "cpu_accounting_scope": "explicit_fixture_job" if self._cpu_reader is not None else "observed_process_tree",
+            "cpu_unavailable_samples": self._cpu_missing if self._cpu_reader is not None else self.missing,
             "includes_load_generator": self.pid == os.getpid(),
             "fixture_control_overhead_included": self.pid != os.getpid(),
         }

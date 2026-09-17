@@ -7,7 +7,7 @@ import random
 import statistics
 from collections.abc import Mapping, Sequence
 
-from scripts.native_slo_contract import percentile, summarize
+from scripts.native_slo_statistics import percentile, summarize
 
 QUALIFICATION_RUNS = 5
 PRIORITY_SAMPLES = 10_000

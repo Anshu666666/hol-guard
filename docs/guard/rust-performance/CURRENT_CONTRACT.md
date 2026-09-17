@@ -1,8 +1,9 @@
 # Current decision and performance contract
 
-This contract describes local source `ce8fce7f504bd67c213d67a60fbca34da724d25e`.
-It incorporates the current remote `5ee52a03` through reconciliation `1580a018b`
-and subsequent reviewed source corrections. Source support is distinct from
+This contract describes local source `c964a61a3a4c19d721358e69c400d6059dfd1156`.
+It incorporates published PR #2970 head `107606388` and the subsequent reviewed
+measurement, Windows authority and fixture corrections. The last observed CI
+belongs to `107606388`, not this later source. Source support is distinct from
 installed activation and release qualification. [RELEASE_REVIEW.md](RELEASE_REVIEW.md)
 records exact current evidence; [EXECUTION.md](EXECUTION.md) retains older rounds.
 All original requirements remain in the [PRD](PRD.md) and [TODO](TODO.md).

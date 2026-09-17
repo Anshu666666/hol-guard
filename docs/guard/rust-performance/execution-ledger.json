@@ -3,7 +3,7 @@
   "reviewed_date": "2026-09-17",
   "target_branch": "release/3.2",
   "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
-  "implementation_tree_before_documentation": "ce8fce7f504bd67c213d67a60fbca34da724d25e",
+  "implementation_tree_before_documentation": "c964a61a3a4c19d721358e69c400d6059dfd1156",
   "qualification_complete": false,
   "status_policy": "DONE means the stated task acceptance has source, specification or test evidence of the required kind; it does not promote its dependent installed qualification. OPEN includes implemented/tested work with remaining acceptance. BLOCKED means a missing prerequisite. DEFERRED requires a measured native go/no-go decision; an unbuilt optional Rust component is neither DONE nor DEFERRED. Original acceptance and dependency fields are unchanged.",
   "tasks": [
@@ -14,10 +14,11 @@
       "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
       "dependencies": [],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Baseline/toolchains and integrated source 923a13634570f7c48021768414ca7a487e72ed83 with tree 8bedacb684c903402f8fb2be96199e93e8198787 are pinned. Published round-four head 81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6 retains older tree 3c1d250c23bee22e23e5525880bdd3f65a63a59d; publication/CI of the final reconciled audited tree remains pending. At the coordinator's API refresh at 10:27 UTC on 2026-09-17, all 36 round-four workflows were terminal: 29 succeeded and seven failed, with none active, on published head 81ef6195c. Performance 35206822316 failed all four targets; CI 35206822177 failed. Native-wheel 35206822343 finished with Linux and macOS ARM jobs successful, Windows and macOS Intel failed. Performance remains smoke, not full qualification. The successful native-wheel observations identify PR merge build source f7293ab; they do not qualify the reconciled source 923a13634. Final four-platform runtime/rule/program/post-sign identities and fully qualified candidate remain required. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "Current main 05fa4760df8401b9710bf098adb4fbb2dc4ff389 and release base 4b89e0d2 are recorded. Local source c964a61a3a4c19d721358e69c400d6059dfd1156, tree 96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1; published 107606 / tree a9998b9 remains the measured checkpoint. Exact first-CI artifact, runtime, rule and toolchain identities are retained, including native-wheel merge build a806a38. Newly corrected installed artifacts, post-sign and frozen identities, and final source-bound qualification remain required.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -105,10 +106,11 @@
         "RSP-003"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual registered Codex/Claude argv/startup/stdout/exit probes and distinct ordinary/approval/malformed scopes are implemented; native Codex completion is now integrated at ae0725300. Published native-wheel Linux and macOS ARM jobs passed; Windows and macOS Intel failed. Successful exact final installed delivery across supported platforms remains required. Retained native-wheel artifacts report real registered Claude PostToolUse startup/stdout/exit smoke with only n=2 per platform: macOS ARM p95/p99 322.268 ms (artifact 10489669145) and Linux 355.223 ms (artifact 10491149852). Both identify build source f7293abfe50cfb8f6b05e99f3e1b9c0449ada61c and qualification_complete=false. These values exceed the PRD installed targets numerically and are a profiling lead, not qualified percentile estimates or a frozen paired comparison. Other registered routes remain unmeasured by this narrow launcher series.",
+      "evidence_or_remaining_work": "Actual registered Claude/Codex argv, process startup, stdin/stdout and exit probes are implemented. First native-wheel smoke records Linux Claude PostToolUse max/p95 of 344.126 ms and macOS ARM of 282.838 ms, with only two observations each; qualification_complete=false. This is a profiling lead, not a paired tail claim. Full installed priority/nonpriority route and platform evidence remains required.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -120,11 +122,12 @@
         "RSP-003"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Python phase instrumentation and the separate small/maximum-inline driver are integrated (13d6aa090, fb8d57a8e): actual 1,024/1,000,000-byte HTTP bodies, benign/sensitive outcomes, route/count/byte witnesses and bounded failed-attempt journals. Native 47-component allocation evidence is recorded separately. Actual installed reports for both arms remain pending; Rust connection/auth, uninstrumented copies and SQLite VFS work remain explicitly unavailable.",
+      "evidence_or_remaining_work": "Source phase collectors and exact timing boundaries exist. The first MCP v1 report separates catalog, classification, policy, barrier, child and simulated-approval CPU/wall time; it does not exercise network work. MCP v2 adds a bounded loopback attribution trace and independent run statistics, pending actual CI. Native inner phases, full cold-resident and SQLite VFS attribution remain missing.",
       "evidence_refs": [
         "phases",
         "allocations",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -167,10 +170,11 @@
         "RSP-009"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Independent daemon/helper/resident resource sampling and closed/open-loop attempt ledgers are implemented. Mixed load retains scheduled offers, generator queue wait, admission/rejection and immutable timeout outcomes. Obtain actual four-platform saturation/process-tree observations; unsupported private/handle/CPU metrics remain unavailable.",
+      "evidence_or_remaining_work": "The actual Linux legacy soak of 100,000 requests and 250,000 receipts has zero errors and 3.9683% sampled RSS growth at build a806a38. Its driver, daemon and descendant scope and soak latency gate are separate from daemon-only qualification. Explicit Windows Job CPU and working-set/private-commit readers, late-unavailable checks and complete before-teardown MCP windows are implemented; final four-platform process-tree and saturation qualification remains.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -229,10 +233,11 @@
         "RSP-014"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Independent frozen expectations distinguish Watch, native unavailable, integrity, size, permission, lifecycle and harness JSON/exit outcomes. Eligible .rs source fixtures now require exact reviewed-content digest and actual Rust allow; fresh command sessions provision and verify real empty authority. The 16-case registered malformed corpus is integrated. Platform execution, not source tests, must establish delivery coverage.",
+      "evidence_or_remaining_work": "Frozen Watch/availability, permission, lifecycle, integrity and source-capability expectations remain distinct. First107606Windows baseline completed the implemented386-case normalized corpus and62registered cases, retaining unsupported source scopes and failing side scenarios. Every candidate stopped at the expiry fixture; corrected renewal preserves acknowledged command extensions, exact ACK and binding. Installed candidate reruns still required.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -244,7 +249,7 @@
         "RSP-015"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Qualification corpus and CURRENT_CONTRACT.md distinguish native decision, posture transformation, availability and final response. Availability allow is not native-evaluated allow.",
+      "evidence_or_remaining_work": "Frozen Watch/availability, permission, lifecycle, integrity and source-capability expectations remain distinct. At the first 107606 checkpoint, the Windows baseline completed the implemented 386-case normalized corpus and 62 registered cases, retaining unsupported source scopes and failing side scenarios. Every candidate stopped at the expiry fixture; corrected renewal preserves acknowledged command extensions, exact ACK and binding. Installed candidate reruns are still required.",
       "evidence_refs": [
         "contract",
         "qualification"
@@ -762,9 +767,10 @@
         "RSP-010"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "36 independent cardinality/mode cells and five alternating 1,000-by-1,000 exact pairs recorded; 13 baseline process timeouts remain censored. Full qualification pending.",
+      "evidence_or_remaining_work": "First CI retains 72 cardinality offers: 36 candidate workers completed, 24 baseline workers completed, and 12 baseline workers were censored at the 15-second whole-worker bound. All 24 complete pairs match semantic coverage. Format preflight has 20 completed candidate cells, 18 completed baseline cells and two baseline Composer count failures; five 1k-by-1k protect-route pairs complete. Unversioned cardinality remains bundle-kernel scope; complete full-route evidence and comparable missing high-cardinality evidence remain required.",
       "evidence_refs": [
-        "package"
+        "package",
+        "first_ci"
       ]
     },
     {
@@ -822,9 +828,10 @@
         "RSP-012"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Optimized Python is measured, including 6812.312 to 121.574 ms median CPU in the 1000-dependency/1000-bundle local diagnostic (98.22%). A Rust pilot has not been built/measured; obtain optimized-Python versus native real-route cost/contract evidence before a port or measured no-port decision.",
+      "evidence_or_remaining_work": "Five actual local protect pairs measure optimized Python median wall time of 259.996 ms and CPU time of 242.241 ms, versus frozen-baseline values of 6,885.272 ms and 5,923.255 ms. The observed 95.9041% median CPU reduction is from Python optimization. Attribute residual current cost, then compare any native pilot against optimized Python using the PRD's 30% benefit gate and 5% other-metric safeguard. Neither an unbuilt native pilot nor a large frozen-baseline speedup closes the port decision.",
       "evidence_refs": [
-        "package"
+        "package",
+        "first_ci"
       ]
     },
     {
@@ -1164,10 +1171,11 @@
         "RSP-076"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Isolated installed workers clear development overrides, verify package/runtime/manifest/source identity and read actual registration argv. Final four-platform successful route execution and signing/frozen selection evidence remain.",
+      "evidence_or_remaining_work": "No-environment-origin installed launcher paths and the default-off dormant Claude pilot exist. Four-target pilot source-feature tests pass at 107606; real native registration, repair, package binding and installed paired benefit are not established. Ordinary installed Python launcher smoke is separate.",
       "evidence_refs": [
         "surfaces",
-        "qualification"
+        "qualification",
+        "first_ci"
       ]
     },
     {
@@ -1446,7 +1454,7 @@
         "RSP-093"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Bounded c1/c4/c16/c64 closed/offered load and mixed mutation/receipt/inventory/resident-recovery runner exist. Need installed large/small/fault saturation, stalled clients, panic/worker/blocked-I/O observations and process-tree bounds; source harness tests alone do not close stress acceptance. Integrated 938d59999 corrects the mixed fixture's eight-per-client admission setting and bounds request-permit handoff to 50 ms within the original deadline. Its retained 240-request workload still failed: zero 503 responses, one 408 and p95 1,708.144 ms above the unchanged 1,000 ms diagnostic target. Integrated 27da1a51b separately transfers already-buffered complete headers under the classification lock and revalidates the exact expired socket/deadline before watchdog closure. The watchdog tests pass (24 adversarial/handoff, six header/probe and one blocking-socket refusal); no passing full-workload rerun exists. Headers completed during parsing and the separate overload-eviction path remain outside this repair's proof. No deadline or PRD limit changed.",
+      "evidence_or_remaining_work": "Bounded c1/c4/c16/c64 closed/offered load and mixed mutation/receipt/inventory/resident-recovery runner exist. Need installed large/small/fault saturation, stalled clients, panic/worker/blocked-I/O observations and process-tree bounds; source harness tests alone do not close stress acceptance. Integrated 938d59999 corrects the mixed fixture's eight-per-client admission setting and bounds request-permit handoff to 50 ms within the original deadline. Its retained 240-request workload still failed: zero 503 responses, one 408 and p95 1,708.144 ms above the unchanged 1,000 ms diagnostic target. Integrated 27da1a51b separately transfers already-buffered complete headers under the classification lock and revalidates the exact expired socket/deadline before watchdog closure. The watchdog tests pass (24 adversarial/handoff, six header/probe and one blocking-socket refusal); no passing full-workload rerun exists. Those were the limits of the earlier 27da1a51b repair. Integrated f5cff2cf8 subsequently adds InitialHeaderReader, which transfers initially partial-header ownership under the classification lock before parser consumption, and exact socket/deadline revalidation for both watchdog and overload eviction. The original 400 ms header deadline and request-capacity release semantics are preserved. This later source repair does not establish a passing installed mixed-workload rerun; no deadline or PRD limit changed.",
       "evidence_refs": [
         "pool",
         "identity",
@@ -1511,9 +1519,10 @@
         "RSP-010"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual stdio session benchmark and nested phase profile separate Guard, deliberate drain, child wait and startup. Local timings are noisy diagnostics.",
+      "evidence_or_remaining_work": "MCP v1 CI records 30 workers and 2,730 calls across five independent runs and seven identical source stdio traces. For the 1,000-entry plain catalog, warm p50/p95 changed from 57.583/83.897 ms to 32.253/33.421 ms; these are nearest-rank descriptive summaries without paired confidence intervals. Child and simulated human waits and the 5 ms quiet barrier are separate; there is no network trace. Version 2 adds actual bounded loopback roundtrip/service attribution and five paired run intervals; its real CI evidence is pending.",
       "evidence_refs": [
-        "mcp"
+        "mcp",
+        "first_ci"
       ]
     },
     {
@@ -1586,9 +1595,10 @@
         "RSP-102"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Immutable catalog/request-local reuse and bounded framing are implemented. Earlier actual stdio timing is noisy; remeasure optimized complete proxy overhead/memory with identical traces and separate child/human/network/5 ms quiet waits before selecting Rust.",
+      "evidence_or_remaining_work": "The actual optimized Python proxy was measured at 107606 before later risk prefilters. For the 1,000-entry catalog, mean parent CPU time changed from 51.886 ms to 24.455 ms. Startup-inclusive resource medians changed from 109.60 to 112.84 MiB RSS and 88.05 to 91.18 MiB private memory; these remain incomplete because final reads are missing and descriptor queries failed. Version 2 now binds 100-call resource sessions to 80 warm windows before child teardown; fresh source measurements and the native go/no-go decision remain outstanding.",
       "evidence_refs": [
-        "mcp"
+        "mcp",
+        "first_ci"
       ]
     },
     {
@@ -1824,11 +1834,12 @@
         "RSP-117"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The installed wheel-only Ollama native 22-case scopes passed on Linux and macOS ARM in round four. Builder isolation correctly rejected all three non-Windows jobs because installed environments were inside source; 6515e525e moves them outside both checkouts. Windows readiness remains unresolved. Successful four-platform contribution/Builder/install/enable/review/receipt/disable and actual changed program/package update/rollback remain required. Ordinary settings rollback is narrower; native Codex continuation source is now integrated but separately unqualified. Integrated 6311a8ade preserves the actual failed lifecycle phase, completed validated cases, one-call readiness elapsed/returned-snapshot state, nonblocking cached publisher state, finite error codes and up to eight code locations. Forty-four focused tests pass and independent source review found no blocker. This is diagnostic repair, not a proven Windows readiness cause or a passing rerun; the 400 ms readiness gate and authority/Builder checks are unchanged. On current published 42579f046, all four installed Builder subchecks pass. Linux and macOS ARM also retain 22 passing native Ollama cases, but their top-level qualification result is false. Source inspection established that the privacy sanitizer dropped source_sha before an identity comparison required it. Integrated 923a13634 now uses safe build_sha on both expected and child sides, preserving exact 40-hex source identity through both sanitizer passes and rejecting missing or mismatched identity. Three new regressions pass; the preceding 44 diagnostic/probe tests also passed. This repairs aggregation, not an installed rerun. Windows and macOS Intel retain generic native_readiness_failed with dropped progress: phase and executed-case count remain unknown. Local 6311a8ade adds bounded phase/publisher diagnostics without changing 400 ms readiness. Changed program/package update and rollback remain unqualified.",
+      "evidence_or_remaining_work": "Both macOS targets validate 22 installed native Ollama cases and Builder at 107606. Windows validates 10 cases, then misses disabled-phase revision 2 readiness at 406 ms against the unchanged 400 ms bound; the sampled publisher stack reaches Windows definition/file binding. Source FFI reuse retains all actual owner, ACL and authority reads and needs a rerun. Settings rollback is narrower than changed program/package upgrade and rollback; full final lifecycle qualification remains blocked.",
       "evidence_refs": [
         "program",
         "control",
-        "ollama"
+        "ollama",
+        "first_ci"
       ]
     },
     {
@@ -2031,7 +2042,7 @@
         "RSP-130"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Actual mixed ingestion and its qualification-side wrapper are integrated (a5d2ffeda,64ae66eac). Candidate uses complete binding-aware durable receipts; only exact baseline 2e672d2 may select legacy receipt profile. Scheduled offers, queue metrics, journal writes/fsync and SQL transaction counts are retained. Installed resource sampling/soak remain unqualified; SQLite VFS bytes/fsync stay null and persistence coverage false.",
+      "evidence_or_remaining_work": "Actual mixed ingestion and its qualification-side wrapper are integrated (a5d2ffeda, 64ae66eac). Candidate uses complete binding-aware durable receipts; only exact baseline 2e672d2 may select legacy receipt profile. Scheduled offers, queue metrics, journal writes/fsync and SQL transaction counts are retained. Installed resource sampling/soak remain unqualified; SQLite VFS bytes/fsync stay null and persistence coverage false.",
       "evidence_refs": [
         "background",
         "mixed"
@@ -2078,14 +2089,15 @@
         "RSP-133"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Earlier per-owner Rust/Clippy, approval, malformed, phase and common-fixture evidence retains its recorded source. New integrated repairs report: 21 Rust fixture tests; 24 Windows child-probe tests plus 1 Windows skip; 48 source-witness diagnostics; 16 macOS diagnostic tests; 44 isolated-runner tests/zero type errors; archive 56 passes / 1 Windows skip plus 1 regression; native Codex 72 final focused passes. Broader Codex 117 tests had 115 passes / 2 failures; adapter timeout reproduced on unchanged source, waiting case passed alone. At the coordinator's API refresh at 10:27 UTC on 2026-09-17, all 36 round-four workflows were terminal: 29 succeeded and seven failed, with none active, on published head 81ef6195c. Performance 35206822316 failed all four targets; CI 35206822177 failed. Native-wheel 35206822343 finished with Linux and macOS ARM jobs successful, Windows and macOS Intel failed. Performance remains smoke, not full qualification. The successful native-wheel observations identify PR merge build source f7293ab; they do not qualify the reconciled source 923a13634. Final combined validation and a successful mixed-fairness workload rerun remain required; no limits changed. Integrated 938d59999 corrects the mixed fixture's eight-per-client admission setting and bounds request-permit handoff to 50 ms within the original deadline. Its retained 240-request workload still failed: zero 503 responses, one 408 and p95 1,708.144 ms above the unchanged 1,000 ms diagnostic target. Integrated 27da1a51b separately transfers already-buffered complete headers under the classification lock and revalidates the exact expired socket/deadline before watchdog closure. The watchdog tests pass (24 adversarial/handoff, six header/probe and one blocking-socket refusal); no passing full-workload rerun exists. Headers completed during parsing and the separate overload-eviction path remain outside this repair's proof. No deadline or PRD limit changed. RSP-052 and Windows Ollama diagnostic source evidence are integrated at 17c531a10 and 6311a8ade; their focused passes do not establish installed qualification. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "The first 107606 checkpoint has 39 workflows: 33 successful and six failed. Main quality, compatibility and scheduling-sensitive checks, source differential/adversarial/authority checks, and the four-target dormant pilot pass. Fixture/version, macOS secure-root, public-digest secret-scan and installed failures remain historical failures. Local targeted corrections and independently reviewed pair, MCP, Windows, resolver and retention changes pass their stated source suites. The root combined 36-module source batch recorded 575 passed, seven skipped and seven failed. Six failures came from a test fixture colliding with PID 10; c964a61a3 fixes that fixture, and the focused rerun recorded 61 passed and two skipped. The original locked-storage burst HTTP timeout remains unresolved; no deadlines changed. The authority gate passed for 131 changed files, and the I/O ownership gate passed with 437 reachable and 3,861 inventoried entries. These source suites overlap and must not be summed; they do not establish an installed qualification pass. Final-head CI remains required.",
       "evidence_refs": [
         "qualification",
         "allocations",
         "launcher_approval",
         "launcher_input",
         "phases",
-        "fixture"
+        "fixture",
+        "first_ci"
       ]
     },
     {
@@ -2098,10 +2110,11 @@
         "RSP-081"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Locked isolated wheels, installed identity and Windows authority probes are wired. Integrated schema LF pin 6971a4331, fixture rewrite 1bbce6df7 and raw Windows child FILE_SHARE_DELETE 0012d3c1d retain exact existing production contracts. Published native-wheel Linux and macOS ARM jobs passed, while Windows and macOS Intel failed; Builder isolation is corrected locally at 6515e525e. Exact final artifact identities, post-sign/frozen and successful platform probes remain required. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "Both exact wheels and hash-locked dependency bundles now build once per platform; paired installers verify installed package, runtime, source, target, Python and dependency versions outside both checkouts. POSIX uses byte-identical private interpreters, preserving the frozen validator. First-wheel Linux and macOS ARM pass at merge build a806a38; macOS Intel recovery and Windows RSS fail. New final artifacts, all-platform execution, post-sign and frozen-sidecar manifests remain required.",
       "evidence_refs": [
         "qualification",
-        "contract"
+        "contract",
+        "first_ci"
       ]
     },
     {
@@ -2114,7 +2127,7 @@
         "RSP-015"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Priority/fault, nonpriority/mixed, approval, malformed and phase drivers are integrated, now including exact native Codex completion and pre-assertion daemon journals. At the coordinator's API refresh at 10:27 UTC on 2026-09-17, all 36 round-four workflows were terminal: 29 succeeded and seven failed, with none active, on published head 81ef6195c. Performance 35206822316 failed all four targets; CI 35206822177 failed. Native-wheel 35206822343 finished with Linux and macOS ARM jobs successful, Windows and macOS Intel failed. Performance remains smoke, not full qualification. The successful native-wheel observations identify PR merge build source f7293ab; they do not qualify the reconciled source 923a13634. Published performance fails all four targets; partial22-case Ollama native passes do not qualify Builder. macOS DNS, Windows source/readiness and full mixed-fairness workload acceptance remain unresolved. The bounded header/watchdog correction is integrated at 27da1a51b; its incomplete-header and overload-eviction boundaries remain explicit. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. On current published 42579f046, all four installed Builder subchecks pass. Linux and macOS ARM also retain 22 passing native Ollama cases, but their top-level qualification result is false. Source inspection established that the privacy sanitizer dropped source_sha before an identity comparison required it. Integrated 923a13634 now uses safe build_sha on both expected and child sides, preserving exact 40-hex source identity through both sanitizer passes and rejecting missing or mismatched identity. Three new regressions pass; the preceding 44 diagnostic/probe tests also passed. This repairs aggregation, not an installed rerun. Windows and macOS Intel retain generic native_readiness_failed with dropped progress: phase and executed-case count remain unknown. Local 6311a8ade adds bounded phase/publisher diagnostics without changing 400 ms readiness. Changed program/package update and rollback remain unqualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "At integrated source c964a61a3a4c19d721358e69c400d6059dfd1156, the priority and fault corpus, nonpriority registered routes, mixed contention, approval, malformed-input and phase drivers are implemented. They include exact native Codex completion, pre-assertion daemon journals, capability-aware Windows source review and separate frozen-baseline unsupported-source evidence. At the first published PR #2970 checkpoint, 107606, native performance run 35220287310 failed all four smoke jobs. The Windows baseline completed one block with 386 normalized corpus observations and 62 registered launcher observations, but its additional scenarios still failed and unsupported source scopes remained explicit. Every candidate stopped at the expiry fixture publication-authentication assertion; Linux baseline interpreter admission and both macOS baseline reverse lookups also failed. The integrated expiry-publication, interpreter, resource and resolver-diagnostic corrections are source changes, not passing installed reruns. InitialHeaderReader and the common classification lock now cover initially partial headers plus watchdog and overload-eviction revalidation; the earlier 27da1a51b-only coverage limits are historical. Full installed candidate route, delivery, approval/continuation, source-reference, availability/fault, mixed-load and four-platform evidence remains required. Strict refusal and original deadline gates remain unchanged. Earlier attempts are retained in EXECUTION.md and prior ledger commits; no historical pass qualifies this corrected source.",
       "evidence_refs": [
         "qualification",
         "surfaces",
@@ -2134,10 +2147,11 @@
         "RSP-010"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Historical run 35201516872 failed before full qualification. Published round-four performance 35206822316 at 81ef6195c is smoke and failed all four targets. Source/fixture corrections preserve frozen baseline and all 400 ms / PRD budgets. Final alternating frozen samples on exact artifacts remain required; no source repair or partial scope pass becomes qualification. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified.",
+      "evidence_or_remaining_work": "Five indexed pairs per platform run both arms on the same runner and preserve the original 2,000/200/20 block counts, five independent runs, estimator, exact numeric commitments and strict cohort checks. Two 60-minute worker bounds now fit a 125-minute collection step within a 200-minute job, with separate encryption and upload budgets. Only failing smoke evidence exists at 107606; final full performance qualification remains blocked.",
       "evidence_refs": [
         "qualification",
-        "contract"
+        "contract",
+        "first_ci"
       ]
     },
     {
@@ -2150,10 +2164,11 @@
         "RSP-131"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Actual hook/control/receipt/inventory/resident-recovery contention and retained side-scenario integration are present. Source tests and 30-second default do not establish installed saturation/soak. Whole Python-daemon restart, full process resources and all persistence metrics remain unqualified.",
+      "evidence_or_remaining_work": "The Linux legacy soak of 100,000 requests and 250,000 receipts passed at build a806a38 with 100,000 responses, 17,888 health checks and zero errors. Its p95 of 528.06 ms and 3.9683% RSS growth describe the recorded soak scope, not PRD installed latency or the complete mixed mutation/recovery/receipt workload. Windows baseline mixed controls/persistence and additional scenarios retain failures. The full selected scope remains blocked.",
       "evidence_refs": [
         "qualification",
-        "contract"
+        "contract",
+        "first_ci"
       ]
     },
     {
@@ -2182,11 +2197,12 @@
         "RSP-138"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Encrypted private-observation retention is integrated at 4dde4d52a/3c28a9a3f: RSA-OAEP-SHA256 wraps fresh AES-256-GCM keys; bounded authenticated manifests, exclusive recovery and separate always-upload ciphertext/public receipts preserve flat JSON/JSONL attempts. 56 tests pass with one actual-Windows ABI skip, plus one receipt-truth regression. Independent recovery with the separately retained production key verified both exact file hashes, including partial JSONL, and Unix 0700/0600 permissions. Actual CI ciphertext retention/readback and Windows execution remain pending; no private key, raw observations or private paths are published. Final success/error/fault artifact privacy and actual retained CI recovery remain required for this OPEN acceptance.",
+      "evidence_or_remaining_work": "Finite public reconstruction, common-versus-semantic identity, every offered/terminal attempt and exact encrypted numeric commitments are implemented. Authorized package format-preflight CI recovery verified 103 files, including 40 JSONL files, and permissions of 0700/0600. Private numeric checkpoints retain earlier observations after failure; availability continuations remain separate from native-evaluated allows. Final success/error/fault artifact privacy, v2 resource completeness and Windows/interrupted CI recovery remain open.",
       "evidence_refs": [
         "qualification",
         "contract",
-        "archive"
+        "archive",
+        "first_ci"
       ]
     },
     {
@@ -2199,7 +2215,7 @@
         "RSP-137"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "EXECUTION/CURRENT_CONTRACT/ledger/TAKEAWAY reconcile integrated 27da1a51b, historical round-four 81ef6195c evidence, native Codex signed request/consumed authority, encrypted archives, corrected external installed environments/corpus runner, completed text single-parse component, bounded watchdog repair and Ollama diagnostics. All 144 original titles, acceptance and dependencies remain unchanged; exported native v3/v4 is separate. New remote publication is tracked separately from historical checks. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "The execution documents, current contract, ledger and takeaway reconcile integrated source c964a61a3a4c19d721358e69c400d6059dfd1156 with the exact first-CI 107606 checkpoint: 39 workflows, 33 successful and six failed. They distinguish implemented native Codex continuation, source-reference reading, bounded initial-header/watchdog/eviction handling, indexed qualification, encrypted numeric retention and later fixture/measurement corrections from their remaining installed evidence. All 144 original IDs, numbers, titles, acceptance conditions and dependencies remain unchanged; exported native v3/v4 consume remains a separate API. Earlier 81ef6195c and 42579f046 attempts remain historical in EXECUTION.md and prior commits. Source validation counts overlap, the locked-storage burst HTTP timeout remains unresolved, and final publication, exact-head CI and installed qualification remain required.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2217,7 +2233,7 @@
         "RSP-141"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Foundation PR #2951 retains its reported 25 successful workflows and 33 resolved threads, with no independent last-push human approval. Performance PR #2954 has 3 resolved review threads. At the coordinator's API refresh at 10:27 UTC on 2026-09-17, all 36 round-four workflows were terminal: 29 succeeded and seven failed, with none active, on published head 81ef6195c. Performance 35206822316 failed all four targets; CI 35206822177 failed. Native-wheel 35206822343 finished with Linux and macOS ARM jobs successful, Windows and macOS Intel failed. Performance remains smoke, not full qualification. The successful native-wheel observations identify PR merge build source f7293ab; they do not qualify the reconciled source 923a13634. Independent approval of the final push and required final CI remain outstanding. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified.",
+      "evidence_or_remaining_work": "Foundation PR #2951 retains its historical observation of 25 successful workflows and 33 resolved threads; independent approval of its latest push remains unestablished. The three resolved review threads on concurrent PR #2954 are historical and do not approve the isolated implementation in PR #2970. The last recorded PR #2970 checkpoint, 107606, has 39 workflows: 33 successful and six failed. Independent review of source components does not replace final-head required CI or independent latest-push approval. The corrected integrated source must receive those checks and approval before merge. Earlier 81ef6195c and 42579f046 workflow outcomes remain in EXECUTION.md and prior ledger commits; none establishes final qualification.",
       "evidence_refs": [
         "qualification",
         "contract"
@@ -2254,67 +2270,82 @@
         "RSP-143"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All 144 original records are reconciled to integrated 923a13634 and separately published 81ef6195c; only RSP-052 closes in this refresh, moving the prior 64 DONE / 39 OPEN / 41 BLOCKED counts to 65 DONE / 38 OPEN / 41 BLOCKED. Native Codex authority and encrypted archive source are integrated with bounded tests and independent local archive recovery. At the coordinator's API refresh at 10:27 UTC on 2026-09-17, all 36 round-four workflows were terminal: 29 succeeded and seven failed, with none active, on published head 81ef6195c. Performance 35206822316 failed all four targets; CI 35206822177 failed. Native-wheel 35206822343 finished with Linux and macOS ARM jobs successful, Windows and macOS Intel failed. Performance remains smoke, not full qualification. The successful native-wheel observations identify PR merge build source f7293ab; they do not qualify the reconciled source 923a13634. Actual final CI retention/platform performance, conditional native comparisons, independent approval and tested rollout/rollback remain required. Current reported PR head 42579f046ac262ff93c0c020547bc3873d308652, tree 096abd5c67d24ab3b324fb911c8bdac5d79090f8, has 36 completed workflows: 32 successful and 4 failed. Rust authority 35210169031 fails because policy_store_tests.rs has 526 lines against its 500-line cap; CI 35210168989 fails only Sonar coverage because a synthetic startup filename has no source. Native wheel 35210168835 fails its Linux c64 bounded gate (job 105165538874): max 615.789 ms, no latency ceiling, zero errors, 64 fail-safe observations and 32 overloaded observations; the other three platform jobs pass. Native performance 35210168801 fails all four baseline arms: Linux review-queue-failed.small reports setup approval_persistence_failed; Windows benign Claude PostToolUse 1M reports delivered/native no_output_to_review block; both macOS baseline getfqdn probes still hang. These observed outcomes do not establish underlying causes. Windows resident/daemon edge and Extension Builder now pass. Results belong to 42579f046, not to the later audited 923a13634 reconciliation. The older 81ef6195c 29/7 snapshot is historical; neither head is fully qualified. Reconciliation 37198f272 incorporates remote 42579f046 while retaining fixed six-field atomic request identity and post-transaction original-waiter liveness, both source/startup diagnostic sets, and independent Windows ABI probes. Retry diagnostics remain observational: hook and challenge refusals must both be zero, including recovered 503s. Coordinator evidence records 197 passing cases and one actual-Windows ABI skip in the initial suite; the corrected 29-case batch passes, including startup coverage XML and refusal-report tests. Source-cap repair 025ddb0b6 splits the private policy-store fixtures without dropping tests. Final CI of this reconciled source remains required. Integrated 923a13634 fixes the exact safe build identity in Ollama aggregation with three missing/mismatch/positive regressions; historical installed outcomes remain unchanged.",
+      "evidence_or_remaining_work": "The PRD addendum, current contract, all 144 immutable acceptance/dependency records, exact first-CI reports and executable takeaway are refreshed at source c964a61a3a4c19d721358e69c400d6059dfd1156. Status is 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED; the first published PR #2970 head, 107606, has 33 successful and six failed workflows. New corrected source, full qualification, native decisions, final review and demonstrated rollout/rollback remain unfinished. Historical evidence is retained through pinned commits and EXECUTION; no measured claim is promoted to later source.",
       "evidence_refs": [
         "qualification",
-        "contract"
+        "contract",
+        "first_ci"
       ]
     }
   ],
-  "review_scope": "All 144 original task titles, acceptance conditions and dependencies are unchanged. This review closes only RSP-062 and RSP-128 at their original source/component criteria, from 65 DONE / 38 OPEN / 41 BLOCKED to 67 DONE / 36 OPEN / 41 BLOCKED. RSP-070 retains failed archive qualification. Final installed qualification, independent approval, merge, canary and release remain incomplete.",
+  "review_scope": "All 144 original IDs, numbers, titles, acceptance conditions and dependencies are unchanged. This checkpoint updates implementation and measured evidence without closing acceptance that still needs installed runs, native comparisons, artifact transitions or independent approval. Status remains 67 DONE / 36 OPEN / 41 BLOCKED / 0 DEFERRED.",
   "release_snapshot": {
-    "observation_basis": "Direct coordinator GitHub API/job-log/artifact review on 2026-09-17; local tests apply only to the stated source. RELEASE_REVIEW.md records the current review; earlier failures remain in EXECUTION.md and retained evidence.",
+    "observation_basis": "GitHub API, exact job logs and independently checked retained public artifacts on 2026-09-17. FIRST_CI_EVIDENCE.md and its manifest bind all reported first-checkpoint measurements; the source corrections below are later.",
     "foundation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2951",
     "foundation_head": "e449594e86c717e66e14598a4130475de79c536f",
-    "foundation_checks": "Last retained observation: 25 successful workflows and 33 resolved threads; final independent code-owner approval not established. Refresh before merge.",
-    "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
-    "implementation_remote_head": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
-    "integrated_source_head": "ce8fce7f504bd67c213d67a60fbca34da724d25e",
-    "integrated_git_tree": "f1b272cbe8ba4762083ef05ddd5d22ece9d95f82",
-    "integrated_publication_status": "Local reconciled source incorporates 5ee52a03. An isolated follow-up branch is being prepared because another session advanced PR2954. No new branch/PR/ref has been published by this session at this documentation cutoff.",
+    "foundation_checks": "Historical observation: 25 successful workflows and 33 resolved threads. Independent latest-push approval remains unestablished; refresh before merge.",
+    "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2970",
+    "implementation_remote_head": "107606388ad55f924a4e2924b4ff84e5fa08e6ff",
+    "implementation_branch": "codex/release-3.2-rust-finalization",
+    "local_integration_branch": "work/rsp-performance-finalization-32",
+    "concurrent_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
+    "concurrent_pr_policy": "Another writer owns that branch; no whole-tree overwrite or unreviewed merge.",
+    "integrated_source_head": "c964a61a3a4c19d721358e69c400d6059dfd1156",
+    "integrated_git_tree": "96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1",
+    "integrated_publication_status": "Prepared local source checkpoint for the isolated PR #2970 branch. The last observed published head is 107606; inspect the live PR head and exact checks after publication. Its 33 successful and six failed workflows are historical relative to these corrections.",
     "workflow_status_counts": {
-      "success": 32,
-      "failure": 4,
+      "success": 33,
+      "failure": 6,
       "active": 0
     },
-    "launched_workflows": 36,
+    "launched_workflows": 39,
     "workflow_failures": [
       {
-        "scope": "desktop_contract",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35213401527",
-        "observation": "Source-bound decision report is stale; regeneration and exact reproducibility checks follow final runtime source changes."
+        "scope": "security",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287255",
+        "observation": "Public source-digest false positive. Local exact fixture exception plus restoration of pinned Gitleaks global defaults passes the original published history range; new-head CI remains required."
       },
       {
         "scope": "main_ci",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35213401782",
-        "observation": "Scheduling-sensitive 48-review test exhausted its existing scheduler deadline; shard24 has two stale source-bound report failures. Local notification-cycle repair is independently proven and 121 focused tests pass; original CI failure was not reproduced locally."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287428",
+        "observation": "Three shards failed on runtime-keyword test doubles, storage/header fixture setup and a parser-version invalidation fixture. Local corrections retain original production contracts and deadlines. Quality, compatibility and scheduling-sensitive jobs passed."
       },
       {
-        "scope": "native_wheel",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35213401455",
-        "observation": "Linux installed launcher did not witness native resident authority; macOS Intel did not witness full native source review. macOS ARM and Windows jobs succeeded at their declared scope; old Windows job lacked installed source-SLO execution."
+        "scope": "rust_daemon_edge",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287297",
+        "observation": "macOS secure-source tests treated the OS temporary-root alias as a supplied source symlink. Local canonical fixture-root correction preserves actual ancestor/leaf symlink refusals; real macOS rerun required."
+      },
+      {
+        "scope": "package_component",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287514",
+        "observation": "All 20 candidate format cells and 36 candidate cardinality cells complete. Two baseline Composer mismatches and 12 censored baseline cardinality workers keep comparability incomplete. Five actual local protect pairs complete; no native comparison."
       },
       {
         "scope": "native_performance",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35213401779",
-        "observation": "Linux and Windows baseline Watch1KiB oracle failures; both macOS baseline constructors hang in socket.getfqdn. Exact mac artifacts show installed/cleaned resolver experiment and zero responder packets. Candidate corrections are not a passing rerun."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287310",
+        "observation": "Smoke: every candidate failed expiry-publication authentication; Linux baseline failed interpreter permission admission; Mac baselines timed out in reverse lookup; Windows retained one baseline block with incomplete side scenarios. Local fixture corrections are not a passing rerun."
+      },
+      {
+        "scope": "native_wheel",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35220287375",
+        "observation": "Linux installed smoke and its 100,000-request / 250,000-receipt soak passed, as did macOS ARM. macOS Intel failed recovery sample 1; Windows RSS was unavailable. Local bounded recovery evidence and the full Windows working-set collector require installed reruns."
       }
     ],
     "qualification_complete": false,
     "merge_or_release_complete": false,
-    "local_validation": "135 combined Watch/capability/source/corpus/Composer/capacity cases passed; 86 ownership/semantic/workflow/public-evidence cases passed; package CI finalizer 15 passed; authority ownership gate passed across 179 changed files and native approval contract gate passed. Source-specific Windows cross-compilation, Linux pilot tests and default/feature executable smokes passed. The decision-diff report regenerated with only three source-binding changes; five tests passed, while the fresh-process metrics case timed out at its unchanged 60-second limit in the combined run and one isolated recheck. No all-tests-green or installed platform/SLO claim follows.",
-    "historical_evidence": "EXECUTION.md; evidence/takeover-42579/manifest.json; source-scoped reports linked by evidence_catalog"
+    "local_validation": "Independent source reviews are clear for indexed pairs, MCP v2, Windows RSS/FFI definitions, the interpreter fixture, resolver observability, the recovery envelope and Gitleaks default-policy repair. Source-scoped suites include 225 pair tests plus 58 final checks; 135 MCP tests; 98 resolver tests; 68 recovery/export tests; 17 interpreter tests; and 11 Windows FFI cases with two platform skips. The root combined 36-module source batch recorded 575 passed, seven skipped and seven failed. Six failures came from a test fixture colliding with PID 10; c964a61a3 fixes that fixture, and the focused rerun recorded 61 passed and two skipped. The original locked-storage burst HTTP timeout remains unresolved; no deadlines changed. The authority gate passed for 131 changed files, and the I/O ownership gate passed with 437 reachable and 3,861 inventoried entries. These source suites overlap and must not be summed; they do not establish an installed qualification pass.",
+    "historical_evidence": "FIRST_CI_EVIDENCE.md; evidence/first-ci-107606/manifest.json; EXECUTION.md; prior ledger at 107606; evidence/takeover-42579/manifest.json"
   },
   "evidence_catalog": {
     "contract": {
       "path": "CURRENT_CONTRACT.md",
-      "source_commit": "ce8fce7f504bd67c213d67a60fbca34da724d25e",
+      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
       "scope_and_limit": "Production routes, authority, limits, approval API distinctions and timing boundaries; source contract, not installed performance."
     },
     "qualification": {
       "path": "RELEASE_REVIEW.md",
-      "source_commit": "ce8fce7f504bd67c213d67a60fbca34da724d25e",
-      "scope_and_limit": "Latest remote5ee 32/4 workflows are historical relative to the local reconciled source. Candidate continuations, exact runtime capability, corrected Watch/HTTP/capacity oracles and encrypted raw retention are implemented; final installed execution, sample minima and SLO gates remain open."
+      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
+      "scope_and_limit": "Local corrected source is later than published 107606, which has 33 successful and six failed workflows. Indexed pairs retain fixed five-run sample minima and exact sealed numeric commitments; installed reruns and full qualification remain pending."
     },
     "identity": {
       "path": "../rsp-runtime-identity-performance.md",
@@ -2324,17 +2355,17 @@
     "package": {
       "path": "../rsp-package-performance.md",
       "source_commit": "640b47ae52dea98ad2d4f5dbfc36b86e91800d83; 0785b00e2",
-      "scope_and_limit": "151 plus 117 focused source tests, 67 independent checks and 560 matching cases. Diagnostic CPU improvement is optimized Python; no built/measured native package pilot."
+      "scope_and_limit": "The retained first CI has five real local protect pairs: median wall time changed from 6,885.272 ms to 259.996 ms and CPU time from 5,923.255 ms to 242.241 ms. All 36 candidate cardinality cells complete; 12 baseline workers were censored and two Composer preflight mismatches remain. Unversioned kernel and full-route scopes are distinct. Optimized-Python residual attribution and native comparison remain open."
     },
     "scanner": {
       "path": "../rsp-scanner-qualification.md",
-      "source_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53;5e23434c0",
+      "source_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53; 5e23434c0",
       "scope_and_limit": "21 equivalent measured Linux source rows, five unavailable cache rows, five alternating samples per arm and rich full-source-CLI/HMAC/context witnesses. Only scanner/security source digests were independently reproduced; no full installed artifact identity or native comparison."
     },
     "mcp": {
-      "path": "../../mcp-framing-bounds.md",
-      "source_commit": "b076ea79c",
-      "scope_and_limit": "Bounded line/queue/response/operation I/O and terminal cleanup, real POSIX pipe tests plus simulated Windows branch; unchanged 5 ms barrier. Native kernel benefit and actual Windows transport qualification remain separate."
+      "path": "mcp-proxy-rebaseline.md",
+      "source_commit": "107606388ad55f924a4e2924b4ff84e5fa08e6ff; 6fcb746da",
+      "scope_and_limit": "Version 1 source stdio CI records 30 workers and 2,730 calls, retaining local improvements and incomplete resource windows. The version 2 source collector adds eight traces and five paired run intervals: 30 workers, 240 sessions, 10,080 calls and 80 warm resource windows before teardown. Actual v2 CI and native selection remain pending. The 5 ms barrier is unchanged."
     },
     "pool": {
       "path": "legacy-pool-and-inventory-audit.md",
@@ -2354,7 +2385,7 @@
     "ollama": {
       "path": "../installed-native-ollama-qualification.md",
       "source_commit": "1b59b2d3b; 58548bb2e; 017214841; 6311a8ade; 923a13634",
-      "scope_and_limit": "Native-wheel run 35206822343 is terminal: Linux job 105154527771 succeeded, including the 100,000-request/250,000-receipt soak; macOS ARM job 105154527991 succeeded. Windows job 105154527989 failed the lock-child probe (source correction integrated); macOS Intel job 105154528161 failed the source witness (cause unproven, diagnostics added). The observed build-source prefix is f7293ab; retain those exact artifact identities in the machine-readable ledger. Separately, installed Ollama native 22-case scopes passed on Linux/macOS ARM, but Builder isolation rejected all three non-Windows jobs; integrated 6515e525e moves environments outside source. Windows Ollama retained an unlocalized readiness assertion after session startup; accumulated progress was dropped, so executed-case count and phase are unknown. No full lifecycle or final candidate qualification follows. Settings rollback is not package/program downgrade. Integrated 6311a8ade preserves the actual failed lifecycle phase, completed validated cases, one-call readiness elapsed/returned-snapshot state, nonblocking cached publisher state, finite error codes and up to eight code locations. Forty-four focused tests pass and independent source review found no blocker. This is diagnostic repair, not a proven Windows readiness cause or a passing rerun; the 400 ms readiness gate and authority/Builder checks are unchanged. On current published 42579f046, all four installed Builder subchecks pass. Linux and macOS ARM also retain 22 passing native Ollama cases, but their top-level qualification result is false. Source inspection established that the privacy sanitizer dropped source_sha before an identity comparison required it. Integrated 923a13634 now uses safe build_sha on both expected and child sides, preserving exact 40-hex source identity through both sanitizer passes and rejecting missing or mismatched identity. Three new regressions pass; the preceding 44 diagnostic/probe tests also passed. This repairs aggregation, not an installed rerun. Windows and macOS Intel retain generic native_readiness_failed with dropped progress: phase and executed-case count remain unknown. Local 6311a8ade adds bounded phase/publisher diagnostics without changing 400 ms readiness. Changed program/package update and rollback remain unqualified."
+      "scope_and_limit": "At the exact first finalization candidate 107606, both macOS targets pass 22 native cases and Builder. Windows validates 10 cases, then misses disabled-phase revision 2 readiness at 406 ms against the unchanged 400 ms bound. Later FFI definition reuse preserves fresh security reads and remains unqualified until rerun. Changed package/program transitions, enrollment, native consume and final lifecycle qualification remain separate."
     },
     "background": {
       "path": "../rust-performance-background.md",
@@ -2363,8 +2394,8 @@
     },
     "mixed": {
       "path": "../../../scripts/native_slo_mixed.py",
-      "source_commit": "a5d2ffeda; 64ae66eac; b076ea79c; 938d59999; 27da1a51b",
-      "scope_and_limit": "Actual daemon hooks, public mutations, ACK/first enforcing receipt, durable receipts, inventory and Rust resident recovery are wired. Published CI shard 18 returns 503 in mixed fairness; bounded production corrections are now integrated; full workload acceptance remains unmet. Installed soak, whole-daemon restart and SQLite VFS metrics remain unmet. Integrated 938d59999 corrects the mixed fixture's eight-per-client admission setting and bounds request-permit handoff to 50 ms within the original deadline. Its retained 240-request workload still failed: zero 503 responses, one 408 and p95 1,708.144 ms above the unchanged 1,000 ms diagnostic target. Integrated 27da1a51b separately transfers already-buffered complete headers under the classification lock and revalidates the exact expired socket/deadline before watchdog closure. The watchdog tests pass (24 adversarial/handoff, six header/probe and one blocking-socket refusal); no passing full-workload rerun exists. Headers completed during parsing and the separate overload-eviction path remain outside this repair's proof. No deadline or PRD limit changed."
+      "source_commit": "a5d2ffeda; 64ae66eac; b076ea79c; 938d59999; 27da1a51b; f5cff2cf8",
+      "scope_and_limit": "Actual daemon hooks, public mutations, ACK/first enforcing receipt, durable receipts, inventory and Rust resident recovery are wired. Historical CI shard 18 returned 503 in mixed fairness; bounded production corrections are now integrated; full workload acceptance remains unmet. Full mixed installed soak, whole-daemon restart and SQLite VFS metrics remain unmet. Integrated 938d59999 corrects the mixed fixture's eight-per-client admission setting and bounds request-permit handoff to 50 ms within the original deadline. Its retained 240-request workload still failed: zero 503 responses, one 408 and p95 1,708.144 ms above the unchanged 1,000 ms diagnostic target. Integrated 27da1a51b separately transfers already-buffered complete headers under the classification lock and revalidates the exact expired socket/deadline before watchdog closure. The watchdog tests pass (24 adversarial/handoff, six header/probe and one blocking-socket refusal); no passing full-workload rerun exists. Those were the limits of the earlier 27da1a51b repair. Integrated f5cff2cf8 subsequently adds InitialHeaderReader, which transfers initially partial-header ownership under the classification lock before parser consumption, and exact socket/deadline revalidation for both watchdog and overload eviction. The original 400 ms header deadline and request-capacity release semantics are preserved. This later source repair does not establish a passing installed mixed-workload rerun; no deadline or PRD limit changed."
     },
     "surfaces": {
       "path": "registered-surfaces-smoke.md",
@@ -2379,7 +2410,7 @@
     "matrix": {
       "path": "../native-command-matrix-performance.md",
       "source_commit": "91f0a8e57",
-      "scope_and_limit": "638 catalog/control/command rows,7/48/86 extensions, up to 780 controls, cold/warm/candidate and benign-restriction evidence. Complete declarative parity; differing final contexts and explicit compatibility restrictions retained."
+      "scope_and_limit": "638 catalog/control/command rows, 7/48/86 extensions, up to 780 controls, cold/warm/candidate and benign-restriction evidence. Complete declarative parity; differing final contexts and explicit compatibility restrictions retained."
     },
     "phases": {
       "path": "installed-python-phase-run.md",
@@ -2399,7 +2430,7 @@
     "launcher_input": {
       "path": "registered-input-corpus.md",
       "source_commit": "d15261b45; b076ea79c",
-      "scope_and_limit": "16 actual-registration malformed/nonobject/empty/oversize contracts:8 native unknown reviews resolved block,8 bypass,0 native allows.92 focused/adjacent source tests; invalid UTF8 and installed platform execution remain separate."
+      "scope_and_limit": "Sixteen actual-registration malformed/nonobject/empty/oversize contracts cover eight native unknown reviews resolved as block, eight bypasses and zero native allows. Ninety-two focused/adjacent source tests pass; invalid UTF-8 and installed platform execution remain separate."
     },
     "inventory": {
       "path": "inventory-refresh-audit.md",
@@ -2407,9 +2438,9 @@
       "scope_and_limit": "Per-call traversal coalescing, exact one-SELECT/upsert reduction and retry ACK correction; unchanged transactions, regressed broader timing and controlled/absent scanner-cloud scopes retained. Installed lifecycle/native selection remains open."
     },
     "archive": {
-      "path": "archive-worker-qualification.md",
-      "source_commit": "5ee52a03e62b9e4940063b348185bedaddf0cb53",
-      "scope_and_limit": "510 measured calls and 60 separate profiles; 2 measured plus 1 warmup timeout retained, expected_results_verified=false, native_worker_qualified=false. No installed/native comparison."
+      "path": "numeric-evidence-durability.md",
+      "source_commit": "c964a61a3a4c19d721358e69c400d6059dfd1156",
+      "scope_and_limit": "Private incremental journals retain interrupted values; exact indexed manifests validate raw counts, hashes and the bytes sealed. Actual package-format preflight archive recovery verified 103 files, including 40 JSONL files, and permissions of 0700/0600. Other component recovery and new interrupted Windows archival recovery remain open; missing data never become zero."
     },
     "codex": {
       "path": "../native-codex-browser-continuation.md",
@@ -2420,6 +2451,11 @@
       "path": "../rsp-text-lockfile-contract.md",
       "source_commit": "17c531a10",
       "scope_and_limit": "RSP-052 is DONE at its original source/component acceptance boundary. Integrated 17c531a10 completes single-traversal Yarn/pnpm/Gemfile manifest and direct-selector views alongside the existing shared JSON/JSONC/TOML decode. Immutable complete-v2 results preserve exact bytes, supported duplicate/alias behavior and typed completeness; a failed parse is reused only within one evaluation and a new evaluation parses again. Numeric 8 MiB/100,000-entry/250,000-node/depth-128/deadline limits remain unchanged, with explicit text-node/depth/projection accounting. Owner batches passed 49 new and 142 existing tests; a broader 275-case run had 274 passes and one old retry expectation, then the corrected context-reuse regression passed in the final 50-case and single-case runs. All 392 frozen-base direct-selector comparisons agreed. No timing, native package or installed qualification is claimed."
+    },
+    "first_ci": {
+      "path": "FIRST_CI_EVIDENCE.md",
+      "source_commit": "107606388ad55f924a4e2924b4ff84e5fa08e6ff",
+      "scope_and_limit": "19 exact retained public reports plus manifest. Optimized Python package/MCP component gains, incomplete resource/cardinality scopes, Linux soak and Mac/Windows failures remain source-specific. Native-wheel build is PR merge a806a38, not later source."
     }
   },
   "status_counts": {
@@ -2427,5 +2463,5 @@
     "DONE": 67,
     "OPEN": 36
   },
-  "implementation_git_tree": "f1b272cbe8ba4762083ef05ddd5d22ece9d95f82"
+  "implementation_git_tree": "96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1"
 }

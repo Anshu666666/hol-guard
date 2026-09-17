@@ -22,6 +22,9 @@ def expire_acknowledged_authority(session: Any) -> dict[str, bool]:
     previous = publisher.current_snapshot()
     if previous is None:
         raise RuntimeError("expiry fixture requires an acknowledged starting generation")
+    command_extensions = previous.get("command_extensions")
+    if command_extensions is not None and not isinstance(command_extensions, dict):
+        raise RuntimeError("expiry fixture starting command authority was invalid")
     config = publisher._compiled_effective_policy()
     publisher.close()  # Suspend renewal; this alone is not evidence of expiry.
     if publisher._thread is not None and publisher._thread.is_alive():
@@ -34,6 +37,9 @@ def expire_acknowledged_authority(session: Any) -> dict[str, bool]:
         raise RuntimeError("expiry fixture signing material unavailable")
     issued = int(time.time() * 1000)
     expires = issued + 3_000
+    # The frozen legacy builder has no command_extensions keyword. An accepted
+    # command-bearing snapshot must retain that authority in the current builder.
+    extension_arguments = {"command_extensions": command_extensions} if command_extensions is not None else {}
     try:
         snapshot = native_policy_snapshot_v3(
             config=config,
@@ -45,6 +51,7 @@ def expire_acknowledged_authority(session: Any) -> dict[str, bool]:
             expires_at_ms=expires,
             renew_after_generation=int(previous["generation"]),
             deadline_monotonic=time.monotonic() + 2.0,
+            **extension_arguments,
         )
     finally:
         material = None
@@ -66,6 +73,9 @@ def expire_acknowledged_authority(session: Any) -> dict[str, bool]:
         or ack.get("policy_digest") != snapshot["policy_digest"]
         or binding is None
         or binding.get("generation") != snapshot["generation"]
+        or binding.get("policy_digest") != snapshot["policy_digest"]
+        or binding.get("runtime_identity") != status.identity.sha256
+        or (command_extensions is not None and binding.get("command_extensions_bound") is not True)
     ):
         raise RuntimeError("expiry fixture did not authenticate its short-lived publication")
     while int(time.time() * 1000) <= expires:

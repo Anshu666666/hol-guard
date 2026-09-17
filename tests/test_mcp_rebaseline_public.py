@@ -7,7 +7,8 @@ import pytest
 
 from scripts import bench_mcp_rebaseline as driver
 from scripts import mcp_rebaseline_ci as ci
-from scripts.mcp_rebaseline_public import project
+from scripts.mcp_rebaseline_public import TOOL_CALLS, project
+from scripts.mcp_rebaseline_statistics import paired_comparisons
 from scripts.mcp_rebaseline_trace import digest
 from tests.mcp_public_fixture import CANDIDATE, complete_report
 
@@ -100,7 +101,7 @@ def test_public_projection_rejects_nested_data_and_inconsistent_pass(tmp_path, f
     output = tmp_path / "public.json"
     observed = ci.publish(private, output, candidate=CANDIDATE, outcome="success")
     assert observed["status"] == "incomplete" and observed["measurements"] is None
-    assert observed["expected_worker_attempts"] == 30 and observed["expected_tool_call_attempts"] == 2730
+    assert observed["expected_worker_attempts"] == 30 and observed["expected_tool_call_attempts"] == TOOL_CALLS
     assert SENTINEL not in output.read_text()
 
 
@@ -118,7 +119,7 @@ def test_environment_text_stays_private_and_projection_does_not_alias(frozen_rep
 def test_failed_partial_report_keeps_actual_counts_and_unknown_metrics(frozen_report):
     report = copy.deepcopy(frozen_report)
     report.update(status="failed", failures=["worker_failure:0:baseline:plain", "trace_inventory"])
-    report["observed_tool_call_outcomes"] -= 91
+    report["observed_tool_call_outcomes"] -= 104
     run = report["run_observations"][0]
     run.update(returncode=None, capture_failure="controller_worker_failure")
     for key in (
@@ -138,12 +139,21 @@ def test_failed_partial_report_keeps_actual_counts_and_unknown_metrics(frozen_re
             for value in row.values():
                 if isinstance(value, dict) and "count" in value:
                     value["count"] = value["count"] * 4 // 5
+                    value["sum"] = value["sum"] * 4 // 5
+    report["run_trace_summaries"] = [
+        r
+        for r in report["run_trace_summaries"]
+        if not (r["block"] == 0 and r["role"] == "baseline" and r["mode"] == "plain")
+    ]
+    for row in report["run_trace_summaries"]:
+        row["headline_eligible"] = False
+    report["paired_comparisons"] = paired_comparisons(report["run_trace_summaries"], runs=5, eligible=False)
     report["raw_evidence"] = [
         row for row in report["raw_evidence"] if not row["file"].startswith("0-baseline-plain.raw")
     ]
     public = project(report, candidate=CANDIDATE)
     assert public["status"] == "failed"
-    assert public["observed_worker_attempts"] == 30 and public["observed_tool_call_outcomes"] == 2639
+    assert public["observed_worker_attempts"] == 30 and public["observed_tool_call_outcomes"] == TOOL_CALLS - 104
     assert public["run_observations"][0]["self_cpu_seconds"] is None
     assert all(not row["headline_eligible"] for row in public["comparisons"])
 
@@ -154,13 +164,16 @@ def test_failed_phase_accounting_preserves_actual_denominators(frozen_report, re
     report.update(status="failed", failures=["phase_row_accounting"])
     for comparison in report["comparisons"]:
         comparison["headline_eligible"] = False
+    for row in report["run_trace_summaries"]:
+        row["headline_eligible"] = False
+    report["paired_comparisons"] = paired_comparisons(report["run_trace_summaries"], runs=5, eligible=False)
     if retained_exceeds_count:
         report["run_observations"][2]["phase_counts"]["catalog_fingerprint"] -= 1
     else:
         report["diagnostic_phases"].pop()
     public = project(report, candidate=CANDIDATE)
     assert public["status"] == "failed" and public["failures"] == ["phase_row_accounting"]
-    assert public["observed_worker_attempts"] == 30 and public["observed_tool_call_outcomes"] == 2730
+    assert public["observed_worker_attempts"] == 30 and public["observed_tool_call_outcomes"] == TOOL_CALLS
     assert public["diagnostic_phases"] == report["diagnostic_phases"]
     assert public["run_observations"] == report["run_observations"]
 
@@ -195,3 +208,32 @@ def test_controller_exception_class_is_bounded_private_and_preserves_attempts(tm
     assert "controller_exception_class" not in json.dumps(report)
     public = project(report, candidate=CANDIDATE)
     assert public["status"] == "failed" and public["observed_worker_attempts"] == 30
+
+
+def test_controller_stops_offering_workers_when_cleanup_cannot_be_proved(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        driver,
+        "_worker",
+        lambda *args, **kwargs: {
+            "returncode": -9,
+            "capture_failure": "resource_observer_cleanup_incomplete",
+            "result": {"status": "failed"},
+        },
+    )
+    monkeypatch.setattr(
+        driver,
+        "source_identity",
+        lambda path: {
+            "commit": ci.BASELINE if path.name == "baseline" else CANDIDATE,
+            "production_tree": "b" * 40,
+            "uv_lock_sha256": "c" * 64,
+        },
+    )
+    output = tmp_path / "private"
+    report = driver.run(tmp_path / "baseline", tmp_path / "candidate", output, runs=5, calls=13, lock=tmp_path / "lock")
+    assert report["status"] == "failed" and report["observed_worker_attempts"] == 1
+    assert len(list(output.glob("*.begin.json"))) == 1
+    assert report["observed_tool_call_outcomes"] == 0
+    public = project(report, candidate=CANDIDATE)
+    assert public["observed_worker_attempts"] == 1
+    assert all(row["intervals"] is None for row in public["paired_comparisons"])

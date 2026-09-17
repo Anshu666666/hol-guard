@@ -1,0 +1,81 @@
+{
+  "schema": "hol-guard.native-paired-incomplete.v1",
+  "evidence_class": "smoke",
+  "plan": {
+    "runs": 1,
+    "priority_per_run": 2,
+    "other_per_run": 2,
+    "cold_per_run": 2,
+    "recovery_per_run": 2,
+    "resource_samples_per_run": 2
+  },
+  "order": "alternating_baseline_candidate_blocks",
+  "artifact_digests": {
+    "baseline": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+    "candidate": "f7312f64122596074629091544c62b83005f87427f7d3c83d5ef63ca56bdb16b"
+  },
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failed_blocks": [
+    {
+      "category": "RuntimeError",
+      "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+      "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "startup_stack": [
+        {
+          "line": 808,
+          "origin": "socket.getfqdn"
+        },
+        {
+          "line": 138,
+          "origin": "http.server.HTTPServer.server_bind"
+        },
+        {
+          "line": 199,
+          "origin": "bounded_http.__init__"
+        },
+        {
+          "line": 662,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 7907,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 302,
+          "origin": "native_slo_session.__init__"
+        },
+        {
+          "line": 355,
+          "origin": "native_slo_daemon_fixture._serve"
+        }
+      ],
+      "arm": "baseline",
+      "run": 0,
+      "artifact_sha256": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+      "timed_out": false,
+      "containment_failed": false
+    },
+    {
+      "category": "RuntimeError",
+      "diagnostic_digest": "62f26a05b59971a84f5fd3a0268c1772da04397f313e5779c4ed6da2ca583271",
+      "line": 70,
+      "origin": "native_slo_expiry.expire_acknowledged_authority",
+      "reason": "qualification_fixture.expiry_fixture_did_not_authenticate_its_short-lived_publication",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "arm": "candidate",
+      "run": 0,
+      "artifact_sha256": "f7312f64122596074629091544c62b83005f87427f7d3c83d5ef63ca56bdb16b",
+      "timed_out": false,
+      "containment_failed": false
+    }
+  ],
+  "sampling_passed": false,
+  "qualification_complete": false,
+  "program_qualification_complete": false,
+  "comparison_available": false
+}

@@ -30,6 +30,8 @@ def test_paired_driver_preserves_alternating_environments_and_rejects_unqualifie
             "schema": "hol-guard.native-qualification-block.v1",
             "runtime": {"runtime_sha256": arm, "package_record_sha256": arm, "python_version": "3.12.14"},
             "corpus_digest": "same-corpus",
+            "common_workload_digest": "same-corpus",
+            "semantic_scope_digest": arm + "-scope",
             "hardware": {"platform": "linux-x64", "cpu_model": "same-cpu"},
             "resources": {"sample_minimum_met": False},
             "measurements": {

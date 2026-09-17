@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 import codex_plugin_scanner.guard.local_supply_chain as local_supply_chain_module
+import codex_plugin_scanner.guard.runtime.lockfile_parse_result as lockfile_parse_module
 import codex_plugin_scanner.guard.runtime.supply_chain_package_eval as package_eval_module
 from codex_plugin_scanner.guard.config import GuardConfig
 from codex_plugin_scanner.guard.consumer import artifact_hash
@@ -30,6 +31,7 @@ from codex_plugin_scanner.guard.runtime.approval_context import (
     build_approval_context_token,
     build_configured_environment_hash,
     build_runtime_launch_identity,
+    parse_approval_context_token,
 )
 from codex_plugin_scanner.guard.runtime.mcp_protection import build_mcp_server_identity
 from codex_plugin_scanner.guard.runtime.package_intent import PackageIntent, build_package_request_artifact
@@ -390,6 +392,12 @@ def test_package_lockfile_parser_version_changes_approval_identity(
     evaluation = _package_evaluation("review")
     config = GuardConfig(guard_home=tmp_path / "guard-home", workspace=workspace)
     store = GuardStore(tmp_path / "guard-home")
+    parser_version = lockfile_parse_module.LOCKFILE_PARSER_VERSION
+    parsed = package_eval_module._parse_lockfile_text_result("package-lock.json", '{"packages": {}}')
+    assert parsed.complete
+    assert parsed.parser_version == parser_version
+    assert parser_version == package_eval_module.LOCKFILE_PARSER_VERSION
+    assert parser_version == local_supply_chain_module.LOCKFILE_PARSER_VERSION
     original_digest = package_request_policy_hash(
         artifact=artifact,
         store=store,
@@ -399,7 +407,9 @@ def test_package_lockfile_parser_version_changes_approval_identity(
         config=config,
     )
 
-    monkeypatch.setattr(local_supply_chain_module, "LOCKFILE_PARSER_VERSION", "complete-v2")
+    # Derive a distinct version so this regression still simulates an upgrade
+    # when the actual parser advances beyond complete-v2.
+    monkeypatch.setattr(local_supply_chain_module, "LOCKFILE_PARSER_VERSION", f"{parser_version}-next")
     upgraded_digest = package_request_policy_hash(
         artifact=artifact,
         store=store,
@@ -410,6 +420,34 @@ def test_package_lockfile_parser_version_changes_approval_identity(
     )
 
     assert original_digest != upgraded_digest
+    original_context = parse_approval_context_token(original_digest)
+    upgraded_context = parse_approval_context_token(upgraded_digest)
+    assert original_context is not None and upgraded_context is not None
+    assert original_context.content_hash != upgraded_context.content_hash
+    assert replace(original_context, content_hash=upgraded_context.content_hash) == upgraded_context
+
+    store.upsert_policy(
+        PolicyDecision(
+            harness=artifact.harness,
+            scope="artifact",
+            action="allow",
+            artifact_id=artifact.artifact_id,
+            artifact_hash=original_digest,
+            source="approval-gate",
+        ),
+        "2026-07-17T00:00:00Z",
+    )
+    result = apply_stored_package_policy_override(
+        evaluation,
+        store=store,
+        artifact=artifact,
+        artifact_hash=upgraded_digest,
+        workspace_dir=workspace,
+        now="2026-07-17T00:00:00Z",
+        execution_context=context,
+    )
+    assert result.policy_action == "review"
+    assert result.reasons[0]["code"] == "approval_reuse_content_changed"
 
 
 @pytest.mark.parametrize(("saved_action", "expected"), [("allow", False), ("block", True)])

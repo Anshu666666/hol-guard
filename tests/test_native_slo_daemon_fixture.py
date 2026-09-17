@@ -6,11 +6,49 @@ import queue
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scripts import native_slo_daemon_fixture as fixture
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+from scripts.native_slo_windows_job_resources import WindowsJobCpuSnapshot
+
+
+@pytest.mark.parametrize("changed", ["closed", "job", "process", "missing-job", "missing-process"])
+def test_cpu_reader_cannot_outlive_or_retarget_fixture(monkeypatch, changed):
+    session = fixture.DaemonFixture(Path("unused"))
+    process, job = object(), object()
+    session.process, session._job = process, job
+    monkeypatch.setattr(fixture, "os", SimpleNamespace(name="nt"))
+    created = []
+
+    def reader_factory(actual_job, actual_process):
+        assert actual_job is job and actual_process is process
+        created.append(True)
+        return lambda: WindowsJobCpuSnapshot(100, 1, 1)
+
+    monkeypatch.setattr(fixture, "WindowsJobCpuReader", reader_factory)
+    reader = session.cpu_accounting_reader()
+    assert reader() == reader() == WindowsJobCpuSnapshot(100, 1, 1)
+    assert len(created) == 1
+    if changed == "closed":
+        session._closed = True
+    elif changed in {"job", "missing-job"}:
+        session._job = object() if changed == "job" else None
+    else:
+        session.process = object() if changed == "process" else None
+    with pytest.raises(RuntimeError, match="lifetime ended"):
+        reader()
+
+
+def test_cpu_reader_requires_existing_fixture_and_is_unused_off_windows(monkeypatch):
+    session = fixture.DaemonFixture(Path("unused"))
+    monkeypatch.setattr(fixture, "os", SimpleNamespace(name="posix"))
+    assert session.cpu_accounting_reader() is None
+    monkeypatch.setattr(fixture, "os", SimpleNamespace(name="nt"))
+    with pytest.raises(RuntimeError, match="lifetime ended"):
+        session.cpu_accounting_reader()()
 
 
 @pytest.mark.skipif(

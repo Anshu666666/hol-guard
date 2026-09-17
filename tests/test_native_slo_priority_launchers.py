@@ -23,6 +23,7 @@ from codex_plugin_scanner.guard.codex_config import dump_toml
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
 from scripts import native_slo_priority_launchers as module
 from scripts.native_slo_adapter import Observation
+from scripts.native_slo_numeric_journal import NumericJournal, recover_numeric_journal
 from scripts.native_slo_priority_launchers import LauncherSession, RegisteredLauncher
 
 
@@ -314,7 +315,10 @@ def test_concurrent_wrong_native_route_fails(
 
 
 def test_full_measurement_preserves_counts_and_cold_boundary(
-    session: LauncherSession, registrations: tuple[RegisteredLauncher, ...], monkeypatch: pytest.MonkeyPatch
+    session: LauncherSession,
+    registrations: tuple[RegisteredLauncher, ...],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     metrics = cast(Metrics, session.daemon._server.hook_worker.metrics)
     monkeypatch.setattr(module, "install_priority_launchers", lambda _: registrations)
@@ -324,7 +328,17 @@ def test_full_measurement_preserves_counts_and_cold_boundary(
         return Observation(launcher.harness, launcher.event, "small", 1.0, "pending_batch_validation", case == "benign")
 
     monkeypatch.setattr(module, "observe_priority_launcher", observe)
-    report, raw = module.measure_priority_launchers(session, {"priority_per_run": 2, "cold_per_run": 20})
+    path = tmp_path / "launchers-numeric.jsonl"
+    with NumericJournal(path) as journal:
+        report, raw = module.measure_priority_launchers(
+            session, {"priority_per_run": 2, "cold_per_run": 20}, journal=journal
+        )
+        journal.finish(raw)
+    recovered = recover_numeric_journal(path)
+    assert recovered["series"] == raw
+    assert list(recovered["series"]) == list(raw)
+    assert recovered["collection_complete"] is True
+    assert recovered["qualification_complete"] is False
     assert len(raw) == 12
     for item in registrations:
         name = f"{item.harness}.{item.event}"

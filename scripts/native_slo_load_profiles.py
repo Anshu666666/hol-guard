@@ -20,7 +20,7 @@ def measure_load_profiles(
 ) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
     concurrent: dict[str, object] = {}
     offered: dict[str, object] = {}
-    with ResourceSampler(pid=session.pid) as resources:
+    with ResourceSampler(pid=session.pid, cpu_reader=session.cpu_accounting_reader()) as resources:
         for concurrency in (1, 4, 16, 64):
             metrics = session.daemon._server.hook_worker.metrics
             before = route_counts(metrics.snapshot())

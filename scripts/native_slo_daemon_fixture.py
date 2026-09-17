@@ -14,7 +14,7 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import suppress
 from http.client import HTTPConnection
 from pathlib import Path
@@ -28,11 +28,18 @@ if str(_ROOT) not in sys.path:
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
-from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402
+from scripts.native_slo_adapter import (  # noqa: E402
+    Observation,
+    is_allowed,
+    observation_reason_code,
+    payload,
+    route_counts,
+)
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
 from scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402
+from scripts.native_slo_windows_job_resources import WindowsJobCpuReader, WindowsJobCpuSnapshot  # noqa: E402
 
 _CONTROL_LIMIT = 256 * 1024
 
@@ -83,6 +90,28 @@ class DaemonFixture:
         if self.process is None:
             raise RuntimeError("daemon fixture not started")
         return self.process.pid
+
+    def cpu_accounting_reader(self) -> Callable[[], WindowsJobCpuSnapshot] | None:
+        """Borrow only this fixture's preassigned job for a nested sample scope.
+
+        Construction/query failures are recorded by ResourceSampler as missing
+        CPU, rather than selecting the runner job or claiming polling complete.
+        The sampling context must finish before fixture.close closes the job.
+        """
+        if os.name != "nt":
+            return None
+        process, job = self.process, self._job
+        reader: WindowsJobCpuReader | None = None
+
+        def read() -> WindowsJobCpuSnapshot:
+            nonlocal reader
+            if self._closed or process is None or job is None or self.process is not process or self._job is not job:
+                raise RuntimeError("fixture job accounting lifetime ended")
+            if reader is None:
+                reader = WindowsJobCpuReader(job, process)
+            return reader()
+
+        return read
 
     def _read_stdout(self) -> None:
         assert self.process is not None and self.process.stdout is not None
@@ -235,6 +264,7 @@ class DaemonFixture:
             witnessed_route(before, after),
             is_allowed(event, response),
             _is_explicit_capacity_response(response),
+            observation_reason_code(response),
         )
 
     def observe_unattributed(self, harness: str, event: str, size_class: str) -> Observation:

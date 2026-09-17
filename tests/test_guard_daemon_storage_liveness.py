@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import socket
 import sqlite3
+import threading
 import time
 import urllib.request
 from collections.abc import Iterator
@@ -50,6 +51,15 @@ def _open_json(
     return raw_payload, time.monotonic() - started
 
 
+def _lock_storage_after_pending_transactions(store: GuardStore, blocker: sqlite3.Connection) -> None:
+    # Startup workers legitimately write asynchronously after daemon.start().
+    # Drain their store connections before acquiring the test's SQLite lock,
+    # then release the admission gate before any measured HTTP request.
+    with store._hold_storage_gate(exclusive=True):
+        _ = blocker.execute("begin exclusive")
+    assert blocker.in_transaction
+
+
 def test_critical_daemon_liveness_does_not_wait_for_locked_storage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -69,7 +79,7 @@ def test_critical_daemon_liveness_does_not_wait_for_locked_storage(
         initial_heartbeat = str(initial_runtime["last_heartbeat_at"])
         state = load_authenticated_daemon_state(store.guard_home)
         assert state is not None
-        _ = blocker.execute("begin exclusive")
+        _lock_storage_after_pending_transactions(store, blocker)
 
         health, health_elapsed = _open_json(f"http://127.0.0.1:{daemon.port}/healthz")
         identity_request = urllib.request.Request(
@@ -110,6 +120,54 @@ def test_critical_daemon_liveness_does_not_wait_for_locked_storage(
         daemon.stop()
 
 
+def test_locked_storage_fixture_drains_existing_writer_and_releases_admission_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = GuardStore(tmp_path / "guard-home")
+    writer_holds_transaction = threading.Event()
+    release_writer = threading.Event()
+    acquiring_fixture_gate = threading.Event()
+    original_gate = store._hold_storage_gate
+
+    @contextmanager
+    def observed_gate(*, exclusive: bool) -> Iterator[None]:
+        if exclusive:
+            acquiring_fixture_gate.set()
+        with original_gate(exclusive=exclusive):
+            yield
+
+    def background_writer() -> None:
+        with store._connect() as connection:
+            _ = connection.execute("begin immediate")
+            writer_holds_transaction.set()
+            assert release_writer.wait(timeout=3)
+
+    monkeypatch.setattr(store, "_hold_storage_gate", observed_gate)
+    blocker = sqlite3.connect(store.path, timeout=0.1, isolation_level=None, check_same_thread=False)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            writer = executor.submit(background_writer)
+            try:
+                assert writer_holds_transaction.wait(timeout=2)
+                locked = executor.submit(_lock_storage_after_pending_transactions, store, blocker)
+                assert acquiring_fixture_gate.wait(timeout=2)
+                assert not locked.done()
+            finally:
+                release_writer.set()
+            writer.result(timeout=2)
+            locked.result(timeout=2)
+            assert blocker.in_transaction
+            # The SQLite transaction remains held, but store admission is no
+            # longer fenced by the test fixture when HTTP measurement begins.
+            with original_gate(exclusive=True):
+                assert blocker.in_transaction
+    finally:
+        release_writer.set()
+        blocker.rollback()
+        blocker.close()
+
+
 def test_locked_storage_hook_burst_fails_safe_without_stranding_daemon(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -124,46 +182,44 @@ def test_locked_storage_hook_burst_fails_safe_without_stranding_daemon(
     )
     store = GuardStore(tmp_path / "guard-home")
     daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
-    daemon.start()
-    blocker = sqlite3.connect(store.path, timeout=0.1, isolation_level=None)
-    _ = blocker.execute("begin exclusive")
-    endpoint = (
-        f"http://127.0.0.1:{daemon.port}/v1/hooks/pi?guard-home={store.guard_home}&home={tmp_path}&workspace={tmp_path}"
-    )
-
-    def review(index: int) -> tuple[dict[str, object], float]:
-        request = urllib.request.Request(
-            endpoint,
-            data=json.dumps(
-                {
-                    "hook_event_name": "PreToolUse",
-                    "tool_name": "Bash",
-                    "tool_input": {"command": f"echo bounded-{index}"},
-                }
-            ).encode(),
-            headers={
-                "Content-Type": "application/json",
-                "X-Guard-Token": daemon._server.auth_token,  # pyright: ignore[reportPrivateUsage]
-            },
-            method="POST",
-        )
-        return _open_json(request, timeout_seconds=1.75)
-
     try:
-        with ThreadPoolExecutor(max_workers=24) as executor:
-            futures = [executor.submit(review, index) for index in range(24)]
-            health, health_elapsed = _open_json(f"http://127.0.0.1:{daemon.port}/healthz")
-            results = [future.result(timeout=2) for future in futures]
-        assert health["ok"] is True
-        assert health_elapsed < 0.5
-        assert max(elapsed for _payload, elapsed in results) < 1.6
-        assert all(payload.get("decision") == "allow" for payload, _elapsed in results)
-        assert daemon._server.active_hook_requests == 0  # pyright: ignore[reportPrivateUsage]
-    finally:
-        blocker.rollback()
-        blocker.close()
+        daemon.start()
+        blocker = sqlite3.connect(store.path, timeout=0.1, isolation_level=None)
+        endpoint = f"http://127.0.0.1:{daemon.port}/v1/hooks/pi?guard-home={store.guard_home}&home={tmp_path}&workspace={tmp_path}"
 
-    try:
+        def review(index: int) -> tuple[dict[str, object], float]:
+            request = urllib.request.Request(
+                endpoint,
+                data=json.dumps(
+                    {
+                        "hook_event_name": "PreToolUse",
+                        "tool_name": "Bash",
+                        "tool_input": {"command": f"echo bounded-{index}"},
+                    }
+                ).encode(),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Guard-Token": daemon._server.auth_token,  # pyright: ignore[reportPrivateUsage]
+                },
+                method="POST",
+            )
+            return _open_json(request, timeout_seconds=1.75)
+
+        try:
+            _ = blocker.execute("begin exclusive")
+            with ThreadPoolExecutor(max_workers=24) as executor:
+                futures = [executor.submit(review, index) for index in range(24)]
+                health, health_elapsed = _open_json(f"http://127.0.0.1:{daemon.port}/healthz")
+                results = [future.result(timeout=2) for future in futures]
+            assert health["ok"] is True
+            assert health_elapsed < 0.5
+            assert max(elapsed for _payload, elapsed in results) < 1.6
+            assert all(payload.get("decision") == "allow" for payload, _elapsed in results)
+            assert daemon._server.active_hook_requests == 0  # pyright: ignore[reportPrivateUsage]
+        finally:
+            blocker.rollback()
+            blocker.close()
+
         assert daemon._server.hook_process_runner.wait_for_capacity(  # pyright: ignore[reportPrivateUsage]
             minimum_workers=1,
             timeout_seconds=15,
@@ -221,6 +277,40 @@ def test_runtime_heartbeat_writer_coalesces_pending_updates() -> None:
 
     assert store.attempts[-1] == "heartbeat-final"
     assert len(store.attempts) < 20
+
+
+def test_locked_storage_burst_contains_daemon_after_early_http_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = GuardStore(tmp_path / "guard-home")
+    stopped = threading.Event()
+
+    class FixtureDaemon:
+        port = 1
+        _server = SimpleNamespace(auth_token="synthetic-fixture")
+
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def stop(self) -> None:
+            stopped.set()
+
+    def fail_http(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("injected HTTP failure")
+
+    monkeypatch.setattr(f"{__name__}.GuardStore", lambda _path: store)
+    monkeypatch.setattr(f"{__name__}.GuardDaemonServer", FixtureDaemon)
+    monkeypatch.setattr(f"{__name__}._open_json", fail_http)
+    with pytest.raises(RuntimeError, match="injected HTTP failure"):
+        test_locked_storage_hook_burst_fails_safe_without_stranding_daemon(tmp_path, monkeypatch)
+    assert stopped.is_set()
+    # The test-owned SQLite blocker is also gone after the failure.
+    with sqlite3.connect(store.path, timeout=0.1) as connection:
+        connection.execute("begin exclusive")
 
 
 def test_bounded_runtime_heartbeat_connection_closes_after_write_error(
@@ -347,10 +437,11 @@ def test_new_store_keeps_incremental_auto_vacuum_with_wal(tmp_path: Path) -> Non
 
 
 def test_unclassified_watchdog_distinguishes_complete_headers_from_trickle() -> None:
-    if not hasattr(socket, "MSG_DONTWAIT"):
-        pytest.skip("nonblocking socket peeking is unavailable")
     server_socket, client_socket = socket.socketpair()
     try:
+        # Match accepted production sockets. Blocking sockets are deliberately
+        # refused because dup() shares their underlying OS blocking mode.
+        server_socket.settimeout(daemon_server_module._DAEMON_REQUEST_READ_TIMEOUT_SECONDS)
         client_socket.sendall(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n")
         assert _GuardDaemonHttpServer._buffered_request_headers_complete(server_socket) is True
         _ = server_socket.recv(65_536)

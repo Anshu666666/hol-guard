@@ -83,10 +83,15 @@ jobs:
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
         with:
           go-version: "1.23"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
       - name: Install Gitleaks
         run: |
           GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.24.2
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Verify exact public fixture exception
+        run: python scripts/ci/check_gitleaks_fixture_allowlist.py --gitleaks gitleaks
       - name: Determine Gitleaks scope
         id: gitleaks-scope
         env:

@@ -1,144 +1,115 @@
 # Release/3.2 Rust performance review
 
-Reviewed 2026-09-17. **Implementation has advanced; the release is not qualified.**
-This checkpoint describes local source
-`ce8fce7f504bd67c213d67a60fbca34da724d25e`, tree
-`f1b272cbe8ba4762083ef05ddd5d22ece9d95f82`, including the corrected dormant
-Claude pilot and package/pilot workflows, and the latest inspected completed CI
-snapshot on remote
-`5ee52a03e62b9e4940063b348185bedaddf0cb53`. These are different source revisions.
-Later work must record its own exact source and artifact identities.
+Reviewed 2026-09-17. **The next source checkpoint is implemented and reviewable;
+installed qualification and the release are still incomplete.** This review
+covers source `c964a61a3a4c19d721358e69c400d6059dfd1156`, tree `96143b80f7f1b41e7ceff1a98a7ad9ee81fbd6f1`, before these documentation edits.
+The measured GitHub checkpoint is the earlier PR #2970 head
+`107606388ad55f924a4e2924b4ff84e5fa08e6ff`. Later source corrections do not inherit
+its measurements. Inspect the live pull request for subsequent publication.
 
-The [PRD](PRD.md) and all 144 [TODO](TODO.md) acceptance conditions and dependencies
-are unchanged. The coordinator's ledger reconciliation closes the source criteria
-RSP-062 and RSP-128, yielding **67 DONE, 36 OPEN and 41 BLOCKED**, with no DEFERRED
-ports. RSP-070 stays OPEN. Component completion does not close dependent installed,
-approval, signing, rollout or performance gates. Use the
-[machine ledger](execution-ledger.json) for per-task evidence and
-[TAKEAWAY](TAKEAWAY.md) for the actionable continuation.
+The original [PRD](PRD.md) and all 144 [TODO](TODO.md) titles, acceptance conditions
+and dependencies remain unchanged. The [release addendum](RELEASE_3_2_PRD.md)
+connects those requirements to the current implementation and conversion
+priorities. The [ledger](EXECUTION_LEDGER.md) contains **67 DONE, 36 OPEN and
+41 BLOCKED, with zero DEFERRED**. This checkpoint changes evidence, not task
+status. Source completion cannot close an installed, native-comparison, signing,
+rollout or approval gate.
 
-## Current source corrections
+## What is ready for the next run
 
-| Area | Integrated correction and its boundary |
+| Change | Implemented behavior and remaining limit |
 | --- | --- |
-| Runtime/header admission | Bounded request-permit handoff retains the original deadline. InitialHeaderReader transfers complete-header ownership before parser consumption; exact socket/deadline rechecks protect expiry and overload eviction. `f5cff2cf8` includes initially partial headers. Focused socket/handler tests are source evidence, not an installed load pass. |
-| Scheduler | `186aed0cf` stops unchanged queued waiters from repeatedly waking one another. Dispatch progress still notifies; permit release explicitly wakes byte reservations even with no queued reviews. No deadline, capacity or service-estimate threshold changed. The failed CI workload needs rerunning. |
-| Windows source access | `2ece1f953` binds reads to retained file handles; `842df0990` exposes the retained parent for permission verification. Capability correction `53b8ee8f8` is integrated with 79 focused tests. The frozen baseline's refusal remains its contract; actual candidate Windows content/identity qualification remains separate. |
-| Watch and package identity | Watch correction `d4f05aec2` has 70 current-renderer and 28 frozen-renderer test witnesses. Composer correction `81c8e86d1` preserves ASCII vendor-qualified identities and namespace-bound emergency denies; its 176-test combined batch and final 30-case focused batch pass. These overlapping counts are not a unique total or installed qualification. |
-| Numeric daemon bind | The completed source audit confirms existing `9cca767fe` already uses numeric TCPServer binding, preserving normal socket binding without reverse DNS. Three bind tests and six paired-driver tests pass, with independent source review. Frozen baseline DNS behavior is unchanged; actual macOS efficacy remains unqualified. Candidate continuation after contained baseline failure is already implemented in `6515e525e`. |
-| Native authority and approvals | The compiled command program, live control fence, protected recovery floor and complete receipt binding remain integrated. Native Codex browser completion performs fresh native evaluation and exact signed consume/replay checks. Ordinary local approval behavior is separate from exported native v3/v4 APIs. |
-| MCP and evidence | `6190a5869` reconstructs public evidence recursively from bounded typed fields, conserves attempt/phase counts, retains failed reports and excludes arbitrary private text. Production framing/terminal cleanup and the 5 ms freshness barrier remain. Component rebaseline and installed transport qualification are distinct. |
-| Scanner and package baselines | `5e23434c0` bounds scanner diagnostic/cache state and states the limits of source identity. `83d2d7e10` adds an independent finite package matrix with real evaluator/protect routes, strict coverage and failure retention. It is a Python baseline harness, not a native package performance result. |
-| Dormant launcher and workflows | Corrected Claude pilot `1026d43b0` plus `9454cb959` is integrated with all four peer findings closed. Package workflow `770e2b721` and four-platform pilot correctness workflow `ce8fce7f5` are integrated and reviewed. The launcher feature remains off; no default registration, installed activation or measured native benefit is claimed. |
+| Indexed installed qualification | Build immutable wheels and locked dependency bundles once per platform; run five independently indexed, alternating same-runner pairs. Each pair retains the original sample plan and two 60-minute worker bounds. A 125-minute collection step plus separate archive/upload time fits a 200-minute job. Exact raw numerical bytes are bound to sealed archive receipts and checked during cohort aggregation. Actual completion and performance remain unproved. |
+| Benchmark authority and failure retention | Common workload identity is separate from each arm's supported semantics. Expiry renewal preserves acknowledged command extensions and exact authenticated publication. Incremental private journals retain observations before failure. Recovery errors retain bounded phase, route, reason and elapsed observations inside the standard failure envelope. No product deadline or baseline semantic behavior changed. |
+| Linux installed interpreter | POSIX benchmark environments copy the same interpreter bytes into an owned private executable before installation. This satisfies the unchanged frozen validator on runners whose tool cache is world-writable. Source and copy identity are verified. Windows behavior is separate; this is a fixture repair, not a production validator exception. |
+| Windows resources and authority setup | Dedicated fixture Job CPU avoids charging the generator to the daemon. Retained process identity and ancestry bind current working-set/private-commit observations; missing final values fail completeness. Production Windows DLL wrappers, structures and function signatures are reused, while owner, ACL, file and authority reads remain fresh. Actual Windows reruns must validate both changes. |
+| Mac resolver diagnosis | The next diagnostic distinguishes call entry, reverse lookup, numeric lookup, direct libSystem lookup and OS resolver registration. It retains bounded private captures after the paired command finishes. Earlier numeric lookup succeeded while reverse lookup stalled; the frozen baseline stall is unresolved. No baseline patch or extended startup deadline is introduced. |
+| MCP component evidence | The v2 collector adds five paired run-level confidence intervals, separately attributed loopback transport/service work and 80 complete warm resource windows before teardown. It retains all offers and failures. Production classification prefilters are integrated. The first v1 measurements predate these changes; a native kernel decision remains open. |
+| CI fixture and secret-scan corrections | Launcher test doubles accept current runtime arguments; parser invalidation uses a genuinely future version; Mac source fixtures canonicalize the OS temporary root. Storage/header fixtures preserve startup and ownership boundaries. The exact public-digest exception restores the pinned Gitleaks global defaults. None of these edits changes production thresholds. |
 
-The coordinator reports a final combined local batch of **135 passing tests**.
-Additional scoped checks passed: 21 pilot Python tests, 15 package CI tests,
-the 179-changed-file ownership gate, native approval contract and workflow policy.
-The pilot owner also reported 12 Rust and 14 Python tests plus default/pilot
-executable capability smoke passes; the package owner reported 75 combined and
-15 final source checks. These batches overlap and are not added together.
-The preceding qualification gate/public/workflow batch passed 86 tests in
-392 seconds. Production Ruff checked 1,251 files and BasedPyright reported zero
-errors, warnings and notes before scheduler integration.
-These are scoped local checks, not final combined-head CI or installed evidence.
-Their counts are not added to overlapping workstream suites.
+Independent review found the fixed full indexed plan fits the existing private
+archive caps: at most 32 files per pair and a conservative total below 124 MiB,
+against limits of 256 files, 32 MiB per file and 128 MiB total. This is a source
+and synthetic-serialization capacity check, not a runtime or compression result.
+Generic custom plans outside the shipped workflow are not covered by that bound.
 
-Actual final-head CI/installed qualification remains pending. Regenerated
-decision-diff evidence changes only the source hashes for
-`lockfile_parse_result`, `supply_chain_package_eval` and `text_lockfile_parse`;
-all nonbinding report fields are identical. Five local report tests pass,
-including exact reproducibility and source binding. One fresh-process metrics
-test failed at its unchanged 60-second deadline, and the isolated rerun failed
-at the same limit. No cause is established and no full-suite pass is claimed.
-The frozen baseline and all readiness/deadline limits remain unchanged.
-Check current ownership and HEAD before editing; do not publish the shared PR
-branch over another writer.
+## Verification and the remaining local failure
 
-## Latest completed GitHub result: 32 success, 4 failure
+The combined 36-module integration batch produced **575 passes, seven skips and
+seven failures**. Six failures came from the test fixture's literal PID 10
+colliding with the actual test driver's PID inside this environment. The fixture
+now uses a distinct synthetic PID; the focused resource/identity/journal rerun
+passed **61 tests with two platform skips**. The guard that refuses load-generator
+CPU remains unchanged and its negative test remains.
 
-The coordinator's GitHub API refresh during this review found **36 terminal
-workflows: 32 successful and four failed**, all at remote `5ee52a03e`. The failing
-workflows are below. Their failures remain failures after local corrections.
+The seventh failure remains open:
+`test_locked_storage_hook_burst_fails_safe_without_stranding_daemon` timed out
+reading an HTTP response at its original 1.75-second limit. The 24-request burst,
+1.6-second latency assertion and original deadlines are unchanged. Cleanup now
+retires the fixture, but that does not make the burst pass. Boundary diagnosis
+continues; no full combined-suite pass is claimed.
 
-| Workflow | Exact observed failure |
+The authority gate passed for 131 changed files; the I/O ownership gate passed
+with 437 reachable functions and 3,861 inventory entries. Scoped source suites
+and independent reviews cover the pair pipeline, MCP v2, resolver, interpreter,
+recovery envelope and Windows contracts. Their counts overlap and are not summed.
+The prospective GitHub publication ancestry also passed Gitleaks with zero
+findings across 1,257 commits, using the intended published parent. These checks
+precede this documentation commit and do not replace CI of the published tree.
+
+## First finalization CI: 33 successes and six failures
+
+All 39 workflows at `107606388...` are terminal. The retained
+[first-CI report](FIRST_CI_EVIDENCE.md) and its 19 exact public reports provide
+artifact identities, numerical evidence and failure boundaries.
+
+| Workflow | Observed result at the measured checkpoint |
 | --- | --- |
-| [Desktop contract CI 35213401527](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401527) | Job `105176074010`: stale source-bound decision-diff report. Local regeneration updates only three source hashes and exact reproduction passes; the separate fresh-process metrics timeout and final CI remain unresolved. |
-| [CI 35213401782](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401782) | Job `105176074932`: 48-review scheduler deadline failure. Shard 24, job `105176401956`: the same stale source-bound report. A passing isolated retry is not a green original batch. |
-| [Native wheel CI 35213401455](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401455) | Linux job `105176073353`: installed launcher did not use resident authority. macOS Intel job `105176072970`: source full-review witness. These require exact installed route/artifact diagnosis and reruns. |
-| [Native performance qualification 35213401779](https://github.com/hashgraph-online/hol-guard/actions/runs/35213401779) | All four baseline arms failed: Linux `105176074335` and Windows `105176074627` on `watch.1k` oracle mismatch; macOS ARM `105176074613` and Intel `105176074664` in baseline `getfqdn` construction. No complete paired qualification follows. |
+| [Security](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287255) | Public digest matched a secret detector. The narrow source-fixture exception and default-policy repair need new-head CI. |
+| [Main CI](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287428) | Three shards failed on launcher, storage/header and parser-version fixtures. Quality, compatibility and scheduling-sensitive jobs passed. The integrated fixes do not rewrite the failed run. |
+| [Daemon edge](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287297) | Mac fixture rejected the OS temporary-root alias as a symlink. Actual ancestor/leaf symlink refusals remain tested after the fixture correction. |
+| [Package component](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287514) | All 20 candidate format cells and 36 candidate cardinality cells completed. Two baseline Composer coverage failures and 12 censored baseline cardinality workers prevent complete comparability. |
+| [Native performance](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287310) | All four smoke jobs failed. Every candidate stopped at expiry-publication authentication. Baselines separately retained Linux interpreter, Mac reverse-lookup and Windows side-scenario failures. |
+| [Native wheel](https://github.com/hashgraph-online/hol-guard/actions/runs/35220287375) | Linux and Mac ARM passed. Mac Intel failed recovery sample 1; Windows lacked RSS evidence. Native-wheel artifacts identify merge source `a806a38...`, separate from the paired source above. |
 
-Foundation [PR #2951](https://github.com/hashgraph-online/hol-guard/pull/2951) last
-recorded 25 successful workflows and 33 resolved threads at
-`e449594e86c717e66e14598a4130475de79c536f`, with independent last-push approval
-still required. That is a separate historical checkpoint; refresh before merge.
-Implementation [PR #2954](https://github.com/hashgraph-online/hol-guard/pull/2954)
-has concurrent writing activity and is now reported at prefix `ae339`. Its newer
-head does not inherit the inspected `5ee52a03e` results. The coordinator's isolated
-publication is still pending. This review makes no new remote change or merge claim.
+The Linux wheel run completed 100,000 requests, 250,000 receipts and 17,888 health
+checks with zero request/health errors, stable PID and 3.9683% sampled RSS growth.
+Its 528.06 ms response p95 passed the legacy soak's own allowance; it does not
+meet or replace the PRD's 50 ms installed-priority target. Registered Python
+launcher smoke measured 344.126 ms on Linux and 282.838 ms on Mac ARM, with only
+two observations each. Both retain `qualification_complete=false`.
 
-## Verified macOS DNS experiment outcome
+The dormant Claude source-feature workflow passed all four targets. Both Macs
+also passed 22 installed native Ollama cases and Builder checks. Windows passed
+ten Ollama cases before a 406 ms disabled-phase readiness miss against the
+unchanged 400 ms limit. No installed native Claude activation, changed-package
+rollback or release approval follows from those narrower successes.
 
-Both latest job logs show the PTR wrapper surrounding the entire paired command.
-The downloaded artifacts have these exact identities:
+## Conversion decisions still to earn
 
-| Target | Artifact | ZIP SHA-256 |
-| --- | --- | --- |
-| macOS ARM | `10494172464` | `75589f593c3b28b345220ae95b4b26a9641ddb25bd1af8c9cf6aefb0ca80985b` |
-| macOS Intel | `10493874671` | `c03f43d06e166f183e5b9e1179509cf9f8ea3ac1224f0acb90c490ee679b2261` |
+The strongest measured package result is already from Python optimization:
+five actual local protect pairs at 1,000 dependencies and bundle entries reduce
+median CPU from 5,923.255 to 242.241 ms. Attribute the optimized residual before
+selecting a Rust package port. Censored 15-second whole-worker cells are not
+15-second evaluator lower bounds. The unversioned bundle kernel and real
+registry-resolved protect route remain distinct workloads.
 
-Their `aggregate/runner-resolver.json` files independently report configuration
-installation and cleanup completed, experiment attempted, command exit 1, and
-**received/answered/rejected/error counters all zero**. Before, after and
-after-cleanup legacy resolver probes all exceeded five seconds, with elapsed
-observations of approximately 5,003–5,012 ms. Baseline startup stacks reached
-`socket.getfqdn → HTTPServer.server_bind`.
+MCP v1 reduced the 1,000-tool catalog's mean parent CPU from 51.886 to 24.455 ms
+per call, but lacked paired intervals and complete resource evidence. Run v2
+before selecting a native kernel. The new opt-in installed Claude experiment,
+optimized package phase attribution and stopped-artifact transition probes are
+separate pending tranches; they are not included in this source cutoff.
 
-Thus the experiment ran but did not resolve the failure. No packet reached the
-responder; the strict question parser was not the observed failing boundary.
-File installation does not establish resolver registration or selection. The
-artifacts cannot distinguish an OS resolver/service stall from alternate routing
-or ignored configuration. The configuration's domain/port syntax is documented
-in [Apple's resolver manual source](https://github.com/apple-oss-distributions/libresolv/blob/main/resolver.5);
-this does not prove efficacy on these runners.
+Complete repaired four-platform smoke, actual component measurements and full
+indexed qualification. Preserve all failing cells and unsupported scopes, then
+make measured go/no-go decisions for package, scanner, MCP, inventory/spool and
+optional ingress work. Complete final artifact/signing/frozen, update/rollback,
+mixed-load and canary evidence before closing the corresponding ledger tasks.
 
-The reports retain `runtime_patched=false`, `baseline_artifact_modified=false`,
-`fixture_deadline_changed=false` and `qualification_pass=false`. The local
-[composed diagnostics](macos-loopback-resolver.md) add fixed call-start,
-reverse-name and numeric controls within the same five-second phase budget;
-these new diagnostics have not supplied CI results yet. No system DNS changes
-or timing experiments were run locally for this review. Preserve a contained
-baseline failure and attempt the candidate independently without passing the pair.
-
-## Remaining evidence and release decisions
-
-- Run exact repaired installed artifacts on all four targets, retaining actual
-  registered launcher, Watch/availability, approval, receipt, source identity,
-  recovery and mixed-load outcomes. Keep source refusal and native enforcement
-  separate. The frozen sample counts, zero-error c16 requirement, product
-  latency targets and resource safeguards remain in the PRD.
-- Finish the [isolated MCP rebaseline](mcp-proxy-rebaseline.md) and
-  [independent package matrix](../rsp-package-matrix-v2.md) with retained failed
-  cells and exact source/environment identities. Neither selects a Rust port
-  before a comparable optimized-Python/native result exists.
-- Complete assigned benchmark fixes separating common workload identity from
-  arm-specific Windows coverage, preserving each observation in the private
-  journal before worker timeout, and measuring Windows CPU through explicit job
-  accounting. These gaps remain open at this source cutoff; missing platform
-  CPU or timeout observations cannot become zero-cost or complete evidence.
-- Use the [rich scanner report](../rsp-scanner-qualification.md) only at its
-  recorded Linux source/CLI boundary. It includes unstable timing and incomplete
-  cache scopes; no installed or native cutover follows. The
-  [archive report](archive-worker-qualification.md) retains two unexpected
-  timeouts among 510 inspections; RSP-070 is open. Its separate test-history
-  section records a 146-pass/one deadline-assertion failure batch and an earlier
-  141-pass/one unexpected-result batch. Targeted or later passing witnesses do
-  not retroactively make those original batches green.
-- Preserve encrypted raw observations, bounded public aggregates and every
-  offered/terminal attempt. Missing data, killed workers and unsupported metrics
-  must remain incomplete. Qualify actual Windows publication/ACL behavior and
-  authorized archive recovery, then signing, frozen sidecars, artifact update/
-  rollback, canary and rollback execution.
-
-Earlier rounds and narrow successes remain in [EXECUTION](EXECUTION.md) and the
-[historical takeover manifest](evidence/takeover-42579/manifest.json). They must
-not be attributed to a later source tree or promoted into a passing release.
+[PR #2970](https://github.com/hashgraph-online/hol-guard/pull/2970) targets
+`release/3.2` on the isolated branch `codex/release-3.2-rust-finalization`.
+PR #2954 has another writer; do not overwrite or merge its whole tree without
+review. Foundation PR #2951's 25 successful workflows and 33 resolved threads
+are historical observations at `e449594...`; refresh before integration.
+Independent latest-push code-owner approval remains a protected-branch gate.
+No protected merge, canary or release is complete.

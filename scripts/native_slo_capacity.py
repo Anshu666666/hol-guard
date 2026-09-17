@@ -1,4 +1,4 @@
-"""Installed native-runtime concurrency and resident RSS measurements."""
+"""Installed native-runtime concurrency and in-process fixture tree RSS."""
 
 from __future__ import annotations
 
@@ -218,7 +218,9 @@ def _measure_rss_and_c64(
         rss_peak = rss_baseline
         if include_capacity:
             observations, errors, evidence = _run_capacity_wave(session, routes, _MAX_CONCURRENCY, executor)
-        rss_peak = max(rss_peak, process_rss_bytes())
+        rss_sample = process_rss_bytes()
+        _require(type(rss_sample) is int and rss_sample > 0, "process-tree RSS peak sample was unavailable")
+        rss_peak = max(rss_peak, rss_sample)
     except BaseException:
         executor.shutdown(wait=False, cancel_futures=True)
         raise

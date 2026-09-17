@@ -18,6 +18,7 @@ import threading
 import time
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, cast
@@ -35,6 +36,7 @@ from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import Observation, route_counts
 from scripts.native_slo_batch import validate_batch_routes
 from scripts.native_slo_contract import clear_proof_environment, summarize
+from scripts.native_slo_numeric_journal import NumericJournal
 
 _CONFIG_LIMIT = 1_000_000
 _TOML = importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli")
@@ -329,20 +331,33 @@ def _require_native_count(before: Mapping[str, int], after: Mapping[str, int], c
         raise RuntimeError("priority_launcher_native_route_mismatch")
 
 
-def _serial_series(session: LauncherSession, launcher: RegisteredLauncher, count: int, *, offset: int) -> list[float]:
+def _serial_series(
+    session: LauncherSession,
+    launcher: RegisteredLauncher,
+    count: int,
+    *,
+    offset: int,
+    journal: NumericJournal | None = None,
+    series: str = "",
+) -> list[float]:
     if registered_launcher(launcher.config_path, launcher.harness, launcher.event) != launcher:
         raise RuntimeError("priority_launcher_registration_changed")
     values: list[float] = []
-    before = _route_snapshot(session)
-    for index in range(count):
-        observation = observe_priority_launcher(session, launcher, sample=offset + index)
-        values.append(observation.latency_ms)
-    after = _route_snapshot(session, expected=sum(before.values()) + count)
-    _require_native_count(before, after, count)
+    with journal.batch(series, count) if journal else nullcontext(None) as batch:
+        before = _route_snapshot(session)
+        for index in range(count):
+            observation = observe_priority_launcher(session, launcher, sample=offset + index)
+            values.append(observation.latency_ms)
+            if batch is not None:
+                batch.record([observation.latency_ms])
+        after = _route_snapshot(session, expected=sum(before.values()) + count)
+        _require_native_count(before, after, count)
     return values
 
 
-def _concurrent_series(session: LauncherSession, launcher: RegisteredLauncher, count: int) -> list[float]:
+def _concurrent_series(
+    session: LauncherSession, launcher: RegisteredLauncher, count: int, *, journal: NumericJournal | None = None
+) -> list[float]:
     if registered_launcher(launcher.config_path, launcher.harness, launcher.event) != launcher:
         raise RuntimeError("priority_launcher_registration_changed")
     rounded = ((count + _CONCURRENCY - 1) // _CONCURRENCY) * _CONCURRENCY
@@ -350,31 +365,39 @@ def _concurrent_series(session: LauncherSession, launcher: RegisteredLauncher, c
     executor = ThreadPoolExecutor(max_workers=_CONCURRENCY, thread_name_prefix="priority-launcher")
     try:
         for offset in range(0, rounded, _CONCURRENCY):
-            barrier = threading.Barrier(_CONCURRENCY + 1)
-            stop = threading.Event()
+            series = f"INSTALLED_LAUNCHER.c16.{launcher.harness}.{launcher.event}"
+            with journal.batch(series, _CONCURRENCY) if journal else nullcontext(None) as batch:
+                barrier = threading.Barrier(_CONCURRENCY + 1)
+                stop = threading.Event()
 
-            def launch(sample: int, launch_barrier: threading.Barrier, launch_stop: threading.Event) -> Observation:
-                launch_barrier.wait(timeout=_LAUNCH_TIMEOUT_SECONDS)
-                return observe_priority_launcher(session, launcher, sample=sample, stop_event=launch_stop)
+                def launch(sample: int, launch_barrier: threading.Barrier, launch_stop: threading.Event) -> Observation:
+                    launch_barrier.wait(timeout=_LAUNCH_TIMEOUT_SECONDS)
+                    return observe_priority_launcher(session, launcher, sample=sample, stop_event=launch_stop)
 
-            before = _route_snapshot(session)
-            futures = [
-                executor.submit(launch, 1_000_000 + offset + slot, barrier, stop) for slot in range(_CONCURRENCY)
-            ]
-            try:
-                barrier.wait(timeout=_LAUNCH_TIMEOUT_SECONDS)
-                observations = [future.result() for future in as_completed(futures, timeout=30.0)]
-            except BaseException:
-                stop.set()
-                barrier.abort()
-                for future in futures:
-                    future.cancel()
-                raise
-            after = _route_snapshot(session, expected=sum(before.values()) + len(observations))
-            attributed, routes = validate_batch_routes(observations, before, after)
-            if routes != {"native_resident": _CONCURRENCY}:
-                raise RuntimeError("priority_launcher_concurrent_route_mismatch")
-            values.extend(observation.latency_ms for observation in attributed)
+                before = _route_snapshot(session)
+                futures = [
+                    executor.submit(launch, 1_000_000 + offset + slot, barrier, stop) for slot in range(_CONCURRENCY)
+                ]
+                observations: list[Observation] = []
+                try:
+                    barrier.wait(timeout=_LAUNCH_TIMEOUT_SECONDS)
+                    for future in as_completed(futures, timeout=30.0):
+                        observations.append(future.result())
+                except BaseException:
+                    stop.set()
+                    barrier.abort()
+                    for future in futures:
+                        future.cancel()
+                    if batch is not None and observations:
+                        batch.record([item.latency_ms for item in observations])
+                    raise
+                if batch is not None:
+                    batch.record([item.latency_ms for item in observations])
+                after = _route_snapshot(session, expected=sum(before.values()) + len(observations))
+                attributed, routes = validate_batch_routes(observations, before, after)
+                if routes != {"native_resident": _CONCURRENCY}:
+                    raise RuntimeError("priority_launcher_concurrent_route_mismatch")
+                values.extend(observation.latency_ms for observation in attributed)
     except BaseException:
         executor.shutdown(wait=False, cancel_futures=True)
         raise
@@ -391,7 +414,7 @@ def _sample_count(plan: Mapping[str, int], key: str) -> int:
 
 
 def measure_priority_launchers(
-    session: LauncherSession, plan: Mapping[str, int]
+    session: LauncherSession, plan: Mapping[str, int], *, journal: NumericJournal | None = None
 ) -> tuple[dict[str, object], dict[str, list[float]]]:
     """Measure four actual registrations at c1, c16 and fresh-launcher startup.
 
@@ -415,9 +438,23 @@ def measure_priority_launchers(
         after = _route_snapshot(session, expected=sum(before.values()) + 2)
         _require_native_count(before, after, 2)
         name = f"{launcher.harness}.{launcher.event}"
-        cold = _serial_series(session, launcher, cold_count, offset=2_000_000)
-        serial = _serial_series(session, launcher, priority_count, offset=0)
-        concurrent = _concurrent_series(session, launcher, priority_count)
+        cold = _serial_series(
+            session,
+            launcher,
+            cold_count,
+            offset=2_000_000,
+            journal=journal,
+            series=f"INSTALLED_LAUNCHER.cold.{name}",
+        )
+        serial = _serial_series(
+            session,
+            launcher,
+            priority_count,
+            offset=0,
+            journal=journal,
+            series=f"INSTALLED_LAUNCHER.{name}",
+        )
+        concurrent = _concurrent_series(session, launcher, priority_count, journal=journal)
         if registered_launcher(launcher.config_path, launcher.harness, launcher.event) != launcher:
             raise RuntimeError("priority_launcher_registration_changed")
         raw[f"INSTALLED_LAUNCHER.{name}"] = serial

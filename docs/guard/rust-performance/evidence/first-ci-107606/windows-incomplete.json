@@ -1,0 +1,40 @@
+{
+  "schema": "hol-guard.native-paired-incomplete.v1",
+  "evidence_class": "smoke",
+  "plan": {
+    "runs": 1,
+    "priority_per_run": 2,
+    "other_per_run": 2,
+    "cold_per_run": 2,
+    "recovery_per_run": 2,
+    "resource_samples_per_run": 2
+  },
+  "order": "alternating_baseline_candidate_blocks",
+  "artifact_digests": {
+    "baseline": "4031a873cc6da687ae5fd91f3b6145e068f53d68c8fbd1ba0ed659c448d6df36",
+    "candidate": "e043087e0a1e83d94d553dccf3fe05325a64bc16f04c3f4dbaefe3c093b3b137"
+  },
+  "completed_blocks": {
+    "baseline": 1,
+    "candidate": 0
+  },
+  "failed_blocks": [
+    {
+      "category": "RuntimeError",
+      "diagnostic_digest": "62f26a05b59971a84f5fd3a0268c1772da04397f313e5779c4ed6da2ca583271",
+      "line": 70,
+      "origin": "native_slo_expiry.expire_acknowledged_authority",
+      "reason": "qualification_fixture.expiry_fixture_did_not_authenticate_its_short-lived_publication",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "arm": "candidate",
+      "run": 0,
+      "artifact_sha256": "e043087e0a1e83d94d553dccf3fe05325a64bc16f04c3f4dbaefe3c093b3b137",
+      "timed_out": false,
+      "containment_failed": false
+    }
+  ],
+  "sampling_passed": false,
+  "qualification_complete": false,
+  "program_qualification_complete": false,
+  "comparison_available": false
+}

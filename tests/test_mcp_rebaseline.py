@@ -3,10 +3,13 @@ from __future__ import annotations
 import copy
 import importlib
 import json
+import os
 import sys
 from pathlib import Path
 
 import pytest
+
+from tests.mcp_public_fixture import resource_fixture
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS.parent))
@@ -17,7 +20,7 @@ driver_module = importlib.import_module("scripts.bench_mcp_rebaseline")
 
 
 def _row(message, trace):
-    return {
+    result = {
         "request_id": message["id"],
         "method": message["method"],
         "request_sha256": trace_module.digest(message),
@@ -29,17 +32,29 @@ def _row(message, trace):
         "decision": "inline-approved" if trace.approval_delay_ms else "policy-warn",
         "policy_action": "allow" if trace.approval_delay_ms else "warn",
     }
+    if trace.name == "loopback_tcp10ms":
+        result.update(
+            network_roundtrip_wall_ns=20_000_000,
+            network_client_thread_cpu_ns=20,
+            network_service_wall_ns=10_000_000,
+            network_service_thread_cpu_ns=10,
+            network_request_bytes=65,
+            network_response_bytes=180,
+            child_wall_ns=30_000_000,
+        )
+    return result
 
 
 def _records():
     records = []
     for role in ("baseline", "candidate"):
         for mode in ("plain", "resources", "diagnostic"):
+            calls = trace_module.calls_for_mode(mode, 2)
             traces = []
             for trace in trace_module.TRACES:
                 rows = []
                 generation = 0
-                for message in trace_module.messages(trace, 2):
+                for message in trace_module.messages(trace, calls):
                     row = _row(message, trace)
                     if message["method"] == "tools/list":
                         generation += 1
@@ -49,12 +64,12 @@ def _records():
                     rows.append(row)
                 traces.append(
                     {
-                        **trace_module.trace_identity(trace, 2),
+                        **trace_module.trace_identity(trace, calls),
                         "status": "passed",
                         "observations": rows,
                         "session": {"wall_ns": 100},
                         "construction": {"wall_ns": 10},
-                        "approvals": [{"wall_ns": 10}] * (2 if trace.approval_delay_ms else 0),
+                        "approvals": [{"wall_ns": 10}] * (calls if trace.approval_delay_ms else 0),
                     }
                 )
             phases = [
@@ -77,7 +92,7 @@ def _records():
                     "receipt_and_inventory_composite",
                 )
             ]
-            phases.extend([{**phases[0], "phase": "quiet_frame_wait"}] * 14)
+            phases.extend([{**phases[0], "phase": "quiet_frame_wait"}] * (2 * len(trace_module.TRACES)))
             counts = {name: sum(row["phase"] == name for row in phases) for name in {row["phase"] for row in phases}}
             records.append(
                 {
@@ -87,6 +102,19 @@ def _records():
                     "returncode": 0,
                     "capture_failure": None,
                     "resources": {"peak": {"processes": 2, "rss_bytes": 10}},
+                    "warm_resource_failure": None,
+                    "warm_resources": [
+                        {
+                            "trace_index": index,
+                            "status": "complete",
+                            "failure": None,
+                            "identity_verified": True,
+                            "expected_warm_attempts": calls - 1,
+                            "warm_attempts": calls - 1,
+                            "resources": resource_fixture(),
+                        }
+                        for index in range(len(trace_module.TRACES))
+                    ],
                     "result": {
                         "status": "passed",
                         "traces": traces,
@@ -109,7 +137,7 @@ def test_identical_trace_is_deterministic_and_refresh_changes_catalog_identity()
 
 
 def test_oracle_accepts_exact_actual_default_warn_and_inline_allow():
-    for trace in (trace_module.TRACES[0], trace_module.TRACES[-1]):
+    for trace in (trace_module.TRACES[0], next(t for t in trace_module.TRACES if t.approval_delay_ms)):
         message = trace_module.messages(trace, 2)[-1]
         response = {
             "jsonrpc": "2.0",
@@ -164,7 +192,7 @@ def test_aggregate_rejects_omitted_or_falsely_passing_observations(mutation):
     elif mutation == "stale_catalog":
         records[0]["result"]["traces"][0]["observations"][1]["catalog_result_sha256"] = "0" * 64
     elif mutation == "missing_approval":
-        records[0]["result"]["traces"][-1]["approvals"].pop()
+        next(t for t in records[0]["result"]["traces"] if t["trace"]["approval_delay_ms"])["approvals"].pop()
     elif mutation == "dropped_phase":
         records[2]["result"]["phase_rows_dropped"] = 1
     elif mutation == "fake_phase_count":
@@ -257,3 +285,19 @@ def test_controller_quarantines_owned_worker_if_resource_observer_fails(tmp_path
     result = driver_module._worker(tmp_path, tmp_path / "result.json", calls=2, diagnostic=False, resources=True)
     assert result["capture_failure"] == "worker_observer_failure:RuntimeError"
     assert result["returncode"] != 0 and result["result"]["status"] == "failed"
+
+
+def test_controller_spawn_failure_closes_all_resource_pipe_ends(tmp_path, monkeypatch):
+    pipes = driver_module.ResourcePipes.create()
+    descriptors = (pipes.parent_request_fd, pipes.parent_ack_fd, *pipes.worker_fds)
+    monkeypatch.setattr(driver_module.ResourcePipes, "create", lambda: pipes)
+
+    def fail_spawn(*args, **kwargs):
+        raise OSError("synthetic spawn failure")
+
+    monkeypatch.setattr(driver_module.subprocess, "Popen", fail_spawn)
+    with pytest.raises(OSError, match="spawn failure"):
+        driver_module._worker(tmp_path, tmp_path / "result.json", calls=100, diagnostic=False, resources=True)
+    for descriptor in descriptors:
+        with pytest.raises(OSError):
+            os.fstat(descriptor)

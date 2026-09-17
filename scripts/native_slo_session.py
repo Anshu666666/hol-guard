@@ -27,7 +27,14 @@ from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_resident_client import close_native_resident_clients
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
-from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
+from scripts.native_slo_adapter import (
+    Observation,
+    is_allowed,
+    observation_reason_code,
+    payload,
+    route_counts,
+    route_delta,
+)
 from scripts.native_slo_capacity_http import MAX_HTTP_RESPONSE_BYTES as _MAX_HTTP_RESPONSE_BYTES
 from scripts.native_slo_capacity_http import capacity_http_response
 from scripts.native_slo_capacity_http import is_explicit_capacity_response as _is_explicit_capacity_response
@@ -374,6 +381,7 @@ class AdapterSession:
             route_delta(before, after),
             is_allowed(event, response),
             _is_explicit_capacity_response(response),
+            observation_reason_code(response),
         )
 
     def observe_unattributed(self, harness: str, event: str, size_class: str) -> Observation:

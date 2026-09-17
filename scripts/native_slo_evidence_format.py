@@ -73,8 +73,23 @@ def context_fields(value: object) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ArchiveError("archive_invalid")
     value = cast(dict[str, object], value)
-    allowed = {"source_sha", "target", "run_id", "run_attempt"}
+    base = {"source_sha", "target", "run_id", "run_attempt"}
+    pair = {
+        "pair_index",
+        "pair_manifest_sha256",
+        "bundle_sha256",
+        "numeric_commitments_sha256",
+        "numeric_commitments_verified",
+    }
+    allowed = base | pair
     require(set(value) <= allowed)
+    if set(value) & pair:
+        require(set(value) == allowed)
+        bounded_int(value["pair_index"], 4)
+        require(type(value["numeric_commitments_verified"]) is bool)
+        for key in ("pair_manifest_sha256", "bundle_sha256", "numeric_commitments_sha256"):
+            commitment = value[key]
+            require(isinstance(commitment, str) and HEX64.fullmatch(commitment) is not None)
     if "source_sha" in value:
         source_sha = value["source_sha"]
         require(isinstance(source_sha, str) and re.fullmatch(r"[0-9a-f]{40}", source_sha) is not None)

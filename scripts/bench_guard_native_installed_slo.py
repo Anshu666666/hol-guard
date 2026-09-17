@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Mapping
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Protocol, cast
 
@@ -53,6 +54,8 @@ from scripts.native_slo_capacity import (  # noqa: E402, F401
 )
 from scripts.native_slo_contract import SIZE_CLASSES  # noqa: E402
 from scripts.native_slo_launcher import measure_registered_launcher  # noqa: E402
+from scripts.native_slo_numeric_journal import NumericJournal  # noqa: E402
+from scripts.native_slo_recovery_failure import RecoveryFailureError  # noqa: E402
 from scripts.native_slo_reporting import (  # noqa: E402
     SloMeasurements,
     safe_failure_rate,
@@ -187,7 +190,9 @@ def _wire_request(workspace: Path, guard_home: Path, request_id: str) -> str:
     )
 
 
-def _run_cold(runtime: Path, session: _LifecycleSession, iterations: int) -> list[float]:
+def _run_cold(
+    runtime: Path, session: _LifecycleSession, iterations: int, *, journal: NumericJournal | None = None
+) -> list[float]:
     values: list[float] = []
     environment = {
         "HOME": str(session.workspace),
@@ -195,41 +200,49 @@ def _run_cold(runtime: Path, session: _LifecycleSession, iterations: int) -> lis
         **{key: value for key in ("LANG", "LC_ALL") if (value := os.environ.get(key))},
     }
     request = _wire_request(session.workspace, session.guard_home, "native-slo-cold")
-    for _ in range(iterations):
-        _require(session.stop_resident(), "cold native resident stop was not contained")
-        started = time.perf_counter()
-        completed = subprocess.run(
-            (str(runtime), "hook", "--stdin"),
-            input=request.encode("utf-8"),
-            cwd=runtime.parent,
-            env=environment,
-            capture_output=True,
-            check=False,
-            timeout=5,
-        )
-        elapsed_ms = (time.perf_counter() - started) * 1_000.0
-        _require(completed.returncode == 0, "cold native one-shot failed")
-        try:
-            response = json.loads(completed.stdout)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise RuntimeError("cold native one-shot returned invalid JSON") from error
-        _require(isinstance(response, Mapping) and response.get("decision") == "allow", "cold decision was unsafe")
-        values.append(elapsed_ms)
+    with journal.batch("NATIVE_CLIENT.cold_oneshot", iterations) if journal else nullcontext(None) as batch:
+        for _ in range(iterations):
+            _require(session.stop_resident(), "cold native resident stop was not contained")
+            started = time.perf_counter()
+            completed = subprocess.run(
+                (str(runtime), "hook", "--stdin"),
+                input=request.encode("utf-8"),
+                cwd=runtime.parent,
+                env=environment,
+                capture_output=True,
+                check=False,
+                timeout=5,
+            )
+            elapsed_ms = (time.perf_counter() - started) * 1_000.0
+            if batch is not None:
+                batch.record([elapsed_ms])
+            _require(completed.returncode == 0, "cold native one-shot failed")
+            try:
+                response = json.loads(completed.stdout)
+            except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                raise RuntimeError("cold native one-shot returned invalid JSON") from error
+            _require(isinstance(response, Mapping) and response.get("decision") == "allow", "cold decision was unsafe")
+            values.append(elapsed_ms)
     return values
 
 
-def _run_recovery(session: _LifecycleSession, iterations: int) -> list[float]:
+def _run_recovery(session: _LifecycleSession, iterations: int, *, journal: NumericJournal | None = None) -> list[float]:
     values: list[float] = []
-    for index in range(iterations):
-        _ = session.observe("claude-code", "PostToolUse", "1k")
-        _require(
-            session.stop_resident(),
-            f"resident stop failed during recovery sample {index}",
-        )
-        started = time.perf_counter()
-        observation = session.observe("claude-code", "PostToolUse", "1k")
-        values.append((time.perf_counter() - started) * 1_000.0)
-        _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
+    with journal.batch("DAEMON_INGRESS.recovery", iterations) if journal else nullcontext(None) as batch:
+        for index in range(iterations):
+            preparation = session.observe("claude-code", "PostToolUse", "1k")
+            _require(
+                session.stop_resident(),
+                f"resident stop failed during recovery sample {index}",
+            )
+            started = time.perf_counter()
+            observation = session.observe("claude-code", "PostToolUse", "1k")
+            elapsed_ms = (time.perf_counter() - started) * 1_000.0
+            values.append(elapsed_ms)
+            if batch is not None:
+                batch.record([elapsed_ms])
+            if not (observation.allowed and observation.route == "native_resident"):
+                raise RecoveryFailureError(index, preparation, observation)
     return values
 
 
@@ -265,7 +278,9 @@ def _measure_slo(
         launcher = measure_registered_launcher(session, iterations=launcher_iterations) if launcher_iterations else None
     if readiness_samples > 1:
         readiness.extend(_readiness_samples(runtime, readiness_samples - 1))
-    rss_peak = max(capacity.rss_peak, process_rss_bytes())
+    rss_sample = process_rss_bytes()
+    _require(type(rss_sample) is int and rss_sample > 0, "process-tree RSS final sample was unavailable")
+    rss_peak = max(capacity.rss_peak, rss_sample)
     return SloMeasurements(
         warm=warm,
         sizes=sizes,

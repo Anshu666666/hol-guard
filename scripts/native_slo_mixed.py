@@ -230,7 +230,7 @@ def run_mixed_scenario(
             failures["setup_failed"] += 1
         else:
             collection_started = True
-            with ResourceSampler(pid=session.pid) as sampler:
+            with ResourceSampler(pid=session.pid, cpu_reader=session.cpu_accounting_reader()) as sampler:
                 load.start()
                 try:
                     for scheduled, operation, arguments in _schedule(plan):

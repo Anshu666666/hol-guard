@@ -20,19 +20,28 @@ from pathlib import Path
 
 if __package__:
     from .native_loopback_dns import LoopbackPTRResponder
+    from .native_loopback_observability import libc_query, retain_private_captures, scutil_diagnostics
 else:
     # Direct script execution puts this helper's directory on sys.path.
     from native_loopback_dns import LoopbackPTRResponder  # pyright: ignore[reportImplicitRelativeImport]
+    from native_loopback_observability import (  # pyright: ignore[reportImplicitRelativeImport]
+        libc_query,
+        retain_private_captures,
+        scutil_diagnostics,
+    )
 
 _QUERIES = {
     "legacy_getfqdn": "socket.getfqdn('127.0.0.1')",
     "reverse_getnameinfo": "socket.getnameinfo(('127.0.0.1',0),socket.NI_NAMEREQD|socket.NI_NUMERICSERV)[0]",
     "numeric_getnameinfo": "socket.getnameinfo(('127.0.0.1',0),socket.NI_NUMERICHOST|socket.NI_NUMERICSERV)[0]",
+    "libc_gethostbyaddr": "packed_ipv4_libsystem_call",
 }
 _STARTED = '{"phase":"call_started"}'
 
 
 def _query(kind: str) -> str:
+    if kind == "libc_gethostbyaddr":
+        return libc_query(_STARTED)
     return (
         "import json,socket; print('" + _STARTED + "',flush=True); name=" + _QUERIES[kind] + "; "
         "print(json.dumps({'loopback_label':name in "
@@ -49,7 +58,8 @@ def _call_started(output: str | bytes | None) -> bool:
 def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = None) -> dict[str, object]:
     query = _query(kind)
     started = time.monotonic()
-    result: dict[str, object] = {"status": "failed", "loopback_label": False, "call_started": False}
+    result_field = "result_present" if kind == "libc_gethostbyaddr" else "loopback_label"
+    result: dict[str, object] = {"status": "failed", result_field: False, "call_started": False}
     try:
         timeout = 5.0 if deadline is None else min(5.0, max(0.0, deadline - started))
         if timeout == 0:
@@ -61,8 +71,8 @@ def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = Non
         lines = completed.stdout.splitlines() if len(completed.stdout) <= 128 else []
         if completed.returncode == 0 and len(lines) == 2 and lines[0] == _STARTED:
             value = json.loads(lines[1])
-            if isinstance(value, dict) and set(value) == {"loopback_label"} and type(value["loopback_label"]) is bool:
-                result.update(status="completed", loopback_label=value["loopback_label"])
+            if isinstance(value, dict) and set(value) == {result_field} and type(value[result_field]) is bool:
+                result.update(status="completed", **{result_field: value[result_field]})
     except subprocess.TimeoutExpired as error:
         result["status"] = "deadline_exceeded"
         result["call_started"] = _call_started(error.output)
@@ -72,13 +82,13 @@ def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = Non
     return result
 
 
-def resolver_diagnostics() -> dict[str, dict[str, object]]:
+def resolver_diagnostics(*, deadline: float | None = None) -> dict[str, dict[str, object]]:
     """Run distinct fixed probes concurrently within one existing 5s wait.
 
     The numeric control requests no name lookup. These independent subprocesses
     never replace either installed arm's resolver or extend its startup deadline.
     """
-    deadline = time.monotonic() + 5.0
+    deadline = time.monotonic() + 5.0 if deadline is None else deadline
 
     def probe(kind: str) -> dict[str, object]:
         return resolver_probe(kind, deadline=deadline)
@@ -113,7 +123,7 @@ def _run_helper(operation: str, port: int, owner: str) -> str:
 
 def _base_report() -> dict[str, object]:
     return {
-        "schema": "hol-guard.native-loopback-resolver.v2",
+        "schema": "hol-guard.native-loopback-resolver.v3",
         "environment_scope": "disposable_ci_runner_both_arms",
         "baseline_artifact_modified": False,
         "runtime_patched": False,
@@ -126,8 +136,25 @@ def _base_report() -> dict[str, object]:
     }
 
 
-def _diagnose_phase(report: dict[str, object], phase: str) -> dict[str, object]:
-    probes = resolver_diagnostics()
+def _diagnose_phase(
+    report: dict[str, object],
+    phase: str,
+    captures: dict[str, dict[str, object]],
+    *,
+    port: int | None = None,
+    responder: LoopbackPTRResponder | None = None,
+) -> dict[str, object]:
+    deadline = time.monotonic() + 5.0
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        probes_future = executor.submit(resolver_diagnostics, deadline=deadline)
+        config_future = executor.submit(scutil_diagnostics, expected_port=port, deadline=deadline)
+        selftest_future = executor.submit(responder.self_test, deadline=deadline) if responder is not None else None
+        probes = probes_future.result()
+        configuration, private = config_future.result()
+        if selftest_future is not None:
+            report["ptr_selftest"] = selftest_future.result()
+    report[f"registration_{phase}"] = configuration
+    captures[phase] = private
     report[f"probes_{phase}"] = probes
     report[phase] = probes["legacy_getfqdn"]
     return probes["legacy_getfqdn"]
@@ -146,21 +173,22 @@ def _terminate(signum: int, _frame: object) -> None:
     raise SystemExit(128 + signum)
 
 
-def run_wrapped(command: list[str], output: Path) -> int:
+def _run_wrapped(
+    command: list[str], output: Path, report: dict[str, object], captures: dict[str, dict[str, object]]
+) -> int:
     """Hold the exact DNS fixture around the entire paired build/measure command."""
-    report = _base_report()
     if sys.platform != "darwin":
         report["status"] = "not_macos"
         _write_report(output, report)
         return _run_command(command)
-    before = _diagnose_phase(report, "before")
+    before = _diagnose_phase(report, "before", captures)
     if before["status"] == "completed":
         report["status"] = "resolver_already_completed"
         _write_report(output, report)
         try:
             return _run_command(command)
         finally:
-            _diagnose_phase(report, "after")
+            _diagnose_phase(report, "after", captures)
             _write_report(output, report)
     report["experiment_attempted"] = True
     owner = secrets.token_hex(16)
@@ -177,7 +205,7 @@ def run_wrapped(command: list[str], output: Path) -> int:
         # helper may have completed its exclusive create. Exact bytes guard it.
         try:
             report["configuration_install"] = _run_helper("install", responder.port, owner)
-            _diagnose_phase(report, "after")
+            _diagnose_phase(report, "after", captures, port=responder.port, responder=responder)
             report["status"] = "experiment_running"
             _write_report(output, report)
             returncode = _run_command(command)
@@ -192,9 +220,27 @@ def run_wrapped(command: list[str], output: Path) -> int:
             report["responder"] = responder.snapshot()
             report["status"] = "experiment_finished"
             _write_report(output, report)
-    _diagnose_phase(report, "after_cleanup")
+    _diagnose_phase(report, "after_cleanup", captures, port=responder.port)
     _write_report(output, report)
     return returncode if cleanup in {"completed", "not_owned"} or returncode else 1
+
+
+def _retain_captures(output: Path, report: dict[str, object], captures: dict[str, dict[str, object]]) -> None:
+    if captures:
+        parent = output.parent.parent if output.parent.name == "aggregate" else output.parent
+        report["private_diagnostics_retained"] = retain_private_captures(parent / "private_samples", captures)
+        _write_report(output, report)
+
+
+def run_wrapped(command: list[str], output: Path) -> int:
+    report = _base_report()
+    captures: dict[str, dict[str, object]] = {}
+    try:
+        return _run_wrapped(command, output, report, captures)
+    finally:
+        # The paired driver requires an empty private sample directory on entry.
+        # Bounded raw captures remain in memory until that command has exited.
+        _retain_captures(output, report, captures)
 
 
 def main() -> int:
@@ -210,8 +256,10 @@ def main() -> int:
         finally:
             signal.signal(signal.SIGTERM, previous)
     report = _base_report()
-    _diagnose_phase(report, "before")
+    captures: dict[str, dict[str, object]] = {}
+    _diagnose_phase(report, "before", captures)
     report["status"] = "diagnostic_only"
+    _retain_captures(args.output, report, captures)
     _write_report(args.output, report)
     return 0
 

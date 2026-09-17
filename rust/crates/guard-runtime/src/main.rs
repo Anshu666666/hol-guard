@@ -168,11 +168,12 @@ fn run() -> Result<(), String> {
                 && flag == "--stdin" =>
         {
             let bytes = read_stdin_bounded()?;
+            let started_at = std::time::Instant::now();
             let timeout = managed_resident::client_timeout(&bytes);
-            let response = managed_resident::client_request(
+            let response = managed_resident::client_request_at_deadline(
                 std::path::Path::new(state_dir),
                 &bytes,
-                timeout,
+                started_at + timeout,
             )?;
             write_bytes_response(&response)
         }

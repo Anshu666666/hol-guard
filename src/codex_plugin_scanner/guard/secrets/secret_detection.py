@@ -610,6 +610,23 @@ def _path_is_high_signal(path: str) -> bool:
     return basename in _HIGH_SIGNAL_BASENAMES or any(part in {".aws", ".ssh", ".gnupg"} for part in pure.parts)
 
 
+def _path_policy_key(path: str) -> tuple[bool, bool, bool, bool, bool]:
+    """All path-dependent detector inputs, excluding occurrence metadata.
+
+    Scan-scoped immutable-blob caches use this key. Any new path-sensitive
+    detection rule must extend it; fixture, public-config, signal, documentation
+    and code-context decisions must never share a cached result accidentally.
+    """
+
+    return (
+        _path_is_documentation(path),
+        _path_is_sample_fixture(path),
+        _path_is_public_client_config(path),
+        _path_is_high_signal(path),
+        PurePosixPath(_normalized_path(path)).suffix in _CODE_SUFFIXES,
+    )
+
+
 def _character_class_count(value: str) -> int:
     return sum(
         (

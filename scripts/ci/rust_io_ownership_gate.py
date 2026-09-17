@@ -133,6 +133,11 @@ class IoObservation:
     reachable: bool
 
 
+_POSTURE_ROOT: Final = RootSpec(
+    "src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py",
+    "hook_review_is_recording_only",
+)
+
 ROOTS: Final = (
     RootSpec(
         "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
@@ -155,6 +160,7 @@ ROOTS: Final = (
         "src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py",
         "try_native_or_source_ref_hook",
     ),
+    _POSTURE_ROOT,
 )
 
 
@@ -298,8 +304,10 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
 def _reachable_records(
     root: Path,
     records: dict[tuple[str, str], list[FunctionRecord]],
+    *,
+    roots: tuple[RootSpec, ...] = ROOTS,
 ) -> tuple[FunctionRecord, ...]:
-    pending = [_root_record(root, spec, records) for spec in ROOTS]
+    pending = [_root_record(root, spec, records) for spec in roots]
     records_view = cast(Mapping[tuple[str, str], list[FunctionRecordLike]], records)
     seen: set[tuple[str, str]] = set()
     result: list[FunctionRecord] = []
@@ -374,8 +382,13 @@ def _branch_failures(root: Path, records: dict[tuple[str, str], list[FunctionRec
     return failures
 
 
-def _inventory(root: Path, reachable: tuple[FunctionRecord, ...]) -> list[IoObservation]:
+def _inventory(
+    root: Path,
+    reachable: tuple[FunctionRecord, ...],
+    posture: tuple[FunctionRecord, ...] = (),
+) -> list[IoObservation]:
     reachable_ids = {(record.path, record.qualname) for record in reachable}
+    posture_ids = {(record.path, record.qualname) for record in posture}
     observations: list[IoObservation] = []
     source_root = root / "src/codex_plugin_scanner/guard"
     for path in sorted(source_root.rglob("*.py")):
@@ -384,13 +397,16 @@ def _inventory(root: Path, reachable: tuple[FunctionRecord, ...]) -> list[IoObse
         module_records = tuple(_functions(tree, relative))
         for record in module_records:
             for observation in _observations(record):
+                category = observation.category
+                if (record.path, record.qualname) in posture_ids and category == "asynchronous_policy":
+                    category = "synchronous_posture_config"
                 observations.append(
                     IoObservation(
                         observation.path,
                         observation.line,
                         observation.operation,
                         observation.kind,
-                        observation.category,
+                        category,
                         (record.path, record.qualname) in reachable_ids or relative in _COMPATIBILITY_PATHS,
                     )
                 )
@@ -408,8 +424,9 @@ def validate(root: Path) -> dict[str, object]:
     root = root.resolve()
     records = _function_map(root)
     reachable = _reachable_records(root, records)
+    posture = _reachable_records(root, records, roots=(_POSTURE_ROOT,))
     failures = _branch_failures(root, records)
-    inventory = _inventory(root, reachable)
+    inventory = _inventory(root, reachable, posture)
     reachable_bad = [item for item in inventory if item.reachable and item.category.startswith("unclassified_python")]
     if reachable_bad:
         failures.extend(

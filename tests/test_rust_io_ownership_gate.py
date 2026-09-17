@@ -39,6 +39,14 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     all_categories = set(report["inventory_by_category"])
     assert "transport_identity" in categories
     assert "asynchronous_policy" in categories
+    assert "synchronous_posture_config" in categories
+    config_reads = [
+        item
+        for item in report["inventory"]
+        if item["path"] == "src/codex_plugin_scanner/guard/config.py" and item["operation"] == "open"
+    ]
+    assert config_reads
+    assert all(item["category"] == "synchronous_posture_config" for item in config_reads)
     assert "compatibility_only" in all_categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
@@ -100,8 +108,7 @@ def test_resolver_follows_qualified_repository_module_alias(tmp_path: Path) -> N
     caller_path = _write_guard_fixture(
         tmp_path,
         "qualified_caller",
-        "from . import qualified_helper\n\n"
-        "def call() -> str:\n    return qualified_helper.read_source()\n",
+        "from . import qualified_helper\n\ndef call() -> str:\n    return qualified_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]
@@ -152,8 +159,7 @@ def test_resolver_fails_closed_for_unknown_symbol_on_repository_module(tmp_path:
     caller_path = _write_guard_fixture(
         tmp_path,
         "unknown_symbol_caller",
-        "from . import known_helper\n\n"
-        "def call() -> str:\n    return known_helper.read_source()\n",
+        "from . import known_helper\n\ndef call() -> str:\n    return known_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]

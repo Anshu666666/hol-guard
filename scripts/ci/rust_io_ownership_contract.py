@@ -8,6 +8,14 @@ from collections.abc import Iterable
 def capability_contract(compatibility_modes: Iterable[str]) -> list[dict[str, object]]:
     return [
         {
+            "id": "hook_posture_and_availability_response",
+            "authority": "python_bridge",
+            "python_decision_time_disk_io": True,
+            "inventory_category": "synchronous_posture_config",
+            "python_semantic_fallback": False,
+            "failure": "event_specific_availability_contract",
+        },
+        {
             "id": "post_tool_source_read",
             "authority": "rust",
             "rust_symbols": ["guard_secure_fs::read_bounded", "guard_hook_core::review_post_tool"],

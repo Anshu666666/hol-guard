@@ -48,7 +48,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         poll_interval_seconds: float = _PUBLISH_RETRY_SECONDS,
         wall_clock: Callable[[], float] | None = None,
         monotonic_clock: Callable[[], float] | None = None,
+        max_workspaces: int = 1_024,
     ) -> None:
+        if not 1 <= max_workspaces <= 1_024:
+            raise ValueError("native policy workspace limit must be between 1 and 1024")
         self.store = store
         self.guard_home = Path(store.guard_home)
         self._status_provider = status_provider
@@ -73,6 +76,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._retry_not_before_monotonic: float | None = None
         self._failure_count = 0
         self._workspace_paths: set[Path] = set()
+        self._max_workspaces = max_workspaces
+        self._workspace_capacity_exceeded = False
+        self._database_policy_fingerprint: str | None = None
+        self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
         self._input_fingerprint: (
             tuple[tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]] | None
         ) = None
@@ -150,6 +157,16 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         candidate = self._resolved_workspace(workspace)
         with self._condition:
             if candidate in self._workspace_paths:
+                return False
+            if len(self._workspace_paths) >= self._max_workspaces:
+                # Active stricter overlays cannot be evicted to admit another
+                # scope. Close the barrier until this publisher is replaced;
+                # callers receive the existing unavailable-policy outcome.
+                self._workspace_capacity_exceeded = True
+                self._epoch += 1
+                self._acked = False
+                self._last_error = "native_policy_snapshot_workspace_capacity"
+                self._condition.notify_all()
                 return False
             self._workspace_paths.add(candidate)
             # A newly observed workspace can add a stricter local overlay.
@@ -288,6 +305,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             fingerprint = self._current_input_fingerprint()
             if self._input_fingerprint is None:
                 self._input_fingerprint = fingerprint
+                self._database_policy_fingerprint = self._database_policy_marker()
             elif fingerprint[1] != self._input_fingerprint[1]:
                 # Resident generation files are created on every managed
                 # restart. Re-push the last snapshot before a hook can rely
@@ -304,6 +322,12 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 }
                 self._input_fingerprint = fingerprint
                 if self._policy_input_changed(changed_paths):
+                    self.request_publish()
+            if self._monotonic_clock() >= self._reconcile_due_monotonic:
+                # Filesystem notifications are hints. Reconcile machine policy
+                # (including Windows HKLM) independently of receipt/DB churn.
+                self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
+                if self._policy_input_changed():
                     self.request_publish()
             with self._condition:
                 if self._closed:
@@ -376,6 +400,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
     def _publish_once(self, *, renew_after_generation: int | None = None) -> None:
         with self._condition:
             if self._closed:
+                return
+            if self._workspace_capacity_exceeded:
+                self._acked = False
+                self._last_error = "native_policy_snapshot_workspace_capacity"
                 return
             if renew_after_generation is None:
                 renew_after_generation = self._renewal_after_generation

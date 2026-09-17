@@ -292,7 +292,7 @@ def _is_explicit_capacity_response(response: Mapping[str, object]) -> bool:
 class AdapterSession:
     """One private daemon and workspace, with deterministic resident cleanup."""
 
-    def __init__(self, runtime: Path) -> None:
+    def __init__(self, runtime: Path, *, configuration: str | None = None) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="hol-guard-slo-")
         # Keep the synthetic paths canonical. macOS may expose ``/tmp`` as
         # ``/private/tmp`` after the daemon validates a hook workspace; using
@@ -303,8 +303,14 @@ class AdapterSession:
         self.workspace = self.root / "workspace"
         self.guard_home.mkdir(mode=0o700)
         self.workspace.mkdir(mode=0o700)
+        if configuration is not None:
+            (self.guard_home / "config.toml").write_text(configuration, encoding="utf-8")
         self.store = GuardStore(self.guard_home)
         self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
+        # Match the installed ownership probe: register the canonical workspace
+        # as fixture setup before timing the adapter readiness barrier. The
+        # isolated qualification fixture separately measures the full startup.
+        self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)
         self.runtime = runtime
         self.readiness_ms = 0.0
         self._connection: HTTPConnection | None = None

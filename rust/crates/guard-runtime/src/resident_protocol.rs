@@ -36,6 +36,18 @@ pub(crate) enum ResidentRequestV1 {
     Hook(NativeHookRequestV1),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LifecycleDisposition {
+    Continue,
+    Shutdown,
+}
+
+#[derive(Debug)]
+pub(crate) struct ResidentEvaluation {
+    pub(crate) response: Vec<u8>,
+    pub(crate) disposition: LifecycleDisposition,
+}
+
 pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
     let mut features = vec![
         "post-tool-inline-v1".into(),
@@ -84,10 +96,19 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn evaluate_resident_bytes(
     bytes: &[u8],
     policy_store: Option<&PolicySnapshotStore>,
-) -> Result<Vec<u8>, String> {
+) -> Result<ResidentEvaluation, String> {
+    evaluate_resident_bytes_started(bytes, policy_store, std::time::Instant::now())
+}
+
+pub(crate) fn evaluate_resident_bytes_started(
+    bytes: &[u8],
+    policy_store: Option<&PolicySnapshotStore>,
+    started_at: std::time::Instant,
+) -> Result<ResidentEvaluation, String> {
     let value = strict_json_value(bytes)?;
     if bytes.len() > NATIVE_APPROVAL_MAX_BYTES
         && matches!(
@@ -122,11 +143,12 @@ pub(crate) fn evaluate_resident_bytes(
     }
     let request: ResidentRequestV1 = serde_json::from_value(value)
         .map_err(|_| "native_resident_request_invalid_json".to_owned())?;
-    match request {
+    let mut disposition = LifecycleDisposition::Continue;
+    let response = match request {
         ResidentRequestV1::Edge(request) => {
             let policy_store =
                 policy_store.ok_or_else(|| "native_policy_snapshot_unavailable".to_owned())?;
-            crate::edge::evaluate_envelope_with_store(request, policy_store)
+            crate::edge::evaluate_envelope_with_store_started(request, policy_store, started_at)
         }
         ResidentRequestV1::Operation(request) => match *request {
             ResidentOperationV1::CommandModel(request) => {
@@ -175,7 +197,7 @@ pub(crate) fn evaluate_resident_bytes(
                 "protocol_version": crate::RESIDENT_PROTOCOL_VERSION,
             })),
             ResidentOperationV1::Shutdown(_request) => {
-                crate::managed_resident::request_shutdown();
+                disposition = LifecycleDisposition::Shutdown;
                 encode_response(&serde_json::json!({"status": "stopping"}))
             }
         },
@@ -189,7 +211,11 @@ pub(crate) fn evaluate_resident_bytes(
                 encode_response(&review_post_tool(&request))
             }
         }
-    }
+    }?;
+    Ok(ResidentEvaluation {
+        response,
+        disposition,
+    })
 }
 
 pub(crate) fn strict_json_value(bytes: &[u8]) -> Result<Value, String> {
@@ -228,6 +254,31 @@ pub(crate) fn safe_error_response(code: &str, retryable: bool) -> Vec<u8> {
 mod tests {
     use super::{evaluate_resident_bytes, safe_error_response};
     use serde_json::Value;
+
+    #[test]
+    fn lifecycle_disposition_follows_strictly_validated_operation() {
+        for (operation, disposition, status) in [
+            ("health", super::LifecycleDisposition::Continue, "ready"),
+            (
+                "shutdown",
+                super::LifecycleDisposition::Shutdown,
+                "stopping",
+            ),
+        ] {
+            let request = format!(r#"{{"operation":"{operation}","request":{{}}}}"#);
+            let evaluated = evaluate_resident_bytes(request.as_bytes(), None).unwrap();
+            assert_eq!(evaluated.disposition, disposition);
+            let response: Value = serde_json::from_slice(&evaluated.response).unwrap();
+            assert_eq!(response["status"], status);
+        }
+        for malformed in [
+            br#"{"operation":"health","operation":"shutdown","request":{}}"#.as_slice(),
+            br#"{"operation":"shutdown"}"#.as_slice(),
+            br#"{"operation":"shutdown","request":{}} {}"#.as_slice(),
+        ] {
+            assert!(evaluate_resident_bytes(malformed, None).is_err());
+        }
+    }
 
     #[test]
     fn approval_error_transport_is_finite() {

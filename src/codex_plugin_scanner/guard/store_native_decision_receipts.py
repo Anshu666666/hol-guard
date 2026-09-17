@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from datetime import datetime, timezone
 from typing import Final, Protocol, cast
@@ -75,12 +75,46 @@ class StoreNativeDecisionReceiptsMixin:
     def record_native_decision_receipt(self: _ConnectionOwner, receipt: Mapping[str, object]) -> bool:
         """Store one validated receipt; duplicate decision IDs are harmless."""
 
+        _record_native_decision_receipts(self, (receipt,))
+        return True
+
+    def record_native_decision_receipts(
+        self: _ConnectionOwner, receipts: Sequence[Mapping[str, object]]
+    ) -> tuple[str, ...]:
+        """Commit a bounded batch atomically, returning acknowledged identities.
+
+        Validate every input before opening a transaction. A failed commit
+        acknowledges none; replay of an already committed decision is harmless.
+        """
+
+        return _record_native_decision_receipts(self, receipts)
+
+    def native_decision_receipt_count(self: _ConnectionOwner) -> int:
+        with self._connect() as connection:
+            row = cast(
+                sqlite3.Row | None,
+                connection.execute("select count(*) as count from native_hook_decision_receipts").fetchone(),
+            )
+        return int(row["count"]) if row is not None else 0
+
+
+def _record_native_decision_receipts(
+    owner: _ConnectionOwner, receipts: Sequence[Mapping[str, object]]
+) -> tuple[str, ...]:
+    if len(receipts) > 50:
+        raise ValueError("native decision receipt batch exceeds 50 records")
+    validated_receipts: list[dict[str, object]] = []
+    for receipt in receipts:
         validated = validate_native_decision_receipt(receipt)
         if validated is None:
             raise ValueError("native decision receipt is invalid")
-        with self._connect() as connection:
-            connection.execute(
-                """
+        validated_receipts.append(validated)
+    if not validated_receipts:
+        return ()
+    recorded_at = datetime.now(timezone.utc).isoformat()
+    with owner._connect() as connection:
+        connection.executemany(
+            """
                 insert or ignore into native_hook_decision_receipts (
                   decision_id, schema, version, authority, request_id,
                   request_digest, harness, event_name, payload_kind,
@@ -92,6 +126,7 @@ class StoreNativeDecisionReceiptsMixin:
                   recorded_at
                 ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
+            [
                 (
                     validated["decision_id"],
                     validated["schema"],
@@ -116,18 +151,12 @@ class StoreNativeDecisionReceiptsMixin:
                     validated["reviewed_output_sha256"],
                     int(cast_bool(validated["observe_mode"])),
                     validated["deadline_budget_ms"],
-                    datetime.now(timezone.utc).isoformat(),
-                ),
-            )
-        return True
-
-    def native_decision_receipt_count(self: _ConnectionOwner) -> int:
-        with self._connect() as connection:
-            row = cast(
-                sqlite3.Row | None,
-                connection.execute("select count(*) as count from native_hook_decision_receipts").fetchone(),
-            )
-        return int(row["count"]) if row is not None else 0
+                    recorded_at,
+                )
+                for validated in validated_receipts
+            ],
+        )
+    return tuple(cast(str, receipt["decision_id"]) for receipt in validated_receipts)
 
 
 def cast_bool(value: object) -> bool:

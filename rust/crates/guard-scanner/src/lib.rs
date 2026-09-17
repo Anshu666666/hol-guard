@@ -2,9 +2,13 @@
 
 use guard_rules::{CONTEXT_CHARS, MAX_MATCHES, MAX_SCAN_BYTES};
 use regex::{Regex, RegexBuilder};
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 use std::time::Instant;
+
+#[cfg(test)]
+mod prefilter_bench_tests;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScanMatch {
@@ -331,12 +335,26 @@ pub fn scan_chunks<'a>(
         let truncated = accepted_end < chunk.len();
         bytes_scanned += accepted.len();
         chunks_scanned += 1;
-        let mut window = String::with_capacity(tail.len() + accepted.len());
-        window.push_str(&tail);
-        window.push_str(accepted);
+        let window = if tail.is_empty() {
+            Cow::Borrowed(accepted)
+        } else {
+            let mut joined = String::with_capacity(tail.len() + accepted.len());
+            joined.push_str(&tail);
+            joined.push_str(accepted);
+            Cow::Owned(joined)
+        };
         classify_window(&window, true, !local_content, &mut found);
         if found.is_empty() && local_content {
             classify_window(&window, false, source_context, &mut found);
+        }
+        if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+            return ScanResult {
+                matches: found.into_values().collect(),
+                bytes_scanned,
+                chunks_scanned,
+                budget_exhausted: true,
+                reason_code: "deadline_exceeded",
+            };
         }
         if found
             .values()
@@ -368,14 +386,13 @@ pub fn scan_chunks<'a>(
                 reason_code: "max_bytes_exceeded",
             };
         }
-        tail = window
-            .chars()
+        let tail_start = window
+            .char_indices()
             .rev()
-            .take(CONTEXT_CHARS)
-            .collect::<String>()
-            .chars()
-            .rev()
-            .collect();
+            .nth(CONTEXT_CHARS - 1)
+            .map_or(0, |(index, _)| index);
+        tail.clear();
+        tail.push_str(&window[tail_start..]);
     }
 
     let reason_code = if found.is_empty() { "clean" } else { "matches" };
@@ -426,6 +443,33 @@ mod tests {
             .matches
             .iter()
             .any(|matched| matched.classifier == "github-token"));
+    }
+
+    #[test]
+    fn unicode_overlap_and_document_boundaries_are_isolated() {
+        let token = github_like_token();
+        for split in 1..token.len() {
+            let first = format!("{} {}", "🙂".repeat(CONTEXT_CHARS + 1), &token[..split]);
+            let second = &token[split..];
+            let result = scan_chunks([first.as_str(), second], true, true, MAX_SCAN_BYTES, None);
+            assert!(result
+                .matches
+                .iter()
+                .any(|found| found.classifier == "github-token"));
+        }
+        assert!(scan_text("ghp_", true, true, MAX_SCAN_BYTES, None)
+            .matches
+            .is_empty());
+        assert!(scan_text(&"a".repeat(30), true, true, MAX_SCAN_BYTES, None)
+            .matches
+            .is_empty());
+        let bounded = scan_text("🙂x", true, true, 3, None);
+        assert_eq!(bounded.bytes_scanned, 0);
+        assert!(bounded.budget_exhausted);
+        assert_eq!(bounded.reason_code, "max_bytes_exceeded");
+        let expired = scan_text("clean", true, true, MAX_SCAN_BYTES, Some(Instant::now()));
+        assert!(expired.budget_exhausted);
+        assert_eq!(expired.reason_code, "deadline_exceeded");
     }
 
     #[test]

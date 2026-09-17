@@ -36,6 +36,7 @@ mod policy_store_persistence;
 #[path = "policy_store_validation.rs"]
 mod policy_store_validation;
 
+use crate::policy_enforcement::AdmittedPolicySnapshot;
 use approval_authority::ApprovalAuthority;
 use approval_v4_authority::ApprovalV4Authority;
 pub(crate) use policy_store_approval::ApprovalPolicyFence;
@@ -113,7 +114,7 @@ struct GenerationFloorV1 {
 }
 
 struct PolicyState {
-    pub(super) snapshot: Option<Arc<PolicySnapshotV3>>,
+    pub(super) snapshot: Option<Arc<AdmittedPolicySnapshot>>,
     pub(super) canonical_bytes: Vec<u8>,
     pub(super) generation_floor: u64,
     pub(super) policy_digest: Option<String>,
@@ -226,7 +227,11 @@ impl PolicySnapshotStore {
             authority_observed,
             authority_changed,
             state: Mutex::new(PolicyState {
-                snapshot: loaded.snapshot.map(Arc::new),
+                snapshot: loaded
+                    .snapshot
+                    .map(AdmittedPolicySnapshot::new)
+                    .transpose()?
+                    .map(Arc::new),
                 canonical_bytes: loaded.canonical_bytes,
                 generation_floor: loaded.generation_floor,
                 policy_digest: loaded.policy_digest,
@@ -319,6 +324,7 @@ impl PolicySnapshotStore {
             // generation rather than silently reusing the floor.
             return encode_requires_new_generation(&state, self.resident_generation);
         }
+        let admitted = Arc::new(AdmittedPolicySnapshot::new(request.snapshot)?);
         let mut observed = match self.authority_observed.lock() {
             Ok(observed) => observed,
             Err(_) => {
@@ -332,14 +338,14 @@ impl PolicySnapshotStore {
         // identity to the watcher.
         persist_authority(
             &self.authority_path,
-            request.snapshot.generation,
-            &request.snapshot.policy_digest,
-            Some(&request.snapshot),
+            admitted.generation,
+            &admitted.policy_digest,
+            Some(admitted.snapshot()),
             &self.verifier_key,
         )?;
-        state.generation_floor = request.snapshot.generation;
-        state.policy_digest = Some(request.snapshot.policy_digest.clone());
-        state.snapshot = Some(Arc::new(request.snapshot.clone()));
+        state.generation_floor = admitted.generation;
+        state.policy_digest = Some(admitted.policy_digest.clone());
+        state.snapshot = Some(Arc::clone(&admitted));
         state.canonical_bytes = snapshot_bytes;
         state.invalid_on_startup = false;
         *observed = authority_fingerprint(&self.authority_path);
@@ -348,7 +354,7 @@ impl PolicySnapshotStore {
             !policy_store_authority::authorities_unchanged(self),
             Ordering::SeqCst,
         );
-        encode_ack(&request.snapshot, false, self.resident_generation)
+        encode_ack(admitted.snapshot(), false, self.resident_generation)
     }
 
     pub(crate) fn validate_request_snapshot(
@@ -356,7 +362,7 @@ impl PolicySnapshotStore {
         value: &Value,
         guard_home: &str,
         generation: u64,
-    ) -> Result<Arc<PolicySnapshotV3>, String> {
+    ) -> Result<Arc<AdmittedPolicySnapshot>, String> {
         let now = now_ms()?;
         let state = self
             .state
@@ -372,7 +378,7 @@ impl PolicySnapshotStore {
         guard_home: &str,
         generation: u64,
         now: u64,
-    ) -> Result<Arc<PolicySnapshotV3>, String> {
+    ) -> Result<Arc<AdmittedPolicySnapshot>, String> {
         if self.authority_changed.load(Ordering::SeqCst)
             || !policy_store_authority::authority_unchanged_fenced(self)
         {
@@ -442,7 +448,7 @@ impl PolicySnapshotStore {
         callback: F,
     ) -> Result<T, String>
     where
-        F: FnOnce(&PolicySnapshotV3) -> Result<T, String>,
+        F: FnOnce(&AdmittedPolicySnapshot) -> Result<T, String>,
     {
         let now = now_ms()?;
         let state = self
@@ -486,7 +492,7 @@ impl PolicySnapshotStore {
             now,
         )
         .map_err(snapshot_error)?;
-        Ok(snapshot.as_ref().clone())
+        Ok(snapshot.snapshot().clone())
     }
 
     #[cfg(test)]

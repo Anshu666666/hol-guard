@@ -174,28 +174,27 @@ fn try_home_states(
     Ok(None)
 }
 
-pub(crate) fn client_request(
+pub(crate) fn client_request_at_deadline(
     state_base: &Path,
     payload: &[u8],
-    timeout: Duration,
+    deadline: Instant,
 ) -> Result<Vec<u8>, String> {
     let client_lease = lease::acquire(state_base)?;
-    client_request_with_lease(state_base, payload, timeout, &client_lease)
+    client_request_with_lease(state_base, payload, deadline, &client_lease)
 }
 
 fn client_request_with_lease(
     state_base: &Path,
     payload: &[u8],
-    timeout: Duration,
+    overall_deadline: Instant,
     _client_lease: &lease::ClientLease,
 ) -> Result<Vec<u8>, String> {
-    if timeout.is_zero() {
+    if Instant::now() >= overall_deadline {
         return Err("native_client_deadline_exceeded".to_owned());
     }
     // Keep the caller's budget intact. Windows spawn already has
     // CLIENT_START_TIMEOUT; shrinking every live request by 300ms makes the
     // 250ms command-model SLO miss the ready serve entirely.
-    let overall_deadline = Instant::now() + timeout;
     let digest = runtime_digest()?;
     let scope = state_scope(state_base, &digest)?;
     if let Some(response) = try_home_states(state_base, payload, overall_deadline, &digest)? {
@@ -470,13 +469,9 @@ pub(crate) fn parse_process_id(value: &str) -> Result<u32, String> {
 }
 
 pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
-    let budget = crate::strict_json_value(payload)
+    let budget = crate::strict_json::deadline_budget_ms(payload)
         .ok()
-        .and_then(|value| {
-            value
-                .get("deadline_budget_ms")
-                .and_then(serde_json::Value::as_u64)
-        })
+        .flatten()
         .unwrap_or(750)
         .clamp(1, 9_000);
     Duration::from_millis(budget)

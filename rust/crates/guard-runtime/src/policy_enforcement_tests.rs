@@ -9,6 +9,32 @@ use guard_policy_snapshot::{
 use serde_json::{json, Map};
 use std::collections::BTreeMap;
 
+fn apply_pre_tool_policy(
+    snapshot: &PolicySnapshotV3,
+    payload: &Value,
+    result: PreToolResultV1,
+) -> Result<PreToolResultV1, String> {
+    super::apply_pre_tool_policy(
+        &AdmittedPolicySnapshot::new(snapshot.clone())?,
+        payload,
+        result,
+    )
+}
+
+fn apply_post_tool_policy(
+    snapshot: &PolicySnapshotV3,
+    request: &NativeHookRequestV1,
+    payload_kind: GuardHookPayloadKindV2,
+    response: HookReviewResponseV1,
+) -> Result<HookReviewResponseV1, String> {
+    super::apply_post_tool_policy(
+        &AdmittedPolicySnapshot::new(snapshot.clone())?,
+        request,
+        payload_kind,
+        response,
+    )
+}
+
 fn policy(default_action: &str) -> EffectiveNativePolicyV3 {
     EffectiveNativePolicyV3 {
         protection_posture: "protected".into(),

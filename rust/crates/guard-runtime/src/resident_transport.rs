@@ -232,6 +232,7 @@ fn handle_pending_request(
     let prefix_length = pending.payload_prefix.len();
     let mut request = vec![0u8; pending.length];
     request[..prefix_length].copy_from_slice(&pending.payload_prefix);
+    let mut disposition = crate::resident_protocol::LifecycleDisposition::Continue;
     let response = if pending
         .stream
         .read_exact(&mut request[prefix_length..])
@@ -244,9 +245,16 @@ fn handle_pending_request(
             crate::resident_protocol::error_response("native_request_digest_mismatch", false)
         } else {
             match catch_unwind(AssertUnwindSafe(|| {
-                crate::resident_protocol::evaluate_resident_bytes(&request, policy_store)
+                crate::resident_protocol::evaluate_resident_bytes_started(
+                    &request,
+                    policy_store,
+                    pending.accepted_at,
+                )
             })) {
-                Ok(Ok(response)) => response,
+                Ok(Ok(evaluation)) => {
+                    disposition = evaluation.disposition;
+                    evaluation.response
+                }
                 Ok(Err(reason)) => crate::resident_protocol::safe_error_response(&reason, false),
                 Err(_panic) => {
                     crate::resident_protocol::error_response("native_runtime_panicked", false)
@@ -254,11 +262,11 @@ fn handle_pending_request(
             }
         }
     };
-    let is_shutdown_request = crate::strict_json_value(&request).is_ok_and(|value| {
-        value.get("operation").and_then(serde_json::Value::as_str) == Some("shutdown")
-    });
+    if disposition == crate::resident_protocol::LifecycleDisposition::Shutdown {
+        crate::managed_resident::request_shutdown();
+    }
     let _ = write_bound_response(&mut *pending.stream, &pending.request_id, &response);
-    if is_shutdown_request {
+    if disposition == crate::resident_protocol::LifecycleDisposition::Shutdown {
         crate::managed_resident::shutdown_response_sent();
     }
 }

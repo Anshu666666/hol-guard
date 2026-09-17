@@ -781,8 +781,8 @@ def _evaluate_current_tool_call(
             summary=("Local Guard's current configuration is stricter than the tool-call-specific recommendation."),
         )
 
-    signals = tool_call_risk_signals(artifact, arguments)
     risk_categories = tool_call_risk_categories(artifact, arguments)
+    signals = _tool_call_risk_signals_for_categories(artifact, arguments, risk_categories)
     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
 
     if len(signals) == 0:
@@ -801,7 +801,7 @@ def _evaluate_current_tool_call(
                 action="allow",
                 source="browser-routine",
                 signals=signals,
-                summary=tool_call_risk_summary(artifact, arguments),
+                summary=_tool_call_summary_for_signals(signals),
                 risk_categories=risk_categories,
             )
         )
@@ -825,7 +825,7 @@ def _evaluate_current_tool_call(
                 action=configured_risk_action,
                 source=source,
                 signals=signals,
-                summary=tool_call_risk_summary(artifact, arguments),
+                summary=_tool_call_summary_for_signals(signals),
                 risk_categories=risk_categories,
             )
         )
@@ -834,7 +834,7 @@ def _evaluate_current_tool_call(
             action="review" if config.mode == "prompt" else "block",
             source="heuristic",
             signals=signals,
-            summary=tool_call_risk_summary(artifact, arguments),
+            summary=_tool_call_summary_for_signals(signals),
             risk_categories=risk_categories,
         )
     )
@@ -904,6 +904,14 @@ def _configured_risk_action(config: GuardConfig, risk_class: str, *, harness: st
 
 
 def tool_call_risk_signals(artifact: GuardArtifact, arguments: object) -> tuple[str, ...]:
+    return _tool_call_risk_signals_for_categories(artifact, arguments, tool_call_risk_categories(artifact, arguments))
+
+
+def _tool_call_risk_signals_for_categories(
+    artifact: GuardArtifact,
+    arguments: object,
+    categories: tuple[str, ...],
+) -> tuple[str, ...]:
     browser_intent = normalize_browser_mcp_intent(artifact, arguments)
     signals_by_category: dict[str, str] = {
         "filesystem_access": "call shape implies filesystem path access",
@@ -930,7 +938,7 @@ def tool_call_risk_signals(artifact: GuardArtifact, arguments: object) -> tuple[
                 ),
             }
         )
-    return tuple(signals_by_category[category] for category in tool_call_risk_categories(artifact, arguments))
+    return tuple(signals_by_category[category] for category in categories)
 
 
 def tool_call_risk_categories(artifact: GuardArtifact, arguments: object) -> tuple[str, ...]:
@@ -1373,7 +1381,10 @@ def _normalized_argument_key(value: str) -> str:
 
 
 def tool_call_risk_summary(artifact: GuardArtifact, arguments: object) -> str:
-    signals = tool_call_risk_signals(artifact, arguments)
+    return _tool_call_summary_for_signals(tool_call_risk_signals(artifact, arguments))
+
+
+def _tool_call_summary_for_signals(signals: tuple[str, ...]) -> str:
     if len(signals) == 0:
         return "No high-risk signal was detected in this tool call."
     if len(signals) == 1:

@@ -85,6 +85,7 @@ from .stdio import (
     _redact_json,
     _timeout_response,
 )
+from .tool_catalog import ToolCatalog
 
 
 def _guard_action(value: object) -> GuardAction:
@@ -456,6 +457,17 @@ def _tool_catalog_fingerprint(
 ) -> str:
     """Hash catalog lifecycle state plus the complete canonical tool surface."""
 
+    if isinstance(catalog, ToolCatalog):
+        return catalog.fingerprint(state, lambda: _uncached_tool_catalog_fingerprint(catalog, state=state))
+    return _uncached_tool_catalog_fingerprint(catalog, state=state)
+
+
+def _uncached_tool_catalog_fingerprint(
+    catalog: Mapping[str, Mapping[str, object]],
+    *,
+    state: _ToolCatalogState,
+) -> str:
+
     canonical_tools = [_canonical_tool_catalog_entry(name, catalog[name]) for name in sorted(catalog)]
     serialized = json.dumps(
         {
@@ -596,7 +608,7 @@ class RuntimeMcpGuardProxy:
         self._active_child_stdout: IO[str] | None = None
         self._tools_call_boundary_lock = threading.RLock()
         self._tool_catalog_state: _ToolCatalogState = "unobserved"
-        self._tool_catalog: dict[str, dict[str, object]] = {}
+        self._tool_catalog = ToolCatalog()
         self._tool_catalog_pending: dict[str, dict[str, object]] | None = None
         self._tool_catalog_expected_cursor: str | None = None
         self._tool_catalog_inflight = False
@@ -3546,7 +3558,7 @@ class RuntimeMcpGuardProxy:
         advance_generation: bool,
     ) -> None:
         self._tool_catalog_state = state
-        self._tool_catalog = {}
+        self._tool_catalog = ToolCatalog()
         self._tool_catalog_pending = None
         self._tool_catalog_expected_cursor = None
         self._tool_catalog_inflight = False
@@ -3572,7 +3584,7 @@ class RuntimeMcpGuardProxy:
             if advance_root_generation:
                 self._tool_catalog_generation += 1
             self._tool_catalog_state = "pending"
-            self._tool_catalog = {}
+            self._tool_catalog = ToolCatalog()
             self._tool_catalog_pending = {}
             self._tool_catalog_expected_cursor = None
             self._tool_catalog_inflight = True
@@ -3673,12 +3685,12 @@ class RuntimeMcpGuardProxy:
         self._tool_catalog_inflight_cursor = None
         if next_cursor is not None:
             self._tool_catalog_state = "pending"
-            self._tool_catalog = {}
+            self._tool_catalog = ToolCatalog()
             self._tool_catalog_pending = merged
             self._tool_catalog_expected_cursor = next_cursor
             return
         self._tool_catalog_state = "complete"
-        self._tool_catalog = merged
+        self._tool_catalog = ToolCatalog(merged)
         self._tool_catalog_pending = None
         self._tool_catalog_expected_cursor = None
 

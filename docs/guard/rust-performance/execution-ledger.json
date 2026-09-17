@@ -1,0 +1,1709 @@
+{
+  "schema_version": "guard.rust-performance-execution.v1",
+  "reviewed_date": "2026-09-17",
+  "target_branch": "release/3.2",
+  "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+  "implementation_tree_before_documentation": "ce8aad5da",
+  "qualification_complete": false,
+  "status_policy": "DONE requires acceptance evidence. BLOCKED means a missing dependency; DEFERRED is reserved for an actual measured no-go, not merely unselected work. OPEN may have tested implementation while its broader acceptance remains unmet.",
+  "tasks": [
+    {
+      "id": "RSP-001",
+      "number": 1,
+      "title": "Pin the implementation source and artifact",
+      "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
+      "dependencies": [],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Baseline source, locked toolchain and Linux native wheel are pinned in EXECUTION.md. Final candidate and four-platform artifact identities await qualification."
+    },
+    {
+      "id": "RSP-002",
+      "number": 2,
+      "title": "Recheck active migration overlaps",
+      "acceptance": "Read current state and changed files for [#2807](https://github.com/hashgraph-online/hol-guard/pull/2807), [#2870](https://github.com/hashgraph-online/hol-guard/pull/2870), [#2931](https://github.com/hashgraph-online/hol-guard/pull/2931), [#2948](https://github.com/hashgraph-online/hol-guard/pull/2948), [#2911](https://github.com/hashgraph-online/hol-guard/pull/2911) and [#2797](https://github.com/hashgraph-online/hol-guard/pull/2797). Record reuse or conflict resolution; do not revive superseded branches.",
+      "dependencies": [
+        "RSP-001"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Seven overlapping PRs rechecked through GitHub on 2026-09-17; reuse/conflict decisions and exact heads are recorded in EXECUTION.md."
+    },
+    {
+      "id": "RSP-003",
+      "number": 3,
+      "title": "Trace and name the four timing boundaries",
+      "acceptance": "Separate KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER in benchmark output and docs. Verify each timer's callers against source.",
+      "dependencies": [
+        "RSP-001"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Current call graph and four timing boundaries documented in CURRENT_CONTRACT.md; benchmark output keeps installed launchers separate from normalized HTTP and kernel probes."
+    },
+    {
+      "id": "RSP-004",
+      "number": 4,
+      "title": "Repair the Python semantic reference",
+      "acceptance": "Construct an explicit isolated benchmark-only oracle or equivalent pinned installed version. An off-mode availability response must fail the reference validation.",
+      "dependencies": [
+        "RSP-003"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Isolated scripts/native_benchmark_oracle.py exercises the Python semantic reference; off-mode availability cannot pass the benign/malicious oracle checks."
+    },
+    {
+      "id": "RSP-005",
+      "number": 5,
+      "title": "Assert semantic work on both benchmark arms",
+      "acceptance": "Require expected route, verdict and reason class for benign and malicious fixtures. A payload-only check cannot pass. Never expose the oracle in production.",
+      "dependencies": [
+        "RSP-004"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Reference and candidate benchmark fixtures assert route, verdict and reason class; synthetic secrets cannot pass as availability continuations. Oracle remains scripts-only."
+    },
+    {
+      "id": "RSP-006",
+      "number": 6,
+      "title": "Correct existing SLO descriptions",
+      "acceptance": "Document warm \u226420 ms OR \u22651.15x and cold \u2264150 ms AND \u22655x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
+      "dependencies": [
+        "RSP-003",
+        "RSP-005"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Existing gate labels retain warm OR and cold AND semantics; 1,000 ms adapter budget and diagnostic versus qualification limits are documented."
+    },
+    {
+      "id": "RSP-007",
+      "number": 7,
+      "title": "Add actual installed launcher measurements",
+      "acceptance": "Start the registered executable/argv from the installed artifact; include interpreter/native startup, stdout and exit status. Keep normalized HTTP probes separately labeled.",
+      "dependencies": [
+        "RSP-003"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Registered Claude PostToolUse launcher pilot implemented. Four priority installed pre/post argv routes and full platform measurements are being integrated."
+    },
+    {
+      "id": "RSP-008",
+      "number": 8,
+      "title": "Add attributable phase measurements",
+      "acceptance": "Measure hashing, config lookup, JSON, admission, queue, native connection, evaluation, evidence submission and response. Export aggregate-only bounded fields.",
+      "dependencies": [
+        "RSP-003"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Bounded phase profiler and resource reporting implemented; complete hashing/config/JSON/admission/queue/native/evidence/response attribution remains required."
+    },
+    {
+      "id": "RSP-009",
+      "number": 9,
+      "title": "Create the workload and platform matrix",
+      "acceptance": "Cover sizes, events, allow/block/review/Watch/unavailable cases, source refs, c1/c4/c16/c64 and supported targets; classify missing routes explicitly.",
+      "dependencies": [
+        "RSP-007",
+        "RSP-008"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "377 independent semantic/delivery cases and size/concurrency matrix frozen; complete installed platform execution is pending."
+    },
+    {
+      "id": "RSP-010",
+      "number": 10,
+      "title": "Add statistically meaningful qualification mode",
+      "acceptance": "Implement the PRD's warm/cold/recovery sample minima, alternating baseline/candidate blocks and per-route confidence intervals. Keep CI smoke labeled as smoke.",
+      "dependencies": [
+        "RSP-009"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Alternating paired driver, sample minima and confidence intervals implemented; final executable corpus/recovery runner integration is pending."
+    },
+    {
+      "id": "RSP-011",
+      "number": 11,
+      "title": "Measure the full process tree and saturation",
+      "acceptance": "Sample private memory/RSS where supported, CPU/request, children, threads, handles, queueing and every attempted request. Add offered-rate load beside closed-loop waves.",
+      "dependencies": [
+        "RSP-009"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Closed-loop plus offered-rate accounting implemented; independent daemon process-tree resource collection is being integrated. Unsupported CPU/private metrics stay unavailable."
+    },
+    {
+      "id": "RSP-012",
+      "number": 12,
+      "title": "Freeze baseline and choose measured tranches",
+      "acceptance": "Record current production and optimized alternatives. Commit metric thresholds and go/no-go rules; exclude deferred conversions from delivery claims.",
+      "dependencies": [
+        "RSP-005",
+        "RSP-010",
+        "RSP-011"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires complete frozen installed baseline. Algorithm prerequisites are selected; optional Rust migrations remain behind the original benefit gates."
+    },
+    {
+      "id": "RSP-013",
+      "number": 13,
+      "title": "Capture the real ordinary native call graph",
+      "acceptance": "Document direct in-daemon HookWorker dispatch and persistent helper reuse. Keep guardian/evaluator IPC only on verified compatibility/approval paths.",
+      "dependencies": [
+        "RSP-001"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "CURRENT_CONTRACT.md traces direct daemon HookWorker dispatch and persistent helper reuse; it identifies approval/compatibility pool callers separately."
+    },
+    {
+      "id": "RSP-014",
+      "number": 14,
+      "title": "Inventory every installed harness surface",
+      "acceptance": "Map actual generated launcher, aliases, pre/post support and observation-only routes. Preflight detection must not count as installed enforcement.",
+      "dependencies": [
+        "RSP-013"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing generated adapter contracts plus qualification corpus inventory aliases and observation surfaces. Complete installed registration matrix is pending."
+    },
+    {
+      "id": "RSP-015",
+      "number": 15,
+      "title": "Freeze Watch and availability response fixtures",
+      "acceptance": "Capture harness JSON and exit behavior for current mode/posture, native misses, integrity/size failures, permission requests and lifecycle events.",
+      "dependencies": [
+        "RSP-014"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Frozen corpus separates native decision and harness delivery for Watch, unavailable, integrity, size, permission and lifecycle cases; installed execution is pending."
+    },
+    {
+      "id": "RSP-016",
+      "number": 16,
+      "title": "Separate native verdict from delivered response",
+      "acceptance": "Define native decision, posture transformation, availability outcome and final harness response in evidence. Preserve accurate receipt attribution.",
+      "dependencies": [
+        "RSP-015"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Qualification corpus and CURRENT_CONTRACT.md distinguish native decision, posture transformation, availability and final response. Availability allow is not native-evaluated allow."
+    },
+    {
+      "id": "RSP-017",
+      "number": 17,
+      "title": "Specify coarse request/result contracts",
+      "acceptance": "Add or extend versioned native schemas only for selected scope; declare fields, limits, unknown-field policy, capabilities and error classes.",
+      "dependencies": [
+        "RSP-012",
+        "RSP-016"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing versioned coarse contracts and limits documented; optional native extension program/control binding is under implementation."
+    },
+    {
+      "id": "RSP-018",
+      "number": 18,
+      "title": "Define byte, Unicode and canonicalization behavior",
+      "acceptance": "Pin duplicate JSON rejection, number/null behavior, UTF-8, string versus byte limits, field ordering and digest domains with fixtures.",
+      "dependencies": [
+        "RSP-017"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing strict JSON/UTF-8/digest contracts retained by core tests. Native extension IR adds a separately pinned Python/Unicode semantic profile."
+    },
+    {
+      "id": "RSP-019",
+      "number": 19,
+      "title": "Define deadline ownership",
+      "acceptance": "One caller deadline must cover setup, queueing, transport and evaluation. Define cancellation and late-result rejection without resetting budget.",
+      "dependencies": [
+        "RSP-017"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Rust client/runtime setup, admission and evaluation share one remaining deadline; output and cooperative OS-I/O limitations documented. Core deadline tests pass."
+    },
+    {
+      "id": "RSP-020",
+      "number": 20,
+      "title": "Define generation-bound identity rules",
+      "acceptance": "Specify executable/package/process/peer identity, policy scope and generation, expiry, and cache invalidation before accepting reuse.",
+      "dependencies": [
+        "RSP-017"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Generation/package/peer/expiry rules documented; live-process attestation proof and extension control generation binding are under implementation."
+    },
+    {
+      "id": "RSP-021",
+      "number": 21,
+      "title": "Define non-replayable request behavior",
+      "acceptance": "Document request commit points for approval, policy and forwarding operations. Ambiguous outcomes require explicit handling, not transparent replay.",
+      "dependencies": [
+        "RSP-019",
+        "RSP-020"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "CURRENT_CONTRACT.md records approval consumption, durable policy publication, MCP prewrite and evidence replay commit points; ambiguous tool writes are not replayed."
+    },
+    {
+      "id": "RSP-022",
+      "number": 22,
+      "title": "Expand source ownership gates",
+      "acceptance": "Follow the current recording-mode caller and proposed new routes; prevent synchronous configuration reads being mislabeled as background work.",
+      "dependencies": [
+        "RSP-013",
+        "RSP-015"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "I/O ownership walker follows recording-posture config reads and labels synchronous_posture_config. Seven gate tests plus 50 posture/availability tests passed."
+    },
+    {
+      "id": "RSP-023",
+      "number": 23,
+      "title": "Build independent correctness vectors",
+      "acceptance": "Add expected outcomes for malicious and benign cases independent of Python equivalence; label every intentional behavior correction separately.",
+      "dependencies": [
+        "RSP-015",
+        "RSP-018"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "377 independent expectations plus package/scanner fault tests added; full installed/native extension vector execution remains pending."
+    },
+    {
+      "id": "RSP-024",
+      "number": 24,
+      "title": "Approve the technical contract through review",
+      "acceptance": "Resolve reviewer questions on current availability behavior, authority transfer, distributions and rollback. Do not infer safety from a passing old manifest.",
+      "dependencies": [
+        "RSP-016",
+        "RSP-021",
+        "RSP-022",
+        "RSP-023"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Final technical review and independent code-owner approval are outstanding; current availability behavior is preserved and stale ownership prose corrected."
+    },
+    {
+      "id": "RSP-025",
+      "number": 25,
+      "title": "Profile executable validation on the ordinary route",
+      "acceptance": "Count status lookups, full executable bytes hashed and latency for warm/cold hooks. Do not confuse capability-cache hits with digest-cache hits.",
+      "dependencies": [
+        "RSP-008"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Installed baseline status component measured: each warm lookup hashes 6,171,560 bytes despite capability-cache hit. Actual warm hook attribution remains pending."
+    },
+    {
+      "id": "RSP-026",
+      "number": 26,
+      "title": "Choose a verified runtime-lifetime design",
+      "acceptance": "Compare retained attested process/session identity and safe native admission against current validation. Record platform-specific proof and limits.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-025"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Narrow Linux live-child executable proof under implementation; unsupported filesystem/platform cases retain full validation."
+    },
+    {
+      "id": "RSP-027",
+      "number": 27,
+      "title": "Implement generation-bound attestation reuse",
+      "acceptance": "Reuse only a verified generation. Bind package/version/digest/permissions/peer and invalidate on upgrades, replacements and identity failure.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-026"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Generation-bound live-process attestation is under implementation; every new spawn must fully validate before receiving request bytes."
+    },
+    {
+      "id": "RSP-028",
+      "number": 28,
+      "title": "Test executable replacement defenses",
+      "acceptance": "Cover same-size mutation, restored timestamps, symlink/path rebinding, ownership/permission changes, stale manifests and concurrent replacement.",
+      "dependencies": [
+        "RSP-027"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Replacement, permission, manifest, process death and race regressions are under implementation with attestation."
+    },
+    {
+      "id": "RSP-029",
+      "number": 29,
+      "title": "Test signing and update transitions",
+      "acceptance": "Verify re-sign/freeze byte changes, manifest refresh, generation retirement, rollback and first request after update on every target.",
+      "dependencies": [
+        "RSP-028"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires final attestation implementation and installed signed/frozen artifacts on all selected targets."
+    },
+    {
+      "id": "RSP-030",
+      "number": 30,
+      "title": "Measure request-time configuration loading",
+      "acceptance": "Count home/workspace config reads and their contribution in _review_native_edge, including Watch changes and cache-miss situations.",
+      "dependencies": [
+        "RSP-008",
+        "RSP-015"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Acknowledged Watch mode avoids one redundant config read and is tested. Full route count/phase measurement remains pending."
+    },
+    {
+      "id": "RSP-031",
+      "number": 31,
+      "title": "Extend acknowledged posture binding if needed",
+      "acceptance": "Carry complete mode/posture semantics in an authenticated snapshot; define visibility only after correct resident acknowledgement.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-030"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing authenticated observe binding is reused; complete posture state transfer requires measurement and authority review before any schema expansion."
+    },
+    {
+      "id": "RSP-032",
+      "number": 32,
+      "title": "Remove redundant ordinary configuration rereads",
+      "acceptance": "Use the acknowledged request binding. Preserve workspace registration, first-use behavior and mixed control changes without stale-mode results.",
+      "dependencies": [
+        "RSP-031"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Redundant read removed only when the acknowledged native snapshot already proves observe mode. Enforce/unavailable paths retain current config authority."
+    },
+    {
+      "id": "RSP-033",
+      "number": 33,
+      "title": "Move the small transformation layer only if selected",
+      "acceptance": "Implement the captured Watch/availability contract at the appropriate native boundary, with deterministic unavailable-runtime bridge behavior.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-032"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native transformation layer is conditional on measured selection; current Python delivery contract remains authoritative."
+    },
+    {
+      "id": "RSP-034",
+      "number": 34,
+      "title": "Exercise policy and posture transitions under load",
+      "acceptance": "Test mode toggles, stricter workspace overlays, expiry, restart, failed publication and races. The adopted behavior matrix must remain intact.",
+      "dependencies": [
+        "RSP-032",
+        "RSP-033"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "50 focused Watch/availability tests passed and background mutation-to-ACK tests exist. Installed mode-toggle/load/restart qualification is pending."
+    },
+    {
+      "id": "RSP-035",
+      "number": 35,
+      "title": "Qualify identity and posture improvements",
+      "acceptance": "Run installed before/after tests and process-tree metrics. Count integrity failures and unavailable continuations separately from evaluated allows.",
+      "dependencies": [
+        "RSP-029",
+        "RSP-034"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires final identity/posture candidate and paired installed qualification."
+    },
+    {
+      "id": "RSP-036",
+      "number": 36,
+      "title": "Retire redundant work and document proof",
+      "acceptance": "Remove only proven duplicated code; retain necessary validation on platforms without equivalent binding. Mark any failed optimization deferred.",
+      "dependencies": [
+        "RSP-035"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Retirement proof depends on attestation and installed results. No platform loses validation on the strength of a metadata-only cache."
+    },
+    {
+      "id": "RSP-037",
+      "number": 37,
+      "title": "Measure parsing, serialization and allocation counts",
+      "acceptance": "Use small and maximum-size envelopes; attribute client timeout parse, protocol parse, shutdown reparse and edge copies separately.",
+      "dependencies": [
+        "RSP-008",
+        "RSP-018"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Rust parse/copy diagnostic timings recorded; complete allocation and installed phase attribution remains pending."
+    },
+    {
+      "id": "RSP-038",
+      "number": 38,
+      "title": "Return typed lifecycle disposition",
+      "acceptance": "Eliminate the post-evaluation full request parse used only to detect shutdown, preserving shutdown authorization and response behavior.",
+      "dependencies": [
+        "RSP-037"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Typed lifecycle disposition removes shutdown reparse; failed or unauthorized shutdown cannot stop the resident. Rust lifecycle tests passed."
+    },
+    {
+      "id": "RSP-039",
+      "number": 39,
+      "title": "Reuse validated timeout metadata",
+      "acceptance": "Avoid full reparsing in client timeout handling while retaining strict framing, duplicate keys, limits and semantic validation.",
+      "dependencies": [
+        "RSP-018",
+        "RSP-019",
+        "RSP-037"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Strict discard JSON parsing retains framing, duplicate-key, depth and UTF-8 validation while avoiding a temporary full tree; core adversarial tests passed."
+    },
+    {
+      "id": "RSP-040",
+      "number": 40,
+      "title": "Compute canonical request identity once",
+      "acceptance": "Carry an immutable validated identity through evaluation and receipt creation; golden digests and approval bindings must remain identical.",
+      "dependencies": [
+        "RSP-018",
+        "RSP-023",
+        "RSP-037"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Validated canonical request identity is computed once and reused for evaluation/receipt creation; digest and approval contract tests passed."
+    },
+    {
+      "id": "RSP-041",
+      "number": 41,
+      "title": "Keep PreTool results typed through receipt creation",
+      "acceptance": "Remove repeated typed\u2192Value\u2192typed conversions while retaining result-matrix validation and serialized output compatibility.",
+      "dependencies": [
+        "RSP-040"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "PreTool result remains typed through receipt creation with result-matrix validation; runtime and edge tests passed."
+    },
+    {
+      "id": "RSP-042",
+      "number": 42,
+      "title": "Compile policy maps at snapshot admission",
+      "acceptance": "Validate keys/actions and canonical harness conflicts once per immutable generation; retain per-request authority, expiry and scope fences.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-024"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Policy maps compile at immutable snapshot admission with key/action and canonical harness conflict validation; freshness/scope checks remain per request."
+    },
+    {
+      "id": "RSP-043",
+      "number": 43,
+      "title": "Share immutable compiled policy state",
+      "acceptance": "Use appropriate shared ownership without copying maps per request; preserve atomic swaps and approval consume synchronization.",
+      "dependencies": [
+        "RSP-042"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Compiled policy state shares immutable ownership across requests; generation swaps and approval consume synchronization remain fenced."
+    },
+    {
+      "id": "RSP-044",
+      "number": 44,
+      "title": "Reduce post-tool output copying",
+      "acceptance": "Optimize traversal/concatenation/hash input while preserving newlines, ordering, character counts, truncation and source equivalence.",
+      "dependencies": [
+        "RSP-018",
+        "RSP-023"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Output traversal/concatenation avoids repeated character-count copies; ordering/newline/limits and source-equivalence tests passed."
+    },
+    {
+      "id": "RSP-045",
+      "number": 45,
+      "title": "Benchmark scanner prefilter alternatives",
+      "acceptance": "Compare existing OnceLock regexes with bounded prefilters/RegexSet on clean and matching text. Preserve per-match suppression and ordering.",
+      "dependencies": [
+        "RSP-012",
+        "RSP-023"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "RegexSet/prefilter comparison performed. Sample-heavy prototype regressed about 13%, so production retains the existing OnceLock scanner."
+    },
+    {
+      "id": "RSP-046",
+      "number": 46,
+      "title": "Preserve scanner chunk and deadline semantics",
+      "acceptance": "Test split tokens, multibyte boundaries and unrelated-document isolation. Ensure parsing/I/O/scanning consume the original remaining deadline.",
+      "dependencies": [
+        "RSP-019",
+        "RSP-044",
+        "RSP-045"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Core scanner chunk, multibyte, source isolation and original-deadline tests passed; no cross-document overlap reuse introduced."
+    },
+    {
+      "id": "RSP-047",
+      "number": 47,
+      "title": "Run core parity and adversarial suites",
+      "acceptance": "Run command, rule-contract, source mutation, snapshot/approval and scanner suites applicable to the changed modules; investigate every difference.",
+      "dependencies": [
+        "RSP-038",
+        "RSP-039",
+        "RSP-041",
+        "RSP-043",
+        "RSP-046"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "196 command crate tests, 137 runtime tests, 12 edge tests and clippy passed on the core tranche. Combined final-head differential/adversarial CI is pending."
+    },
+    {
+      "id": "RSP-048",
+      "number": 48,
+      "title": "Qualify end-to-end benefit of core changes",
+      "acceptance": "Compare installed and native-client timings; a microbenchmark gain with a slower installed path does not justify adoption.",
+      "dependencies": [
+        "RSP-047",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Kernel improvements are diagnostic only until installed/native-client comparisons qualify on final artifacts."
+    },
+    {
+      "id": "RSP-049",
+      "number": 49,
+      "title": "Inventory package-core production consumers",
+      "acceptance": "Trace package protect, shims, audit CLI, daemon and MCP package routes. Record local computation versus network or approval wait.",
+      "dependencies": [
+        "RSP-001",
+        "RSP-008"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Production package consumers and local versus launch/network/approval boundaries inventoried in ../rsp-package-performance.md."
+    },
+    {
+      "id": "RSP-050",
+      "number": 50,
+      "title": "Benchmark dependency and bundle cardinality independently",
+      "acceptance": "Cover absent/exact/unversioned/deny matches with 100/1000/10000 dependencies and independently scaled bundles; record CPU and full local evaluation.",
+      "dependencies": [
+        "RSP-049",
+        "RSP-010"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "36 independent cardinality/mode cells and five alternating 1,000-by-1,000 exact pairs recorded; 13 baseline process timeouts remain censored. Full qualification pending."
+    },
+    {
+      "id": "RSP-051",
+      "number": 51,
+      "title": "Build verified immutable bundle indexes in Python",
+      "acceptance": "Eliminate repeated full bundle scans; preserve canonical duplicates, unversioned risk selection, emergency denies and stale-bundle semantics.",
+      "dependencies": [
+        "RSP-050",
+        "RSP-023"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Verified immutable bundle indexes preserve duplicates, namespaces, versionless risk/ties, emergency denies and freshness. Focused plus independent parity tests passed."
+    },
+    {
+      "id": "RSP-052",
+      "number": 52,
+      "title": "Parse each lockfile input once in Python",
+      "acceptance": "Return structured entries and validation/completeness from one parse, preserving JSONC/UTF-8/duplicate handling and current budgets.",
+      "dependencies": [
+        "RSP-051"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Structured JSON/JSONC/TOML decode is shared with extraction; existing Yarn/pnpm text projections retained. Full format-wide installed parity remains open."
+    },
+    {
+      "id": "RSP-053",
+      "number": 53,
+      "title": "Share one immutable input snapshot per evaluation",
+      "acceptance": "Bind content bytes/hash/parser identity to evaluation, context and evidence; do not reuse by filename or timestamp alone.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-052"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "One exact-byte lazy snapshot per evaluation binds parser/context/evidence, with 8 MiB input and 128 MiB aggregate retention bounds and explicit incomplete outcomes."
+    },
+    {
+      "id": "RSP-054",
+      "number": 54,
+      "title": "Rebaseline and decide whether Rust is justified",
+      "acceptance": "Compare current Python and optimized Python in real local package routes. Record port/no-port decision against PRD benefit threshold.",
+      "dependencies": [
+        "RSP-053",
+        "RSP-012"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Current versus optimized full local evaluator compared with matching output hashes; 98.22% median CPU reduction observed in five pairs. No native candidate qualified."
+    },
+    {
+      "id": "RSP-055",
+      "number": 55,
+      "title": "Define native package batch schemas",
+      "acceptance": "Specify bounded PackageEvaluationRequestV1/ResultV1 with input, verified bundle and policy identities, findings and explicit completeness.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-054"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Conditional native package contract awaits a measured go decision against optimized Python; proposed schema is not shipped as a supported API."
+    },
+    {
+      "id": "RSP-056",
+      "number": 56,
+      "title": "Implement one native parser format end to end",
+      "acceptance": "Add proposed guard-package-core only after go decision. Validate and emit entries in one traversal under current byte/node/entry/depth limits.",
+      "dependencies": [
+        "RSP-055"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No native package parser selected; requires RSP-054 benefit decision and RSP-055 contract."
+    },
+    {
+      "id": "RSP-057",
+      "number": 57,
+      "title": "Implement native indexed bundle evaluation",
+      "acceptance": "Preserve ecosystem identity/version semantics, emergency deny precedence and trust freshness; never accept caller-supplied verified=true as proof.",
+      "dependencies": [
+        "RSP-056"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No native bundle evaluator selected; immutable Python indexes are implemented. Native authority proof requires the conditional contract."
+    },
+    {
+      "id": "RSP-058",
+      "number": 58,
+      "title": "Integrate the coarse native call into a real surface",
+      "acceptance": "Wire package protect or audit to one native batch request, preserving final execution revalidation and all output/evidence fields.",
+      "dependencies": [
+        "RSP-057"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No coarse native package call activated without a qualified real consumer."
+    },
+    {
+      "id": "RSP-059",
+      "number": 59,
+      "title": "Expand format parity and malformed-input tests",
+      "acceptance": "Cover aliases, workspaces, transitive/local/git/optional dependencies, prereleases, truncation, stale bundles and explicit bun.lockb fallback.",
+      "dependencies": [
+        "RSP-058"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "151 focused disconnected/loopback tests, 117 isolated parser/store tests and 67 independent checks cover Python parity; native format expansion remains conditional."
+    },
+    {
+      "id": "RSP-060",
+      "number": 60,
+      "title": "Qualify and activate only supported formats",
+      "acceptance": "Pass installed package-flow correctness and optimized-Python comparisons; publish native format coverage and unsupported routes accurately.",
+      "dependencies": [
+        "RSP-059",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native format activation requires an actual native implementation and installed benefit proof over optimized Python."
+    },
+    {
+      "id": "RSP-061",
+      "number": 61,
+      "title": "Map rich secret detector capabilities",
+      "acceptance": "Compare provider rules, entropy, context, suppressions, positions, HMAC and evidence to guard-scanner. Record exact gaps before reuse.",
+      "dependencies": [
+        "RSP-001",
+        "RSP-023"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Exact rich offline versus hook scanner capability matrix published in ../rust-performance-scanner-review.md."
+    },
+    {
+      "id": "RSP-062",
+      "number": 62,
+      "title": "Baseline repository, staged and history workflows",
+      "acceptance": "Separate process startup, Git object I/O, detector CPU, bytes and files covered. Include small/large and repeated-blob workloads.",
+      "dependencies": [
+        "RSP-061",
+        "RSP-010"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Seven workloads, five alternating repetitions, full Secrets CLI and separated Git/detector CPU diagnostics recorded. Platform/cold-cache/finding-heavy qualification pending."
+    },
+    {
+      "id": "RSP-063",
+      "number": 63,
+      "title": "Batch Git object reads in Python",
+      "acceptance": "Replace repeated size/blob subprocesses with a bounded reader. Preserve staged bytes, object identity, timeouts and child cleanup.",
+      "dependencies": [
+        "RSP-062"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "At most two lazy bounded Git object readers verify immutable SHA-1/SHA-256 blobs, deadlines, headers and child cleanup; scanner regressions passed."
+    },
+    {
+      "id": "RSP-064",
+      "number": 64,
+      "title": "Deduplicate blob scanning without losing occurrences",
+      "acceptance": "Reuse findings by immutable blob identity plus detector/policy configuration; report each path/commit occurrence and correct counters.",
+      "dependencies": [
+        "RSP-063"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Per-scan immutable object/detector/path-policy finding cache retains every path/commit occurrence and existing finding/coverage budgets."
+    },
+    {
+      "id": "RSP-065",
+      "number": 65,
+      "title": "Share secure traversal for plugin checks",
+      "acceptance": "Avoid repeated root enumeration and reads where checks permit shared immutable input. Preserve containment, exclusions and incomplete coverage.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-062"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Plugin checks share one secure traversal and immutable per-file input while retaining containment/exclusions/incomplete coverage; focused tests passed."
+    },
+    {
+      "id": "RSP-066",
+      "number": 66,
+      "title": "Rebaseline and approve only justified scanner ports",
+      "acceptance": "Compare optimized Python and intended native boundary, including startup and serialization; defer ports with no full-command benefit.",
+      "dependencies": [
+        "RSP-064",
+        "RSP-065",
+        "RSP-012"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Optimized Python baseline exists; no equivalent offline native boundary has met the full-command benefit gate."
+    },
+    {
+      "id": "RSP-067",
+      "number": 67,
+      "title": "Specify separate offline detector schemas",
+      "acceptance": "Preserve richer findings, deterministic ordering, caller HMAC and completeness; do not substitute the hook scanner output contract.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-061",
+        "RSP-066"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Separate offline native schema remains conditional; hook ScanMatch is explicitly not substituted for rich finding/HMAC/completeness output."
+    },
+    {
+      "id": "RSP-068",
+      "number": 68,
+      "title": "Implement bounded native detector batches",
+      "acceptance": "Compile appropriate rules and parser logic, preserve Unicode/line counting/suppression, and reset overlap across logical files.",
+      "dependencies": [
+        "RSP-067"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Rich native detector batch is not selected pending RSP-066 and exact richer contract."
+    },
+    {
+      "id": "RSP-069",
+      "number": 69,
+      "title": "Wire the real secrets CLI and exit behavior",
+      "acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+      "dependencies": [
+        "RSP-068"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing real Secrets CLI preserves exits 0/2/3 with optimized Python; native CLI consumer remains conditional."
+    },
+    {
+      "id": "RSP-070",
+      "number": 70,
+      "title": "Qualify hostile archive worker separately",
+      "acceptance": "Profile interpreter/member-loop cost; retain isolation, digest/inode binding, expansion checks and launch binding for any native worker.",
+      "dependencies": [
+        "RSP-066",
+        "RSP-024"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Hostile archive isolation and identity/expansion controls retained; dedicated archive cost profiling still required before selecting a port."
+    },
+    {
+      "id": "RSP-071",
+      "number": 71,
+      "title": "Run secret and scanner adversarial parity",
+      "acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+      "dependencies": [
+        "RSP-069",
+        "RSP-070"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "178 scanner/transport/shared-input tests pass, including mutation, redaction and incomplete coverage. Native detector/archive differential remains conditional."
+    },
+    {
+      "id": "RSP-072",
+      "number": 72,
+      "title": "Publish scanner go/no-go and coverage evidence",
+      "acceptance": "Report full CLI wall time and CPU versus optimized Python, complete finding equivalence, platforms and deliberately retained Python scopes.",
+      "dependencies": [
+        "RSP-071",
+        "RSP-010"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Python diagnostic evidence and exact retained scopes published. Installed/native/platform comparison is outstanding, so no native speed claim is made."
+    },
+    {
+      "id": "RSP-073",
+      "number": 73,
+      "title": "Rank launcher cost by actual harness use",
+      "acceptance": "Use installed baseline measurements and explicit supported-route inventory; do not assume all adapters are Python command hooks.",
+      "dependencies": [
+        "RSP-007",
+        "RSP-012",
+        "RSP-014"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Priority installed launcher matrix is being completed; route ranking must use those actual measurements."
+    },
+    {
+      "id": "RSP-074",
+      "number": 74,
+      "title": "Design a package-bound native launcher command",
+      "acceptance": "Reuse existing runtime distribution and identity validation; specify argv, stdin, stdout, exit and environment contracts.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-073"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Package-bound native launcher is conditional on RSP-073; existing signed/manifest-bound runtime distribution is the proposed reuse point."
+    },
+    {
+      "id": "RSP-075",
+      "number": 75,
+      "title": "Implement one canonical pre/post launcher",
+      "acceptance": "Start with the highest justified installed route and preserve response/continuation semantics without PATH lookup or auto download.",
+      "dependencies": [
+        "RSP-074",
+        "RSP-015"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No new canonical native launcher is activated without route-specific installed benefit and delivery parity."
+    },
+    {
+      "id": "RSP-076",
+      "number": 76,
+      "title": "Integrate registration and repair",
+      "acceptance": "Update generated hook entries, detect existing installs, and preserve idempotent reinstall/uninstall and exact package ownership.",
+      "dependencies": [
+        "RSP-075"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "New native registration/repair depends on a selected launcher implementation; existing registrations remain under contract tests."
+    },
+    {
+      "id": "RSP-077",
+      "number": 77,
+      "title": "Verify no-environment installed selection",
+      "acceptance": "Clear development overrides and prove runtime origin plus actual registered executable use; source-checkout execution is insufficient.",
+      "dependencies": [
+        "RSP-076"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Qualification builder installs wheel artifacts with development overrides cleared and reads registered argv. Four-platform execution is pending."
+    },
+    {
+      "id": "RSP-078",
+      "number": 78,
+      "title": "Port and qualify an alias-heavy harness",
+      "acceptance": "Exercise native Cursor/Copilot event and response forms, including permission and unavailable cases, not just normalized daemon JSON.",
+      "dependencies": [
+        "RSP-077"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Cursor/Copilot alias and response fixtures are frozen. A new native alias launcher and its installed qualification remain conditional."
+    },
+    {
+      "id": "RSP-079",
+      "number": 79,
+      "title": "Port and qualify Pi/OMP source references",
+      "acceptance": "Preserve reference identity, external-source permission, plaintext bounds, output equivalence and response schemas.",
+      "dependencies": [
+        "RSP-077"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Pi/OMP source-reference contract remains covered by existing tests/corpus; a new launcher port is conditional."
+    },
+    {
+      "id": "RSP-080",
+      "number": 80,
+      "title": "Preserve approval continuation across launchers",
+      "acceptance": "Test review/pause/approve/revalidate/consume, expired approvals, restart and ambiguous completion without duplicate tool execution.",
+      "dependencies": [
+        "RSP-078",
+        "RSP-079",
+        "RSP-021"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing one-time approval/revalidation/consume contracts retained. Final installed launcher restart and ambiguous-completion matrix is pending."
+    },
+    {
+      "id": "RSP-081",
+      "number": 81,
+      "title": "Qualify wheels and frozen sidecars",
+      "acceptance": "Test Linux x64, macOS x64/arm64 and Windows x64 package/version/manifest binding and signing/freeze changes.",
+      "dependencies": [
+        "RSP-077",
+        "RSP-029"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires selected launcher and final four-platform wheels/frozen sidecars; source tests cannot satisfy this acceptance."
+    },
+    {
+      "id": "RSP-082",
+      "number": 82,
+      "title": "Measure cold/warm launcher improvements",
+      "acceptance": "Apply actual launcher targets and include final response, setup and queue time; publish any platform or route misses.",
+      "dependencies": [
+        "RSP-080",
+        "RSP-081",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires actual final installed launcher observations and route/platform target comparison."
+    },
+    {
+      "id": "RSP-083",
+      "number": 83,
+      "title": "Expand route by route with declared support",
+      "acceptance": "Move only routes with parity and benefit proof; keep preflight-only/observation-only surfaces labeled correctly.",
+      "dependencies": [
+        "RSP-082"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No additional route activated without parity plus benefit proof; preflight and observation surfaces stay accurately labeled."
+    },
+    {
+      "id": "RSP-084",
+      "number": 84,
+      "title": "Test launcher upgrade and rollback",
+      "acceptance": "Retire old registration/generation safely, preserve in-progress sessions and verify the prior tested native route can be restored.",
+      "dependencies": [
+        "RSP-083",
+        "RSP-081"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native launcher upgrade/rollback depends on a selected new launcher and installed registration matrix."
+    },
+    {
+      "id": "RSP-085",
+      "number": 85,
+      "title": "Profile discovery/connect/auth versus evaluation",
+      "acceptance": "Measure platform-specific per-request work through the existing persistent helper and resident; count current socket opens.",
+      "dependencies": [
+        "RSP-035",
+        "RSP-048",
+        "RSP-010"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing persistent Python-to-native helper verified; direct native/client phase and connection accounting are being integrated into qualification."
+    },
+    {
+      "id": "RSP-086",
+      "number": 86,
+      "title": "Choose connection reuse or ingress consolidation",
+      "acceptance": "Compare alternatives with full process-tree cost; do not port the entire administrative server to optimize hooks.",
+      "dependencies": [
+        "RSP-085",
+        "RSP-012"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Connection or ingress consolidation requires full process-tree comparison against the optimized current path."
+    },
+    {
+      "id": "RSP-087",
+      "number": 87,
+      "title": "Specify bounded native session protocol",
+      "acceptance": "Define generation/peer binding, framing, inflight limit, request correlation, idle timeout, cancellation and freshness checks.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-021",
+        "RSP-086"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing v2 generation-bound native framing and limits documented; any additional connection protocol remains conditional."
+    },
+    {
+      "id": "RSP-088",
+      "number": 88,
+      "title": "Implement generation-bound persistent connections",
+      "acceptance": "Reuse only within the authenticated scope and capability contract; bound pools, memory and lifetime.",
+      "dependencies": [
+        "RSP-087"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Further resident connection reuse requires measured selection and authenticated scope/lifetime proof."
+    },
+    {
+      "id": "RSP-089",
+      "number": 89,
+      "title": "Exercise replacement and recovery races",
+      "acceptance": "Test restart, stale discovery, peer replacement, failed auth, reconnect, concurrent requests, cancellation and ambiguous commit.",
+      "dependencies": [
+        "RSP-088",
+        "RSP-021"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Current generation/expiry/restart/admission tests retained; expanded final installed recovery and replacement matrix pending."
+    },
+    {
+      "id": "RSP-090",
+      "number": 90,
+      "title": "Prototype hook-only native ingress if selected",
+      "acceptance": "Preserve auth, context binding, scheduler/admission, response and evidence contracts while keeping product/admin APIs on their current owner.",
+      "dependencies": [
+        "RSP-086",
+        "RSP-024"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Hook-only native ingress not selected; no administrative server rewrite is authorized by a hypothetical hook gain."
+    },
+    {
+      "id": "RSP-091",
+      "number": 91,
+      "title": "Preserve Windows and Unix transport guarantees",
+      "acceptance": "Test DACL/owner/SYSTEM rules, loopback authentication, exact package process, Unix private paths, permissions and peer identity.",
+      "dependencies": [
+        "RSP-089",
+        "RSP-090"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Foundation Windows resident/native identity CI passed. Final candidate DACL/peer/process/Unix path checks remain required."
+    },
+    {
+      "id": "RSP-092",
+      "number": 92,
+      "title": "Audit the remaining Python process-pool callers",
+      "acceptance": "Enumerate compatibility and Codex approval revalidation consumers and measure idle/startup footprint before changing startup.",
+      "dependencies": [
+        "RSP-013",
+        "RSP-011"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Compatibility and Codex approval pool distinction documented; full remaining caller inventory and idle/startup footprint audit pending."
+    },
+    {
+      "id": "RSP-093",
+      "number": 93,
+      "title": "Lazy-start or replace only proven pool consumers",
+      "acceptance": "Preserve first-approval latency, fresh reevaluation, containment and lifecycle cleanup; never claim ordinary-hook IPC removal here.",
+      "dependencies": [
+        "RSP-092",
+        "RSP-080"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Pool lazy-start/replacement requires measured remaining consumers and first-approval/revalidation proof."
+    },
+    {
+      "id": "RSP-094",
+      "number": 94,
+      "title": "Stress admission and fault containment",
+      "acceptance": "Use mixed large/small hooks at c16/c64, stalled clients, panic/worker failure and blocked I/O; require bounded failures and no cross-session leak.",
+      "dependencies": [
+        "RSP-091",
+        "RSP-093"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "c16/c64, offered-rate and explicit failure accounting implemented; final mixed payload/fault containment runs pending."
+    },
+    {
+      "id": "RSP-095",
+      "number": 95,
+      "title": "Qualify the transport benefit",
+      "acceptance": "Meet adopted p99/CPU/memory thresholds against the optimized current route; report all unavailable, rejected and timed-out work.",
+      "dependencies": [
+        "RSP-094",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No new transport benefit is claimed without installed p99/CPU/private-memory qualification."
+    },
+    {
+      "id": "RSP-096",
+      "number": 96,
+      "title": "Roll out or defer native ingress explicitly",
+      "acceptance": "Activate only proven routes/platforms with tested generation rollback; retain simpler current transport if benefit is insufficient.",
+      "dependencies": [
+        "RSP-095"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native ingress remains unselected pending a measured go/no-go decision and tested generation rollback."
+    },
+    {
+      "id": "RSP-097",
+      "number": 97,
+      "title": "Trace actual stdio and remote MCP behavior",
+      "acceptance": "Reinspect [#2931](https://github.com/hashgraph-online/hol-guard/pull/2931) and current dispatch; document catalog lifecycle, approvals, forwarding commit and response multiplexing.",
+      "dependencies": [
+        "RSP-002",
+        "RSP-003"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Actual stdio catalog, approval, forwarding and multiplexing route reviewed; remote-http draft #2931 is not treated as shipped current behavior."
+    },
+    {
+      "id": "RSP-098",
+      "number": 98,
+      "title": "Benchmark Guard overhead separate from server wait",
+      "acceptance": "Measure startup, catalog hashing, classification, policy, barrier, child/network/human wait and serialization with identical synthetic traces.",
+      "dependencies": [
+        "RSP-097",
+        "RSP-010"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Actual stdio session benchmark and nested phase profile separate Guard, deliberate drain, child wait and startup. Local timings are noisy diagnostics."
+    },
+    {
+      "id": "RSP-099",
+      "number": 99,
+      "title": "Cache immutable full-catalog fingerprints",
+      "acceptance": "Reuse canonical digest per validated catalog generation; preserve full-catalog binding and invalidation during pending approvals.",
+      "dependencies": [
+        "RSP-098",
+        "RSP-020"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Owned immutable full tool catalog fingerprints cache one canonical digest per validated generation; mutation and pending-approval invalidation tests pass."
+    },
+    {
+      "id": "RSP-100",
+      "number": 100,
+      "title": "Reuse request-local risk analysis",
+      "acceptance": "Compute categories/signals once for unchanged exact inputs; recompute after any authority/catalog/input change.",
+      "dependencies": [
+        "RSP-099"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Risk categories/signals reused only within one exact request; public helpers and changed requests recompute. 342 relevant MCP tests passed."
+    },
+    {
+      "id": "RSP-101",
+      "number": 101,
+      "title": "Bound framing and buffering where required",
+      "acceptance": "Define limits and backpressure for lines, queues and response buffers without deadlocking notifications while approvals are pending.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-098"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Bounded MCP lines, child queue and unmatched response buffering are under implementation; existing final freshness barrier must be retained."
+    },
+    {
+      "id": "RSP-102",
+      "number": 102,
+      "title": "Preserve the final prewrite freshness barrier",
+      "acceptance": "Retain catalog invalidation during quiet drain and entrypoint-change quarantine. Removing a 5 ms wait requires an equivalent reviewed ordering design.",
+      "dependencies": [
+        "RSP-097",
+        "RSP-023"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "5 ms final quiet drain and entrypoint-change quarantine retained; whole-catalog authority is rechecked before forwarding."
+    },
+    {
+      "id": "RSP-103",
+      "number": 103,
+      "title": "Rebaseline optimized Python proxy",
+      "acceptance": "Measure actual proxy overhead and memory; distinguish deliberate waits and remote latency from local CPU before choosing Rust.",
+      "dependencies": [
+        "RSP-100",
+        "RSP-101",
+        "RSP-102"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Actual proxy session profile recorded; controlled installed overhead/memory rebaseline still needed before any Rust choice."
+    },
+    {
+      "id": "RSP-104",
+      "number": 104,
+      "title": "Specify coarse native MCP facts contract if justified",
+      "acceptance": "Pass bounded catalog/request facts with immutable identities; keep credentials and remote session orchestration outside the kernel.",
+      "dependencies": [
+        "RSP-103",
+        "RSP-024"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native MCP facts contract remains conditional on measured kernel benefit; credentials and remote session orchestration stay outside the kernel."
+    },
+    {
+      "id": "RSP-105",
+      "number": 105,
+      "title": "Implement and integrate selected pure native kernels",
+      "acceptance": "Port canonicalization/risk evidence at one coarse boundary; preserve full policy/claim composition and redacted evidence.",
+      "dependencies": [
+        "RSP-104"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "No native MCP kernel is activated before RSP-103/104 selection and full policy/claim parity."
+    },
+    {
+      "id": "RSP-106",
+      "number": 106,
+      "title": "Test protocol and forwarding correctness",
+      "acceptance": "Cover IDs, notifications, cancellation, out-of-order replies, schema changes, EOF, slow consumers, package calls and no replay after ambiguous writes.",
+      "dependencies": [
+        "RSP-105",
+        "RSP-021"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "342 existing MCP protocol/catalog/approval tests pass; framing/flood/slow-consumer and final integrated tests pending."
+    },
+    {
+      "id": "RSP-107",
+      "number": 107,
+      "title": "Qualify native kernels against optimized proxy",
+      "acceptance": "Require measured benefit at the real proxy boundary with no catalog/approval/forwarding regressions.",
+      "dependencies": [
+        "RSP-106",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Requires selected native kernel and real proxy-boundary comparison against optimized Python."
+    },
+    {
+      "id": "RSP-108",
+      "number": 108,
+      "title": "Record full proxy rewrite decision",
+      "acceptance": "Defer unless kernels and Python optimizations cannot meet adopted goals. If justified, require a separate ADR and complete protocol rollout scope.",
+      "dependencies": [
+        "RSP-107"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Full proxy rewrite has no measured justification. Separate ADR/protocol rollout required if future evidence selects it."
+    },
+    {
+      "id": "RSP-109",
+      "number": 109,
+      "title": "Inventory matcher semantics and current native coverage",
+      "acceptance": "Enumerate all concrete matcher classes and safe variants; distinguish Python catalog presence from production Rust execution.",
+      "dependencies": [
+        "RSP-014",
+        "RSP-001"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Foundation inventory is 86 extensions, 291 rules, 304 permissions and 26 matcher families; exact artifact/coverage mapping is being completed."
+    },
+    {
+      "id": "RSP-110",
+      "number": 110,
+      "title": "Freeze extension outcome and control fixtures",
+      "acceptance": "Cover defaults, local opt-in, managed layers, permission IDs, uncertainty, overlaps, safe variants and hard floors.",
+      "dependencies": [
+        "RSP-109",
+        "RSP-023"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Control/default/opt-in/uncertainty/hard-floor fixtures and Python oracle vectors are under integration."
+    },
+    {
+      "id": "RSP-111",
+      "number": 111,
+      "title": "Define a bounded versioned matcher IR",
+      "acceptance": "Specify executable semantics, full config, rule/program digests and limits. Matcher kind+digest alone is not executable IR.",
+      "dependencies": [
+        "RSP-110",
+        "RSP-017"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Bounded executable IR with version, program/catalog/trust digests and explicit CPython 3.12/UCD15 semantics is under implementation."
+    },
+    {
+      "id": "RSP-112",
+      "number": 112,
+      "title": "Build trusted deterministic IR compilation",
+      "acceptance": "Compile supported reviewed definitions without arbitrary runtime Python imports. Reject unsupported types and emit per-rule coverage.",
+      "dependencies": [
+        "RSP-111"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Deterministic reviewed-type compiler translates rules and variants; final generated artifact and unsupported-type rejection tests pending."
+    },
+    {
+      "id": "RSP-113",
+      "number": 113,
+      "title": "Preserve the existing contribution and Builder flow",
+      "acceptance": "Keep python-module metadata and supported declarative authoring; normal contributors should not need a Rust toolchain.",
+      "dependencies": [
+        "RSP-112"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Existing contribution/Builder authoring retained; generated IR is a build artifact. Final normal-contributor build/install proof pending."
+    },
+    {
+      "id": "RSP-114",
+      "number": 114,
+      "title": "Implement native matcher primitives incrementally",
+      "acceptance": "Cover real operand/path-set/specialized matchers as well as basic combinators; unsupported must not become no-match/allow.",
+      "dependencies": [
+        "RSP-111",
+        "RSP-024"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Core, option/flag, operand/path-set and specialized matcher ports are under integration with independent oracle vectors; no unimplemented family may become allow."
+    },
+    {
+      "id": "RSP-115",
+      "number": 115,
+      "title": "Bind native program to control snapshots",
+      "acceptance": "Preserve catalog/trust identity, opt-in, independent revisions, durable commit-before-publish and equivocation rejection.",
+      "dependencies": [
+        "RSP-114",
+        "RSP-020"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Capability-gated optional authenticated snapshot binding and independent durable local/cloud revision floors are under integration; legacy byte identity retained."
+    },
+    {
+      "id": "RSP-116",
+      "number": 116,
+      "title": "Integrate native matching with one canonical command",
+      "acceptance": "Return complete observations, variants, uncertainty and redacted evidence. No per-rule IPC or duplicate independent parsing.",
+      "dependencies": [
+        "RSP-115"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Canonical-command native matching and complete redacted observation/receipt binding are under integration."
+    },
+    {
+      "id": "RSP-117",
+      "number": 117,
+      "title": "Protect core floors and unknown-command behavior",
+      "acceptance": "Test that extension outcomes cannot weaken non-overridable native policy/security floors and unsupported families retain explicit handling.",
+      "dependencies": [
+        "RSP-116",
+        "RSP-110"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Generic independent sensitive-path floor fixed and tested in foundation. Full extension overlap/unknown-command/core-floor matrix pending."
+    },
+    {
+      "id": "RSP-118",
+      "number": 118,
+      "title": "Qualify command.ollama end to end",
+      "acceptance": "Exercise contribution/build/install/enable/native review/receipt/disable/update/rollback; Python matcher tests alone cannot complete this task.",
+      "dependencies": [
+        "RSP-113",
+        "RSP-117"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "command.ollama needs the completed native program, controls, actual installed enable/disable/receipt/update/rollback route."
+    },
+    {
+      "id": "RSP-119",
+      "number": 119,
+      "title": "Benchmark full catalog execution",
+      "acceptance": "Separate cold compile/load from warm evaluation; vary catalog/candidates/controls within valid combined limits and include false-review counts.",
+      "dependencies": [
+        "RSP-118",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Full catalog compile/load/warm/candidate/control benchmark awaits coherent native integration."
+    },
+    {
+      "id": "RSP-120",
+      "number": 120,
+      "title": "Publish native extension coverage and diagnostics",
+      "acceptance": "Declare translated and unsupported matcher families, exact artifact/catalog versions and production route proof; do not call compatibility gain a measured speedup.",
+      "dependencies": [
+        "RSP-119"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Publish production native coverage only after final packaged artifact and route proof; compatibility benefit is separate from latency."
+    },
+    {
+      "id": "RSP-121",
+      "number": 121,
+      "title": "Measure foreground evidence submission cost",
+      "acceptance": "Attribute full payload copies/JSON before response, queue admission, native receipt validation and rejected work; use maximum envelopes.",
+      "dependencies": [
+        "RSP-008"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "30 paired synthetic foreground evidence diagnostics cover maximum envelopes and rejection. Real installed mixed-load attribution remains pending."
+    },
+    {
+      "id": "RSP-122",
+      "number": 122,
+      "title": "Use bounded compact evidence before queue admission",
+      "acceptance": "Avoid unnecessary full payload copying; preserve correlation/attempt identity and explicit aggregate degraded counters.",
+      "dependencies": [
+        "RSP-121",
+        "RSP-016"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Compact retained facts replace full payload copy before admission; bounded queue rejection is early, correlation and degraded counters retained."
+    },
+    {
+      "id": "RSP-123",
+      "number": 123,
+      "title": "Define persistence milestones and loss window",
+      "acceptance": "Document memory accepted versus journal durable versus DB committed; specify deduplication, crash cut points and single-writer ownership.",
+      "dependencies": [
+        "RSP-024",
+        "RSP-121"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Memory accepted, journal durable, DB committed and checkpointed milestones plus cross-process writer lock/loss window documented in ../rust-performance-background.md."
+    },
+    {
+      "id": "RSP-124",
+      "number": 124,
+      "title": "Implement real SQL transaction batching",
+      "acceptance": "Group inserts within bounded latency/size limits; preserve uniqueness and per-record outcomes without silently changing durability promises.",
+      "dependencies": [
+        "RSP-123"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Native receipts use bounded 50-record SQL batches with exact uniqueness/rollback; package evidence also uses an atomic evaluation transaction."
+    },
+    {
+      "id": "RSP-125",
+      "number": 125,
+      "title": "Replace per-record whole-journal rewrites",
+      "acceptance": "Use bounded checkpoint/segment compaction or equivalent; keep exact replay and sidecar consistency under crash and backlog.",
+      "dependencies": [
+        "RSP-123",
+        "RSP-124"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Per-record journal rewrites replaced with one bounded checkpoint per committed group; retry never reruns the decision or committed batch."
+    },
+    {
+      "id": "RSP-126",
+      "number": 126,
+      "title": "Exercise persistence fault recovery",
+      "acceptance": "Test duplicate IDs, SQLite busy/corrupt, read-only/full disk, truncated journal and death at append/commit/checkpoint; decisions must not be rerun.",
+      "dependencies": [
+        "RSP-125"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Fault tests cover duplicate/replay IDs, SQLite busy, disk full, truncated journal and append/commit/checkpoint process death; 259 background tests plus one skip."
+    },
+    {
+      "id": "RSP-127",
+      "number": 127,
+      "title": "Introduce precise policy invalidation",
+      "acceptance": "Use domain revisions/dirty signals with cross-process and WAL-aware reconciliation; unrelated receipt writes must not trigger full recompilation.",
+      "dependencies": [
+        "RSP-020",
+        "RSP-002"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "WAL-aware precise integrity-domain invalidation skips receipt-driven recompilation; managed/home/workspace reconciliation and key fences retained."
+    },
+    {
+      "id": "RSP-128",
+      "number": 128,
+      "title": "Bound workspace policy tracking",
+      "acceptance": "Measure 1/10/100 workspaces; coalesce compilation and define safe cache/registration lifecycle without losing active stricter overlays.",
+      "dependencies": [
+        "RSP-127"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Exact captured-byte cache and safe 1,024-workspace admission implemented; 1/10/100 diagnostics recorded. Installed lifecycle/load qualification pending."
+    },
+    {
+      "id": "RSP-129",
+      "number": 129,
+      "title": "Test mutation-to-enforcement freshness",
+      "acceptance": "Measure accepted change\u2192compile\u2192publish\u2192ACK\u2192first decision; cover lost watcher hints, restart, key change, expiry and rollout admission.",
+      "dependencies": [
+        "RSP-128",
+        "RSP-034"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Local mutation-to-ACK, lost hint, managed repair and capacity race tests pass; actual installed first decision and platform transition measurements pending."
+    },
+    {
+      "id": "RSP-130",
+      "number": 130,
+      "title": "Profile and optimize incremental inventory",
+      "acceptance": "Separate traversal, third-party scanner and cloud wait; coalesce changes and batch joins/upserts without changing client_unverified provenance.",
+      "dependencies": [
+        "RSP-011",
+        "RSP-012"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Inventory-specific incremental traversal/upsert/cloud attribution remains to be profiled; no Rust inventory speed claim made."
+    },
+    {
+      "id": "RSP-131",
+      "number": 131,
+      "title": "Qualify real receipt ingestion under mixed load",
+      "acceptance": "Drive actual native receipts alongside mixed pre/post hooks and policy updates; report fsyncs, bytes rewritten, queue age and process-tree resources.",
+      "dependencies": [
+        "RSP-126",
+        "RSP-129",
+        "RSP-130"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Actual native receipt ingest under mixed hooks/policy updates and complete process-tree accounting awaits final installed runs."
+    },
+    {
+      "id": "RSP-132",
+      "number": 132,
+      "title": "Decide whether native spool/compiler is still needed",
+      "acceptance": "Keep Python improvements if they meet targets; native spool requires writer fencing, and compiler port requires evidenced local CPU/ACK benefit.",
+      "dependencies": [
+        "RSP-131",
+        "RSP-012"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Native spool/compiler decision depends on optimized Python mixed-load qualification; no exclusive daemon lease or exactly-once legacy guarantee invented."
+    },
+    {
+      "id": "RSP-133",
+      "number": 133,
+      "title": "Audit workflow dependency selection",
+      "acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+      "dependencies": [
+        "RSP-006",
+        "RSP-022"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "23 validation workflows select release/3.2 and dependent inputs; publication permissions/triggers unchanged. 229 tests and dependency coverage audit passed."
+    },
+    {
+      "id": "RSP-134",
+      "number": 134,
+      "title": "Run scope-appropriate Rust and Python validation",
+      "acceptance": "Run formatting/lint, crate tests, rule/command differential, adversarial, policy/approval and source mutation suites needed by the selected changes.",
+      "dependencies": [
+        "RSP-133"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Per-tranche meaningful Rust/Python/lint/type tests passed; final combined source and exact-head GitHub checks remain required."
+    },
+    {
+      "id": "RSP-135",
+      "number": 135,
+      "title": "Build and attest all selected release artifacts",
+      "acceptance": "Use locked dependencies and current toolchain; bind source/version/target/rule/runtime digests and verify post-sign/frozen manifests.",
+      "dependencies": [
+        "RSP-134",
+        "RSP-081"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Four-platform locked native-wheel builder/workflow implemented. Final package/runtime/rule/source identities and frozen/post-sign qualification pending."
+    },
+    {
+      "id": "RSP-136",
+      "number": 136,
+      "title": "Verify installed route and control-mode coverage",
+      "acceptance": "Exercise actual launchers, no-env auto, aliases, source refs, Watch, availability and approval flow from each selected package.",
+      "dependencies": [
+        "RSP-135",
+        "RSP-015"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Independent corpus and registered-launcher helpers implemented/in progress. All selected final installed routes/modes must run on their artifacts."
+    },
+    {
+      "id": "RSP-137",
+      "number": 137,
+      "title": "Run full performance qualification",
+      "acceptance": "Use frozen targets and sample methodology against matching baseline artifacts on declared hardware; include every error/denial/retry.",
+      "dependencies": [
+        "RSP-136",
+        "RSP-010"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Full labeled qualification run requires a frozen final candidate; smoke/diagnostics cannot close this task."
+    },
+    {
+      "id": "RSP-138",
+      "number": 138,
+      "title": "Run mixed offered-load and recovery soak",
+      "acceptance": "Include real evidence ingest, policy mutations, inventory, startup/restart and saturation; preserve responsiveness and bounded process resources.",
+      "dependencies": [
+        "RSP-137",
+        "RSP-131"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Mixed offered-load/recovery/resource soak on final installed artifacts is outstanding."
+    },
+    {
+      "id": "RSP-139",
+      "number": 139,
+      "title": "Verify update, downgrade and rollback behavior",
+      "acceptance": "Test mixed generations, in-progress requests, signing changes and installed registration; never reopen hidden Python semantic fallback.",
+      "dependencies": [
+        "RSP-135",
+        "RSP-138"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Final artifact update/downgrade/rollback and mixed-generation installed behavior is outstanding."
+    },
+    {
+      "id": "RSP-140",
+      "number": 140,
+      "title": "Verify evidence privacy and truthful status",
+      "acceptance": "Probe exported metrics, error paths and receipts for raw secrets, commands, output and private paths; separate availability continuations from evaluated allows.",
+      "dependencies": [
+        "RSP-136",
+        "RSP-138"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "AIBOM URL credential redaction corrected; benchmark outputs use aggregates/digests and separate availability. Final artifact privacy probes pending."
+    },
+    {
+      "id": "RSP-141",
+      "number": 141,
+      "title": "Reconcile current architecture and old PRDs",
+      "acceptance": "Update actual route graphs, authority/availability wording, capability coverage and SLO truth; mark obsolete claims superseded without inventing history.",
+      "dependencies": [
+        "RSP-136",
+        "RSP-137"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Original PRD/TODO/TAKEAWAY preserved with current execution contract and provenance; final architecture/native coverage must be reconciled after integration."
+    },
+    {
+      "id": "RSP-142",
+      "number": 142,
+      "title": "Complete independent review of the final head",
+      "acceptance": "Resolve review threads and required CI on the actual candidate SHA. Explain intentional behavior differences separately from performance changes.",
+      "dependencies": [
+        "RSP-134",
+        "RSP-140",
+        "RSP-141"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Final-head CI and independent code-owner review remain required by the release ruleset; foundation automated findings are being addressed."
+    },
+    {
+      "id": "RSP-143",
+      "number": 143,
+      "title": "Prepare concrete canary and rollback evidence",
+      "acceptance": "Specify selected versions, platforms, cohorts, stop conditions and tested rollback. Publish or merge only within the implementation session's authorization.",
+      "dependencies": [
+        "RSP-139",
+        "RSP-142"
+      ],
+      "status": "BLOCKED",
+      "evidence_or_remaining_work": "Concrete canary/stop/rollback protocol documented in EXECUTION.md; exact selected qualified versions and tested rollback evidence pending."
+    },
+    {
+      "id": "RSP-144",
+      "number": 144,
+      "title": "Publish an accurate implementation handoff",
+      "acceptance": "List selected/deferred tasks, artifacts, exact metrics and coverage, commands/results and rollback. No measured claim without attached evidence.",
+      "dependencies": [
+        "RSP-137",
+        "RSP-138",
+        "RSP-139",
+        "RSP-140",
+        "RSP-141",
+        "RSP-142",
+        "RSP-143"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "This 144-row ledger preserves every acceptance condition and dependency. Final handoff must include exact PR/artifact results and unresolved/deferred scope."
+    }
+  ]
+}

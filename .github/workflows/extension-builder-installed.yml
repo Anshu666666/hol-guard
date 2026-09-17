@@ -16,9 +16,12 @@ on:
       - 'scripts/ci/verify_extension_builder_install.py'
       - 'scripts/release/stage_guard_cloud_review_artifacts.py'
       - 'pyproject.toml'
+      - 'rust/**'
+      - 'src/codex_plugin_scanner/guard/native_*.py'
+      - 'uv.lock'
       - '.github/workflows/extension-builder-installed.yml'
   push:
-    branches: [main]
+    branches: [main, release/3.2]
     paths:
       - 'src/codex_plugin_scanner/guard/extension_builder/**'
       - 'src/codex_plugin_scanner/guard/cli/extension_builder_commands.py'
@@ -33,6 +36,9 @@ on:
       - 'scripts/ci/verify_extension_builder_install.py'
       - 'scripts/release/stage_guard_cloud_review_artifacts.py'
       - 'pyproject.toml'
+      - 'rust/**'
+      - 'src/codex_plugin_scanner/guard/native_*.py'
+      - 'uv.lock'
       - '.github/workflows/extension-builder-installed.yml'
   workflow_dispatch:
 

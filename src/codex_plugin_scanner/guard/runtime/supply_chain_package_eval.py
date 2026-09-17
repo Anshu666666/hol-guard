@@ -11,6 +11,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -104,9 +105,12 @@ from .supply_chain_package_identity import (
 )
 from .supply_chain_support import ecosystem_support_metadata
 from .workspace_path_guard import (
+    WorkspaceInputSnapshotError,
+    path_exists_within_workspace,
     read_bytes_within_workspace,
     read_text_within_workspace,
     resolve_path_within_workspace,
+    workspace_input_snapshot,
 )
 
 _DECISION_RANK = {"allow": 0, "monitor": 1, "warn": 2, "ask": 3, "block": 4}
@@ -320,14 +324,37 @@ def evaluate_package_request_artifact(
 ) -> PackageRequestEvaluation:
     cache_token = _LOCKFILE_PARSE_CACHE.set({})
     try:
-        return _evaluate_package_request_artifact_uncached(
-            artifact=artifact,
-            store=store,
-            workspace_dir=workspace_dir,
-            now=now,
-            external_archive_network_authorized=external_archive_network_authorized,
-            retain_external_archive_blob=retain_external_archive_blob,
-        )
+        with workspace_input_snapshot():
+            try:
+                return _evaluate_package_request_artifact_uncached(
+                    artifact=artifact,
+                    store=store,
+                    workspace_dir=workspace_dir,
+                    now=now,
+                    external_archive_network_authorized=external_archive_network_authorized,
+                    retain_external_archive_blob=retain_external_archive_blob,
+                )
+            except WorkspaceInputSnapshotError as error:
+                parse_result = incomplete_lockfile_result(
+                    error.relative_path,
+                    b"",
+                    error_reason=error.reason,
+                    budget_ms=_LOCKFILE_PARSE_MAX_BUDGET_SECONDS * 1000,
+                    source_hash=error.source_hash,
+                    source_hash_complete=error.source_hash is not None,
+                    source_byte_count=error.bytes_observed,
+                    source_byte_limit=error.byte_limit,
+                )
+                targets = _targets_from_artifact(artifact)
+                return _finalize_incomplete_lockfile_evaluation(
+                    artifact=artifact,
+                    store=store,
+                    target=targets[0] if targets else incomplete_lockfile_fallback_target(parse_result),
+                    workspace_dir=workspace_dir,
+                    parse_result=parse_result,
+                    package_intent_hash=artifact.artifact_id.rsplit(":", 1)[-1],
+                    now=now or datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+                )
     finally:
         _LOCKFILE_PARSE_CACHE.reset(cache_token)
 
@@ -2101,40 +2128,40 @@ def _persist_evidence(
         return
     if evaluation.decision == "monitor" and not evaluation.record_monitor_evidence:
         return
-    for package in evaluation.packages:
-        if not _should_record_package(package, evaluation.decision):
-            continue
-        evidence_id = _evidence_id(evaluation.package_intent_hash, package)
-        store.add_evidence(
-            EvidenceRecord(
-                evidence_id=evidence_id,
-                action_id=artifact.artifact_id,
-                request_id=evaluation.package_intent_hash,
-                harness=artifact.harness,
-                workspace=artifact.source_scope,
-                signal_id=str(package.get("decision") or evaluation.decision),
-                category="supply-chain",
-                severity=_reason_severity(package),
-                confidence=1.0 if evaluation.decision in {"block", "ask"} else 0.6,
-                summary=evaluation.risk_summary,
-                details={
-                    "agent_app": _optional_string(artifact.metadata.get("agent_app")) or artifact.harness,
-                    "command_shape": _optional_string(artifact.metadata.get("redacted_command")),
-                    "decision": evaluation.decision,
-                    "enforcement": evaluation.enforcement,
-                    "exception_id": evaluation.exception_id,
-                    "harness": artifact.harness,
-                    "matched_rule_id": evaluation.matched_rule_id,
-                    "package": package,
-                    "package_manager": _optional_string(artifact.metadata.get("package_manager")),
-                    "repo_fingerprint": evaluation.workspace_fingerprint,
-                    "reasons": package.get("reasons", []),
-                    "workspace_fingerprint": evaluation.workspace_fingerprint,
-                },
-                action_identity=evaluation.exception_id or evaluation.matched_rule_id,
-                created_at=now,
-            )
+    packages = tuple(package for package in evaluation.packages if _should_record_package(package, evaluation.decision))
+    if not packages:
+        return
+    store.add_evidence_batch(
+        EvidenceRecord(
+            evidence_id=_evidence_id(evaluation.package_intent_hash, package),
+            action_id=artifact.artifact_id,
+            request_id=evaluation.package_intent_hash,
+            harness=artifact.harness,
+            workspace=artifact.source_scope,
+            signal_id=str(package.get("decision") or evaluation.decision),
+            category="supply-chain",
+            severity=_reason_severity(package),
+            confidence=1.0 if evaluation.decision in {"block", "ask"} else 0.6,
+            summary=evaluation.risk_summary,
+            details={
+                "agent_app": _optional_string(artifact.metadata.get("agent_app")) or artifact.harness,
+                "command_shape": _optional_string(artifact.metadata.get("redacted_command")),
+                "decision": evaluation.decision,
+                "enforcement": evaluation.enforcement,
+                "exception_id": evaluation.exception_id,
+                "harness": artifact.harness,
+                "matched_rule_id": evaluation.matched_rule_id,
+                "package": package,
+                "package_manager": _optional_string(artifact.metadata.get("package_manager")),
+                "repo_fingerprint": evaluation.workspace_fingerprint,
+                "reasons": package.get("reasons", []),
+                "workspace_fingerprint": evaluation.workspace_fingerprint,
+            },
+            action_identity=evaluation.exception_id or evaluation.matched_rule_id,
+            created_at=now,
         )
+        for package in packages
+    )
 
 
 def _evaluation_targets(
@@ -2369,7 +2396,9 @@ def _finalize_incomplete_lockfile_evaluation(
     now: str,
 ) -> PackageRequestEvaluation:
     config = load_guard_config(store.guard_home, workspace=workspace_dir)
-    decision = "block" if config.security_level in {"strict", "paranoid"} else "ask"
+    decision = (
+        "block" if config.security_level in {"strict", "paranoid"} or not parse_result.source_hash_complete else "ask"
+    )
     package = _incomplete_lockfile_package_result(
         target=target,
         parse_result=parse_result,
@@ -2393,6 +2422,7 @@ def _finalize_incomplete_lockfile_evaluation(
         {
             "lockfile_hash": parse_result.source_hash,
             "lockfile_parser_version": parse_result.parser_version,
+            **({"lockfile_hash_complete": False} if not parse_result.source_hash_complete else {}),
         }
     )
     evaluation = _finalize_evaluation(
@@ -2411,14 +2441,21 @@ def _incomplete_lockfile_package_result(
     decision: str = "ask",
 ) -> dict[str, object]:
     error_reason = parse_result.error_reason or "parse_error"
+    input_admission_failure = parse_result.source_byte_limit is not None
+    message = (
+        f"Guard could not read the package input within its resource budget ({error_reason}), "
+        "so this package request is paused. Reduce the input size or retry when the workspace is responsive."
+        if input_admission_failure
+        else (
+            f"Guard could not completely parse the existing {parse_result.format} lockfile "
+            f"({error_reason}), so this package request is paused. Repair the lockfile, then retry."
+        )
+    )
     package = _heuristic_package_result(
         target=target,
         decision=decision,
         code="lockfile_parse_incomplete",
-        message=(
-            f"Guard could not completely parse the existing {parse_result.format} lockfile "
-            f"({error_reason}), so this package request is paused. Repair the lockfile, then retry."
-        ),
+        message=message,
         severity="high",
     )
     metadata = incomplete_lockfile_metadata(parse_result)
@@ -2507,14 +2544,14 @@ def _lockfile_context(workspace_dir: Path | None, artifact: GuardArtifact) -> di
     if not isinstance(lockfile_paths, list) or not lockfile_paths:
         return None
     lockfile_path = resolve_path_within_workspace(workspace_dir, str(lockfile_paths[0]))
-    if lockfile_path is None or not lockfile_path.exists():
+    if lockfile_path is None:
         return None
     if lockfile_path.name.lower() == "bun.lockb":
         return None
-    lockfile_text = read_text_within_workspace(workspace_dir, str(lockfile_paths[0]))
-    if lockfile_text is None:
+    lockfile_source = read_bytes_within_workspace(workspace_dir, str(lockfile_paths[0]))
+    if lockfile_source is None:
         return None
-    parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_text)
+    parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
     if not parse_result.complete:
         return {
             "dependencyCount": 0,
@@ -2561,7 +2598,7 @@ def _transitive_lockfile_results(
         all_direct_target_names.update(candidate_names)
     for relative_path in lockfile_paths:
         lockfile_path = resolve_path_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_path is None or not lockfile_path.exists():
+        if lockfile_path is None:
             continue
         if lockfile_path.name.lower() == "bun.lockb":
             continue
@@ -2571,11 +2608,11 @@ def _transitive_lockfile_results(
             if lockfile_ecosystem is not None
             else all_direct_target_names
         )
-        lockfile_text = read_text_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_text is None:
+        lockfile_source = read_bytes_within_workspace(workspace_dir, str(relative_path))
+        if lockfile_source is None:
             continue
         dependency_entries: list[tuple[str, str, str, bool]] = []
-        parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_text)
+        parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
         if not parse_result.complete:
             results.append(
                 _incomplete_lockfile_package_result(
@@ -2732,29 +2769,12 @@ def _is_bundle_stale(bundle_response: SupplyChainBundleResponse, *, now_timestam
 
 def _bundle_package_index(
     bundle_response: SupplyChainBundleResponse,
-) -> dict[CanonicalPackageIdentity, SupplyChainBundlePackage]:
-    index: dict[CanonicalPackageIdentity, SupplyChainBundlePackage] = {}
-    for package in bundle_response.bundle.packages:
-        try:
-            identity = canonical_package_identity(
-                ecosystem=package.ecosystem,
-                namespace=package.namespace,
-                name=package.name,
-                version=package.version,
-            )
-        except PackageIdentityError as error:
-            raise SupplyChainBundleMalformedError(f"Invalid package identity: {error}") from error
-        existing = index.get(identity)
-        if existing is not None and existing != package:
-            raise SupplyChainBundleMalformedError(
-                f"Conflicting package records for canonical identity {identity.display}"
-            )
-        index.setdefault(identity, package)
-    return index
+) -> Mapping[CanonicalPackageIdentity, SupplyChainBundlePackage]:
+    return bundle_response.bundle.package_index.exact
 
 
 def _bundle_package_from_index(
-    index: dict[CanonicalPackageIdentity, SupplyChainBundlePackage],
+    index: Mapping[CanonicalPackageIdentity, SupplyChainBundlePackage],
     *,
     package_name: str,
     package_version: str,
@@ -3103,7 +3123,7 @@ def _bun_lockfile_binary_fallback_packages(
             for relative_path in lockfile_paths
             if Path(str(relative_path)).name == "bun.lockb"
             and (resolved := resolve_path_within_workspace(workspace_dir, str(relative_path))) is not None
-            and resolved.exists()
+            and path_exists_within_workspace(workspace_dir, str(relative_path))
         ),
         None,
     )
@@ -3441,9 +3461,7 @@ def _go_replace_result(
         (
             str(path)
             for path in manifest_paths
-            if Path(str(path)).name == "go.mod"
-            and (resolved := resolve_path_within_workspace(workspace_dir, str(path))) is not None
-            and resolved.exists()
+            if Path(str(path)).name == "go.mod" and path_exists_within_workspace(workspace_dir, str(path))
         ),
         None,
     )
@@ -3715,16 +3733,17 @@ def _lockfile_dependency_versions(
     )
     for relative_path in lockfile_paths:
         lockfile_path = resolve_path_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_path is None or not lockfile_path.exists():
+        if lockfile_path is None:
             continue
         if lockfile_path.name.lower() == "bun.lockb":
             continue
-        lockfile_text = read_text_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_text is None:
+        lockfile_source = read_bytes_within_workspace(workspace_dir, str(relative_path))
+        if lockfile_source is None:
             continue
-        parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_text)
+        parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
         if not parse_result.complete:
             continue
+        lockfile_text = lockfile_source.decode("utf-8")
         if lockfile_path.name == "package-lock.json":
             versions.update(_package_lock_target_versions_from_entries(parse_result, targets))
             continue
@@ -3737,23 +3756,24 @@ def _lockfile_dependency_versions(
         if lockfile_path.name == "bun.lock":
             versions.update(_bun_lock_target_versions(parse_result, targets))
             continue
-        if lockfile_path.name == "Cargo.lock":
-            versions.update(_cargo_lock_target_versions(lockfile_text, targets))
+        if lockfile_path.name in {"Cargo.lock", "composer.lock", "Gemfile.lock"}:
+            versions.update(_target_versions_from_direct_map(targets, parse_result.dependency_map()))
             continue
-        if lockfile_path.name == "composer.lock":
-            versions.update(_composer_lock_target_versions(lockfile_text, targets))
-            continue
-        if lockfile_path.name == "Gemfile.lock":
-            versions.update(_gemfile_lock_target_versions(lockfile_text, targets))
-            continue
-        if lockfile_path.name == "poetry.lock":
-            versions.update(_poetry_lock_target_versions(lockfile_text, targets, python_manifest_names))
-            continue
-        if lockfile_path.name == "uv.lock":
-            versions.update(_uv_lock_target_versions(lockfile_text, targets, python_manifest_names))
-            continue
-        if lockfile_path.name == "Pipfile.lock":
-            versions.update(_pipfile_lock_target_versions(lockfile_text, targets, python_manifest_names))
+        if lockfile_path.name in {"poetry.lock", "uv.lock", "Pipfile.lock"}:
+            direct_versions: dict[str, str] = {}
+            for raw_name, raw_version in parse_result.direct_version_candidates:
+                name = _optional_string(raw_name)
+                version = (
+                    _python_lockfile_version(raw_version)
+                    if lockfile_path.name == "Pipfile.lock"
+                    else _optional_string(raw_version)
+                )
+                if name is None or version is None:
+                    continue
+                normalized_name = _normalize_package_name("pypi", name)
+                if normalized_name in python_manifest_names:
+                    direct_versions[normalized_name] = version
+            versions.update(_target_versions_from_direct_map(targets, direct_versions))
     manifest_versions = _manifest_dependency_versions(workspace_dir, artifact, targets)
     for target_key, version in manifest_versions.items():
         versions.setdefault(target_key, version)
@@ -3775,7 +3795,7 @@ def _manifest_direct_dependency_names(
     direct_names: set[str] = set()
     for relative_path in manifest_paths:
         manifest_path = resolve_path_within_workspace(workspace_dir, str(relative_path))
-        if manifest_path is None or not manifest_path.exists():
+        if manifest_path is None:
             continue
         manifest_text = read_text_within_workspace(workspace_dir, str(relative_path))
         if manifest_text is None:
@@ -3805,7 +3825,7 @@ def _manifest_dependency_versions(
     versions: dict[tuple[str, str | None], str] = {}
     for relative_path in manifest_paths:
         manifest_path = resolve_path_within_workspace(workspace_dir, str(relative_path))
-        if manifest_path is None or not manifest_path.exists():
+        if manifest_path is None:
             continue
         manifest_text = read_text_within_workspace(workspace_dir, str(relative_path))
         if manifest_text is None:
@@ -3874,8 +3894,10 @@ def _package_lock_target_versions_from_entries(
     return versions
 
 
-def _package_lock_entries(text: str, *, deadline: float | None = None) -> list[tuple[str, str, str, bool]]:
-    payload = json.loads(text or "{}")
+def _package_lock_entries(
+    text: str, *, deadline: float | None = None, document: dict[str, object] | None = None
+) -> list[tuple[str, str, str, bool]]:
+    payload = json.loads(text or "{}") if document is None else document
     entries: list[tuple[str, str, str, bool]] = []
     packages = payload.get("packages")
     if isinstance(packages, dict):
@@ -4405,7 +4427,37 @@ def _pypi_tilde_specifier(value: str) -> str | None:
 
 
 def _bundle_package_versions(bundle_response: SupplyChainBundleResponse, target: dict[str, object]) -> list[str]:
-    return [item.version for item in bundle_response.bundle.packages if _bundle_package_name_matches(item, target)]
+    return [item.version for item in _bundle_packages_for_target(bundle_response, target)]
+
+
+def _bundle_packages_for_target(
+    bundle_response: SupplyChainBundleResponse, target: dict[str, object]
+) -> tuple[SupplyChainBundlePackage, ...]:
+    index = bundle_response.bundle.package_index
+    target_ecosystem = _optional_string(target.get("ecosystem"))
+    ecosystems = index.ecosystems if target_ecosystem is None else (target_ecosystem,)
+    matches: list[SupplyChainBundlePackage] = []
+    for ecosystem in ecosystems:
+        try:
+            identity = canonical_package_identity(
+                ecosystem=ecosystem,
+                namespace=_optional_string(target.get("namespace")),
+                name=str(target["name"]),
+                version="*",
+            )
+        except PackageIdentityError:
+            continue
+        matches.extend(index.by_name.get(identity, ()))
+    if target_ecosystem is None and len(ecosystems) > 1:
+        # Legacy ecosystem-less callers use signed order across ecosystems.
+        matches.sort(
+            key=lambda package: index.positions[
+                canonical_package_identity(
+                    ecosystem=package.ecosystem, namespace=package.namespace, name=package.name, version=package.version
+                )
+            ]
+        )
+    return tuple(matches)
 
 
 def _bundle_package_name_matches(package: SupplyChainBundlePackage, target: dict[str, object]) -> bool:
@@ -4438,9 +4490,7 @@ def _recommended_fix_allow_package_result(
     resolved_version: str,
     bundle_response: SupplyChainBundleResponse,
 ) -> dict[str, object] | None:
-    for package in bundle_response.bundle.packages:
-        if not _bundle_package_name_matches(package, target):
-            continue
+    for package in _bundle_packages_for_target(bundle_response, target):
         if package.version == resolved_version:
             continue
         if package.recommended_fix_version != resolved_version:
@@ -4536,21 +4586,17 @@ def _lockfile_parse_warning_result(
     target_ecosystem = _optional_string(target.get("ecosystem")) or "npm"
     for relative_path in lockfile_paths:
         lockfile_path = resolve_path_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_path is None or not lockfile_path.exists():
+        if lockfile_path is None:
             continue
         if lockfile_path.name.lower() == "bun.lockb":
             continue
         lockfile_ecosystem = _lockfile_ecosystem(lockfile_path.name)
         if lockfile_ecosystem is not None and lockfile_ecosystem != target_ecosystem:
             continue
-        lockfile_text = read_text_within_workspace(workspace_dir, str(relative_path))
-        if lockfile_text is None:
+        lockfile_source = read_bytes_within_workspace(workspace_dir, str(relative_path))
+        if lockfile_source is None:
             continue
-        parse_result = _safe_dependency_map_result_for_path(
-            lockfile_path.name,
-            lockfile_text,
-            deadline=time.monotonic() + 0.2,
-        )
+        parse_result = _parse_lockfile_text_result(lockfile_path.name, lockfile_source)
         if parse_result.complete:
             continue
         return _incomplete_lockfile_package_result(
@@ -4647,12 +4693,25 @@ def _bundle_package(
     target: dict[str, object],
     package_version: str,
 ) -> SupplyChainBundlePackage | None:
-    for item in bundle_response.bundle.packages:
-        if not _bundle_package_name_matches(item, target):
+    index = bundle_response.bundle.package_index
+    target_ecosystem = _optional_string(target.get("ecosystem"))
+    selected: tuple[int, SupplyChainBundlePackage] | None = None
+    for ecosystem in index.ecosystems if target_ecosystem is None else (target_ecosystem,):
+        try:
+            identity = canonical_package_identity(
+                ecosystem=ecosystem,
+                namespace=_optional_string(target.get("namespace")),
+                name=str(target["name"]),
+                version=package_version,
+            )
+        except PackageIdentityError:
             continue
-        if item.version == package_version:
-            return item
-    return None
+        item = index.exact.get(identity)
+        if item is not None and item.version == package_version:
+            position = index.positions[identity]
+            if selected is None or position < selected[0]:
+                selected = (position, item)
+    return selected[1] if selected is not None else None
 
 
 def _severity_rank_value(value: str) -> int:

@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
+import platform
+import sqlite3
 import stat
+from collections import OrderedDict
+from contextlib import closing
+from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from threading import Condition
 from typing import cast
@@ -16,6 +24,23 @@ from .native_policy_snapshot_constants import (
 from .native_policy_snapshot_policy import _merge_effective_native_policies, effective_native_policy_v3
 
 
+@dataclass(frozen=True)
+class _CapturedPolicyInput:
+    identity: object
+    # None bypasses caching for an input above the capture limit. Ordinary
+    # config loading retains its existing behavior for those larger files.
+    content: bytes | None
+
+
+def _captured_config_reader(path: Path, *, inputs: dict[Path, _CapturedPolicyInput]) -> dict[str, object]:
+    from .config import tomllib
+
+    content = inputs[path].content
+    if content is None:
+        raise ValueError("uncaptured policy input")
+    return cast(dict[str, object], tomllib.loads(content.decode("utf-8")))
+
+
 class NativePolicySnapshotPublisherInputs:
     """Mixin containing filesystem observation outside synchronous hooks."""
 
@@ -25,6 +50,9 @@ class NativePolicySnapshotPublisherInputs:
     _workspace_paths: set[Path]  # pyright: ignore[reportUninitializedInstanceVariable]
     _published_policy_fingerprint: tuple[str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _observed_policy_fingerprint: tuple[str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    _compiled_workspace_policies: OrderedDict[Path | None, tuple[object, dict[str, object]]]  # pyright: ignore[reportUninitializedInstanceVariable]
+    _database_policy_fingerprint: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    _cached_managed_identity: tuple[str, str | None, str | None, object]  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def _current_input_fingerprint(
         self,
@@ -178,14 +206,143 @@ class NativePolicySnapshotPublisherInputs:
         """Build the native snapshot input off the synchronous hook path."""
 
         from .config import load_guard_config
+        from .mdm.policy import _cache_path, load_managed_policy
 
         with self._condition:
             workspaces = tuple(sorted(self._workspace_paths, key=str))
-        configs = [load_guard_config(self.guard_home)]
-        configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
-        return _merge_effective_native_policies(
-            tuple(effective_native_policy_v3(config) | {"mode": config.mode} for config in configs)
+        # Verify machine authority once per compilation pass, including HKLM on
+        # Windows. Sharing this value does not cache a trust decision across
+        # reconciliation passes or cause one cache write per workspace.
+        managed = load_managed_policy(write_cache=False)
+        managed_cache_path = _cache_path(platform.system())
+        managed_identity = (
+            managed.status,
+            managed.policy.content_hash if managed.policy is not None else None,
+            managed.reason_code,
+            self._capture_policy_input(managed_cache_path).identity,
         )
+        if managed.policy is not None and managed_identity != getattr(self, "_cached_managed_identity", None):
+            # Retain the loader's durable last-known policy behavior, without
+            # rewriting identical cache files on every reconciliation pass.
+            managed = load_managed_policy()
+            self._cached_managed_identity = (
+                managed.status,
+                managed.policy.content_hash if managed.policy is not None else None,
+                managed.reason_code,
+                self._capture_policy_input(managed_cache_path).identity,
+            )
+        home_path = self.guard_home / "config.toml"
+        home_input = self._capture_policy_input(home_path)
+        common = (
+            home_input.identity,
+            managed.status,
+            managed.policy.content_hash if managed.policy is not None else None,
+            managed.reason_code,
+        )
+        if not hasattr(self, "_compiled_workspace_policies"):
+            self._compiled_workspace_policies = OrderedDict()
+        cache = self._compiled_workspace_policies
+        policies: list[dict[str, object]] = []
+        for workspace in (None, *workspaces):
+            captured = {home_path: home_input}
+            if workspace is not None:
+                captured.update(
+                    (workspace / name, self._capture_policy_input(workspace / name))
+                    for name in (".ai-plugin-scanner-guard.toml", ".hol-guard.toml")
+                )
+            identity = (common, tuple((path, value.identity) for path, value in captured.items()))
+            cacheable = all(value.content is not None for value in captured.values())
+            cached = cache.get(workspace)
+            if not cacheable or cached is None or cached[0] != identity:
+                if cached is not None:
+                    # Periodic reconciliation may discover a change with no
+                    # file notification (for example HKLM). Withdraw authority
+                    # before rebuilding that scope, just as the watcher does.
+                    with self._condition:
+                        self._acked = False
+                        self._condition.notify_all()
+                config = load_guard_config(
+                    self.guard_home,
+                    workspace=workspace,
+                    managed_policy_state=managed,
+                    config_reader=partial(_captured_config_reader, inputs=captured) if cacheable else None,
+                )
+                policy = effective_native_policy_v3(config) | {"mode": config.mode}
+                if cacheable:
+                    cache[workspace] = (identity, policy)
+                else:
+                    cache.pop(workspace, None)
+            else:
+                policy = cached[1]
+            if cacheable:
+                cache.move_to_end(workspace)
+            policies.append(policy)
+        # Compiled entries are expendable; evicting one only requires rebuilding
+        # it next pass. Registered active overlays are never evicted.
+        while len(cache) > 1_025:
+            cache.popitem(last=False)
+        return _merge_effective_native_policies(tuple(policies))
+
+    @staticmethod
+    def _capture_policy_input(path: Path) -> _CapturedPolicyInput:
+        try:
+            entry = path.lstat()
+            target = path.stat()
+            if not stat.S_ISREG(target.st_mode):
+                return _CapturedPolicyInput(("not-file", target.st_mode), b"")
+            descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0))
+            with os.fdopen(descriptor, "rb") as handle:
+                target = os.fstat(handle.fileno())
+                if not stat.S_ISREG(target.st_mode):
+                    return _CapturedPolicyInput(("not-file", target.st_mode), b"")
+                content = handle.read(1024 * 1024 + 1)
+        except OSError:
+            # Preserve _read_toml's missing/inaccessible-file semantics. A later
+            # successful read has a different content identity and is rebuilt.
+            return _CapturedPolicyInput("unavailable", b"")
+        metadata_identity = tuple(
+            value
+            for metadata in (entry, target)
+            for value in (
+                metadata.st_dev,
+                metadata.st_ino,
+                metadata.st_mode,
+                metadata.st_uid,
+                metadata.st_gid,
+                metadata.st_size,
+                metadata.st_mtime_ns,
+                metadata.st_ctime_ns,
+            )
+        )
+        if len(content) > 1024 * 1024:
+            return _CapturedPolicyInput((metadata_identity, "uncached-large-input"), None)
+        # Hash and parse these same captured bytes. Metadata-only caching is
+        # insufficient on Windows, where ctime may represent creation time.
+        return _CapturedPolicyInput((metadata_identity, hashlib.sha256(content).hexdigest()), content)
+
+    def _database_policy_marker(self) -> str:
+        """Read the publication authority domain through SQLite's WAL view.
+
+        Native effective-policy projection currently consumes TOML/MDM, not
+        receipt or activity tables. The integrity marker is the DB dependency
+        of publication's signing material. Add exact revision keys here when a
+        future snapshot schema begins consuming another database policy domain.
+        """
+
+        path = (self.guard_home / "guard.db").absolute()
+        try:
+            with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.05)) as connection:
+                row = connection.execute(
+                    "select substr(cast(payload_json as blob), 1, 65537) "
+                    "from sync_state where state_key = 'policy_integrity'"
+                ).fetchone()
+            if row is None:
+                return "absent"
+            if not isinstance(row[0], bytes) or len(row[0]) > 65536:
+                return "invalid"
+            return hashlib.sha256(row[0]).hexdigest()
+        except (OSError, sqlite3.Error, ValueError):
+            return "unavailable"
 
     @staticmethod
     def _external_policy_paths() -> tuple[Path, ...]:
@@ -203,17 +360,34 @@ class NativePolicySnapshotPublisherInputs:
         """Compare effective policy in the publisher thread, never in hooks."""
 
         force_republish = False
+        if not changed_paths:
+            marker = self._database_policy_marker()
+            previous_marker = self._database_policy_fingerprint
+            self._database_policy_fingerprint = marker
+            force_republish = previous_marker is not None and previous_marker != marker
+            if force_republish:
+                with self._condition:
+                    self._acked = False
+                    self._condition.notify_all()
         if changed_paths:
             database_paths = {
                 str(self.guard_home / name) for name in ("guard.db", "guard.db-wal", "guard.db-shm", "guard.db-journal")
             }
             database_only_change = all(path in database_paths for path in changed_paths)
+            if database_only_change:
+                marker = self._database_policy_marker()
+                previous_marker = getattr(self, "_database_policy_fingerprint", None)
+                self._database_policy_fingerprint = marker
+                if previous_marker == marker:
+                    return False
+                force_republish = previous_marker is not None
             if not database_only_change:
                 # Guard config, workspace overrides, MDM policy files, and
                 # verifier state are effective-input boundaries. Republish before the
                 # resident is used even when this Python projection cannot
                 # yet express a workspace-specific native policy.
                 force_republish = True
+            if force_republish:
                 # Revoke the old snapshot before potentially slow compilation.
                 with self._condition:
                     self._acked = False

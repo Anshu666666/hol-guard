@@ -314,9 +314,9 @@ class HookWorkerNativeMixin:
         deadline: float | None,
     ) -> dict[str, object]:
         policy_snapshot = self._native_policy_snapshot(workspace, deadline=deadline)
-        recording_only = hook_review_is_recording_only(guard_home=guard_home, workspace=workspace) or (
+        recording_only = (
             policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
-        )
+        ) or hook_review_is_recording_only(guard_home=guard_home, workspace=workspace)
         edge = self._review_raw_hook_native(
             payload=payload,
             harness=harness,

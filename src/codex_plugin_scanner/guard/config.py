@@ -10,7 +10,7 @@ import sqlite3
 import sys
 import tempfile
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -513,12 +513,15 @@ def load_guard_config(
     workspace: Path | None = None,
     *,
     managed_policy_state: ManagedPolicyState | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> GuardConfig:
     """Load Guard config from home and workspace overrides."""
 
     guard_home.mkdir(parents=True, exist_ok=True)
-    home_config = _read_toml(guard_home / "config.toml")
-    workspace_config = _load_workspace_guard_config(workspace)
+    home_config = (
+        _read_toml(guard_home / "config.toml") if config_reader is None else config_reader(guard_home / "config.toml")
+    )
+    workspace_config = _load_workspace_guard_config(workspace, config_reader=config_reader)
 
     merged = _merge_config_payload(home_config, workspace_config)
     managed_state = managed_policy_state or load_managed_policy()
@@ -1388,12 +1391,15 @@ def _raise_when_backup_deadline_elapsed(deadline: float) -> None:
         raise TimeoutError("guard.db migration timed out")
 
 
-def _load_workspace_guard_config(workspace: Path | None) -> dict[str, object]:
+def _load_workspace_guard_config(
+    workspace: Path | None, *, config_reader: Callable[[Path], dict[str, object]] | None = None
+) -> dict[str, object]:
     if workspace is None:
         return {}
     merged: dict[str, object] = {}
     for filename in WORKSPACE_CONFIG_FILENAMES:
-        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(_read_toml(workspace / filename)))
+        payload = _read_toml(workspace / filename) if config_reader is None else config_reader(workspace / filename)
+        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(payload))
     return merged
 
 

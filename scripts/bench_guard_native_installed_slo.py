@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure installed adapter-to-decision native runtime SLOs.
+"""Measure daemon ingress and registered installed-launcher native SLOs.
 
 Synthetic requests cross the daemon adapter boundary; output is aggregate-only.
 """
@@ -52,6 +52,7 @@ from scripts.native_slo_capacity import (  # noqa: E402, F401
     measure_capacity,
 )
 from scripts.native_slo_contract import SIZE_CLASSES  # noqa: E402
+from scripts.native_slo_launcher import measure_registered_launcher  # noqa: E402
 from scripts.native_slo_reporting import (  # noqa: E402
     SloMeasurements,
     safe_failure_rate,
@@ -217,6 +218,7 @@ def _measure_slo(
     recovery_iterations: int,
     readiness_samples: int,
     include_capacity: bool,
+    launcher_iterations: int = 0,
 ) -> SloMeasurements:
     # Cold probes stop the session's resident before each one-shot call. Keep
     # them separate so this lifecycle exercise does not consume the bounded
@@ -235,6 +237,7 @@ def _measure_slo(
         )
         capacity = measure_capacity(session, routes, include_capacity=include_capacity)
         readiness = [session.readiness_ms]
+        launcher = measure_registered_launcher(session, iterations=launcher_iterations) if launcher_iterations else None
     if readiness_samples > 1:
         readiness.extend(_readiness_samples(runtime, readiness_samples - 1))
     rss_peak = max(capacity.rss_peak, process_rss_bytes())
@@ -250,6 +253,7 @@ def _measure_slo(
         readiness=readiness,
         rss_baseline=capacity.rss_baseline,
         rss_peak=rss_peak,
+        installed_launcher=launcher,
     )
 
 
@@ -261,6 +265,7 @@ def run_slo(
     recovery_iterations: int,
     readiness_samples: int,
     include_capacity: bool,
+    launcher_iterations: int = 0,
 ) -> dict[str, object]:
     _clear_proof_overrides()
     runtime_summary = _runtime_summary(runtime)
@@ -274,6 +279,7 @@ def run_slo(
         recovery_iterations=recovery_iterations,
         readiness_samples=readiness_samples,
         include_capacity=include_capacity,
+        launcher_iterations=launcher_iterations,
     )
     summary = summarize_measurements(measurements)
     gates = slo_gates(
@@ -301,6 +307,7 @@ def main() -> int:
     parser.add_argument("--cold-iterations", type=int, default=_DEFAULT_COLD_ITERATIONS)
     parser.add_argument("--recovery-iterations", type=int, default=_DEFAULT_RECOVERY_ITERATIONS)
     parser.add_argument("--readiness-samples", type=int, default=3)
+    parser.add_argument("--launcher-iterations", type=int, default=2)
     parser.add_argument("--skip-capacity", action="store_true")
     parser.add_argument("--enforce", action="store_true")
     parser.add_argument("--json", type=Path)
@@ -309,6 +316,8 @@ def main() -> int:
         parser.error("iteration counts must be positive")
     if not 1 <= args.readiness_samples <= _MAX_READINESS_SAMPLES:
         parser.error("readiness samples must be between one and eight")
+    if args.launcher_iterations < 0:
+        parser.error("launcher iterations must be non-negative; zero explicitly skips launcher coverage")
     runtime = args.runtime.expanduser().resolve(strict=True)
     _require(runtime.is_file() and not args.runtime.is_symlink(), "runtime must be a regular non-symlink file")
     result = run_slo(
@@ -318,6 +327,7 @@ def main() -> int:
         recovery_iterations=args.recovery_iterations,
         readiness_samples=args.readiness_samples,
         include_capacity=not args.skip_capacity,
+        launcher_iterations=args.launcher_iterations,
     )
     rendered = json.dumps(result, indent=2, sort_keys=True)
     print(rendered)

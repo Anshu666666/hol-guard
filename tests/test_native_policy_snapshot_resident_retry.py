@@ -329,7 +329,6 @@ def test_invalid_policy_observation_then_valid_recovery_rearms_publication(
         poll_interval_seconds=0.05,
     )
     policy = {"mode": "enforce", "blocked_capabilities": ["network"]}
-    database_change = {str(publisher.guard_home / "guard.db-wal")}
     observations: list[object] = [OSError("invalid policy"), OSError("invalid policy"), policy, policy]
 
     def observe_policy() -> dict[str, object]:
@@ -340,14 +339,14 @@ def test_invalid_policy_observation_then_valid_recovery_rearms_publication(
 
     monkeypatch.setattr(publisher, "_compiled_effective_policy", observe_policy)
     try:
-        assert publisher._policy_input_changed(database_change)
-        assert not publisher._policy_input_changed(database_change)
-        assert publisher._policy_input_changed(database_change)
-        assert not publisher._policy_input_changed(database_change)
+        assert publisher._policy_input_changed()
+        assert not publisher._policy_input_changed()
+        assert publisher._policy_input_changed()
+        assert not publisher._policy_input_changed()
 
         mode_only_policy = {**policy, "mode": "observe"}
         monkeypatch.setattr(publisher, "_compiled_effective_policy", lambda: mode_only_policy)
-        assert publisher._policy_input_changed(database_change)
-        assert not publisher._policy_input_changed(database_change)
+        assert publisher._policy_input_changed()
+        assert not publisher._policy_input_changed()
     finally:
         publisher.close()

@@ -35,6 +35,7 @@ class SloMeasurements:
     readiness: list[float]
     rss_baseline: int
     rss_peak: int
+    installed_launcher: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -234,7 +235,16 @@ def slo_result(
 ) -> dict[str, object]:
     result: dict[str, object] = {
         "schema": SLO_SCHEMA,
-        "scope": "installed_adapter_to_decision",
+        "scope": "daemon_ingress_and_registered_launcher",
+        "evidence_class": "smoke",
+        "qualification_complete": False,
+        "timing_boundaries": {
+            "KERNEL": "not_measured",
+            "NATIVE_CLIENT": "cold_native_process",
+            "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+            "INSTALLED_LAUNCHER": "registered_argv" if measurements.installed_launcher else "not_measured",
+        },
+        "installed_launcher": measurements.installed_launcher,
         "runtime": runtime_summary,
         "corpus": {
             "harnesses": len({harness for harness, _ in routes}),
@@ -267,7 +277,14 @@ def slo_result(
         "errors_16": measurements.errors_16,
         "errors_64": measurements.errors_64,
         "latency": {
+            "boundary": "DAEMON_INGRESS",
             "warm_all_harnesses": summarize(summary.warm_values),
+            "warm_by_route": {
+                f"{harness}.{event}": summarize(
+                    [item.latency_ms for item in measurements.warm if (item.harness, item.event) == (harness, event)]
+                )
+                for harness, event in routes
+            },
             "warm_by_event": {event: summarize(values) for event, values in summary.event_values.items() if values},
             "size_classes": {size_class: summarize(values) for size_class, values in summary.size_values.items()},
             "cold_native_oneshot": summarize(measurements.cold),

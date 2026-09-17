@@ -6,7 +6,7 @@ import json
 import os
 import re
 import stat
-from collections.abc import Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -15,6 +15,7 @@ from typing import cast
 from uuid import uuid4
 
 from ..action_lattice import is_guard_action
+from ..durable_io import fsync_directory
 from ..native_decision_receipt import (
     NATIVE_HOOK_DECISION_RECEIPT_SCHEMA,
     validate_native_decision_receipt,
@@ -264,12 +265,18 @@ def _validated_sidecar_preview(value: object) -> str | None:
     return stripped
 
 
-def _read_preview_sidecar(path: Path) -> dict[str, str]:
+def _read_preview_sidecar(path: Path, *, max_bytes: int = 16 * 1024 * 1024) -> dict[str, str]:
     sidecar = _preview_sidecar_path(path)
     try:
-        raw_lines = sidecar.read_bytes().splitlines()
+        descriptor = _open_journal(sidecar, os.O_RDONLY)
     except FileNotFoundError:
         return {}
+    try:
+        if os.fstat(descriptor).st_size > max_bytes:
+            raise OSError("evidence preview journal exceeds the configured size limit")
+        raw_lines = os.read(descriptor, max_bytes + 1).splitlines()
+    finally:
+        os.close(descriptor)
     previews: dict[str, str] = {}
     for raw_line in raw_lines:
         try:
@@ -285,25 +292,46 @@ def _read_preview_sidecar(path: Path) -> dict[str, str]:
     return previews
 
 
-def _append_preview_sidecar(path: Path, record: _EvidenceRecord) -> None:
-    if not isinstance(record, _CommandActivityRecord):
-        return
-    preview = _validated_sidecar_preview(record.invocation_preview)
-    if preview is None:
-        return
+def _append_preview_sidecars(path: Path, records: Sequence[_EvidenceRecord], *, max_bytes: int) -> int | None:
+    lines: list[bytes] = []
+    for record in records:
+        if not isinstance(record, _CommandActivityRecord):
+            continue
+        preview = _validated_sidecar_preview(record.invocation_preview)
+        if preview is not None:
+            lines.append(
+                json.dumps(
+                    {"record_id": record.record_id, "invocation_preview": preview},
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ).encode("utf-8")
+                + b"\n"
+            )
+    if not lines:
+        return None
     sidecar = _preview_sidecar_path(path)
-    payload = (
-        json.dumps(
-            {"record_id": record.record_id, "invocation_preview": preview},
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
-        + b"\n"
-    )
+    payload = b"".join(lines)
     descriptor = _open_journal(sidecar, os.O_APPEND | os.O_CREAT | os.O_WRONLY)
+    original_size = os.fstat(descriptor).st_size
     try:
+        if original_size + len(payload) > max_bytes:
+            raise OSError("evidence preview journal exceeds the configured size limit")
         _apply_private_file_mode(descriptor)
         _write_all(descriptor, payload)
+        os.fsync(descriptor)
+    except OSError:
+        os.ftruncate(descriptor, original_size)
+        os.fsync(descriptor)
+        raise
+    finally:
+        os.close(descriptor)
+    return original_size
+
+
+def _rollback_preview_sidecars(path: Path, original_size: int) -> None:
+    descriptor = _open_journal(_preview_sidecar_path(path), os.O_WRONLY)
+    try:
+        os.ftruncate(descriptor, original_size)
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
@@ -360,17 +388,39 @@ def _apply_private_file_mode(descriptor: int) -> None:
 
 
 def append_journal(path: Path, record: _EvidenceRecord) -> None:
+    append_journal_batch(path, (record,))
+
+
+def append_journal_batch(path: Path, records: Sequence[_EvidenceRecord], *, max_bytes: int = 16 * 1024 * 1024) -> None:
+    """Durably append a bounded group with one aggregate-journal flush.
+
+    Partial appends roll back to the previous length. Preview data precedes
+    aggregate durability so a recovered aggregate can retain its local display;
+    orphan previews after process death have no authority and are pruned by the
+    next checkpoint. A successful return follows both files' flushes.
+    """
+
+    if not records:
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     with _journal_lock(path):
         descriptor = _open_journal(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY)
         original_size = os.fstat(descriptor).st_size
+        original_preview_size: int | None = None
         try:
+            payload = b"".join(record.serialized() for record in records)
+            if original_size + len(payload) > max_bytes:
+                raise OSError("evidence journal exceeds the configured size limit")
             _apply_private_file_mode(descriptor)
-            _write_all(descriptor, record.serialized())
+            original_preview_size = _append_preview_sidecars(path, records, max_bytes=max_bytes)
+            _write_all(descriptor, payload)
             os.fsync(descriptor)
-            _append_preview_sidecar(path, record)
+            fsync_directory(path.parent)
         except OSError:
             os.ftruncate(descriptor, original_size)
+            os.fsync(descriptor)
+            if original_preview_size is not None:
+                _rollback_preview_sidecars(path, original_preview_size)
             raise
         finally:
             os.close(descriptor)
@@ -379,9 +429,21 @@ def append_journal(path: Path, record: _EvidenceRecord) -> None:
 def rewrite_journal(path: Path, *, remove_record_id: str, max_bytes: int) -> int:
     """Remove one completed record without erasing another writer's records."""
 
+    return checkpoint_journal(path, remove_record_ids={remove_record_id}, max_bytes=max_bytes)
+
+
+def checkpoint_journal(path: Path, *, remove_record_ids: Collection[str], max_bytes: int) -> int:
+    """Remove a committed batch with one bounded read and atomic replacement.
+
+    A crash before replacement replays committed identities. A crash after
+    replacement can leave only orphan preview entries; their identity join
+    cannot resurrect a completed aggregate record.
+    """
+
     with _journal_lock(path):
         records, invalid_records = _read_journal_records_locked(path, max_bytes=max_bytes)
-        remaining = tuple(record for record in records if record.record_id != remove_record_id)
+        removed = frozenset(remove_record_ids)
+        remaining = tuple(record for record in records if record.record_id not in removed)
         temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
         flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_CLOEXEC", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
@@ -395,6 +457,7 @@ def rewrite_journal(path: Path, *, remove_record_id: str, max_bytes: int) -> int
                 os.close(descriptor)
             os.replace(temporary, path)
             _rewrite_preview_sidecar(path, remaining)
+            fsync_directory(path.parent)
         finally:
             temporary.unlink(missing_ok=True)
     return invalid_records
@@ -475,6 +538,8 @@ __all__ = [
     "_NativeDecisionReceiptRecord",
     "_payload_has_command",
     "append_journal",
+    "append_journal_batch",
+    "checkpoint_journal",
     "recover_journal_records",
     "rewrite_journal",
 ]

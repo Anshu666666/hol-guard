@@ -23,6 +23,7 @@ else:  # pragma: no cover - runtime compatibility
 
 from .action_lattice import coerce_guard_action, normalize_guard_action
 from .approval_gate import ApprovalGateGrant, public_config, require_settings_write
+from .config_mutation import notify_native_policy_mutation, record_posture_change_if_needed
 from .config_preset_support import apply_named_posture_harness_policy
 from .guard_home_state import database_has_custom_extension_state
 from .mdm.contracts import ManagedPolicy, ManagedPolicyState
@@ -426,8 +427,6 @@ class GuardConfig:
     publisher_actions: dict[str, GuardAction] | None = None
     artifact_actions: dict[str, GuardAction] | None = None
     evidence_retain_days: int = 90
-    # Opt-in caps on retained detailed rows. None keeps the store defaults
-    # (250k each); power users can lower these to bound database growth.
     receipt_detail_limit: int | None = None
     guard_event_limit: int | None = None
     managed_policy_status: str = "absent"
@@ -757,19 +756,16 @@ def update_guard_settings(
         raise ValueError("Cloud sync requires a paid team plan.")
     _write_guard_config(guard_home / "config.toml", next_payload)
     updated = load_guard_config(guard_home)
-    explicit_choice = incoming_selected_posture and updated.protection_posture_explicit
-    if current_config.protection_posture != updated.protection_posture or (
-        explicit_choice and not current_config.protection_posture_explicit
-    ):
-        from .protection_events import record_posture_change
-
-        record_posture_change(
-            guard_home,
-            previous=current_config.protection_posture,
-            next_posture=updated.protection_posture,
-            source=event_source,
-            auto=event_source == "auto-revert",
-        )
+    notify_native_policy_mutation(guard_home)
+    record_posture_change_if_needed(
+        guard_home,
+        previous=current_config.protection_posture,
+        next_posture=updated.protection_posture,
+        previous_explicit=current_config.protection_posture_explicit,
+        next_explicit=updated.protection_posture_explicit,
+        selected=incoming_selected_posture,
+        event_source=event_source,
+    )
     return updated
 
 
@@ -791,7 +787,9 @@ def update_guard_update_channel(
     current = _read_toml(guard_home / "config.toml")
     current["update_channel"] = update_channel
     _write_guard_config(guard_home / "config.toml", current)
-    return load_guard_config(guard_home)
+    updated = load_guard_config(guard_home)
+    notify_native_policy_mutation(guard_home)
+    return updated
 
 
 @serialize_guard_settings
@@ -809,10 +807,22 @@ def reset_guard_settings(
         load_guard_config(guard_home).presentation_revision
     )
     _write_guard_config(guard_home / "config.toml", next_payload)
-    return load_guard_config(guard_home)
+    updated = load_guard_config(guard_home)
+    notify_native_policy_mutation(guard_home)
+    return updated
 
 
 def _coerce_editable_setting(key: str, value: object) -> object:
+    if key == "presentation_mode":
+        return coerce_presentation_mode_write(value)
+    if key == "presentation_mode_explicit":
+        if isinstance(value, bool):
+            return value
+        raise ValueError("presentation_mode_explicit must be true or false.")
+    if key == "presentation_schema_version":
+        if value == PRESENTATION_SCHEMA_VERSION:
+            return value
+        raise ValueError("Unsupported presentation schema version.")
     if key == "mode":
         if isinstance(value, str) and value in VALID_GUARD_MODES:
             return value

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from scripts import native_slo_darwin_resources as darwin
 from scripts.native_slo_windows_job_resources import WindowsJobCpuSnapshot
 
 _MAX_PROCESSES = 4096
@@ -39,6 +40,7 @@ class TreeResources:
     # Private collector state. Never emit process identifiers into public evidence.
     process_cpu: dict[tuple[int, float], float] = field(default_factory=dict, repr=False)
     cpu_includes_reaped: bool = False
+    darwin_cpu: darwin.DarwinTreeCpu | None = field(default=None, repr=False)
 
 
 def _stat(pid: int, proc: Path) -> tuple[int, int, int]:
@@ -61,12 +63,13 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
     """Collect available metrics separately; denied USS is not zero memory.
 
     PID and creation time are checked before and after enumeration. Linux CPU
-    includes live processes and their waited-for children via /proc. Elsewhere
-    the sampler retains CPU for observed processes that later exit; very short
-    descendants that exit between polls are explicitly outside that coverage.
+    includes live processes and their waited-for children via /proc. Darwin
+    uses independently checked Mach counters and transitive reaped-child usage.
+    Other platforms retain only CPU for processes observed before they exit.
     """
     psutil = _psutil()
     process_id = os.getpid() if pid is None else pid
+    darwin_failure: str | None = None
     for _ in range(2):
         try:
             root = psutil.Process(process_id)
@@ -74,6 +77,18 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
             unavailable: dict[str, str] = {}
             totals: dict[str, int | float] = {name: 0 for name in _METRICS}
             process_cpu: dict[tuple[int, float], float] = {}
+            darwin_cpu = None
+            darwin_before: dict[tuple[int, float], darwin.DarwinProcessCpu] = {}
+            darwin_timebase = (0, 0)
+            if darwin_failure is not None:
+                unavailable["cpu_seconds"] = darwin_failure
+            elif sys.platform == "darwin":
+                try:
+                    darwin_timebase = darwin.timebase()
+                    darwin_before = {identity: darwin.process_cpu(identity[0]) for identity in before}
+                except darwin.DarwinCpuUnavailableError as error:
+                    unavailable["cpu_seconds"] = error.code
+                    darwin_failure = error.code
 
             def read(
                 metric: str,
@@ -100,11 +115,12 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
                 else:
                     read("descriptors", process.num_fds)
                     unavailable["handles"] = "platform_unsupported"
-                try:
-                    cpu = process.cpu_times()
-                    process_cpu[identity] = cpu.user + cpu.system
-                except psutil.AccessDenied:
-                    unavailable["cpu_seconds"] = "permission_denied"
+                if sys.platform != "darwin":
+                    try:
+                        cpu = process.cpu_times()
+                        process_cpu[identity] = cpu.user + cpu.system
+                    except psutil.AccessDenied:
+                        unavailable["cpu_seconds"] = "permission_denied"
             cpu_includes_reaped = False
             if sys.platform.startswith("linux"):
                 # utime/stime + cutime/cstime include reaped children without
@@ -117,6 +133,19 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
                 totals["cpu_seconds"] = sum(process_cpu.values())
             if set(_inventory(psutil.Process(process_id))) != set(before):
                 continue
+            if sys.platform == "darwin" and "cpu_seconds" not in unavailable:
+                try:
+                    after = {identity: darwin.process_cpu(identity[0]) for identity in before}
+                    darwin_cpu = darwin.stable_tree_cpu(
+                        process_id, darwin_before, after, darwin_timebase, darwin.timebase()
+                    )
+                    if set(_inventory(psutil.Process(process_id))) != set(before):
+                        raise darwin.DarwinCpuUnavailableError("darwin_cpu_inventory_changed")
+                    totals["cpu_seconds"] = darwin_cpu.ticks * darwin_cpu.numer / (darwin_cpu.denom * 1_000_000_000)
+                    cpu_includes_reaped = True
+                except darwin.DarwinCpuUnavailableError as error:
+                    unavailable["cpu_seconds"] = error.code
+                    darwin_cpu = None
             return TreeResources(
                 rss_bytes=None if "rss_bytes" in unavailable else int(totals["rss_bytes"]),
                 private_bytes=None if "private_bytes" in unavailable else int(totals["private_bytes"]),
@@ -128,6 +157,7 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
                 unavailable=unavailable,
                 process_cpu=process_cpu,
                 cpu_includes_reaped=cpu_includes_reaped,
+                darwin_cpu=darwin_cpu,
             )
         except (psutil.NoSuchProcess, psutil.AccessDenied, OSError, ValueError, IndexError):
             continue
@@ -167,6 +197,8 @@ class ResourceSampler:
         self.unavailable: dict[str, Counter[str]] = {}
         self._observed_cpu: dict[tuple[int, float], float] = {}
         self._initial_cpu = 0.0
+        self._darwin_first: darwin.DarwinTreeCpu | None = None
+        self._darwin_last: darwin.DarwinTreeCpu | None = None
         self.started = 0.0
         self.stopped = 0.0
 
@@ -214,6 +246,15 @@ class ResourceSampler:
             if name == "cpu_seconds" and self._cpu_reader is not None:
                 continue
             self.unavailable.setdefault(name, Counter())[reason] += 1
+        if value.darwin_cpu is not None:
+            try:
+                if self._darwin_last is not None:
+                    value.darwin_cpu.seconds_since(self._darwin_last)
+                if self._darwin_first is None:
+                    self._darwin_first = value.darwin_cpu
+                self._darwin_last = value.darwin_cpu
+            except darwin.DarwinCpuUnavailableError as error:
+                self.unavailable.setdefault("cpu_seconds", Counter())[error.code] += 1
         if self._cpu_reader is not None:
             return
         for identity, cpu in value.process_cpu.items():
@@ -257,6 +298,18 @@ class ResourceSampler:
             and self.last is not None
             and self.last.cpu_includes_reaped
         )
+        darwin_complete = (
+            self._darwin_first is not None
+            and self._darwin_last is not None
+            and self.first is not None
+            and self.last is not None
+            and self.first.darwin_cpu is self._darwin_first
+            and self.last.darwin_cpu is self._darwin_last
+            and self.missing == 0
+            and "cpu_seconds" not in self.unavailable
+        )
+        if self._darwin_first is not None:
+            reaped = darwin_complete
         if job_complete:
             assert self._cpu_first is not None and self._cpu_last is not None
             # Subtract exact 100ns integers before conversion, even for a job
@@ -268,7 +321,12 @@ class ResourceSampler:
             and self.last is not None
             and "cpu_seconds" not in self.unavailable
         ):
-            if reaped and self.first.cpu_seconds is not None and self.last.cpu_seconds is not None:
+            if darwin_complete:
+                assert self._darwin_first is not None and self._darwin_last is not None
+                difference = self._darwin_last.seconds_since(self._darwin_first)
+            elif self._darwin_first is not None:
+                difference = -1.0  # Incomplete Mach accounting never falls back to guessed observed CPU.
+            elif reaped and self.first.cpu_seconds is not None and self.last.cpu_seconds is not None:
                 difference = self.last.cpu_seconds - self.first.cpu_seconds
             else:
                 difference = sum(self._observed_cpu.values()) - self._initial_cpu
@@ -283,6 +341,9 @@ class ResourceSampler:
         if self._cpu_reader is not None:
             per_metric["cpu_seconds"] = job_complete and self.metric_samples["cpu_seconds"] >= 30
             collector = "psutil_with_windows_job_cpu"
+        elif self._darwin_first is not None or sys.platform == "darwin":
+            per_metric["cpu_seconds"] = darwin_complete and self.metric_samples["cpu_seconds"] >= 30
+            collector = "psutil_with_darwin_rusage_cpu"
         elif reaped:
             collector = "psutil_with_linux_proc_cpu"
         else:
@@ -307,7 +368,13 @@ class ResourceSampler:
             "cpu_includes_reaped_descendants": reaped or job_complete,
             "short_exited_descendants_cpu_complete": reaped or job_complete,
             "cpu_accounting_scope": "explicit_fixture_job" if self._cpu_reader is not None else "observed_process_tree",
-            "cpu_unavailable_samples": self._cpu_missing if self._cpu_reader is not None else self.missing,
+            "cpu_unavailable_samples": self._cpu_missing
+            if self._cpu_reader is not None
+            else (
+                self.missing + sum(self.unavailable.get("cpu_seconds", {}).values())
+                if collector == "psutil_with_darwin_rusage_cpu"
+                else self.missing
+            ),
             "includes_load_generator": self.pid == os.getpid(),
             "fixture_control_overhead_included": self.pid != os.getpid(),
         }

@@ -28,6 +28,15 @@ from scripts.native_slo_workload_identity import timing_series
 PAIR_SCHEMA = "hol-guard.qualification-pair.v1"
 NUMERIC_LIMIT = 4 * 1024 * 1024
 CONTEXT_KEYS = {"build_sha", "target", "run_id", "run_attempt", "pair_index", "runs", "mode", "bundle_sha256"}
+# Bundle targets identify shipped Cargo artifacts, including their ABI. The
+# resident reports ARCH-OS instead. Admit only these exact associations; the
+# separately checked wheel/runtime digests bind the actual artifact bytes.
+_RUNTIME_TARGETS = {
+    "x86_64-unknown-linux-musl": "x86_64-linux",
+    "x86_64-apple-darwin": "x86_64-macos",
+    "aarch64-apple-darwin": "aarch64-macos",
+    "x86_64-pc-windows-msvc": "x86_64-windows",
+}
 
 
 def validate_context(value: Mapping[str, Any]) -> None:
@@ -90,11 +99,12 @@ def numeric_commitment(path: Path, report: Mapping[str, Any], plan: Mapping[str,
 
 
 def validate_runtime(report: Mapping[str, Any], expected: Mapping[str, Any], *, target: str) -> None:
+    require(target in TARGETS, "pair_target_invalid")
     runtime = report.get("runtime")
     require(isinstance(runtime, Mapping), "pair_runtime_identity_missing")
     runtime = cast(Mapping[str, Any], runtime)
     require(
-        runtime.get("target") == target
+        runtime.get("target") == _RUNTIME_TARGETS[target]
         and runtime.get("package_origin") == "installed"
         and runtime.get("mode") == "auto",
         "pair_installed_runtime_context_invalid",

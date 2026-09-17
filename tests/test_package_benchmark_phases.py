@@ -12,7 +12,7 @@ from scripts.package_benchmark_corpus import Case
 from scripts.package_benchmark_phases import FUNCTIONS, LABELS, phase_report, validate_phases
 from scripts.package_benchmark_protocol import preset, preset_arms, validate_worker_report
 from tests.test_package_benchmark_controller import setup_controller, valid_report
-from tests.test_package_benchmark_matrix import worker_case
+from tests.test_package_benchmark_matrix import worker_cli_case
 
 pytestmark = pytest.mark.skipif(not sys.platform.startswith("linux"), reason="declared Linux component scope")
 
@@ -120,10 +120,8 @@ def test_candidate_only_controller_rejects_unapproved_count_before_launch(tmp_pa
     assert calls == []
 
 
-def test_actual_instrumented_protect_preserves_oracle_and_single_parse(tmp_path, monkeypatch):
-    observed = worker_case(
-        Case("npm", 100, 100, "exact", "protect_dry_run"), tmp_path, monkeypatch, measurement="attribution"
-    )
+def test_actual_instrumented_protect_preserves_oracle_and_single_parse(tmp_path):
+    observed = worker_cli_case(Case("npm", 100, 100, "exact", "protect_dry_run"), tmp_path, measurement="attribution")
     assert observed["status"] == "completed" and observed["packages"] == observed["evidence_rows"] == 100
     assert "wall_ms" not in observed and "cpu_ms" not in observed
     value = observed["phases"]
@@ -160,6 +158,37 @@ def test_actual_instrumented_protect_preserves_oracle_and_single_parse(tmp_path,
     assert all(
         label in FUNCTIONS or label in {"sqlite_calls", "rsa_signature_verify", "rsa_public_key_load"} for label in rows
     )
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "route_wall_ns",
+        "route_process_cpu_ns",
+        "profiled_exclusive_thread_cpu_ns",
+        "selected_exclusive_thread_cpu_ns",
+        "unattributed_profile_thread_cpu_ns",
+    ),
+)
+def test_negative_phase_total_rejects_with_exact_bounded_metric(field):
+    value = synthetic_phases()
+    value[field] = -123
+    with pytest.raises(ValueError, match=f"^package_phase_total_invalid:{field}:-123$"):
+        validate_phases(value)
+
+
+def test_invalid_phase_total_never_renders_untrusted_value():
+    class PrivateValue:
+        def __repr__(self):
+            raise AssertionError("private value must not be rendered")
+
+    value = synthetic_phases()
+    value["route_wall_ns"] = PrivateValue()
+    with pytest.raises(ValueError, match=r"^package_phase_total_invalid:route_wall_ns:type$"):
+        validate_phases(value)
+    value["route_wall_ns"] = -(10**100)
+    with pytest.raises(ValueError, match=r"^package_phase_total_invalid:route_wall_ns:range$"):
+        validate_phases(value)
 
 
 def test_phase_ci_preserves_all_eight_observations_and_semantic_parity(tmp_path):

@@ -215,6 +215,8 @@ def run(
         WORKER,
         *Path(__file__).parent.glob("mcp_rebaseline_*.py"),
         Path(__file__).with_name("native_slo_resources.py"),
+        Path(__file__).with_name("native_slo_darwin_resources.py"),
+        Path(__file__).with_name("native_slo_windows_job_resources.py"),
         Path(__file__).with_name("native_slo_qualification.py"),
         Path(__file__).with_name("native_slo_statistics.py"),
     ]

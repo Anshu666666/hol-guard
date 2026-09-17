@@ -12,6 +12,7 @@ from scripts.native_slo_adapter import Observation, process_rss_bytes
 from scripts.native_slo_baseline import steady_state_rss_baseline as _steady_state_rss_baseline
 from scripts.native_slo_capacity_failure import CapacityWarmupFailureError
 from scripts.native_slo_capacity_routes import CapacityRouteEvidence, capacity_route_evidence
+from scripts.native_slo_capacity_witness import capacity_none_witness
 from scripts.native_slo_session import AdapterSession
 
 _MAX_CONCURRENCY = 64
@@ -157,8 +158,10 @@ def _run_capacity_wave(
     before = session.capacity_route_snapshot()
     overloads_before = session.native_overload_count()
     untracked = _UnattributedObserver(session)
-    observations, errors = _run_concurrent(untracked, routes, concurrency, executor)
-    after_idle = session.wait_for_capacity_bookkeeping()
+    with capacity_none_witness(session.daemon._server.hook_worker) as witness:
+        observations, errors = _run_concurrent(untracked, routes, concurrency, executor)
+        after_idle = session.wait_for_capacity_bookkeeping()
+        witness.finish(bookkeeping_complete=before_idle and after_idle and errors == 0)
     after = session.capacity_route_snapshot()
     overloads_after = session.native_overload_count()
     overloads = (
@@ -174,6 +177,7 @@ def _run_capacity_wave(
         after=after,
         bookkeeping_complete=before_idle and after_idle,
         native_overloads=overloads,
+        none_witness=witness.report(),
     )
     return observations, errors, evidence
 

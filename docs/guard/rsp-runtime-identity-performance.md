@@ -167,14 +167,22 @@ home/workspace TOML files and the real configuration loader are used. No decisio
 is fabricated. The report counts loader calls and exact home/workspace file
 opens; nested loader CPU must not be added to total component CPU.
 
-The integrated candidate already short-circuits the recording-only check when
+The candidate measured in this report short-circuited the recording-only check when
 an acknowledged snapshot's mode is `observe`. Enforce and missing-binding cases
 still read current configuration. An enforce binding followed by a local Watch
 change therefore retains the prior immediate recording-only behavior; an
 observe binding followed by protected configuration remains observe until the
 new binding is acknowledged. Removing all remaining reads would require choosing
 and testing a different coherent visibility contract for these transitions.
-That behavior change is not hidden inside the executable identity optimization.
+That behavior change was not hidden inside the executable identity optimization.
+
+**Superseded transition contract:** the later RSP-031
+[acknowledged posture correction](rust-performance/acknowledged-posture-contract.md)
+uses the sampled resident-ACKed mode for ordinary native delivery in both
+directions. A local Watch update now awaits its ACK; missing acknowledgement
+keeps the separate ordinary availability response. The table and timing results
+below remain historical observations of the earlier asymmetric implementation,
+not measurements of the correction.
 
 | Posture slice case | Baseline config loads/home opens/workspace opens per call | Candidate per call | Delivered observe flag at native boundary |
 | --- | --- | --- | --- |

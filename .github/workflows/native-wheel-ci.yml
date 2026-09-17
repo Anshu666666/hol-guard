@@ -195,6 +195,11 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify Darwin reaped descendant CPU accounting
+        run: >-
+          uv run --no-sync pytest tests/test_native_slo_darwin_resources.py
+          tests/test_native_slo_darwin_resources_live.py
+          tests/test_native_slo_resources.py tests/test_native_slo_resource_accounting.py --tb=short
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.88.0 --profile minimal

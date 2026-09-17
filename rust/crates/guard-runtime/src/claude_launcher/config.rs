@@ -1,4 +1,4 @@
-use super::{discovery::PeerIdentity, files, response::Failure};
+use super::{discovery::PeerIdentity, files, response::Failure, target};
 use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -20,6 +20,7 @@ pub(super) struct Config {
     pub(super) manifest_sha256: String,
     pub(super) package_version: String,
     pub(super) target: String,
+    pub(super) manifest_target: String,
     pub(super) build_sha: String,
     pub(super) rule_digest: String,
     pub(super) daemon: PeerIdentity,
@@ -48,6 +49,7 @@ impl Config {
         if self.schema != "hol-guard.claude-launcher-pilot.v1"
             || self.package_version != capabilities.runtime_version
             || self.target != capabilities.target
+            || target::compiled_manifest_target() != Some(self.manifest_target.as_str())
             || self.build_sha != capabilities.build_sha
             || self.rule_digest != capabilities.rule_digest
             || !hex_digest(&self.runtime_sha256, 64)
@@ -117,7 +119,7 @@ impl Config {
         }
         for (field, expected) in [
             ("package_version", &self.package_version),
-            ("target", &self.target),
+            ("target", &self.manifest_target),
             ("source_sha", &self.build_sha),
             ("rule_digest", &self.rule_digest),
             ("runtime_sha256", &self.runtime_sha256),
@@ -202,4 +204,60 @@ fn hex_digest(value: &str, length: usize) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn config_value() -> Value {
+        json!({
+            "schema": "hol-guard.claude-launcher-pilot.v1",
+            "guard_home": "/guard", "home": "/home", "workspace": null,
+            "query": "fixture", "runtime_path": "/runtime", "runtime_size": 12,
+            "runtime_sha256": "a".repeat(64), "manifest_sha256": "b".repeat(64),
+            "package_version": "3.0.1", "target": "x86_64-linux",
+            "manifest_target": "x86_64-unknown-linux-musl",
+            "build_sha": "c".repeat(40), "rule_digest": "d".repeat(64),
+            "daemon": {"compatibility_version": 2, "package_version": "3.0.1",
+                "source_root": "/package", "runtime_fingerprint": "e".repeat(64)}
+        })
+    }
+
+    #[test]
+    fn old_config_without_separate_manifest_target_is_not_admitted() {
+        let mut value = config_value();
+        assert!(serde_json::from_value::<Config>(value.clone()).is_ok());
+        value.as_object_mut().unwrap().remove("manifest_target");
+        assert!(serde_json::from_value::<Config>(value).is_err());
+    }
+
+    #[test]
+    fn manifest_uses_exact_cargo_identity_and_retains_other_identity_fences() {
+        let config: Config = serde_json::from_value(config_value()).unwrap();
+        let manifest = json!({
+            "schema": "hol-guard-native-runtime.v1", "protocol_version": 1,
+            "runtime_size": config.runtime_size, "package_version": config.package_version,
+            "target": config.manifest_target, "source_sha": config.build_sha,
+            "rule_digest": config.rule_digest, "runtime_sha256": config.runtime_sha256
+        });
+        assert!(config.validate_manifest(&manifest).is_ok());
+        for field in [
+            "target",
+            "package_version",
+            "source_sha",
+            "rule_digest",
+            "runtime_sha256",
+        ] {
+            let mut changed = manifest.clone();
+            changed[field] = json!(config.target);
+            assert!(config.validate_manifest(&changed).is_err(), "{field}");
+        }
+        for field in ["protocol_version", "runtime_size"] {
+            let mut changed = manifest.clone();
+            changed[field] = json!(0);
+            assert!(config.validate_manifest(&changed).is_err(), "{field}");
+        }
+    }
 }

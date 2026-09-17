@@ -66,6 +66,26 @@ def test_public_resource_requires_accounting_provenance(field):
         RESOURCE(actual)
 
 
+@pytest.mark.parametrize("name", ["native_slo_darwin_resources.py", "native_slo_windows_job_resources.py"])
+def test_imported_resource_helper_hashes_have_exact_public_identity(name, frozen_report):
+    report = copy.deepcopy(frozen_report)
+    report["source_and_environment"]["harness"][name] = "9" * 64
+    public = project(report, candidate=CANDIDATE)
+    assert public["source_and_environment"]["harness"][name] == "9" * 64
+    source = driver.Path(driver.__file__).read_text()
+    assert f'Path(__file__).with_name("{name}")' in source
+    report["source_and_environment"]["harness"][name.replace(".py", "_private.py")] = "9" * 64
+    with pytest.raises(ValueError, match="invalid public component evidence"):
+        project(report, candidate=CANDIDATE)
+
+
+def test_darwin_collector_does_not_expand_linux_mcp_evidence_scope():
+    actual = resource_fixture()
+    actual["collector"] = "psutil_with_darwin_rusage_cpu"
+    with pytest.raises(ValueError, match="invalid public component evidence"):
+        RESOURCE(actual)
+
+
 @pytest.mark.parametrize(
     "case",
     [

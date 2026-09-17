@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import cast
 
 from scripts.native_slo_adapter import Observation
+from scripts.native_slo_capacity_witness import capacity_none_report
 
 _ROUTES = frozenset({"native_resident", "native_fail_safe", "native_oneshot", "python_semantic"})
 
@@ -24,6 +25,7 @@ class CapacityRouteEvidence:
     bookkeeping_complete: bool
     native_overloads: int | None
     failures: tuple[str, ...]
+    none_witness: dict[str, object] | None = field(default=None, compare=False)
 
     def qualifies(self, *, expected: int, allow_overload: bool) -> bool:
         return (
@@ -35,10 +37,14 @@ class CapacityRouteEvidence:
         )
 
     def report(self) -> dict[str, object]:
+        fields = asdict(self)
+        fields.pop("none_witness")
+        if self.none_witness is not None:
+            fields["none_witness"] = capacity_none_report(self.none_witness)
         return {
             "route_attribution": "isolated_whole_wave_counter_conservation",
             "per_request_native_route_proven": False,
-            **asdict(self),
+            **fields,
             "responses_received": self.completed,
             "terminal_outcomes": self.completed + self.errors,
             "accounted": self.attempted == self.completed + self.errors,
@@ -54,6 +60,7 @@ def capacity_route_evidence(
     after: Mapping[str, object],
     bookkeeping_complete: bool,
     native_overloads: int | None,
+    none_witness: dict[str, object] | None = None,
 ) -> CapacityRouteEvidence:
     failures: list[str] = []
     routes: dict[str, int] = {}
@@ -111,6 +118,7 @@ def capacity_route_evidence(
         bookkeeping_complete,
         native_overloads,
         tuple(dict.fromkeys(failures)),
+        none_witness,
     )
 
 

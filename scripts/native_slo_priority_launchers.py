@@ -1,9 +1,8 @@
 """Measure the four priority hooks using their installed command registrations.
 
-Every sample starts the registered executable, sends stdin, captures stdout,
-waits for exit, and checks the harness response. No direct HTTP request replaces
-a launcher. The caller owns a prepared, otherwise idle daemon with an explicit
-acknowledged allow policy (``DaemonFixture(runtime, policy="normal")``).
+Every sample starts the registered executable and checks its stdout and exit.
+The caller owns a prepared idle daemon with an acknowledged allow policy
+(``DaemonFixture(runtime, policy="normal")``).
 """
 
 from __future__ import annotations
@@ -36,6 +35,7 @@ from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import Observation, route_counts
 from scripts.native_slo_batch import validate_batch_routes
 from scripts.native_slo_contract import clear_proof_environment, summarize
+from scripts.native_slo_launcher_rejection import validate_stdout_with_witness
 from scripts.native_slo_numeric_journal import NumericJournal
 
 _CONFIG_LIMIT = 1_000_000
@@ -307,7 +307,7 @@ def observe_priority_launcher(
         raise RuntimeError("priority_launcher_stdout_not_json") from error
     if not isinstance(response, Mapping):
         raise RuntimeError("priority_launcher_stdout_not_object")
-    validate_launcher_stdout(launcher, cast(Mapping[str, object], response), case=case)
+    validate_stdout_with_witness(validate_launcher_stdout, launcher, completed, response, case=case)
     return Observation(
         launcher.harness,
         launcher.event,

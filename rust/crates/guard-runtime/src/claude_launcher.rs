@@ -6,6 +6,7 @@ mod files;
 mod http;
 mod response;
 mod response_json;
+mod target;
 
 use response::{Event, Failure};
 use serde_json::json;

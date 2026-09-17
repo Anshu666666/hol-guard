@@ -18,6 +18,12 @@ from codex_plugin_scanner.guard.native_command_control_authority_io import read_
 
 _MAX_CONFIG = 16 * 1024
 _CAPABILITY = "claude-launcher-pilot-v1"
+_MANIFEST_TARGETS = {
+    "x86_64-unknown-linux-musl": "x86_64-linux",
+    "x86_64-apple-darwin": "x86_64-macos",
+    "aarch64-apple-darwin": "aarch64-macos",
+    "x86_64-pc-windows-msvc": "x86_64-windows",
+}
 
 
 def _require(condition: bool, reason: str) -> None:
@@ -86,9 +92,12 @@ def prepare(*, guard_home: Path, home: Path, workspace: Path | None, event: str)
         and parsed_manifest.runtime_size == identity.size
         and parsed_manifest.package_version == capabilities.runtime_version
         and parsed_manifest.source_sha == capabilities.build_sha
-        and parsed_manifest.target == capabilities.target
         and parsed_manifest.rule_digest == capabilities.rule_digest,
         "launcher_manifest_identity_changed",
+    )
+    _require(
+        _MANIFEST_TARGETS.get(parsed_manifest.target) == capabilities.target,
+        "launcher_manifest_target_unsupported",
     )
     state = load_authenticated_daemon_state(guard_home)
     _require(isinstance(state, dict) and _supported_signed_domain(state), "launcher_signed_state_profile_unsupported")
@@ -126,6 +135,7 @@ def prepare(*, guard_home: Path, home: Path, workspace: Path | None, event: str)
         "manifest_sha256": hashlib.sha256(manifest).hexdigest(),
         "package_version": capabilities.runtime_version,
         "target": capabilities.target,
+        "manifest_target": parsed_manifest.target,
         "build_sha": capabilities.build_sha,
         "rule_digest": capabilities.rule_digest,
         "daemon": peer,

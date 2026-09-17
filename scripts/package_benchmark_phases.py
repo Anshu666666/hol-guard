@@ -149,12 +149,16 @@ def validate_phases(value: object) -> None:
         or value["headline_eligible"] is not False
     ):
         raise ValueError("package_phase_scope_invalid")
-    for key in _TOTALS:
+    for key in sorted(_TOTALS):
         number = value[key]
-        if type(number) is not int or not -(10**13) <= number <= 10**13:
-            raise ValueError("package_phase_total_invalid")
+        if type(number) is not int:
+            raise ValueError(f"package_phase_total_invalid:{key}:type")
+        if not -(10**13) <= number <= 10**13:
+            raise ValueError(f"package_phase_total_invalid:{key}:range")
         if key != "process_minus_profile_cpu_ns" and number < 0:
-            raise ValueError("package_phase_total_invalid")
+            # Only the fixed field name and an already bounded integer enter
+            # this diagnostic; arbitrary values and their repr never do.
+            raise ValueError(f"package_phase_total_invalid:{key}:{number}")
     validate_origins(value["origins"], total=value["profiled_exclusive_thread_cpu_ns"])
     rows = value["functions"]
     if not isinstance(rows, dict) or set(rows) != set(LABELS):

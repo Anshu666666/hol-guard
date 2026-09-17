@@ -1,0 +1,24 @@
+# Claude pilot target identity correction
+
+The opt-in experiment [run 35240794149](https://github.com/hashgraph-online/hol-guard/actions/runs/35240794149) built source `2ebb01ff356101aea8d658ce639fe2c87188bd0d`, tree `1c41bef1979ead9e50ee406a60505ce6894aa461`. All 20 jobs failed during registration preparation, before preflight or measurement offers. The workflow checks out the explicit PR head; these wheel identities must not be substituted for the merge-build identities of ordinary PR checks. [The complete finite cohort](claude-launcher-fourth-preparation.json) retains every job, wheel/runtime/package identity, test result, failure commitment and encrypted failure-summary receipt.
+
+The recorded failure digest `d0a82a13ed20a9732e1ce6d11c8342554915dcf0c8d68fd8e66b8d5aa1bf9840` equals SHA-256 of the fixed source error `launcher_manifest_identity_changed`. The preparation comparison incorrectly required two different identity domains to have the same spelling. [The capability producer](../../../rust/crates/guard-runtime/src/resident_protocol.rs) emits Rust `ARCH-OS`; [the wheel builder](../../../scripts/build_native_hol_guard_wheel.py) records its explicit Cargo `--target` triple in the manifest. The pilot build passes the same exact Cargo target through that builder. The previous synthetic preparation test used `fixture-target` for both and concealed this mismatch.
+
+The actual ordinary qualification Linux bundle from the same source independently confirms the package domain: artifact `10506040129`, ZIP SHA-256 `ebf0de8204962df5b0f7cd3e47f45c45656e444879239e03fec983013f2308fa`, candidate wheel SHA-256 `60fa55b26e6a1e7c11dcd0c844a5b59f565bcb6174a56e6c438579ceeef21a92`, manifest byte SHA-256 `dfa3d7d68a6432d55961582dfb4dea39251f93719bcd3dd0cd6f2d3b0bcf7202`. Its manifest target is `x86_64-unknown-linux-musl`. This is a default-feature qualification wheel, not the distinct pilot-feature wheel; its runtime hash is not used as pilot identity evidence. The pilot Linux job `105268400267` independently reports capability target `x86_64-linux`.
+
+The corrected immutable config binds two required values:
+
+| Manifest Cargo target (`manifest_target`) | Capability platform (`target`) |
+| --- | --- |
+| `x86_64-unknown-linux-musl` | `x86_64-linux` |
+| `x86_64-apple-darwin` | `x86_64-macos` |
+| `aarch64-apple-darwin` | `aarch64-macos` |
+| `x86_64-pc-windows-msvc` | `x86_64-windows` |
+
+Preparation accepts only these exact pairs. Native admission independently checks architecture, OS and ABI compiled into the executable, compares `target` with the unchanged runtime capability, and compares the actual manifest with `manifest_target`. It still verifies the full config digest, full manifest bytes, executable bytes and size, source SHA, package version, rule digest, canonical context and current executable identity. There is no environment-derived target, fuzzy matching or global capability-schema change. GNU/Linux, Windows GNU and undeclared architecture/ABI combinations are explicitly unsupported by this dormant pilot. Configs without the new required field fail closed and need explicit preparation again; preparation never edits a harness registration.
+
+The new tests cover all four valid domain pairs, seven unknown/equal/crossed pairs, missing-field rejection, immutable manifest/config digest binding, compiler-derived target selection and independent manifest identity mutations. Independent source review found no weakened admission fence. These checks do not prove the repaired installed path or a launcher performance benefit; those require the next real four-platform experiment.
+
+Local validation: 63 Python preparation, pilot-workflow and experiment tests passed; the preparation module has zero source type errors/warnings; Ruff, Rustfmt and diff checks pass. Four Rust target/manifest tests passed in an isolated harness that includes the actual changed modules and replaces unused runtime/file-loading entry points with unreachable stubs. This proves the exercised pure admission branches, not complete runtime integration. The full feature-enabled runtime and actual Windows/macOS path remain for the existing four-platform CI; no new local performance run was performed.
+
+The fourth cohort does establish limited progress over earlier failed cohorts: all five Windows jobs completed the targeted tests (`43 passed, 6 skipped`) and encrypted a failure summary; all 15 POSIX jobs completed their targeted tests (`48 passed, 1 skipped`) and passed the former private-interpreter preparation failure. No job reached the per-attempt measurement journals. Each archive contains exactly one failure-summary file, and the final retention gate correctly fails because there are no measurement journals. The successful failure-summary encryption must not be described as successful installed journal or performance qualification. Default registration and the pilot feature remain off.

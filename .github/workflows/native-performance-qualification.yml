@@ -55,7 +55,8 @@ jobs:
       github.event_name != 'pull_request' ||
       github.event.action != 'labeled' ||
       github.event.label.name == 'rust-performance-qualification' ||
-      github.event.label.name == 'rust-nonpriority-tails'
+      github.event.label.name == 'rust-nonpriority-tails' ||
+      github.event.label.name == 'rust-nonpriority-tail-smoke'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -65,6 +66,7 @@ jobs:
       platforms: ${{ steps.plan.outputs.platforms }}
       pairs: ${{ steps.plan.outputs.pairs }}
       tails_enabled: ${{ steps.tails.outputs.enabled }}
+      tails_mode: ${{ steps.tails.outputs.mode }}
       tails_selection: ${{ steps.tails.outputs.selection }}
       tails_first_enabled: ${{ steps.tails.outputs.first_enabled }}
       tails_second_enabled: ${{ steps.tails.outputs.second_enabled }}
@@ -92,15 +94,15 @@ jobs:
         env:
           TAIL_MODE: ${{ steps.plan.outputs.mode }}
           TAIL_SELECTION: >-
-            ${{ github.event_name == 'pull_request' &&
-                github.event.pull_request.head.repo.full_name == github.repository &&
-                contains(github.event.pull_request.labels.*.name, 'rust-performance-qualification') &&
-                contains(github.event.pull_request.labels.*.name, 'rust-nonpriority-tails') && 'all' ||
-                github.event_name == 'workflow_dispatch' && inputs.nonpriority_route || 'none' }}
+            ${{ github.event_name == 'workflow_dispatch' && inputs.nonpriority_route || 'none' }}
+          TAIL_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          TAIL_PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         shell: bash
         run: |
           python candidate-src/scripts/native_slo_surface_tail_plan.py --mode "$TAIL_MODE" \
-            --selection "$TAIL_SELECTION" --output "$GITHUB_OUTPUT"
+            --selection "$TAIL_SELECTION" --output "$GITHUB_OUTPUT" \
+            --event-name "$GITHUB_EVENT_NAME" --repository "$GITHUB_REPOSITORY" \
+            --head-repository "$TAIL_HEAD_REPOSITORY" --pr-labels-json "$TAIL_PR_LABELS"
 
   build:
     needs: plan
@@ -423,6 +425,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
 
   nonpriority-tails-first:
+    name: Nonpriority route pairs (${{ needs.plan.outputs.tails_mode }}, first group)
     needs: [plan, build]
     if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_first_enabled == 'true' }}
     strategy:
@@ -434,10 +437,11 @@ jobs:
       target: ${{ matrix.target }}
       candidate-sha: ${{ needs.plan.outputs.sha }}
       route: ${{ matrix.route }}
-      mode: ${{ needs.plan.outputs.mode }}
+      mode: ${{ needs.plan.outputs.tails_mode }}
       pair-index: ${{ matrix.pair_index }}
 
   nonpriority-tails-second:
+    name: Nonpriority route pairs (${{ needs.plan.outputs.tails_mode }}, second group)
     needs: [plan, build]
     if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_second_enabled == 'true' }}
     strategy:
@@ -449,10 +453,11 @@ jobs:
       target: ${{ matrix.target }}
       candidate-sha: ${{ needs.plan.outputs.sha }}
       route: ${{ matrix.route }}
-      mode: ${{ needs.plan.outputs.mode }}
+      mode: ${{ needs.plan.outputs.tails_mode }}
       pair-index: ${{ matrix.pair_index }}
 
   nonpriority-tail-aggregation:
+    name: Nonpriority route aggregation (${{ needs.plan.outputs.tails_mode }})
     needs: [plan, build, nonpriority-tails-first, nonpriority-tails-second]
     if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.tails_enabled == 'true' }}
     strategy:
@@ -491,7 +496,7 @@ jobs:
           TAIL_TARGET: ${{ matrix.target }}
           TAIL_SHA: ${{ needs.plan.outputs.sha }}
           TAIL_SELECTION: ${{ needs.plan.outputs.tails_selection }}
-          TAIL_MODE: ${{ needs.plan.outputs.mode }}
+          TAIL_MODE: ${{ needs.plan.outputs.tails_mode }}
         run: |
           uv sync --frozen --no-dev --project candidate-src
           uv run --frozen --no-sync --project candidate-src python candidate-src/scripts/native_slo_surface_tail_aggregate.py \

@@ -78,7 +78,7 @@ def block_fixture(bundle, arm, plan):
         "schema": "hol-guard.native-qualification-block.v1",
         "artifact_sha256": expected["wheel_sha256"],
         "runtime": {
-            "target": TARGET,
+            "target": "x86_64-linux",
             "package_origin": "installed",
             "mode": "auto",
             "build_sha": expected["build_sha"],

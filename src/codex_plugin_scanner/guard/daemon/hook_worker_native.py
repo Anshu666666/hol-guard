@@ -318,9 +318,11 @@ class HookWorkerNativeMixin:
         deadline: float | None,
     ) -> dict[str, object]:
         policy_snapshot = self._native_policy_snapshot(workspace, deadline=deadline)
-        recording_only = (
-            policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
-        ) or hook_review_is_recording_only(guard_home=guard_home, workspace=workspace)
+        # This request's resident-ACKed binding owns both native evaluation and
+        # its delivery posture. A newer local Watch setting cannot weaken an
+        # enforcing result (or skip its control fence) before its own ACK.
+        # Missing bindings retain the separate ordinary availability response.
+        recording_only = policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
         fenced: bool | None = None
         try:
             with native_review_fence(

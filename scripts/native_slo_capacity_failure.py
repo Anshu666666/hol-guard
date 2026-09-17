@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from scripts.native_slo_capacity_routes import CapacityRouteEvidence
+from scripts.native_slo_capacity_witness import capacity_none_report
 from scripts.native_slo_failure import FixtureFailureError
 
 _ROUTES = frozenset({"native_resident", "native_fail_safe", "native_oneshot", "python_semantic", "unrecognized"})
@@ -61,6 +62,11 @@ class CapacityWarmupFailureError(FixtureFailureError):
                 "allow_overload": False,
                 "per_request_native_route_proven": False,
                 "qualification_complete": False,
+                **(
+                    {"none_witness": capacity_none_report(evidence.none_witness)}
+                    if evidence.none_witness is not None
+                    else {}
+                ),
             }
         )
         self.args = (

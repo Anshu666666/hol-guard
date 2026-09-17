@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from scripts.native_slo_contract import assert_privacy_safe
+from scripts.native_slo_launcher_rejection import launcher_rejection_detail
 
 
 class FixtureFailureError(RuntimeError):
@@ -70,4 +71,7 @@ def failure_evidence(error: Exception) -> dict[str, object]:
         )
     ) and re.fullmatch(r"[A-Za-z0-9 _:.=-]{1,96}", message):
         evidence["reason"] = message.replace(" ", "_").replace("secret", "sensitive")
+    rejection = launcher_rejection_detail(error)
+    if rejection is not None:
+        evidence["launcher_stdout_rejection"] = rejection
     return assert_privacy_safe(evidence)

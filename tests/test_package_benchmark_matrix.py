@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import socket
+import subprocess
 import sys
 from pathlib import Path
 
@@ -140,6 +141,45 @@ def worker_case(case, tmp_path, monkeypatch, *, measurement="validation"):
             measurement=measurement,
         )
     )
+
+
+def worker_cli_case(case, tmp_path, *, measurement="validation"):
+    """Use the actual fresh-worker boundary, outside pytest's shared profiler."""
+    value = fixture(case)
+    response, trusted = sign_fixture(value["bundle"])
+    fixture_file = tmp_path / "fixture.json"
+    write_private(fixture_file, {"fixture": value, "response": response, "trusted_fingerprint": trusted})
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            str(ROOT / "scripts/package_benchmark_worker.py"),
+            "--source-root",
+            str(ROOT),
+            "--fixture",
+            str(fixture_file),
+            "--journal",
+            str(tmp_path / "journal.jsonl"),
+            "--semantic",
+            str(tmp_path / "semantic.json"),
+            "--temporary-root",
+            str(tmp_path),
+            "--measurement",
+            measurement,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout
+    assert not completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["bundle_admission_verified_before_route"] is True
+    assert result["fixture_sha256"] == digest(value)
+    assert result["signed_response_sha256"] == digest(response)
+    assert result["measurement"] == measurement
+    return result
 
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="initial package runner declares Linux only")

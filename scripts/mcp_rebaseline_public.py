@@ -113,7 +113,8 @@ def manifest(value: Any, candidate: str) -> dict[str, Any]:
     require(value["order"] == EXPECTED_ORDER)
     require(isinstance(value["harness"], dict) and 1 <= len(value["harness"]) <= 32)
     name = pattern(
-        r"(?:bench_mcp_rebaseline|mcp_rebaseline(?:_[a-z]+)*|native_slo_(?:resources|qualification|statistics))\.py"
+        r"(?:bench_mcp_rebaseline|mcp_rebaseline(?:_[a-z]+)*|"
+        r"native_slo_(?:resources|darwin_resources|windows_job_resources|qualification|statistics))\.py"
     )
     harness = {name(key): SHA256(item) for key, item in value["harness"].items()}
     # Free-form platform/interpreter/dependency strings remain in the encrypted

@@ -18,14 +18,20 @@ def test_companion_is_explicit_opt_in_and_never_added_to_scheduled_or_ordinary_s
     main, _ = workflows()
     tails = next(step for step in main["jobs"]["plan"]["steps"] if step.get("id") == "tails")
     selection = tails["env"]["TAIL_SELECTION"]
-    assert "rust-nonpriority-tails" in selection and "rust-performance-qualification" in selection
-    assert "head.repo.full_name == github.repository" in selection
     assert "workflow_dispatch" in selection and "|| 'none'" in selection
+    assert tails["env"]["TAIL_HEAD_REPOSITORY"] == "${{ github.event.pull_request.head.repo.full_name }}"
+    assert tails["env"]["TAIL_PR_LABELS"] == "${{ toJSON(github.event.pull_request.labels.*.name) }}"
+    assert '--event-name "$GITHUB_EVENT_NAME" --repository "$GITHUB_REPOSITORY"' in tails["run"]
+    assert '--head-repository "$TAIL_HEAD_REPOSITORY" --pr-labels-json "$TAIL_PR_LABELS"' in tails["run"]
+    assert "github.event.label.name == 'rust-nonpriority-tail-smoke'" in main["jobs"]["plan"]["if"]
+    assert main["jobs"]["plan"]["outputs"]["tails_mode"] == "${{ steps.tails.outputs.mode }}"
     for suffix in ("first", "second"):
         job = main["jobs"]["nonpriority-tails-" + suffix]
         assert f"tails_{suffix}_enabled == 'true'" in job["if"]
         assert job["uses"] == "./.github/workflows/native-surface-tail-pair.yml"
         assert job["strategy"]["fail-fast"] is False
+        assert job["with"]["mode"] == "${{ needs.plan.outputs.tails_mode }}"
+        assert "needs.plan.outputs.tails_mode" in job["name"]
     assert main["jobs"]["pairs"]["timeout-minutes"] == 200
 
 
@@ -60,6 +66,9 @@ def test_all_new_runner_temp_expressions_are_step_scoped():
 def test_aggregation_fetches_separate_roots_and_never_uploads_private_values():
     main, _ = workflows()
     job = main["jobs"]["nonpriority-tail-aggregation"]
+    assert "needs.plan.outputs.tails_mode" in job["name"]
+    collect = next(step for step in job["steps"] if "native_slo_surface_tail_aggregate.py" in step.get("run", ""))
+    assert collect["env"]["TAIL_MODE"] == "${{ needs.plan.outputs.tails_mode }}"
     download = next(step for step in job["steps"] if "pattern" in step.get("with", {}))
     assert download["with"]["merge-multiple"] is False
     assert "surface-tail-${{ matrix.target }}" in download["with"]["pattern"]

@@ -1,0 +1,209 @@
+name: Offline scanner regex opt-in experiment
+
+on:
+  pull_request:
+    branches: [main, release/3.2]
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      selection:
+        description: Smoke must be inspected before selecting the full five-run experiment
+        type: choice
+        options: [smoke, full]
+        default: smoke
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scanner-regex-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       (contains(github.event.pull_request.labels.*.name, 'scanner-regex-pilot') ||
+        contains(github.event.pull_request.labels.*.name, 'scanner-regex-pilot-smoke')) &&
+       (github.event.action != 'labeled' || github.event.label.name == 'scanner-regex-pilot' ||
+        github.event.label.name == 'scanner-regex-pilot-smoke'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      selection: ${{ steps.plan.outputs.selection }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - id: plan
+        env:
+          SELECTION: ${{ github.event_name == 'workflow_dispatch' && inputs.selection || (contains(github.event.pull_request.labels.*.name, 'scanner-regex-pilot') && 'full' || 'smoke') }}
+        run: |
+          echo "selection=$SELECTION" >> "$GITHUB_OUTPUT"
+          python -I scripts/scanner_pilot_ci.py matrix --selection "$SELECTION" > matrix.json
+          echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
+
+  shards:
+    needs: plan
+    name: Scanner (${{ matrix.case }}, independent run ${{ matrix.run }})
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      SELECTION: ${{ needs.plan.outputs.selection }}
+      CASE: ${{ matrix.case }}
+      RUN: ${{ matrix.run }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        timeout-minutes: 2
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Persist the offered shard denominator before setup or build
+        timeout-minutes: 1
+        run: >-
+          python -I scripts/scanner_pilot_ci.py init --selection "$SELECTION"
+          --case "$CASE" --run "$RUN" --source-sha "$SOURCE_SHA"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        timeout-minutes: 2
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        timeout-minutes: 2
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - name: Install identical locked dependencies for both arms
+        timeout-minutes: 5
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/scanner-pilot-environment
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Install pinned compiler
+        timeout-minutes: 3
+        run: rustup toolchain install 1.88.0 --profile minimal
+      - name: Build and test the benchmark-only extractor
+        timeout-minutes: 7
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/scanner-pilot-target
+        run: |
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --release -p guard-offline-regex-pilot
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --release -p guard-offline-regex-pilot
+      - name: Check actual bridge and collector contracts before timing
+        timeout-minutes: 3
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/scanner-pilot-environment
+          GUARD_OFFLINE_REGEX_PILOT_BINARY: ${{ runner.temp }}/scanner-pilot-target/release/guard-offline-regex-pilot
+        run: >-
+          uv run --no-sync pytest -q tests/test_guard_secret_native_pilot.py
+          tests/test_scanner_pilot_process.py tests/test_scanner_pilot_ci.py
+          tests/test_scanner_pilot_public.py tests/test_scanner_pilot_workflow.py
+      - name: Run exactly two cache states and six alternating pairs
+        id: collect
+        timeout-minutes: 105
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/scanner-pilot-environment
+          PILOT_BINARY: ${{ runner.temp }}/scanner-pilot-target/release/guard-offline-regex-pilot
+          PILOT_LOCK: ${{ runner.temp }}/scanner-pilot-measurement.lock
+        run: >-
+          uv run --no-sync python -I scripts/scanner_pilot_ci.py collect
+          --selection "$SELECTION" --case "$CASE" --run "$RUN" --source-sha "$SOURCE_SHA"
+          --binary "$PILOT_BINARY" --lock "$PILOT_LOCK"
+      - name: Project and encrypt the exact private evidence snapshot
+        id: seal
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/scanner-pilot-environment
+        run: >-
+          uv run --frozen --extra dev --python 3.12 python -I scripts/scanner_pilot_ci.py seal
+          --selection "$SELECTION" --case "$CASE" --run "$RUN" --source-sha "$SOURCE_SHA"
+          --public-key docs/guard/rust-performance/qualification-recipient.pem
+          --run-id "${{ github.run_id }}" --run-attempt "${{ github.run_attempt }}"
+      - name: Retain finite public shard evidence
+        id: public
+        if: always()
+        timeout-minutes: 3
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: scanner-pilot-${{ matrix.case }}-${{ matrix.run }}-public
+          path: scanner-evidence/public/*.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain encrypted raw observations
+        id: encrypted
+        if: always()
+        timeout-minutes: 3
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: scanner-pilot-${{ matrix.case }}-${{ matrix.run }}-encrypted
+          path: scanner-evidence/observations.hge
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require collection and both retained artifacts
+        if: always()
+        timeout-minutes: 1
+        env:
+          SEAL: ${{ steps.seal.outcome }}
+          PUBLIC: ${{ steps.public.outcome }}
+          ENCRYPTED: ${{ steps.encrypted.outcome }}
+          PUBLIC_ID: ${{ steps.public.outputs.artifact-id }}
+          ENCRYPTED_ID: ${{ steps.encrypted.outputs.artifact-id }}
+        run: |
+          test "$SEAL" = success
+          test "$PUBLIC" = success
+          test "$ENCRYPTED" = success
+          test -n "$PUBLIC_ID"
+          test -n "$ENCRYPTED_ID"
+          python -I scripts/scanner_pilot_ci.py verify
+
+  aggregate:
+    needs: [plan, shards]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          pattern: scanner-pilot-*-public
+          path: scanner-shards
+      - name: Compare matched independent runs and retain missing shard counts
+        id: compare
+        env:
+          SELECTION: ${{ needs.plan.outputs.selection }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SHARDS_OUTCOME: ${{ needs.shards.result }}
+        run: >-
+          python -I scripts/scanner_pilot_ci.py aggregate --selection "$SELECTION"
+          --source-sha "$SOURCE_SHA" --input scanner-shards --output scanner-aggregate.json
+          --shards-outcome "$SHARDS_OUTCOME"
+      - id: retain
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: scanner-pilot-aggregate
+          path: scanner-aggregate.json
+          if-no-files-found: error
+          retention-days: 30
+      - if: always()
+        env:
+          COMPARE: ${{ steps.compare.outcome }}
+          RETAIN: ${{ steps.retain.outcome }}
+          RETAIN_ID: ${{ steps.retain.outputs.artifact-id }}
+        run: |
+          test "$COMPARE" = success
+          test "$RETAIN" = success
+          test -n "$RETAIN_ID"
+      # Collection success is not native adoption or installed qualification.

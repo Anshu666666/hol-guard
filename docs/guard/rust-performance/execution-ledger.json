@@ -3,7 +3,7 @@
   "reviewed_date": "2026-09-17",
   "target_branch": "release/3.2",
   "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
-  "implementation_tree_before_documentation": "872b0517b5596f8c19abd0fce185c7e14983cc20",
+  "implementation_tree_before_documentation": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
   "qualification_complete": false,
   "status_policy": "DONE means the stated task acceptance has source, specification or test evidence of the required kind; it does not promote its dependent installed qualification. OPEN includes implemented/tested work with remaining acceptance. BLOCKED means a missing prerequisite. DEFERRED requires a measured native go/no-go decision; an unbuilt optional Rust component alone is neither DONE nor DEFERRED. Original acceptance and dependency fields are unchanged.",
   "tasks": [
@@ -14,12 +14,14 @@
       "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
       "dependencies": [],
       "status": "DONE",
-      "evidence_or_remaining_work": "Current main 05fa4760df8401b9710bf098adb4fbb2dc4ff389, release base 4b89e0d2d496a85f04922b2e019a4aea15326bb9, API source 872b0517b5596f8c19abd0fce185c7e14983cc20, and explicit tree 581e5cb30bd0082abf0356b5931b26d5ef204903 are pinned. The PR #2970 implementation and local integration branches are recorded in release_snapshot. The fourth manifest and package manifests bind exact package/runtime/rule identities, toolchain and host metadata at measured source 2ebb01ff356101aea8d658ce639fe2c87188bd0d; PR merge d769f9722d34e98cadea058e01575b48ab24f053 is a distinct build identity with the same measured tree. Source changes since frozen 2e672d2 are documented without transferring its artifact identity. This closes literal source/artifact recording, not later-source installed or post-sign qualification.",
+      "evidence_or_remaining_work": "Main 05fa4760df8401b9710bf098adb4fbb2dc4ff389, release base 4b89e0d2d496a85f04922b2e019a4aea15326bb9, source d06d8093bb1744ff22fcaf65fcfd1e908c989c2d and explicit tree 9b2caee188ace6c0bc97379e08708f7f4019d4e0 are recorded. Fifth measured candidate 96a69725eab018674174dabc6f205a4087d6ff4b, merge c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d and equal tree 7da3dcf25df5dc75b61f773c40a3a4dd96bbf2fa remain separate build identities. The fifth manifest and package, scanner and tail manifests bind source, artifacts, runtime, dependencies, toolchain and host facts. Frozen 3.0.1 baseline identity is unchanged. Literal pinning does not qualify later artifacts or signed/frozen builds.",
       "evidence_refs": [
         "contract",
         "qualification",
-        "fourth_ci",
-        "package_decision"
+        "fifth_ci",
+        "package_fifth",
+        "scanner_fifth",
+        "tail_fifth"
       ]
     },
     {
@@ -123,13 +125,13 @@
         "RSP-003"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Kernel/client collectors and installed timing boundaries remain separate. Fourth-checkpoint package attribution completed ten fresh workers, including six profiles; the disjoint origin partition accounts for the formerly unnamed exclusive calling-thread CPU. Guard Python median shares are 37.309% protect and 51.752% evaluator; Pydantic Python/core recorded zero calls. These are instrumented function-origin observations, not language savings or native speedup. Earlier MCP phase cohorts remain separate. Native inner installed phases, full cold-resident attribution and SQLite VFS attribution remain open.",
+      "evidence_or_remaining_work": "Fifth package attribution completes ten fresh workers, including six profiles. Guard Python accounts for 41.9683% protect and 53.6792% evaluator disjoint function-origin exclusive CPU; Pydantic Python and core recorded zero calls. Each profile has one parse, one immutable index and one evidence batch, and matches separate validation commitments. These instrumented source-route observations are not language savings or native speedup. Fourth and MCP cohorts remain separate. Native installed inner phases, full cold-resident attribution and SQLite VFS attribution remain OPEN.",
       "evidence_refs": [
         "phases",
         "allocations",
         "package_phases",
-        "package_decision",
-        "fourth_ci"
+        "package_fifth",
+        "fifth_ci"
       ]
     },
     {
@@ -172,12 +174,13 @@
         "RSP-009"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Historical d0e Linux soak retained 100,000 requests/responses, 250,000 receipts, zero errors, 20,128 successful health checks, one stable daemon and 5.5121% sampled RSS growth. Fourth Windows-resident and daemon-edge workflows passed their declared jobs; optional daemon soak skipped. The later Darwin reader uses pinned Apple ABI/Mach timebase and stable process identity to conserve live/reaped descendant CPU; unavailable reads remain incomplete. Its actual Mac tests were skipped locally and await both macOS CI targets. Full four-platform process-tree/saturation qualification is not established.",
+      "evidence_or_remaining_work": "Fifth Linux native-wheel CI passed all 14 installed smoke gates and its 100,000-request/250,000-receipt soak, with zero errors, 18,484 successful health checks, one stable daemon and 3.4097% sampled RSS growth. Its soak p95 was 551.88 ms under the unchanged 4,500 ms soak ceiling; the separate registered Claude PostToolUse smoke had only two observations and p95 354.188 ms. Neither series qualifies the original installed-priority targets. Both actual Mac ignored-child witnesses exposed roughly doubled reap counters. General Darwin tree CPU is now unavailable with darwin_reaped_cpu_ambiguous; memory and private diagnostic counters remain independent. Unknown historical signal/reaping behavior prevents a complete total. Counters are not divided by two and tolerances are not relaxed. Windows RAM identity now reads actual inventory through the locked psutil dependency; failed reads remain missing. Full four-platform process-tree resources and saturation remain OPEN.",
       "evidence_refs": [
         "qualification",
         "third_ci",
-        "fourth_ci",
-        "darwin_resources"
+        "fifth_ci",
+        "darwin_resources",
+        "tail_fifth"
       ]
     },
     {
@@ -346,10 +349,11 @@
         "RSP-015"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The source I/O walker now classifies the narrow shared approval lease as synchronous authority fencing and traces recording-posture config separately. It also inventories Linux identity reuse and Rust identity components (9758a8ba6, 70a033f4d, bf2f096a7). Root reported 10 ownership tests passing; no foreground authority I/O is relabeled background publication.",
+      "evidence_or_remaining_work": "The source I/O walker now classifies the narrow shared approval lease as synchronous authority fencing and traces recording-posture config separately. It also inventories Linux identity reuse and Rust identity components (9758a8ba6, 70a033f4d, bf2f096a7). Root reported 10 ownership tests passing; no foreground authority I/O is relabeled background publication. Fifth ownership workflows exposed a missing classification for the offline regex benchmark crate. Its dedicated rust_semantic owner covers only that crate, including Cargo.toml and main.rs, and grants no production hook, policy, approval, receipt or installation authority. Regression tests, the authority gate against the same release base, and the full I/O gate pass locally. Fresh source CI remains separate.",
       "evidence_refs": [
         "contract",
-        "qualification"
+        "qualification",
+        "fifth_ci"
       ]
     },
     {
@@ -777,11 +781,12 @@
         "RSP-010"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "At measured 2ebb, the independent D/B=100/1,000/10,000 matrix completes all 36 candidate cardinality cells and 24 baseline cells; 12 baseline attempts remain censored at the unchanged 15-second whole-worker bound. Format preflight completes 20 candidate and 18 baseline cells, retaining two baseline Composer failures. The separate explicit npm * witness uses 100 admitted synthetic transport GETs per arm with actual decoder/resolver/evaluator/protect semantics. None-version kernel scope and noncomparable baseline results remain explicit; no censored worker supplies a completed evaluator timing.",
+      "evidence_or_remaining_work": "The fifth cardinality matrix completes 36 candidate and 23 baseline cells; 13 baseline attempts remain censored at the unchanged 15-second whole-worker limit. All 20 candidate and 18 baseline format cells complete; two baseline Composer coverage failures remain. Both explicit npm * resolution workers make 100 admitted synthetic-transport GETs through the actual decoder, resolver, evaluator and protect route. None-version kernel scope, absent baseline completion and noncomparable coverage remain explicit. No timed result is invented for a censored worker. The fourth cohort of 36 candidate completions, 24 baseline completions and 12 censored baselines remains separate.",
       "evidence_refs": [
         "package_decision",
+        "package_fifth",
         "package_phases",
-        "fourth_ci"
+        "fifth_ci"
       ]
     },
     {
@@ -839,11 +844,12 @@
         "RSP-012"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The measured 2ebb exact npm protect route has five independent alternating current/optimized-Python pairs: median wall 8,785.843 to 327.344 ms and CPU 7,739.458 to 319.842 ms; median paired reductions are 96.2752% wall and 95.8662% CPU. The 15-file public manifest and recovered phase evidence bind the exact cohort. The recorded release decision retains optimized Python and selects no package Rust implementation. Reopening requires a coarse model/identity/result boundary compared against optimized Python at the unchanged 30% benefit/5% other-metric gate. No unbuilt native pilot is called a failed comparison. This closes the literal comparison/decision criterion; the unchanged RSP-012 dependency remains BLOCKED and installed/platform qualification is not inherited.",
+      "evidence_or_remaining_work": "The measured 2ebb exact npm protect route has five independent alternating current/optimized-Python pairs: median wall 8,785.843 to 327.344 ms and CPU 7,739.458 to 319.842 ms; median paired reductions are 96.2752% wall and 95.8662% CPU. The 15-file public manifest and recovered phase evidence bind the exact cohort. The recorded release decision retains optimized Python and selects no package Rust implementation. Reopening requires a coarse model/identity/result boundary compared against optimized Python at the unchanged 30% benefit/5% other-metric gate. No unbuilt native pilot is called a failed comparison. This closes the literal comparison/decision criterion; the unchanged RSP-012 dependency remains BLOCKED and installed/platform qualification is not inherited. Separate fifth evidence has five independent pairs with wall medians of 11,735.251 → 274.568 ms and CPU medians of 5,930.041 → 245.011 ms; median paired reductions are 97.6966% and 95.8707%. This does not replace or pool the fourth decision cohort, build a Rust candidate, or close installed qualification.",
       "evidence_refs": [
         "package_decision",
         "package_phases",
-        "fourth_ci"
+        "fourth_ci",
+        "package_fifth"
       ]
     },
     {
@@ -915,12 +921,14 @@
       "dependencies": [
         "RSP-058"
       ],
-      "status": "OPEN",
-      "evidence_or_remaining_work": "Python parsing/identity/evidence tests and actual source-route fixtures remain. Measured 2ebb retains 36 candidate/24 baseline cardinality completions plus 12 censored baselines, and 20 candidate/18 baseline format completions plus two Composer failures. Broader named format/adversarial parity is still OPEN; conditional native implementation deferral does not establish that parity.",
+      "status": "DONE",
+      "evidence_or_remaining_work": "The literal source-test criterion covers aliases, supported workspace behavior, transitive/local/git/optional dependencies, prereleases, malformed/truncated input, stale bundles and explicit bun.lockb fallback. The final focused suite passed 265 tests, including 49 new cases. The reviewed coverage map joins existing tests with real evaluator cases, including ten malformed supported formats, stale-confidence behavior and named/targetless Bun fallback without binary-content reads. Bundler malformed specs now invalidate every projection. Complete-v3 invalidates a real saved v2 approval context; historical v1/v2 evidence retains its original identity. This completes the named source correctness criterion, not exhaustive grammar, Python/native parity or installed qualification. RSP-058 remains recorded and conditionally deferred; the original dependency and all other task criteria remain unchanged.",
       "evidence_refs": [
-        "package_decision",
+        "package_parity",
         "text_lockfile",
-        "fourth_ci"
+        "package_decision",
+        "package_fifth",
+        "fifth_ci"
       ]
     },
     {
@@ -1023,11 +1031,12 @@
         "RSP-012"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Optimized Python scanner evidence and the exact retained finding semantics are recorded. The separately opt-in regex experiment is source-integrated (8da83da9c) with 24 planned smoke or 840 planned full timed attempts, bounded private retention and independent-run benefit admission. No measurement accompanies it. Native selection, installed/platform equivalence and full-CLI benefit remain unproved; the existing BLOCKED status is unchanged.",
+      "evidence_or_remaining_work": "The first actual regex smoke built the native binary and passed four Rust and 69 actual bridge/collector tests, then failed before source identity or experiment preflight was retained. Of 24 planned attempts, zero were offered or completed and all 24 remain unoffered. The exact failed setup subcheck was not retained. Corrected executable admission, finite setup stages and attempt-bound retention require the same bounded smoke before the 840-attempt full comparison. Native selection and real CLI benefit remain unproved; the original BLOCKED status remains.",
       "evidence_refs": [
         "scanner",
         "scanner_decision",
-        "scanner_experiment"
+        "scanner_experiment",
+        "scanner_fifth"
       ]
     },
     {
@@ -1069,10 +1078,11 @@
         "RSP-068"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Production Secrets CLI remains Python and preserves exits 0/2/3. The opt-in regex source-CLI collector exercises exact finding/HMAC/completeness and native/fallback counters with startup, transport and cleanup inside its timed boundary. It is not an installed selected native CLI. No measurement or actual-binary/platform execution is inferred from locally skipped tests.",
+      "evidence_or_remaining_work": "Production Secrets CLI remains Python with exits 0/2/3. The experimental source-CLI collector preserves exact finding, HMAC, order and completeness semantics, native/fallback counts, and whole-CLI startup, transport and cleanup. Fifth native/bridge correctness checks passed, but setup failed before any timed CLI or semantic preflight offer. No installed selected-native CLI, full platform correctness or successful measurement is inferred.",
       "evidence_refs": [
         "scanner",
-        "scanner_experiment"
+        "scanner_experiment",
+        "scanner_fifth"
       ]
     },
     {
@@ -1102,9 +1112,12 @@
         "RSP-070"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "178 scanner/transport/shared-input tests pass, including mutation, redaction and incomplete coverage. Native detector/archive differential remains conditional.",
+      "evidence_or_remaining_work": "RSP-071 remains OPEN. Fifth source passed four Rust tests and 69 total selected Python tests using the actual pilot; these are not 69 separate parity cases, and all 24 planned timed attempts remained unoffered. The later bounded working-file reader retains descriptors, reads no more than the configured limit plus one overflow byte and verifies final identity before detection. Admitted replacement, growth or read failure now yields incomplete coverage and exit 2 while preserving earlier findings. Initial exclusions, supported link behavior, malformed-UTF-8 omission and finding/HMAC contracts remain explicit. Linux source suites passed 93 focused tests and, separately, 54 detector/bridge tests with 16 binary-dependent skips; these suites overlap. Five new full-CLI/native parity cases and relevant platform checks, including actual Windows execution, remain pending. The Windows ancestor limitation is documented. Existing staged-OID/shared-input witnesses and the archive's 510 calls with two timeouts remain separate; no native archive parity or performance result follows.",
       "evidence_refs": [
-        "scanner"
+        "scanner",
+        "scanner_fifth",
+        "scanner_working_files",
+        "archive_profile"
       ]
     },
     {
@@ -1117,10 +1130,11 @@
         "RSP-010"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "The current scanner/archive decision distinguishes retained Python boundaries from the still-unmeasured finding-heavy regex experiment. Its smoke/full collection has fixed 24/840-attempt plans and preserves failed/interrupted/ unavailable/unoffered outcomes. No actual optimized-Python/native benefit, installed route, or platform comparison accompanies the integrated collector.",
+      "evidence_or_remaining_work": "The scanner/archive decision retains Python boundaries and seven earlier clean timed states without qualifying benefit. Fifth finding-heavy smoke failed before all 24 planned offers; no finding-heavy timing completed. Corrected setup requires fresh smoke, then deliberate full collection of 840 attempts if admitted. All failed, interrupted, unavailable and unoffered work remains. Full-CLI optimized-Python/native benefit, finding equivalence and platform qualification remain OPEN.",
       "evidence_refs": [
         "scanner_decision",
         "scanner_experiment",
+        "scanner_fifth",
         "archive_profile"
       ]
     },
@@ -1202,11 +1216,12 @@
         "RSP-076"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Actual registration/readback and no-environment installed probes remain. Fourth native-wheel ARM passed; Linux/Windows capacity proof and Intel latency failed. All 20 explicit same-wheel Claude experiment jobs stopped before measurement at the manifest/capability target association; earlier interpreter and Windows archive-admission failures did not recur. Reviewed source now binds separate distribution and compiled target identities. Native production registration, experiment parity/benefit and installed selection remain open.",
+      "evidence_or_remaining_work": "Fifth target admission reached real installed Claude experiment requests: nine jobs passed and 11 measurement jobs failed, with all final encrypted retention steps successful. All six POSIX failures match the fixed native PostToolUse-unavailable response; all five Windows failures match discovery-unavailable. Hash matches identify response classes, not underlying causes. Later source adds bounded exact public error identities and read-only Windows discovery/security observations, without new authority, repair, retries or acceptance changes. Production selection remains off; no qualified same-artifact benefit or complete installed lifecycle follows.",
       "evidence_refs": [
         "launcher_experiment",
         "claude_target_identity",
-        "fourth_ci",
+        "claude_discovery",
+        "fifth_ci",
         "qualification"
       ]
     },
@@ -1871,9 +1886,9 @@
         "RSP-117"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Fourth installed Ollama/Builder scenarios passed on Linux, macOS ARM and Windows. Windows retained all 22 native-resident cases with durable receipts and control mutation checks. Intel completed two inactive cases, then enabled readiness took 403.453 ms against the unchanged 400 ms barrier. A later generation does not satisfy that timing. Full declared-platform contribution/ install/native lifecycle acceptance and original dependencies remain unmet.",
+      "evidence_or_remaining_work": "Fifth installed Ollama/Builder scenarios pass all 22 native cases on Linux, macOS ARM and Windows. Intel completes ten cases before disabled-control readiness takes 523.888 ms against the unchanged 400 ms barrier; Builder passes. Earlier failed attempts remain. These real native route, receipt and control observations do not complete every target, contribution/update/rollback lifecycle, or original qualification dependency.",
       "evidence_refs": [
-        "fourth_ci",
+        "fifth_ci",
         "qualification",
         "control",
         "ollama"
@@ -1904,13 +1919,14 @@
         "RSP-119"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Published translation/compatibility inventories identify 249 declarative rules and 42 null-matcher identities under guard.native-command-program.v1 and cpython-3.12-ucd15. Program digest 4df5208d0dc05ceaadb1de6a6d8f6d3f9e5395dffcf992640fed87b82a0df1c9 and catalog digest 232ff389ca607b805118a02bd9560e972453f9a406188237037138f4834faf11 are pinned. Fourth Linux/ARM/Windows scenario receipts supply actual installed production-route proof for declared cases, including Windows 22-case lifecycle. Owned unsupported/uncertain cases never count as successful empty matching. This closes coverage/diagnostics publication, not every matcher/platform qualification, Intel readiness, RSP-118 or a measured compatibility speedup.",
+      "evidence_or_remaining_work": "Published translation/compatibility inventories identify 249 declarative rules and 42 null-matcher identities under guard.native-command-program.v1 and cpython-3.12-ucd15. Program digest 4df5208d0dc05ceaadb1de6a6d8f6d3f9e5395dffcf992640fed87b82a0df1c9 and catalog digest 232ff389ca607b805118a02bd9560e972453f9a406188237037138f4834faf11 are pinned. Fourth Linux/ARM/Windows scenario receipts supply actual installed production-route proof for declared cases, including Windows 22-case lifecycle. Owned unsupported/uncertain cases never count as successful empty matching. This closes coverage/diagnostics publication, not every matcher/platform qualification, Intel readiness, RSP-118 or a measured compatibility speedup. Fifth independently supplies 22 native scenario cases on each of Linux, ARM and Windows, while Intel disabled readiness fails. Publication completion remains separate from full lifecycle or platform qualification.",
       "evidence_refs": [
         "native_coverage",
         "program",
         "matrix",
         "control",
-        "fourth_ci"
+        "fourth_ci",
+        "fifth_ci"
       ]
     },
     {
@@ -2128,10 +2144,10 @@
         "RSP-133"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Fourth Main CI has 114 jobs: 106 success, six skipped and two failed. 95/96 pytest shards passed; shard 54 retained one package phase-total failure and the aggregate job failed its dependency gate. All 96 duration artifacts exist, but duration-manifest and Sonar jobs skipped. Security, Windows-resident and daemon-edge declared jobs passed. Later source repairs have focused validation recorded separately; final required exact-source CI remains outstanding. The 42 individually reviewed Sonar dispositions remain unapplied, with no blanket gate/exclusion change.",
+      "evidence_or_remaining_work": "Fifth Main has 19 jobs: nine successful, three failed and seven skipped. No pytest shard ran because full collection failed. A scanner test polluted module search order; the later scoped-import correction passes local full collection and protected invariants. Both ownership workflows also failed the missing benchmark-crate classification; its exact mapping and source gates are corrected. Security passed all four jobs. The final integrated source collects 22,409 cases and retains all 24 protected invariants via scripts/ci/test_inventory.py. The final scanner selection passes 62 tests with 16 explicit native-binary skips; the release-workflow selection passes 133 tests. The earlier corrected integration batch passes 253 tests with 15 platform/native-binary skips, and a separate workflow-policy batch passes 36 tests. Package parity passes 265 focused tests including 49 new cases, and 93 committed-source harness correctness tests. The deterministic command differential generator and its independent --check pass all 51,000 cases; only three of 394 source commitments change, with zero lowered decisions, disposition changes or unreconciled cases. Two fixture reconciliation/privacy tests pass; subsequent scanner changes do not belong to that fixture source set. These suites overlap and must not be added together. All 43 changed Python files pass Ruff check/format; the 19 changed source/protocol files have zero type errors at the CI error level. Whole-workspace Rust formatting, same-release-base authority, full I/O ownership and privacy gates pass. The exact prospective final-source-range Gitleaks scan passes with zero findings. Independent source and evidence reviews cleared the changes. No local performance workload or new installed qualification is claimed; final published-source CI, actual platform execution and human approval remain separate. Fresh required CI and Sonar remain outstanding. The 42 individually reviewed Sonar dispositions remain unapplied, with no global gate or exclusion change.",
       "evidence_refs": [
         "qualification",
-        "fourth_ci",
+        "fifth_ci",
         "sonar"
       ]
     },
@@ -2145,10 +2161,10 @@
         "RSP-081"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "All four immutable wheel builds passed at fourth measured source 2ebb, including Windows dependency-bundle export. Their exact source/tree, wheel, runtime and dependency identities remain bound to that checkpoint. Later API source artifacts, post-sign/frozen identities and platform installation proof remain unestablished; successful earlier build jobs do not qualify later bytes or final installed release artifacts.",
+      "evidence_or_remaining_work": "All four immutable qualification wheel builds passed at fifth source 96a697, with exact source/tree, artifact/runtime/dependency and platform identities retained. Later-source wheel bytes, signed/frozen manifests and complete selected-artifact installation proof still require execution. Earlier successful build jobs cannot qualify a new source or signed/frozen bytes.",
       "evidence_refs": [
         "qualification",
-        "fourth_ci",
+        "fifth_ci",
         "pair_identity",
         "transitions"
       ]
@@ -2163,13 +2179,13 @@
         "RSP-015"
       ],
       "status": "OPEN",
-      "evidence_or_remaining_work": "Fourth native-wheel ARM passed its installed scope. Linux c64 delivered 48 allows/16 overloads but retained only 32 resident/16 fail-safe routes and the native-overload counter delta was zero; Windows had one ordinary fallback and a similar c64 conservation failure. Intel c16 was 1,014.141 ms against 1,000 ms. ARM paired candidate completed 386 daemon and 62 registered corpus cases before a c16 Codex PostToolUse schema rejection; only three of 16 offered latencies were retained. Failed response names/native cause remain unknown. Later capacity and stdout witnesses preserve those boundaries and do not supply a fix or qualified result. ACK-only posture has source tests, not installed Watch transition qualification. Final selected-artifact all-route, approval/fault/source/mixed-load and four-platform evidence remains required.",
+      "evidence_or_remaining_work": "Fifth indexed candidates all fail PostToolUse response validation: Linux OMP block at 1 MiB, ARM Cursor benign maximum, Intel Pi benign 1 KiB, and Windows Codex benign 1 KiB. Native elapsed times of 9/33/55/47 ms leave 2,937–2,985 ms of budget. No accepted receipt and the observer reason other leave the exact cause unknown. The later fixed vocabulary of 34 command-control error codes changes diagnostics only. Fifth Linux native-wheel CI passed all 14 installed smoke gates and its 100,000-request/250,000-receipt soak, with zero errors, 18,484 successful health checks, one stable daemon and 3.4097% sampled RSS growth. Its soak p95 was 551.88 ms under the unchanged 4,500 ms soak ceiling; the separate registered Claude PostToolUse smoke had only two observations and p95 354.188 ms. Neither series qualifies the original installed-priority targets. Windows installed SLO fails with six unclassified responses across c16/c64 and zero observed raw-bridge None returns; their underlying cause remains unknown. ACK-only posture has source tests but still needs actual mixed installed transitions. Final artifact evidence for all routes, approvals, source reads, aliases and faults remains OPEN.",
       "evidence_refs": [
         "qualification",
         "contract",
-        "fourth_ci",
+        "fifth_ci",
         "capacity_diagnostics",
-        "launcher_rejection",
+        "native_error_codes",
         "acknowledged_posture",
         "raw_utf8"
       ]
@@ -2184,12 +2200,13 @@
         "RSP-010"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The four-platform full plan retains five independent priority pairs, original sample counts, cohort/estimator admission and sealed numeric commitments. Fourth qualification built all four immutable wheels; all four indexed pair jobs and four aggregators failed. Linux/Windows target-association recording failures, Mac frozen-baseline getfqdn timeouts and candidate failures remain. The exact target correction is source-only; no completed comparison is manufactured. Optional transitions/nonpriority collection skipped. The separate 16-registration tail plan and all full installed gates remain blocked.",
+      "evidence_or_remaining_work": "Fifth qualification has 27 jobs: nine successful, 16 failed and two skipped. All four immutable builds pass; all four indexed pairs and all eight ordinary/tail aggregators fail. Every indexed candidate returns an invalid PostToolUse error; Mac frozen baselines stop in OS reverse DNS. Only Linux nonpriority pair zero passes both two-sample arms. Windows workers complete but RAM identity is missing; Mac candidate arms cannot substitute for failed baselines. The verified singleton directory-layout and Windows RAM source fixes need new smoke. Original five-run, confidence/resource and warm/cold minima remain unchanged. Full selections for 320 tail jobs and 840 scanner attempts remain absent.",
       "evidence_refs": [
         "qualification",
         "pair_identity",
         "nonpriority_tails",
-        "fourth_ci"
+        "tail_fifth",
+        "fifth_ci"
       ]
     },
     {
@@ -2202,12 +2219,13 @@
         "RSP-131"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The separate d0e Linux legacy soak completed 100,000 requests/responses and 250,000 receipts with zero errors, 20,128 successful health checks, one stable daemon and 5.5121% sampled RSS growth. That historical scope is not a later-source mixed-load result. Fourth native-wheel ARM passed, while Linux/Windows conservation and Intel latency failed; optional daemon-edge soak skipped. Complete selected-source all-platform mixed-load, resource, receipt/control and soak qualification remains outstanding.",
+      "evidence_or_remaining_work": "Fifth Linux native-wheel CI passed all 14 installed smoke gates and its 100,000-request/250,000-receipt soak, with zero errors, 18,484 successful health checks, one stable daemon and 3.4097% sampled RSS growth. Its soak p95 was 551.88 ms under the unchanged 4,500 ms soak ceiling; the separate registered Claude PostToolUse smoke had only two observations and p95 354.188 ms. Neither series qualifies the original installed-priority targets. This source-specific Linux installed-wheel soak remains distinct from all-platform mixed offered load, policy mutation, inventory, real native receipt/control and recovery qualification. Historical d0e observations of 100,000 requests, 250,000 receipts and zero errors remain separately bound. Current Mac CPU ambiguity and Windows SLO failures prevent complete resource acceptance. Original RSS growth, saturation, error and receipt obligations remain BLOCKED.",
       "evidence_refs": [
         "qualification",
         "third_ci",
-        "fourth_ci",
-        "mixed"
+        "fifth_ci",
+        "mixed",
+        "darwin_resources"
       ]
     },
     {
@@ -2220,11 +2238,12 @@
         "RSP-138"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "The stopped-artifact probe and four-platform opt-in workflow preserve exact baseline install, candidate upgrade/reinstall, baseline rollback and candidate restore identities, prior receipt retirement and immutable encrypted capture. Fourth transition jobs skipped, so no actual transition result is claimed. Mixed in-flight generations, signing/frozen artifacts and live production registration lifecycle remain outstanding.",
+      "evidence_or_remaining_work": "The stopped-artifact probe preserves exact baseline installation, candidate upgrade/reinstall, baseline rollback and candidate restoration in separate environments. Fourth and fifth transition jobs were skipped. No measured stopped or live transition follows. In-flight mixed generations, signed/frozen bytes, changed-program rollback and live registration lifecycle remain outstanding.",
       "evidence_refs": [
         "transitions",
         "qualification",
-        "fourth_ci"
+        "fourth_ci",
+        "fifth_ci"
       ]
     },
     {
@@ -2256,13 +2275,14 @@
         "RSP-137"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "Current architecture, ledger and takeaway reconcile API source 872b0517b5596f8c19abd0fce185c7e14983cc20, tree 581e5cb30bd0082abf0356b5931b26d5ef204903, with measured fourth source 2ebb01ff356101aea8d658ce639fe2c87188bd0d: 40 terminal workflows, 35 success/five failure. Native verdict, availability and delivery stay separate; all original task definitions and dependencies remain exact. The source includes ACK-only posture, exact target association, package decision/phase-test correction, Darwin accounting, bounded failure witnesses and opt-in scanner collection without importing old measurements into new qualification. Earlier cohorts/failures remain in immutable reports and EXECUTION history. Full installed qualification and release are incomplete.",
+      "evidence_or_remaining_work": "Current PRD, architecture, ledger, review and takeaway reconcile source d06d8093bb1744ff22fcaf65fcfd1e908c989c2d, tree 9b2caee188ace6c0bc97379e08708f7f4019d4e0, with fifth measured source 96a69725eab018674174dabc6f205a4087d6ff4b: 41 terminal workflows, 33 successful and eight failed. Later source corrects collection/ownership, scanner identity/retention and bounded working-file reads, ambiguous Darwin CPU, Windows RAM, singleton artifact roots and finite diagnostics without authority, deadline or acceptance changes. All original task fields, historical reports and the execution suffix remain unchanged. Installed qualification, human approval and release remain incomplete.",
       "evidence_refs": [
         "qualification",
         "contract",
-        "fourth_ci",
+        "fifth_ci",
         "package_decision",
-        "acknowledged_posture"
+        "acknowledged_posture",
+        "scanner_working_files"
       ]
     },
     {
@@ -2276,10 +2296,10 @@
         "RSP-141"
       ],
       "status": "BLOCKED",
-      "evidence_or_remaining_work": "Measured PR #2970 fourth source has 35 successful and five failed workflows. Bounded independent agent reviews cover the later source corrections and evidence limitations. They are not independent latest-push human/code-owner approval or successful final required CI. Historical foundation approvals do not approve the later candidate; PR #2954 remains another writer's branch.",
+      "evidence_or_remaining_work": "Fifth PR #2970 source has 33 successful and eight failed workflows. Bounded independent agent reviews cover source corrections and evidence limits; they are not independent latest-push human/code-owner approval or green final required CI. Foundation reviews do not approve later candidate bytes. PR #2954 remains another writer's branch; no whole-tree overwrite or unreviewed merge.",
       "evidence_refs": [
         "qualification",
-        "fourth_ci",
+        "fifth_ci",
         "technical_review"
       ]
     },
@@ -2314,7 +2334,7 @@
         "RSP-143"
       ],
       "status": "DONE",
-      "evidence_or_remaining_work": "The source-bound PRD/current-contract/review/ledger/takeaway handoff at 872b0517b5596f8c19abd0fce185c7e14983cc20 (tree 581e5cb30bd0082abf0356b5931b26d5ef204903) lists selected/deferred work, exact metrics and coverage, commands/results, artifact identities and preserved rollback obligations. Status: 83 DONE / 24 OPEN / 29 BLOCKED / 8 DEFERRED. Four measured CI cohorts remain distinct; fourth is 35 success/five failure across 40 workflows. Later source/tests are clearly unqualified. This closes accurate handoff publication only, without closing its unchanged dependency list, full installed performance, actual rollout/ rollback, final CI or independent latest-push approval.",
+      "evidence_or_remaining_work": "The source-bound PRD, current contract, review, ledger and takeaway at d06d8093bb1744ff22fcaf65fcfd1e908c989c2d, tree 9b2caee188ace6c0bc97379e08708f7f4019d4e0, preserve all 144 definitions and record selected/deferred work, source/artifact identities, actual fifth results, later commands/tests and rollback obligations. Status: 84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED. Fifth results of 41 terminal workflows, 33 successful and eight failed, remain distinct from earlier cohorts and new unqualified source. Literal accurate-handoff publication is complete; unchanged dependencies, installed benefit, mixed load, signed/frozen/live rollback, final CI and human approval remain open.",
       "evidence_refs": [
         "qualification",
         "contract",
@@ -2322,63 +2342,79 @@
         "second_ci",
         "third_ci",
         "fourth_ci",
+        "fifth_ci",
         "package_decision"
       ]
     }
   ],
-  "review_scope": "All 144 original IDs, numbers, titles, acceptance conditions and dependencies are unchanged. The fourth measured checkpoint and later API source are separate. Literal RSP-001/031/054/070/120/144 criteria close without promoting unmet dependencies or full installed qualification. Package RSP-055/056/057/058/060 are deferred by the measured keep-Python/no-selection decision; RSP-059 stays OPEN, RSP-012 BLOCKED and RSP-034 OPEN. No unbuilt native component is labeled a failed comparison. Earlier three MCP deferrals retain their original cohort. Status: 83 DONE / 24 OPEN / 29 BLOCKED / 8 DEFERRED.",
+  "review_scope": "All 144 original IDs, numbers, titles, acceptance conditions and dependencies are preserved. Fifth measured source 96a697 has 41 terminal workflows: 33 successful and eight failed. Later source corrections require new execution. Package and MCP deferrals retain their independent decision cohorts. No unbuilt Rust component is labeled a failed comparison, no smoke qualifies installed benefit, and no final CI or human approval is inferred. 84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED. Only RSP-059 changes from OPEN to DONE, supported by the reviewed source-test coverage; all other statuses are preserved.",
   "release_snapshot": {
-    "observation_basis": "Exact GitHub terminal statuses, logs and artifact-backed fourth reports on 2026-09-17; all four earlier measured cohorts retain separate identities.",
+    "observation_basis": "Exact GitHub terminal statuses, logs and artifact-backed fifth reports on 2026-09-17; all five measured cohorts retain separate identities.",
     "foundation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2951",
     "foundation_head": "e449594e86c717e66e14598a4130475de79c536f",
     "foundation_checks": "Historical observation: 25 successful workflows and 33 resolved threads. Independent latest-push approval remains unestablished; refresh before merge.",
     "implementation_pr": "https://github.com/hashgraph-online/hol-guard/pull/2970",
-    "implementation_remote_head": "2ebb01ff356101aea8d658ce639fe2c87188bd0d",
+    "implementation_remote_head": "96a69725eab018674174dabc6f205a4087d6ff4b",
     "implementation_branch": "codex/release-3.2-rust-finalization",
     "local_integration_branch": "work/rsp-performance-finalization-32",
     "concurrent_pr": "https://github.com/hashgraph-online/hol-guard/pull/2954",
     "concurrent_pr_policy": "Another writer owns that branch; no whole-tree overwrite or unreviewed merge.",
-    "integrated_source_head": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-    "integrated_git_tree": "581e5cb30bd0082abf0356b5931b26d5ef204903",
-    "integrated_publication_status": "Immutable fifth GitHub API source/tree checkpoint exists, supplied explicitly by the publication owner; the owned branch remains at measured 2ebb until final documentation publication. The frozen 40 workflow results belong only to fourth 2ebb; later-source CI and installed qualification are not inferred. Refresh remote branch and checks after publication.",
+    "integrated_source_head": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+    "integrated_git_tree": "9b2caee188ace6c0bc97379e08708f7f4019d4e0",
+    "integrated_publication_status": "An immutable sixth source/tree checkpoint exists. At this prepublication observation, the owned branch was at fifth source 96a697. These 41 workflow results belong only to 96a697. Final documentation publication advances the owned branch; refresh its live head and checks. Later qualification is not inferred.",
     "workflow_status_counts": {
-      "success": 35,
-      "failure": 5,
+      "success": 33,
+      "failure": 8,
       "skipped": 0,
       "active": 0
     },
-    "launched_workflows": 40,
+    "launched_workflows": 41,
     "workflow_failures": [
       {
         "scope": "main_ci",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35240794078",
-        "observation": "114 jobs: 106 success/six skipped/two failures. Shard54 package_phase_total_invalid is the one source failure (227pass/1fail); the aggregate dependency gate also failed. 95/96 pytest shards passed, all96 duration artifacts exist; duration-manifest/Sonar skipped. Later source repair requires new CI."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986641",
+        "observation": "19 jobs: nine successful, three failed and seven skipped. Collection failed before all 96 test shards; a scanner test import path shadowed ci. The strict scoped-test correction passes locally. New required CI and Sonar remain outstanding."
+      },
+      {
+        "scope": "io_ownership",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986568",
+        "observation": "The new benchmark crate lacked a precise permanent owner. Its dedicated benchmark-only mapping now passes local gates; I/O authority was not reclassified."
+      },
+      {
+        "scope": "rust_authority",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986675",
+        "observation": "The same missing benchmark-crate owner caused this failure. The complete later ownership graph was validated locally."
       },
       {
         "scope": "native_wheel",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35240794111",
-        "observation": "ARM passed. Linux c64 conservation failed; Windows ordinary resident-share/safe-corpus and c64 conservation failed. Intel c16 reached1014.141ms against1000ms. All original failures remain; native unavailability is not native allow and no underlying pool/scheduler cause is proven."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986691",
+        "observation": "Linux SLO and soak passed. Both Mac ignored-child CPU checks failed, and Windows installed SLO failed. Later Darwin CPU remains unavailable; no complete resource window is established."
       },
       {
         "scope": "package_component",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35240794034",
-        "observation": "All10 phase workers and five exact protect pairs completed. Diagnostic/cardinality and format finalization failed with12 censored baselines and two Composer failures. The measured decision retains Python; no Rust pilot was built or judged a failed comparison."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986524",
+        "observation": "All ten phase workers and five protect pairs completed; 13 baseline cardinality workers were censored and two Composer cases failed. The fourth decision remains separate; no failed Rust comparison is claimed."
       },
       {
         "scope": "native_performance",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35240794284",
-        "observation": "21 jobs:8success/9failure/4skip. Four immutable builds passed. All four indexed pairs/four aggregators failed. Linux/Windows target recording mismatched identities; Mac frozen baselines timed out in getfqdn; ARM candidate failed later Codex Post schema and Intel Pi source mismatch. Linux/ARM/Windows scenarios passed; Intel403.453ms failed400ms readiness. Optional transitions/nonpriority skipped; no completed comparison."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986949",
+        "observation": "27 jobs: nine successful, 16 failed and two skipped. Four builds pass; all indexed pairs and eight aggregators fail. Three platform scenarios pass 22 cases each; Intel readiness of 523.888 ms fails the 400 ms barrier. Only the Linux tail pair passes. No qualified comparison follows."
       },
       {
         "scope": "claude_experiment",
-        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35240794149",
-        "observation": "All20 jobs failed manifest/runtime target association before any measurement request. Each encrypted one failure-summary file; no measurement journals and final retention gates failed. Later exact-association repair requires new execution; production activation stays off."
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986580",
+        "observation": "20 jobs: nine successful and 11 measurement failures, with all archives retained. Six POSIX failures match the fixed native PostToolUse-unavailable response; all five Windows failures match discovery-unavailable. Underlying causes remain unproved and production activation stays off."
+      },
+      {
+        "scope": "scanner_experiment",
+        "run": "https://github.com/hashgraph-online/hol-guard/actions/runs/35247986730",
+        "observation": "Four Rust and 69 actual bridge correctness tests pass; setup fails before identity/preflight. All 24 planned attempts remain unoffered and all three uploads are retained. The later correction requires new smoke."
       }
     ],
     "qualification_complete": false,
     "merge_or_release_complete": false,
-    "local_validation": "The later integrated source has 85 passing ACK/target/package tests and a separate 165-passing-test suite with three Darwin-only skips. Two pair-related suites passed 105 and 45 tests separately; these and the other suites overlap and are not additive. The scanner collector source suite recorded 63 passes and 11 actual-native-binary skips; two new diagnostic-error-preservation tests also passed with 29 deselected. Skipped binary checks do not establish actual native correctness. The bounded opt-in scanner collector is integrated (8da83da9c, followed by diagnostic-error preservation 54b9f11f3), but no scanner measurement accompanies it. Darwin source/ABI/conservation checks do not establish actual macOS execution. ACK delivery/publication source tests use the real signed builder and ACK barrier with injected resident transport, not an installed transition measurement. Capacity and launcher failure witnesses preserve original failures and limits. All 43 changed Python files passed Ruff check/format, whole-Cargo formatting passed, and workflow policy plus the prospective release-base-to-source Gitleaks scan passed with zero findings. All later fixes require their own exact-source CI/installed evidence; no suite count or historical measurement is promoted to that qualification.",
-    "historical_evidence": "FIRST_CI_EVIDENCE.md; SECOND_CI_EVIDENCE.md; THIRD_CI_EVIDENCE.md; FOURTH_CI_EVIDENCE.md; exact artifact manifests; unchanged EXECUTION historical suffix; prior ledger commits",
+    "local_validation": "The final integrated source collects 22,409 cases and retains all 24 protected invariants via scripts/ci/test_inventory.py. The final scanner selection passes 62 tests with 16 explicit native-binary skips; the release-workflow selection passes 133 tests. The earlier corrected integration batch passes 253 tests with 15 platform/native-binary skips, and a separate workflow-policy batch passes 36 tests. Package parity passes 265 focused tests including 49 new cases, and 93 committed-source harness correctness tests. The deterministic command differential generator and its independent --check pass all 51,000 cases; only three of 394 source commitments change, with zero lowered decisions, disposition changes or unreconciled cases. Two fixture reconciliation/privacy tests pass; subsequent scanner changes do not belong to that fixture source set. These suites overlap and must not be added together. All 43 changed Python files pass Ruff check/format; the 19 changed source/protocol files have zero type errors at the CI error level. Whole-workspace Rust formatting, same-release-base authority, full I/O ownership and privacy gates pass. The exact prospective final-source-range Gitleaks scan passes with zero findings. Independent source and evidence reviews cleared the changes. No local performance workload or new installed qualification is claimed; final published-source CI, actual platform execution and human approval remain separate.",
+    "historical_evidence": "FIRST_CI_EVIDENCE.md; SECOND_CI_EVIDENCE.md; THIRD_CI_EVIDENCE.md; FOURTH_CI_EVIDENCE.md; FIFTH_CI_EVIDENCE.md; hashed artifact manifests; unchanged EXECUTION history; prior ledger commits",
     "validation_only_followups": [
       {
         "source_head": "2ebb01ff356101aea8d658ce639fe2c87188bd0d",
@@ -2386,11 +2422,11 @@
         "scope": "Six later old-head label events are terminal: four skipped Native/Claude runs and two empty authorization successes, with no benchmark offers, release builds or publishes. These do not change the frozen 40-workflow cohort."
       }
     ],
-    "implementation_code_checkpoint_head": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-    "last_measured_source_head": "2ebb01ff356101aea8d658ce639fe2c87188bd0d",
-    "last_measured_git_tree": "1c41bef1979ead9e50ee406a60505ce6894aa461",
-    "last_measured_merge_head": "d769f9722d34e98cadea058e01575b48ab24f053",
-    "workflow_status_source_head": "2ebb01ff356101aea8d658ce639fe2c87188bd0d",
+    "implementation_code_checkpoint_head": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+    "last_measured_source_head": "96a69725eab018674174dabc6f205a4087d6ff4b",
+    "last_measured_git_tree": "7da3dcf25df5dc75b61f773c40a3a4dd96bbf2fa",
+    "last_measured_merge_head": "c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d",
+    "workflow_status_source_head": "96a69725eab018674174dabc6f205a4087d6ff4b",
     "supplemental_label_events": {
       "source_head": "2ebb01ff356101aea8d658ce639fe2c87188bd0d",
       "evidence_path": "evidence/fourth-ci-2ebb/supplemental-label-events.json",
@@ -2411,13 +2447,13 @@
   "evidence_catalog": {
     "contract": {
       "path": "CURRENT_CONTRACT.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Current authority/delivery contract; exact ACK visibility and unchanged availability are distinct. No installed promotion."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Sixth source authority/delivery contract and truthful resource/diagnostic limits; no installed promotion."
     },
     "qualification": {
       "path": "RELEASE_REVIEW.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Later API source than measured 2ebb. Fourth 40 terminal workflows are 35 success/five failure; final qualification is incomplete."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Later corrected source than fifth 96a697. Its 41 terminal workflows, 33 successful and eight failed, belong only to that measured cohort. Release remains incomplete."
     },
     "identity": {
       "path": "../rsp-runtime-identity-performance.md",
@@ -2531,13 +2567,13 @@
     },
     "package_phases": {
       "path": "package-phase-attribution.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Fourth fresh-worker origin evidence exists; the later negative-total test/diagnostic correction preserves rejection. Instrumented shares are not native speedups."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Fourth/fifth fresh-worker origin profiles remain independent, with an exact-worker test and strict total rejection. Instrumented shares are not native benefit."
     },
     "launcher_experiment": {
       "path": "installed-claude-pilot-experiment.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Opt-in same-wheel experiment remains dormant. Fourth offered no timing request; later target repair establishes no parity or native benefit."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Fifth experiment has nine successful and 11 failed jobs, with all final retention completed. Production activation remains off. Fixed target association passed preparation; real parity, benefit and lifecycle remain incomplete."
     },
     "transitions": {
       "path": "installed-artifact-transitions.md",
@@ -2626,13 +2662,13 @@
     },
     "darwin_resources": {
       "path": "darwin-resource-accounting.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Integrated Darwin ABI/timebase and live/reaped CPU accounting. Actual macOS checks skipped locally; installed/platform resource proof remains pending."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Actual ignored-child witnesses show roughly doubled raw rollup. Later general CPU is unavailable with darwin_reaped_cpu_ambiguous. Memory and private diagnostics remain; no complete process-tree qualification."
     },
     "pair_identity": {
       "path": "qualification-target-identity.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Separate artifact distribution and compiled runtime target identities retain exact wheel/runtime/dependency proof. Fourth failed pairs are not reclassified."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Exact artifact/runtime/dependency binding is unchanged. Fifth target preparation proceeds; later singleton artifact roots retain strict comparison admission."
     },
     "claude_target_identity": {
       "path": "claude-launcher-target-identity-diagnosis.md",
@@ -2656,25 +2692,65 @@
     },
     "scanner_decision": {
       "path": "scanner-current-decision.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Retained Python scopes, completed archive profiling decision and still-unmeasured regex boundary remain distinct; no production native selection."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Retained Python/archive decision. Finding-heavy selection remains open after first smoke failed before offers. No production native activation."
     },
     "scanner_experiment": {
       "path": "scanner-regex-pilot-ci.md",
-      "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
-      "scope_and_limit": "Integrated 8da83da9c opt-in fixed 24-smoke/840-full attempt plan with retention/identity/benefit gates. No measurements; skipped actual-binary tests are not native proof."
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Fixed 24-attempt smoke and 840-attempt full plan, bounded executable reader, finite setup stages and attempt-bound retention. Fifth offered zero attempts; next smoke is required."
     },
     "native_coverage": {
       "path": "../native-command-compatibility-admission.md",
       "source_commit": "872b0517b5596f8c19abd0fce185c7e14983cc20",
       "scope_and_limit": "249 declarative/42 null-matcher inventory with exact program/catalog/profile identity and bounded installed declared-case route evidence; compatibility is not speedup."
+    },
+    "fifth_ci": {
+      "path": "FIFTH_CI_EVIDENCE.md",
+      "source_commit": "96a69725eab018674174dabc6f205a4087d6ff4b",
+      "scope_and_limit": "Exact candidate/merge/equal-tree identity, 41 terminal workflows and failed scopes. Successful authorization-only workflows did not publish."
+    },
+    "package_fifth": {
+      "path": "PACKAGE_FIFTH_CI_EVIDENCE.md",
+      "source_commit": "96a69725eab018674174dabc6f205a4087d6ff4b",
+      "scope_and_limit": "Separate five-pair cohort and all ten phase workers; 36 candidate and 23 baseline cardinality completions, 13 censored baselines and two Composer failures; 16 hashed public files. No native pilot or pooling."
+    },
+    "scanner_fifth": {
+      "path": "scanner-smoke-ci-96a697.md",
+      "source_commit": "96a69725eab018674174dabc6f205a4087d6ff4b",
+      "scope_and_limit": "Four Rust and 69 actual bridge tests passed. Collection failed before identity: 24 planned, zero offered/completed and 24 unoffered. All three uploads were retained. Later source does not reclassify this failure."
+    },
+    "scanner_working_files": {
+      "path": "scanner-working-file-contract.md",
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Bounded retained-descriptor reads and deliberate incomplete/exit-2 behavior for admitted changes/failures. Linux 93 passes and separate 54 passes/16 native-binary skips overlap; five new actual-native cases and relevant platform execution remain pending. No native activation, timing or Windows ancestor-ABA guarantee."
+    },
+    "tail_fifth": {
+      "path": "nonpriority-smoke-ci-96a697.md",
+      "source_commit": "96a69725eab018674174dabc6f205a4087d6ff4b",
+      "scope_and_limit": "Linux two-sample pair passed. Windows private workers completed but admission failed on missing RAM identity. Mac baselines failed DNS. Three authenticated archives yielded 25 private files; old outer exit status remains unknown."
+    },
+    "claude_discovery": {
+      "path": "claude-discovery-diagnostics.md",
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Fifth response-class hashes identify no underlying cause. Later fixed public vocabulary and non-atomic, read-only Windows current-object observations are not repairs or Rust authority proof."
+    },
+    "native_error_codes": {
+      "path": "../../../scripts/native_slo_error_codes.py",
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Exactly 34 already-public Rust command-control diagnostic identities, with no prefix/raw-message admission or production decoder/retry change."
+    },
+    "package_parity": {
+      "path": "package-format-parity-coverage.md",
+      "source_commit": "d06d8093bb1744ff22fcaf65fcfd1e908c989c2d",
+      "scope_and_limit": "Literal RSP-059 source correctness coverage and complete-v3 admission/approval identity correction. No native parser, exhaustive grammar or installed qualification; historical v1/v2 evidence remains unchanged."
     }
   },
   "status_counts": {
-    "DONE": 83,
-    "OPEN": 24,
+    "DONE": 84,
+    "OPEN": 23,
     "BLOCKED": 29,
     "DEFERRED": 8
   },
-  "implementation_git_tree": "581e5cb30bd0082abf0356b5931b26d5ef204903"
+  "implementation_git_tree": "9b2caee188ace6c0bc97379e08708f7f4019d4e0"
 }

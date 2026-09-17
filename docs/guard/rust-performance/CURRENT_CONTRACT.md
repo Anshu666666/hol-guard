@@ -1,17 +1,18 @@
 # Current decision and performance contract
 
-This contract describes source `872b0517b5596f8c19abd0fce185c7e14983cc20`, tree
-`581e5cb30bd0082abf0356b5931b26d5ef204903`, before the current documentation refresh. The latest
-measured publication is `2ebb01ff356101aea8d658ce639fe2c87188bd0d`, tree
-`1c41bef1979ead9e50ee406a60505ce6894aa461`; its PR merge is
-`d769f9722d34e98cadea058e01575b48ab24f053` with the same tree. The
-[fourth checkpoint](FOURTH_CI_EVIDENCE.md) records 40 terminal workflows:
-35 successful and five failed. Later source corrections require their own
-execution. The [release review](RELEASE_REVIEW.md) separates implementation,
-actual measurements and remaining acceptance.
+This contract describes source `d06d8093bb1744ff22fcaf65fcfd1e908c989c2d`, tree
+`9b2caee188ace6c0bc97379e08708f7f4019d4e0`, before the current documentation refresh. The [fifth CI checkpoint](FIFTH_CI_EVIDENCE.md) records measured PR head
+`96a69725eab018674174dabc6f205a4087d6ff4b`, tree `7da3dcf25df5dc75b61f773c40a3a4dd96bbf2fa`.
+Its merge `c9a4b508ec5e9f5e6526990f9a3fad8c8b97646d` has the same tree and distinct build identity.
+All 41 workflow instances are terminal: **33 successful and eight failed**.
+Successful authorization-only publish workflows did not publish a release.
+Later source corrections require new CI; earlier
+[first](FIRST_CI_EVIDENCE.md), [second](SECOND_CI_EVIDENCE.md),
+[third](THIRD_CI_EVIDENCE.md) and [fourth](FOURTH_CI_EVIDENCE.md)
+cohorts retain their original identities and failed observations.
 
 Original requirements and all 144 task records remain in [PRD](PRD.md) and
-[TODO](TODO.md). The current ledger is **83 DONE / 24 OPEN / 29 BLOCKED / 8 DEFERRED**.
+[TODO](TODO.md). The current ledger is **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED**.
 A completed source, specification, pinning or accurate handoff criterion does
 not complete its installed, artifact, approval or rollout dependencies.
 The [first](FIRST_CI_EVIDENCE.md), [second](SECOND_CI_EVIDENCE.md) and
@@ -67,11 +68,14 @@ or authority cache. Cold work before readiness must still fit existing startup
 budgets. The original storage burst passed unchanged assertions. The older
 broader deferred-backfill failure remains recorded in its investigation; all
 96 pytest jobs at d0e passed. At the fourth checkpoint, 95 of 96 passed;
-one shared-process package attribution test rejected a negative profile total.
-All 96 duration artifacts were uploaded, but aggregate duration validation and
-Sonar were skipped. The later correction exercises the actual fresh-worker CLI
-and still rejects invalid totals. Neither cohort supplies green final-head CI
-or installed performance qualification.
+one package attribution test rejected a negative profile total. Its correction
+uses the real fresh-worker CLI and preserves strict invalid-total rejection.
+Fifth Main instead failed collection before any shard ran because a scanner
+test left a scripts path in the global import path, shadowing the root ci
+namespace. The path is now restored immediately after helper import; full
+local collection and protected invariants pass. Duration aggregation and Sonar
+have not run on the corrected source. Neither a historical cohort nor local
+collection supplies green final-head CI or installed qualification.
 
 ## Decision and delivered response
 
@@ -160,6 +164,15 @@ limits remain unchanged, with explicit text-node/depth/projection accounting. Ow
 then the corrected context-reuse regression passed in the final 50-case and single-case runs. All
 392 frozen-base direct-selector comparisons agreed. No timing, native package or installed
 qualification is claimed.
+
+The later [format parity correction](package-format-parity-coverage.md) advances
+current LOCKFILE_PARSER_VERSION to complete-v3. Invalid top-level Bundler specs
+cannot publish partial views as complete; unsupported bun.lockb fallback avoids
+content parsing in manifest target discovery. Package approval context includes
+the parser version, and a saved v2 allow cannot match the new v3 interpretation.
+The preceding source-test observations remain historical; fourth/fifth paired
+measurements retain baseline complete-v1 and candidate complete-v2 and do not
+measure this later complete-v3 correctness change.
 
 See the [text lockfile contract](../rsp-text-lockfile-contract.md). JSONC/UTF-8 and
 duplicate semantics stay with the existing supported parsers. Text admission now
@@ -450,8 +463,12 @@ write/change times, single-link, owner/DACL and ancestry checks remain; no field
 is masked or replaced by cached `DirEntry` metadata. At the fourth checkpoint all five Windows pilot jobs passed their contract
 tests and encrypted one failure summary; ordinary Windows qualification bundle
 export also passed. The pilot stopped before measurement journals, so this
-does not prove their installed retention path. Raw observations and the private
-recovery key stay out of Git.
+does not prove their installed retention path. Fifth experiment jobs reached
+real measurement preparation/offers, and all 20 final archives were retained.
+Three nonpriority fifth archives were independently authenticated and recovered
+with 25 private files in total; their original Windows/RAM and Mac baseline
+failures remain. This is bounded recovery evidence, not all-platform fault
+qualification. Raw observations and the private recovery key stay out of Git.
 
 Local archive/recovery tests include exact interrupted JSONL and private Unix
 modes. The second-checkpoint MCP archive was actually authenticated and recovered:
@@ -465,7 +482,7 @@ categories instead of OS messages. Historical scanner digests cover the specifie
 
 ## Source baselines and conditional ports
 
-Immutable `complete-v2` package results reuse one bounded parse per evaluation,
+Current immutable `complete-v3` package results reuse one bounded parse per evaluation,
 including text formats and direct/manifest projections. Composer transitive
 identity preserves canonical ASCII `vendor/package` names; invalid paths and
 non-ASCII normalization tricks are rejected. Direct dependencies are excluded
@@ -498,17 +515,24 @@ decoder, semver resolver, evaluator, protect projection and evidence persistence
 They select lower-risk version 2.0.0 over higher-risk 1.0.0, unlike the separate
 None-version highest-risk kernel. Only transport bytes are synthetic. Bare
 `latest` retains its literal shortcut and is not covered by this witness.
-RSP-050 retains its kernel/censored-baseline scope: 36 candidate cardinality
+At the fourth decision cohort, RSP-050 retains its kernel/censored-baseline scope: 36 candidate cardinality
 cells complete, 24 baseline cells complete and 12 are censored. All 20 candidate
 format cells complete; 18 baseline cells complete and two Composer cells fail.
-Installed package flow, broader parity and latency tails remain separate.
+The separate fifth cohort has 36 candidate/23 baseline completions and 13
+censored baseline cardinality attempts, with the same two baseline Composer
+failures. Its own paired route and phase figures are retained in
+[PACKAGE_FIFTH_CI_EVIDENCE](PACKAGE_FIFTH_CI_EVIDENCE.md); no cohort is pooled or
+converted into a native benefit result. Installed package flow, broader parity
+and latency tails remain separate.
 
 The [scanner decision](scanner-current-decision.md) retains optimized Python
 while completing one fixed finding-heavy comparison of the existing experimental
 regex boundary. Seven completed clean states in the earlier source-CLI pilot
 showed no qualifying 30%/5% benefit; omitted finding-heavy states prevent a
 blanket native no-go. The integrated [opt-in pilot](scanner-regex-pilot-ci.md) plans 24 smoke or
-840 full attempts; execution remains pending. It does not activate production
+840 full attempts. Its first actual smoke passed binary/bridge correctness
+checks, then failed before source identity and preflight; all 24 planned
+attempts remain unoffered. Corrected setup and retention require a new smoke. It does not activate production
 detection. Its bounded plan preserves actual fresh Python/Git/Rust startup, serialization,
 full findings/HMAC/ordering, complete CPU and exits 0/2/3. Native admission
 remains ASCII at most 4 MiB per logical file; other inputs retain declared
@@ -546,8 +570,8 @@ contract, implementation, parity and optimized-Python comparison requirements.
 The d0e component is a separate successful cohort: 30 workers, 10,080 calls and
 80 warm windows with 129–326 samples and no missing readings. Its ten lifecycle
 windows retain 18 missing snapshots and nine descriptor-error rows. The earlier
-decision cohort has 16 missing lifecycle snapshots. The fourth source-stdio job
-passed, but this refresh does not pool or reanalyze that later cohort. Source
+decision cohort has 16 missing lifecycle snapshots. The fourth and fifth source-stdio jobs
+passed, but this refresh does not pool or reanalyze those later cohorts. Source
 inventory now binds both imported platform CPU readers; that does not expand
 the MCP public projection beyond its actual Linux CPU scope.
 
@@ -568,7 +592,10 @@ only four shipping associations; Rust independently checks compiled architecture
 OS and ABI. Full config, manifest, runtime, source, package and rule identities
 remain required. No global capability-schema change, target normalization or
 environment-derived ABI is introduced. Old configs without the new field fail
-closed and require explicit preparation. Production registration remains off.
+closed and require explicit preparation. Fifth admission reached real offers:
+nine experiment jobs passed and 11 failed, with final archives retained. The
+POSIX fixed unavailable-response and Windows discovery-response matches do not
+identify their underlying cause. Production registration remains off.
 
 The [pair validator](qualification-target-identity.md) uses the same four exact
 distribution/platform associations while retaining complete wheel, runtime,
@@ -578,6 +605,10 @@ not rewrite fourth-source failed manifests or fabricate unoffered candidate
 measurements. All four fourth-source wheel builds passed; all four pair jobs
 and aggregators failed. Linux/ARM/Windows candidate Ollama/Builder scenarios
 passed, including 22 Windows native cases; Intel exceeded 400 ms readiness.
+Fifth likewise built all four wheels, then all indexed candidates failed
+PostToolUse response validation. Its Linux/ARM/Windows scenarios each completed
+22 native cases; Intel disabled readiness failed at 523.888 ms against 400 ms.
+Both Mac frozen baselines remain blocked in OS reverse lookup.
 
 [Capacity](native-capacity-none-witness.md) and
 [stdout-rejection](fourth-installed-failure-observations.md) witnesses retain
@@ -590,17 +621,18 @@ unoffered work remain in the original journals/manifests.
 
 ### Resource and further qualification boundaries
 
-The [Darwin resource collector](darwin-resource-accounting.md) follows pinned
-Apple source for the 160-byte v2 ABI, Mach tick conversion and transitive child
-rollup at reap. It subtracts integer counters before conversion, keeps native
-birth/timebase identities, rejects zombies and reap transfers during a snapshot,
-and preserves denied/missing reads across the existing retry. CPU failure is
-sticky for the interval; psutil observations cannot restore completeness.
-Memory availability remains independent. Tests on Linux prove fake ABI/error/
-conservation paths; actual own-clock, nested and ignored-child witnesses must
-run on both Mac targets. No short-lived Mac CPU or RSP-011 completion is claimed
-before that execution. Escaped/orphaned work and kernel-lost statistics remain
-outside the fixture-owned tree proof.
+The [Darwin resource collector](darwin-resource-accounting.md) retains pinned
+Apple ABI, native birth/timebase identities and bounded reads. Actual fifth ARM
+and Intel ignored-child witnesses exposed approximately double accumulation;
+endpoint snapshots cannot disambiguate historical signal/reaping behavior.
+The corrected general collector therefore returns CPU unavailable with
+darwin_reaped_cpu_ambiguous and keeps CPU/resource completeness false. Memory
+and private raw counters remain independent diagnostic facts. Other missing,
+denied or identity-changed reads remain sticky. Neither psutil replacement nor
+division by two can establish complete CPU. Known-child tests retain their
+2 ms lower/20 ms upper discrepancy bounds and classify the observed once/twice behavior without
+qualifying a general workload. Actual corrected Mac checks and a defensible
+complete measurement are separate requirements; RSP-011 remains OPEN.
 
 The [nonpriority companion](nonpriority-installed-tails.md) covers 16 actual
 registrations independently from normalized HTTP. Explicit
@@ -610,11 +642,14 @@ It takes precedence over full companion labels while leaving main priority mode
 independent. Smoke cannot satisfy five-run or 1,000-observation acceptance.
 Without the smoke label, both full companion labels select the 320-job plan.
 Every route/platform keeps its original denominator and strict sealed-cohort
-aggregation. Source wiring supplies no observations.
+aggregation. Fifth Linux completed both two-sample arms; Windows retained
+complete workers but failed missing-RAM identity admission, and both Mac
+baselines failed DNS while candidate arms completed. All four aggregators
+failed. These observations do not qualify the companion.
 
 The independent stopped-artifact transition probe uses exact indexed wheels,
 a third environment, candidate-locked dependencies, five stopped phases and ten
-registered cases. It was skipped at the fourth checkpoint. Stopped replacement
+registered cases. It was skipped at the fourth and fifth checkpoints. Stopped replacement
 does not qualify in-flight generations, signing/frozen changes, live program
 updates or rollback. Full priority/nonpriority samples, mixed offered load,
 resource minima, actual signed artifacts and tested rollout remain mandatory.
@@ -628,3 +663,33 @@ handoff and RSP-120 coverage publication do not supply RSP-118 platform success,
 RSP-137 performance qualification, RSP-142 independent latest-push approval or
 RSP-143 canary/rollback execution. The [ledger](EXECUTION_LEDGER.md) remains the
 complete record of the unchanged 144 acceptance and dependency fields.
+
+## Current qualification observations and resource limits
+
+The fifth cohort built all four immutable qualification wheels, but every
+indexed candidate returned a failing PostToolUse response and no indexed pair
+qualified. The new fixture observer admits only the existing fixed public
+command-control error identities; arbitrary error text remains redacted.
+Windows Claude discovery observations use read-only handles and the existing
+bounded loaders before measurement. They neither repair ACLs nor authorize a
+Rust request; current-object checks are non-atomic diagnostic facts. Original
+decoders, semantic gates, offers and deadlines remain unchanged.
+
+Windows RAM identity uses the already locked psutil system inventory; a failed
+or invalid read remains missing and fails comparison admission.
+
+The [working-file reader](scanner-working-file-contract.md) now reads at most
+the configured limit plus one overflow byte through retained descriptors.
+Identity changes, growth and failures after admission yield finite incomplete
+coverage and exit 2 before those bytes reach detection. Earlier findings remain.
+Initial exclusions, legitimate hardlinks, contained links and existing invalid
+UTF-8 omission remain unchanged. Actual Windows and five new native parity cases
+are still pending; the documented Windows ancestor limitation is not hidden.
+
+The experimental scanner crate owns only its benchmark path. It has no product
+hook, policy, approval, receipt or installer authority. Its corrected executable
+reader admits immutable current-user/root toolchain files and legitimate links
+while rejecting mutable or mismatched paths/content; private evidence admission
+remains stricter and unchanged. The first smoke retained all 24 attempts as
+unoffered after setup failed. A new smoke, then a deliberately selected full
+comparison, is required before a rich-scanner conversion decision.

@@ -181,7 +181,7 @@ fn scoped_authority_replacement_and_expiry_fail_closed() {
     let bytes = fs::read(&file).unwrap();
     let mut value: Value = serde_json::from_slice(&bytes).unwrap();
     value["snapshot"]["source_input_digest"] = "f".repeat(64).into();
-    fixture_file(&file, &canonical_json_bytes(&value).unwrap());
+    fs::write(&file, canonical_json_bytes(&value).unwrap()).unwrap();
     assert!(store
         .validate_versioned_request_snapshot(&reference(&candidate), root.to_str().unwrap(), 9)
         .is_err());
@@ -203,7 +203,7 @@ fn missing_scoped_snapshot_recovery_never_claims_acceptance() {
     let file = root.join(SNAPSHOT_FILE_NAME);
     let mut record: Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
     record["snapshot"] = Value::Null;
-    fixture_file(&file, &canonical_json_bytes(&record).unwrap());
+    fs::write(&file, canonical_json_bytes(&record).unwrap()).unwrap();
     let reopened = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
     let recovery: PolicySnapshotAckV2 =
         serde_json::from_slice(&reopened.push(&push_value(&candidate)).unwrap()).unwrap();
@@ -242,7 +242,7 @@ fn retry_never_acknowledges_a_removed_or_changed_durable_authority() {
         store.push(&push_value(&candidate)).unwrap();
         let file = root.join(SNAPSHOT_FILE_NAME);
         if changed {
-            fixture_file(&file, b"{}");
+            fs::write(&file, b"{}").unwrap();
         } else {
             fs::remove_file(&file).unwrap();
         }

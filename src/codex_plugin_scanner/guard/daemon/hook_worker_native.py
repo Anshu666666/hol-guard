@@ -338,8 +338,9 @@ class HookWorkerNativeMixin:
         required = event_name == "PreToolUse" and policy_authority_required(publisher)
         if required and policy_snapshot is None:
             return _scoped_authority_unavailable(self, harness)
-        scoped = getattr(publisher, "requires_scoped_authority", False) is True or (
-            policy_snapshot is not None and "source_input_digest" in policy_snapshot
+        scoped = event_name == "PreToolUse" and (
+            getattr(publisher, "requires_scoped_authority", False) is True
+            or (policy_snapshot is not None and "source_input_digest" in policy_snapshot)
         )
         if scoped and (policy_snapshot is None or "source_input_digest" not in policy_snapshot):
             return _scoped_authority_unavailable(self, harness)

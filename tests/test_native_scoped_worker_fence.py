@@ -183,3 +183,70 @@ def test_scoped_native_deny_cannot_be_lowered_by_python_watch(
     assert output["permissionDecision"] == "deny"
     assert actual["policy_action"] == "block"
     assert receipts == [edge["receipt"]]
+
+
+@pytest.mark.parametrize("has_snapshot", [False, True])
+@pytest.mark.parametrize("native_available", [False, True])
+def test_scoped_pre_tool_fence_preserves_post_tool_response_shape(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    has_snapshot: bool,
+    native_available: bool,
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_native
+
+    _, snapshot = _bound_result()
+    activities: list[object] = []
+    receipts: list[object] = []
+    routes: list[str] = []
+    edge = {
+        "schema": "guard-hook-edge-result.v2",
+        "authority": "rust",
+        "event_name": "PostToolUse",
+        "harness": "claude-code",
+        "payload_kind": "inline",
+        "result": {"decision": "allow", "model_output_action": "allow_original", "policy_action": "allow"},
+        "receipt": None,
+    }
+
+    def forbidden(_binding: object) -> bool:
+        pytest.fail("post-tool results do not select a scoped pre-tool policy row")
+
+    monkeypatch.setattr(hook_worker_native, "hook_review_is_recording_only", lambda **_kwargs: False)
+    host: Any = SimpleNamespace(
+        policy_snapshot_publisher=SimpleNamespace(
+            requires_scoped_authority=True,
+            requires_policy_authority=True,
+            result_binding_is_current=forbidden,
+        ),
+        _native_policy_snapshot=lambda *_args, **_kwargs: dict(snapshot) if has_snapshot else None,
+        _review_raw_hook_native=lambda **_kwargs: edge if native_available else None,
+        _record_native_decision_receipt=lambda receipt: receipts.append(receipt) or receipt,
+        _record_post_tool_activity=lambda **kwargs: activities.append(kwargs),
+        metrics=SimpleNamespace(record_route=routes.append),
+        activity_writer=None,
+    )
+    actual = worker_module.HookWorker._review_native_edge(
+        host,
+        payload={"hook_event_name": "PostToolUse", "tool_name": "Read", "tool_response": "synthetic output"},
+        harness="claude-code",
+        event_name="PostToolUse",
+        default_harness="claude-code",
+        home_dir=tmp_path,
+        guard_home=tmp_path,
+        workspace=tmp_path,
+        deadline=None,
+    )
+    output = actual["hookSpecificOutput"]
+    assert output["hookEventName"] == "PostToolUse"
+    assert "permissionDecision" not in output
+    assert len(activities) == 1
+    if native_available:
+        assert actual["policy_action"] == "allow"
+        assert receipts == [None]
+        assert routes == ["native_resident"]
+    else:
+        assert actual["continue"] is True
+        assert actual["reason_code"] == "native_post_tool_unavailable"
+        assert receipts == []
+        assert routes == ["native_fail_safe"]

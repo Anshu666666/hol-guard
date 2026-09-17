@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      gitleaks_diagnostic:
+        description: Compare pinned working-tree scans with safe finding metadata
+        type: boolean
+        default: false
 
 concurrency:
   group: hol-guard-security-gates-${{ github.event.pull_request.number || github.ref }}
@@ -161,3 +166,95 @@ jobs:
         env:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         run: gitleaks dir --no-banner --redact --exit-code 1 .
+
+  gitleaks-pinned-diagnostic:
+    name: Gitleaks pinned diagnostic (${{ matrix.source.label }})
+    if: github.event_name == 'workflow_dispatch' && inputs.gitleaks_diagnostic
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - label: candidate
+            sha: cfd1aba920f6bfb143ea63ddfc321db08c058cbc
+            tree: 31ac3b3bb62f07c45b72f4799543814d6d587abb
+          - label: main-control
+            sha: 05fa4760df8401b9710bf098adb4fbb2dc4ff389
+            tree: 29d9df40b812821345285fe785b5ecbe2b0a57f6
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ matrix.source.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify immutable scan source
+        env:
+          SOURCE_SHA: ${{ matrix.source.sha }}
+          SOURCE_TREE: ${{ matrix.source.tree }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version: "1.23"
+      - name: Install unchanged pinned scanner
+        run: |
+          GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.24.2
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan and emit safe finding metadata
+        env:
+          SOURCE_SHA: ${{ matrix.source.sha }}
+        run: |
+          set -euo pipefail
+          umask 077
+          scan_tmp=$(mktemp -d "$RUNNER_TEMP/gitleaks-diagnostic.XXXXXX")
+          trap 'rm -rf -- "$scan_tmp"' EXIT
+          set +e
+          gitleaks dir --no-banner --redact=100 --exit-code 1 \
+            --report-format json --report-path "$scan_tmp/report.json" . \
+            >"$scan_tmp/scanner.log" 2>&1
+          scan_exit=$?
+          set -e
+          python - "$scan_tmp/report.json" "$scan_exit" "$SOURCE_SHA" <<'PY'
+          import json
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          report_path, raw_exit, source_sha = sys.argv[1:]
+          scan_exit = int(raw_exit)
+          worktree = Path.cwd().resolve()
+          try:
+              tracked = set(subprocess.check_output(["git", "ls-files", "-z"], stderr=subprocess.DEVNULL).decode().split("\0"))
+              findings = json.loads(Path(report_path).read_text())
+              if findings is None:
+                  findings = []
+              if not isinstance(findings, list) or any(not isinstance(row, dict) for row in findings):
+                  raise ValueError("invalid_report_shape")
+              rows = []
+              for finding in findings:
+                  rule = finding.get("RuleID")
+                  rule = rule if isinstance(rule, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", rule) else "invalid-rule"
+                  raw_path = finding.get("File")
+                  relative = "invalid-or-untracked-path"
+                  if isinstance(raw_path, str) and "\x00" not in raw_path:
+                      candidate = Path(raw_path)
+                      if not candidate.is_absolute():
+                          candidate = worktree / candidate
+                      try:
+                          normalized = candidate.resolve().relative_to(worktree).as_posix()
+                          if normalized in tracked:
+                              relative = normalized
+                      except (OSError, RuntimeError, ValueError):
+                          pass
+                  line = finding.get("StartLine")
+                  line = line if type(line) is int and 0 < line < 2**31 else None
+                  rows.append({"ruleId": rule, "path": relative, "line": line})
+              print(json.dumps({"sourceSha": source_sha, "scanExit": scan_exit, "count": len(rows), "findings": rows}, sort_keys=True))
+          except (OSError, UnicodeError, ValueError, TypeError, subprocess.CalledProcessError):
+              print(json.dumps({"sourceSha": source_sha, "scanExit": scan_exit, "diagnostic": "report-unavailable-or-invalid"}, sort_keys=True))
+              raise SystemExit(scan_exit if scan_exit else 1)
+          raise SystemExit(scan_exit if scan_exit or not rows else 1)
+          PY

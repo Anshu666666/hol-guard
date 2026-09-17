@@ -146,7 +146,9 @@ class _BatchProcess:
         data = _read_exact(self._process.stdout, size)
         if _read_exact(self._process.stdout, 1) != b"\n":
             raise GitObjectReadError("git_object_invalid_terminator")
-        digest = hashlib.sha1() if len(oid) == 40 else hashlib.sha256()
+        # Match Git's stored object format; this checksum does not authenticate
+        # a publisher or grant trust. The returned bytes still undergo scanning.
+        digest = hashlib.sha1(usedforsecurity=False) if len(oid) == 40 else hashlib.sha256()
         digest.update(f"blob {size}\0".encode("ascii"))
         digest.update(data)
         if digest.hexdigest() != oid:

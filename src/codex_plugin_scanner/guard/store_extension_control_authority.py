@@ -322,6 +322,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         layers_json = layers_to_json(layers)
         self._validate_serialized_layers(layers_json)
         with self._extension_control_authority_lock():
+            self._invalidate_native_extension_control_policy()
             current = self._read_extension_control_authority_locked(catalog_digest)
             key = self._authority_key(required=True)
             assert key is not None
@@ -569,6 +570,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         migration_registry: CommandSafetyExtensionRegistry | None = None,
     ) -> ExtensionControlAuthorityView:
         with self._extension_control_authority_lock():
+            self._invalidate_native_extension_control_policy()
             key = self._authority_key(required=False)
             if key is None:
                 return self._reset_extension_control_authority(
@@ -739,6 +741,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
 
     def acknowledge_extension_control_degraded_mode(self) -> ExtensionControlAuthorityView:
         self._extension_control_degraded_acknowledged = True
+        self._invalidate_native_extension_control_policy()
         return self._degraded_view(self._extension_control_last_catalog_digest)
 
     def _read_extension_control_authority_locked(
@@ -1125,6 +1128,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
     ) -> ExtensionControlAuthorityView:
         """Rebind authenticated controls to a trusted built-in catalog update."""
 
+        self._invalidate_native_extension_control_policy()
         catalog_digest = registry.catalog_digest
         previous_manifest = self._load_catalog_manifest(previous.catalog_digest, key=key) or {}
         current_manifest = self._catalog_target_manifest(registry)
@@ -1277,6 +1281,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
     def _bootstrap_extension_control_authority(
         self, catalog_digest: str, *, key: bytes | None
     ) -> ExtensionControlAuthorityView:
+        self._invalidate_native_extension_control_policy()
         if key is None:
             key = secrets.token_bytes(32)
             self._secret_store().set_secret(self._key_ref(), base64.urlsafe_b64encode(key).decode())

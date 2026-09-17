@@ -86,6 +86,20 @@ def preserve_managed_extension_control(
 
 
 class _ExtensionControlAuthoritySupportMixin:
+    def _invalidate_native_extension_control_policy(self) -> None:
+        """Close local native readiness before a durable control mutation.
+
+        Mutation callers hold the authority lock. The asynchronous publisher
+        must acquire that lock to verify committed controls, and its epoch
+        check rejects any older publication already in flight. No ACK wait is
+        performed under store locks; failed/rolled-back mutations are safely
+        republished from their authenticated committed state.
+        """
+
+        from .native_policy_snapshot import notify_native_policy_mutation
+
+        notify_native_policy_mutation(cast(Path, self.guard_home))
+
     def _require_compatible_extension_control_schema(self) -> None:
         with self._connect() as connection:
             ensure_extension_control_authority_schema(connection)

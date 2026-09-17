@@ -13,6 +13,8 @@ import json
 import math
 import os
 import stat
+import subprocess
+import sys
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -24,6 +26,14 @@ from .native_resident_client import native_resident_client_request
 from .native_response_decoder import native_error as _native_error
 from .native_response_decoder import response_from_payload as _response_from_payload
 from .native_route_receipt import record_native_hook_result
+from .native_runtime_identity import (
+    NativeProcessAttestation,
+    NativeProcessAttestationResult,
+    attest_native_process,
+    attestation_is_current,
+    live_native_identity,
+    retire_native_path,
+)
 from .native_runtime_resilience import (
     NativeRuntimeHealthSnapshot,
     native_record_integrity_failure,
@@ -394,6 +404,10 @@ def _python_package_version() -> str | None:
 
 
 def native_runtime_status() -> NativeRuntimeStatus:
+    return _native_runtime_status(allow_attestation=True)
+
+
+def _native_runtime_status(*, allow_attestation: bool) -> NativeRuntimeStatus:
     mode = native_mode()
     if mode == "off":
         return NativeRuntimeStatus(
@@ -404,13 +418,21 @@ def native_runtime_status() -> NativeRuntimeStatus:
         )
     for candidate in _runtime_candidates():
         _restore_bundled_runtime_execute_bit(candidate)
-        identity = _validate_binary(candidate)
+        identity = (
+            live_native_identity(candidate, package_version=_python_package_version)
+            if allow_attestation and mode == "auto" and _is_bundled_candidate(candidate)
+            else None
+        )
         if identity is None:
+            identity = _validate_binary(candidate)
+        if identity is None:
+            retire_native_path(candidate)
             continue
         manifest: NativeRuntimeManifest | None = None
         if _is_bundled_candidate(candidate):
             manifest, manifest_error = _manifest_for_bundled_identity(identity)
             if manifest_error is not None:
+                retire_native_path(identity.path)
                 return NativeRuntimeStatus(
                     mode=mode,
                     available=True,
@@ -425,8 +447,10 @@ def native_runtime_status() -> NativeRuntimeStatus:
             identity.sha256,
         )
         if capabilities is None:
+            retire_native_path(identity.path)
             continue
         if capabilities.protocol_version != _NATIVE_PROTOCOL_VERSION:
+            retire_native_path(identity.path)
             return NativeRuntimeStatus(
                 mode=mode,
                 available=True,
@@ -447,6 +471,7 @@ def native_runtime_status() -> NativeRuntimeStatus:
             else:
                 reason = None
             if reason is not None:
+                retire_native_path(identity.path)
                 return NativeRuntimeStatus(
                     mode=mode,
                     available=True,
@@ -458,6 +483,8 @@ def native_runtime_status() -> NativeRuntimeStatus:
         expected_version = _python_package_version()
         version_compatible = expected_version is None or capabilities.runtime_version == expected_version
         compatible = version_compatible or mode in {"shadow", "force"}
+        if not compatible:
+            retire_native_path(identity.path)
         return NativeRuntimeStatus(
             mode=mode,
             available=True,
@@ -471,6 +498,47 @@ def native_runtime_status() -> NativeRuntimeStatus:
         available=False,
         compatible=False,
         reason="native_unavailable",
+    )
+
+
+def native_process_spawn_admission(executable: Path) -> tuple[bool, NativeRuntimeStatus | None]:
+    """A reused live-child identity can never authorize another process launch."""
+
+    required = sys.platform == "linux" and native_mode() == "auto" and _is_bundled_candidate(executable)
+    if not required:
+        return False, None
+    status = _native_runtime_status(allow_attestation=False)
+    try:
+        resolved = executable.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return True, None
+    if (
+        not status.available
+        or not status.compatible
+        or status.identity is None
+        or status.capabilities is None
+        or status.identity.path != resolved
+    ):
+        return True, None
+    return True, status
+
+
+def register_native_process_attestation(
+    process: subprocess.Popen[bytes], expected: NativeRuntimeStatus
+) -> NativeProcessAttestationResult:
+    return attest_native_process(
+        process,
+        expected,
+        verify=lambda: _native_runtime_status(allow_attestation=False),
+        package_version=_python_package_version,
+    )
+
+
+def native_process_attestation_is_current(attestation: NativeProcessAttestation) -> bool:
+    return (
+        native_mode() == "auto"
+        and attestation_is_current(attestation, package_version=_python_package_version())
+        and _manifest_for_bundled_identity(attestation.identity)[1] is None
     )
 
 

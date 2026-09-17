@@ -193,7 +193,8 @@ def test_batch_handles_empty_binary_large_and_newline_paths(tmp_path: Path, obje
 
 def test_scan_cache_keeps_path_policy_and_finding_budget(tmp_path: Path) -> None:
     _init(tmp_path)
-    data = f"AWS_ACCESS_KEY_ID=AKIA1234567890ABCDEF\nTOKEN={_token()}\n".encode()
+    synthetic_access_key = "AKIA" + "1234567890ABCDEF"
+    data = f"AWS_ACCESS_KEY_ID={synthetic_access_key}\nTOKEN={_token()}\n".encode()
     target = tmp_path / "content.env"
     target.write_bytes(data)
     oid = _git(tmp_path, "hash-object", "-w", str(target)).decode().strip()

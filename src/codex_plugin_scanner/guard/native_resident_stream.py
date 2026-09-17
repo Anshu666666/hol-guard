@@ -17,6 +17,7 @@ from queue import Empty, Full, Queue
 
 from .codex_hook_launch_runtime import isolated_hook_environment
 from .native_resident_transport import write_frame
+from .native_runtime_identity import NativeProcessAttestation, retire_native_process
 
 _MAX_REQUEST_BYTES = 6 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -44,6 +45,7 @@ class _PersistentNativeClient:
         self._environment = isolated_hook_environment(environment)
         self._record_failure = failure_recorder or (lambda _code: None)
         self._process: subprocess.Popen[bytes] | None = None
+        self._attestation: NativeProcessAttestation | None = None
         self._responses: Queue[bytes | _StreamFailure] = Queue(maxsize=1)
         self._reader: threading.Thread | None = None
         self._lock = threading.Lock()
@@ -55,14 +57,26 @@ class _PersistentNativeClient:
         self._request_lock = threading.Lock()
 
     def _start(self) -> bool:
+        from .native_runtime import (
+            native_process_attestation_is_current,
+            native_process_spawn_admission,
+            register_native_process_attestation,
+        )
+
         if self._process is not None:
             if self._process.poll() is None:
+                if self._attestation is not None and not native_process_attestation_is_current(self._attestation):
+                    self._close_locked()
+                    return False
                 return True
             # Reap/close the previous generation before replacing its process
             # and response queue. Its reader may still be draining EOF.
             self._close_locked()
         responses: Queue[bytes | _StreamFailure] = Queue(maxsize=1)
         self._responses = responses
+        admission_required, admission = native_process_spawn_admission(self._executable)
+        if admission_required and admission is None:
+            return False
         try:
             process = subprocess.Popen(
                 (
@@ -82,6 +96,18 @@ class _PersistentNativeClient:
             self._process = None
             return False
         self._process = process
+        if admission is not None:
+            try:
+                attested = register_native_process_attestation(process, admission)
+            except Exception:
+                # No frame has been sent. A failed verifier must not leak an
+                # unadmitted child or leave it available to a later request.
+                self._close_locked()
+                return False
+            if attested.status == "invalid":
+                self._close_locked()
+                return False
+            self._attestation = attested.attestation
         self._reader = threading.Thread(
             target=self._read_responses,
             args=(process, responses),
@@ -217,9 +243,11 @@ class _PersistentNativeClient:
         reader = self._reader
         responses = self._responses
         self._process = None
+        self._attestation = None
         self._reader = None
         if process is None:
             return
+        retire_native_process(process)
         with suppress(Full):
             responses.put_nowait(_StreamFailure())
         if process.poll() is None:

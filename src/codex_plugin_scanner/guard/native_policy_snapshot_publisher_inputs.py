@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from threading import Condition
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
+from .native_command_control_binding import read_native_command_control_binding
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     NATIVE_POLICY_VERIFIER_KEY_NAME,
@@ -22,6 +23,10 @@ from .native_policy_snapshot_constants import (
     NativePolicySnapshotError,
 )
 from .native_policy_snapshot_policy import _merge_effective_native_policies, effective_native_policy_v3
+
+if TYPE_CHECKING:
+    from .runtime.extension_control_runtime import ExtensionControlRuntime
+    from .store import GuardStore
 
 
 @dataclass(frozen=True)
@@ -45,11 +50,13 @@ class NativePolicySnapshotPublisherInputs:
     """Mixin containing filesystem observation outside synchronous hooks."""
 
     guard_home: Path  # pyright: ignore[reportUninitializedInstanceVariable]
+    store: GuardStore  # pyright: ignore[reportUninitializedInstanceVariable]
+    _command_control_runtime: ExtensionControlRuntime | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _condition: Condition  # pyright: ignore[reportUninitializedInstanceVariable]
     _acked: bool  # pyright: ignore[reportUninitializedInstanceVariable]
     _workspace_paths: set[Path]  # pyright: ignore[reportUninitializedInstanceVariable]
-    _published_policy_fingerprint: tuple[str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
-    _observed_policy_fingerprint: tuple[str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    _published_policy_fingerprint: tuple[str, str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    _observed_policy_fingerprint: tuple[str, str, str] | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _compiled_workspace_policies: OrderedDict[Path | None, tuple[object, dict[str, object]]]  # pyright: ignore[reportUninitializedInstanceVariable]
     _database_policy_fingerprint: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
     _cached_managed_identity: tuple[str, str | None, str | None, object]  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -323,26 +330,87 @@ class NativePolicySnapshotPublisherInputs:
     def _database_policy_marker(self) -> str:
         """Read the publication authority domain through SQLite's WAL view.
 
-        Native effective-policy projection currently consumes TOML/MDM, not
-        receipt or activity tables. The integrity marker is the DB dependency
-        of publication's signing material. Add exact revision keys here when a
-        future snapshot schema begins consuming another database policy domain.
+        These bounded hashes are invalidation hints only. The publisher reads
+        and authenticates full control authority before signing a binding.
+        Receipts and activity rows cannot change this policy-domain marker.
         """
 
         path = (self.guard_home / "guard.db").absolute()
         try:
             with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.05)) as connection:
-                row = connection.execute(
-                    "select substr(cast(payload_json as blob), 1, 65537) "
-                    "from sync_state where state_key = 'policy_integrity'"
-                ).fetchone()
-            if row is None:
-                return "absent"
-            if not isinstance(row[0], bytes) or len(row[0]) > 65536:
-                return "invalid"
-            return hashlib.sha256(row[0]).hexdigest()
-        except (OSError, sqlite3.Error, ValueError):
+                rows = connection.execute(
+                    "select state_key, substr(cast(payload_json as blob), 1, 1048577) "
+                    "from sync_state where state_key in ('policy_integrity', 'managed_controls_active', "
+                    "'managed_controls_revision') order by state_key"
+                ).fetchall()
+                values: list[object] = [
+                    (
+                        key,
+                        hashlib.sha256(payload).hexdigest()
+                        if isinstance(payload, bytes) and len(payload) <= 1048576
+                        else "invalid",
+                    )
+                    for key, payload in rows
+                ]
+                tables = {
+                    row[0]
+                    for row in connection.execute(
+                        "select name from sqlite_master where type = 'table' and name in "
+                        "('extension_control_authority_snapshot', 'extension_control_authority_transition')"
+                    )
+                }
+                if "extension_control_authority_snapshot" in tables:
+                    row = connection.execute(
+                        "select substr(cast(revision as text), 1, 32), substr(catalog_digest, 1, 65), "
+                        "substr(snapshot_digest, 1, 65), substr(snapshot_mac, 1, 65), "
+                        "substr(cast(layers_json as blob), 1, 262145), "
+                        "substr(cast(snapshot_json as blob), 1, 1048577) "
+                        "from extension_control_authority_snapshot where singleton = 1"
+                    ).fetchone()
+                    values.append(
+                        (
+                            "local",
+                            tuple(
+                                hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else value
+                                for value in row
+                            )
+                            if row is not None
+                            else None,
+                        )
+                    )
+                if "extension_control_authority_transition" in tables:
+                    row = connection.execute(
+                        "select substr(cast(revision as text), 1, 32), substr(phase, 1, 32), "
+                        "substr(snapshot_digest, 1, 65) from extension_control_authority_transition "
+                        "order by revision desc limit 1"
+                    ).fetchone()
+                    values.append(
+                        (
+                            "transition",
+                            tuple(
+                                hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else value
+                                for value in row
+                            )
+                            if row is not None
+                            else None,
+                        )
+                    )
+            return _digest_v3(values)
+        except (OSError, sqlite3.Error, ValueError, NativePolicySnapshotError):
             return "unavailable"
+
+    def _compiled_command_extensions(self) -> dict[str, object]:
+        try:
+            binding, runtime = read_native_command_control_binding(
+                self.store, getattr(self, "_command_control_runtime", None)
+            )
+            self._command_control_runtime = runtime
+            return binding
+        except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError):
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            raise
 
     @staticmethod
     def _external_policy_paths() -> tuple[Path, ...]:
@@ -405,9 +473,10 @@ class NativePolicySnapshotPublisherInputs:
             current_fingerprint = (
                 cast(str, _digest_v3(policy_for_digest)),
                 cast(str, effective_policy["mode"]),
+                _digest_v3(self._compiled_command_extensions()),
             )
         except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError):
-            current_fingerprint = ("unavailable", "")
+            current_fingerprint = ("unavailable", "", "")
         # Observation is independent of acknowledgment: unchanged inputs must
         # not reset a failed publication's retry backoff on every database write.
         previous_fingerprint = (

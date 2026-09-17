@@ -45,6 +45,7 @@ def _status() -> SimpleNamespace:
                 "policy-snapshot-resident-generation-v1",
                 "native-policy-in-memory-v1",
                 "native-resident-client-v1",
+                "native-command-program-v1",
             ),
         ),
     )

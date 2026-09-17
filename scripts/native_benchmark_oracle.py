@@ -54,7 +54,31 @@ def validate_semantic_response(response: object, *, route: str, expected_route: 
         actual = tuple(getattr(response, key, None) for key in ("decision", "model_output_action", "reason_code"))
     if route != expected_route or actual != expected:
         # Do not include a response body: unexpected results could carry content.
-        raise RuntimeError(f"benchmark semantic validation failed: case={case} expected_route={expected_route}")
+        labels = {
+            "allow",
+            "deny",
+            "allow_original",
+            "block",
+            "not_applicable",
+            "output_scan_allow",
+            "output_secret_match",
+            "observe_output_scan_allow",
+            "observe_output_secret_match",
+            "policy_allow",
+            "native_resident",
+            "native_fail_safe",
+            "native_oneshot",
+            "python_semantic",
+        }
+        safe_actual = [
+            value if isinstance(value, str) and value in labels else "missing" if value is None else "other"
+            for value in actual
+        ]
+        safe_route = route if route in labels else "other"
+        raise RuntimeError(
+            f"benchmark semantic validation failed: case={case} expected_route={expected_route} "
+            f"actual_route={safe_route} decision={safe_actual[0]} action={safe_actual[1]} reason={safe_actual[2]}"
+        )
 
 
 def _serve(connection: Connection, workspace: Path, guard_home: Path) -> None:

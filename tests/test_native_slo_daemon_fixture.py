@@ -58,3 +58,21 @@ for line in sys.stdin:
         assert session.daemon._server.auth_token == "synthetic-private-token"
     assert launched[0].poll() == 0
     session.close()
+
+
+def test_progress_does_not_extend_control_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    times = iter((10.0, 11.0, 12.0))
+    monkeypatch.setattr(fixture.time, "monotonic", lambda: next(times))
+    session = fixture.DaemonFixture(Path("unused"))
+    observed: list[float] = []
+
+    def receive(*, timeout: float) -> bytes:
+        observed.append(timeout)
+        if len(observed) == 1:
+            return b'{"state":"progress","stage":"start"}'
+        return b'{"state":"ready"}'
+
+    monkeypatch.setattr(session._responses, "get", receive)
+    assert session._receive(30.0) == {"state": "ready"}
+    assert observed == [29.0, 28.0]
+    assert session._stage == "start"

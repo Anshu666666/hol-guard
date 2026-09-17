@@ -30,6 +30,7 @@ from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402
 from scripts.native_slo_contract import clear_proof_environment  # noqa: E402
+from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
 
 _CONTROL_LIMIT = 256 * 1024
@@ -73,6 +74,7 @@ class DaemonFixture:
         self._closed = False
         self.startup_ms = 0.0
         self.readiness_ms = 0.0
+        self._stage = "spawn"
 
     @property
     def pid(self) -> int:
@@ -99,20 +101,29 @@ class DaemonFixture:
             pass  # Never publish raw fixture diagnostics or retain unbounded bytes.
 
     def _receive(self, timeout: float) -> Mapping[str, object]:
-        try:
-            line = self._responses.get(timeout=timeout)
-        except queue.Empty as error:
-            raise RuntimeError("daemon fixture control deadline exceeded") from error
-        if line is None:
-            raise RuntimeError("daemon fixture control stream unavailable")
-        result = json.loads(line)
-        if not isinstance(result, Mapping):
-            raise RuntimeError("daemon fixture operation failed")
-        if result.get("error"):
-            detail = result.get("detail")
-            reason = detail.get("reason") if isinstance(detail, Mapping) else "unclassified_failure"
-            raise RuntimeError("qualification_fixture." + str(reason)[:64])
-        return result
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                line = self._responses.get(timeout=max(0, deadline - time.monotonic()))
+            except queue.Empty as error:
+                raise RuntimeError("daemon fixture deadline at " + self._stage) from error
+            if line is None:
+                raise RuntimeError("daemon fixture stream unavailable at " + self._stage)
+            result = json.loads(line)
+            if not isinstance(result, Mapping):
+                raise RuntimeError("daemon fixture operation failed")
+            if result.get("state") == "progress":
+                stage = result.get("stage")
+                if stage not in {"construct", "start", "fault", "serve", "cleanup"}:
+                    raise RuntimeError("daemon fixture invalid progress stage")
+                self._stage = str(stage)
+                continue  # Progress cannot extend the fixed operation deadline.
+            if result.get("error"):
+                detail = result.get("detail")
+                if not isinstance(detail, Mapping):
+                    raise RuntimeError("daemon fixture invalid failure evidence")
+                raise FixtureFailureError(detail)
+            return result
 
     def control(self, operation: str, **arguments: object) -> Mapping[str, object]:
         with self._lock:
@@ -308,7 +319,6 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
     from contextlib import nullcontext
 
     from scripts.native_slo_faults import FaultFixture
-    from scripts.native_slo_phases import PhaseProfiler
     from scripts.native_slo_session import AdapterSession
 
     configuration = None
@@ -316,11 +326,23 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
         from scripts.native_slo_workloads import configuration_text
 
         configuration = configuration_text(setup if setup != "none" else policy)
+    _emit({"state": "progress", "stage": "construct"})
+    adapter = AdapterSession(runtime, configuration=configuration)
+    _emit({"state": "progress", "stage": "start"})
+    with adapter as session:
+        _emit({"state": "progress", "stage": "fault"})
+        fault_context = FaultFixture(session, setup) if setup != "none" else nullcontext()
+        with fault_context as fault:
+            _serve_session(session, fault)
+    _emit({"closed": True})
+    return 0
+
+
+def _serve_session(session: Any, fault: Any) -> None:
+    from scripts.native_slo_phases import PhaseProfiler
+
     profiler: PhaseProfiler | None = None
-    with (
-        AdapterSession(runtime, configuration=configuration) as session,
-        FaultFixture(session, setup) if setup != "none" else nullcontext() as fault,
-    ):
+    try:
         _emit(
             {
                 "state": "ready",
@@ -366,8 +388,8 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
                 break
             else:
                 raise RuntimeError("unsupported daemon fixture operation")
-    _emit({"closed": True})
-    return 0
+    finally:
+        _emit({"state": "progress", "stage": "cleanup"})
 
 
 if __name__ == "__main__":
@@ -376,7 +398,5 @@ if __name__ == "__main__":
             raise ValueError("private daemon fixture invocation required")
         raise SystemExit(_serve(Path(sys.argv[2]).resolve(strict=True), sys.argv[3], sys.argv[4]))
     except Exception as error:
-        from scripts.native_slo_failure import failure_evidence
-
         _emit({"error": "fixture_failed", "detail": failure_evidence(error)})
         raise SystemExit(1) from None

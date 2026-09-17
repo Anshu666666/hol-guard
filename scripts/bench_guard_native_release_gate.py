@@ -33,6 +33,7 @@ from codex_plugin_scanner.guard.native_policy_test_support import native_policy_
 from codex_plugin_scanner.guard.native_resident_client import close_native_residents, native_resident_client_request
 from codex_plugin_scanner.guard.native_route_receipt import native_hook_route, reset_native_hook_route
 from codex_plugin_scanner.guard.native_runtime import (
+    native_runtime_health,
     native_runtime_status,
     review_post_tool_native,
 )
@@ -324,7 +325,13 @@ def _validate_native_cases(
             observe_mode=False,
             policy_snapshot=policy_snapshot,
         )
-        validate_semantic_response(response, route=native_hook_route(), expected_route="native_resident", case=case)
+        try:
+            validate_semantic_response(response, route=native_hook_route(), expected_route="native_resident", case=case)
+        except RuntimeError as error:
+            # Health reasons are bounded product identifiers; never log the
+            # native response or the hook's content to diagnose a failed gate.
+            health = native_runtime_health(guard_home)
+            raise RuntimeError(f"{error} health={health.reason} failures={health.resident_failures}") from None
         result = run_isolated_hook_process(
             (str(runtime), "hook", "--stdin"),
             input_text=_wire_request(workspace=workspace, guard_home=guard_home, case=case),

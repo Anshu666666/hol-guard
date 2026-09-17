@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import cast
+from typing import TypeAlias, cast
 
 _ROUTES = frozenset({"native_resident", "native_oneshot", "native_fail_safe", "native_degraded", "python_semantic"})
+_SOURCES = frozenset({"direct", "process"})
+RouteCounts: TypeAlias = dict[str, dict[str, int]]
 
 
 def require_allowed_response(response: Mapping[str, object]) -> None:
@@ -23,30 +25,41 @@ def require_allowed_response(response: Mapping[str, object]) -> None:
         raise RuntimeError("Hook response did not return an allowed decision.")
 
 
-def read_route_counts(details: Mapping[str, object] | None) -> dict[str, int] | None:
-    """Read only known integer counters from the authenticated worker report."""
+def read_route_counts(details: Mapping[str, object] | None) -> RouteCounts | None:
+    """Read both authenticated sources without hiding unknown or invalid counters."""
 
     workers = details.get("hook_workers") if details is not None else None
     routes = cast(Mapping[object, object], workers).get("routes") if isinstance(workers, Mapping) else None
-    if not isinstance(routes, Mapping) or not routes:
+    direct = details.get("hook_worker_routes") if details is not None else None
+    if not isinstance(routes, Mapping) or not isinstance(direct, Mapping):
         return None
-    counts = {route: 0 for route in sorted(_ROUTES)}
-    for name, value in cast(Mapping[object, object], routes).items():
-        if not isinstance(name, str) or name not in _ROUTES or type(value) is not int or value < 0:
-            return None
-        counts[name] = value
+    counts: RouteCounts = {}
+    sources = (("direct", cast(Mapping[object, object], direct)), ("process", cast(Mapping[object, object], routes)))
+    for source, observed in sources:
+        counts[source] = {route: 0 for route in sorted(_ROUTES)}
+        for name, value in observed.items():
+            if not isinstance(name, str) or name not in _ROUTES or type(value) is not int or value < 0:
+                return None
+            counts[source][name] = value
     return counts
 
 
-def measured_route_counts(before: dict[str, int], after_details: Mapping[str, object] | None) -> dict[str, int] | None:
+def measured_route_counts(before: RouteCounts, after_details: Mapping[str, object] | None) -> dict[str, int] | None:
     """Reject missing/reset counters instead of manufacturing an empty native proof."""
 
     after = read_route_counts(after_details)
-    if after is None or frozenset(before) != _ROUTES:
+    if after is None or frozenset(before) != _SOURCES:
         return None
-    if any(type(before[name]) is not int or before[name] < 0 or after[name] < before[name] for name in _ROUTES):
-        return None
-    return {name: after[name] - before[name] for name in sorted(_ROUTES)}
+    result = {name: 0 for name in sorted(_ROUTES)}
+    for source in _SOURCES:
+        if frozenset(before[source]) != _ROUTES:
+            return None
+        for name in _ROUTES:
+            baseline, final = before[source][name], after[source][name]
+            if type(baseline) is not int or baseline < 0 or final < baseline:
+                return None
+            result[name] += final - baseline
+    return result
 
 
 def native_routes_passed(routes: Mapping[str, int] | None, *, requests: int) -> bool:

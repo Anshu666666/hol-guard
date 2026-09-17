@@ -73,7 +73,29 @@ def test_stress_request_accepts_an_explicit_allowed_decision(monkeypatch: pytest
 
 
 def _details(routes: object) -> dict[str, object]:
-    return {"hook_workers": {"routes": routes}}
+    return {"hook_workers": {"routes": routes}, "hook_worker_routes": {}}
+
+
+def test_direct_native_routes_are_counted_when_child_workers_are_idle() -> None:
+    before = read_route_counts({"hook_workers": {"routes": {}}, "hook_worker_routes": {"native_resident": 64}})
+    assert before is not None
+    measured = measured_route_counts(
+        before, {"hook_workers": {"routes": {}}, "hook_worker_routes": {"native_resident": 100_064}}
+    )
+    assert native_routes_passed(measured, requests=100_000)
+
+
+def test_one_source_cannot_mask_the_other_sources_counter_reset() -> None:
+    before = read_route_counts(
+        {"hook_workers": {"routes": {"native_resident": 64}}, "hook_worker_routes": {"native_resident": 64}}
+    )
+    assert before is not None
+    assert (
+        measured_route_counts(
+            before, {"hook_workers": {"routes": {"native_resident": 100_064}}, "hook_worker_routes": {}}
+        )
+        is None
+    )
 
 
 def test_native_route_proof_uses_only_the_measured_interval() -> None:
@@ -103,7 +125,9 @@ def test_a_single_nonresident_decision_fails_the_native_soak(route: str) -> None
         None,
         {},
         {"hook_workers": {}},
-        _details({}),
+        {"hook_workers": {"routes": {"native_resident": 100_000}}},
+        {"hook_workers": {"routes": {}}, "hook_worker_routes": {"private-route": 0}},
+        {"hook_workers": {"routes": {}}, "hook_worker_routes": {"native_resident": True}},
         _details({"native_resident": True}),
         _details({"native_resident": 100_000.0}),
         _details({"native_resident": -1}),
@@ -133,7 +157,9 @@ def test_counter_reset_and_unmeasured_results_cannot_pass() -> None:
 def test_cli_requires_native_route_evidence_only_for_enforced_soak(
     enforced: bool, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    routes = read_route_counts(_details({"native_resident": 100_000}))
+    baseline = read_route_counts(_details({}))
+    assert baseline is not None
+    routes = measured_route_counts(baseline, _details({"native_resident": 100_000}))
     assert routes is not None
     result = script.StressResult(
         requests=100_000,

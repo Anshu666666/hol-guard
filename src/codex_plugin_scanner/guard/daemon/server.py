@@ -256,6 +256,7 @@ from .discovery import (
 )
 from .extension_control_api import ExtensionControlApiError, ExtensionControlApiService
 from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_optional_publish
+from .hook_health import hook_worker_health
 from .hook_process_runner import HookProcessRunner
 from .hook_request_auth import CHALLENGE_HOOK_PATHS, challenge_auth, request_auth
 from .hook_worker_responses import prepare_native_hook_policy
@@ -7192,9 +7193,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 "state": load_state,
                 "detail": load_detail,
             },
-            "hook_process_capacity": process_scheduler_stats,
-            "hook_workers": daemon_server.hook_process_runner.stats(),
-            "request_capacity": request_capacity,
+            **hook_worker_health(daemon_server, process_scheduler_stats, request_capacity),
         }
 
     def _operator_health_payload(self) -> dict[str, object]:

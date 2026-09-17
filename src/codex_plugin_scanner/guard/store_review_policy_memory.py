@@ -149,6 +149,13 @@ class StoreReviewPolicyMemoryMixin:
                 return frozenset()
             if any(registry.get(key) != version.get(key) for key in ("policyVersion", "bundleHash")):
                 return frozenset()
+            integrity = registry.get("integrity")
+            signed_at = integrity.get("signed_at") if isinstance(integrity, dict) else None
+            if not isinstance(signed_at, str):
+                return frozenset()
+            # Every retained row is replaced in the same transaction that
+            # signs this registry. Its MAC also authenticates signed_at.
+            materialized_at = _canonical_utc_timestamp(signed_at)
             entries = registry_entries(registry, store=self, oauth=oauth, binding=binding, now=now)
         except (GuardReviewContractError, OSError, RuntimeError, TypeError, ValueError):
             return frozenset()
@@ -168,6 +175,7 @@ class StoreReviewPolicyMemoryMixin:
                     decision.owner,
                     decision.source,
                     _canonical_utc_timestamp(decision.expires_at) if decision.expires_at else None,
+                    materialized_at,
                 )
             )
         return frozenset(identities)

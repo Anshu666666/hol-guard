@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 
 from .project_identity import is_portable_project_identity
 from .review_oauth_binding import GuardReviewContractError, GuardReviewOAuthMetadata
@@ -48,6 +49,7 @@ def local_memory_match_fields(
     oauth: GuardReviewOAuthMetadata,
     project_identity: str | None,
     action: str | None = None,
+    scope: str | None = None,
 ) -> tuple[str | None, str | None]:
     """Return matcher fields the local resolver actually compares.
 
@@ -68,8 +70,16 @@ def local_memory_match_fields(
             raise GuardReviewContractError("decision_memory_target_partial")
     elif project_identity and is_portable_project_identity(project_identity):
         chosen = project_identity
-    if chosen is None or action == "allow":
-        return None, None
+    if scope == "project" and chosen is None:
+        chosen = project_identity
+    if (
+        chosen is not None
+        and action == "allow"
+        and (is_portable_project_identity(chosen) or not Path(chosen).is_absolute())
+    ):
+        raise GuardReviewContractError("decision_memory_project_allow_unsupported")
+    if scope == "project" and chosen is None:
+        raise GuardReviewContractError("decision_memory_project_scope_unsupported")
     return chosen, None
 
 

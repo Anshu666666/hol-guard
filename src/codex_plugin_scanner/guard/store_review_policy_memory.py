@@ -28,6 +28,8 @@ class _PolicyMemoryStore(Protocol):
         self,
         connection: sqlite3.Connection,
         rows: Sequence[tuple[object, ...]],
+        *,
+        owned_sources: frozenset[str] | None = None,
     ) -> None: ...
 
 
@@ -56,7 +58,11 @@ class StoreReviewPolicyMemoryMixin:
         }
         with self._connect() as connection:
             connection.execute("begin immediate")
-            self._replace_remote_policy_rows_locked(connection, rows)
+            self._replace_remote_policy_rows_locked(
+                connection,
+                rows,
+                owned_sources=frozenset({"cloud-signed-memory"}),
+            )
             connection.executemany(
                 """
                 insert into sync_state (state_key, payload_json, updated_at)

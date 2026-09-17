@@ -91,10 +91,7 @@ def execute_review_policy_memory(
         rejected_rule_ids=rejected_rule_ids,
     )
     store.apply_review_policy_memory_state(
-        [
-            *_existing_non_memory_policies(store),
-            *[_decision_from_registry_entry(entry) for entry in registry.values()],
-        ],
+        [_decision_from_registry_entry(entry) for entry in registry.values()],
         registry=list(registry.values()),
         version={"policyVersion": _text(bundle.get("policyVersion"))},
         acknowledgement=ack,
@@ -130,34 +127,6 @@ def _stored_registry(store: GuardStore) -> dict[str, dict[str, object]]:
         if rule_id is not None and isinstance(decision, dict):
             registry[rule_id] = {"decision": dict(decision), "ruleId": rule_id}
     return registry
-
-
-def _existing_non_memory_policies(store: GuardStore) -> list[PolicyDecision]:
-    decisions: list[PolicyDecision] = []
-    for item in store.list_policy_decisions():
-        if item.get("source") != "policy-bundle":
-            continue
-        scope = _text(item.get("scope"))
-        action = _text(item.get("action"))
-        harness = _text(item.get("harness"))
-        if scope is None or action is None or harness is None or not _is_scope(scope) or not is_guard_action(action):
-            continue
-        decisions.append(
-            PolicyDecision(
-                harness=harness,
-                scope=scope,
-                action=action,
-                artifact_id=_text(item.get("artifact_id")),
-                artifact_hash=_text(item.get("artifact_hash")),
-                workspace=_text(item.get("workspace")),
-                publisher=_text(item.get("publisher")),
-                reason=_text(item.get("reason")),
-                owner=_text(item.get("owner")),
-                source="policy-bundle",
-                expires_at=_text(item.get("expires_at")),
-            )
-        )
-    return decisions
 
 
 def _decision_from_registry_entry(entry: dict[str, object]) -> PolicyDecision:

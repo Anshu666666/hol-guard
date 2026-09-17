@@ -49,6 +49,7 @@ from .memory_pattern_fingerprint import (
     build_memory_pattern_fingerprint,
 )
 from .models import GUARD_ACTION_VALUES
+from .policy_integrity import REMOTE_POLICY_SOURCES
 from .runtime.approval_context import approval_context_tokens_validation_reason
 from .store_base import *
 from .store_event_receipts import _local_once_approval_is_reusable, _verify_local_once_approval
@@ -67,6 +68,8 @@ _LOCAL_REUSE_DIAGNOSTIC_COLUMNS = """
     integrity_key_id, signed_at
 """
 _POLICY_REUSE_DIAGNOSTIC_COLUMNS = _POLICY_LOOKUP_COLUMNS
+_MEMORY_OWNED_POLICY_SOURCES = frozenset({"cloud-signed-memory"})
+_BUNDLE_OWNED_POLICY_SOURCES = frozenset(REMOTE_POLICY_SOURCES - _MEMORY_OWNED_POLICY_SOURCES)
 
 _SqlProbe = tuple[str, tuple[object, ...], str]
 
@@ -1126,7 +1129,11 @@ class StorePolicyMixin:
             )
             if continuity_rejection is not None:
                 return reject(continuity_rejection, connection)
-            self._replace_remote_policy_rows_locked(connection, rows)
+            self._replace_remote_policy_rows_locked(
+                connection,
+                rows,
+                owned_sources=_BUNDLE_OWNED_POLICY_SOURCES,
+            )
             for state_key, payload_json in encoded_payloads.items():
                 connection.execute(
                     """
@@ -1251,7 +1258,11 @@ class StorePolicyMixin:
                     ),
                     allow_nan=False,
                 )
-            self._replace_remote_policy_rows_locked(connection, ())
+            self._replace_remote_policy_rows_locked(
+                connection,
+                (),
+                owned_sources=_BUNDLE_OWNED_POLICY_SOURCES,
+            )
             connection.execute(
                 "delete from sync_state where state_key in (?, ?, ?, ?)",
                 (
@@ -1340,10 +1351,14 @@ class StorePolicyMixin:
     def _replace_remote_policy_rows_locked(
         connection: sqlite3.Connection,
         rows: Sequence[tuple[object, ...]],
+        *,
+        owned_sources: frozenset[str] | None = None,
     ) -> None:
+        sources = tuple(sorted(owned_sources or REMOTE_POLICY_SOURCES))
+        placeholders = ",".join("?" * len(sources))
         connection.execute(
-            f"delete from policy_decisions where source in {_REMOTE_POLICY_SOURCE_PLACEHOLDERS}",
-            _REMOTE_POLICY_SOURCE_PARAMS,
+            f"delete from policy_decisions where source in ({placeholders})",
+            sources,
         )
         connection.executemany(
             """

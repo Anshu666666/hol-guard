@@ -21,7 +21,7 @@ _NOW = "2026-09-17T00:00:00Z"
 _ARTIFACT = "codex:project:synthetic-policy-fixture"
 
 
-def _activated_store(tmp_path: Path, *, action: str = "allow") -> GuardStore:
+def _activated_store(tmp_path: Path, *, action: str = "allow", bundle_version: int = 8) -> GuardStore:
     store = GuardStore(tmp_path / "guard-home")
     device = store.get_device_metadata()
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -44,7 +44,9 @@ def _activated_store(tmp_path: Path, *, action: str = "allow") -> GuardStore:
             ],
         },
     }
-    bundle = _signed_bundle(private_key, key, payload_base=payload, rollout_state="enforcing")
+    bundle = _signed_bundle(
+        private_key, key, payload_base=payload, rollout_state="enforcing", bundle_version=bundle_version
+    )
     decisions = build_canonical_policy_bundle_decisions(
         bundle, device_id=device["installation_id"], device_name=device["device_label"]
     )
@@ -56,7 +58,11 @@ def _activated_store(tmp_path: Path, *, action: str = "allow") -> GuardStore:
             policy_bundle=bundle,
             policy_bundle_keyring=policy_bundle_keyring_payload((key,), workspace_id="workspace-alpha"),
             cloud_exceptions=[],
-            policy_bundle_ack={"bundleHash": bundle["bundleHash"], "bundleVersion": 8, "status": "validated"},
+            policy_bundle_ack={
+                "bundleHash": bundle["bundleHash"],
+                "bundleVersion": bundle_version,
+                "status": "validated",
+            },
             policy_bundle_checkpoint=policy_bundle_acceptance_checkpoint(bundle),
             update_last_good=True,
             remote_write_authorized=True,

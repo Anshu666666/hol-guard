@@ -73,8 +73,8 @@ def _contains_node(nodeids: Sequence[str], required: str) -> bool:
     return any(nodeid.split("[", 1)[0] == required for nodeid in nodeids)
 
 
-def _workflow_jobs(root: Path) -> dict[str, object]:
-    workflow = yaml.safe_load((root / ".github/workflows/publish.yml").read_text(encoding="utf-8"))
+def _workflow_jobs(root: Path, filename: str = "publish.yml") -> dict[str, object]:
+    workflow = yaml.safe_load((root / ".github/workflows" / filename).read_text(encoding="utf-8"))
     if not isinstance(workflow, dict):
         raise RuntimeError("publish workflow is not a mapping")
     jobs = workflow.get("jobs")
@@ -161,7 +161,7 @@ def build_report(root: Path) -> ReleaseCollectionReport:
         deselected_required=deselected,
         missing_required=missing,
         named_ci_deselects=_named_ci_deselects(root),
-        configured_canary_oses=_installed_canary_oses(jobs),
+        configured_canary_oses=_installed_canary_oses(_workflow_jobs(root, "installed-pr-canary.yml")),
         configured_wheel_jobs=_installed_wheel_jobs(jobs),
         installed_runtime_verified=False,
     )

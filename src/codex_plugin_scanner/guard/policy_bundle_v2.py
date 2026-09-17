@@ -16,12 +16,8 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from .contract_validation import canonical_uuid, positive_integer
 from .policy_bundle_ack_contract import GENERIC_ACK_KEYS, validated_generic_policy_acknowledgement
-from .policy_bundle_trusted_keys import (
-    PolicyBundleVerificationKey,
-    resolve_policy_bundle_signing_key,
-    signing_key_is_current,
-    signing_key_is_trusted,
-)
+from .policy_bundle_trusted_keys import PolicyBundleVerificationKey
+from .policy_bundle_v2_key_authority import authorized_v2_signing_key
 from .policy_bundle_validity import (
     comparison_unix_seconds,
     expires_at_validity_error,
@@ -259,12 +255,14 @@ def _verify_signature(
     signature = _non_empty_string(verifier.get("signature"))
     if key_id is None or signature is None:
         return "invalid_verifier"
-    signing_key = resolve_policy_bundle_signing_key(key_id, trusted_verification_keys)
+    signing_key = authorized_v2_signing_key(
+        key_id,
+        trusted_keys=trusted_verification_keys,
+        anchored_keys=anchored_verification_keys,
+        workspace_id=policy_bundle.get("workspaceId"),
+        now=now,
+    )
     if signing_key is None:
-        return "untrusted_signing_key"
-    if not signing_key_is_trusted(signing_key, anchored_verification_keys):
-        return "untrusted_signing_key"
-    if not signing_key_is_current(signing_key, now=now):
         return "untrusted_signing_key"
     key_fingerprint = verifier.get("keyFingerprint")
     if key_fingerprint is not None and key_fingerprint != signing_key.fingerprint_sha256:

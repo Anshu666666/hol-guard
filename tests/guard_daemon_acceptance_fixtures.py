@@ -14,6 +14,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -66,6 +67,7 @@ class WorkloadResult:
     inbox_requests: int
     dispatch_counts: dict[str, int]
     failure_reasons: dict[str, int]
+    transport_counts: dict[str, int]
 
 
 def load_correctness_workloads() -> tuple[WorkloadSpec, ...]:
@@ -106,11 +108,30 @@ def assert_adversarial_nodeids_resolve() -> None:
             raise AssertionError(f"missing adversarial nodeid: {nodeid}")
 
 
+def run_clients(
+    clients: list[ClientSpec], review: Callable[[str, str, int], None], *, request_timeout_seconds: float
+) -> None:
+    """Retain each client's declared concurrency throughout a mixed workload."""
+
+    def lane(client: ClientSpec, first: int) -> None:
+        for index in range(first, client["requests"], client["concurrency"]):
+            review(client["harness"], client["client"], index)
+
+    workers = sum(min(client["concurrency"], client["requests"]) for client in clients)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            (executor.submit(lane, client, first), len(range(first, client["requests"], client["concurrency"])))
+            for client in clients
+            for first in range(min(client["concurrency"], client["requests"]))
+        ]
+        for future, requests in futures:
+            future.result(timeout=request_timeout_seconds * requests)
+
+
 def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
     """Run a bounded workload through authenticated production hook endpoints."""
 
     request_count = sum(client["requests"] for client in spec["clients"])
-    max_workers = sum(client["concurrency"] for client in spec["clients"])
     guard_home = root / "guard-home"
     workspace = root / "workspace"
     workspace.mkdir(parents=True)
@@ -134,13 +155,31 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
     outcomes: Counter[str] = Counter()
     dispatch: Counter[str] = Counter()
     failure_reasons: Counter[str] = Counter()
+    transport_counts: Counter[str] = Counter()
     latencies_ms: list[float] = []
     lock = threading.Lock()
     remaining_ms = str(int(10_000 * under_coverage_scale(3.0)))
     review_timeout_seconds = 30 * under_coverage_scale(3.0)
 
+    def record_transport(name: str) -> None:
+        with lock:
+            transport_counts[name] += 1
+
+    def retry_admission(status: int, reason: str, *, lane: str, attempt: int, deadline: float) -> bool:
+        # parse_request refuses this request before hook dispatch. Never replay
+        # an evaluated response, a generic 503, or an ambiguous transport fault.
+        if not is_pre_dispatch_refusal(status, reason):
+            return False
+        record_transport(f"{lane}_admission_refusals")
+        if attempt != 0 or time.monotonic() + 0.025 >= deadline:
+            return False
+        record_transport(f"{lane}_admission_retries")
+        time.sleep(0.025)
+        return True
+
     def review(harness: str, client: str, index: int) -> None:
         started = time.monotonic()
+        transport_deadline = started + 12
         secret_request = index % spec["secret_stride"] == 0
         output = (
             "token=sk-proj-FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE" if secret_request else "routine documentation"
@@ -164,8 +203,11 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                 result = None
                 for attempt in range(2):
                     nonce = secrets.token_hex(32)
-                    connection = http.client.HTTPConnection("127.0.0.1", daemon.port, timeout=12)
+                    connection = http.client.HTTPConnection(
+                        "127.0.0.1", daemon.port, timeout=max(0.001, transport_deadline - time.monotonic())
+                    )
                     try:
+                        record_transport("challenge_attempts")
                         connection.request(
                             "POST",
                             "/v1/daemon/identity-challenge",
@@ -181,12 +223,20 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         )
                         challenge_response = connection.getresponse()
                         challenge_body = challenge_response.read()
-                        if challenge_response.status == 503 and attempt == 0:
-                            time.sleep(0.025 + (index % 6) * 0.01)
+                        if retry_admission(
+                            challenge_response.status,
+                            challenge_response.reason,
+                            lane="challenge",
+                            attempt=attempt,
+                            deadline=transport_deadline,
+                        ):
                             continue
                         if challenge_response.status != 200:
                             raise RuntimeError(f"challenge-status-{challenge_response.status}")
                         challenge = cast(dict[str, object], json.loads(challenge_body))
+                        if connection.sock is not None:
+                            connection.sock.settimeout(max(0.001, transport_deadline - time.monotonic()))
+                        record_transport("hook_attempts")
                         connection.request(
                             "POST",
                             f"/v1/hooks/{harness}?{query}",
@@ -202,6 +252,14 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         )
                         hook_response = connection.getresponse()
                         hook_body = hook_response.read()
+                        if retry_admission(
+                            hook_response.status,
+                            hook_response.reason,
+                            lane="hook",
+                            attempt=attempt,
+                            deadline=transport_deadline,
+                        ):
+                            continue
                         if hook_response.status != 200:
                             raise RuntimeError(f"hook-status-{hook_response.status}")
                         result = cast(dict[str, object], json.loads(hook_body))
@@ -221,8 +279,24 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                     },
                     method="POST",
                 )
-                with urllib.request.urlopen(request, timeout=12) as response:
-                    result = cast(dict[str, object], json.loads(response.read()))
+                for attempt in range(2):
+                    record_transport("hook_attempts")
+                    try:
+                        with urllib.request.urlopen(
+                            request, timeout=max(0.001, transport_deadline - time.monotonic())
+                        ) as response:
+                            result = cast(dict[str, object], json.loads(response.read()))
+                        break
+                    except urllib.error.HTTPError as error:
+                        error.close()
+                        if not retry_admission(
+                            error.code,
+                            str(error.reason),
+                            lane="hook",
+                            attempt=attempt,
+                            deadline=transport_deadline,
+                        ):
+                            raise
             blocked = _response_blocks_action(result)
             reason_code = result.get("reason_code")
             outcome = (
@@ -254,20 +328,11 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
 
     browser_calls: list[str] = []
     try:
-        with (
-            patch(
-                "codex_plugin_scanner.guard.daemon.server.open_browser_url",
-                side_effect=lambda url: browser_calls.append(str(url)) or False,
-            ),
-            ThreadPoolExecutor(max_workers=max_workers) as executor,
+        with patch(
+            "codex_plugin_scanner.guard.daemon.server.open_browser_url",
+            side_effect=lambda url: browser_calls.append(str(url)) or False,
         ):
-            futures = [
-                executor.submit(review, client["harness"], client["client"], index)
-                for client in spec["clients"]
-                for index in range(client["requests"])
-            ]
-            for future in futures:
-                future.result(timeout=review_timeout_seconds)
+            run_clients(spec["clients"], review, request_timeout_seconds=review_timeout_seconds)
         worker_stats = daemon._server.hook_process_runner.stats()
         scheduler_stats = daemon._server.runtime_hook_scheduler.stats()
         final_inbox = len(store.list_approval_requests(status=None, limit=None))
@@ -299,7 +364,12 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
         inbox_requests=max(0, final_inbox - initial_inbox),
         dispatch_counts=dict(dispatch),
         failure_reasons=dict(failure_reasons),
+        transport_counts=dict(transport_counts),
     )
+
+
+def is_pre_dispatch_refusal(status: int, reason: str) -> bool:
+    return status == 503 and reason == "Guard daemon request capacity reached"
 
 
 def _response_blocks_action(result: dict[str, object]) -> bool:

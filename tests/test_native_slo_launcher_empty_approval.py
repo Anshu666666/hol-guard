@@ -64,7 +64,7 @@ def test_missing_command_can_only_be_blocked_through_real_resolution(tmp_path, h
         row = session.store.get_approval_request(request_id)
         assert row["launch_target"] == "tool:tool"
         assert row["action_envelope_json"]["command"] is None
-        assert row["action_envelope_json"]["action_type"] == "mcp_tool"
+        assert row["action_envelope_json"]["action_type"] == ("config_change" if harness == "codex" else "mcp_tool")
         assert row["resolution_action"] == "block"
         assert result["matching"] == "exact_identity_and_new_row"
         assert str(tmp_path) not in json.dumps(result)

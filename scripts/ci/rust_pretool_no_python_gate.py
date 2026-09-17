@@ -385,8 +385,35 @@ def _worker_failures(root: Path) -> list[str]:
     )
     failures.extend(required_tokens(native_hook, ("native_pre_tool_unavailable",)))
     native_edge_review = function_node(native_hook, "_review_native_edge", class_name="HookWorkerNativeMixin")
-    if "_review_raw_hook_native" not in function_calls(native_edge_review):
-        failures.append("HookWorkerNativeMixin._review_native_edge does not invoke the native hook edge")
+    delegated = "_review_native_edge_with_snapshot"
+    calls = [
+        child
+        for child in ast.walk(native_edge_review)
+        if isinstance(child, ast.Call)
+        and isinstance(child.func, ast.Attribute)
+        and isinstance(child.func.value, ast.Name)
+        and child.func.value.id == "self"
+        and child.func.attr == delegated
+    ]
+    fenced_calls = [
+        call
+        for context in ast.walk(native_edge_review)
+        if isinstance(context, ast.With)
+        and any(
+            isinstance(item.context_expr, ast.Call)
+            and isinstance(item.context_expr.func, ast.Name)
+            and item.context_expr.func.id == "native_review_fence"
+            for item in context.items
+        )
+        for statement in context.body
+        for call in ast.walk(statement)
+        if call in calls
+    ]
+    if len(calls) != 1 or fenced_calls != calls:
+        failures.append("HookWorkerNativeMixin native edge delegation is not inside its authority fence")
+    native_snapshot_review = _function_node_or_none(native_hook, delegated, class_name="HookWorkerNativeMixin")
+    if native_snapshot_review is None or "_review_raw_hook_native" not in function_calls(native_snapshot_review):
+        failures.append("HookWorkerNativeMixin snapshot helper does not invoke the native hook edge")
     raw_edge_review = function_node(hook_worker, "_review_raw_hook_native", class_name="HookWorker")
     if "review_raw_hook_native" not in function_calls(raw_edge_review):
         failures.append("HookWorker._review_raw_hook_native does not invoke review_raw_hook_native")

@@ -125,3 +125,16 @@ def test_shadow_comparison_requires_explicit_non_production_surface(
     monkeypatch.delenv("HOL_GUARD_NATIVE_DIAGNOSTIC", raising=False)
 
     assert shadow_comparison_enabled() is False
+
+
+def test_native_codex_completion_is_an_explicit_native_only_root(tmp_path: Path) -> None:
+    _copy_sources(tmp_path)
+    path = tmp_path / "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py"
+    source = path.read_text()
+    marker = "            edge = worker._review_raw_hook_native(\n"
+    assert marker in source
+    path.write_text(source.replace(marker, "            edge = evaluate_command(\n", 1))
+    failures = MODULE._graph_failures(tmp_path)
+    assert any(
+        "complete_native_codex_live_decision" in value and "semantic hook evaluator" in value for value in failures
+    )

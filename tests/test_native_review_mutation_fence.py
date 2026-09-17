@@ -163,9 +163,6 @@ def test_cross_process_stricter_commit_waits_for_paused_reuse(tmp_path, monkeypa
             except BaseException as error:
                 outcome.append(error)
 
-        thread = threading.Thread(target=review)
-        thread.start()
-        assert entered.wait(5)
         script = """
 import contextlib, json, pathlib, sys
 from codex_plugin_scanner.guard.store import GuardStore
@@ -181,6 +178,8 @@ def observed(*args, **kwargs):
     with original(*args, **kwargs):
         yield
 store._extension_control_authority_lock = observed
+print('ready', flush=True)
+assert sys.stdin.readline().strip() == 'commit'
 _commit(store)
 print('committed', flush=True)
 """
@@ -193,6 +192,16 @@ print('committed', flush=True)
         )
         assert process.stdin is not None and process.stdout is not None
         process.stdin.write(json.dumps(secrets.values) + "\n")
+        process.stdin.flush()
+        assert select.select([process.stdout], [], [], 8)[0]
+        assert process.stdout.readline() == "ready\n"
+        # Store initialization may acquire the same authority fence. Finish it
+        # before starting the timed review so this measures commit contention,
+        # not child imports or an unobserved initialization lock.
+        thread = threading.Thread(target=review)
+        thread.start()
+        assert entered.wait(5)
+        process.stdin.write("commit\n")
         process.stdin.flush()
         assert select.select([process.stdout], [], [], 8)[0]
         assert process.stdout.readline() == "waiting\n"

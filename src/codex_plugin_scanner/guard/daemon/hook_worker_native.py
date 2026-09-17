@@ -453,6 +453,7 @@ class HookWorkerNativeMixin:
                     workspace=workspace,
                     guard_home=guard_home,
                     verified_receipt=edge.get("receipt"),
+                    home_dir=home_dir,
                 )
                 return _record_native_pre_activity(self, native_harness, payload, response, accepted_receipt), True
             return _record_native_pre_activity(

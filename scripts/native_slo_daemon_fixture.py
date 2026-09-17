@@ -339,7 +339,7 @@ def _native_samples(session: Any, count: int) -> dict[str, object]:
 
 
 def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
-    from contextlib import nullcontext
+    from contextlib import ExitStack, nullcontext
 
     from scripts.native_slo_faults import FaultFixture
     from scripts.native_slo_session import AdapterSession
@@ -349,11 +349,12 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
         from scripts.native_slo_workloads import configuration_text
 
         configuration = configuration_text(setup if setup != "none" else policy)
-    with StartupDiagnostic(_emit) as diagnostic:
-        diagnostic.progress("construct")
-        adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
-    _emit({"state": "progress", "stage": "start"})
-    with adapter as session:
+    with ExitStack() as lifetime:
+        with StartupDiagnostic(_emit) as diagnostic:
+            diagnostic.progress("construct")
+            adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
+            diagnostic.progress("start")
+            session = lifetime.enter_context(adapter)
         _emit({"state": "progress", "stage": "fault"})
         fault_context = FaultFixture(session, setup) if setup != "none" else nullcontext()
         with fault_context as fault:

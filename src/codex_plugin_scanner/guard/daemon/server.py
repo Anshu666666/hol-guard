@@ -5503,6 +5503,19 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
 
     def _handle_codex_live_decision(self, request_id: str, payload: Mapping[str, object]) -> None:
         request = self.server.store.get_approval_request(request_id)  # type: ignore[attr-defined]
+        from .codex_native_live_decision import complete_native_codex_live_decision, is_native_codex_review
+
+        if is_native_codex_review(request):
+            daemon_server = self._daemon_server()
+            result = complete_native_codex_live_decision(
+                daemon_server.store,
+                worker=daemon_server.hook_worker,
+                request_id=request_id,
+                payload=payload,
+                deadline=time.monotonic() + _RUNTIME_HOOK_PROCESS_TIMEOUT_SECONDS,
+            )
+            self._write_json(result, status=200 if result.get("completed") is True else 409)
+            return
         previous = self.server.store.get_request_resume(request_id)  # type: ignore[attr-defined]
         claimed_hash, claimed_request_id = _codex_live_replay_authority(request, previous)
         if isinstance(request, Mapping) and request.get("resolution_action") == "allow":

@@ -13,6 +13,8 @@ from pathlib import Path
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import route_counts
 from scripts.native_slo_daemon_fixture import DaemonFixture, witnessed_route
+from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+from scripts.native_slo_semantic_diagnostic import semantic_diagnostic
 
 _IMPLEMENTED_SETUPS = frozenset(
     {
@@ -107,8 +109,13 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
                 route = witnessed_route(before, after)
                 evidence = session.control("case_result")
                 validate_setup(case, evidence["setup"])
-                validate_case(case, response, route, http_status=http_status)
-                validate_native_result(case, evidence["native_result"])
+                try:
+                    validate_case(case, response, route, http_status=http_status)
+                    validate_native_result(case, evidence["native_result"])
+                except AssertionError as error:
+                    detail = failure_evidence(error)
+                    detail["observed_semantics"] = semantic_diagnostic(response, evidence["native_result"], cases)
+                    raise FixtureFailureError(detail) from error
                 validated.append(case.case_id)
                 semantic += int(case.semantic_sample)
                 for name, value in (

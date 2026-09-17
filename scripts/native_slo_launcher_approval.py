@@ -25,6 +25,7 @@ from codex_plugin_scanner.guard.daemon.hook_native_review_approval import (
     _native_review_tool_name,
 )
 from codex_plugin_scanner.guard.daemon.hook_request_parsing import pre_tool_command
+from codex_plugin_scanner.guard.runtime.actions import normalize_harness_payload
 from codex_plugin_scanner.guard.sqlite_tuning import sqlite_connect_timeout_override
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import route_counts
@@ -242,7 +243,7 @@ class LauncherApprovalControl:
         canonical_empty = (
             operation.harness == "codex" and operation.command is None and empty_profile == ("config_change", None)
         )
-        expected_envelope = {
+        expected_envelope: dict[str, object] = {
             "harness": operation.harness,
             "tool_name": None if canonical_empty else operation.tool,
             "command": operation.command,
@@ -254,6 +255,27 @@ class LauncherApprovalControl:
             if canonical_empty
             else "mcp_tool",
         }
+        if (
+            operation.harness == "codex"
+            and isinstance(envelope, Mapping)
+            and envelope.get("workspace_hash") is not None
+        ):
+            # Current native Codex presentation redacts workspace and command
+            # paths. Their canonical projection and the unredacted row scope
+            # and launch target must match the identity captured before launch.
+            # Keep the pinned baseline's legacy, unhashed envelope separate.
+            canonical = normalize_harness_payload(
+                "codex",
+                "PreToolUse",
+                {"tool_name": operation.tool, "tool_input": {"command": operation.command}}
+                if operation.command is not None
+                else {},
+                workspace=operation.workspace,
+                home_dir=getattr(self.session, "root", self.session.store.guard_home.parent),
+            ).to_dict()
+            for field_name in ("workspace", "workspace_hash", "command", "tool_name", "action_type"):
+                expected_envelope[field_name] = canonical[field_name]
+            expected_envelope["schema_version"] = 1
         if not isinstance(envelope, Mapping) or any(
             envelope.get(key) != value for key, value in expected_envelope.items()
         ):

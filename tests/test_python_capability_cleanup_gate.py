@@ -20,8 +20,13 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 96
-    assert payload["capabilities"]["legacy_python_resident_transport"] == 2
+    assert payload["scope_files"] == 104
+    assert payload["capabilities"] == {
+        "hook_control_and_transport": 81,
+        "python_reference_oracle": 17,
+        "hook_evidence_persistence": 4,
+        "legacy_python_resident_transport": 2,
+    }
     assert payload["candidate_evidence"] == [
         {
             "path": "src/codex_plugin_scanner/guard/native_runtime_resident.py",
@@ -34,6 +39,33 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
     assert payload["dynamic_import_destinations_checked"] is True
     assert payload["dynamic_import_unbounded"] == []
     assert payload["dynamic_import_count"] == len(payload["dynamic_import_evidence"])
+
+
+def test_native_review_and_codex_continuation_files_have_explicit_control_ownership() -> None:
+    contract, owners, scope = GATE._validate_contract(ROOT)
+    classes = GATE._capability_classes(contract)
+    expected = {
+        "native_runtime_identity.py",
+        "daemon/hook_native_review_binding.py",
+        "daemon/hook_native_review_fence.py",
+        "daemon/hook_native_review_approval.py",
+        "daemon/hook_native_review_continuation.py",
+        "daemon/codex_native_live_decision.py",
+        "codex_live_decision.py",
+        "store_consumed_once_authority.py",
+        "store_event_receipts.py",
+    }
+    assert set(owners) == scope
+    for relative in expected:
+        path = f"src/codex_plugin_scanner/guard/{relative}"
+        assert path in scope
+        assert owners[path] == "hook_control_and_transport"
+        assert classes[owners[path]] == "required_control_plane"
+    # The legacy semantic engine remains an explicitly retained oracle even
+    # though the new continuation transport invokes native decision authority.
+    oracle = owners["src/codex_plugin_scanner/guard/runtime/hook_review_engine.py"]
+    assert oracle == "python_reference_oracle"
+    assert classes[oracle] == "named_reference_oracle"
 
 
 def test_dynamic_import_gate_rejects_unbounded_destination(tmp_path: Path) -> None:

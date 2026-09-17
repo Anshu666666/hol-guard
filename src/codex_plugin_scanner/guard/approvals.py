@@ -789,6 +789,16 @@ def apply_approval_resolution(
     )
     persisted_rule = persist_policy is True or (persist_policy is None and scope != "artifact")
     local_once_fallback = False
+    native_codex_once = (
+        action == "allow"
+        and scope == "artifact"
+        and request.get("harness") == "codex"
+        and isinstance(request_artifact_id, str)
+        and request_artifact_id.startswith("codex:native-pretool:")
+        and requires_local_once_approval(request)
+        and temporary_mcp_selection is None
+        and local_tool_selection is None
+    )
     if persisted_rule:
         store.ensure_policy_integrity_ready_for_write(
             harness=decision.harness if decision.harness != "*" else None,
@@ -804,7 +814,7 @@ def apply_approval_resolution(
                 harness=_approval_policy_harness(request),
                 created_at=resolved_at,
             )
-    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None:
+    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None and not native_codex_once:
         once_decision = replace(
             decision,
             expires_at=_approval_once_policy_expires_at(resolved_at),
@@ -827,6 +837,24 @@ def apply_approval_resolution(
                 harness=_approval_policy_harness(request),
                 created_at=resolved_at,
             )
+    elif native_codex_once:
+        # A live native waiter needs signed, exact one-use authority even
+        # when the reviewer chooses not to save a policy. Keep its original
+        # artifact and workspace; runtime selectors must not broaden it.
+        local_once_fallback = _record_local_once_approval(
+            store,
+            request_id=request_id,
+            decision=replace(
+                decision,
+                artifact_id=request_artifact_id,
+                artifact_hash=request_artifact_hash,
+                workspace=_string_or_none(request.get("workspace")),
+                publisher=request_publisher,
+                expires_at=_approval_once_policy_expires_at(resolved_at),
+            ),
+            harness="codex",
+            created_at=resolved_at,
+        )
 
     temporary_mcp_result: dict[str, object] | None = None
     temporary_mcp_resolved_ids: list[str] = []

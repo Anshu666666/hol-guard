@@ -97,6 +97,40 @@ def test_preexisting_deduplicated_request_is_never_selected(tmp_path):
         control.close()
 
 
+@pytest.mark.parametrize("field,value", [("workspace", "~/another-workspace"), ("workspace_hash", "f" * 64)])
+def test_canonical_codex_workspace_label_and_hash_cannot_retarget_approval(tmp_path, monkeypatch, field, value):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    release = threading.Event()
+    original = control._new_pending
+
+    def delayed(operation):
+        assert release.wait(2)
+        return original(operation)
+
+    monkeypatch.setattr(control, "_new_pending", delayed)
+    try:
+        begun = control.begin("codex", _payload(), timeout_seconds=2)
+        request_id = _queue(session, harness="codex")
+        row = session.store.get_approval_request(request_id)
+        assert row["workspace"] == str(session.workspace)
+        assert row["action_envelope_json"]["workspace"] == "~/workspace"
+        envelope = {**row["action_envelope_json"], field: value}
+        with session.store._connect() as connection:
+            connection.execute(
+                "update approval_requests set action_envelope_json=? where request_id=?",
+                (json.dumps(envelope), request_id),
+            )
+        release.set()
+        result = _result(control, begun["operation_id"])
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "qualification_launcher_approval_identity_changed"
+        assert session.store.get_approval_request(request_id)["status"] == "pending"
+    finally:
+        release.set()
+        control.close()
+
+
 def test_other_harness_tool_command_and_workspace_are_not_resolved(tmp_path):
     session, _ = _session(tmp_path)
     control = LauncherApprovalControl(session)

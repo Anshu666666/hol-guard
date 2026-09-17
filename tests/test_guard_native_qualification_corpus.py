@@ -7,6 +7,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import replace
+from email.message import Message
 from pathlib import Path
 
 import pytest
@@ -54,7 +55,12 @@ def _delivered(case: QualificationCase) -> dict[str, object]:
     """
 
     if case.expected_http_status == 413:
-        return {"error": "body_too_large"}
+        handler = object.__new__(_GuardDaemonHandler)
+        handler.headers = Message()
+        handler.headers["Content-Length"] = str(case.wire_bytes)
+        _, error = handler._load_request_body()
+        assert error == "request_body_too_large"
+        return {"error": error}
     if case.native_expected is None:
         return availability_harness_response(
             case.payload,

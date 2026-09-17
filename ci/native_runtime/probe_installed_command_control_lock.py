@@ -10,15 +10,36 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from codex_plugin_scanner.guard import native_command_control_authority_io as authority_io
+
+
+def _raw_child_file(kernel32: Any, path: Path) -> int:
+    create = kernel32.CreateFileW
+    create.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+    ]
+    create.restype = ctypes.c_void_p
+    # A newly created private parent handle retains DELETE access for atomic
+    # rollback. CRT os.open does not share DELETE, so it can fail before the
+    # child reaches LockFileEx. Match Rust's read/write/delete open sharing;
+    # lock contention is still decided independently by the byte-range lease.
+    handle = create(str(path), 0xC0000000, 0x00000007, None, 3, 0x00200080, None)
+    if handle is None or handle == ctypes.c_void_p(-1).value:
+        raise RuntimeError("installed_command_control_lock_child_open_failed")
+    return int(handle)
 
 
 def _raw_child(path: Path, shared: bool) -> int:
     # This independent binding intentionally does not call the implementation
     # under test. Its whole-file range matches Rust fs2, overlapping byte zero.
-    import msvcrt
-
     class Overlapped(ctypes.Structure):
         _fields_ = [
             ("internal", ctypes.c_size_t),
@@ -39,12 +60,13 @@ def _raw_child(path: Path, shared: bool) -> int:
         ctypes.POINTER(Overlapped),
     ]
     lock.restype = ctypes.c_int
-    descriptor = os.open(path, os.O_RDWR | os.O_BINARY)
+    close = kernel32.CloseHandle
+    close.argtypes = [ctypes.c_void_p]
+    close.restype = ctypes.c_int
+    handle = _raw_child_file(kernel32, path)
     try:
         record = Overlapped()
-        acquired = bool(
-            lock(msvcrt.get_osfhandle(descriptor), 1 if shared else 3, 0, 0xFFFFFFFF, 0xFFFFFFFF, ctypes.byref(record))
-        )
+        acquired = bool(lock(handle, 1 if shared else 3, 0, 0xFFFFFFFF, 0xFFFFFFFF, ctypes.byref(record)))
         code = 0 if acquired else ctypes.get_last_error()
         if not acquired and code != 33:  # ERROR_LOCK_VIOLATION only
             raise RuntimeError("installed_command_control_lock_unexpected_win32_error")
@@ -52,7 +74,8 @@ def _raw_child(path: Path, shared: bool) -> int:
         return 0
     finally:
         # Closing releases the child's lease, including the success case.
-        os.close(descriptor)
+        if not close(handle):
+            raise RuntimeError("installed_command_control_lock_child_close_failed")
 
 
 def _child_result(path: Path, *, shared: bool) -> bool:

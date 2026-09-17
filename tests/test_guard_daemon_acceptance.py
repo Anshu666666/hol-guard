@@ -54,6 +54,15 @@ def test_packaged_correctness_workloads(
     assert result.routine_allowed + result.secrets_denied == result.requests
     assert result.capacity_denials == 0
     assert result.generic_failures == 0
+    # Successful logical reviews and HTTP admission attempts are separate.
+    # Refusals never count as an evaluated allow/deny, and retries remain part
+    # of the request latency measured above.
+    assert result.transport_counts["hook_attempts"] == result.requests + result.transport_counts.get(
+        "hook_admission_refusals", 0
+    )
+    assert result.transport_counts.get("hook_admission_refusals", 0) == result.transport_counts.get(
+        "hook_admission_retries", 0
+    )
     assert result.pid_stable
     assert result.workers_stable
     assert result.queue_bounded
@@ -241,6 +250,7 @@ def test_aggregate_report_drops_sensitive_and_unbounded_fields() -> None:
                 "fixture_id": "pi-240-24",
                 "requests": 240,
                 "secrets_denied": 24,
+                "transport_counts": {"hook_attempts": 241, "hook_admission_refusals": 1, "hook_admission_retries": 1},
                 "command": "do not persist",
                 "workspace": "/private/path",
                 "raw_payload": {"token": "do not persist"},
@@ -254,6 +264,18 @@ def test_aggregate_report_drops_sensitive_and_unbounded_fields() -> None:
     assert "command" not in serialized
     assert "workspace" not in serialized
     assert "token" not in serialized
+    assert "'hook_attempts': 241" in serialized
+    assert "'hook_admission_refusals': 1" in serialized
+    assert "'hook_admission_retries': 1" in serialized
+
+
+@pytest.mark.parametrize(
+    "counts",
+    [{"private/path": 1}, {"hook_attempts": "private/path"}, {"hook_attempts": -1}, {"hook_attempts": True}],
+)
+def test_aggregate_report_rejects_unbounded_transport_counter_fields(counts: dict[str, object]) -> None:
+    report = _load_report_module().sanitize_report({"results": [{"transport_counts": counts}]})
+    assert "transport_counts" not in repr(report)
 
 
 @pytest.mark.slow

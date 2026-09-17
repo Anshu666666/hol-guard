@@ -50,6 +50,13 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     assert config_reads
     assert all(item["category"] == "synchronous_posture_config" for item in config_reads)
     assert "compatibility_only" in all_categories
+    assert {
+        "continuation_transport_decode",
+        "continuation_protocol_identity",
+        "continuation_endpoint_identity",
+        "continuation_process_identity",
+        "synchronous_control_durability",
+    } <= categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
 
@@ -69,6 +76,8 @@ def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path) -> None
 def test_floor_codec_exception_does_not_admit_program_or_source_io() -> None:
     path = "src/codex_plugin_scanner/guard/native_command_control_binding.py"
     assert MODULE._category(path, "decode", "native_command_control_floor_mac") == "transport_decode"
+    assert MODULE._category(path, "decode", "native_command_control_floor_mac", "decode") == "transport_decode"
+    assert MODULE._category(path, "decode", "native_command_control_floor_mac", "loads").startswith("unclassified_")
     assert MODULE._category(path, "filesystem", "native_command_control_floor_mac") == "unclassified_python_io"
     assert MODULE._category(path, "decode", "_metadata_from_bytes") == "unclassified_python_content_io"
     assert MODULE._category(path, "hash", "_metadata_from_bytes") == "unclassified_python_io"
@@ -206,3 +215,116 @@ def test_resolver_follows_exact_static_facade_without_accepting_computed_exports
     )
     with pytest.raises(RuntimeError, match="unresolved repository-qualified helper call"):
         MODULE.resolve_call(tmp_path, caller, "api.read_source", MODULE._function_map(tmp_path))
+
+
+def test_resolver_follows_visible_direct_function_alias(tmp_path: Path) -> None:
+    target = _write_guard_fixture(tmp_path, "actual_identity", "def mapping_value():\n    return {}\n")
+    _write_guard_fixture(tmp_path, "unrelated_identity", "def _mapping():\n    return {}\n")
+    caller = _write_guard_fixture(
+        tmp_path,
+        "alias_caller",
+        "from .actual_identity import mapping_value as _mapping\ndef call():\n    return _mapping()\n",
+    )
+    records = MODULE._function_map(tmp_path)
+    resolved = MODULE.resolve_call(tmp_path, records[caller, "call"][0], "_mapping", records)
+    assert resolved is not None and resolved.path == target and resolved.name == "mapping_value"
+
+
+def test_resolver_keeps_builtin_file_open_at_calling_function(tmp_path: Path) -> None:
+    _write_guard_fixture(
+        tmp_path, "network_handlers", "class First:\n def open(self): pass\nclass Second:\n def open(self): pass\n"
+    )
+    caller = _write_guard_fixture(tmp_path, "file_caller", 'def inspect():\n    return open("source.txt")\n')
+    records = MODULE._function_map(tmp_path)
+    record = records[caller, "inspect"][0]
+    assert MODULE.resolve_call(tmp_path, record, "open", records) is None
+    observations = list(MODULE._observations(record))
+    assert any(value.kind == "filesystem" and value.category == "unclassified_python_io" for value in observations)
+
+
+def test_resolver_follows_explicit_imported_class_method(tmp_path: Path) -> None:
+    target = _write_guard_fixture(
+        tmp_path, "envelope", "class Envelope:\n @classmethod\n def from_dict(cls, value): return cls()\n"
+    )
+    caller = _write_guard_fixture(
+        tmp_path,
+        "class_caller",
+        "from .envelope import Envelope\ndef inspect(value):\n    return Envelope.from_dict(value)\n",
+    )
+    records = MODULE._function_map(tmp_path)
+    result = MODULE.resolve_call(tmp_path, records[caller, "inspect"][0], "Envelope.from_dict", records)
+    assert result is not None and result.path == target and result.qualname == "Envelope.from_dict"
+
+
+@pytest.mark.parametrize(
+    ("source", "call"),
+    [
+        ("from hashlib import sha256\ndef inspect(): return sha256(b'')\n", "sha256"),
+        ("from hashlib import sha256 as digest\ndef inspect(): return digest(b'')\n", "digest"),
+        ("import hashlib as digest\ndef inspect(): return digest.sha256(b'')\n", "digest.sha256"),
+        (
+            "from .unrelated_hash import sha256\ndef inspect():\n"
+            "    from hashlib import sha256\n    return sha256(b'')\n",
+            "sha256",
+        ),
+    ],
+)
+def test_external_import_cannot_resolve_unrelated_repository_helper(tmp_path: Path, source: str, call: str) -> None:
+    _write_guard_fixture(tmp_path, "unrelated_hash", "def sha256(value): return open(value).read()\n")
+    caller = _write_guard_fixture(tmp_path, "external_caller", source)
+    records = MODULE._function_map(tmp_path)
+    record = records[caller, "inspect"][0]
+    assert MODULE.resolve_call(tmp_path, record, call, records) is None
+    if call.endswith("sha256"):
+        assert any(item.kind == "hash" and item.operation == "sha256" for item in MODULE._observations(record))
+
+
+@pytest.mark.parametrize(
+    ("module", "function", "kind", "operation", "category"),
+    [
+        ("daemon/codex_native_live_decision", "_decode_hook_input", "decode", "loads", "continuation_transport_decode"),
+        ("continuation_payload", "offer_hash", "hash", "sha256", "continuation_protocol_identity"),
+        ("continuation_runtime", "_opaque_target_id", "hash", "sha256", "continuation_protocol_identity"),
+        ("codex_app_server", "_is_safe_local_socket_path", "filesystem", "resolve", "continuation_endpoint_identity"),
+        ("codex_app_server", "_is_trusted_local_socket", "filesystem", "lstat", "continuation_endpoint_identity"),
+        ("live_process_identity", "_linux_proc_stat", "filesystem", "read", "continuation_process_identity"),
+        ("live_process_identity", "_trusted_posix_ps_path", "filesystem", "stat", "continuation_process_identity"),
+        ("durable_io", "fsync_directory", "filesystem", "open", "synchronous_control_durability"),
+    ],
+)
+def test_continuation_io_exceptions_are_function_and_primitive_scoped(
+    module: str, function: str, kind: str, operation: str, category: str
+) -> None:
+    path = f"src/codex_plugin_scanner/guard/{module}.py"
+    assert MODULE._category(path, kind, function, operation) == category
+    for other_function in ("unrelated", f"{function}.nested", f"Owner.{function}"):
+        assert MODULE._category(path, kind, other_function, operation).startswith("unclassified_")
+    assert MODULE._category(path, kind, function, "read_bytes").startswith("unclassified_")
+    assert MODULE._category(path, "archive", function, "tarfile").startswith("unclassified_")
+
+
+def test_nested_operation_does_not_inherit_outer_continuation_exception(tmp_path: Path) -> None:
+    path = _write_guard_fixture(
+        tmp_path,
+        "live_process_identity",
+        "def _linux_proc_stat(pid):\n"
+        "    def inspect_other_source():\n        return open('source.txt').read()\n"
+        "    return open('/proc/123/stat').read()\n",
+    )
+    record = MODULE._function_map(tmp_path)[path, "_linux_proc_stat"][0]
+    observed = list(MODULE._observations(record))
+    nested = [item for item in observed if item.line == 3]
+    outer = [item for item in observed if item.line == 4]
+    assert len(nested) == len(outer) == 2
+    assert all(item.category == "unclassified_python_io" for item in nested)
+    assert all(item.category == "continuation_process_identity" for item in outer)
+
+
+def test_continuation_contract_retains_rust_action_identity_and_explicit_control_io() -> None:
+    contract = next(
+        item for item in MODULE._capability_contract() if item["id"] == "native_codex_browser_continuation_control"
+    )
+    assert contract["python_decision_time_disk_io"] is True
+    assert contract["python_semantic_fallback"] is False
+    assert contract["action_source_identity"] == "verified_rust_request_digest"
+    assert contract["failure"] == "continuation_not_completed"

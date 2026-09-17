@@ -6,6 +6,7 @@ import ctypes
 import os
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -63,6 +64,33 @@ def test_overlapped_uses_windows_32_bit_dwords_on_every_host() -> None:
     assert lock._Overlapped.OffsetHigh.offset == 2 * pointer + 4
     assert lock._Overlapped.hEvent.offset == 2 * pointer + 8
     assert ctypes.sizeof(lock._Overlapped) == 3 * pointer + 8
+
+
+def test_independent_child_open_shares_delete_with_live_private_creation_handle(tmp_path: Path) -> None:
+    from ci.native_runtime import probe_installed_command_control_lock as probe
+
+    calls = []
+
+    def create(path, access, share, security, disposition, attributes, template):
+        calls.append((path, access, share, security, disposition, attributes, template))
+        # Model an existing parent handle retaining DELETE access. Rejecting
+        # that sharing mode would prevent the independent lock oracle running.
+        return 91 if share & 4 else ctypes.c_void_p(-1).value
+
+    kernel32 = SimpleNamespace(CreateFileW=Mock(side_effect=create))
+    path = tmp_path / "extension-control-authority.lock"
+    assert probe._raw_child_file(kernel32, path) == 91
+    assert calls == [(str(path), 0xC0000000, 7, None, 3, 0x00200080, None)]
+    assert kernel32.CreateFileW.restype is ctypes.c_void_p
+
+
+@pytest.mark.parametrize("invalid", [None, ctypes.c_void_p(-1).value])
+def test_independent_child_open_failure_is_never_reported_as_lock_contention(tmp_path: Path, invalid) -> None:
+    from ci.native_runtime import probe_installed_command_control_lock as probe
+
+    kernel32 = SimpleNamespace(CreateFileW=Mock(return_value=invalid))
+    with pytest.raises(RuntimeError, match="child_open_failed"):
+        probe._raw_child_file(kernel32, tmp_path / "extension-control-authority.lock")
 
 
 @pytest.mark.skipif(os.name != "nt", reason="real Windows LockFileEx process boundary")

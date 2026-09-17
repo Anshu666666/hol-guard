@@ -588,7 +588,7 @@ def build_cases(workspace: Path) -> tuple[QualificationCase, ...]:
             f"inline-http-bound-{size_class}",
             payload=payload,
             expected=ExpectedResponse(
-                "transport_rejected", "not_delivered", "http_body_limit", {"error": "body_too_large"}
+                "transport_rejected", "not_delivered", "http_body_limit", {"error": "request_body_too_large"}
             ),
             route="engine_bypassed",
             status=413,

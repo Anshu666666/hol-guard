@@ -25,8 +25,8 @@ from typing import Final, cast
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.ci.rust_io_ownership_contract import capability_contract
-from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call
+from scripts.ci.rust_io_ownership_contract import capability_contract, scoped_io_category
+from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call, scoped_nodes
 
 SCHEMA: Final = "hol-guard.decision-critical-io.v1"
 NATIVE_MODES: Final = frozenset({"auto", "force"})
@@ -100,26 +100,6 @@ _ASYNC_POLICY_PATHS: Final = frozenset(
         "src/codex_plugin_scanner/guard/runtime/command_activity_correlation.py",
     }
 )
-# This pure floor codec decodes already-canonical bounded in-memory JSON. Keep
-# the exception function-scoped so program loading and source decoding in the
-# same module cannot silently become synchronous hook work.
-_TRANSPORT_CODEC_FUNCTIONS: Final = frozenset(
-    {
-        (
-            "src/codex_plugin_scanner/guard/native_command_control_binding.py",
-            "native_command_control_floor_mac",
-        ),
-    }
-)
-_SYNCHRONOUS_FENCE_FUNCTIONS: Final = frozenset(
-    {
-        ("src/codex_plugin_scanner/guard/native_command_control_authority_io.py", "_unix_directory"),
-        (
-            "src/codex_plugin_scanner/guard/native_command_control_authority_io.py",
-            "hold_command_control_authority_lock",
-        ),
-    }
-)
 _PERSISTENCE_PATH_PREFIXES: Final = (
     "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
     "src/codex_plugin_scanner/guard/runtime/hook_enrichment_queue.py",
@@ -182,6 +162,9 @@ ROOTS: Final = (
         "try_native_or_source_ref_hook",
     ),
     _POSTURE_ROOT,
+    RootSpec(
+        "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py", "complete_native_codex_live_decision"
+    ),
 )
 
 
@@ -267,23 +250,16 @@ def _calls(record: FunctionRecord) -> tuple[str, ...]:
     return tuple(names)
 
 
-def _category(path: str, kind: str, function: str = "") -> str:
+def _category(path: str, kind: str, function: str = "", operation: str = "") -> str:
     if path in _COMPATIBILITY_PATHS:
         return "compatibility_only"
     if path in _TRANSPORT_IDENTITY_PATHS:
         return "transport_identity"
     if path in _TRANSPORT_DECODE_PATHS and kind == "decode":
         return "transport_decode"
-    if (path, function) in _TRANSPORT_CODEC_FUNCTIONS and kind == "decode":
-        return "transport_decode"
-    if (path, function) in _SYNCHRONOUS_FENCE_FUNCTIONS and kind == "filesystem":
-        return "synchronous_authority_fence"
-    if (
-        path == "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py"
-        and function == "native_review_action_identity"
-        and kind == "hash"
-    ):
-        return "approval_identity"
+    scoped = scoped_io_category(path, kind, function, operation)
+    if scoped is not None:
+        return scoped
     if (
         path
         in {
@@ -306,7 +282,7 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
     path = record.path
     if record.name in _EQUIVALENCE_FUNCTIONS:
         yield IoObservation(path, record.node.lineno, record.name, "equivalence", _category(path, "equivalence"), True)
-    for node in ast.walk(record.node):
+    for node, function in scoped_nodes(record):
         if isinstance(node, ast.Call):
             name = _call_name(node)
             chain = _attribute_chain(node.func)
@@ -323,7 +299,9 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
             elif name in _ARCHIVE_MODULES:
                 kind, operation = "archive", name
             if kind is not None and operation is not None:
-                yield IoObservation(path, node.lineno, operation, kind, _category(path, kind, record.name), True)
+                yield IoObservation(
+                    path, node.lineno, operation, kind, _category(path, kind, function, operation), True
+                )
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".", maxsplit=1)[0]

@@ -9,7 +9,7 @@ from typing import cast
 
 import pytest
 
-from scripts import native_slo_session, native_slo_startup
+from scripts import native_slo_daemon_fixture, native_slo_session, native_slo_startup
 from scripts.native_slo_contract import assert_privacy_safe
 
 
@@ -117,3 +117,57 @@ def test_constructor_reports_the_operation_that_actually_failed(
     with pytest.raises(OSError, match="synthetic store failure"):
         native_slo_session.AdapterSession(tmp_path / "runtime", progress=seen.append)
     assert seen == ["construct_workspace", "construct_store"]
+
+
+@pytest.mark.parametrize("startup_fails", (False, True))
+def test_fixture_watchdog_covers_start_and_retires_before_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, startup_fails: bool
+) -> None:
+    delivered = threading.Event()
+    seen: list[dict[str, object]] = []
+    diagnostics: list[native_slo_startup.StartupDiagnostic] = []
+    closed: list[bool] = []
+
+    def emit(value: dict[str, object]) -> None:
+        seen.append(value)
+        if value.get("state") == "startup_diagnostic":
+            delivered.set()
+
+    def diagnostic_factory(_emit):
+        diagnostic = native_slo_startup.StartupDiagnostic(_emit, after_seconds=0.01)
+        diagnostics.append(diagnostic)
+        return diagnostic
+
+    class Adapter:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def __enter__(self):
+            assert delivered.wait(timeout=1.0)
+            if startup_fails:
+                raise RuntimeError("synthetic startup failure")
+            return self
+
+        def __exit__(self, *_args):
+            closed.append(True)
+
+    def serve(_session, _fault):
+        assert not diagnostics[0]._timer.is_alive()
+        before = len(seen)
+        diagnostics[0]._snapshot()
+        assert len(seen) == before
+
+    monkeypatch.setattr(native_slo_daemon_fixture, "StartupDiagnostic", diagnostic_factory)
+    monkeypatch.setattr(native_slo_daemon_fixture, "_emit", emit)
+    monkeypatch.setattr(native_slo_daemon_fixture, "_serve_session", serve)
+    monkeypatch.setattr(native_slo_session, "AdapterSession", Adapter)
+    if startup_fails:
+        with pytest.raises(RuntimeError, match="synthetic startup failure"):
+            native_slo_daemon_fixture._serve(tmp_path / "runtime")
+    else:
+        assert native_slo_daemon_fixture._serve(tmp_path / "runtime") == 0
+    assert closed == ([] if startup_fails else [True])
+    assert not diagnostics[0]._timer.is_alive()
+    snapshots = [value for value in seen if value.get("state") == "startup_diagnostic"]
+    assert len(snapshots) == 1
+    assert snapshots[0]["stage"] == "start"

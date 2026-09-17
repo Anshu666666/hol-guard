@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
@@ -18,6 +18,28 @@ class FunctionRecordLike(Protocol):
 
 
 RecordT = TypeVar("RecordT", bound=FunctionRecordLike)
+_EXTERNAL_IMPORT = "<explicit non-repository import>"
+
+
+def scoped_nodes(record: FunctionRecordLike) -> Iterator[tuple[ast.AST, str]]:
+    """Keep nested operations visible without lending the outer I/O exception."""
+
+    pending: list[tuple[ast.AST, str]] = [(record.node, record.qualname)]
+    while pending:
+        node, scope = pending.pop()
+        yield node, scope
+        for child in ast.iter_child_nodes(node):
+            child_scope = scope
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                child_scope = f"{scope}.{child.name}"
+            elif isinstance(child, ast.Lambda):
+                child_scope = f"{scope}.<lambda>"
+            pending.append((child, child_scope))
+
+
+def _external_import(root: Path, module: str) -> bool:
+    namespace = module.split(".", maxsplit=1)[0]
+    return bool(namespace) and not any((base / namespace).exists() for base in (root / "src", root))
 
 
 def _read(path: Path) -> str:
@@ -239,16 +261,16 @@ def _scope_imports(body: list[ast.stmt]) -> tuple[ast.Import | ast.ImportFrom, .
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
             imports.append(node)
 
-        def visit_FunctionDef(self, _node: ast.FunctionDef) -> None:
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
             return
 
-        def visit_AsyncFunctionDef(self, _node: ast.AsyncFunctionDef) -> None:
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
             return
 
-        def visit_ClassDef(self, _node: ast.ClassDef) -> None:
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
             return
 
-        def visit_Lambda(self, _node: ast.Lambda) -> None:
+        def visit_Lambda(self, node: ast.Lambda) -> None:
             return
 
     collector = Collector()
@@ -275,7 +297,7 @@ def _qualified_parts(name: str) -> tuple[str, str] | None:
 
 
 def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> str | None:
-    """Return the repository path imported for ``name`` at a call site."""
+    """Return the lexical repository path, external sentinel, or no binding."""
 
     qualified = _qualified_parts(name)
     binding_name, symbol_name = qualified or (name, name)
@@ -290,8 +312,23 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                         continue
                     target = _import_target_path(root, record.path, node, alias.name)
                     if target is None:
+                        if not node.level and _external_import(root, node.module or ""):
+                            return _EXTERNAL_IMPORT
                         continue
                     resolved = _resolve_exported_symbol(root, target, symbol_name, set())
+                    if resolved is None:
+                        tree = ast.parse(_read(root / target), filename=target)
+                        if any(
+                            isinstance(item, ast.ClassDef)
+                            and item.name == alias.name
+                            and any(
+                                isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
+                                and method.name == symbol_name
+                                for method in item.body
+                            )
+                            for item in tree.body
+                        ):
+                            resolved = target
                     if resolved is None:
                         raise RuntimeError(
                             f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
@@ -303,6 +340,8 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                         continue
                     target = _import_target_path(root, record.path, node, alias.name if alias.name != "*" else None)
                     if target is None:
+                        if alias.name != "*" and not node.level and _external_import(root, node.module or ""):
+                            return _EXTERNAL_IMPORT
                         continue
                     if alias.name == "*":
                         resolved = _resolve_exported_symbol(root, target, name, set())
@@ -317,6 +356,8 @@ def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> s
                     continue
                 target = _repository_module_path(root, alias.name if alias.asname else local_name)
                 if target is None:
+                    if _external_import(root, alias.name):
+                        return _EXTERNAL_IMPORT
                     continue
                 if qualified is None:
                     return target
@@ -340,6 +381,24 @@ def resolve_call(
     if "." not in name and name in _local_binding_names(record):
         return None
     imported_path = imported_symbol_path(root, record, name)
+    if imported_path == _EXTERNAL_IMPORT:
+        # A known stdlib/third-party binding cannot call a same-named global
+        # repository helper. Its primitive remains inventoried at the caller.
+        return None
+    if imported_path is not None and "." not in name:
+        # Follow the explicit source symbol of a visible direct alias. The
+        # call-site spelling is not a global helper name in another module.
+        imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
+        for visible in reversed(imports):
+            if not isinstance(visible.node, ast.ImportFrom):
+                continue
+            alias = next(
+                (item for item in visible.node.names if item.name != "*" and (item.asname or item.name) == name),
+                None,
+            )
+            if alias is not None:
+                name = alias.name
+                break
     if "." in name:
         if imported_path is None:
             return None
@@ -350,6 +409,10 @@ def resolve_call(
         if candidate_name == name
         for candidate in values
     ]
+    if name == "open" and imported_path is None and not any(candidate.path == record.path for candidate in matches):
+        # A bare builtin file open is still inventoried at its calling
+        # function; unrelated class methods do not own this operation.
+        return None
     if not matches:
         return None
     if imported_path is not None:

@@ -34,7 +34,9 @@ def test_transport_rejection_distinguishes_declared_length_from_delivered_malfor
             self.sent += value
 
         def getresponse(self) -> BytesIO:
-            response = BytesIO(b'{"error":"body_too_large"}' if status == 413 else b'{"error":"invalid_request_body"}')
+            response = BytesIO(
+                b'{"error":"request_body_too_large"}' if status == 413 else b'{"error":"invalid_request_body"}'
+            )
             response.status = status
             return response
 
@@ -50,7 +52,7 @@ def test_transport_rejection_distinguishes_declared_length_from_delivered_malfor
     response, observed_status = corpus._transport_boundary(session, "pi", encoded)
     connection = connections[0]
     assert observed_status == status
-    assert response["error"] == ("body_too_large" if status == 413 else "invalid_request_body")
+    assert response["error"] == ("request_body_too_large" if status == 413 else "invalid_request_body")
     assert int(connection.headers["Content-Length"]) == len(encoded)
     assert connection.sent == (b"" if status == 413 else encoded)
     assert connection.closed is True

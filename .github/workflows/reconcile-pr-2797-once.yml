@@ -35,22 +35,19 @@ jobs:
 
           if [ "$merge_exit" -ne 0 ]; then
             echo "Merge reported conflicts. Resolving unresolved paths against current main."
-            git status --short || true
-            git ls-files -u || true
-
-            while IFS= read -r -d '' path; do
+            rm -f .git/index.lock
+            mapfile -d '' conflict_paths < <(git diff --name-only --diff-filter=U -z)
+            for path in "${conflict_paths[@]}"; do
               [ -n "$path" ] || continue
               echo "Resolving: $path"
+              rm -f .git/index.lock
               if git cat-file -e "origin/main:$path" 2>/dev/null; then
-                git rm -rf --cached --ignore-unmatch -- "$path" || true
-                rm -rf -- "$path"
                 git checkout origin/main -- "$path"
-                git add -A -- "$path"
+                git add -- "$path"
               else
-                git rm -rf --ignore-unmatch -- "$path" || true
-                git add -A -- "$path" || true
+                git rm -rf --ignore-unmatch -- "$path"
               fi
-            done < <(git diff --name-only --diff-filter=U -z)
+            done
           fi
 
           remaining="$(git diff --name-only --diff-filter=U)"
@@ -61,7 +58,6 @@ jobs:
             exit 1
           fi
 
-          git rm -f .github/workflows/reconcile-pr-2797-once.yml
           git add -A
           git commit -m "chore: reconcile release/3.2 with main [merge-main-reconcile]"
-          git push origin HEAD:automation/reconcile-pr-2797-20260917
+          git push --force-with-lease origin HEAD:automation/reconcile-pr-2797-result

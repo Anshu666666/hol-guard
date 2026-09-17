@@ -12,7 +12,7 @@ from .approval_gate import ApprovalGateGrant, require_high_risk
 from .policy_authority import validate_policy_write_authority
 from .policy_document import GuardPolicyDocument, policy_document_digest
 from .policy_document_import_identity import validate_import_identities
-from .policy_document_io import CompiledPolicyRow
+from .policy_document_io import CompiledPolicyRow, PolicyCompilationError
 from .store_base import _validate_scoped_policy_artifact_target
 
 PolicyImportMode = Literal["merge", "replace"]
@@ -43,6 +43,8 @@ class StorePolicyDocumentMixin:
     ) -> PolicyDocumentImportPlan:
         if mode not in {"merge", "replace"}:
             raise ValueError("invalid_policy_import_mode")
+        if document is None:
+            raise PolicyCompilationError("policy_import_document_required", "document")
         current_rows = self.list_policy_decisions()
         validate_import_identities(
             self._normalize_compiled_rows(compiled_rows),

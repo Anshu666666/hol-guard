@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -63,3 +64,43 @@ def test_managed_permission_disable_retains_its_reason_against_local_enable():
     )
     assert result.blocked is True
     assert any(factor.reason_code == "control.disabled-permission" for factor in result.factors)
+
+
+@pytest.mark.parametrize("cloud_effect", ["allow", "block"])
+def test_generic_one_shot_consumption_depends_on_selected_persisted_action(
+    tmp_path: Path, monkeypatch, cloud_effect: str
+):
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key = _verification_key(private, workspace_id="workspace-alpha")
+    store = _seed_v2_admission_store(tmp_path, key)
+    artifact = "codex:project:tool-action:one-shot-precedence"
+    payload = _generic_v2_payload(rule_id="cloud-rule", artifact_id=artifact)
+    payload["spec"]["rules"][0]["effect"] = cloud_effect
+    signed = _signed_bundle(private, key, payload_base=payload)
+    monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
+    _sync_signed_v2_bundle(store, monkeypatch, signed, synced_at="2026-09-17T12:00:00Z")
+    approval_id = store.record_local_once_approval(
+        request_id="one-shot-precedence",
+        harness="codex",
+        artifact_id=artifact,
+        artifact_hash="sha256:one-shot-precedence",
+        workspace=None,
+        publisher=None,
+        action="allow",
+        created_at="2026-09-17T12:01:00Z",
+        expires_at="2026-09-17T13:00:00Z",
+    )
+    result = store.resolve_policy_decision_lookup(
+        "codex", artifact, artifact_hash="sha256:one-shot-precedence", now="2026-09-17T12:02:00Z"
+    )["decision"]
+    assert result is not None and result["action"] == cloud_effect
+    with store._connect() as connection:
+        claimed_at = connection.execute(
+            "select claimed_at from guard_local_once_approvals where approval_id = ?", (approval_id,)
+        ).fetchone()[0]
+    if cloud_effect == "block":
+        assert result["source"] == "policy-bundle-canonical"
+        assert claimed_at is None
+    else:
+        assert result["source"] == "approval-gate-once"
+        assert datetime.fromisoformat(claimed_at) == datetime.fromisoformat("2026-09-17T12:02:00Z")

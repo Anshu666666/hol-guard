@@ -51,9 +51,11 @@ def test_advertised_combinations_match_real_compiler(capsys, keys, effect, lifet
         assert row.harness == ("codex" if "harnesses" in keys else "*")
         assert row.workspace == ("/workspace/project" if "workspaces" in keys else None)
         assert row.publisher == ("verified-publisher" if "publishers" in keys else None)
-        expected_artifact = (
-            "skill:capability" if "artifacts" in keys else "family:tool-action" if "tools" in keys else None
-        )
+        expected_artifact = None
+        if "artifacts" in keys:
+            expected_artifact = "skill:capability"
+        elif "tools" in keys:
+            expected_artifact = "family:tool-action"
         assert row.artifact_id == expected_artifact
         assert rows[0].decision.expires_at == ("2030-01-01T00:00:00Z" if lifetime == "until" else None)
     else:

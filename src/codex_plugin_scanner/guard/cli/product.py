@@ -396,9 +396,7 @@ def _build_cloud_context(store: GuardStore) -> dict[str, object]:
         "advisory_count": len(advisories),
         "advisory_headline": _advisory_headline(advisories),
         "remote_policy_active": bool(remote_policy),
-        **cloud_policy_sync_fields(
-            policy_bundle, policy_bundle_last_error, sync_summary, cached_policy_bundle_error
-        ),
+        **cloud_policy_sync_fields(policy_bundle, policy_bundle_last_error, sync_summary, cached_policy_bundle_error),
         "alert_preferences_active": bool(alert_preferences),
         "watchlist_enabled": bool(alert_preferences.get("watchlistEnabled")),
         "team_alerts_enabled": bool(alert_preferences.get("teamAlertsEnabled")),

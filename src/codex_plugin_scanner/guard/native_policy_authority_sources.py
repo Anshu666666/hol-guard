@@ -67,14 +67,27 @@ class FrozenNativePolicySources:
 
 def _identity_row(identity: tuple[object, ...]) -> dict[str, object]:
     fields = (
-        "harness", "scope", "artifact_id", "artifact_hash", "workspace", "publisher", "exact_command_sha256",
-        "action", "reason", "owner", "source", "expires_at", "updated_at",
+        "harness",
+        "scope",
+        "artifact_id",
+        "artifact_hash",
+        "workspace",
+        "publisher",
+        "exact_command_sha256",
+        "action",
+        "reason",
+        "owner",
+        "source",
+        "expires_at",
+        "updated_at",
     )
     return dict(zip(fields, identity, strict=True))
 
 
 def signed_bundle_native_rows(
-    state: FrozenNativePolicySources, *, now: float,
+    state: FrozenNativePolicySources,
+    *,
+    now: float,
 ) -> tuple[list[dict[str, object]], dict[str, object] | None, dict[str, object] | None]:
     """Rebuild the complete targeted generic authority after signature checks."""
     bundle, reason = cached_policy_bundle_validation(state, state.get_sync_payload("policy_bundle"), now=now)
@@ -93,37 +106,62 @@ def signed_bundle_native_rows(
         else build_policy_bundle_decisions
     )
     decisions = builder(
-        bundle, device_id=state.device["installation_id"], device_name=state.device["device_label"],
+        bundle,
+        device_id=state.device["installation_id"],
+        device_name=state.device["device_label"],
     )
     materialized_at = verified_policy_materialization_time(
-        state.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY), bundle=bundle,
-        device_id=state.device["installation_id"], key=state.key_material[0], key_id=state.key_material[1],
+        state.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY),
+        bundle=bundle,
+        device_id=state.device["installation_id"],
+        key=state.key_material[0],
+        key_id=state.key_material[1],
     )
     if decisions and materialized_at is None:
         raise NativePolicySnapshotError("native_policy_authority_materialization_unavailable")
     rows: list[dict[str, object]] = []
     for decision in decisions:
         artifact, digest, workspace, publisher = state.normalize_keys(decision)
-        row = _identity_row((
-            decision.harness, decision.scope, artifact, digest, workspace, publisher, decision.exact_command_sha256,
-            decision.action,
-            decision.reason, decision.owner, decision.source,
-            _canonical_utc_timestamp(decision.expires_at) if decision.expires_at is not None else None,
-            materialized_at,
-        ))
+        row = _identity_row(
+            (
+                decision.harness,
+                decision.scope,
+                artifact,
+                digest,
+                workspace,
+                publisher,
+                decision.exact_command_sha256,
+                decision.action,
+                decision.reason,
+                decision.owner,
+                decision.source,
+                _canonical_utc_timestamp(decision.expires_at) if decision.expires_at is not None else None,
+                materialized_at,
+            )
+        )
         identity = canonical_rule_identity(bundle, decision.owner, installation_id=state.device["installation_id"])
         if identity is not None:
             row["_policy_rule_identity"] = identity.to_selected_row_dict()
         rows.append(row)
-    return rows, policy_defaults_from_validated_bundle(bundle), {
-        "kind": "signed-bundle", "revision": bundle["bundleVersion"], "digest": bundle["bundleHash"],
-        "workspace_id": state.workspace_id, "device_id": state.device["installation_id"],
-        "expires_at": bundle.get("expiresAt"), "materialized_at": materialized_at,
-    }
+    return (
+        rows,
+        policy_defaults_from_validated_bundle(bundle),
+        {
+            "kind": "signed-bundle",
+            "revision": bundle["bundleVersion"],
+            "digest": bundle["bundleHash"],
+            "workspace_id": state.workspace_id,
+            "device_id": state.device["installation_id"],
+            "expires_at": bundle.get("expiresAt"),
+            "materialized_at": materialized_at,
+        },
+    )
 
 
 def signed_memory_native_rows(
-    state: FrozenNativePolicySources, *, now: str,
+    state: FrozenNativePolicySources,
+    *,
+    now: str,
 ) -> tuple[list[dict[str, object]], dict[str, object] | None]:
     """Reconstruct memory from one signed registry and its active binding."""
     saved = state.get_sync_payload(REGISTRY_KEY)
@@ -150,9 +188,13 @@ def signed_memory_native_rows(
         raise NativePolicySnapshotError("native_policy_authority_memory_unavailable")
     integrity = cast(dict[str, object], registry["integrity"])
     return rows, {
-        "kind": "signed-memory", "revision": registry["policyVersion"], "digest": registry["bundleHash"],
-        "registry_digest": integrity["payload_hash"], "materialized_at": integrity["signed_at"],
-        "workspace_id": oauth.workspace_id, "device_id": oauth.installation_id,
+        "kind": "signed-memory",
+        "revision": registry["policyVersion"],
+        "digest": registry["bundleHash"],
+        "registry_digest": integrity["payload_hash"],
+        "materialized_at": integrity["signed_at"],
+        "workspace_id": oauth.workspace_id,
+        "device_id": oauth.installation_id,
     }
 
 
@@ -171,7 +213,8 @@ def _memory_selection_expired(registry: Mapping[str, object], rule_id: object, d
     if bundle_expiry is None or current is None or not isinstance(rules, list):
         return False
     selected = [
-        cast(dict[str, object], rule) for rule in cast(list[object], rules)
+        cast(dict[str, object], rule)
+        for rule in cast(list[object], rules)
         if isinstance(rule, dict) and cast(dict[str, object], rule).get("ruleId") == rule_id
     ]
     if len(selected) != 1:

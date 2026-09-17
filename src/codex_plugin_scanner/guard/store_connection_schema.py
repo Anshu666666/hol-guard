@@ -219,9 +219,7 @@ class StoreConnectionSchemaMixin:
                 local.depth -= 1
             return
         path = self.guard_home / "storage-access.lock"
-        with hold_storage_file_lock(
-            path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds(),
-        ):
+        with hold_storage_file_lock(path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds()):
             local.owner = id(self)
             local.depth = 1
             local.exclusive = exclusive

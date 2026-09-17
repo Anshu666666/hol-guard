@@ -152,7 +152,7 @@ def publish_scoped(
                 publication.resident_generation,
                 observed_directory,
             )
-            generation_path = f"/generation-{publication.resident_generation}.json"
+            generation_path = f"/generation-{publication.resident_generation:020d}.json"
             if confirmed is None or not any(path.endswith(generation_path) for path, _, _ in confirmed):
                 raise NativePolicySnapshotError("native_policy_snapshot_resident_changed")
             now_ms = int(publisher._wall_clock() * 1000)

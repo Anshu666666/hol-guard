@@ -24,7 +24,7 @@ def _resident(home, generation=3):
     (home / "native-runtime").mkdir(mode=0o700, exist_ok=True)
     directory = home / "native-runtime" / "resident-v3-synthetic"
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
-    path = directory / f"generation-{generation}.json"
+    path = directory / f"generation-{generation:020d}.json"
     if not path.exists():
         path.write_text("{}")
     return path
@@ -195,6 +195,19 @@ def test_inflight_publication_cannot_overwrite_newer_authority(barrier, mutation
 def test_no_resident_metadata_is_not_positive_ready_evidence(barrier):
     publisher, state = barrier
     state.materialize = False
+    publisher._publish_once()
+    _assert_closed(publisher)
+    assert publisher.last_error == "native_policy_snapshot_resident_changed"
+
+
+def test_noncanonical_resident_generation_name_cannot_open_readiness(barrier):
+    publisher, state = barrier
+
+    def rename_metadata():
+        canonical = _resident(publisher.guard_home)
+        canonical.rename(canonical.with_name("generation-3.json"))
+
+    state.during_ack = rename_metadata
     publisher._publish_once()
     _assert_closed(publisher)
     assert publisher.last_error == "native_policy_snapshot_resident_changed"

@@ -103,9 +103,7 @@ class NativePolicyAuthorityCapabilities:
         feature_values = cast(list[object], raw_features)
         if len(feature_values) > 256:
             raise NativePolicySnapshotError("native_policy_authority_capability_invalid")
-        features = frozenset(
-            cast(str, bounded_authority_text(item)) for item in feature_values
-        )
+        features = frozenset(cast(str, bounded_authority_text(item)) for item in feature_values)
         snapshot_version = authority_integer(value.get("policy_snapshot_version"), positive=True)
         catalog_digest = bounded_authority_text(value.get("extension_catalog_digest"), optional=True)
         return cls(snapshot_version, features, catalog_digest)
@@ -159,7 +157,8 @@ class NativeScopedPolicyRow:
             valid = self.publisher is not None and self.workspace is None and self.artifact_id is None
         else:
             valid = (
-                self.workspace is None and self.publisher is None
+                self.workspace is None
+                and self.publisher is None
                 and (self.artifact_id is None or self.artifact_id.startswith("family:"))
             )
         if not valid:
@@ -228,7 +227,8 @@ class NativeManagedPolicyAuthority:
         if len(self.catalog_digest) != 64 or any(ch not in "0123456789abcdef" for ch in self.catalog_digest):
             raise NativePolicySnapshotError("native_policy_authority_catalog_invalid")
         if (
-            type(self.global_lockdown) is not bool or type(self.controls) is not tuple
+            type(self.global_lockdown) is not bool
+            or type(self.controls) is not tuple
             or len(self.controls) > NATIVE_AUTHORITY_MAX_CONTROLS
         ):
             raise NativePolicySnapshotError("native_policy_authority_control_invalid")
@@ -287,8 +287,17 @@ class NativePolicyAuthorityDraft:
 
 
 __all__ = [
-    "NATIVE_AUTHORITY_MAX_ROWS", "NATIVE_MANAGED_AUTHORITY_FEATURE", "NATIVE_SCOPED_AUTHORITY_FEATURE",
-    "NativeManagedControl", "NativeManagedPolicyAuthority", "NativePolicyAction", "NativePolicyAuthorityCapabilities",
-    "NativePolicyAuthorityDraft", "NativePolicyScope", "NativePolicySourceKind", "NativeScopedPolicyRow",
-    "authority_integer", "bounded_authority_text",
+    "NATIVE_AUTHORITY_MAX_ROWS",
+    "NATIVE_MANAGED_AUTHORITY_FEATURE",
+    "NATIVE_SCOPED_AUTHORITY_FEATURE",
+    "NativeManagedControl",
+    "NativeManagedPolicyAuthority",
+    "NativePolicyAction",
+    "NativePolicyAuthorityCapabilities",
+    "NativePolicyAuthorityDraft",
+    "NativePolicyScope",
+    "NativePolicySourceKind",
+    "NativeScopedPolicyRow",
+    "authority_integer",
+    "bounded_authority_text",
 ]

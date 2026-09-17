@@ -36,10 +36,18 @@ if TYPE_CHECKING:
     from .store import GuardStore
 
 _STATE_KEYS = (
-    "policy_bundle", "policy_bundle_keyring", "supply_chain_bundle_keyring", "policy_bundle_acceptance_checkpoint",
-    POLICY_BUNDLE_MATERIALIZATION_KEY, MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY,
-    REGISTRY_KEY, VERSION_KEY, REVIEW_VERIFICATION_KEYRING_SYNC_KEY, "policy_integrity",
-    MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY,
+    "policy_bundle",
+    "policy_bundle_keyring",
+    "supply_chain_bundle_keyring",
+    "policy_bundle_acceptance_checkpoint",
+    POLICY_BUNDLE_MATERIALIZATION_KEY,
+    MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY,
+    REGISTRY_KEY,
+    VERSION_KEY,
+    REVIEW_VERIFICATION_KEYRING_SYNC_KEY,
+    "policy_integrity",
+    MANAGED_CONTROLS_ACTIVE_STATE_KEY,
+    MANAGED_CONTROLS_REVISION_STATE_KEY,
 )
 _MAX_CAPTURE_BYTES = 4 * 1024 * 1024
 
@@ -69,7 +77,10 @@ def _canonical(value: object) -> str:
 
 
 def _credentials_for_capture(
-    store: GuardStore, payload: object, *, needed: bool,
+    store: GuardStore,
+    payload: object,
+    *,
+    needed: bool,
 ) -> dict[str, object] | None:
     if not needed:
         return None
@@ -85,8 +96,16 @@ def _credentials_for_capture(
     # Memory authority requires the actual DPoP key pair. Refresh/access
     # tokens and display metadata are not needed for that verification.
     needed_fields = {
-        "issuer", "client_id", "grant_id", "device_id", "machine_id", "runtime_id", "workspace_id",
-        "dpop_private_key_pem", "dpop_public_jwk", "dpop_public_jwk_thumbprint",
+        "issuer",
+        "client_id",
+        "grant_id",
+        "device_id",
+        "machine_id",
+        "runtime_id",
+        "workspace_id",
+        "dpop_private_key_pem",
+        "dpop_public_jwk",
+        "dpop_public_jwk_thumbprint",
     }
     return {key: value for key, value in credentials.items() if key in needed_fields}
 
@@ -111,7 +130,8 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
         connection.execute("begin")
         placeholders = ",".join("?" for _ in state_keys)
         state_rows = connection.execute(
-            f"select state_key, payload_json from sync_state where state_key in ({placeholders})", state_keys,
+            f"select state_key, payload_json from sync_state where state_key in ({placeholders})",
+            state_keys,
         ).fetchall()
         if sum(len(str(row["payload_json"]).encode("utf-8")) for row in state_rows) > _MAX_CAPTURE_BYTES:
             raise NativePolicySnapshotError("native_policy_authority_capture_limit")
@@ -140,8 +160,10 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
         remote_sources = tuple(sorted(REMOTE_POLICY_SOURCES))
         excluded = ",".join("?" for _ in remote_sources)
         retained_sources = {
-            str(row["source"]) for row in connection.execute(
-                f"select distinct source from policy_decisions where source in ({excluded})", remote_sources,
+            str(row["source"])
+            for row in connection.execute(
+                f"select distinct source from policy_decisions where source in ({excluded})",
+                remote_sources,
             ).fetchall()
         }
         # An orphan cache cannot authorize anything, but its presence also
@@ -165,8 +187,13 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
         workspace_id = workspace if isinstance(workspace, str) and workspace.strip() else None
         credentials = _credentials_for_capture(store, oauth_payload, needed=payloads.get(REGISTRY_KEY) is not None)
         state = FrozenNativePolicySources(
-            payloads, device, workspace_id, credentials, key_material,
-            store._normalized_policy_keys, store._guard_source,
+            payloads,
+            device,
+            workspace_id,
+            credentials,
+            key_material,
+            store._normalized_policy_keys,
+            store._guard_source,
         )
         bundle_rows, defaults, bundle_source = signed_bundle_native_rows(state, now=now)
         memory_rows, memory_source = signed_memory_native_rows(state, now=now_text)
@@ -175,19 +202,28 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
             value = dict(row)
             if (
                 row["integrity_version"] != POLICY_INTEGRITY_VERSION
-                or control is None or not control.get("cutover_complete") or type(generation) is not int
+                or control is None
+                or not control.get("cutover_complete")
+                or type(generation) is not int
                 or verify_local_policy_row(
-                    value, key=key_material[0], key_id=key_material[1], trusted_generation=generation,
-                ).status != "valid"
+                    value,
+                    key=key_material[0],
+                    key_id=key_material[1],
+                    trusted_generation=generation,
+                ).status
+                != "valid"
             ):
                 raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
             rows.append(value)
         # Source-owned rows are reconstructed from authenticated content, so
         # their database IDs are not authority. IDs in this draft identify
         # rows only within one encoded snapshot; no approval can consume them.
-        normalized = sorted(rows, key=lambda value: _canonical({
-            key: item for key, item in value.items() if key not in {"decision_id", "reason", "owner"}
-        }))
+        normalized = sorted(
+            rows,
+            key=lambda value: _canonical(
+                {key: item for key, item in value.items() if key not in {"decision_id", "reason", "owner"}}
+            ),
+        )
         active: list[dict[str, object]] = []
         rule_identities: list[tuple[int, PolicyRuleIdentity]] = []
         for index, row in enumerate(normalized, start=1):
@@ -198,7 +234,8 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
                 raw_identity = value.get("_policy_rule_identity")
                 identity = (
                     PolicyRuleIdentity.from_selected_row(cast(Mapping[str, object], raw_identity))
-                    if isinstance(raw_identity, Mapping) else None
+                    if isinstance(raw_identity, Mapping)
+                    else None
                 )
                 if identity is not None:
                     rule_identities.append((index, identity))
@@ -211,19 +248,33 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
             if expiry is None:
                 raise NativePolicySnapshotError("native_policy_authority_expiry_invalid")
             expiries.append(int(expiry.timestamp() * 1_000))
-        input_digest = hashlib.sha256(_canonical({
-            "authority": authority.content_digest, "sources": source_values, "defaults": defaults,
-            "local_control": control, "local_key_id": key_material[1],
-            "state": payloads, "device": device,
-            "rule_identities": [(index, identity.to_selected_row_dict()) for index, identity in rule_identities],
-        }).encode("utf-8")).hexdigest()
+        input_digest = hashlib.sha256(
+            _canonical(
+                {
+                    "authority": authority.content_digest,
+                    "sources": source_values,
+                    "defaults": defaults,
+                    "local_control": control,
+                    "local_key_id": key_material[1],
+                    "state": payloads,
+                    "device": device,
+                    "rule_identities": [
+                        (index, identity.to_selected_row_dict()) for index, identity in rule_identities
+                    ],
+                }
+            ).encode("utf-8")
+        ).hexdigest()
     if store._policy_integrity_secret_material(create=False) != key_material or (
         store._load_policy_integrity_control_state(create=False) != control
     ):
         raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
     return NativeVerifiedPolicyInputs(
-        authority, _canonical(defaults) if defaults is not None else None, sources_json, input_digest,
-        min(expiries) if expiries else None, tuple(rule_identities),
+        authority,
+        _canonical(defaults) if defaults is not None else None,
+        sources_json,
+        input_digest,
+        min(expiries) if expiries else None,
+        tuple(rule_identities),
     )
 
 

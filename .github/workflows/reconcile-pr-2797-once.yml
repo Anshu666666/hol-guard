@@ -21,34 +21,82 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Restore current-main dashboard update-channel wiring
+      - name: Remove stale review presentation merge fragment
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("dashboard/src/approval-center-layout.tsx")
+          path = Path("dashboard/src/review-states.tsx")
           text = path.read_text()
 
-          old_destructure = "    onUpdateGuard,\n    onReinstallGuard,\n  } = useGuardUpdate("
-          new_destructure = "    onUpdateGuard,\n    onReinstallGuard,\n    onSetUpdateChannel,\n  } = useGuardUpdate("
-          old_prop = "        onUpdateGuard={onUpdateGuard}\n        onReinstallGuard={onReinstallGuard}\n        approvalGate="
-          new_prop = "        onUpdateGuard={onUpdateGuard}\n        onReinstallGuard={onReinstallGuard}\n        onSetUpdateChannel={onSetUpdateChannel}\n        approvalGate="
+          text = text.replace("  GuardPresentationMode,\n", "", 1)
 
-          if old_destructure not in text:
-              raise SystemExit("Expected useGuardUpdate destructuring shape not found")
-          if old_prop not in text:
-              raise SystemExit("Expected ShellNavigation prop shape not found")
+          start = text.index("function TechnicalStoppedAction(")
+          end = text.index("export function buildWhatWouldHappen(")
+          replacement = '''export function PrimaryActionCard({ item }: { item: GuardApprovalRequest }) {
+  const action = buildPrimaryReviewAction(item);
+  const workingDirectory = resolveRequestWorkingDirectory(item);
 
-          text = text.replace(old_destructure, new_destructure, 1)
-          text = text.replace(old_prop, new_prop, 1)
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <SectionLabel>What was stopped</SectionLabel>
+          {action.detail !== null && (
+            <p className="mt-1 text-sm text-brand-dark/70">
+              {action.detail}
+            </p>
+          )}
+        </div>
+        <span className="rounded-full border border-brand-blue/15 bg-brand-blue/[0.04] px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue">
+          {action.label}
+        </span>
+      </div>
+      <div className="mt-3">
+        <LoggedActionPanel
+          key={item.request_id}
+          label={action.label}
+          text={action.text}
+          copyAriaLabel="Copy full stopped action to clipboard"
+          expandAriaLabel="Expand full stopped action"
+          collapseAriaLabel="Collapse full stopped action"
+        />
+        {workingDirectory !== null && (
+          <div className="mt-3 flex min-w-0 items-start gap-2 text-xs text-muted-foreground">
+            <HiMiniFolder className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+            <span className="shrink-0 font-medium text-brand-dark/70">Working directory</span>
+            <code className="min-w-0 break-all font-mono text-brand-dark" title={workingDirectory}>
+              {workingDirectory}
+            </code>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+'''
+          text = text[:start] + replacement + text[end:]
+
+          forbidden = (
+              "useActionExplanation",
+              "usePresentationMode",
+              "ActionExplanationSummary",
+              "GuardTechnicalDisclosure",
+              "GuardPresentationMode",
+          )
+          leftovers = [name for name in forbidden if name in text]
+          if leftovers:
+              raise SystemExit(f"Stale review presentation symbols remain: {leftovers}")
+
           path.write_text(text)
           PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dashboard/src/approval-center-layout.tsx
+          git add dashboard/src/review-states.tsx
           git diff --cached --check
-          git commit -m "fix: restore dashboard update-channel wiring"
+          git commit -m "fix: remove stale review presentation merge fragment"
           git push origin HEAD:automation/reconcile-pr-2797-result

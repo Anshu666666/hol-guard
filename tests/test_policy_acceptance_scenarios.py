@@ -15,22 +15,18 @@ from codex_plugin_scanner.guard.continuation_runtime import (
 )
 from codex_plugin_scanner.guard.continuation_snapshot import canonical_continuation_correlation_id
 from codex_plugin_scanner.guard.live_process_identity import current_process_identity
-from codex_plugin_scanner.guard.review_contracts import payload_hash_for_decision_memory_bundle
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.runtime.exact_cloud_review import enable_exact_cloud_review
 from codex_plugin_scanner.guard.runtime.exact_cloud_review_executor import execute_exact_cloud_review_operation
 from codex_plugin_scanner.guard.runtime.review_policy_memory_executor import execute_review_policy_memory
 from codex_plugin_scanner.guard.store import GuardStore
-from tests.guard_exact_cloud_review_support import add_review_request, connected_exact_review_store
+from tests.guard_exact_cloud_review_support import add_review_request, connected_exact_review_store, review_request
 from tests.guard_exact_cloud_review_support import remote_approval as signed_remote_approval
-from tests.guard_exact_cloud_review_support import review_request
-from tests.guard_review_signing_helpers import REVIEW_SIGNING_KEY_ID, review_verification_keys, sign_review_payload
+from tests.policy_acceptance_memory_support import _NOW, _WORKSPACE, _enable_memory_keys, _memory_bundle
 from tests.policy_bundle_signing_helpers import policy_bundle_test_keyring, sign_policy_bundle
 from tests.support.network import stub_authenticated_urlopen
 from tests.test_guard_runtime import _seed_guard_cloud
 
-_WORKSPACE = "workspace-acceptance"
-_NOW = "2026-09-17T12:00:00+00:00"
 _CANARY = "codex:project:acceptance-canary"
 _MEMORY_ARTIFACT = "plugin:hol/acceptance-memory"
 
@@ -186,12 +182,14 @@ def test_hgp_191_two_device_approved_policy_adoption(tmp_path: Path, monkeypatch
     control = _device(tmp_path, "control")
     target_ids = [_device_id(alpha), _device_id(beta)]
     cloud = _StubCloud()
-    cloud.bundle = _signed_bundle(version="policy-2026-09-17.1", device_ids=target_ids, artifact_id=_CANARY, action="block")
+    cloud.bundle = _signed_bundle(
+        version="policy-2026-09-17.1", device_ids=target_ids, artifact_id=_CANARY, action="block"
+    )
     _install_sync_stubs(monkeypatch, cloud)
 
     alpha_sync = _sync(alpha)
     beta_sync = _sync(beta)
-    control_sync = _sync(control)
+    _sync(control)
 
     publication = cloud.bundle["bundleHash"]
     for store, result in ((alpha, alpha_sync), (beta, beta_sync)):
@@ -263,6 +261,8 @@ def test_hgp_192_offline_reconnect_newest_revision_convergence(
 
 
 def _seed_waiting_codex(store: GuardStore, request_id: str) -> dict[str, object]:
+    observed_at = datetime.now(timezone.utc)
+    timestamp = observed_at.isoformat()
     add_review_request(store, review_request(request_id, harness="codex"))
     request = store.get_approval_request(request_id)
     assert request is not None
@@ -278,7 +278,7 @@ def _seed_waiting_codex(store: GuardStore, request_id: str) -> dict[str, object]
         client_version="1.0.0",
         workspace="/workspace/repo",
         capabilities=["approval-resolution"],
-        now=_NOW,
+        now=timestamp,
     )
     store.upsert_guard_operation(
         operation_id=f"operation-{request_id}",
@@ -290,12 +290,12 @@ def _seed_waiting_codex(store: GuardStore, request_id: str) -> dict[str, object]
         resume_token=None,
         metadata={
             "codex_hook_waits_for_browser_approval": True,
-            "codex_browser_wait_deadline_at": "2026-09-17T12:01:00+00:00",
+            "codex_browser_wait_deadline_at": (observed_at + timedelta(minutes=1)).isoformat(),
             "codex_browser_wait_process": identity,
             "hook_event_name": "PreToolUse",
             "correlationId": "gcr_11111111-2222-4333-8444-555555555555",
         },
-        now=_NOW,
+        now=timestamp,
     )
     refreshed = store.get_approval_request(request_id)
     assert refreshed is not None
@@ -311,15 +311,16 @@ def _resume(*, store: GuardStore, request_row: dict[str, object], action: str, n
         request_row=request_row,
         action=action,
         now=now,
+        timeout_seconds=20.0,
         headless=False,
     )
-    if waiting.get("capability") != "suspended-response":
+    if waiting.get("continuationCapability") != "suspended-response":
         return waiting
     completed = record_live_hook_completion(
         store,
         request_id=str(request_row["request_id"]),
         action="allow",
-        now="2026-09-17T12:00:01+00:00",
+        now=now,
     )
     return dict(completed) if isinstance(completed, dict) else waiting
 
@@ -338,14 +339,16 @@ def test_hgp_193_review_to_continuation_without_persistent_grant(tmp_path: Path)
     correlation = canonical_continuation_correlation_id(
         request_id="exact-first",
         request_row=first,
-        operation_metadata=first["_operation_metadata"]
-        if isinstance(first.get("_operation_metadata"), dict)
-        else {},
+        operation_metadata=first["_operation_metadata"] if isinstance(first.get("_operation_metadata"), dict) else {},
     )
     assert applied["localRequestId"] == "exact-first"
     assert applied["receiptId"] == "receipt-first"
     assert applied["applicationStatus"] == "applied"
-    assert applied["continuationStatus"] in {"resumed", "waiting", "manual_retry_required"}
+    assert applied["continuationStatus"] == "resumed", applied["continuationReason"]
+    assert applied["continuationReason"] == "live_hook_completed"
+    first_operation = store.get_guard_operation_for_approval_request("exact-first")
+    assert first_operation is not None
+    assert first_operation["status"] == "resumed"
     assert correlation.startswith("gcr_")
     assert store.get_approval_request("exact-first")["status"] == "resolved"
     assert all(row.get("source") != "cloud-signed-memory" for row in store.list_policy_decisions())
@@ -360,74 +363,14 @@ def test_hgp_193_review_to_continuation_without_persistent_grant(tmp_path: Path)
         resume_after_approval=_resume,
     )["data"]
     assert later["localRequestId"] == "exact-second"
+    assert later["continuationStatus"] == "resumed"
+    assert later["continuationReason"] == "live_hook_completed"
+    second_operation = store.get_guard_operation_for_approval_request("exact-second")
+    assert second_operation is not None
+    assert second_operation["status"] == "resumed"
     assert store.get_approval_request("exact-second")["status"] == "resolved"
     assert store.get_sync_payload("guard_review_memory_registry") is None
     assert second["request_id"] == "exact-second"
-
-
-def _memory_bundle(store: GuardStore, *, version: str, artifact_id: str, revocations: list[str] | None = None) -> dict[str, object]:
-    issued_at = datetime.now(timezone.utc).replace(microsecond=0)
-    bundle: dict[str, object] = {
-        "blastRadius": {"artifactCount": 1, "machineCount": 1, "workspaceCount": 1},
-        "bundleVersion": version,
-        "contractVersion": "guard.decision-memory-bundle.v1",
-        "expiresAt": (issued_at + timedelta(days=30)).isoformat(),
-        "issuedAt": issued_at.isoformat(),
-        "issuerKeyId": REVIEW_SIGNING_KEY_ID,
-        "memoryRules": []
-        if revocations
-        else [
-            {
-                "action": "allow",
-                "approvalId": "memory-approval-1",
-                "artifactHash": "b" * 64,
-                "artifactId": artifact_id,
-                "capabilityCategory": "tool-call",
-                "expiresAt": (issued_at + timedelta(days=30)).isoformat(),
-                "harnessId": "codex",
-                "projectIdentity": "project:/workspace/repo",
-                "reason": "Remembered in cloud.",
-                "recommendedScope": "artifact",
-                "riskCategory": "medium",
-                "ruleId": "review-memory:acceptance-1",
-                "scope": "artifact",
-                "sourceReceiptIds": ["receipt-memory-1"],
-                "target": {
-                    "machineIds": [str(store.get_device_metadata()["installation_id"])],
-                    "workspaceIds": [_WORKSPACE],
-                },
-            }
-        ],
-        "policyVersion": version,
-        "revocations": revocations or [],
-        "scope": "workspace",
-        "scopeEvidence": {
-            "approvalIds": ["memory-approval-1"],
-            "sourceReceiptHashes": ["c" * 64],
-            "sourceReceiptIds": ["receipt-memory-1"],
-        },
-        "verificationKeys": review_verification_keys(workspace_id=None, purpose="unscoped"),
-        "signatureAlgorithm": "rsa-pss-sha256",
-        "workspaceId": _WORKSPACE,
-    }
-    payload_hash = payload_hash_for_decision_memory_bundle(bundle)
-    bundle["bundleHash"] = payload_hash
-    bundle["payloadHash"] = payload_hash
-    bundle["signature"] = sign_review_payload(bundle)
-    return bundle
-
-
-def _enable_memory_keys(store: GuardStore) -> None:
-    store.set_sync_payload(
-        "policy_bundle_keyring",
-        policy_bundle_test_keyring(workspace_id=_WORKSPACE),
-        _NOW,
-    )
-    store.set_sync_payload(
-        "guard_review_verification_keyring",
-        review_verification_keys(workspace_id=None, purpose="unscoped"),
-        _NOW,
-    )
 
 
 def test_hgp_194_alternating_policy_and_memory_durability(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -435,7 +378,9 @@ def test_hgp_194_alternating_policy_and_memory_durability(tmp_path: Path, monkey
     beta = _device(tmp_path, "beta")
     target_ids = [_device_id(alpha), _device_id(beta)]
     cloud = _StubCloud()
-    cloud.bundle = _signed_bundle(version="policy-2026-09-17.1", device_ids=target_ids, artifact_id=_CANARY, action="block")
+    cloud.bundle = _signed_bundle(
+        version="policy-2026-09-17.1", device_ids=target_ids, artifact_id=_CANARY, action="block"
+    )
     _install_sync_stubs(monkeypatch, cloud)
     for store in (alpha, beta):
         _enable_memory_keys(store)
@@ -484,9 +429,12 @@ def test_hgp_194_alternating_policy_and_memory_durability(tmp_path: Path, monkey
     reopened_alpha = GuardStore(alpha.guard_home)
     reopened_beta = GuardStore(beta.guard_home)
     for store in (reopened_alpha, reopened_beta):
-        _sync(store)
         sources = _sources(store)
         assert _CANARY in sources.get("policy-bundle", set())
         assert sources.get("cloud-signed-memory", set()) == set()
         assert _canary(store) == "block"
-        assert store.get_sync_payload("guard_review_memory_registry") == []
+        registry = store.get_sync_payload("guard_review_memory_registry")
+        assert isinstance(registry, dict)
+        assert registry["rules"] == {}
+        assert registry["bundles"] == {}
+        _sync(store)

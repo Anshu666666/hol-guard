@@ -258,11 +258,19 @@ def test_signed_enforcing_generic_v2_bundle_is_admitted(
     assert cached_policy_bundle_validation(store, published)[0] == published
 
 
-@pytest.mark.parametrize("cached_rollout_state", ["draft", "pending_approval", None])
+@pytest.mark.parametrize(
+    ("cached_rollout_state", "expected_reason"),
+    [
+        ("draft", "inactive_rollout_state"),
+        ("pending_approval", "inactive_rollout_state"),
+        (None, "invalid_policy_document"),
+    ],
+)
 def test_cached_inactive_v2_bundle_is_not_activated_when_last_good_exists(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     cached_rollout_state: str | None,
+    expected_reason: str,
 ) -> None:
     monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -308,7 +316,7 @@ def test_cached_inactive_v2_bundle_is_not_activated_when_last_good_exists(
     assert "command:draft-block" not in remaining_rows
     cached, cached_reason = cached_policy_bundle_validation(store, inactive)
     assert cached is None
-    assert cached_reason in {"inactive_rollout_state", "invalid_policy_document"}
+    assert cached_reason == expected_reason
 
 
 def _signed_v2_with_rollout_value(

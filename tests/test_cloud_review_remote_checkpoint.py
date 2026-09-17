@@ -45,7 +45,7 @@ def test_lost_response_settles_confirmed_event_without_claiming_new_delivery(
     assert row["acknowledged_stream_sequence"] == 1
 
 
-@pytest.mark.parametrize("checkpoint", [-1, True, 1.5, "1", 100])
+@pytest.mark.parametrize("checkpoint", [None, -1, True, 1.5, "1", 100])
 def test_invalid_remote_checkpoint_cannot_remove_local_events(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, checkpoint: object
 ) -> None:

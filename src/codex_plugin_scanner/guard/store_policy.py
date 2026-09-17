@@ -687,7 +687,8 @@ class StorePolicyMixin:
             return False
         if (
             str(candidate["source"]) in {"policy-bundle", "policy-bundle-canonical"}
-            and self._materialized_policy_bundle_row_identity(candidate) not in policy_bundle_decision_identities
+            and (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
+            not in policy_bundle_decision_identities
         ):
             return False
         if (
@@ -1081,6 +1082,25 @@ class StorePolicyMixin:
             )
             if continuity_rejection is not None:
                 return reject(continuity_rejection, connection)
+            from .policy_bundle_materialization import (
+                POLICY_BUNDLE_MATERIALIZATION_KEY,
+                PolicyBundleMaterializationError,
+                PolicyMaterializationStore,
+                bind_policy_bundle_materialization,
+            )
+
+            try:
+                rows, materialization = bind_policy_bundle_materialization(
+                    cast(PolicyMaterializationStore, cast(object, self)),
+                    connection,
+                    bundle=policy_bundle,
+                    rows=rows,
+                    now=normalized_now,
+                )
+            except PolicyBundleMaterializationError:
+                return reject("policy_bundle_materialization_unavailable", connection)
+            if materialization is not None:
+                encoded_payloads[POLICY_BUNDLE_MATERIALIZATION_KEY] = json.dumps(materialization, allow_nan=False)
             self._replace_remote_policy_rows_locked(connection, rows)
             for state_key, payload_json in encoded_payloads.items():
                 connection.execute(
@@ -1208,10 +1228,11 @@ class StorePolicyMixin:
                 )
             self._replace_remote_policy_rows_locked(connection, ())
             connection.execute(
-                "delete from sync_state where state_key in (?, ?, ?, ?)",
+                "delete from sync_state where state_key in (?, ?, ?, ?, ?)",
                 (
                     "policy_bundle",
                     "policy_bundle_ack",
+                    "policy_bundle_materialization",
                     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
                     MANAGED_CONTROLS_NEGOTIATED_CAPABILITIES_STATE_KEY,
                 ),
@@ -2161,7 +2182,8 @@ class StorePolicyMixin:
             return False
         if source in {"policy-bundle", "policy-bundle-canonical"} and (
             policy_bundle_decision_identities is None
-            or self._materialized_policy_bundle_row_identity(row) not in policy_bundle_decision_identities
+            or (*self._materialized_policy_bundle_row_identity(row), row["updated_at"])
+            not in policy_bundle_decision_identities
         ):
             return False
         if (

@@ -7,6 +7,7 @@ import sqlite3
 from collections.abc import Callable, Mapping, Sequence
 from typing import Protocol
 
+from .approval_gate import ApprovalGateError
 from .managed_controls_policy_bundle import signed_cloud_extension_projection_digest
 from .managed_controls_policy_fields import ParsedManagedControlsPolicy
 from .policy_activation_failure import PolicyActivationPersistenceError, classify_policy_activation_failure
@@ -47,6 +48,8 @@ def activate_with_reason(
         return result, "" if result is not None else "policy_bundle_activation_rejected"
     except PolicyBundleActivationRejectionError as error:
         return None, error.reason
+    except ApprovalGateError:
+        raise
     except (sqlite3.Error, OSError, MemoryError) as error:
         failure = classify_policy_activation_failure(error)
         return None, str(failure["reason"])

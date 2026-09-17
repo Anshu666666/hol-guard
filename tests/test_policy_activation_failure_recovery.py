@@ -160,6 +160,21 @@ def test_publication_rejection_remains_available_to_the_callers_existing_handler
         activate_with_reason(rejected_publication)
 
 
+def test_approval_gate_rejection_is_not_reclassified_as_a_retryable_storage_error() -> None:
+    from codex_plugin_scanner.guard.approval_gate import ApprovalGateError
+    from codex_plugin_scanner.guard.policy_bundle_activation import activate_with_reason
+
+    denied = ApprovalGateError("approval_gate_required", "Approval is required.")
+
+    def activate(**kwargs: object) -> None:
+        raise denied
+
+    with pytest.raises(ApprovalGateError) as caught:
+        activate_with_reason(activate)
+    assert caught.value is denied
+    assert caught.value.code == "approval_gate_required"
+
+
 def test_unreadable_status_and_stale_acknowledgement_never_claim_application(tmp_path: Path) -> None:
     from codex_plugin_scanner.guard.policy_activation_failure import activation_status_from_store
 

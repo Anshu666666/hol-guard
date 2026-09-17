@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
+from codex_plugin_scanner.guard.models import PolicyDecision
+from codex_plugin_scanner.guard.policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from codex_plugin_scanner.guard.policy_bundle_parser import policy_bundle_acceptance_checkpoint
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import policy_bundle_keyring_payload
 from codex_plugin_scanner.guard.runtime.canonical_policy_decisions import build_canonical_policy_bundle_decisions
@@ -132,3 +134,105 @@ def test_canonical_reuse_revalidates_signature_after_lookup(tmp_path: Path) -> N
             "update sync_state set payload_json = ? where state_key = 'policy_bundle'", (json.dumps({}),)
         )
     assert not store.claim_approval_reuse_decision(decision, now=_NOW)
+
+
+def test_materialization_recency_cannot_be_changed_without_authority(tmp_path: Path) -> None:
+    store = _activated_store(tmp_path)
+    store.upsert_policy(
+        PolicyDecision(
+            harness="codex",
+            scope="artifact",
+            action="block",
+            artifact_id=_ARTIFACT,
+            artifact_hash="synthetic-hash",
+            source="local",
+        ),
+        "2026-09-17T00:00:01Z",
+    )
+    assert store.resolve_policy("codex", _ARTIFACT, "synthetic-hash", now="2026-09-17T00:00:02Z") == "block"
+    with sqlite3.connect(store.path) as connection:
+        connection.execute(
+            "update policy_decisions set updated_at = ? where source = 'policy-bundle-canonical'",
+            ("2026-09-17T00:00:02.000000+00:00",),
+        )
+    assert store.resolve_policy("codex", _ARTIFACT, "synthetic-hash", now="2026-09-17T00:00:03Z") == "block"
+
+
+def _reapply_current(store: GuardStore, now: str) -> object:
+    bundle = store.get_sync_payload("policy_bundle")
+    keyring = store.get_sync_payload("policy_bundle_keyring")
+    assert isinstance(bundle, dict) and isinstance(keyring, dict)
+    device = store.get_device_metadata()
+    return store.apply_policy_bundle_authority(
+        build_canonical_policy_bundle_decisions(
+            bundle, device_id=device["installation_id"], device_name=device["device_label"]
+        ),
+        now,
+        policy_bundle=bundle,
+        policy_bundle_keyring=keyring,
+        cloud_exceptions=[],
+        policy_bundle_ack={"bundleHash": bundle["bundleHash"], "bundleVersion": 8, "status": "validated"},
+        policy_bundle_checkpoint=policy_bundle_acceptance_checkpoint(bundle),
+        update_last_good=True,
+        remote_write_authorized=True,
+    )
+
+
+def test_identical_bundle_reapplication_retains_original_materialization_time(tmp_path: Path) -> None:
+    store = _activated_store(tmp_path)
+    initial = store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY)
+    assert isinstance(initial, dict)
+    assert _reapply_current(store, "2026-09-17T00:01:00Z") is not None
+    assert store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY) == initial
+    rows = store.list_policy_decisions()
+    assert len(rows) == 1
+    assert rows[0]["updated_at"] == initial["materializedAt"]
+
+
+@pytest.mark.parametrize("mutation", ["empty", "timestamp", "bundle", "version-type", "key"])
+def test_materialization_binding_cannot_be_modified_or_replaced(tmp_path: Path, mutation: str) -> None:
+    store = _activated_store(tmp_path)
+    record = store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY)
+    assert isinstance(record, dict)
+    if mutation == "empty":
+        record = {}
+    elif mutation == "timestamp":
+        record["materializedAt"] = "2026-09-17T00:00:02.000000+00:00"
+        with sqlite3.connect(store.path) as connection:
+            connection.execute("update policy_decisions set updated_at = ?", (record["materializedAt"],))
+    elif mutation == "bundle":
+        record["bundleHash"] = "sha256:" + "f" * 64
+    elif mutation == "version-type":
+        record["bundleVersion"] = "8"
+    else:
+        record["keyId"] = "different-key"
+    store.set_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY, record, _NOW)
+    lookup = store.resolve_policy_decision_lookup("codex", _ARTIFACT, now=_NOW, consume_one_shot=False)
+    assert lookup["decision"] is None
+    stored = store.list_policy_decisions()[0]
+    candidate = {**stored, "_approval_authority_revision": lookup["authority_revision"]}
+    assert not store.claim_approval_reuse_decision(candidate, now=_NOW)
+    assert _reapply_current(store, "2026-09-17T00:01:00Z") is None
+
+
+def test_materialization_key_failure_preserves_previous_durable_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _activated_store(tmp_path)
+    before_rows = store.list_policy_decisions()
+    before_record = store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY)
+    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda **_kwargs: (None, None))
+    assert _reapply_current(store, "2026-09-17T00:01:00Z") is None
+    assert store.list_policy_decisions() == before_rows
+    assert store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY) == before_record
+
+
+def test_unbound_legacy_rows_require_validated_reapplication_and_clear_removes_binding(tmp_path: Path) -> None:
+    store = _activated_store(tmp_path)
+    with sqlite3.connect(store.path) as connection:
+        connection.execute("delete from sync_state where state_key = ?", (POLICY_BUNDLE_MATERIALIZATION_KEY,))
+    assert store.resolve_policy("codex", _ARTIFACT, now=_NOW) is None
+    assert _reapply_current(store, "2026-09-17T00:01:00Z") is not None
+    assert store.resolve_policy("codex", _ARTIFACT, now="2026-09-17T00:01:01Z") == "allow"
+    store.clear_policy_bundle_authority("2026-09-17T00:02:00Z", policy_bundle_last_error={"reason": "fixture-clear"})
+    assert store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY) is None

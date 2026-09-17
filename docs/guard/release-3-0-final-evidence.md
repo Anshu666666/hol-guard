@@ -1,4 +1,4 @@
-# Guard 3.0 final release evidence
+# Final release evidence
 
 The final release record is a reproducible, privacy-safe summary of the
 artifact, installed-runtime, Desktop Core, security, and review gates. It
@@ -91,17 +91,32 @@ wrong-workspace binding, stale revision, unavailable native runtime, and
 immutable policy blocks. Those cases must refuse or fail closed, never pass.
 
 ```text
-python scripts/ci/verify_release_negative_outcomes.py \
-  --evidence negative-outcomes.json
-python scripts/ci/release_required_evidence.py
+python scripts/ci/collect_release_negative_outcomes.py \
+  --source-sha <40-lowercase-hex> --output negative-outcomes.json
+python scripts/ci/release_required_evidence.py --output release-required-evidence.json
+python scripts/ci/verify_release_negative_outcomes.py --evidence negative-outcomes.json
 ```
 
-`release_required_evidence.py` fails if a required pytest node is missing or
-silently deselected by default `-m not slow` collection. The Publish workflow
-already proves installed artifacts: TestPyPI canary install on
-Linux/macOS/Windows for labeled same-repository PRs, and
-`uv tool run --from <wheel> hol-guard --version` after exact TestPyPI/PyPI
-bytes are verified for alpha and stable publication.
+The negative collector executes every named assertion in a fresh Python
+process against an unchanged checkout. It records only the source digest,
+required test identifier digests, and setup/call/teardown outcomes. Missing,
+skipped, or failed assertions cannot produce accepted evidence. The
+`passed=false` field records that the forbidden action did not pass; each
+corresponding pytest assertion must itself pass all three phases.
+
+The collection inventory rejects missing or silently deselected required
+nodes. It checks each configured publication job separately and reports
+`evidence_kind=collection-and-configuration` and
+`installed_runtime_verified=false`. Workflow declarations cannot prove that
+a platform job ran. Installed acceptance requires actual successful evidence
+for the same candidate; a disabled, skipped, or unavailable job remains
+unverified.
+
+The contract-fixture generator takes these two input artifacts, validates
+their shared source identity, and binds their bytes into the final manifest.
+Its installed, artifact, and Desktop examples remain explicitly labeled
+`evidence_kind=contract-fixture`. They exercise validator contracts and cannot
+authorize a release, even with a detached signature.
 
 ## Final gate and signature
 
@@ -109,7 +124,10 @@ The final record names these independent gates: CI, CodeQL, fuzzing,
 adversarial coverage, parity, mutation, source-race, approval-replay,
 fault-injection, soak, privacy, and independent review. It also records the
 exact CI run, exact source/base commits, required-check state, component
-evidence hashes, and the reproducible command set:
+evidence hashes, and the reproducible command set. Required components include
+negative outcomes and the collection inventory. The CLI reads the adjacent
+component files, verifies their exact hashes, and validates the required
+results before accepting the manifest:
 
 ```text
 python scripts/ci/final_release_evidence.py \

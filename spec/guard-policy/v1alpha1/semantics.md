@@ -64,34 +64,6 @@ This representation release does not change runtime precedence:
 
 The decision fixtures freeze exact-vs-broad, active-vs-expired, once-vs-permanent, and local-vs-remote outcomes. Compilers and representation changes MUST preserve them.
 
-## Operator runtime notes (verified against this tree)
-
-These notes are for operators, not a second precedence table.
-
-- **v2 admission:** `policy_bundle_is_enforceable` treats generic
-  `guard-policy-bundle.v2` documents as live when `payload.spec.rolloutState` is
-  omitted or is `enforcing` / `enforced` / `rollback_available`. Explicit
-  `draft`, `pending_approval`, and `simulated` states are not live. Broader
-  unpublished-bundle hardening remains in-review in
-  [hol-guard#2948](https://github.com/hashgraph-online/hol-guard/pull/2948).
-- **Lane reporting:** this `main` snapshot does not yet guarantee canonical
-  flag-off / cohort / enabled / missing-authority lane labels. That reporting
-  is in-review in
-  [hol-guard#2949](https://github.com/hashgraph-online/hol-guard/pull/2949).
-  Until it merges, do not treat a UI badge as proof of the enforcement lane.
-- **Memory targets:** signed memory must project exactly onto named
-  project/machine/workspace targets or refuse with no partial rows. Exact
-  multi-target projection and bundle/memory lane ownership are in-review in
-  [hol-guard#2949](https://github.com/hashgraph-online/hol-guard/pull/2949) and
-  [hol-guard#2959](https://github.com/hashgraph-online/hol-guard/pull/2959).
-  Do not recover a failed memory delivery by editing local protected files.
-- **Exact review:** Cloud `allow_once` resolves one pending local request.
-  Immutable policy blocks are not remotely approvable. Application is not
-  agent continuation; unsupported continuation stays blocked.
-
-Docs MUST NOT promise unsupported matcher families, automatic continuation, or
-a Cloud `block` that silently outranks a more-specific local `allow`.
-
 ## Extensions
 
 An object may contain keys matching `x-[a-z0-9][a-z0-9.-]{0,62}`. Extensions are preserved and participate in canonical hashing/signing. Core enforcement ignores them unless both producer and consumer negotiated that extension contract. An unnegotiated extension cannot affect matching, action, precedence, or lifetime.

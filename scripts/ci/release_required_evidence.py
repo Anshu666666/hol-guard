@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Prove required release tests were collected and installed canary gates remain."""
+"""Inventory required test collection and configured installation checks."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol, cast
@@ -17,14 +18,10 @@ import yaml
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from scripts.ci.verify_release_negative_outcomes import REQUIRED_TESTS
+
 REQUIRED_RELEASE_FILES = ("tests/test_release_negative_outcomes.py",)
-REQUIRED_RELEASE_NODE_FRAGMENTS = (
-    "test_release_negative_outcomes.py::test_draft_rollout_is_not_live_authority",
-    "test_release_negative_outcomes.py::test_wrong_workspace_bundle_is_refused",
-    "test_release_negative_outcomes.py::test_stale_bundle_is_rejected_as_downgrade",
-    "test_release_negative_outcomes.py::test_unavailable_runtime_is_not_release_evidence",
-    "test_release_negative_outcomes.py::test_immutable_block_is_not_remotely_approvable",
-)
+REQUIRED_RELEASE_NODE_IDS = tuple(REQUIRED_TESTS.values())
 INSTALLED_CANARY_JOB = "pr-installed-canary"
 INSTALLED_WHEEL_SNIPPET = 'uv tool run --from "$wheel" hol-guard --version'
 ALPHA_WHEEL_SNIPPET = 'uv tool run --from "$guard_wheel" hol-guard --version'
@@ -40,13 +37,17 @@ class _CollectionSession(Protocol):
 
 @dataclass(frozen=True)
 class ReleaseCollectionReport:
+    schema: str
+    source_sha: str
+    evidence_kind: str
     collected_release_cases: int
     default_collected_cases: int
     deselected_required: tuple[str, ...]
     missing_required: tuple[str, ...]
     named_ci_deselects: tuple[str, ...]
-    installed_canary_oses: tuple[str, ...]
-    installed_wheel_jobs: tuple[str, ...]
+    configured_canary_oses: tuple[str, ...]
+    configured_wheel_jobs: tuple[str, ...]
+    installed_runtime_verified: bool
 
 
 class _NodeCollector:
@@ -68,8 +69,8 @@ def _collect(root: Path, extra_args: Sequence[str], *, targets: Sequence[str]) -
     return [item.nodeid for item in collector.items]
 
 
-def _contains_fragment(nodeids: Sequence[str], fragment: str) -> bool:
-    return any(fragment in nodeid for nodeid in nodeids)
+def _contains_node(nodeids: Sequence[str], required: str) -> bool:
+    return any(nodeid.split("[", 1)[0] == required for nodeid in nodeids)
 
 
 def _workflow_jobs(root: Path) -> dict[str, object]:
@@ -98,22 +99,36 @@ def _installed_canary_oses(jobs: dict[str, object]) -> tuple[str, ...]:
     required = {"ubuntu-latest", "macos-latest", "windows-latest"}
     if set(os_list) != required:
         raise RuntimeError(f"pr-installed-canary OS matrix is incomplete: {os_list}")
+    steps = job.get("steps")
+    runs = [step.get("run", "") for step in steps if isinstance(step, dict)] if isinstance(steps, list) else []
+    for command in ("verify-release --registry testpypi", "-m scripts.run_installed_canary"):
+        if not any(isinstance(run, str) and command in run for run in runs):
+            raise RuntimeError("pr-installed-canary checks are not configured")
     return tuple(os_list)
 
 
-def _installed_wheel_jobs(root: Path, jobs: dict[str, object]) -> tuple[str, ...]:
-    workflow_text = (root / ".github/workflows/publish.yml").read_text(encoding="utf-8")
-    if INSTALLED_WHEEL_SNIPPET not in workflow_text or ALPHA_WHEEL_SNIPPET not in workflow_text:
-        raise RuntimeError("publish workflow does not install a verified hol-guard wheel")
-    if "verify-release --registry testpypi" not in workflow_text:
-        raise RuntimeError("publish workflow is missing the TestPyPI canary install check")
-    proven: list[str] = []
-    for name in ("publish-alpha-testpypi", "publish-alpha-pypi", "publish-main-pypi"):
+def _installed_wheel_jobs(jobs: dict[str, object]) -> tuple[str, ...]:
+    configured: list[str] = []
+    for name, snippet in (
+        ("publish-alpha-testpypi", INSTALLED_WHEEL_SNIPPET),
+        ("publish-alpha-pypi", ALPHA_WHEEL_SNIPPET),
+        ("publish-main-pypi", ALPHA_WHEEL_SNIPPET),
+    ):
         job = jobs.get(name)
         if not isinstance(job, dict):
             raise RuntimeError(f"{name} job is missing")
-        proven.append(name)
-    return tuple(proven)
+        steps = job.get("steps")
+        if not isinstance(steps, list) or not any(
+            isinstance(step, dict)
+            and isinstance(step.get("run"), str)
+            and snippet in step["run"]
+            and step.get("if") is not False
+            and step.get("if") not in {"false", "${{ false }}"}
+            for step in steps
+        ):
+            raise RuntimeError(f"{name} has no configured wheel install check")
+        configured.append(name)
+    return tuple(configured)
 
 
 def _named_ci_deselects(root: Path) -> tuple[str, ...]:
@@ -126,28 +141,46 @@ def _named_ci_deselects(root: Path) -> tuple[str, ...]:
 def build_report(root: Path) -> ReleaseCollectionReport:
     default_ids = _collect(root, (), targets=REQUIRED_RELEASE_FILES)
     release_ids = _collect(root, ("-o", "addopts=", "-m", "release"), targets=REQUIRED_RELEASE_FILES)
-    missing = tuple(
-        fragment for fragment in REQUIRED_RELEASE_NODE_FRAGMENTS if not _contains_fragment(release_ids, fragment)
-    )
+    missing = tuple(node for node in REQUIRED_RELEASE_NODE_IDS if not _contains_node(release_ids, node))
     if missing:
         raise RuntimeError(f"required release tests were not collected: {missing}")
     deselected = tuple(
-        fragment
-        for fragment in REQUIRED_RELEASE_NODE_FRAGMENTS
-        if _contains_fragment(release_ids, fragment) and not _contains_fragment(default_ids, fragment)
+        node
+        for node in REQUIRED_RELEASE_NODE_IDS
+        if _contains_node(release_ids, node) and not _contains_node(default_ids, node)
     )
     if deselected:
         raise RuntimeError(f"required release tests were silently deselected: {deselected}")
     jobs = _workflow_jobs(root)
     return ReleaseCollectionReport(
+        schema="hol-guard-release-collection.v1",
+        source_sha=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
+        evidence_kind="collection-and-configuration",
         collected_release_cases=len(release_ids),
         default_collected_cases=len(default_ids),
         deselected_required=deselected,
         missing_required=missing,
         named_ci_deselects=_named_ci_deselects(root),
-        installed_canary_oses=_installed_canary_oses(jobs),
-        installed_wheel_jobs=_installed_wheel_jobs(root, jobs),
+        configured_canary_oses=_installed_canary_oses(jobs),
+        configured_wheel_jobs=_installed_wheel_jobs(jobs),
+        installed_runtime_verified=False,
     )
+
+
+def validate_collection_report(payload: Mapping[str, object], *, source_sha: str) -> None:
+    if (
+        payload.get("schema") != "hol-guard-release-collection.v1"
+        or payload.get("source_sha") != source_sha
+        or payload.get("evidence_kind") != "collection-and-configuration"
+        or payload.get("missing_required") != []
+        or payload.get("deselected_required") != []
+        or payload.get("installed_runtime_verified") is not False
+    ):
+        raise ValueError("required release collection is incomplete")
+    for key in ("collected_release_cases", "default_collected_cases"):
+        value = payload.get(key)
+        if type(value) is not int or value < len(REQUIRED_RELEASE_NODE_IDS):
+            raise ValueError("required release collection count is incomplete")
 
 
 def main() -> int:

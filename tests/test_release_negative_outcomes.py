@@ -77,9 +77,17 @@ def test_draft_rollout_is_not_live_authority() -> None:
     assert policy_bundle_is_enforceable(v2_draft) is False
     assert policy_bundle_is_enforceable(v2_omitted) is True
     assert policy_bundle_is_enforceable(v2_enforcing) is True
-    assert policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT}) is True
-    assert policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": []}) is True
-    assert policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": {"spec": []}}) is True
+    assert (
+        policy_bundle_is_enforceable(
+            {"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": {"spec": {"rolloutState": None}}}
+        )
+        is False
+    )
+    assert policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT}) is False
+    assert policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": []}) is False
+    assert (
+        policy_bundle_is_enforceable({"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": {"spec": []}}) is False
+    )
 
 
 @pytest.mark.release

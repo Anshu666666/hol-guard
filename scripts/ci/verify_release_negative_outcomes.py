@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import stat
@@ -12,16 +13,18 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 SCHEMA = "hol-guard-release-negative-outcomes.v1"
-REQUIRED_CASES = (
-    "draft",
-    "wrong-workspace",
-    "stale",
-    "unavailable-runtime",
-    "immutable-block",
-)
+REQUIRED_TESTS = {
+    "draft": "tests/test_release_negative_outcomes.py::test_draft_rollout_is_not_live_authority",
+    "wrong-workspace": "tests/test_release_negative_outcomes.py::test_wrong_workspace_bundle_is_refused",
+    "stale": "tests/test_release_negative_outcomes.py::test_stale_bundle_is_rejected_as_downgrade",
+    "unavailable-runtime": "tests/test_release_negative_outcomes.py::test_unavailable_runtime_is_not_release_evidence",
+    "immutable-block": "tests/test_release_negative_outcomes.py::test_immutable_block_is_not_remotely_approvable",
+}
+REQUIRED_CASES = tuple(REQUIRED_TESTS)
 ALLOWED_RESULTS = frozenset({"fail-closed", "refused", "unsupported"})
 _TOKEN = re.compile(r"^[a-z0-9][a-z0-9._:-]{0,159}\Z")
 _SHA64 = re.compile(r"[0-9a-f]{64}\Z")
+_SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 _MAX_BYTES = 256 * 1024
 
 
@@ -35,9 +38,38 @@ def _token(value: object, *, label: str) -> str:
     return value
 
 
+def result_digest(source_sha: str, results: object) -> str:
+    encoded = json.dumps({"source_sha": source_sha, "pytest_results": results}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def _execution(payload: Mapping[str, object]) -> tuple[str, list[dict[str, object]]]:
+    source_sha = payload.get("source_sha")
+    if not isinstance(source_sha, str) or _SHA40.fullmatch(source_sha) is None:
+        raise NegativeOutcomeError("negative evidence source digest is invalid")
+    results = payload.get("pytest_results")
+    if not isinstance(results, list) or len(results) != len(REQUIRED_TESTS):
+        raise NegativeOutcomeError("executed pytest results are incomplete")
+    normalized: list[dict[str, object]] = []
+    for node, row in zip(REQUIRED_TESTS.values(), results, strict=True):
+        digest = hashlib.sha256(node.encode()).hexdigest()
+        if not isinstance(row, dict) or row != {
+            "nodeid_sha256": digest,
+            "setup": "passed",
+            "call": "passed",
+            "teardown": "passed",
+        }:
+            raise NegativeOutcomeError("required negative assertion did not execute successfully")
+        normalized.append(dict(row))
+    if payload.get("pytest_results_sha256") != result_digest(source_sha, normalized):
+        raise NegativeOutcomeError("pytest result digest does not bind execution")
+    return source_sha, normalized
+
+
 def validate_negative_outcomes(payload: Mapping[str, object]) -> dict[str, object]:
     if payload.get("schema") != SCHEMA:
         raise NegativeOutcomeError("unsupported negative-outcome schema")
+    source_sha, execution = _execution(payload)
     cases = payload.get("cases")
     if not isinstance(cases, list) or not cases:
         raise NegativeOutcomeError("negative-outcome cases are missing")
@@ -53,11 +85,11 @@ def validate_negative_outcomes(payload: Mapping[str, object]) -> dict[str, objec
         result = _token(item.get("result"), label="result")
         if result not in ALLOWED_RESULTS:
             raise NegativeOutcomeError(f"happy-path result is not evidence for {name}")
-        if item.get("passed") is True:
-            raise NegativeOutcomeError(f"{name} cannot record a pass as negative evidence")
+        if item.get("passed") is not False:
+            raise NegativeOutcomeError(f"{name} must explicitly record passed=false as negative evidence")
         evidence = _token(item.get("evidence"), label="evidence")
         digest = item.get("pytest_nodeid_sha256")
-        if digest is not None and (not isinstance(digest, str) or _SHA64.fullmatch(digest) is None):
+        if digest != hashlib.sha256(REQUIRED_TESTS[name].encode()).hexdigest():
             raise NegativeOutcomeError(f"pytest digest is invalid for {name}")
         record: dict[str, object] = {"name": name, "result": result, "passed": False, "evidence": evidence}
         if isinstance(digest, str):
@@ -68,6 +100,9 @@ def validate_negative_outcomes(payload: Mapping[str, object]) -> dict[str, objec
         raise NegativeOutcomeError(f"negative-outcome set is incomplete: {missing}")
     return {
         "schema": SCHEMA,
+        "source_sha": source_sha,
+        "pytest_results": execution,
+        "pytest_results_sha256": result_digest(source_sha, execution),
         "cases": [by_name[name] for name in REQUIRED_CASES],
     }
 

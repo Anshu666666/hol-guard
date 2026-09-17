@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal, cast
 
+from .config_mutation import notify_native_policy_mutation
 from .managed_controls_policy_bundle import (
     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
     MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
@@ -37,6 +38,7 @@ from .store_policy_activation_preflight import (
     encoded_policy_activation_payloads,
     policy_checkpoint_rejection,
 )
+from .store_policy_rows import materialized_policy_row_identity, replace_remote_policy_rows_locked
 
 if TYPE_CHECKING:
     from .managed_controls_policy_fields import ParsedManagedControlsPolicy
@@ -666,27 +668,14 @@ class StorePolicyMixin:
                 )
         return True
 
-    @staticmethod
-    def _materialized_policy_bundle_row_identity(row: sqlite3.Row) -> tuple[object, ...]:
-        return (
-            row["harness"],
-            row["scope"],
-            row["artifact_id"],
-            row["artifact_hash"],
-            row["workspace"],
-            row["publisher"],
-            row["action"],
-            row["reason"],
-            row["owner"],
-            row["source"],
-            row["expires_at"],
-        )
+    _materialized_policy_bundle_row_identity = staticmethod(materialized_policy_row_identity)
 
     def _runtime_policy_row_is_eligible(
         self,
         candidate,
         *,
         policy_bundle_decision_identities: frozenset[tuple[object, ...]],
+        memory_decision_identities: frozenset[tuple[object, ...]],
         artifact_id: str | None,
         artifact_hash: str | None,
         runtime_exact_match_key: str | None,
@@ -698,8 +687,14 @@ class StorePolicyMixin:
         if str(candidate["source"]) in {"cloud-sync", "team-policy"}:
             return False
         if (
-            str(candidate["source"]) == "policy-bundle"
-            and self._materialized_policy_bundle_row_identity(candidate) not in policy_bundle_decision_identities
+            str(candidate["source"]) in {"policy-bundle", "policy-bundle-canonical"}
+            and (*self._materialized_policy_bundle_row_identity(candidate), candidate["updated_at"])
+            not in policy_bundle_decision_identities
+        ):
+            return False
+        if (
+            str(candidate["source"]) == "cloud-signed-memory"
+            and self._materialized_policy_bundle_row_identity(candidate) not in memory_decision_identities
         ):
             return False
         return not _scoped_runtime_row_requires_exact_match(
@@ -723,47 +718,9 @@ class StorePolicyMixin:
     ) -> frozenset[tuple[object, ...]]:
         """Return only rows derivable from the currently authorized signed bundle."""
 
-        from .policy_bundle_decisions import build_policy_bundle_decisions
-        from .synced_policy import SyncPayloadReader, cached_policy_bundle_validation
+        from .policy_bundle_row_authority import PolicyBundleRowStore, current_policy_bundle_row_identities
 
-        policy_bundle = self.get_sync_payload("policy_bundle")
-        if not isinstance(policy_bundle, dict) or not policy_bundle:
-            return frozenset()
-        validated_bundle, _reason = cached_policy_bundle_validation(
-            cast(SyncPayloadReader, cast(object, self)),
-            policy_bundle,
-            now=now,
-        )
-        if validated_bundle is None:
-            return frozenset()
-        try:
-            device_metadata = self.get_device_metadata()
-            decisions = build_policy_bundle_decisions(
-                validated_bundle,
-                device_id=str(device_metadata["installation_id"]),
-                device_name=str(device_metadata["device_label"]),
-            )
-        except (KeyError, OSError, RuntimeError, TypeError, ValueError):
-            return frozenset()
-        identities: set[tuple[object, ...]] = set()
-        for decision in decisions:
-            artifact_id, artifact_hash, workspace, publisher = self._normalized_policy_keys(decision)
-            identities.add(
-                (
-                    decision.harness,
-                    decision.scope,
-                    artifact_id,
-                    artifact_hash,
-                    workspace,
-                    publisher,
-                    decision.action,
-                    decision.reason,
-                    decision.owner,
-                    decision.source,
-                    (_canonical_utc_timestamp(decision.expires_at) if decision.expires_at is not None else None),
-                )
-            )
-        return frozenset(identities)
+        return current_policy_bundle_row_identities(cast(PolicyBundleRowStore, cast(object, self)), now=now)
 
     def upsert_policy(
         self,
@@ -1126,6 +1083,25 @@ class StorePolicyMixin:
             )
             if continuity_rejection is not None:
                 return reject(continuity_rejection, connection)
+            from .policy_bundle_materialization import (
+                POLICY_BUNDLE_MATERIALIZATION_KEY,
+                PolicyBundleMaterializationError,
+                PolicyMaterializationStore,
+                bind_policy_bundle_materialization,
+            )
+
+            try:
+                rows, materialization = bind_policy_bundle_materialization(
+                    cast(PolicyMaterializationStore, cast(object, self)),
+                    connection,
+                    bundle=policy_bundle,
+                    rows=rows,
+                    now=normalized_now,
+                )
+            except PolicyBundleMaterializationError:
+                return reject("policy_bundle_materialization_unavailable", connection)
+            if materialization is not None:
+                encoded_payloads[POLICY_BUNDLE_MATERIALIZATION_KEY] = json.dumps(materialization, allow_nan=False)
             self._replace_remote_policy_rows_locked(connection, rows)
             for state_key, payload_json in encoded_payloads.items():
                 connection.execute(
@@ -1144,6 +1120,7 @@ class StorePolicyMixin:
                     published_authority,
                     connection.commit,
                 )
+        notify_native_policy_mutation(self.guard_home)
         persisted_acknowledgement = json.loads(encoded_payloads["policy_bundle_ack"])
         return persisted_acknowledgement if isinstance(persisted_acknowledgement, dict) else None
 
@@ -1253,10 +1230,11 @@ class StorePolicyMixin:
                 )
             self._replace_remote_policy_rows_locked(connection, ())
             connection.execute(
-                "delete from sync_state where state_key in (?, ?, ?, ?)",
+                "delete from sync_state where state_key in (?, ?, ?, ?, ?)",
                 (
                     "policy_bundle",
                     "policy_bundle_ack",
+                    "policy_bundle_materialization",
                     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
                     MANAGED_CONTROLS_NEGOTIATED_CAPABILITIES_STATE_KEY,
                 ),
@@ -1287,6 +1265,8 @@ class StorePolicyMixin:
                     ),
                     connection.commit,
                 )
+
+        notify_native_policy_mutation(self.guard_home)
 
     def _prepared_remote_policy_rows(
         self,
@@ -1336,26 +1316,7 @@ class StorePolicyMixin:
             )
         return normalized_now, rows
 
-    @staticmethod
-    def _replace_remote_policy_rows_locked(
-        connection: sqlite3.Connection,
-        rows: Sequence[tuple[object, ...]],
-    ) -> None:
-        connection.execute(
-            f"delete from policy_decisions where source in {_REMOTE_POLICY_SOURCE_PLACEHOLDERS}",
-            _REMOTE_POLICY_SOURCE_PARAMS,
-        )
-        connection.executemany(
-            """
-            insert into policy_decisions (
-              harness, scope, artifact_id, artifact_hash, workspace, publisher, action, reason, owner, source,
-              expires_at, updated_at, integrity_version, integrity_generation, payload_hash, payload_mac,
-              integrity_key_id, signed_at
-            )
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            rows,
-        )
+    _replace_remote_policy_rows_locked = staticmethod(replace_remote_policy_rows_locked)
 
     def resolve_policy(
         self,
@@ -1783,7 +1744,12 @@ class StorePolicyMixin:
                 self._cached_policy_bundle_decision_identities(
                     now=_parse_utc_timestamp(current_time).timestamp(),
                 )
-                if any(str(candidate["source"]) == "policy-bundle" for candidate in rows)
+                if any(str(candidate["source"]) in {"policy-bundle", "policy-bundle-canonical"} for candidate in rows)
+                else frozenset()
+            )
+            memory_decision_identities = (
+                self._cached_review_memory_decision_identities(now=current_time)
+                if any(str(candidate["source"]) == "cloud-signed-memory" for candidate in rows)
                 else frozenset()
             )
             has_local_rows = any(not is_remote_policy_source(str(candidate["source"])) for candidate in rows)
@@ -1792,6 +1758,7 @@ class StorePolicyMixin:
                     if not self._runtime_policy_row_is_eligible(
                         candidate,
                         policy_bundle_decision_identities=policy_bundle_decision_identities,
+                        memory_decision_identities=memory_decision_identities,
                         artifact_id=artifact_id,
                         artifact_hash=artifact_hash,
                         runtime_exact_match_key=runtime_exact_match_key,
@@ -1875,6 +1842,7 @@ class StorePolicyMixin:
                 if not self._runtime_policy_row_is_eligible(
                     candidate,
                     policy_bundle_decision_identities=policy_bundle_decision_identities,
+                    memory_decision_identities=memory_decision_identities,
                     artifact_id=artifact_id,
                     artifact_hash=artifact_hash,
                     runtime_exact_match_key=runtime_exact_match_key,
@@ -2117,13 +2085,20 @@ class StorePolicyMixin:
                 connection.rollback()
                 return False
             policy_bundle_decision_identities: frozenset[tuple[object, ...]] | None = None
-            if any(decision.get("source") == "policy-bundle" for decision in unique_decisions):
+            if any(
+                decision.get("source") in {"policy-bundle", "policy-bundle-canonical"} for decision in unique_decisions
+            ):
                 # Revalidate the signed bundle and its materialized identities
                 # after the write lock is held. This closes bundle/key/workspace
                 # replacement and key-expiry races between lookup and launch.
                 policy_bundle_decision_identities = self._cached_policy_bundle_decision_identities(
                     now=_parse_utc_timestamp(current_time).timestamp(),
                 )
+            memory_decision_identities = (
+                self._cached_review_memory_decision_identities(now=current_time)
+                if any(decision.get("source") == "cloud-signed-memory" for decision in unique_decisions)
+                else frozenset()
+            )
             for decision in unique_decisions:
                 if not self._claim_approval_reuse_decision_locked(
                     connection,
@@ -2132,6 +2107,7 @@ class StorePolicyMixin:
                     local_integrity_key=local_integrity_key,
                     local_integrity_key_id=local_integrity_key_id,
                     policy_bundle_decision_identities=policy_bundle_decision_identities,
+                    memory_decision_identities=memory_decision_identities,
                 ):
                     connection.rollback()
                     return False
@@ -2146,6 +2122,7 @@ class StorePolicyMixin:
         local_integrity_key: bytes | None,
         local_integrity_key_id: str | None,
         policy_bundle_decision_identities: frozenset[tuple[object, ...]] | None,
+        memory_decision_identities: frozenset[tuple[object, ...]],
     ) -> bool:
         """Claim one prevalidated member of an open batch transaction."""
 
@@ -2207,9 +2184,15 @@ class StorePolicyMixin:
         source = str(row["source"])
         if source in {"cloud-sync", "team-policy"}:
             return False
-        if source == "policy-bundle" and (
+        if source in {"policy-bundle", "policy-bundle-canonical"} and (
             policy_bundle_decision_identities is None
-            or self._materialized_policy_bundle_row_identity(row) not in policy_bundle_decision_identities
+            or (*self._materialized_policy_bundle_row_identity(row), row["updated_at"])
+            not in policy_bundle_decision_identities
+        ):
+            return False
+        if (
+            source == "cloud-signed-memory"
+            and self._materialized_policy_bundle_row_identity(row) not in memory_decision_identities
         ):
             return False
         if is_remote_policy_source(source):

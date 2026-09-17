@@ -56,7 +56,7 @@ jobs:
         run: uv run --no-sync python scripts/ci/test_inventory.py --output test-inventory.json
       - name: Publish test inventory
         run: cat test-inventory.json
-      - name: Gate required release tests and installed canary contracts
+      - name: Inventory required release collection and configured install checks
         run: |
           uv run --no-sync python scripts/ci/release_required_evidence.py \
             --output release-required-evidence.json

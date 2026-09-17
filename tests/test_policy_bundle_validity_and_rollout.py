@@ -6,7 +6,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from codex_plugin_scanner.guard.policy_bundle_parser import policy_bundle_is_enforceable
+from codex_plugin_scanner.guard.policy_bundle_parser import (
+    _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT,
+    policy_bundle_is_enforceable,
+)
 from codex_plugin_scanner.guard.policy_bundle_rollout import policy_bundle_rollout_state
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import validate_synced_policy_bundle
 from codex_plugin_scanner.guard.policy_bundle_v2 import (
@@ -37,6 +40,21 @@ def test_v2_enforcing_rollout_is_live() -> None:
         "payload": {"spec": {"rolloutState": "enforcing"}},
     }
     assert policy_bundle_is_enforceable(bundle) is True
+
+
+def test_v2_omitted_rollout_is_compat_and_present_null_is_not_enforceable() -> None:
+    omitted = {"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": {"spec": {}}}
+    present_null = {
+        "contractVersion": POLICY_BUNDLE_V2_CONTRACT,
+        "payload": {"spec": {"rolloutState": None}},
+    }
+    malformed = {"contractVersion": POLICY_BUNDLE_V2_CONTRACT, "payload": "not-an-object"}
+    assert policy_bundle_rollout_state(omitted) is _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT
+    assert policy_bundle_is_enforceable(omitted) is True
+    assert policy_bundle_rollout_state(present_null) is None
+    assert policy_bundle_is_enforceable(present_null) is False
+    assert policy_bundle_rollout_state(malformed) is None
+    assert policy_bundle_is_enforceable(malformed) is False
 
 
 def test_flag_off_lane_is_legacy_and_v2_is_unverified(monkeypatch: pytest.MonkeyPatch) -> None:

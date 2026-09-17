@@ -61,9 +61,16 @@ def _signed_bundle(
     rollback: dict[str, object] | None = None,
     payload_base: dict[str, object] | None = None,
     payload_extensions: dict[str, object] | None = None,
+    rollout_state: str | None = None,
 ) -> dict[str, object]:
     document = load_policy_document(_FIXTURE)
     payload = dict(payload_base) if payload_base is not None else document.to_mapping()
+    if rollout_state is not None:
+        spec = payload.get("spec")
+        if isinstance(spec, dict):
+            spec = dict(spec)
+            spec["rolloutState"] = rollout_state
+            payload["spec"] = spec
     if payload_extensions is not None:
         payload.update(payload_extensions)
     bundle: dict[str, object] = {
@@ -535,3 +542,4 @@ def test_policy_shadow_comparison_uses_bounded_semantic_reason_codes() -> None:
         "selector_set",
         "action",
     )
+

@@ -23,7 +23,12 @@ from .policy_bundle_trusted_keys import (
     policy_bundle_key_fingerprint,
     resolve_authorized_policy_bundle_signing_key,
 )
-from .policy_bundle_rollout import policy_bundle_is_enforceable as _policy_bundle_is_enforceable
+from .policy_bundle_rollout import (  # noqa: F401
+    POLICY_BUNDLE_ENFORCEABLE_ROLLOUT_STATES,
+    _POLICY_BUNDLE_ROLLOUT_STATE_ABSENT,
+    policy_bundle_is_enforceable,
+    policy_bundle_rollout_state,
+)
 from .policy_bundle_v2 import (
     POLICY_BUNDLE_MAX_BYTES,
     POLICY_BUNDLE_MAX_COLLECTION_ITEMS,
@@ -337,12 +342,6 @@ def policy_bundle_daemon_version_supported(policy_bundle: dict[str, object]) -> 
     current = _version_tuple(__version__)
     minimum = _version_tuple(min_daemon_version)
     return current is not None and minimum is not None and current >= minimum
-
-
-def policy_bundle_is_enforceable(policy_bundle: dict[str, object]) -> bool:
-    """Return whether an authenticated rollout is intended as live authority."""
-
-    return _policy_bundle_is_enforceable(policy_bundle)
 
 
 def policy_bundle_acceptance_checkpoint(policy_bundle: dict[str, object]) -> dict[str, object]:

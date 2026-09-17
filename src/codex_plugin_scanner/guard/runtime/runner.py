@@ -2892,6 +2892,7 @@ def sync_receipts(
         if validated_policy_bundle is not None and not _daemon_version_supported(validated_policy_bundle):
             validated_policy_bundle = None
             policy_bundle_rejection_reason = "unsupported_daemon_version"
+        # Shared publication contract: v1 ``rolloutState`` and v2 ``payload.spec.rolloutState``.
         if validated_policy_bundle is not None and not policy_bundle_is_enforceable(validated_policy_bundle):
             validated_policy_bundle = None
             policy_bundle_rejection_reason = "inactive_rollout_state"
@@ -3046,6 +3047,7 @@ def sync_receipts(
             expected_workspace_id=store.get_cloud_workspace_id(),
         )
         if activation_bundle is not None and not policy_bundle_is_enforceable(activation_bundle):
+            # Cached current/LKG reads use the same publication-state gate as sync.
             activation_bundle = None
             activation_reason = "inactive_rollout_state"
         acceptance_checkpoint = store.get_sync_payload("policy_bundle_acceptance_checkpoint")

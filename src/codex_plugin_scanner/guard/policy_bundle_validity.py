@@ -7,6 +7,17 @@ from datetime import datetime, timezone
 POLICY_BUNDLE_CLOCK_SKEW_SECONDS = 300
 
 
+def _parse_policy_bundle_timestamp(value: str) -> float | None:
+    candidate = value[:-1] + "+00:00" if value.endswith(("Z", "z")) else value
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).timestamp()
+
+
 def comparison_unix_seconds(now: datetime | float | None, *, default: float) -> float:
     """Normalize an injected clock to unix seconds without replacing caller defaults."""
 

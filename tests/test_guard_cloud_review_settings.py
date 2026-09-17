@@ -54,7 +54,7 @@ def test_dashboard_reports_real_consent_not_cloud_connection(tmp_path: Path) -> 
     assert disabled["connected"] is True
 
 
-def test_status_counts_only_current_binding_and_uses_source_sync_state(tmp_path: Path) -> None:
+def test_status_counts_only_current_binding_and_keeps_unbound_delivery_unknown(tmp_path: Path) -> None:
     store = connected_exact_review_store(tmp_path)
     add_review_request(store, review_request("current-workspace"))
     add_review_request(store, review_request("other-workspace"))
@@ -72,7 +72,7 @@ def test_status_counts_only_current_binding_and_uses_source_sync_state(tmp_path:
     )
     result = cloud_review_settings_status(alternate)
     assert result["last_synced_at"] is None
-    assert result["delivery_state"] == "error"
+    assert result["delivery_state"] == "unknown"
     assert result["pending_uploads"] == 0
 
 
@@ -194,7 +194,12 @@ def test_quick_recovery_checks_the_request_history_identity(tmp_path: Path) -> N
     assert result["pending_requests_requeued"] == 0
 
 
-def test_dashboard_route_requires_local_origin_session_and_gate(tmp_path: Path) -> None:
+def test_dashboard_route_requires_local_origin_session_and_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.support.cloud_review_workers import install_in_memory_cloud_review_workers
+
+    install_in_memory_cloud_review_workers(monkeypatch)
     store = connected_exact_review_store(tmp_path)
     update_settings(store.guard_home, {"enabled": True, "new_password": "test-pass", "confirm_password": "test-pass"})
     daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)

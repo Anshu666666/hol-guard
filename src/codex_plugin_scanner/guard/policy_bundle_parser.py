@@ -8,7 +8,6 @@ import hashlib
 import json
 import re
 import time
-from datetime import datetime, timezone
 
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
@@ -36,6 +35,7 @@ from .policy_bundle_v2 import (
     POLICY_BUNDLE_MAX_STRING_LENGTH,
 )
 from .policy_bundle_validity import (
+    _parse_policy_bundle_timestamp,
     comparison_unix_seconds,
     expires_at_validity_error,
     issued_at_validity_error,
@@ -492,17 +492,6 @@ def _verify_policy_bundle_signature(
     except (InvalidSignature, ValueError, TypeError):
         return "bundle_signature_invalid"
     return None
-
-
-def _parse_policy_bundle_timestamp(value: str) -> float | None:
-    candidate = value[:-1] + "+00:00" if value.endswith(("Z", "z")) else value
-    try:
-        parsed = datetime.fromisoformat(candidate)
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc).timestamp()
 
 
 def policy_bundle_rejection_message(reason: str | None) -> str | None:

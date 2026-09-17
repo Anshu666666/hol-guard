@@ -24534,8 +24534,8 @@ def test_codex_read_only_source_inspection_preserves_pipelines_in_safe_chains(tm
 
 
 def test_codex_read_only_source_inspection_allows_cd_then_bounded_secret_term_search(tmp_path: Path) -> None:
-    repo_root = tmp_path / "CascadeProjects" / "hashgraph-online"
-    workspace_dir = repo_root / "hol-points-portal" / ".worktrees" / "guard-auth-phase-r-removal"
+    repo_root = tmp_path / "ExampleProjects" / "example-org"
+    workspace_dir = repo_root / "hol-example-repository" / ".worktrees" / "source-inspection"
     source_file = workspace_dir / "src" / "guard-auth.ts"
     live_prefix = "guard" + "_live" + "_"
     _write_text(
@@ -24577,9 +24577,9 @@ def test_codex_read_only_source_inspection_allows_cd_then_bounded_secret_term_se
 
 
 def test_codex_read_only_source_inspection_rejects_cd_parent_escape(tmp_path: Path) -> None:
-    repo_root = tmp_path / "CascadeProjects" / "hashgraph-online"
-    workspace_dir = repo_root / "hol-points-portal" / ".worktrees" / "guard-auth-phase-r-removal"
-    outside_dir = tmp_path / "CascadeProjects" / "outside"
+    repo_root = tmp_path / "ExampleProjects" / "example-org"
+    workspace_dir = repo_root / "hol-example-repository" / ".worktrees" / "source-inspection"
+    outside_dir = tmp_path / "ExampleProjects" / "outside"
     _write_text(workspace_dir / "src" / "inside.ts", "export const token_label = 'field name only';\n")
     _write_text(outside_dir / "src" / "outside.ts", "export const token_label = 'field name only';\n")
 
@@ -24596,8 +24596,8 @@ def test_codex_read_only_source_inspection_rejects_cd_parent_escape(tmp_path: Pa
 
 
 def test_codex_read_only_source_inspection_allows_tilde_worktree_targets(tmp_path: Path) -> None:
-    repo_root = tmp_path / "CascadeProjects" / "hashgraph-online"
-    workspace_dir = repo_root / "hol-points-portal" / ".worktrees" / "guard-auth-phase-r-default-surfaces"
+    repo_root = tmp_path / "ExampleProjects" / "example-org"
+    workspace_dir = repo_root / "hol-example-repository" / ".worktrees" / "source-surfaces"
     _write_text(
         workspace_dir / "app" / "agent-token-detail.tsx",
         "export type AgentTokenDetail = { tokenId: string };\n",
@@ -24606,8 +24606,8 @@ def test_codex_read_only_source_inspection_allows_tilde_worktree_targets(tmp_pat
 
     command = (
         'rg -n "onRotated=|onRotated:|onRotated\\)|AgentTokenDetail" '
-        "~/CascadeProjects/hashgraph-online/hol-points-portal/.worktrees/guard-auth-phase-r-default-surfaces/app "
-        "~/CascadeProjects/hashgraph-online/hol-points-portal/.worktrees/guard-auth-phase-r-default-surfaces/__tests__"
+        "~/ExampleProjects/example-org/hol-example-repository/.worktrees/source-surfaces/app "
+        "~/ExampleProjects/example-org/hol-example-repository/.worktrees/source-surfaces/__tests__"
     )
 
     assert guard_commands_module._codex_command_is_read_only_source_inspection(

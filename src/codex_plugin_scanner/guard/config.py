@@ -635,7 +635,6 @@ def load_guard_config(
 def editable_guard_settings(config: GuardConfig) -> dict[str, object]:
     """Return Guard config values that are safe to edit from the local dashboard."""
 
-    presentation_writable = config.presentation_diagnostic != UNSUPPORTED_PRESENTATION_SCHEMA_DIAGNOSTIC
     return {
         "mode": config.mode,
         "presentation_mode": config.presentation_mode,
@@ -821,7 +820,6 @@ def _update_guard_settings_locked(
     return updated
 
 
-@serialize_guard_settings
 def update_guard_update_channel(
     guard_home: Path,
     update_channel: object,
@@ -844,7 +842,6 @@ def update_guard_update_channel(
     return updated
 
 
-@serialize_guard_settings
 def reset_guard_settings(
     guard_home: Path,
     *,
@@ -855,9 +852,6 @@ def reset_guard_settings(
     require_settings_write(guard_home, approval_gate_grant=approval_gate_grant)
     current = _read_toml(guard_home / "config.toml")
     next_payload = {key: value for key, value in current.items() if key not in EDITABLE_GUARD_SETTING_KEYS}
-    next_payload["presentation_revision"] = next_presentation_revision(
-        load_guard_config(guard_home).presentation_revision
-    )
     _write_guard_config(guard_home / "config.toml", next_payload)
     updated = load_guard_config(guard_home)
     notify_native_policy_mutation(guard_home)
@@ -1162,7 +1156,7 @@ def _incoming_selects_protection_posture(
 def _write_guard_config(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = _toml_lines_for_table(payload, ())
-    atomic_write_settings(path, "\n".join(lines).strip() + "\n")
+    path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
 
 
 def _toml_lines_for_table(payload: Mapping[str, object], path: tuple[str, ...]) -> list[str]:

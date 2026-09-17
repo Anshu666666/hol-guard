@@ -1099,6 +1099,20 @@ function FleetWorkspace(props) {
       connect_url: props.runtime.connect_url
     }
   );
+  let primaryCta = null;
+  let secondaryCta = null;
+  if (protectionHealth.state === "protected") {
+    if (heroCopy.primaryCtaStartsCloudConnect) {
+      primaryCta = /* @__PURE__ */ jsxRuntimeExports.jsx(ConnectGuardCloudButton, { label: heroCopy.primaryCtaLabel, variant: "primary" });
+    } else {
+      primaryCta = /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: heroCopy.primaryCtaHref, children: heroCopy.primaryCtaLabel });
+    }
+    if (heroCopy.secondaryCtaStartsCloudConnect) {
+      secondaryCta = /* @__PURE__ */ jsxRuntimeExports.jsx(ConnectGuardCloudButton, { label: heroCopy.secondaryCtaLabel, variant: "outline" });
+    } else {
+      secondaryCta = /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: heroCopy.secondaryCtaHref, variant: "outline", children: heroCopy.secondaryCtaLabel });
+    }
+  }
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-8", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       GuardHero,
@@ -1106,8 +1120,8 @@ function FleetWorkspace(props) {
         status: heroCopy.status,
         headline: heroCopy.headline,
         subheadline: heroCopy.subheadline,
-        cta: protectionHealth.state !== "protected" ? null : heroCopy.primaryCtaStartsCloudConnect ? /* @__PURE__ */ jsxRuntimeExports.jsx(ConnectGuardCloudButton, { label: heroCopy.primaryCtaLabel, variant: "primary" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: heroCopy.primaryCtaHref, children: heroCopy.primaryCtaLabel }),
-        secondaryCta: protectionHealth.state !== "protected" ? null : heroCopy.secondaryCtaStartsCloudConnect ? /* @__PURE__ */ jsxRuntimeExports.jsx(ConnectGuardCloudButton, { label: heroCopy.secondaryCtaLabel, variant: "outline" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: heroCopy.secondaryCtaHref, variant: "outline", children: heroCopy.secondaryCtaLabel })
+        cta: primaryCta,
+        secondaryCta
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx(

@@ -250,10 +250,14 @@ def _redact_inventory_store_item(
     *,
     home_dir: Path,
 ) -> dict[str, object]:
-    """Redact local paths before emitting a stored inventory row."""
+    """Redact local paths and endpoint credentials before emitting an inventory row."""
     from . import aibom_cli as api
+    from .inventory_contract_redaction import redact_url
 
     redacted = dict(item)
+    origin_url = item.get("origin_url")
+    if isinstance(origin_url, str) and origin_url:
+        redacted["origin_url"] = redact_url(origin_url)
     config_path = item.get("config_path")
     if isinstance(config_path, str) and config_path:
         redacted["config_path"] = api.redact_local_path(Path(config_path), home_dir=home_dir)

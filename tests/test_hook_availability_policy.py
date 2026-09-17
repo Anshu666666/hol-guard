@@ -1,4 +1,4 @@
-"""Emergency-safe hook floor when native review cannot complete."""
+"""Action classification and current event-specific native availability responses."""
 
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ def test_piped_command_is_not_emergency_safe() -> None:
     assert hook_action_is_emergency_safe(payload) is False
 
 
-def test_availability_allows_inspection_and_pauses_high_impact(tmp_path: Path) -> None:
+def test_ordinary_pretool_unavailability_continues_inspection_and_high_impact(tmp_path: Path) -> None:
     allow = availability_harness_response(
         {
             "hook_event_name": "PreToolUse",

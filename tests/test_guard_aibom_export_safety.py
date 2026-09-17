@@ -42,6 +42,7 @@ def test_export_redacts_paths_without_changing_skill_presence(
         "present": True,
         "custom_field": "preserve-me",
         "launch_command": f"python {home}/server.py --token fake-secret",
+        "origin_url": "https://fixture-user:fixture-password@example.test/mcp?token=fixture-token&version=1",
     }
     store = SimpleNamespace(list_inventory=lambda: [original], get_sync_payload=lambda _key: None)
     context = HarnessContext(home, skill_root, tmp_path / "guard")
@@ -59,6 +60,10 @@ def test_export_redacts_paths_without_changing_skill_presence(
     assert row["trust_verdict"] == "allow"
     assert row["custom_field"] == "preserve-me"
     assert row["launch_command"] == "python {home}/server.py --token redacted"
+    assert row["origin_url"] == "https://example.test/mcp?token=redacted&version=1"
+    for private_value in ("fixture-user", "fixture-password", "fixture-token"):
+        assert private_value not in json.dumps(payload)
+        assert private_value in original["origin_url"]
     assert "fake-secret" not in json.dumps(payload)
     assert original["launch_command"].endswith("--token fake-secret")
     assert str(skill_file) not in json.dumps(payload)

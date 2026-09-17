@@ -19227,7 +19227,12 @@ function parseGuardCloudConnectHttp(status, payload) {
     throw new Error("This Guard window needs a signed local session before Guard Cloud sign-in can start.");
   }
   if (status < 200 || status >= 300) {
-    const message = typeof record2.message === "string" && record2.message.trim() ? record2.message : typeof record2.error === "string" && record2.error.trim() ? `${record2.error} (${status})` : `Request failed with ${status}`;
+    let message = `Request failed with ${status}`;
+    if (typeof record2.message === "string" && record2.message.trim()) {
+      message = record2.message;
+    } else if (typeof record2.error === "string" && record2.error.trim()) {
+      message = `${record2.error} (${status})`;
+    }
     throw new Error(message);
   }
   return {

@@ -3586,11 +3586,16 @@ function SettingsWorkspace({ onApprovalGateChange }) {
         ...proof?.confirmPassword ? { confirm_password: proof.confirmPassword } : {},
         ...proof?.totpCode ? { totp_code: proof.totpCode } : {}
       };
-      const settingsToSave = scope === "approval-gate" ? { approval_gate: approvalGateUpdate } : {
-        ...withoutPresentationSettings(draft),
-        risk_actions: draft.security_level === "custom" ? draft.risk_actions : draft.risk_action_overrides,
-        approval_gate: approvalGateUpdate
-      };
+      let settingsToSave;
+      if (scope === "approval-gate") {
+        settingsToSave = { approval_gate: approvalGateUpdate };
+      } else {
+        settingsToSave = {
+          ...withoutPresentationSettings(draft),
+          risk_actions: draft.security_level === "custom" ? draft.risk_actions : draft.risk_action_overrides,
+          approval_gate: approvalGateUpdate
+        };
+      }
       const payload = await updateSettings(settingsToSave);
       const normalizedPayload = normalizeSettingsPayload(payload);
       setState({ kind: "ready", payload: normalizedPayload });

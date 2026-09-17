@@ -400,6 +400,16 @@ fn evaluate_signals(harness: &str, event: &str, signals: GenericSignals) -> PreT
             );
         }
         if action_type == PreToolActionTypeV1::Command {
+            // A benign command proves only its command text. Independent
+            // structured paths still describe the action the tool will take.
+            if signals.sensitive_target {
+                return generic_result(
+                    action,
+                    "review",
+                    "native_sensitive_access_review",
+                    "HOL Guard requires review before this action can access sensitive local data.",
+                );
+            }
             return generic_result(
                 action,
                 &command_decision.minimum_action,

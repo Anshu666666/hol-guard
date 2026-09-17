@@ -6468,7 +6468,11 @@ function ProtectionCenterWorkspace(props) {
         setState({ kind: "ready", catalog, effective });
         return effective;
       } catch (error) {
-        setState((current) => current.kind === "ready" ? current : { kind: "error", message: error instanceof Error ? error.message : "Extensions are unavailable" });
+        const message = error instanceof Error ? error.message : "Extensions are unavailable";
+        setState((current) => {
+          if (current.kind === "ready") return current;
+          return { kind: "error", message };
+        });
         return null;
       }
     })();

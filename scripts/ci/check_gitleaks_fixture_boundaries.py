@@ -53,7 +53,7 @@ def _new_value(rule_id: str) -> str:
     if rule_id == "curl-auth-header":
         return '\x63url -H "Authorization: Bearer ' + value + '" https://example.invalid'
     if rule_id == "curl-auth-user":
-        return '\x63url -u "control:' + value + '" https://example.invalid'
+        return '\x63url \x2du "control:' + value + '" https://example.invalid'
     raise ValueError("unrecognized fixture rule")
 
 

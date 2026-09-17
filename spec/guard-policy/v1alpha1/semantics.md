@@ -67,3 +67,42 @@ The decision fixtures freeze exact-vs-broad, active-vs-expired, once-vs-permanen
 ## Extensions
 
 An object may contain keys matching `x-[a-z0-9][a-z0-9.-]{0,62}`. Extensions are preserved and participate in canonical hashing/signing. Core enforcement ignores them unless both producer and consumer negotiated that extension contract. An unnegotiated extension cannot affect matching, action, precedence, or lifetime.
+
+## Authority path examples for policy help
+
+Choose the authority path before explaining a winner. There is no single
+Cloud-over-local priority rule across these paths. "Shadowed" below means that
+another applicable input did not determine the effective result; it does not
+mean that the input was deleted.
+
+| Authority path and applicable inputs | Winner | Shadowed input | Reason and execution reference |
+| --- | --- | --- | --- |
+| Generic persisted rows at the same specificity: older valid Cloud `block`, newer local `allow` | Local `allow` | Cloud `block` | When both rows coexist and are eligible, `updated_at` breaks the tie; source is not a priority. `StorePolicyMixin.resolve_policy_decision_lookup`; `test_generic_row_recency_is_not_a_cloud_priority_rule[True]`. |
+| Generic persisted rows at the same specificity: older local `allow`, newer valid Cloud `block` | Cloud `block` | Local `allow` | The same timestamp rule applies in the other direction. `test_generic_row_recency_is_not_a_cloud_priority_rule[False]`. |
+| Generic persisted rows: exact artifact `block`, newer global `allow` | Artifact `block` | Global `allow` | Artifact scope has higher specificity than global scope. The persisted-row ordering applies before timestamp ties; `store_policy.py` and the frozen precedence vectors. |
+| Generic eligible one-shot approval and persisted Cloud rule | The eligible one-shot decision, consumed atomically | Persisted row for that generic lookup | This is the generic store's one-shot path. It does not remove managed restrictions or native intrinsic blocks in other enforcement paths. |
+| Managed/extension permission: signed Cloud `disabled`, local administrator `enabled` on the same permission | Permission remains disabled; control factor blocks | Local `enabled` | `compose_control_layers` gives disable dominance regardless of layer order. Resolver reason is `control.disabled-permission`; `test_managed_permission_disable_retains_its_reason_against_local_enable`. |
+| Managed-restrictive publication attempts `enabled` | Publication fields are rejected | No enablement is applied | `_append_control` raises `managed_restrictive_broadening`. This authority supports restrictions only; there is no accepted enable rule to compare for recency. |
+| Shared Cloud enable targets a non-configurable permission | Enablement is rejected | No enablement is applied | `_append_control` rejects `immutable_floor`; catalog authority determines configurability. |
+| Native pre-tool intrinsic `block`, authenticated native policy `allow` | Intrinsic `block`; deny | Policy `allow` | `apply_pre_tool_policy` joins action floors and validates the typed decision. Native test `policy_allow_cannot_lower_intrinsic_review_or_block`. |
+| Native intrinsic `block` in observe mode | Intrinsic `block`; deny | Any weaker policy-only action | Observe mode does not remove intrinsic blocks. Native tests `observe_pre_policy_floor_is_non_blocking_but_intrinsic_block_is_hard` and `observe_preserves_intrinsic_block_but_does_not_enforce_policy_only_floor`. |
+| Extension global lockdown on typed trusted local recovery surface | Only documented recovery access | Command execution remains blocked | `resolve_extension_controls` preserves observations and exempts the typed recovery surface from the control block; this is not a general command approval. Existing test `test_global_lockdown_preserves_observations_and_allows_only_typed_local_recovery`. |
+
+The generic examples describe selection among existing rows, not write merge
+behavior. Today `_upsert_policy_locked` replaces an exact stored selector key
+before inserting a local decision, regardless of the previous source. If that
+write removed the other row, a help view must describe replacement instead of a
+recency winner between two still-existing rows. The signed-sync proving tests
+create the local row first and then apply the Cloud bundle so both inputs are
+present for the timestamp comparison. This documentation does not change that
+write behavior or claim that deleted rows remain enforceable. This limitation is
+about generic stored rows; it grants no authority to remove managed restrictions
+or native intrinsic safety floors.
+
+Source references: `src/codex_plugin_scanner/guard/store_policy.py`,
+`src/codex_plugin_scanner/guard/managed_controls_policy_fields_core.py`,
+`src/codex_plugin_scanner/guard/runtime/extension_control_resolver.py`, and
+`rust/crates/guard-runtime/src/policy_enforcement.rs`. Python examples execute in
+`tests/test_policy_authority_explanations.py`; native examples refer to the
+existing tests in `rust/crates/guard-runtime/src/policy_enforcement_tests.rs`.
+These examples do not substitute for a signed installed-runtime workflow test.

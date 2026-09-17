@@ -2,8 +2,8 @@
 
 This contract describes the implementation identified in [EXECUTION.md](EXECUTION.md),
 including the 2026-09-17 takeover corrections to Codex continuation, package
-parsing and MCP notification delivery. It includes native command execution,
-control authority and live-process attestation. Source support
+parsing, bounded source experiments and MCP notification delivery. It includes
+native command execution, control authority and live-process attestation. Source support
 is distinct from installed activation and release qualification; exact evidence
 and remaining acceptance are in the [execution ledger](EXECUTION_LEDGER.md).
 
@@ -217,6 +217,20 @@ an inactive experiment: consumers own and match exact inputs, including scalar
 types, container shape, dictionary order and signed zero. No facts value is
 retained across approval/catalog/claim boundaries, and no performance selection
 is inferred from semantic parity tests.
+
+The completed private native text experiment evaluates four category groups
+through 13 fixed predicates. Its whole UTF-8 packet is bounded to 16 MiB including
+the 16-byte envelope, with one admitted request and an exact 13-byte sequence-bound
+response. External MCP framing stays at 4 MiB. Python keeps normalization, current
+policy, catalog and approval authority, credentials and exact forwarding. The
+full source-proxy comparison includes IPC and helper CPU and fails the original
+selection gate; the helper is inactive. RSP-100 remains open because production B
+still derives categories for approval identity and fresh policy separately. A
+private owned-generation implementation attempt is active after this source
+cutoff, with no claimed result. Any prepared lifetime must retain public copy/match
+fallback, callback mutation ordering and binding to the exact forwarded request;
+no cache becomes authority through this experiment.
+
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
 forward is permitted. Quiet drains cannot reset the deadline or discard catalog
@@ -230,6 +244,21 @@ mutation uses the existing cross-process lock, not an invented lifetime-exclusiv
 daemon lease. Checkpoint retry does not invoke the decision engine. Legacy records
 without a stable occurrence timestamp retain their documented best-effort behavior.
 
+## Private Claude launcher boundary
+
+The experimental Linux Claude Pre/Post command is implemented in the existing
+runtime distribution and selected only by private qualification registration.
+Package and registration authentication has its own purpose and is independent
+of daemon discovery. The pilot preserves the original challenge/POST exchange
+on one loopback connection and contains completion under the original absolute
+deadline. Existing daemon/resident policy and approval authority remain unchanged.
+The anonymous sealed input handoff does not put the request in a persistent file
+or argv. Detailed HTTP
+framing and timeout conformance limits are recorded in the [pilot report](claude-native-launcher-pilot.md).
+Component and later focused integration checks pass in their recorded scopes.
+Actual installed wheel parity, native route conservation and paired benefit are
+pending. No default launcher or signed Desktop registration selects this pilot.
+
 ## Source ownership and proof
 
 `scripts/ci/rust_pretool_no_python_gate.py` and `rust_io_ownership_gate.py` protect
@@ -242,4 +271,10 @@ Current test suites cover native contracts, malformed/source mutation, separate
 native approval APIs and ordinary local review reuse, Watch/availability,
 policy publication and scanner parity. Those tests
 are necessary but do not establish installed performance or final code-owner
-approval. The [execution ledger](EXECUTION_LEDGER.md) records those remaining gates.
+approval. The [current source validation](evidence/pilots-checkpoint/source-validation.json)
+pins its 147-test integration set, 42-file lint/format checks and unfiltered
+1,253-file type result, including 20,229 nonfatal warnings and retained initial
+failures. Actual abf retained-Python scanner checks pass 84 cases on three Unix
+hosts; Windows fails before its first case. Neither those functional passes nor
+the narrower Linux native-wheel soak completes installed qualification. The
+[execution ledger](EXECUTION_LEDGER.md) records those remaining gates.

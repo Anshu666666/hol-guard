@@ -17,8 +17,8 @@ implementation tasks. Preserve those fields and thresholds when updating status.
 
 ## Establish the actual source and artifact
 
-This documentation checkpoint covers `ffec9b2d384e3a5069544d4428d0e4b3ddfaa74b` on
-`codex/rsp-takeover-proof-20260917`, dated 2026-09-17. Inspect actual
+This documentation checkpoint covers `7befd329a00f9689b6d648750e64f58082e8986d` on
+`codex/rsp-takeover-pilots-20260917`, dated 2026-09-17. Inspect actual
 HEAD, branch, status and worktree ownership before editing; later work may already
 be integrated. Use isolated worktrees and one owner per shared boundary.
 
@@ -29,8 +29,11 @@ contains squashed main lineage; preserve release-only controls/UI and carried
 main authority without blindly re-merging.
 
 The last published implementation preceding this checkpoint is
-`ae33987d0c8675c36a77375e03419aee920825f6`, Git tree
-`f292bc95eb53af29162fcc8ea7e46a4b213803b7`, verified identical to local 8aa2b63ee.
+`abf319d5a345d761d88e26ba787026e98370c26f`, Git tree
+`62eb319323cc7c9de7513af6ef7f05009d411189`. Paired candidate wheels explicitly
+build abf; actual native-wheel build `70b456e93a77fff48522ee7aa6ddeec6d157f6e6`
+has the same tree. Prior compatible wheels retain their actual a224 build and
+associated ae head separately; never substitute a mutable latest artifact.
 Foundation #2951 is e449594e86c717e66e14598a4130475de79c536f with normal
 protected auto-merge enabled; approval remains missing. Refresh GitHub heads,
 base, checks, reviews, threads and rules before publication/merge claims. Verify
@@ -94,68 +97,87 @@ Read current owner commits and checkpoints before redoing any item:
    Keep all 24 attempted states, unavailable evictions, interrupted/confounded
    cohorts and the separate executable-provenance correction. Production keeps
    the descriptor-bound, size-limited Python reader and explicit incomplete
-   coverage. The final local isolated pure-wheel probe passes28 semantic cases;
-   finish actual installed native-wheel entrypoint checks on all four hosts, with
-   exact launcher/interpreter/wheel origin, staged bytes, limits, exits, links and
-   mutation evidence. Retain the disclosed local build-tool limitation.
-3. Keep the restored optimized Python MCP runtime default while finishing the
-   frozen facts experiments. Commit 88d815e2d removes the candidate runtime wiring;
-   the explicit private facts API/tests remain for measured comparisons.
-   First candidate C preserves semantic parity but regresses 128-KiB p95 47.79%
-   and CPU 17.22% against better Python B; it is not an accepted improvement.
-   Structural candidate D also regresses supported dense containers. Finish its
-   unchanged comparison against B, retaining
-   owned exact-input copies, type/order/signed-zero distinctions, fresh authority,
-   and nested/high-cardinality transient-memory controls. Near-4 MiB ASCII/Unicode leaves material local
-   classification cost, so build the bounded four-predicate private native pilot;
-   retain external 4 MiB framing and Python normalization/policy/approval authority.
-   Include the separate derived-text helper limit and all IPC/memory/CPU costs.
-4. Exercise the repaired expiry renewal on GitHub: preserve acknowledged command
-   controls, require exact accepted ACK and authenticated readback, suspend renewal
-   and prove real expiry under the original 3 s TTL and existing operation budgets.
-   Also execute the four installed posture transition groups under real four-route
-   concurrent load; verify every full authenticated ACK and durable native receipt.
-   Preserve the earlier failed source attempt and the final111-pass source evidence.
-   Also execute the four installed posture transition groups under real four-route
-   concurrent load; verify every full authenticated ACK and durable native receipt.
-   Preserve the earlier failed source attempt and the final111-pass source evidence.
-   Keep every original failure. Recovery, interpreter rejection and capacity now
-   need their bounded actual host evidence; never guess, repair permissions or
-   weaken route conservation to obtain a pass.
-5. Preserve the macOS resolver result. Correct root-owned configuration is selected,
-   direct UDP works, libc produces no observed requests and `getfqdn` still stalls.
-   Do not patch the pinned baseline, change transport, restart/flush services
-   speculatively or raise the 400 ms readiness budget. The new bounded read-only
-   owned-child libc lookup/stack witness runs after qualification and retains the
-   original return, packet counts and resolver state; diagnose from its actual output. The new bounded read-only
-   owned-child libc lookup/stack witness runs after qualification and retains the
-   original return, packet counts and resolver state; diagnose from its actual output.
-6. Run the implemented rejected-downgrade containment and candidate restoration,
-   plus separate functional rollback through an exact compatible prior-candidate wheel.
-   Original baseline rejects the candidate combined command authority schema.
-   Keep all six receipts and stronger floor intact; never remove bindings to make
-   it run. Four pinned prior wheels have actual build a224cc2, distinct from their
-   associated ae PR head. The explicit suite contract requires seven positive
-   phases and one verified expected negative, while retaining the original failed
-   phase and four-of-five positive count. Preserve original registration and prove retirement before replacement.
-   Prior artifact discovery runs inside its mandatory15s contained transition
-   check; missing or changed bytes fail while independent paired/Ollama/scanner
-   checks continue. No mutable latest or rebuild fallback is allowed.
-   Prior artifact discovery runs inside its mandatory15s contained transition
-   check; missing or changed bytes fail while independent paired/Ollama/scanner
-   checks continue. No mutable latest or rebuild fallback is allowed.
-   Windows needs initial worker failure evidence. Same-version stopped transitions
-   cannot qualify changed program/version/signing, enrollment or live generations.
-7. Recheck integrated CI. Full pytest collection succeeds after removing a scanner
-   test's global import-path mutation; the scheduler's actual GitHub job passes.
-   Benchmark-only crate ownership is explicit, and four exact verified Gitleaks
-   source-hash findings have fingerprint-specific exclusions with a clean rescan.
-   Run all required checks on the resulting head, preserving earlier failures.
-8. Finish the private Linux Claude Pre/Post native launcher pilot using the existing
-   runtime distribution. Authenticate package/registration independently of daemon
-   discovery; preserve challenge/POST, response/exit, total deadline, contained
-   recovery and explicit failure disposition. Default and signed Desktop paths
-   remain unchanged until route-specific installed parity and benefit justify use.
+   coverage. Actual abf native-bundled wheels pass all 28 semantic cases on each
+   of Linux and both macOS hosts: 84 passes with no skips. Windows raises
+   `PackageNotFoundError` at initial attestation, before any identity or case.
+   Preserve its exact CRLF probe digest. Run the source-tested environment/reader
+   corrections on a fresh hosted artifact; do not relabel the failed attempt.
+3. Preserve the completed MCP B/C/D and native experiments. Production retains
+   B; C and universal D regress supported inputs. The native four-category helper
+   completes 68 cells, 1,692 forwards and 34 exact pairs but fails the original
+   30% benefit / 5% nonregression gate. Near-limit Unicode median CPU improves
+   29.711838%, below 30%; adverse blocks and ordinary/early-positive controls
+   remain visible. External 4 MiB framing, the separate 16 MiB whole private
+   packet bound, inherited deadline and all IPC/helper CPU costs remain explicit.
+   RSP-098/103/104/108 are complete in their documented source or decision scope;
+   RSP-105/107 activation and positive qualification are deferred for this tested
+   boundary. RSP-106's existing scope is unchanged. RSP-100 stays OPEN: one
+   private owned-generation implementation attempt is active, with no claimed
+   result. Preserve public copy/match fallback, callback mutation order, exact
+   forwarded params and browser/store/claim authority composition. Review and
+   measure the actual candidate before changing production selection.
+4. Complete actual posture, expiry, recovery and route-conservation qualification
+   on the next hosted artifacts. The four posture groups require full authenticated
+   ACKs and durable receipts under concurrent Claude/Codex Pre/Post load. Retain
+   the earlier failed source attempt and its 111 passing corrected checks as
+   historical snapshots. Abf Windows baseline passes enforce-to-Watch and expiry
+   but fails restart, strict-workspace ACK and blocked-publication witnesses;
+   no candidate all-group pass exists. Keep the original 3 s TTL, operation budgets
+   and protected command binding. Linux baseline correctly rejects the shared
+   interpreter target's mode 0777. The new disposable-venv setup copies identical
+   bytes to a private owned 0755 interpreter, preserves the shared target and
+   pyvenv configuration, and requires real ABI/SQLite/SSL/prefix and unchanged
+   installed-validator checks. Actual hosted proof is pending; do not chmod shared
+   files, alter wheel bytes, weaken validation or relax route conservation.
+5. Preserve the macOS resolver findings. The exact daemon fixture calls
+   `_receive(30.0)` during construction; failure JSON does not record observed
+   elapsed startup time. Separate read-only libc lookup probes each have a
+   five-second bound. Numeric lookup passes, system name lookups time out without
+   responder packets, and selected root-owned resolver configuration is unchanged.
+   `scutil` selection listing does not prove query routing or reachability flags.
+   One ARM stack sample identifies allowlisted lookup frames; three other samples
+   time out. Cleanup passes, but no resolver repair is proven. Do not patch the
+   pinned baseline, speculate about service repair or raise the 400 ms readiness
+   budget. Continue from the retained actual diagnostic output.
+6. Preserve both rollback sequences. Exact candidate/prior-a224/candidate stopped
+   replacement passes all three phases on each Unix host. Original 2e downgrade
+   rejects the candidate's combined protected command schema; all six receipts
+   and authority bytes survive, but legacy stop returns 2 and quiescence remains
+   unverified. Expected-negative acceptance stays false and candidate restore was
+   not attempted. The producer-aware containment certificate remains design work;
+   retiring the outer process alone cannot prove detached native clients and
+   supervisors are gone. Keep protected floors and registration intact. The suite
+   still requires seven positive phases and one verified expected negative.
+   Prior artifact discovery runs inside its mandatory 15-second contained check;
+   independent paired/Ollama/scanner checks retain their own outcomes. Windows
+   has no transition JSON after cleanup and reporter failures. Run its source
+   fixes on new hosts. Same-version stopped transitions do not establish live,
+   in-progress, changed-version/program, signing or enrollment rollback.
+7. Run the resulting head's required checks and the pinned CodeQL diagnostics.
+   Foundation has 179 check records: 159 successful, 19 skipped and one failed
+   external CodeQL check reporting two high alerts. Abf's separate external
+   CodeQL check reports three new high alerts even though its Actions analysis
+   workflow succeeds. Neither alert set has exact source attribution yet; do not
+   assume all were introduced by this PR. The implemented diagnostic selects six
+   source/language jobs across fixed e449 and abf, preserving observed settings
+   and retaining raw SARIF in Actions artifacts with no Code Scanning/database
+   upload. Retrieve actual findings, investigate them and fix any substantiated
+   defects before claiming a clean security gate. The latest local manifest pins
+   42-file Ruff/format passes, 147 passing integration tests and 1,253 production
+   files with zero type errors and 20,229 nonfatal warnings. Preserve the initial
+   formatting refusal and CRLF diff-check failure; the latter's interpretation
+   fix changes no retained artifact bytes. This finite evidence is not a full-suite
+   or installed pass, and older 585/111 snapshots remain separate.
+8. Complete installed qualification of the implemented private Linux Claude
+   Pre/Post launcher. Its authenticated package/registration boundary, original
+   challenge/POST and contained completion exist in the current runtime. The final
+   component snapshot passes 81 Python and 12 Rust tests; later helper corrections
+   and selection checks have separate 43-test and 27-test results. Do not describe
+   those as a full rerun of the earlier snapshot. The installed probe requires
+   actual native transport, exact wheel/daemon receipt identity and route
+   conservation; no installed parity or paired benefit result exists yet. Keep
+   detailed HTTP framing/timeout conformance limits visible. Default registration
+   and signed Desktop selection do not select this pilot.
 
 The archive investigation is complete for its declared profiling scope: 508/510
 expected results, two restrictive timeouts and an earlier warmup timeout retained,
@@ -165,14 +187,22 @@ worker could never help. Conditional ports follow the original PRD decision rule
 A native pilot is not mandatory for every optional port, but measured coverage and
 predicted benefit must support a deferral; large unmeasured cases remain open.
 
-At ae33987, all 36 workflows completed: 30 successful, six failed. Both arms
-were attempted on all four platforms, with no complete paired comparison. All
-four installed Ollama probes pass 22 cases and all Builder probes pass. Linux
-and both macOS hosts complete upgrade/reinstall, then old-baseline downgrade
-fails readiness while preserving receipts and authority. Windows stops before
-completed worker evidence. Main CI collection, experimental ownership and exact
-Gitleaks fixes are now integrated; Linux/Intel capacity, expiry and original
-baseline failures require new host evidence. Retain ae, 5ee and 42579 records.
+At abf319, all 36 workflows completed: 31 successful and five failed. The separate
+[all-attempt check inventory](evidence/takeover-abf319/github-check-inventory.json)
+has 199 records: 163 successful, 23 skipped, 12 failed and one cancelled. The latest
+197-record view omits two earlier successful Gitar attempts. Legacy CodeRabbit
+explicitly skipped review because the PR is draft. Both arms were attempted on all four platforms, with one completed Windows baseline
+smoke block, every candidate block failed and no complete pair. Linux/ARM pass
+22 Ollama cases each; Intel and Windows retain readiness failures after ten/two
+cases. All four Builder checks pass. The Linux native-wheel SLO smoke and
+100,000-request/250,000-receipt soak pass with zero errors and stable daemon
+identity, while `qualification_complete` remains false. The macOS native-wheel
+source-reference failures, candidate missing-native results, zero-case Windows
+scanner failure and failed legacy quiescence remain independent observations.
+Read the canonical [abf manifest](evidence/takeover-abf319/manifest.json) and keep
+ae, 5ee and 42579 records historical. Use the [reconstruction manifest](reproducibility/manifest.json)
+for exact measured source/harness scopes; historical collector attribution gaps
+remain unresolved. Later source fixes require actual new-head artifacts and checks.
 
 Local AF_UNIX creation is denied, so do source tests/builds locally and real
 installed daemon/launcher execution on supported GitHub hosts. Protect benchmark
@@ -227,14 +257,17 @@ behavior corrections separately from performance claims.
 Update all 144 task records and regenerate the Markdown ledger with exact evidence,
 counts, unresolved dependencies and original-field integrity. Keep EXECUTION,
 CURRENT_CONTRACT and this prompt aligned with the selected source and dated actual
-GitHub state. At this checkpoint the count is 70 DONE/33 OPEN/33 BLOCKED/8 DEFERRED; those
-numbers do not claim release completion. Scoped conditional package/scanner
-production ports are deferred after their measured no-go decisions. RSP-144 stays open until final evidence,
+GitHub state. At this checkpoint the count is 74 DONE/31 OPEN/29 BLOCKED/10 DEFERRED; those
+numbers do not claim release completion. Scoped conditional package, scanner and
+MCP production ports are deferred after their measured no-go decisions. RSP-144
+stays open until final evidence,
 conditional decisions and release state are delivered.
 
 Obtain final Greptile 5/5 and required independent CODEOWNER approval through the
 actual review process, resolve threads and required CI on the published head.
-Foundation's protected auto-merge does not waive implementation approval. Never
+Foundation's protected auto-merge and recorded Greptile 5/5 do not clear its
+CodeQL failure or supply independent last-push CODEOWNER approval. Neither does
+a successful Actions workflow clear abf's separate CodeQL application failure. Never
 fabricate approval, self-approve as the author or bypass the release ruleset.
 
 Prepare exact qualified candidate/prior artifact manifests, platform/harness

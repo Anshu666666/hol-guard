@@ -7,21 +7,61 @@ import hashlib
 import json
 import os
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
 FOUNDATION_SHA = "e449594e86c717e66e14598a4130475de79c536f"
 FOUNDATION_TREE = "b6a17d026500c1821d02b5a9202b544be0874377"
 OBSERVED_MERGE_SHA = "b9395b11c216a52a0bea9eb937d7cd7cf6b2770b"
+IMPLEMENTATION_SHA = "abf319d5a345d761d88e26ba787026e98370c26f"
+IMPLEMENTATION_TREE = "62eb319323cc7c9de7513af6ef7f05009d411189"
+IMPLEMENTATION_MERGE_SHA = "70b456e93a77fff48522ee7aa6ddeec6d157f6e6"
 CODEQL_ACTION_SHA = "8aad20d150bbac5944a9f9d289da16a4b0d87c1e"
 CODEQL_VERSION = "2.27.0"
+OBSERVED_CLI_BUILD = "b47b3e59262c95aff4eeb84ac72d09e25a9c37e9"
 SARIF_FILES = {"actions": "actions.sarif", "javascript-typescript": "javascript.sarif", "python": "python.sarif"}
 QUERY_PACKS = {"actions": "0.6.35", "javascript-typescript": "2.4.5", "python": "1.8.10"}
 MAX_SARIF_BYTES = 128 * 1024 * 1024
 
 
-def source_identity(root: Path) -> dict[str, object]:
+@dataclass(frozen=True)
+class SnapshotProfile:
+    commit: str
+    tree: str
+    analyzed_merge: str
+    workflow_run: int
+    alert_check: int
+    high_alerts: int
+    analysis_jobs: dict[str, int]
+
+
+# Only these observed snapshots may be selected; the CLI accepts no Git ref.
+PROFILES = {
+    "foundation": SnapshotProfile(
+        FOUNDATION_SHA,
+        FOUNDATION_TREE,
+        OBSERVED_MERGE_SHA,
+        35181898004,
+        105075778732,
+        2,
+        {"actions": 105075647482, "javascript-typescript": 105075647388, "python": 105075647242},
+    ),
+    "implementation": SnapshotProfile(
+        IMPLEMENTATION_SHA,
+        IMPLEMENTATION_TREE,
+        IMPLEMENTATION_MERGE_SHA,
+        35229526605,
+        105229882410,
+        3,
+        {"actions": 105229666643, "javascript-typescript": 105229666837, "python": 105229666277},
+    ),
+}
+
+
+def source_identity(root: Path, profile_name: str = "foundation") -> dict[str, object]:
     """Read tracked Git identity without executing repository programs or hooks."""
+    profile = PROFILES[profile_name]
     try:
         result = subprocess.run(
             ["git", "-C", str(root), "rev-parse", "HEAD", "HEAD^{tree}"],
@@ -47,7 +87,7 @@ def source_identity(root: Path) -> dict[str, object]:
         "commit": commit,
         "tree": tree,
         "tracked_clean": clean,
-        "matches_pin": commit == FOUNDATION_SHA and tree == FOUNDATION_TREE and clean,
+        "matches_pin": commit == profile.commit and tree == profile.tree and clean,
     }
 
 
@@ -94,12 +134,15 @@ def collect(
     observed_version: str,
     init_outcome: str,
     analyze_outcome: str,
+    *,
+    profile_name: str = "foundation",
 ) -> dict[str, object]:
     """Always retain an incomplete manifest when setup, analysis or identity fails."""
-    identity = source_identity(source_root)
+    profile = PROFILES[profile_name]
+    identity = source_identity(source_root, profile_name)
     sarif, errors = sarif_identity(results_root / SARIF_FILES[language])
     if not identity["matches_pin"]:
-        errors.append("foundation_identity_mismatch")
+        errors.append(f"{profile_name}_identity_mismatch")
     if observed_version != CODEQL_VERSION:
         errors.append("codeql_version_unproven")
     if init_outcome != "success":
@@ -107,16 +150,21 @@ def collect(
     if analyze_outcome != "success":
         errors.append("analysis_incomplete")
     report: dict[str, object] = {
-        "schema": "guard.codeql-foundation-diagnostic.v1",
+        "schema": "guard.codeql-snapshot-diagnostic.v1",
+        "profile": profile_name,
         "source": identity,
-        "expected_commit": FOUNDATION_SHA,
-        "expected_tree": FOUNDATION_TREE,
-        "original_analyzed_merge": OBSERVED_MERGE_SHA,
-        "original_workflow_run": 35181898004,
-        "original_alert_check": 105075778732,
+        "expected_commit": profile.commit,
+        "expected_tree": profile.tree,
+        "original_analyzed_merge": profile.analyzed_merge,
+        "original_workflow_run": profile.workflow_run,
+        "original_analysis_job": profile.analysis_jobs[language],
+        "original_alert_check": profile.alert_check,
+        "original_high_alert_count": profile.high_alerts,
+        "original_alert_overlap_known": False,
         "language": language,
         "codeql_action": CODEQL_ACTION_SHA,
         "expected_cli_version": CODEQL_VERSION,
+        "original_cli_build": OBSERVED_CLI_BUILD,
         "observed_cli_version": observed_version[:64],
         "original_bundled_query_pack_version": QUERY_PACKS[language],
         "query_selection": "bundle_default_queries",
@@ -143,6 +191,7 @@ def collect(
 class Arguments(argparse.Namespace):
     phase: str = ""
     source_root: Path = Path(".")
+    profile: str = "foundation"
     results_root: Path | None = None
     language: str | None = None
     observed_version: str = ""
@@ -154,6 +203,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("phase", choices=("verify", "collect"))
     _ = parser.add_argument("--source-root", type=Path, required=True)
+    _ = parser.add_argument("--profile", choices=tuple(PROFILES), default="foundation")
     _ = parser.add_argument("--results-root", type=Path)
     _ = parser.add_argument("--language", choices=tuple(SARIF_FILES))
     _ = parser.add_argument("--observed-version", default="")
@@ -162,8 +212,8 @@ def main() -> int:
     args = Arguments()
     _ = parser.parse_args(namespace=args)
     if args.phase == "verify":
-        if not source_identity(args.source_root)["matches_pin"]:
-            parser.exit(1, "Foundation source identity does not match the immutable diagnostic pin.\n")
+        if not source_identity(args.source_root, args.profile)["matches_pin"]:
+            parser.exit(1, "Source identity does not match the selected immutable diagnostic profile.\n")
         return 0
     if args.results_root is None or args.language is None:
         parser.error("collect requires --results-root and --language")
@@ -174,6 +224,7 @@ def main() -> int:
         args.observed_version,
         args.init_outcome,
         args.analyze_outcome,
+        profile_name=args.profile,
     )
     completion = {"diagnostic_analysis_complete": report["diagnostic_analysis_complete"], "errors": report["errors"]}
     print(json.dumps(completion))

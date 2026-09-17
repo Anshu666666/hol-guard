@@ -90,6 +90,18 @@ Both macOS jobs fail the large source-reference witness with no native result:
 ARM at `pi/PostToolUse/5m` sample 23 and Intel at `codex/PostToolUse/5m` sample 18.
 Those wheel failures are distinct from the paired candidate failures above.
 
+The later [complete check inventory](github-check-inventory.json) separates the
+36 Actions workflows (31 successful, five failed) from all 199 exact-head check
+attempts (163 successful, 23 skipped, 12 failed, one cancelled). The default latest
+view contains 197 checks; two earlier successful Gitar attempts account for the
+difference. The separate
+[CodeQL security check](https://github.com/hashgraph-online/hol-guard/runs/105229882410)
+reports three high-severity alerts even though its analysis workflow succeeds.
+The connector cannot read the annotations endpoint, so this record does not
+identify their rules or locations, infer introduction by this PR, or equate them
+with the foundation PR's two alerts. CodeRabbit's separate successful commit
+status explicitly says review was skipped because the PR is a draft.
+
 `manifest.json` verifies all eight downloaded ZIP digests against the GitHub
 artifact API and retains all 51 JSON members with decoded values unchanged.
 Eight records reference the scanner owner's canonical copies. Five original

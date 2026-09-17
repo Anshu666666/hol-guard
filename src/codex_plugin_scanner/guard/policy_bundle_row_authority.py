@@ -74,7 +74,9 @@ def current_policy_bundle_row_authorities(
                     _canonical_utc_timestamp(decision.expires_at) if decision.expires_at is not None else None,
                     materialized_at,
                 )
-            ] = canonical_rule_identity(validated_bundle, decision.owner)
+            ] = canonical_rule_identity(
+                validated_bundle, decision.owner, installation_id=str(device["installation_id"])
+            )
         return identities
     except (KeyError, OSError, RuntimeError, TypeError, ValueError):
         return {}

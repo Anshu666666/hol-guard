@@ -116,7 +116,7 @@ def bind_saved_policy_identity(
         or selected is None
     ):
         return reuse
-    return replace(reuse, policy_rule_identity=PolicyRuleIdentity.from_mapping(selected))
+    return replace(reuse, policy_rule_identity=PolicyRuleIdentity.from_selected_row(selected))
 
 
 def evaluate_approval_reuse(

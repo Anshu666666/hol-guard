@@ -209,9 +209,7 @@ def test_signed_unpublished_generic_v2_bundle_is_not_admitted(
     assert isinstance(last_error, dict)
     assert last_error.get("reason") == "inactive_rollout_state"
     acknowledgement = store.get_sync_payload("policy_bundle_ack")
-    assert acknowledgement == {} or (
-        isinstance(acknowledgement, dict) and acknowledgement.get("status") != "applied"
-    )
+    assert acknowledgement == {} or (isinstance(acknowledgement, dict) and acknowledgement.get("status") != "applied")
     remaining_rows = [row["artifact_id"] for row in store.list_policy_decisions()]
     assert "command:draft-block" not in remaining_rows
     assert "command:live-block" in remaining_rows

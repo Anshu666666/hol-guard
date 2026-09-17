@@ -319,7 +319,7 @@ def _run_guard_policy_document_command(
                 include_provenance=True,
             )
             difference = diff_policy_documents(current_document, document)
-            plan = store.plan_policy_document_import(compiled, mode=mode)
+            plan = store.plan_policy_document_import(compiled, mode=mode, document=document)
             dry_run = bool(args.dry_run)
             if dry_run:
                 _write_payload(

@@ -70,11 +70,11 @@ def test_local_rows_round_trip_through_canonical_document() -> None:
             {
                 "decision_id": 7,
                 "harness": "codex",
-                "scope": "artifact",
+                "scope": "workspace",
                 "artifact_id": "skill:hol/deploy",
                 "artifact_hash": "sha256:abc",
                 "workspace": "/workspace",
-                "publisher": "hashgraph-online",
+                "publisher": None,
                 "action": "allow",
                 "reason": "Approved deployment skill",
                 "owner": "owner@example.com",
@@ -99,11 +99,11 @@ def test_local_rows_round_trip_through_canonical_document() -> None:
     assert len(compiled) == 1
     assert compiled[0].rule_id == "local-7"
     assert compiled[0].decision.harness == "codex"
-    assert compiled[0].decision.scope == "artifact"
+    assert compiled[0].decision.scope == "workspace"
     assert compiled[0].decision.artifact_id == "skill:hol/deploy"
     assert compiled[0].decision.artifact_hash == "sha256:abc"
     assert compiled[0].decision.workspace == "/workspace"
-    assert compiled[0].decision.publisher == "hashgraph-online"
+    assert compiled[0].decision.publisher is None
     assert compiled[0].decision.action == "allow"
 
 
@@ -237,7 +237,7 @@ def test_export_order_is_stable_when_primary_fields_tie() -> None:
 
 
 def test_compile_rejects_effect_not_supported_by_local_store() -> None:
-    document = _policy_document(effect="review")
+    document = _policy_document(effect="warn")
 
     with pytest.raises(PolicyCompilationError, match="unsupported_policy_effect"):
         compile_policy_document(document)

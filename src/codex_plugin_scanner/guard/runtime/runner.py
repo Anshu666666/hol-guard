@@ -2471,7 +2471,7 @@ def _build_canonical_policy_bundle_decisions(
         devices = match.get("devices")
         if isinstance(devices, list) and devices:
             device_selectors = {str(value) for value in devices}
-            if device_id not in device_selectors and device_name not in device_selectors:
+            if device_id not in device_selectors:
                 continue
             match.pop("devices", None)
         local_rules.append(raw_rule)

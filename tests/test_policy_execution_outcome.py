@@ -188,8 +188,9 @@ def test_source_removed_after_real_child_completion_does_not_relabel_the_receipt
 
     def execute_then_clear_source(*args, **kwargs):
         result = actual_run(*args, **kwargs)
-        completed.append(result.returncode)
-        store.clear_policy_bundle_authority(_NOW, policy_bundle_last_error={})
+        if args and isinstance(args[0], (list, tuple)) and tuple(args[0][-2:]) == ("install", "synthetic-known@1.0.0"):
+            completed.append(result.returncode)
+            store.clear_policy_bundle_authority(_NOW, policy_bundle_last_error={})
         return result
 
     monkeypatch.setattr("codex_plugin_scanner.guard.local_supply_chain.subprocess.run", execute_then_clear_source)

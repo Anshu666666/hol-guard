@@ -10031,7 +10031,6 @@ url = http://127.0.0.1:8787/guard-canary
         thread.start()
         try:
             _seed_sync_credentials(home_dir, f"http://127.0.0.1:{server.server_port}/receipts")
-            login_rc = 0
 
             sync_rc = main(["guard", "sync", "--home", str(home_dir), "--json"])
             sync_output = json.loads(capsys.readouterr().out)
@@ -10044,10 +10043,10 @@ url = http://127.0.0.1:8787/guard-canary
                 "receiptsStored": 1,
             }
 
-        assert login_rc == 0
         assert sync_rc == 1
         assert sync_output == {
             "synced": False,
+            "http_status": 403,
             "error": "Guard sync requires a Pro or Team plan.",
         }
 

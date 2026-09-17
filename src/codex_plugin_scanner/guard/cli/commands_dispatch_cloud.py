@@ -47,6 +47,7 @@ from ._commands_shared import *
 from .commands_dispatch_cloud_review import apply_connect_time_cloud_review_consent
 from .commands_parser_helpers import *
 from .commands_support_service import _dispatch_guard_daemon_command
+from .commands_sync_output import sync_failure_payload, sync_success_payload
 
 
 def _cloud_guard_sync_auth_context(store: GuardStore) -> dict[str, object]:
@@ -323,23 +324,17 @@ def _run_guard_sync_command(
     except (GuardSyncAuthorizationExpiredError, GuardSyncNotConfiguredError) as error:
         message = _guard_sync_failure_message(error)
         if getattr(args, "json", False):
-            _emit("sync", {"synced": False, "error": message}, True)
+            _emit("sync", sync_failure_payload(error, message=message), True)
         else:
             print(message, file=sys.stderr)
         return 1
     except RuntimeError as error:
         if getattr(args, "json", False):
-            _emit("sync", {"synced": False, "error": str(error)}, True)
+            _emit("sync", sync_failure_payload(error), True)
         else:
             print(str(error), file=sys.stderr)
         return 1
-    receipts = payload.get("receipts")
-    if isinstance(receipts, dict):
-        payload.setdefault("receipt_upload_status", receipts.get("receipt_upload_status"))
-        payload.setdefault("policy_validation_status", receipts.get("policy_validation_status"))
-        payload.setdefault("policy_application_status", receipts.get("policy_application_status"))
-        payload.setdefault("policy_rejection_reason", receipts.get("policy_rejection_reason"))
-    _emit("sync", payload, getattr(args, "json", False))
+    _emit("sync", sync_success_payload(payload), getattr(args, "json", False))
     return 0
 
 

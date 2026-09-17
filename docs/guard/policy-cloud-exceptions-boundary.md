@@ -17,8 +17,10 @@ artifact, publisher, harness, workspace, and global scopes. Availability in a
 particular workflow is limited to the targets it advertises. Do not infer an
 unsupported scope or target from a display label.
 
-Remembered decisions, Cloud exceptions, and strict settings have separate
-purposes. Exact Cloud Review resolves one pending request. It does not create
+Remembered rules, Cloud exceptions, and strict settings have separate
+purposes. Remembered rules apply only within their recorded scope. Evidence
+records observations and outcomes; it does not grant policy authority. Exact
+Cloud Review resolves one pending request. It does not create
 reusable policy. Immutable blocks cannot be approved remotely. Check the
 returned continuation result separately from approval; manual retry or an
 unsupported continuation must not be presented as successful resumption.

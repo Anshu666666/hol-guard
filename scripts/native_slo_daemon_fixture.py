@@ -19,7 +19,7 @@ from contextlib import suppress
 from http.client import HTTPConnection
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -40,6 +40,9 @@ from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # 
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
 from scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402
 from scripts.native_slo_windows_job_resources import WindowsJobCpuReader, WindowsJobCpuSnapshot  # noqa: E402
+
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 
 _CONTROL_LIMIT = 256 * 1024
 
@@ -69,6 +72,12 @@ class DaemonFixture:
     """Daemon/helper/resident tree independent of the benchmark load generator."""
 
     def __init__(self, runtime: Path, *, setup: str | None = None, policy: str | None = None) -> None:
+        # Assigned only after the existing ready acknowledgement; these
+        # annotations deliberately do not create attributes before __enter__.
+        self.root: Path
+        self.workspace: Path
+        self.guard_home: Path
+        self.daemon: SimpleNamespace
         self.runtime = runtime
         self.setup = setup
         self.policy = policy
@@ -219,9 +228,9 @@ class DaemonFixture:
             self.root = Path(str(ready["root"]))
             self.workspace = Path(str(ready["workspace"]))
             self.guard_home = Path(str(ready["guard_home"]))
-            self.readiness_ms = float(ready["readiness_ms"])
+            self.readiness_ms = float(cast(float, ready["readiness_ms"]))
             self.daemon = SimpleNamespace(
-                port=int(ready["port"]),
+                port=int(cast(int, ready["port"])),
                 _server=SimpleNamespace(
                     auth_token=str(ready["auth_token"]),
                     hook_worker=SimpleNamespace(metrics=_RemoteMetrics(self)),
@@ -238,7 +247,7 @@ class DaemonFixture:
     def request(self, harness: str, request_payload: Mapping[str, object]) -> tuple[Mapping[str, object], float]:
         started = time.perf_counter()
         response = _request(
-            self.daemon,
+            cast("GuardDaemonServer", cast(object, self.daemon)),
             guard_home=self.guard_home,
             workspace=self.workspace,
             harness=harness,
@@ -283,7 +292,7 @@ class DaemonFixture:
         return self.control("stop_resident").get("contained") is True
 
     def native_overload_count(self) -> int:
-        return int(self.control("native_overloads")["count"])
+        return int(cast(int, self.control("native_overloads")["count"]))
 
     def close(self) -> None:
         if self._closed:
@@ -394,11 +403,13 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
 
 
 def _serve_session(session: Any, fault: Any) -> None:
+    from scripts.native_slo_identity_phases import IdentityObserver
     from scripts.native_slo_launcher_review import LauncherReviewFixture
     from scripts.native_slo_mixed_server import MixedScenarioFixture
     from scripts.native_slo_phases import PhaseProfiler
 
     profiler: PhaseProfiler | None = None
+    identity_observer: IdentityObserver | None = None
     mixed = MixedScenarioFixture(session)
     launcher_review = LauncherReviewFixture(session)
     try:
@@ -433,7 +444,15 @@ def _serve_session(session: Any, fault: Any) -> None:
                 _emit({"contained": session.stop_resident()})
             elif operation == "native_overloads":
                 _emit({"count": session.native_overload_count()})
-            elif operation == "phases_start" and profiler is None:
+            elif operation == "identity_start" and identity_observer is None and profiler is None:
+                identity_observer = IdentityObserver()
+                identity_observer.__enter__()
+                _emit({"started": True})
+            elif operation == "identity_finish" and identity_observer is not None:
+                identity_observer.__exit__()
+                _emit(identity_observer.report())
+                identity_observer = None
+            elif operation == "phases_start" and profiler is None and identity_observer is None:
                 profiler = PhaseProfiler()
                 profiler.__enter__()
                 _emit({"started": True})
@@ -453,6 +472,8 @@ def _serve_session(session: Any, fault: Any) -> None:
                 raise RuntimeError("unsupported daemon fixture operation")
     finally:
         try:
+            if identity_observer is not None:
+                identity_observer.__exit__()
             launcher_review.close()
         finally:
             mixed.close()

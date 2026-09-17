@@ -15,6 +15,8 @@ default = []
 native-claude-launcher-pilot = ["nix/user"]
 # Allocation counting is opt-in and the allocator is installed only in tests.
 diagnostic-allocations = ["dep:stats_alloc"]
+# Diagnostic wheel only; ordinary release builds contain no client timers.
+diagnostic-native-client = []
 
 [dependencies]
 guard-command = { path = "../guard-command" }

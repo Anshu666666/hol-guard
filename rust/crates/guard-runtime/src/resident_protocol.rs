@@ -93,6 +93,8 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
     }
     #[cfg(feature = "native-claude-launcher-pilot")]
     features.push("claude-launcher-pilot-v1".into());
+    #[cfg(feature = "diagnostic-native-client")]
+    features.push("native-client-profile-v1".into());
     RuntimeCapabilitiesV1 {
         protocol_version: NATIVE_PROTOCOL_VERSION,
         runtime_version: crate::PACKAGE_VERSION.to_owned(),

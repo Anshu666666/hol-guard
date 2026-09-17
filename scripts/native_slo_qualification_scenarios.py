@@ -15,6 +15,7 @@ from typing import cast
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_daemon_fixture import DaemonFixture
 from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_identity_run import measure_evaluated_identity
 from scripts.native_slo_launcher_corpus import run_registered_approval_corpus
 from scripts.native_slo_launcher_input import run_registered_input_corpus
 from scripts.native_slo_launcher_utf8 import run_registered_utf8_observation
@@ -98,6 +99,10 @@ def run_additional_scenarios(
         report["passed"] = report.get("implemented_scope_passed") is True
         return report
 
+    def identity() -> dict[str, object]:
+        with DaemonFixture(runtime, setup="normal") as session:
+            return measure_evaluated_identity(session, raw_file.with_name(raw_file.stem + "-identity-cases.jsonl"))
+
     def raw_utf8() -> dict[str, object]:
         with DaemonFixture(runtime, setup="normal") as session:
             return run_registered_utf8_observation(
@@ -127,6 +132,11 @@ def run_additional_scenarios(
             phases,
             evidence_file=raw_file.with_name(raw_file.stem + "-phase-summary.json"),
             scope="diagnostic_instrumented_run",
+        ),
+        "runtime_identity": _retained_scenario(
+            identity,
+            evidence_file=raw_file.with_name(raw_file.stem + "-identity-summary.json"),
+            scope="prepared_resident_first_hook_and_warm",
         ),
         "priority_input": _retained_scenario(
             inputs,

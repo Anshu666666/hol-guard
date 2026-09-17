@@ -41,6 +41,12 @@ from codex_plugin_scanner.guard.native_runtime import (
 )
 from codex_plugin_scanner.guard.runtime.hook_review_types import HookReviewRequest
 from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_probe_corpus_witness import (
+    InstalledCorpusDeliveryWitness,
+)
+from scripts.native_probe_corpus_witness import (
+    delivery_diagnostic as _delivery_diagnostic,
+)
 from scripts.native_probe_receipts import (
     receipt_corpus_is_complete,
     wait_for_receipt_corpus,
@@ -102,14 +108,6 @@ def _require(condition: bool, detail: object) -> None:
         raise RuntimeError(f"native_default_auto_probe_failed: {detail}")
 
 
-def _permission_decision(response: Mapping[str, object]) -> str | None:
-    specific = response.get("hookSpecificOutput")
-    if not isinstance(specific, Mapping):
-        return None
-    value = specific.get("permissionDecision")
-    return value if isinstance(value, str) else None
-
-
 def _prepare_empty_command_authority(store: GuardStore) -> dict[str, str]:
     """Provision generated production keys only inside this fresh CI fixture.
 
@@ -122,33 +120,6 @@ def _prepare_empty_command_authority(store: GuardStore) -> dict[str, str]:
     from scripts.native_slo_command_fixture import prepare_empty_command_authority
 
     return prepare_empty_command_authority(store)
-
-
-def _delivery_diagnostic(response: Mapping[str, object]) -> dict[str, object]:
-    """Fixed public codes only: never log source text or arbitrary reasons."""
-
-    allowed = {
-        "decision": {"allow", "deny", "block", "review", "ask"},
-        "policy_action": {"allow", "warn", "block", "review", "suppress"},
-        "reason_code": {
-            "native_exact_safe_command",
-            "native_command_control_authority_block",
-            "native_command_control_mutation_in_progress",
-            "native_request_invalid_json",
-            "native_policy_warning",
-            "native_policy_block",
-            "native_policy_snapshot_unavailable",
-            "native_hook_unavailable",
-            "output_secret_match",
-        },
-    }
-    result: dict[str, object] = {}
-    for field, choices in allowed.items():
-        value = response.get(field)
-        result[field] = value if isinstance(value, str) and value in choices else (None if value is None else "other")
-    permission = _permission_decision(response)
-    result["permission_decision"] = permission if permission in {None, "allow", "deny", "ask"} else "other"
-    return result
 
 
 def _native_state_files(guard_home: Path) -> list[Path]:
@@ -235,6 +206,7 @@ def _exercise_installed_routes(
     routes: dict[str, dict[str, str]],
     route_receipts: list[dict[str, str]],
     reason_codes: dict[str, int],
+    delivery_witness: InstalledCorpusDeliveryWitness | None = None,
 ) -> None:
     for harness, route in sorted(routes.items()):
         events: list[tuple[str, dict[str, object]]] = []
@@ -265,8 +237,11 @@ def _exercise_installed_routes(
                 response_payload = _installed_hook_request(daemon, guard_home, workspace, harness, event, payload)
             if response_payload is None:
                 raise RuntimeError(f"empty response for {harness} {event}")
+            allowed = is_allowed(event, response_payload)
+            if delivery_witness is not None:
+                delivery_witness.record(harness, event, response_payload, allowed=allowed)
             _require(
-                is_allowed(event, response_payload),
+                allowed,
                 {
                     "harness": harness,
                     "event": event,
@@ -341,6 +316,7 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
         _ = register_workspace(workspace)
     reason_codes: dict[str, int] = {}
     route_receipts: list[dict[str, str]] = []
+    delivery_witness = InstalledCorpusDeliveryWitness()
     routes = _ownership_routes()
     daemon.start()
     mode_invariants: dict[str, dict[str, object]] = {}
@@ -360,7 +336,9 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
                 "policy_ready": prepared_policy is not None,
             },
         )
-        _exercise_installed_routes(daemon, guard_home, workspace, routes, route_receipts, reason_codes)
+        _exercise_installed_routes(
+            daemon, guard_home, workspace, routes, route_receipts, reason_codes, delivery_witness
+        )
         worker_stats = wait_for_route_corpus(
             daemon._server.hook_worker.metrics,
             expected=len(route_receipts),
@@ -370,18 +348,19 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
         evidence_stats = wait_for_receipt_corpus(writer, expected=len(route_receipts))
     finally:
         daemon.stop()
-    if not isinstance(worker_stats, Mapping) or not isinstance(evidence_stats, Mapping):
-        raise RuntimeError("native_default_auto_probe_failed: hook corpus stats missing")
     expected = len(route_receipts)
-    observed_routes_raw = worker_stats["routes"]
-    if not isinstance(observed_routes_raw, dict):
-        raise RuntimeError(f"native_default_auto_probe_failed: invalid route metrics: {worker_stats}")
-    observed_routes = cast(dict[str, int], observed_routes_raw)
-    _require(expected > 0, "installed hook corpus is empty")
-    _require(expected == 21, {"expected": expected, "routes": routes})
-    _require(sum(observed_routes.values()) == expected, worker_stats)
-    _require(observed_routes.get("native_resident") == expected, worker_stats)
-    _require(receipt_corpus_is_complete(evidence_stats, expected=expected), evidence_stats)
+    with delivery_witness.aggregate_validation(expected=expected, worker_stats=worker_stats):
+        if not isinstance(worker_stats, Mapping) or not isinstance(evidence_stats, Mapping):
+            raise RuntimeError("native_default_auto_probe_failed: hook corpus stats missing")
+        observed_routes_raw = worker_stats["routes"]
+        if not isinstance(observed_routes_raw, dict):
+            raise RuntimeError(f"native_default_auto_probe_failed: invalid route metrics: {worker_stats}")
+        observed_routes = cast(dict[str, int], observed_routes_raw)
+        _require(expected > 0, "installed hook corpus is empty")
+        _require(expected == 21, {"expected": expected, "routes": routes})
+        _require(sum(observed_routes.values()) == expected, worker_stats)
+        _require(observed_routes.get("native_resident") == expected, worker_stats)
+        _require(receipt_corpus_is_complete(evidence_stats, expected=expected), evidence_stats)
     return {
         "command_authority_fixture": command_authority_fixture,
         "routes": route_receipts,

@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+use crate::native_client_profile::{self as profile, Phase};
 #[cfg(not(windows))]
 use std::io::Write;
 use std::path::Path;
@@ -130,25 +131,27 @@ fn try_home_states(
     deadline: Instant,
     preferred_digest: &str,
 ) -> Result<Option<Vec<u8>>, String> {
-    let runtime_digest = runtime_digest()?;
-    for (_scope, _digest, state) in discover_home_states_prefer(state_base, Some(preferred_digest))?
-    {
+    let runtime_digest = profile::measure(Phase::RuntimeIdentity, runtime_digest)?;
+    for (_scope, _digest, state) in profile::measure(Phase::Discovery, || {
+        discover_home_states_prefer(state_base, Some(preferred_digest))
+    })? {
         let timeout = deadline.saturating_duration_since(Instant::now());
         if timeout.is_zero() {
             return Ok(None);
         }
         let same_runtime = runtime_digest == state.runtime_sha256;
-        if (same_runtime
-            && validate_package_process_identity(state.process_id, &state.process_start_marker)
-                .is_err())
-            || (!same_runtime
-                && validate_runtime_process_identity(
+        let peer = profile::measure(Phase::PeerValidation, || {
+            if same_runtime {
+                validate_package_process_identity(state.process_id, &state.process_start_marker)
+            } else {
+                validate_runtime_process_identity(
                     state.process_id,
                     &state.process_start_marker,
                     &state.runtime_sha256,
                 )
-                .is_err())
-        {
+            }
+        });
+        if peer.is_err() {
             continue;
         }
         let token = token_from_state(&state)?;
@@ -195,7 +198,7 @@ fn client_request_with_lease(
     // Keep the caller's budget intact. Windows spawn already has
     // CLIENT_START_TIMEOUT; shrinking every live request by 300ms makes the
     // 250ms command-model SLO miss the ready serve entirely.
-    let digest = runtime_digest()?;
+    let digest = profile::measure(Phase::RuntimeIdentity, runtime_digest)?;
     let scope = state_scope(state_base, &digest)?;
     if let Some(response) = try_home_states(state_base, payload, overall_deadline, &digest)? {
         return Ok(response);

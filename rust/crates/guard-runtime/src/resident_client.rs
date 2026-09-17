@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+use crate::native_client_profile::{self as profile, Phase};
 use sha2::{Digest, Sha256};
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr, TcpStream};
@@ -94,7 +95,7 @@ fn authenticate(
 }
 
 fn validate_runtime_owner(identity: &ExpectedProcessIdentity<'_>) -> Result<(), String> {
-    match identity.digest {
+    profile::measure(Phase::PeerValidation, || match identity.digest {
         Some(digest) => crate::resident_state::validate_runtime_process_identity(
             identity.process_id,
             identity.start_marker,
@@ -104,7 +105,7 @@ fn validate_runtime_owner(identity: &ExpectedProcessIdentity<'_>) -> Result<(), 
             identity.process_id,
             identity.start_marker,
         ),
-    }
+    })
 }
 
 fn connect_loopback_with_digest(
@@ -119,8 +120,13 @@ fn connect_loopback_with_digest(
         return Err("native_client_endpoint_invalid".to_owned());
     }
     validate_runtime_owner(identity)?;
-    let stream = TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT))
-        .map_err(|_| "native_client_connect_failed".to_owned())?;
+    let stream = TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT)).map_err(|_| {
+        // std owns TCP socket construction. A failed connect may have
+        // opened a socket; a successful return proves exactly this one.
+        profile::socket_count_unknown();
+        "native_client_connect_failed".to_owned()
+    })?;
+    profile::socket_opened();
     validate_runtime_owner(identity)?;
     Ok(Box::new(stream))
 }
@@ -148,6 +154,7 @@ fn connect_unix_with_digest(
         None,
     )
     .map_err(|_| "native_client_connect_failed".to_owned())?;
+    profile::socket_opened();
     fcntl(&descriptor, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .map_err(|_| "native_client_connect_failed".to_owned())?;
     fcntl(&descriptor, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC))
@@ -240,6 +247,7 @@ fn write_request(
     let mut request_id = [0u8; FRAME_REQUEST_ID_BYTES];
     getrandom::fill(&mut request_id).map_err(|_| "native_client_random_failed".to_owned())?;
     let digest = Sha256::digest(payload);
+    profile::request_digest(&digest);
     let mut frame = Vec::with_capacity(AUTH_PROOF_BYTES + FRAME_HEADER_BYTES + payload.len());
     frame.extend_from_slice(&hmac_sha256(token, CLIENT_PROOF_LABEL, nonce));
     frame.extend_from_slice(REQUEST_MAGIC);
@@ -304,13 +312,17 @@ pub(crate) fn send_request_for_digest_detailed(
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<Vec<u8>, ResidentClientError> {
     let started = std::time::Instant::now();
-    let mut stream =
-        connect(transport, endpoint, timeout, identity).map_err(ResidentClientError::fatal)?;
+    let mut stream = profile::measure(Phase::Connect, || {
+        connect(transport, endpoint, timeout, identity)
+    })
+    .map_err(ResidentClientError::fatal)?;
     let remaining = timeout.saturating_sub(started.elapsed());
     if remaining.is_zero() {
         return Err("native_client_deadline_exceeded".to_owned().into());
     }
-    let nonce = authenticate(&mut *stream, token, remaining)?;
+    let nonce = profile::measure(Phase::Authentication, || {
+        authenticate(&mut *stream, token, remaining)
+    })?;
     let remaining = timeout.saturating_sub(started.elapsed());
     if remaining.is_zero() {
         return Err("native_client_deadline_exceeded".to_owned().into());
@@ -321,11 +333,15 @@ pub(crate) fn send_request_for_digest_detailed(
     stream
         .set_resident_write_timeout(Some(remaining))
         .map_err(|_| "native_client_timeout_failed".to_owned())?;
-    let request_id = write_request(&mut *stream, token, &nonce, payload)?;
+    let request_id = profile::measure(Phase::RequestWrite, || {
+        write_request(&mut *stream, token, &nonce, payload)
+    })?;
     if started.elapsed() >= timeout {
         return Err("native_client_deadline_exceeded".to_owned().into());
     }
-    read_committed_response(&mut *stream, &request_id)
+    profile::measure(Phase::ResponseRead, || {
+        read_committed_response(&mut *stream, &request_id)
+    })
 }
 
 pub(crate) fn send_request_for_digest(

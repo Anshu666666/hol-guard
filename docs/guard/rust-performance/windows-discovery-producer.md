@@ -38,15 +38,33 @@ identity and a private DACL. Missing identity, unavailable security metadata,
 foreign ownership, or failed exclusive acquisition cannot trigger a fallback ACL
 write. Contending directory handles can therefore cause provisioning to fail.
 
-Exclusive access follows the documented child-propagation suppression behavior
-of [SetSecurityInfo](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-setsecurityinfo).
-This parent operation does not open, rewrite or repair children. A live Windows
-regression compares existing key and nested-child bytes, file identities, raw
-owner/group SIDs, DACL bytes and descriptor control before and after provisioning;
+The eighth attempt showed that exclusive access alone does not preserve child
+security with `SetSecurityInfo`: all five Windows launcher jobs failed the first
+child snapshot comparison. The direct key and nested directory retained bytes,
+identity and owner/group SIDs, but their inherited ACE flags were cleared and
+their DACLs became protected. Each job completed 101 correctness tests, skipped
+six platform cases, failed this one regression and offered no launcher samples.
+The grandchild's security was unchanged. Those failures remain evidence.
+Separately, eighth Main job `105366900597` passed the packaged Windows Core
+bootstrap regression (`1 passed in 52.63s`) with its ordinary-directory setup.
+
+Parent-only provisioning now selects the documented
+[NtSetSecurityObject](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntsetsecurityobject)
+user-mode operation with the existing exclusive handle and complete self-relative
+descriptor. Its flags select only the DACL and DACL protection; ownership is
+verified but never reassigned. An unavailable entry point or unsuccessful status
+fails without a fallback setter. Shared `SetSecurityInfo` callers retain their
+existing behavior. `SetKernelObjectSecurity` is not selected because its Microsoft
+documentation advises against filesystem use.
+
+This operation does not enumerate, open, rewrite or repair children. The live
+Windows regression keeps its exact comparison of existing key and nested-child
+bytes, file identities, raw owner/group SIDs, DACL bytes and descriptor control;
 the inherited key must still be rejected. A separate regression exercises an
 ordinary existing directory followed by fresh key/state publication. The existing
-packaged bootstrap test keeps its ordinary-directory setup. These Windows checks
-must execute before claiming the bootstrap regression resolved on that platform.
+packaged bootstrap test keeps its ordinary-directory setup. The new setter must
+pass these actual Windows checks before child preservation or the platform
+bootstrap correction can be claimed.
 
 Key publication remains exclusive. The existing-key branch and raced-winner read
 retain their prior behavior; they do not repair, rewrite, rotate or newly attest

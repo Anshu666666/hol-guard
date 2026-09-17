@@ -94,8 +94,8 @@ def test_manager_parent_provisioning_retains_identity_ownership_and_exclusive_mu
         if (handle, fault) in {("exclusive", "verify"), ("restored", "restore-acl")}:
             fail()
 
-    def apply(_kernel, handle, descriptor, dacl, directory):
-        assert (handle, descriptor, dacl, directory) == ("exclusive", "descriptor", "dacl", True)
+    def apply(handle, descriptor, *, api):
+        assert (handle, descriptor) == ("exclusive", "descriptor")
         assert events[-1] == ("owner", "exclusive")
         events.append(("apply", handle))
         if fault == "apply":
@@ -107,7 +107,12 @@ def test_manager_parent_provisioning_retains_identity_ownership_and_exclusive_mu
     monkeypatch.setattr(api, "_windows_close_handle", closed)
     monkeypatch.setattr(api, "_windows_verify_private_owner", owner)
     monkeypatch.setattr(api, "_windows_verify_private_dacl", verify)
-    monkeypatch.setattr(api, "_windows_apply_private_dacl", apply)
+    monkeypatch.setattr(windows_state, "_windows_apply_parent_only_dacl", apply)
+    monkeypatch.setattr(
+        api,
+        "_windows_apply_private_dacl",
+        lambda *_args: pytest.fail("parent-only provisioning must not use the recursive setter"),
+    )
     monkeypatch.setattr(
         windows_state, "_windows_create_directory", lambda path, *_args: fault == "created" and path == target
     )
@@ -168,6 +173,46 @@ def test_exclusive_directory_open_rejects_unrelated_operations(options):
     kwargs.update(options)
     with pytest.raises(api.NativePolicySnapshotError, match="exclusive_directory_invalid"):
         windows_io._windows_open_configuration(api, **kwargs)
+
+
+@pytest.mark.parametrize("status", [0, 1, 0xC0000022, -1073741790])
+def test_parent_only_setter_targets_one_handle_and_only_dacl(monkeypatch, status):
+    from ctypes import wintypes
+
+    calls = []
+
+    def setter(*args):
+        calls.append(args)
+        return status
+
+    def library(name):
+        assert name == "ntdll"
+        return SimpleNamespace(NtSetSecurityObject=setter)
+
+    monkeypatch.setattr(api, "_windows_dll", library)
+    descriptor = ctypes.c_void_p(0x1234)
+    if status == 0:
+        windows_state._windows_apply_parent_only_dacl(17, descriptor, api=api)
+    else:
+        with pytest.raises(api.NativePolicySnapshotError, match="parent_acl_apply_failed"):
+            windows_state._windows_apply_parent_only_dacl(17, descriptor, api=api)
+    assert calls == [(17, api._WINDOWS_SECURITY_INFORMATION, descriptor)]
+    assert setter.argtypes == [wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p]
+    assert setter.restype is ctypes.c_int32
+    assert api._WINDOWS_SECURITY_INFORMATION == 0x80000004
+
+
+@pytest.mark.parametrize("missing_library", [False, True])
+def test_parent_only_setter_has_no_fallback_when_unavailable(monkeypatch, missing_library):
+    def library(name):
+        assert name == "ntdll"
+        if missing_library:
+            raise OSError("unavailable")
+        return SimpleNamespace()
+
+    monkeypatch.setattr(api, "_windows_dll", library)
+    with pytest.raises(api.NativePolicySnapshotError, match="parent_acl_apply_unavailable"):
+        windows_state._windows_apply_parent_only_dacl(17, object(), api=api)
 
 
 def _windows_child_snapshot(path, *, directory=False):

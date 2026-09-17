@@ -147,8 +147,7 @@ def _windows_open_configuration(
         elif lock:
             share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE
         if exclusive_directory:
-            # SetSecurityInfo must not propagate this directory's ACEs to
-            # pre-existing children during explicit parent-only provisioning.
+            # Retain exclusive access for the parent-only descriptor write.
             share_mode = 0
     else:
         desired_access = _WINDOWS_GENERIC_READ | (_WINDOWS_GENERIC_WRITE if create_new or repair else 0)

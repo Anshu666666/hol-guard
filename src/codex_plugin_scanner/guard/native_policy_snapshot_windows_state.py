@@ -11,6 +11,7 @@ from typing import Any
 
 from .native_policy_snapshot_constants import (
     _WINDOWS_ERROR_ALREADY_EXISTS,
+    _WINDOWS_SECURITY_INFORMATION,
     NATIVE_RUNTIME_STATE_DIRECTORY,
     NativePolicySnapshotError,
 )
@@ -99,7 +100,6 @@ def _windows_bind_directory_component(
                             api=api,
                             identity=identity,
                             descriptor=descriptor,
-                            dacl=dacl,
                             owner_sid=owner_sid,
                         )
                         opened = True
@@ -138,13 +138,31 @@ def _windows_bind_directory_component(
         raise
 
 
+def _windows_apply_parent_only_dacl(handle: Any, descriptor: Any, *, api: Any) -> None:
+    """Set the bound directory's descriptor without walking its children."""
+
+    import ctypes
+    from ctypes import wintypes
+
+    try:
+        setter = api._windows_dll("ntdll").NtSetSecurityObject
+    except (AttributeError, OSError) as error:
+        raise NativePolicySnapshotError("native_policy_windows_parent_acl_apply_unavailable") from error
+    setter.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p]
+    setter.restype = ctypes.c_int32
+    # NtSetSecurityObject is the documented user-mode, handle-bound operation.
+    # Only the DACL is selected, so the descriptor's owner is not reassigned.
+    # SetSecurityInfo may change existing child inheritance even with share=0.
+    if int(setter(handle, _WINDOWS_SECURITY_INFORMATION, descriptor)) != 0:
+        raise NativePolicySnapshotError("native_policy_windows_parent_acl_apply_failed")
+
+
 def _windows_provision_parent_only(
     path: Path,
     *,
     api: Any,
     identity: tuple[int, int, int],
     descriptor: Any,
-    dacl: Any,
     owner_sid: str,
 ) -> tuple[Any, Any]:
     """Provision the same owned parent exclusively, preserving child security."""
@@ -156,7 +174,7 @@ def _windows_provision_parent_only(
         if _windows_file_identity(information) != identity:
             raise NativePolicySnapshotError("native_policy_windows_parent_identity_changed")
         api._windows_verify_private_owner(handle, owner_sid=owner_sid)
-        api._windows_apply_private_dacl(kernel32, handle, descriptor, dacl, True)
+        _windows_apply_parent_only_dacl(handle, descriptor, api=api)
         api._windows_verify_private_dacl(handle, owner_sid=owner_sid, directory=True)
     finally:
         api._windows_close_handle(kernel32, handle)

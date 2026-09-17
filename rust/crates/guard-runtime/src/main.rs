@@ -6,6 +6,7 @@ mod claude_launcher;
 mod edge;
 mod hardening;
 mod managed_resident;
+mod native_client_profile;
 mod native_hook_receipt;
 mod oneshot;
 mod policy_enforcement;
@@ -192,6 +193,13 @@ fn run() -> Result<(), String> {
         [command, flag, state_dir]
             if command == "resident-client-stream" && flag == "--stdin" =>
         {
+            managed_resident::client_stream(std::path::Path::new(state_dir))
+        }
+        #[cfg(feature = "diagnostic-native-client")]
+        [command, flag, state_dir]
+            if command == "resident-client-stream-profile" && flag == "--stdin" =>
+        {
+            native_client_profile::enable();
             managed_resident::client_stream(std::path::Path::new(state_dir))
         }
         [command, flag, state_dir] if command == "resident-stop" && flag == "--state-dir" => {

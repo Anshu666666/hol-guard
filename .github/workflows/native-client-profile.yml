@@ -1,0 +1,176 @@
+name: Opt-in native client phase diagnostics
+
+on:
+  pull_request:
+    branches: [main, release/3.2]
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - '.github/workflows/native-client-profile.yml'
+      - 'scripts/ci/*native_client_profile*.py'
+      - 'scripts/native_client_profile*.py'
+      - 'scripts/ci/build_claude_pilot_wheel.py'
+      - 'scripts/native_slo*.py'
+      - 'src/codex_plugin_scanner/guard/**'
+      - 'tests/test_native_client_profile*.py'
+      - 'rust/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-client-profile-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'rust-native-client-profile') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'rust-native-client-profile'))
+    name: Client diagnostics (${{ matrix.platform.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            tag: musllinux_1_2_x86_64
+            deployment: '11.0'
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            tag: macosx_13_0_x86_64
+            deployment: '13.0'
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            tag: macosx_11_0_arm64
+            deployment: '11.0'
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            tag: win_amd64
+            deployment: '11.0'
+    runs-on: ${{ matrix.platform.runner }}
+    # At most 88 minutes of individual step budgets plus runner overhead.
+    timeout-minutes: 100
+    defaults:
+      run:
+        shell: bash
+    env:
+      PROFILE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform.deployment }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        timeout-minutes: 2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        timeout-minutes: 3
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        timeout-minutes: 2
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - name: Install locked diagnostic dependencies outside checkout
+        timeout-minutes: 5
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Validate diagnostic source contracts
+        timeout-minutes: 10
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+        run: uv run --no-sync pytest tests/test_native_client_profile*.py -q -rs
+      - name: Install Linux target linker
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install pinned Rust toolchain
+        timeout-minutes: 5
+        run: rustup toolchain install 1.88.0 --profile minimal --target "${{ matrix.platform.target }}"
+      - name: Build and install the explicit diagnostic wheel
+        timeout-minutes: 30
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+        run: >-
+          uv run --no-sync python scripts/ci/build_native_client_profile_wheel.py
+          --allow-diagnostic --target "${{ matrix.platform.target }}"
+          --platform-tag "${{ matrix.platform.tag }}" --source-sha "$PROFILE_SOURCE_SHA"
+          --destination profile-build
+      - name: Exercise compiled diagnostic contracts on the selected target
+        timeout-minutes: 10
+        run: >-
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --release
+          --target "${{ matrix.platform.target }}" -p hol-guard-runtime
+          --features diagnostic-native-client native_client_profile
+      - name: Collect installed diagnostic phases separately from qualification
+        id: collect
+        timeout-minutes: 5
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+        run: >-
+          uv run --no-sync python -I scripts/ci/measure_native_client_profile.py
+          --wheel profile-build/native/*.whl --source-sha "$PROFILE_SOURCE_SHA"
+          --output evidence/aggregate --private evidence/private_samples --count 20
+      - name: Encrypt retained diagnostic observations
+        id: seal
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+        run: >-
+          uv run --frozen --extra dev --python 3.12 python scripts/native_slo_evidence_archive.py encrypt
+          --source evidence/private_samples --output profile-private.enc
+          --public-key docs/guard/rust-performance/qualification-recipient.pem
+          --recipient-id d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+          --receipt profile-archive-receipt.json --source-sha "$PROFILE_SOURCE_SHA"
+          --target "${{ matrix.platform.target }}" --run-id "${{ github.run_id }}"
+          --run-attempt "${{ github.run_attempt }}"
+      - name: Retain finite public diagnostics
+        id: public
+        if: always()
+        timeout-minutes: 3
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-client-profile-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.platform.target }}-public
+          path: |
+            evidence/aggregate/summary.json
+            profile-archive-receipt.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain encrypted diagnostic observations
+        id: encrypted
+        if: always()
+        timeout-minutes: 3
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-client-profile-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.platform.target }}-encrypted
+          path: profile-private.enc
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require collector success and complete encrypted retention
+        if: always()
+        timeout-minutes: 2
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/native-client-profile-environment
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          SEAL_OUTCOME: ${{ steps.seal.outcome }}
+          PUBLIC_OUTCOME: ${{ steps.public.outcome }}
+          ENCRYPTED_OUTCOME: ${{ steps.encrypted.outcome }}
+          PUBLIC_ID: ${{ steps.public.outputs.artifact-id }}
+          ENCRYPTED_ID: ${{ steps.encrypted.outputs.artifact-id }}
+        run: |
+          test "$COLLECT_OUTCOME" = success
+          test "$SEAL_OUTCOME" = success
+          test "$PUBLIC_OUTCOME" = success
+          test "$ENCRYPTED_OUTCOME" = success
+          test -n "$PUBLIC_ID"
+          test -n "$ENCRYPTED_ID"
+          uv run --no-sync python scripts/ci/native_client_profile_retention.py --receipt profile-archive-receipt.json --archive profile-private.enc
+      # Instrumented component diagnostics only: no activation or qualification claim.

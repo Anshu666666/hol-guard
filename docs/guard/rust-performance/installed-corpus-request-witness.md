@@ -29,3 +29,30 @@ single-call transport timeout for all three client branches, successful response
 preservation, validated-prefix conservation, unknown-value privacy and a failing
 diagnostic sink. This change adds diagnostic context, not an installed passing
 rerun or a correction to the observed timeout's unknown cause.
+
+## Aggregate validation after returned responses
+
+The eighth native-wheel Windows job (`35270079893`, attempt 1,
+`105366900977`) at source `a933921372ddb3772eff8a9d86771fe15da063b1`
+returned all 21 normalized corpus requests, then failed the unchanged aggregate
+route-count check: 19 `native_resident` plus one `native_fail_safe` totaled 20.
+The request-exception witness had no exception to observe. This record does not
+identify which request lacked a counter or establish the cause.
+
+`scripts/native_probe_corpus_witness.py` adds at most 32 retained delivery rows
+with closed harness, event, decision, permission, model-action and reason labels.
+It captures the existing single `is_allowed` result per request. Unknown strings
+become `other`; excerpt text and arbitrary response fields are excluded. A
+failure-only diagnostic emits these rows separately from aggregate route counts
+when the existing corpus validation raises. Missing, invalid or over-cap counts
+remain `null`; an observed zero remains zero. Truncation and projection failures
+are explicit.
+
+Allowed delivery does not prove a native route. The diagnostic neither assigns
+an aggregate route to an individual request nor identifies the missing counter's
+cause. Requests, payloads, deadlines, waits, retries, validation predicates and
+successful receipt fields are unchanged. Projection or emission failure cannot
+replace the original validation exception. Focused regressions cover the 21/20
+mismatch, a complete count with insufficient native decisions, quiet success,
+closed labels, bounded counts and exception preservation. This is a source-only
+diagnostic follow-up; it does not establish that the Windows corpus now passes.

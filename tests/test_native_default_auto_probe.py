@@ -103,7 +103,9 @@ def test_installed_corpus_waits_before_mode_changes(tmp_path: Path, monkeypatch:
         def stop(self) -> None:
             events.append("stopped")
 
-    def exercise_routes(daemon, guard_home, workspace, routes, route_receipts, reason_codes) -> None:
+    def exercise_routes(
+        daemon, guard_home, workspace, routes, route_receipts, reason_codes, delivery_witness=None
+    ) -> None:
         route_receipts.extend({"route": "native_resident"} for _ in range(21))
 
     def exercise_modes(*args: object) -> dict[str, object]:

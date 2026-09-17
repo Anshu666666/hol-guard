@@ -21,7 +21,10 @@ from scripts.native_slo_mixed_response import delivered_decision
 
 def test_success_failure_and_capacity_are_retained_in_the_same_denominator(tmp_path: Path) -> None:
     ledger = PrivateLedger(tmp_path / "attempts.jsonl")
-    plan = MixedPlan(duration_seconds=0.15, rate=20, concurrency=1)
+    # This fixture selects three request outcomes; generator overload is
+    # exercised separately below. Reserve one real queue slot per planned
+    # outcome so a delayed worker cannot turn the latter two into rejections.
+    plan = MixedPlan(duration_seconds=0.15, rate=20, concurrency=3)
 
     def request(_harness: str, payload: object) -> tuple[dict[str, object], float]:
         assert isinstance(payload, dict)
@@ -33,16 +36,37 @@ def test_success_failure_and_capacity_are_retained_in_the_same_denominator(tmp_p
         return {"decision": "allow"}, 1.0
 
     load = MixedLoad(plan, request, ledger)
+    worker = load._worker
+
+    def after_all_offers() -> None:
+        deadline = load.started + plan.duration_seconds + plan.completion_seconds
+        assert load._offering_done.wait(max(0, deadline - time.monotonic()))
+        worker()
+
+    # Force the scheduling condition that exposed the old capacity-one test:
+    # every offer arrives before any worker dequeues. Use the real offer,
+    # worker, terminal accounting, clock and completion deadline throughout.
+    load._worker = after_all_offers
     load.start()
     result = load.finish()
     retained = ledger.finish()
     assert result["offered"] == result["planned"] == result["generator_admitted"] == 3
     assert result["completed"] == 2
     assert result["transport_failed"] == result["capacity_rejected"] == 1
+    assert result["generator_rejected"] == result["generator_cancelled"] == result["completion_timeout"] == 0
+    assert result["workers_unfinished"] == 0
     assert result["accounting_complete"]
     data = (tmp_path / "attempts.jsonl").read_bytes()
     rows = [json.loads(line) for line in data.splitlines()]
     assert Counter(row["kind"] for row in rows) == {"offer": 3, "terminal": 3}
+    assert [row["kind"] for row in rows[:3]] == ["offer"] * 3
+    terminal = {row["attempt"]: row for row in rows if row["kind"] == "terminal"}
+    assert set(terminal) == {"mixed-load-0", "mixed-load-1", "mixed-load-2"}
+    assert terminal["mixed-load-0"]["state"] == "completed"
+    assert terminal["mixed-load-1"]["state"] == "transport_failed"
+    assert terminal["mixed-load-1"]["failure_type"] == "OSError"
+    assert terminal["mixed-load-2"]["state"] == "completed"
+    assert terminal["mixed-load-2"]["capacity_rejected"] is True
     assert "raw exception text" not in data.decode()
     assert retained["sha256"] == hashlib.sha256(data).hexdigest()
     if os.name != "nt":

@@ -52,7 +52,7 @@ pub(super) fn run(state_base: &Path) -> Result<(), String> {
         };
         let started_at = std::time::Instant::now();
         let deadline = started_at + super::client_timeout(&payload);
-        let response = match client_lease.as_ref() {
+        let response = crate::native_client_profile::request(|| match client_lease.as_ref() {
             Ok(lease) => {
                 match super::client_request_with_lease(state_base, &payload, deadline, lease) {
                     Ok(response) => response,
@@ -60,7 +60,7 @@ pub(super) fn run(state_base: &Path) -> Result<(), String> {
                 }
             }
             Err(error) => crate::resident_protocol::safe_error_response(error, false),
-        };
+        });
         write_frame(&mut output, &response)?;
     }
 }

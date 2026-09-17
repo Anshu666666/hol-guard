@@ -78,6 +78,7 @@ def test_utf8_observation_is_separate_from_original_cases_and_headline_samples(t
         "installed_daemon_mixed_contention",
         "priority_approval",
         "diagnostic_instrumented_run",
+        "prepared_resident_first_hook_and_warm",
         "priority_input",
         "priority_utf8_observation",
     ]

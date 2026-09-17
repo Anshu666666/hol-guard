@@ -66,6 +66,7 @@ class WorkloadResult:
     inbox_requests: int
     dispatch_counts: dict[str, int]
     failure_reasons: dict[str, int]
+    failure_stages: dict[str, int]
 
 
 def load_correctness_workloads() -> tuple[WorkloadSpec, ...]:
@@ -134,6 +135,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
     outcomes: Counter[str] = Counter()
     dispatch: Counter[str] = Counter()
     failure_reasons: Counter[str] = Counter()
+    failure_stages: Counter[str] = Counter()
     latencies_ms: list[float] = []
     lock = threading.Lock()
     remaining_ms = str(int(10_000 * under_coverage_scale(3.0)))
@@ -159,10 +161,12 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
             f"home={urllib.parse.quote(str(root))}&"
             f"workspace={urllib.parse.quote(str(workspace))}"
         )
+        failure_stage = "request_setup"
         try:
             if harness in {"codex", "claude-code"}:
                 result = None
                 for attempt in range(2):
+                    failure_stage = "identity_challenge"
                     nonce = secrets.token_hex(32)
                     connection = http.client.HTTPConnection("127.0.0.1", daemon.port, timeout=12)
                     try:
@@ -187,6 +191,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         if challenge_response.status != 200:
                             raise RuntimeError(f"challenge-status-{challenge_response.status}")
                         challenge = cast(dict[str, object], json.loads(challenge_body))
+                        failure_stage = "hook_exchange"
                         connection.request(
                             "POST",
                             f"/v1/hooks/{harness}?{query}",
@@ -211,6 +216,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                 if result is None:
                     raise RuntimeError("codex-review-unavailable")
             else:
+                failure_stage = "hook_exchange"
                 request = urllib.request.Request(
                     f"http://127.0.0.1:{daemon.port}/v1/hooks/{harness}?{query}",
                     data=json.dumps(payload).encode(),
@@ -223,6 +229,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                 )
                 with urllib.request.urlopen(request, timeout=12) as response:
                     result = cast(dict[str, object], json.loads(response.read()))
+            failure_stage = "response_classification"
             blocked = _response_blocks_action(result)
             reason_code = result.get("reason_code")
             outcome = (
@@ -247,6 +254,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                     else f"{type(error).__name__}:{error}"
                 )
                 failure_reasons[error_key] += 1
+                failure_stages[failure_stage] += 1
         elapsed_ms = (time.monotonic() - started) * 1000
         with lock:
             outcomes[outcome] += 1
@@ -299,6 +307,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
         inbox_requests=max(0, final_inbox - initial_inbox),
         dispatch_counts=dict(dispatch),
         failure_reasons=dict(failure_reasons),
+        failure_stages=dict(failure_stages),
     )
 
 

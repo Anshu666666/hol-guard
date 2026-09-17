@@ -1209,6 +1209,8 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
     startup_cleanup_failure: ProbeError | None = None
     receipt: dict[str, Any] | None = None
     try:
+        # Admit the private root once before direct worker policy registration.
+        root = root.resolve()
         home = root / "home"
         guard_home = root / "guard-home"
         workspace = root / "workspace"

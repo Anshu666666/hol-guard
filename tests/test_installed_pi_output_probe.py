@@ -812,3 +812,112 @@ def test_malformed_results_are_visible_blocks_but_observe_remains_preserved() ->
         malformed_records["negative-observe"] = [_record(observe_case, malformed)]
         with pytest.raises(ProbeError, match="canonical allow metadata"):
             _assert_negative_results(malformed_results, malformed_records)
+
+
+@pytest.mark.skipif(probe.os.name == "nt", reason="installed Pi probe is POSIX-only")
+@pytest.mark.parametrize("aliased_parent", [False, True])
+def test_probe_admits_private_root_before_scoped_workspace_capture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, aliased_parent: bool
+) -> None:
+    from codex_plugin_scanner.guard.config_source_io import GuardConfigSourceError
+    from codex_plugin_scanner.guard.daemon.config_read_scope import HookConfigReadScope
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+
+    real = tmp_path / "real"
+    real.mkdir()
+    canonical_root = real / "probe-root"
+    canonical_root.mkdir()
+    parent = real
+    if aliased_parent:
+        parent = tmp_path / "alias"
+        try:
+            parent.symlink_to(real, target_is_directory=True)
+        except OSError:
+            pytest.skip("creating directory aliases requires runner support")
+    events = []
+    identity = object()
+    monkeypatch.setattr(probe, "tempfile", SimpleNamespace(mkdtemp=lambda **_kwargs: str(parent / "probe-root")))
+    monkeypatch.setattr(probe, "_installed_package_path", lambda _repo: real)
+    monkeypatch.setattr(probe, "_probe_native_identity", lambda: (object(), identity, object()))
+    monkeypatch.setattr(probe, "_node_command", lambda: ["fixture-node"])
+    monkeypatch.setattr(probe, "_probe_python_path", lambda: Path("/fixture/python"))
+    monkeypatch.setattr(probe, "_write_node_runner", lambda path: path.write_text("", encoding="utf-8"))
+    monkeypatch.setattr(probe, "_write_cli_wrapper", lambda path, **_kwargs: path.write_text("", encoding="utf-8"))
+    monkeypatch.setattr(probe, "_generate_extension", lambda path, **_kwargs: path.write_text("", encoding="utf-8"))
+    monkeypatch.setattr(probe, "time", SimpleNamespace(monotonic=lambda: 10.0))
+    monkeypatch.setattr(store_module, "GuardStore", lambda home, **_kwargs: SimpleNamespace(guard_home=home))
+
+    class EndOfCaptureWitnessError(Exception):
+        pass
+
+    class Worker:
+        def __init__(self, store):
+            self.scope = HookConfigReadScope.for_guard_home(store.guard_home)
+            self.policy_snapshot_publisher = NativePolicySnapshotPublisher(store=store, config_capture=self.scope)
+
+        def prepare_workspace_policy(self, workspace, *, deadline):
+            assert probe._DAEMON_READINESS_TIMEOUT == 5.0
+            assert deadline == 15.0
+            publisher = self.policy_snapshot_publisher
+            assert publisher.config_capture is self.scope
+            assert publisher.register_workspace(workspace) is False
+            assert publisher._workspace_paths == {workspace}
+            assert isinstance(publisher._compiled_effective_policy(), dict)
+            assert workspace == canonical_root / "workspace"
+            events.append("same_scoped_generation_prepared")
+            # No native client or ACK is synthesized by this capture-boundary witness.
+            return {"fixture_scoped_capture": True}
+
+    class Daemon:
+        def __init__(self, store, **_kwargs):
+            self._server = SimpleNamespace(hook_worker=Worker(store))
+
+        def start(self):
+            events.append("started")
+
+    daemon_holder = []
+
+    def daemon_factory(store, **kwargs):
+        daemon = Daemon(store, **kwargs)
+        daemon_holder.append(daemon)
+        return daemon
+
+    def node_cases(**kwargs):
+        workspace = kwargs["cwd"]
+        assert workspace == canonical_root / "workspace"
+        publisher = daemon_holder[0]._server.hook_worker.policy_snapshot_publisher
+        workspace.rename(canonical_root / "original-workspace")
+        replacement = canonical_root / "replacement-workspace"
+        replacement.mkdir()
+        workspace.symlink_to(replacement, target_is_directory=True)
+        publisher._acked = True
+        with pytest.raises(GuardConfigSourceError, match="guard_config_scope_changed"):
+            publisher._compiled_effective_policy()
+        assert publisher._acked is False
+        assert publisher.config_capture is daemon_holder[0]._server.hook_worker.scope
+        events.append("retarget_rejected_and_ack_withdrawn")
+        raise EndOfCaptureWitnessError
+
+    def close_daemon(daemon):
+        daemon._server.hook_worker.policy_snapshot_publisher.close()
+        events.append("daemon_closed")
+
+    def close_native(actual_identity, guard_home):
+        assert actual_identity is identity
+        assert guard_home == canonical_root / "guard-home"
+        events.append("native_cleanup_same_root")
+
+    monkeypatch.setattr(daemon_server, "GuardDaemonServer", daemon_factory)
+    monkeypatch.setattr(probe, "_run_node_cases", node_cases)
+    monkeypatch.setattr(probe, "_cleanup_installed_daemon", close_daemon)
+    monkeypatch.setattr(probe, "_cleanup_native", close_native)
+    with pytest.raises(EndOfCaptureWitnessError):
+        _run_probe()
+    assert events == [
+        "started",
+        "same_scoped_generation_prepared",
+        "retarget_rejected_and_ack_withdrawn",
+        "daemon_closed",
+        "native_cleanup_same_root",
+    ]
+    assert not canonical_root.exists()

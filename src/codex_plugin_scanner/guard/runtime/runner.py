@@ -143,6 +143,7 @@ from .managed_controls_sync import (
 from .managed_controls_sync import (
     managed_controls_runtime_sync_posture as _managed_controls_runtime_sync_posture,
 )
+from .optional_telemetry_sync import PainSignalSyncError, sync_nonessential_telemetry
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
 from .prompt_injection import detect_prompt_injection_requests
 from .signals import RiskSignalV2
@@ -3234,13 +3235,12 @@ def sync_receipts(
         exceptions=deduped_exceptions,
         now=now,
     )
-    try:
-        pain_signals_uploaded = sync_pain_signals(store, auth_context=resolved_auth_context)
-    except RuntimeError as pain_signal_error:
-        if "429" in str(pain_signal_error):
-            pain_signals_uploaded = 0
-        else:
-            raise
+    telemetry = sync_nonessential_telemetry(
+        store,
+        pain_signals=lambda: sync_pain_signals(store, auth_context=resolved_auth_context),
+        guard_events=lambda: sync_guard_events(store, auth_context=resolved_auth_context),
+        authorization_errors=(GuardSyncNotConfiguredError, GuardSyncNotAvailableError),
+    )
     value_metrics = _build_value_metrics(store)
     weekly_digest = _build_weekly_firewall_digest(metrics=value_metrics, now=now)
     summary: dict[str, object] = {
@@ -3259,7 +3259,7 @@ def sync_receipts(
         "exceptions_stored": len(deduped_exceptions),
         "cloud_exceptions_stored": len(cloud_exception_items),
         "remote_policies_stored": remote_policies_stored,
-        "pain_signals_uploaded": pain_signals_uploaded,
+        **telemetry,
         "receipts": len(receipts),
         "receipt_cursor_rowid": persisted_cursor_rowid,
         "receipt_cursor_backfill": bool(
@@ -3278,7 +3278,6 @@ def sync_receipts(
     }
     if remote_policy_sync_blocked:
         summary["remote_policy_sync_blocked"] = True
-    summary["guard_events_v1"] = sync_guard_events(store, auth_context=resolved_auth_context)
     if include_aibom:
         from ..aibom_cli import sync_aibom_snapshots_if_due
 
@@ -4039,13 +4038,9 @@ def sync_pain_signals(
                     retry_timeout_seconds=_PAIN_SIGNAL_RETRY_TIMEOUT_SECONDS,
                 )
             except urllib.error.HTTPError as error:
-                if error.code == 404:
-                    return uploaded_count
-                if error.code == 429:
-                    return uploaded_count
-                raise RuntimeError(_sync_http_error_message(error)) from error
+                raise PainSignalSyncError(_sync_http_error_message(error), uploaded_count=uploaded_count) from error
             except OSError as error:
-                raise RuntimeError(_sync_url_error_message(error)) from error
+                raise PainSignalSyncError(_sync_url_error_message(error), uploaded_count=uploaded_count) from error
             uploaded_count += len(signal_items)
         current_event_id = last_processed_event_id
         store.set_sync_payload(

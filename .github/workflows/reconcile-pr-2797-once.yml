@@ -1,0 +1,51 @@
+name: Reconcile PR 2797 branch once
+
+on:
+  push:
+    branches:
+      - automation/reconcile-pr-2797-20260917
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[merge-main-reconcile]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out reconciliation branch
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Merge main and resolve remaining conflicts in favor of current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          if ! git merge --no-commit --no-ff -X theirs origin/main; then
+            while IFS= read -r path; do
+              [ -n "$path" ] || continue
+              if git cat-file -e "origin/main:$path" 2>/dev/null; then
+                git checkout origin/main -- "$path"
+                git add -- "$path"
+              else
+                git rm -f --ignore-unmatch -- "$path"
+              fi
+            done < <(git diff --name-only --diff-filter=U)
+          fi
+
+          remaining="$(git diff --name-only --diff-filter=U)"
+          if [ -n "$remaining" ]; then
+            printf 'Unresolved paths remain:\n%s\n' "$remaining" >&2
+            exit 1
+          fi
+
+          git rm -f .github/workflows/reconcile-pr-2797-once.yml
+          git commit -m "chore: reconcile release/3.2 with main [merge-main-reconcile]"
+          git push origin HEAD:automation/reconcile-pr-2797-20260917

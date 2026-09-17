@@ -1,17 +1,14 @@
 # Rust performance execution for release/3.2
 
-Current source and validation appear in [RELEASE_REVIEW.md](RELEASE_REVIEW.md),
-with **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED** in the [execution ledger](EXECUTION_LEDGER.md).
-Implementation checkpoint `ab06f959bf58fae9006137a4aa21398110dc2409`, tree `34f22d781012a71723b5d377f6817ba86b5bf1f1`.
-Latest measured PR #2970 publication `9d3907a2e6ed1ec201281901cb878836a7dad32d` has 41 terminal workflows:
-35 successful and six failed. [SIXTH_CI_EVIDENCE.md](SIXTH_CI_EVIDENCE.md) retains
-its exact source and distinct merge identity. Later control-refresh, Windows
-producer, finite test-ID and diagnostic corrections require their own CI.
-All 144 original definitions and prior statuses remain unchanged. Measured
-package/MCP decisions remain bound to their original cohorts. Full installed
-performance, resources, signed/frozen/live rollback, final CI, independent human
-approval and release remain incomplete. Original [PRD](PRD.md), [TODO](TODO.md)
-and the historical record below remain unchanged.
+Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
+with **85 DONE / 22 OPEN / 29 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
+Implementation `8dc0831dbeab56c497f855b4d50289383425ef7c`, tree `93d1c84cbc7f54ecf0539f892bfbbbf2f0bbff6d`. Seventh measured publication
+`79cb6921ff722a597b545350485864dcd9310bdc` has 41 terminal first-attempt workflows: 34 successful and 7 failed; its exact tree and distinct merge identity are
+retained in [SEVENTH_CI_EVIDENCE](SEVENTH_CI_EVIDENCE.md).
+Later reviewed source requires its own execution. RSP-071 closes only its original source/adversarial case-coverage criterion after the actual supported Windows reader cases pass. Its RSP-069/RSP-070 dependencies, native/installed qualification, documented platform limits and failed archive exact-result gate remain unchanged; all other statuses are preserved.
+All 144 original definitions/dependencies and the historical record below are
+unchanged. Installed qualification, complete resources, signed/frozen live
+rollback, final CI, human approval and release remain incomplete.
 
 ## Historical integration and evidence record
 

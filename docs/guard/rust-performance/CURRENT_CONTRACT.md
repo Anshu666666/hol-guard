@@ -1,25 +1,19 @@
 # Current decision and performance contract
 
-This contract describes implementation checkpoint `ab06f959bf58fae9006137a4aa21398110dc2409`, tree
-`34f22d781012a71723b5d377f6817ba86b5bf1f1`, before its documentation refresh.
+Implementation checkpoint `8dc0831dbeab56c497f855b4d50289383425ef7c`, tree `93d1c84cbc7f54ecf0539f892bfbbbf2f0bbff6d`.
 
-The [sixth CI checkpoint](SIXTH_CI_EVIDENCE.md) binds measured PR head
-`9d3907a2e6ed1ec201281901cb878836a7dad32d`, tree `833ea191211db2a0613db8520d072f5edf485380`. Its tested merge
-`64164db9cd11e3d05182a99dba100daa6011c83d` has the same tree and a distinct build identity.
-All 41 first-attempt workflow instances are terminal: **35 successful and six failed**.
-Main passed all 96 pytest shards; its remaining failure is the Sonar quality gate.
-Publish to PyPI built and verified distributions and retained hashes/SBOMs, but
-publication, release and container jobs skipped. No release was published.
-The later implementation checkpoint below requires its own CI. Preserve the
-[first](FIRST_CI_EVIDENCE.md), [second](SECOND_CI_EVIDENCE.md),
-[third](THIRD_CI_EVIDENCE.md), [fourth](FOURTH_CI_EVIDENCE.md) and
-[fifth](FIFTH_CI_EVIDENCE.md) cohorts as separate historical evidence.
+The [seventh CI evidence](SEVENTH_CI_EVIDENCE.md) records **41 terminal first-attempt workflows: 34 successful and 7 failed**
+at PR head `79cb6921ff722a597b545350485864dcd9310bdc`, tree `f158652293b1e10931122db6ccf48e33f5dd3c38`. GitHub tested merge
+`b06b8db2f6fbd9d8f87e5e724e117748f57aea75` has the same tree and a distinct build identity.
+The later implementation checkpoint `8dc0831dbeab56c497f855b4d50289383425ef7c`, tree `93d1c84cbc7f54ecf0539f892bfbbbf2f0bbff6d`,
+requires its own published-source CI. All seven historical cohorts remain
+separate; failed, censored and unoffered work retains its original denominator.
 
-Original requirements and all 144 task records remain in [PRD](PRD.md) and
-[TODO](TODO.md). The current ledger is **84 DONE / 23 OPEN / 29 BLOCKED / 8 DEFERRED**.
-Source, specification, pinning and accurate handoff criteria do not complete
-installed, artifact, approval or rollout dependencies. Historical reports and
-the historical [execution](EXECUTION.md) suffix remain unchanged.
+Original [PRD](PRD.md) and [144 TODO definitions](TODO.md) remain normative.
+The [ledger](EXECUTION_LEDGER.md) is **85 DONE / 22 OPEN / 29 BLOCKED / 8 DEFERRED**. RSP-071 closes only its original source/adversarial case-coverage criterion after the actual supported Windows reader cases pass. Its RSP-069/RSP-070 dependencies, native/installed qualification, documented platform limits and failed archive exact-result gate remain unchanged; all other statuses are preserved.
+The established ownership/authority contract below is preserved. Named earlier
+cohort observations keep their historical scope; the final section records the
+latest measured evidence and later implementation changes.
 
 ## Ownership and timing boundaries
 
@@ -617,8 +611,12 @@ two ARM measurements and all five Windows jobs fail. Every complete native p95
 series remains above 50 ms. Windows independent preflight rejects key/state
 security admission while bounded reads, authentication and peer identity pass.
 The new [producer](windows-discovery-producer.md) establishes private DACLs on
-new files without repairing or rotating existing keys. Actual Windows execution
-and the exact sixth failed request branch remain unproven. Production registration remains off.
+new files without repairing or rotating existing keys. At the sixth checkpoint,
+actual Windows producer execution and the exact failed request branch remained
+unproven. Seventh actual Windows producer contract tests pass; the exact sixth
+failed request branch remains unlocalized. The installed Windows experiment
+and eighth-source existing-parent provisioning still require successful
+execution. Production registration remains off.
 
 The [pair validator](qualification-target-identity.md) uses the same four exact
 distribution/platform associations while retaining complete wheel, runtime,
@@ -704,49 +702,28 @@ complete record of the unchanged 144 acceptance and dependency fields.
 
 ## Current qualification observations and resource limits
 
-The [sixth report](SIXTH_CI_EVIDENCE.md) binds all 41 terminal workflows to
-9d3907, with 35 successes and six failures. Later source corrections require
-their own execution. Intel's indexed and wheel errors are explicit command-control
-mutation responses with substantial deadline remaining, not deadline exhaustion.
-Source inspection independently establishes that periodic unchanged refresh
-requested an exclusive lease. The [correction](command-control-refresh-contention.md)
-reads under a shared lease and uses the existing mutation-required sentinel to
-release it and perform a fresh exclusive read. Real mutation, authentication,
-fencing and arbitrary failure behavior remain unchanged. The actual historical
-lock holder was not observed; installed benefit is pending.
+| Workstream | Seventh observation and practical limit |
+| --- | --- |
+| Main CI and security | All 96 pytest shards pass. Main has 114 jobs: 109 successful, two failed and three skipped. Windows packaged bootstrap rejects a pre-existing nonprivate Guard directory. Sonar stops on a service HTTP 500 before a new analysis or gate result. All four security jobs, I/O ownership and Rust authority ownership pass. All 195 Main artifacts are present and unexpired. |
+| Installed native launcher | All fifteen POSIX jobs complete: 1,320/1,320 attempts including 1,200 timed observations. All native p95 series exceed 50 ms. Five Windows jobs fail in synthetic fixture teardown before measurement: 440 planned attempts remain unoffered, with no observation archive. Real Windows private-producer tests pass. Production selection remains off. |
+| Dormant native source pilot | All four jobs stop at a stale discovery.py source commitment before the source/Rust gates. The regenerated fixture changes only that commitment; all response, signed, body and wire vectors remain identical. Later source needs its own execution. |
+| Scanner | Four Rust and 174 Python checks pass. The original Python executable read reports metadata_writable before experiment preflight or any of the 24 timed offers: zero offered, zero completed, 24 unoffered. Public and encrypted evidence uploads succeed; collection and aggregation remain failed. The corrected Windows reader/route selection passes 17 supported source cases; 25 explicit POSIX-only skips remain excluded. This is not native regex execution on Windows. No finding-heavy benefit or installed native selection follows. |
+| Package | Five comparable Python protect pairs retain median wall 8,904.153534 → 326.290654 ms and CPU 7,808.830 → 318.823 ms, with median paired reductions 96.3355230483%/95.9201319796%. All ten phase workers complete. Cardinality retains 36 candidate and 24 baseline completions plus twelve baseline workers censored at 15 seconds; formats retain 20 candidate and 18 baseline completions plus two frozen Composer failures. The original keep-Python decision remains unchanged. |
+| MCP | 30 workers and 10,080 outcomes complete with zero failures across eight five-block comparisons. All 80 warm resource windows complete; ten separate lifecycle rows retain 13 missing samples and 39 descriptor denials. The existing decision remains unchanged; installed/cross-platform qualification and native selection remain unproved. |
+| Installed native wheel | Linux and both Macs pass all 14 installed smoke gates; qualification remains false. Linux c16 completes 16 native requests with zero errors. At c64, it retains 62 native results and two explicit overloads, with no fail-safe or None results and all 64 requests accounted for. The Linux soak completes 100,000 requests and responses plus 250,000 receipts, with zero errors, 17,765 health checks and no health failures. RSS grows by 3.2749%, with one daemon and a stable PID. Its p95 of 522.36 ms is judged against the 4,500 ms diagnostic bound, not the ordinary 50 ms target. Windows retains the original five-second corpus HTTP timeout after a separate standalone 21/21 normalized native-decision pass. That earlier probe also retains a separate receipt-failure counter of five; passing decisions do not establish clean receipt persistence. |
+| Indexed qualification and nonpriority tails | All four immutable wheels build. Linux smoke completes one block per arm, each with 38 series and 136 numeric observations. The separate aggregate reports comparison_available=true; sampling, program qualification and overall qualification remain false. Both Mac candidates complete 38 series and 136 observations, while their frozen baselines fail during DNS construction. Windows baseline completes 386 daemon and 62 registered-launcher cases, then fails route-count validation in batch 27, c16 Claude PreToolUse: all 16 requests are offered and observed, after 26 validated batches and 66 retained numeric values. Windows candidate completes 28 daemon cases and fails case 29, review/small Claude PreToolUse, before any numeric observations; HTTP does not return, and no native-bridge witness is retained. Neither Windows failure proves a narrower exception class or timeout cause. Linux and ARM scenarios pass. Windows disabled publication lacks an ACK; Intel enabled readiness exceeds 400 ms. Linux and Windows tail comparisons complete both arms. Mac candidates complete, but their baselines fail DNS before offers. Twelve of 16 planned timed tail observations are retained; four remain unattempted. |
+| Packaging and release | PyPI builds and verifies distributions with hashes/SBOMs. Desktop validation passes. Actual publication, release, containers and desktop publication skip; no release is published. |
 
-Linux native-wheel c64 retains 64 responses: 32 native, 15 fail-safe and 17
-explicit overloads, with 15 raw None returns and zero unclassified responses.
-Its old nested reason records were truncated by the unchanged privacy depth
-limit. The final report now exports bounded closed-form witnesses at
-capacity_none_witnesses.sixteen/sixty_four. The old reasons are irrecoverable;
-no production cause is inferred. Global privacy depth and gates are unchanged.
+| Later source change | Resulting behavior | Required next evidence |
+| --- | --- | --- |
+| Synthetic discovery fixture cleanup | After the original byte and signature assertions, the finally block removes only synthetic daemon state before global daemon retirement. Unrelated retirement remains exercised on both normal and assertion-failure exits. | Actual Windows source/launcher rerun; this does not repair the separate real existing-directory bootstrap failure. |
+| Claude fixture source commitment | The existing generator rebinds only discovery.py's changed bytes; all semantic, signed, response, body and wire vectors remain unchanged. | Four-target source/Rust gates on the newly published source. |
+| Original installed-corpus failure context | Each original request retains a finite harness/event and validated-prefix witness if it raises; the same exception, single call and five-second transport timeout remain. Private URL, payload and exception text are excluded. | A fresh Windows observation identifying the request; the historical timeout cause remains unknown. |
+| Scanner private interpreter | Integrated source 8dc0831dbeab56c497f855b4d50289383425ef7c reuses the existing owner-private byte-identical interpreter-copy helper after frozen uv sync, inside the unchanged five-minute setup step. The hosted interpreter is untouched. Before/after invocation, version, prefix, stdlib and venv-config identity match; original strict executable admission remains. The encrypted setup record is required for verified collection and bound to the measured interpreter hash and worker commitment; only its digest is public. | Actual pinned-uv/hosted-runner setup and comparable 24-attempt smoke; local correctness and source review do not supply measurements or satisfy the full five-run minimum. |
+| Explicit Windows parent provisioning | Explicit manager setup verifies trusted ownership and retained identity, changes only the existing parent DACL under exclusive access, and then restores the verified binding. Existing child and key bytes and ACLs are preserved. Generic helper defaults and strict discovery readers remain unchanged. | Actual Windows child-preservation regressions, unchanged frozen bootstrap and installed launcher; local tests alone cannot establish Windows behavior. |
+| Dormant native HTTP socket buffering | The dormant client sets TCP_NODELAY on the existing validated loopback stream before challenge or hook writes. Wire bytes, proof headers, socket reuse, authentication and absolute deadlines remain unchanged; production registration stays off. | Fresh paired installed measurements on all targets remain required. Six correctness tests using the exact production HTTP module pass; this does not establish a full runtime build or latency improvement. See the reviewed transport change in native-claude-launcher-design.md. |
 
-Windows discovery diagnostics are read-only, bounded, non-atomic observations
-before measurement. They neither authorize the Rust request nor prove its
-exact failure branch. Source producers now establish a private Windows DACL
-for fresh keys and complete state replacements; fresh setup creates missing
-directories privately. Existing parents are verified rather than repaired;
-exclusive key collision and existing-key reads preserve their prior contract.
-The shared writer's existing callers retain their default behavior. Actual
-Windows tests and installed retry are still required.
+Private discovery readers and producers remain strict about retained identity, owner/DACL, complete bytes and authentication. Existing untrusted key material is not repaired or blessed. The working-file reader retains limit-plus-one bounded reads and incomplete coverage with exit 2 after admitted mutation/failure while preserving earlier findings. Windows supported reader coverage passes with the documented ancestor limitation and explicit POSIX-only skips. Scanner executable admission still binds owner, stable mode, links, path and content; fixture provisioning supplies private bytes and provenance rather than relaxing admission. Source and fixture corrections require actual execution before any native selection or performance claim.
 
-The [working-file reader](scanner-working-file-contract.md) reads at most the
-configured limit plus one overflow byte through retained descriptors. Admitted
-identity changes, growth and failures make coverage incomplete with exit 2
-before detection, preserving earlier findings. Initial exclusions, supported
-links, invalid UTF-8 omission and HMAC behavior remain unchanged. Sixth runs
-all five new actual-native cases in the Linux scanner experiment. All 42
-reader/route cases pass on Linux and both Macs.
-Windows has 16 passes, 25 explicit POSIX skips and one fixture setup/teardown
-error before its assertion. Finite IDs preserve the full 65,543-byte input and
-avoid the Windows environment overflow. Actual rerun remains required and
-RSP-071 stays OPEN; the Windows ancestor limitation remains documented.
-
-The experimental scanner crate owns only its benchmark path. It has no product
-hook, policy, approval, receipt or installer authority. Its executable reader
-retains immutable current-user/root toolchain, link and exact content/path
-admission. Sixth fails at Python executable identity before all 24 offers;
-the narrower reason was not retained. The later original-read diagnostic keeps
-private numeric metadata out of public output and admits only 17 fixed codes.
-Fresh comparable smoke precedes the deliberately selected full experiment.
+See [RELEASE_REVIEW](RELEASE_REVIEW.md), [SEVENTH_CI_EVIDENCE](SEVENTH_CI_EVIDENCE.md)
+and [TAKEAWAY](TAKEAWAY.md) for exact evidence and remaining acceptance.

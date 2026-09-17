@@ -1,7 +1,8 @@
-"""Darwin own + reaped-child CPU counters; no process data is public evidence.
+"""Darwin raw CPU counters; no process data is public evidence.
 
 ABI/units/rollup are pinned in docs/guard/rust-performance/darwin-resource-accounting.md.
 CPU counters use Mach ticks, including on ARM; they are not nanoseconds.
+Ignored-child usage can be rolled up twice; these counters do not prove tree CPU.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from typing import Protocol, cast
 
 _RUSAGE_INFO_V2 = 2
 _RUSAGE_BYTES = 160
+REAPED_CPU_UNAVAILABLE = "darwin_reaped_cpu_ambiguous"
 
 
 class _RusageInfoV2(ctypes.Structure):
@@ -106,6 +108,8 @@ class DarwinProcessCpu:
 
 @dataclass(frozen=True)
 class DarwinTreeCpu:
+    """Private raw counter snapshot, not a proof of complete descendant CPU."""
+
     root: tuple[int, float, int]
     ticks: int
     numer: int

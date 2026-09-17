@@ -39,6 +39,10 @@ FAILURES = (
     "detector_oracle_failed",
     "collector_operation_failed",
     "collector_failed",
+    "source_identity_failed",
+    "dependency_identity_failed",
+    "python_executable_identity_failed",
+    "native_executable_identity_failed",
 )
 SOURCE = fields(
     {

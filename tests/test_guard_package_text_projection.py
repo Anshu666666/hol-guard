@@ -107,7 +107,7 @@ def test_all_supported_formats_keep_dependency_completeness(name: str, text: str
     assert result.complete
     assert result.dependency_map() == expected
     assert result.manifest_dependency_map() == expected
-    assert result.parser_version == "complete-v2"
+    assert result.parser_version == "complete-v3"
     assert _parse(name, text.encode() + b"\xff").error_reason == "decode_error"
 
 

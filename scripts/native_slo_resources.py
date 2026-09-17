@@ -64,7 +64,8 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
 
     PID and creation time are checked before and after enumeration. Linux CPU
     includes live processes and their waited-for children via /proc. Darwin
-    uses independently checked Mach counters and transitive reaped-child usage.
+    retains checked Mach counters privately, but its child rollups cannot
+    distinguish ordinary reaping from the kernel's ignored-child double count.
     Other platforms retain only CPU for processes observed before they exit.
     """
     psutil = _psutil()
@@ -141,8 +142,10 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
                     )
                     if set(_inventory(psutil.Process(process_id))) != set(before):
                         raise darwin.DarwinCpuUnavailableError("darwin_cpu_inventory_changed")
-                    totals["cpu_seconds"] = darwin_cpu.ticks * darwin_cpu.numer / (darwin_cpu.denom * 1_000_000_000)
-                    cpu_includes_reaped = True
+                    # XNU can add ignored children twice. Endpoint inventories
+                    # cannot recover an unseen parent's historical disposition.
+                    # Preserve the raw witness, never publish it as measured CPU.
+                    unavailable["cpu_seconds"] = darwin.REAPED_CPU_UNAVAILABLE
                 except darwin.DarwinCpuUnavailableError as error:
                     unavailable["cpu_seconds"] = error.code
                     darwin_cpu = None

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import re
 import sys
@@ -164,9 +165,14 @@ def combine(directory: Path, output: Path, *, selection: str, source_sha: str, s
     reports = []
     invalid = 0
     report: dict[str, Any]
-    paths = sorted(directory.glob("*/summary.json"))
-    if len(paths) > len(matrix(selection)):
-        raise ValueError("scanner_aggregate_file_bound")
+    maximum = len(matrix(selection))
+    paths = list(itertools.islice(directory.glob("*/summary.json"), maximum + 1))
+    excess = len(paths) > maximum
+    if excess:
+        # Retain a finite failed aggregate even when input inventory exceeds
+        # admission. Do not choose an arbitrary subset for benefit comparisons.
+        invalid += 1
+        paths = []
     for path in paths:
         try:
             reports.append(admitted_public(path.parent)[0])
@@ -186,6 +192,9 @@ def combine(directory: Path, output: Path, *, selection: str, source_sha: str, s
         }
         invalid += 1
     report["invalid_shards"] = invalid
+    if excess:
+        report["status"] = "aggregate_file_bound"
+        report["summary_files_observed_minimum"] = maximum + 1
     report["upstream_retention_passed"] = shards_outcome == "success"
     if invalid or shards_outcome != "success":
         report["collection_complete"] = False

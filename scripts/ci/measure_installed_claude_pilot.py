@@ -17,6 +17,7 @@ if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
 
 from codex_plugin_scanner.guard import native_runtime  # noqa: E402
+from scripts.ci.native_claude_discovery_witness import windows_discovery_preflight  # noqa: E402
 from scripts.ci.native_claude_pilot_measure import measure  # noqa: E402
 from scripts.ci.native_claude_pilot_registration import ARMS, EVENTS, PilotRegistration  # noqa: E402
 from scripts.native_slo_artifact import (  # noqa: E402
@@ -138,6 +139,12 @@ def run(*, wheel: Path, build_sha: str, iterations: int, run_index: int, output:
                             "registration_sha256": selected.registration_sha256,
                             "argv_sha256": hashlib.sha256(json.dumps(selected.argv).encode()).hexdigest(),
                         }
+                # Independent current-state checks precede every offered/timed
+                # request. They neither repair authority nor gate the outcome.
+                native_arguments = registration.native["PreToolUse"]
+                report["discovery_preflight"] = windows_discovery_preflight(
+                    session.guard_home, Path(native_arguments[3]), native_arguments[5]
+                )
                 report["stage"] = "measurement"
                 report["latency"] = measure(
                     session,

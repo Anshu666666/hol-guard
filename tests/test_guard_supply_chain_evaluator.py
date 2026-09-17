@@ -2512,7 +2512,7 @@ def test_transitive_lockfile_timeout_pauses_without_using_partial_entries(
     assert any(reason["code"] == "lockfile_parse_incomplete" for reason in result.reasons)
     assert result.packages[0]["lockfileParseError"] == "deadline_exceeded"
     assert result.packages[0]["lockfileParseComplete"] is False
-    assert result.packages[0]["lockfileParserVersion"] == "complete-v2"
+    assert result.packages[0]["lockfileParserVersion"] == "complete-v3"
     assert "npm-package-lock" in result.user_copy.harness_message
 
 

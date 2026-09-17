@@ -104,6 +104,7 @@ jobs:
           uv run --no-sync pytest -q tests/test_guard_secret_native_pilot.py
           tests/test_scanner_pilot_process.py tests/test_scanner_pilot_ci.py
           tests/test_scanner_pilot_public.py tests/test_scanner_pilot_workflow.py
+          tests/test_scanner_pilot_identity.py
       - name: Run exactly two cache states and six alternating pairs
         id: collect
         timeout-minutes: 105
@@ -133,7 +134,7 @@ jobs:
         timeout-minutes: 3
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: scanner-pilot-${{ matrix.case }}-${{ matrix.run }}-public
+          name: scanner-pilot-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.case }}-${{ matrix.run }}-public
           path: scanner-evidence/public/*.json
           if-no-files-found: error
           retention-days: 30
@@ -143,7 +144,7 @@ jobs:
         timeout-minutes: 3
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: scanner-pilot-${{ matrix.case }}-${{ matrix.run }}-encrypted
+          name: scanner-pilot-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.case }}-${{ matrix.run }}-encrypted
           path: scanner-evidence/observations.hge
           if-no-files-found: error
           retention-days: 30
@@ -177,7 +178,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         continue-on-error: true
         with:
-          pattern: scanner-pilot-*-public
+          pattern: scanner-pilot-${{ github.run_id }}-${{ github.run_attempt }}-*-public
           path: scanner-shards
       - name: Compare matched independent runs and retain missing shard counts
         id: compare
@@ -193,7 +194,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: scanner-pilot-aggregate
+          name: scanner-pilot-${{ github.run_id }}-${{ github.run_attempt }}-aggregate
           path: scanner-aggregate.json
           if-no-files-found: error
           retention-days: 30

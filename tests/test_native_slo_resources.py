@@ -36,7 +36,20 @@ finally:
         process.communicate(b"x", timeout=5)
 
 
-def test_missing_process_tree_is_unavailable(tmp_path: Path) -> None:
+def test_missing_process_tree_is_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from scripts import native_slo_resources as resources
+
+    def missing(_pid: int) -> None:
+        raise ProcessLookupError
+
+    # A small literal PID can exist on macOS; proc= does not replace psutil.
+    monkeypatch.setattr(
+        resources,
+        "_psutil",
+        lambda: SimpleNamespace(Process=missing, AccessDenied=PermissionError, NoSuchProcess=ProcessLookupError),
+    )
     assert sample_process_tree(123, proc=tmp_path) is None
 
 
@@ -90,20 +103,28 @@ def test_windows_handles_and_denied_uss_remain_distinct(monkeypatch: pytest.Monk
     assert snapshot.cpu_includes_reaped is False
 
 
+@pytest.mark.parametrize("driver_pid", [10, 20])
 def test_non_linux_cpu_retains_observed_exited_processes_without_claiming_complete_coverage(
     monkeypatch: pytest.MonkeyPatch,
+    driver_pid: int,
 ) -> None:
+    from types import SimpleNamespace
+
     from scripts import native_slo_resources as resources
 
+    # Model the driver separately: a real PID namespace may give it PID10.
+    # Replace only this module's identity view, not the process-wide os module.
+    monkeypatch.setattr(resources, "os", SimpleNamespace(getpid=lambda: driver_pid))
+    root_pid, child_pid = driver_pid + 1, driver_pid + 2
     snapshots = iter(
         [
-            resources.TreeResources(100, 50, 1.0, 1, 1, 3, process_cpu={(10, 1.0): 1.0}),
-            resources.TreeResources(200, 100, 1.9, 2, 2, 6, process_cpu={(10, 1.0): 1.4, (20, 2.0): 0.5}),
-            resources.TreeResources(100, 50, 1.5, 1, 1, 3, process_cpu={(10, 1.0): 1.5}),
+            resources.TreeResources(100, 50, 1.0, 1, 1, 3, process_cpu={(root_pid, 1.0): 1.0}),
+            resources.TreeResources(200, 100, 1.9, 2, 2, 6, process_cpu={(root_pid, 1.0): 1.4, (child_pid, 2.0): 0.5}),
+            resources.TreeResources(100, 50, 1.5, 1, 1, 3, process_cpu={(root_pid, 1.0): 1.5}),
         ]
     )
     monkeypatch.setattr(resources, "sample_process_tree", lambda _pid: next(snapshots))
-    sampler = resources.ResourceSampler(pid=10)
+    sampler = resources.ResourceSampler(pid=root_pid)
     for _ in range(3):
         sampler._sample()
     result = sampler.report(attempted=10)

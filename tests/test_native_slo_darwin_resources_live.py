@@ -15,6 +15,7 @@ import pytest
 
 from scripts import native_slo_darwin_resources as darwin
 from scripts.native_slo_resources import sample_process_tree
+from tests.fixtures.native_slo_darwin_cpu_witness import classify_ignored_rollup
 
 pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="actual Darwin libproc accounting")
 FIXTURE = Path(__file__).parent / "fixtures/native_slo_darwin_cpu_witness.py"
@@ -58,7 +59,7 @@ def test_actual_darwin_cpu_units_match_process_clock():
 
 
 @pytest.mark.parametrize("command", ["nested", "ignored"])
-def test_actual_unobserved_child_cpu_survives_reap_into_owned_root(owned_root, command):
+def test_actual_unobserved_child_rollup_is_diagnostic_not_qualified_cpu(owned_root, command):
     process = owned_root
     before = sample_process_tree(process.pid)
     before_raw = darwin.process_cpu(process.pid)
@@ -70,7 +71,9 @@ def test_actual_unobserved_child_cpu_survives_reap_into_owned_root(owned_root, c
     after_raw = darwin.process_cpu(process.pid)
     after = sample_process_tree(process.pid)
     assert after is not None and after.darwin_cpu is not None and after.processes == 1
-    assert after.cpu_includes_reaped is True
+    for snapshot in (before, after):
+        assert snapshot.cpu_seconds is None and snapshot.cpu_includes_reaped is False
+        assert snapshot.unavailable["cpu_seconds"] == darwin.REAPED_CPU_UNAVAILABLE
     assert after.darwin_cpu.root == before.darwin_cpu.root
     numer, denom = darwin.timebase()
     child_ns = (
@@ -82,10 +85,13 @@ def test_actual_unobserved_child_cpu_survives_reap_into_owned_root(owned_root, c
         expected = witness["waited_cpu_ns"]
         assert 0 < witness["grandchild_cpu_ns"] < expected
         assert abs(child_ns - expected) <= 2_000_000 + expected * 0.02
+        classification = "waited_once"
     else:
         # Child reports process_time immediately before its short write/exit.
         expected = witness["child_cpu_ns"]
-        assert expected > 0 and expected - 2_000_000 <= child_ns <= expected + 20_000_000
-    # No descendant was observed by either tree sample. CPU transferred into
-    # the kernel parent counters supplies it exactly once, not history maxima.
+        classification = classify_ignored_rollup(expected, child_ns)
+    # Retain finite correctness evidence via pytest -rP, without process data.
+    print(json.dumps({"case": command, "expected_ns": expected, "raw_child_ns": child_ns, "rollup": classification}))
+    # Only the raw delta is conserved here. Ignored children can be rolled up
+    # twice; neither this delta nor its classification qualifies tree CPU.
     assert after.darwin_cpu.seconds_since(before.darwin_cpu) * 1e9 >= child_ns - 2_000_000

@@ -10,12 +10,18 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import secret_scan_native_pilot as pilot
-from bench_guard_secret_scans import _qualify_detector
-from secret_scan_benchmark_fixtures import WORKLOADS, _file_bytes, context_examples, provider_examples
-
 from codex_plugin_scanner.guard.secrets import secret_detection as detector
+
+_scripts_path = str(Path(__file__).resolve().parents[1] / "scripts")
+sys.path.insert(0, _scripts_path)
+try:
+    import secret_scan_native_pilot as pilot
+    from bench_guard_secret_scans import _qualify_detector
+    from secret_scan_benchmark_fixtures import WORKLOADS, _file_bytes, context_examples, provider_examples
+finally:
+    # Leaving scripts on the import path shadows the repository's ci namespace
+    # with scripts/ci and prevents installed-probe tests from being collected.
+    sys.path.remove(_scripts_path)
 
 
 @pytest.fixture

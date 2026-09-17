@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.native_slo_evidence_format import canonical, digest
+from scripts.scanner_pilot_identity import IdentityError
 from scripts.scanner_pilot_process import AttemptFailedError, full_cli, run_command
 from scripts.scanner_pilot_protocol import (
     CONTROLLER_SECONDS,
@@ -269,6 +270,8 @@ def collect(root: Path, binary: Path, private: Path, *, expected_source: str, lo
         failure = "controller_deadline"
     except AttemptFailedError as error:
         failure = error.code
+    except IdentityError as error:
+        failure = str(error)
     except BaseException:
         failure = "collector_failed"
     finally:

@@ -16,6 +16,7 @@ from typing import Any
 from scripts.native_slo_dependency_identity import dependency_versions_digest
 from scripts.native_slo_evidence_files import atomic_exclusive, read_file
 from scripts.native_slo_evidence_format import canonical, digest
+from scripts.scanner_pilot_identity import IdentityError, executable_digest
 
 CASES = (
     "working_provider_small",
@@ -64,6 +65,22 @@ def git(root: Path, *arguments: str) -> str:
 
 
 def identities(root: Path, binary: Path, expected: str) -> dict[str, Any]:
+    try:
+        return _identities(root, binary, expected)
+    except IdentityError:
+        raise
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        raise IdentityError("source_identity_failed") from error
+
+
+def _identity_stage(operation: Any, code: str) -> Any:
+    try:
+        return operation()
+    except (OSError, ValueError) as error:
+        raise IdentityError(code) from error
+
+
+def _identities(root: Path, binary: Path, expected: str) -> dict[str, Any]:
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         raise ValueError("scanner_host_unsupported")
     if git(root, "rev-parse", "HEAD") != expected or git(root, "status", "--porcelain", "--untracked-files=no"):
@@ -89,9 +106,11 @@ def identities(root: Path, binary: Path, expected: str) -> dict[str, Any]:
         "rust_lock_sha256": digest((root / "rust/Cargo.lock").read_bytes()),
         "pilot_tree": git(root, "rev-parse", "HEAD:rust/crates/guard-offline-regex-pilot"),
         "harness_sha256": digest(canonical({p.relative_to(root).as_posix(): digest(p.read_bytes()) for p in scripts})),
-        "dependency_sha256": dependency_versions_digest(),
-        "python_sha256": digest(read_file(Path(sys.executable).resolve(), 64 * 1024 * 1024)),
-        "binary_sha256": digest(read_file(binary, 64 * 1024 * 1024)),
+        "dependency_sha256": _identity_stage(dependency_versions_digest, "dependency_identity_failed"),
+        "python_sha256": _identity_stage(
+            lambda: executable_digest(Path(sys.executable).resolve()), "python_executable_identity_failed"
+        ),
+        "binary_sha256": _identity_stage(lambda: executable_digest(binary), "native_executable_identity_failed"),
         "python_version": list(sys.version_info[:3]),
         "host": {
             "system": "linux",

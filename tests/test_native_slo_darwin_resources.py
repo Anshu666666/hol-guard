@@ -12,6 +12,7 @@ import pytest
 
 from scripts import native_slo_darwin_resources as darwin
 from scripts import native_slo_resources as resources
+from tests.fixtures.native_slo_darwin_cpu_witness import classify_ignored_rollup
 
 
 class Function:
@@ -171,7 +172,7 @@ def _tree(members, timebase=(125, 3)):
     return darwin.stable_tree_cpu(321, members, members, timebase, timebase)
 
 
-def test_own_and_reaped_transitive_usage_are_not_counted_twice():
+def test_raw_counter_model_conserves_normal_waited_transitive_usage():
     # Root:10+5, child:20+10, already reaped grandchild:40+20.
     root, child = (321, 1.0), (654, 2.0)
     live = _tree({root: _process(), child: _process(2, 20, 10, 40, 20)})
@@ -225,17 +226,17 @@ def _snapshot(value, *, unavailable=None):
     return resources.TreeResources(
         100,
         50,
-        1.0 if value else None,
+        None,
         1,
         1,
         3,
-        unavailable=unavailable or {},
-        cpu_includes_reaped=value is not None,
+        unavailable=unavailable or {"cpu_seconds": darwin.REAPED_CPU_UNAVAILABLE},
+        cpu_includes_reaped=False,
         darwin_cpu=value,
     )
 
 
-def test_sampler_retains_exact_mach_delta_and_darwin_label(monkeypatch):
+def test_sampler_retains_private_mach_delta_without_promoting_ambiguous_cpu(monkeypatch):
     root = (321, 1.0)
     snapshots = iter(_snapshot(_tree({root: _process(user=2**60 + i * 3)})) for i in range(30))
     monkeypatch.setattr(resources, "sample_process_tree", lambda _pid: next(snapshots))
@@ -243,10 +244,14 @@ def test_sampler_retains_exact_mach_delta_and_darwin_label(monkeypatch):
     for _ in range(30):
         sampler._sample()
     report = sampler.report(attempted=29)
-    assert report["cpu_seconds"] == 29 * 125 / 1e9
+    assert sampler._darwin_last.seconds_since(sampler._darwin_first) == 29 * 125 / 1e9
+    assert report["cpu_seconds"] is None
+    assert report["cpu_ms_per_attempt"] is None
     assert report["collector"] == "psutil_with_darwin_rusage_cpu"
-    assert report["metric_minimum_met"]["cpu_seconds"] is True
-    assert report["short_exited_descendants_cpu_complete"] is True
+    assert report["metric_minimum_met"]["cpu_seconds"] is False
+    assert report["short_exited_descendants_cpu_complete"] is False
+    assert report["cpu_includes_reaped_descendants"] is False
+    assert report["unavailable_metrics"]["cpu_seconds"] == {darwin.REAPED_CPU_UNAVAILABLE: 30}
     assert sampler._observed_cpu == {}
 
 
@@ -318,7 +323,26 @@ def test_darwin_query_failure_preserves_available_memory(fake_process_tree, api)
     api.error = None
     snapshot = resources.sample_process_tree(321)
     assert snapshot.darwin_cpu.ticks == 26
-    assert snapshot.cpu_includes_reaped is True
+    assert snapshot.cpu_seconds is None and snapshot.cpu_includes_reaped is False
+    assert snapshot.unavailable["cpu_seconds"] == darwin.REAPED_CPU_UNAVAILABLE
+
+
+@pytest.mark.parametrize("child_ticks", [0, 25, 50])
+def test_unobserved_reap_history_never_qualifies_cpu(fake_process_tree, api, child_ticks):
+    # Ordinary, duplicate and zero historical rollups have no identifying tag.
+    api.values = (3, 5, child_ticks, 0)
+    sampler = resources.ResourceSampler(pid=321)
+    for _ in range(30):
+        sampler._sample()
+    report = sampler.report(attempted=2)
+    assert report["baseline"]["rss_bytes"] == 100
+    assert report["metric_minimum_met"]["rss_bytes"] is True
+    assert report["metric_minimum_met"]["cpu_seconds"] is False
+    assert report["cpu_seconds"] is None and report["cpu_ms_per_attempt"] is None
+    assert report["sample_minimum_met"] is False
+    assert report["cpu_includes_reaped_descendants"] is False
+    assert report["short_exited_descendants_cpu_complete"] is False
+    assert report["unavailable_metrics"]["cpu_seconds"] == {darwin.REAPED_CPU_UNAVAILABLE: 30}
 
 
 def test_inventory_retry_cannot_erase_a_denied_darwin_read(monkeypatch, fake_process_tree, api):
@@ -352,4 +376,30 @@ def test_ci_runs_actual_darwin_witness_on_both_existing_mac_targets():
     step = next(step for step in job["steps"] if step.get("name") == "Verify Darwin reaped descendant CPU accounting")
     assert "tests/test_native_slo_darwin_resources_live.py" in step["run"]
     assert "tests/test_native_slo_darwin_resources.py" in step["run"]
+    assert "pytest -rP" in step["run"]
     assert not step.get("continue-on-error", False) and "if" not in step
+
+
+@pytest.mark.parametrize(
+    ("expected", "observed", "classification"),
+    [
+        (51_244_000, 102_642_416.66666667, "twice"),
+        (189_394_000, 379_164_912, "twice"),
+        (50_000_000, 51_000_000, "once"),
+    ],
+)
+def test_actual_and_ordinary_ignored_child_classifications(expected, observed, classification):
+    assert classify_ignored_rollup(expected, observed) == classification
+
+
+@pytest.mark.parametrize("observed", [47_999_999, 70_000_001, 97_999_999, 120_000_001, float("nan"), float("inf")])
+def test_ignored_child_unknown_rollup_is_not_accepted(observed):
+    with pytest.raises(ValueError, match="rollup_unknown"):
+        classify_ignored_rollup(50_000_000, observed)
+
+
+def test_ignored_child_ambiguous_or_invalid_clock_is_not_classified():
+    with pytest.raises(ValueError, match="rollup_unknown"):
+        classify_ignored_rollup(10_000_000, 20_000_000)
+    with pytest.raises(ValueError, match="clock_invalid"):
+        classify_ignored_rollup(0, 0)

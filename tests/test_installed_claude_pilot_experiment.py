@@ -316,8 +316,16 @@ def test_complete_worker_summary_binds_both_arms_and_reports_target_misses(
     monkeypatch.setattr(
         installed, "installed_identity", lambda *_args: (tmp_path / "runtime", {"wheel_sha256": "a" * 64})
     )
+    preflight_calls = []
+
+    def diagnostic(*args):
+        preflight_calls.append(args)
+        return {"observer_error": True, "authorization_evidence": False}
+
+    monkeypatch.setattr(installed, "windows_discovery_preflight", diagnostic)
 
     def observe(_session, _launcher, *, sample, case, attempt, record):
+        assert len(preflight_calls) == 1
         record([120.0])
         return "b" * 64
 
@@ -326,6 +334,8 @@ def test_complete_worker_summary_binds_both_arms_and_reports_target_misses(
         wheel=tmp_path / "fixture.whl", build_sha="a" * 40, iterations=2, run_index=0, output=tmp_path / "complete"
     )
     assert report["contracts_passed"] is True
+    assert report["discovery_preflight"] == {"observer_error": True, "authorization_evidence": False}
+    assert preflight_calls == [(session.guard_home, Path(pair.native["PreToolUse"][3]), pair.native["PreToolUse"][5])]
     assert report["qualification_complete"] is False and report["production_selected"] is False
     assert report["fixture_registration_restored"] is True
     assert len(report["registrations"]) == 4

@@ -12,6 +12,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
+import psutil
+
 from codex_plugin_scanner.guard.daemon.hook_process_capacity import effective_cpu_count, physical_memory_bytes
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status
 from scripts.bench_guard_native_installed_slo import _run_cold, _run_recovery
@@ -54,6 +56,20 @@ def platform_label() -> str:
     return f"{system}-{architecture}"
 
 
+def _hardware_ram_bytes() -> int | None:
+    """Record host RAM on Windows; retain existing POSIX capacity semantics."""
+    if platform.system() != "Windows":
+        return physical_memory_bytes()
+    # The production capacity helper uses sysconf/cgroups, neither of which
+    # supplies Windows RAM. Qualification must query the actual host instead
+    # of making an absent value satisfy the immutable hardware identity gate.
+    try:
+        total = psutil.virtual_memory().total
+    except (OSError, psutil.Error, NotImplementedError):
+        return None
+    return total if type(total) is int and 0 < total < 2**63 else None
+
+
 def hardware_summary() -> dict[str, object]:
     cpu = platform.processor()
     if platform.system() == "Linux":
@@ -73,7 +89,7 @@ def hardware_summary() -> dict[str, object]:
         "cpu_model": re.sub(r"[^A-Za-z0-9_.:-]", "_", cpu)[:96] or "unknown",
         "cpu_count": os.cpu_count(),
         "effective_cpu_count": effective_cpu_count(),
-        "ram_bytes": physical_memory_bytes(),
+        "ram_bytes": _hardware_ram_bytes(),
         "os_release": re.sub(r"[^A-Za-z0-9_.:-]", "_", platform.release())[:96],
         "load_average": load,
         "power_mode": "unrecorded",

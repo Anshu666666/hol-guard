@@ -381,9 +381,11 @@ def test_package_policy_and_sandbox_context_changes_invalidate_review_approval(
     assert result.reasons[0]["code"] == expected_reason
 
 
+@pytest.mark.parametrize("prior_parser_version", (None, "complete-v2"))
 def test_package_lockfile_parser_version_changes_approval_identity(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    prior_parser_version: str | None,
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -398,6 +400,9 @@ def test_package_lockfile_parser_version_changes_approval_identity(
     assert parsed.parser_version == parser_version
     assert parser_version == package_eval_module.LOCKFILE_PARSER_VERSION
     assert parser_version == local_supply_chain_module.LOCKFILE_PARSER_VERSION
+    if prior_parser_version is not None:
+        assert prior_parser_version != parser_version
+        monkeypatch.setattr(local_supply_chain_module, "LOCKFILE_PARSER_VERSION", prior_parser_version)
     original_digest = package_request_policy_hash(
         artifact=artifact,
         store=store,
@@ -407,9 +412,12 @@ def test_package_lockfile_parser_version_changes_approval_identity(
         config=config,
     )
 
-    # Derive a distinct version so this regression still simulates an upgrade
-    # when the actual parser advances beyond complete-v2.
-    monkeypatch.setattr(local_supply_chain_module, "LOCKFILE_PARSER_VERSION", f"{parser_version}-next")
+    # Exercise the actual v2 -> current migration and a future identity change.
+    monkeypatch.setattr(
+        local_supply_chain_module,
+        "LOCKFILE_PARSER_VERSION",
+        parser_version if prior_parser_version is not None else f"{parser_version}-next",
+    )
     upgraded_digest = package_request_policy_hash(
         artifact=artifact,
         store=store,

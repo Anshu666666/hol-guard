@@ -10,20 +10,9 @@ from typing import Any
 from unittest.mock import patch
 
 from codex_plugin_scanner.guard import native_hook_edge
-from codex_plugin_scanner.guard.native_approval_errors import (
-    NATIVE_APPROVAL_ERROR_CODES,
-    NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES,
-)
+from scripts.native_slo_error_codes import PUBLIC_NATIVE_ERROR_CODES
 
-_ERROR_CODES = (
-    NATIVE_APPROVAL_ERROR_CODES
-    | NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
-    | {
-        "native_request_deadline_exceeded",
-        "native_frame_read_failed",
-        "native_request_digest_mismatch",
-    }
-)
+_ERROR_CODES = PUBLIC_NATIVE_ERROR_CODES
 _STATUS_REASONS = frozenset(
     {
         "native_ready",

@@ -39,7 +39,7 @@ write.
 Fixture creation, correctness preflight, file-cache preparation, code identity
 checks, and artifact writes occur outside timed CLI boundaries. Each arm runs
 the actual source CLI in a fresh Python process, including its imports,
-Git/Rust children, native compilation-on-start, JSON transport, retained
+Git/Rust children, regex catalog compilation at native process startup, JSON transport, retained
 Python finding work, public serialization and child cleanup. Both arms use
 the same exact Python/dependency environment and fixture. Their order
 alternates by pair and independent-run index.

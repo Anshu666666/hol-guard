@@ -482,7 +482,16 @@ jobs:
         with:
           name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: wheel-bundle
+      # This pinned action flattens a single pattern match even when
+      # merge-multiple is false. Preserve the exact root explicitly for smoke.
+      - name: Fetch the exact smoke route pair into its named root
+        if: always() && needs.plan.outputs.tails_mode == 'smoke'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: surface-tail-${{ matrix.target }}-${{ needs.plan.outputs.tails_selection }}-0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tail-pairs/surface-tail-${{ matrix.target }}-${{ needs.plan.outputs.tails_selection }}-0-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Fetch every expected route pair without merging artifact roots
+        if: always() && needs.plan.outputs.tails_mode == 'qualification'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: surface-tail-${{ matrix.target }}-*-${{ github.run_id }}-${{ github.run_attempt }}
@@ -537,8 +546,14 @@ jobs:
         with:
           name: wheels-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: wheel-bundle
+      - name: Fetch the exact smoke pair into its named root
+        if: always() && needs.plan.outputs.mode == 'smoke'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: pair-${{ matrix.target }}-0-${{ github.run_id }}-${{ github.run_attempt }}
+          path: retained-pairs/pair-${{ matrix.target }}-0-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        if: always()
+        if: always() && needs.plan.outputs.mode == 'qualification'
         with:
           pattern: pair-${{ matrix.target }}-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: retained-pairs

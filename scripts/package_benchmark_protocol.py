@@ -177,7 +177,7 @@ def validate_worker_report(value: object, offered: Mapping[str, object]) -> dict
                 raise ValueError("package_matrix_worker_timing_invalid")
         elif key in value:
             raise ValueError("package_matrix_worker_unexpected_timing")
-    if "parser_version" in value and value["parser_version"] not in {"complete-v1", "complete-v2"}:
+    if "parser_version" in value and value["parser_version"] not in {"complete-v1", "complete-v2", "complete-v3"}:
         raise ValueError("package_matrix_worker_parser_invalid")
     if "decision" in value and value["decision"] != "block":
         raise ValueError("package_matrix_worker_decision_invalid")

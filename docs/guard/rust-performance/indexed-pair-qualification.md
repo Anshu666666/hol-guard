@@ -34,6 +34,19 @@ remain explicitly unattempted. The aggregation job runs after failed collection
 jobs and requires every expected index. Missing, duplicated, mismatched or
 unarchived evidence prevents comparison.
 
+Smoke downloads its one exact artifact into an explicitly named pair directory.
+The pinned `actions/download-artifact` implementation extracts a single pattern
+match directly into `path`, even with `merge-multiple: false`. In fifth run
+`35247986949` at source `96a69725eab018674174dabc6f205a4087d6ff4b`, the Linux
+ordinary aggregator (`105298784268`) and nonpriority aggregator (`105296268452`)
+therefore rejected flattened evidence as missing/unexpected pair roots. The
+nonpriority collection itself had completed both two-observation arms. The
+download correction preserves exact run/attempt/platform/index names for both
+smoke aggregators; full qualification retains its multiple-artifact pattern.
+Synthetic sealed-archive regressions check completed and failed arms after the
+same extraction shape. These checks do not change the retained failed CI result
+or constitute a new installed run or qualified performance result.
+
 ## Identity and comparability
 
 The platform build emits both immutable wheels and hash-pinned exports from the

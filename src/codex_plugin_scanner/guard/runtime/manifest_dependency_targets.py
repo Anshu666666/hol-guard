@@ -73,7 +73,7 @@ def _manifest_dependency_targets(
             if not isinstance(relative_path, str) or not relative_path:
                 continue
             lockfile_path = resolve_path_within_workspace(workspace_dir, relative_path)
-            if lockfile_path is None:
+            if lockfile_path is None or lockfile_path.name.lower() == "bun.lockb":
                 continue
             lockfile_source = read_bytes_within_workspace(workspace_dir, relative_path)
             if lockfile_source is None:

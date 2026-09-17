@@ -182,6 +182,18 @@ def test_worker_rejects_invalid_timing_values(value):
         validate_worker_report(report, offered)
 
 
+@pytest.mark.parametrize("version", ("complete-v1", "complete-v2", "complete-v3", "complete-v4", "unknown"))
+def test_worker_parser_versions_admit_current_and_historical_closed_contracts(version):
+    offered = {"schema": "hol-guard.package-attempt.v2", **dict.fromkeys(IDENTITY_FIELDS, "fixture")}
+    offered.update(case_id=Case("npm", 100, 100, "exact", "evaluator").id, measurement="validation")
+    report = {**valid_report(offered), "parser_version": version}
+    if version in {"complete-v1", "complete-v2", "complete-v3"}:
+        assert validate_worker_report(report, offered)["parser_version"] == version
+    else:
+        with pytest.raises(ValueError, match="parser_invalid"):
+            validate_worker_report(report, offered)
+
+
 def test_no_favorable_subset_summary():
     rows = [
         {"case_id": "case", "comparable": True, "wall_reduction": 0.5, "cpu_reduction": 0.4},

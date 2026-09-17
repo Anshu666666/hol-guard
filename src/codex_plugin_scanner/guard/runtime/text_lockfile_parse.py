@@ -243,13 +243,19 @@ def parse_text_lockfile(
             pnpm.line(stripped, indent, budget)
         elif name == "yarn.lock":
             yarn.line(raw, stripped, budget)
-        elif stripped == "specs:":
+        elif indent == 2 and stripped == "specs:":
             in_specs = True
-        elif _HEADING_RE.fullmatch(stripped):
+        elif indent == 0 and _HEADING_RE.fullmatch(stripped):
             in_specs = False
-        elif in_specs and (match := _SPEC_RE.match(raw)):
-            gems[match.group(1)] = match.group(2)
-            budget.entries(len(gems))
+        elif in_specs:
+            if match := _SPEC_RE.fullmatch(raw.rstrip()):
+                gems[match.group(1)] = match.group(2)
+                budget.entries(len(gems))
+            elif indent == 4:
+                # A recognized top-level gem spec cannot be silently omitted
+                # after a valid prefix. Nested dependency constraints and other
+                # sections remain outside this deliberately bounded grammar.
+                raise TextLockfileValidationError("syntax_error")
     check_deadline()
     if budget.bracket_depth != 0:
         raise TextLockfileValidationError("syntax_error")

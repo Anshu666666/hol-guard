@@ -9,6 +9,20 @@ import sys
 import time
 
 
+def classify_ignored_rollup(expected_ns: int, observed_ns: float) -> str:
+    """Classify the witness only; never correct or authorize measured tree CPU."""
+    if expected_ns <= 0:
+        raise ValueError("ignored_child_clock_invalid")
+    matches = [
+        label
+        for label, count in (("once", 1), ("twice", 2))
+        if expected_ns * count - 2_000_000 <= observed_ns <= expected_ns * count + 20_000_000
+    ]
+    if len(matches) != 1:
+        raise ValueError("ignored_child_rollup_unknown")
+    return matches[0]
+
+
 def burn() -> None:
     # Fixed bounded work makes child CPU distinguishable from clock rounding.
     sum(value * value for value in range(1_000_000))

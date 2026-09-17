@@ -65,6 +65,19 @@ def test_fixed_deadlines_fit_job_and_archive_is_always_required():
     assert "needs.shards.result" in json.dumps(value["jobs"]["aggregate"])
 
 
+def test_artifact_names_and_download_selection_are_bound_to_current_run_attempt():
+    for job in workflow()["jobs"].values():
+        for step in job["steps"]:
+            uses = step.get("uses", "")
+            if uses.startswith("actions/upload-artifact@"):
+                name = step["with"]["name"]
+                assert "github.run_id" in name and "github.run_attempt" in name
+                assert step["with"].get("overwrite", "false") == "false"
+            if uses.startswith("actions/download-artifact@"):
+                pattern = step["with"]["pattern"]
+                assert "github.run_id" in pattern and "github.run_attempt" in pattern
+
+
 def test_crate_is_explicit_benchmark_only_and_lock_keeps_existing_dependencies():
     import tomllib
 

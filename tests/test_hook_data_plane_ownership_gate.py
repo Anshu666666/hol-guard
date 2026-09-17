@@ -37,6 +37,34 @@ def test_changed_path_gate_maps_live_cli_hook_support(monkeypatch: pytest.Monkey
     assert changed == (path,)
 
 
+def test_changed_path_gate_maps_offline_regex_pilot_separately(monkeypatch: pytest.MonkeyPatch) -> None:
+    paths = (
+        "rust/crates/guard-offline-regex-pilot/Cargo.toml",
+        "rust/crates/guard-offline-regex-pilot/src/main.rs",
+    )
+    monkeypatch.setattr(MODULE, "_changed_files", lambda _base_ref: paths)
+    manifest = MODULE._manifest()
+
+    assert MODULE._changed_path_gate(manifest, "base") == paths
+    for path in paths:
+        owners = [
+            node for node in manifest["nodes"] if any(MODULE._matches(path, pattern) for pattern in node["paths"])
+        ]
+        assert [node["id"] for node in owners] == ["offline_regex_benchmark_pilot"]
+        assert owners[0]["class"] == "rust_semantic"
+
+
+def test_manifest_rejects_unowned_offline_regex_pilot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = MODULE._manifest()
+    manifest["nodes"] = [node for node in manifest["nodes"] if node["id"] != "offline_regex_benchmark_pilot"]
+    contract = tmp_path / "hook-data-plane-ownership.v2.json"
+    contract.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(MODULE, "MANIFEST", contract)
+
+    with pytest.raises(RuntimeError, match=r"has no ownership mapping: rust/crates/guard-offline-regex-pilot/"):
+        MODULE._manifest()
+
+
 def test_changed_path_gate_maps_every_production_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     path = "src/codex_plugin_scanner/guard/adapters/antigravity.py"
     monkeypatch.setattr(MODULE, "_changed_files", lambda _base_ref: (path,))

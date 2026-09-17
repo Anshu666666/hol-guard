@@ -144,6 +144,23 @@ def test_failed_encrypted_upload_clears_derived_claims_even_with_valid_local_rec
     assert all(row["comparison"] is None and not row["benefit_gate_passed"] for row in value["cohorts"])
 
 
+def test_excess_summary_inventory_retains_failed_aggregate_without_comparing_subset(tmp_path, monkeypatch):
+    for label in ("expected", "unexpected"):
+        child = tmp_path / "shards" / label
+        child.mkdir(parents=True)
+        (child / "summary.json").write_text("{}")
+    monkeypatch.setattr(ci, "admitted_public", lambda *_: pytest.fail("excess inventory must not admit a subset"))
+    target = tmp_path / "aggregate.json"
+    assert not ci.combine(
+        tmp_path / "shards", target, selection="smoke", source_sha=SOURCE_SHA, shards_outcome="success"
+    )
+    report = json.loads(target.read_text())
+    assert report["status"] == "aggregate_file_bound" and report["summary_files_observed_minimum"] == 2
+    assert report["planned_attempts"] == 24 and report["invalid_shards"] == 1
+    assert not report["collection_complete"] and not report["minimum_independent_runs_met"]
+    assert all(row["comparison"] is None and not row["benefit_gate_passed"] for row in report["cohorts"])
+
+
 @pytest.mark.skipif(sys.platform != "linux", reason="Linux-only flock/alarm collector")
 def test_controller_budget_retains_unoffered_plan_and_fixed_failure(tmp_path, monkeypatch):
     from scripts import scanner_pilot_worker as worker

@@ -19,7 +19,7 @@ if TYPE_CHECKING or sys.version_info >= (3, 11):
 else:  # pragma: no cover - Python 3.10 runtime compatibility
     tomllib = importlib.import_module("tomli")
 
-LOCKFILE_PARSER_VERSION = "complete-v2"
+LOCKFILE_PARSER_VERSION = "complete-v3"
 LOCKFILE_MAX_BYTES = 8 * 1024 * 1024
 LOCKFILE_MAX_ENTRIES = 100_000
 LOCKFILE_MAX_NODES = 250_000

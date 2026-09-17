@@ -18,6 +18,12 @@ if TYPE_CHECKING:
     from ..store import GuardStore
 
 from ..dashboard_launcher import build_desktop_dashboard_session_url, desktop_bootstrap_is_preflight
+from .desktop_presentation import (
+    presentation_projection as _presentation_projection,
+    run_presentation_get_command,
+    run_presentation_set_command,
+    unsupported_presentation_projection,
+)
 
 DESKTOP_BOOTSTRAP_SCHEMA = "guard-desktop-bootstrap.v1"
 _MAX_PENDING_APPROVALS = 20
@@ -216,6 +222,7 @@ def build_desktop_bootstrap_payload(
     oldest_pending_at: str | None = None,
     resolved_today_count: int | None = None,
     receipt_summary: dict[str, object] | None = None,
+    presentation: dict[str, object] | None = None,
 ) -> dict[str, object]:
     runtime_status = _text(status_payload.get("runtime_status")) or "offline"
     runtime_active = runtime_status == "active"
@@ -329,6 +336,7 @@ def build_desktop_bootstrap_payload(
         "recentReceipts": receipt_projections,
         "cloud": _cloud_projection(status_payload),
         "dashboard": {"available": True, "launchCommandSupported": True},
+        "presentation": presentation or unsupported_presentation_projection(),
     }
 
 
@@ -366,8 +374,13 @@ def _run_guard_desktop_command(
         if bool(getattr(args, "alpha", False)):
             argv.append("--alpha")
         return dashboard_update_main(argv)
-    if getattr(args, "desktop_command", None) != "bootstrap":
-        print("Choose desktop bootstrap.", file=sys.stderr)
+    desktop_command = getattr(args, "desktop_command", None)
+    if desktop_command == "presentation-get":
+        return run_presentation_get_command(args, guard_home=guard_home, config=config, output_stream=output_stream)
+    if desktop_command == "presentation-set":
+        return run_presentation_set_command(args, guard_home=guard_home, config=config, output_stream=output_stream)
+    if desktop_command != "bootstrap":
+        print("Choose desktop bootstrap, presentation-get or presentation-set.", file=sys.stderr)
         return 2
     if context is None or store is None or config is None:
         raise RuntimeError("Guard Desktop bootstrap requires local Guard context")
@@ -412,6 +425,7 @@ def _run_guard_desktop_command(
         oldest_pending_at=oldest_pending_at,
         resolved_today_count=resolved_today_count,
         receipt_summary=receipt_summary,
+        presentation=_presentation_projection(config),
     )
     dashboard = payload.get("dashboard")
     if isinstance(dashboard, dict):

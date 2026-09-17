@@ -32,19 +32,6 @@ _AZ_BATCH = _az("storage", "blob", "delete-batch")
 _MC_DELETE = _join(_mc("rm"), _mc("rb"), _mc("mirror", required=frozenset({"--remove"})))
 _GCS_RSYNC = _gcloud("storage", "rsync", forbidden=frozenset({"--delete-unmatched-destination-objects"}))
 
-_AWS = "command.storage.aws-s3"
-_GCS = "command.storage.google-cloud"
-_AZURE = "command.storage.azure-blob"
-_MINIO = "command.storage.minio"
-_AWS_ACT = "AWS storage destructive command"
-_GCS_ACT = "Google storage destructive command"
-_AZ_ACT = "Azure storage destructive command"
-_MC_ACT = "MinIO storage destructive command"
-
-_AWS_SYNC = _aws("s3", "sync", forbidden=frozenset({"--delete"}))
-_GCS_RSYNC = _gcloud("storage", "rsync", forbidden=frozenset({"--delete-unmatched-destination-objects"}))
-_GCS_FAMILY = "google-cloud-storage"
-
 STORAGE_COMMAND_RULES = (
     *AWS_S3_COMMAND_RULES,
     _rule(

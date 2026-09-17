@@ -92,7 +92,7 @@ def _write_scan(result: RepositorySecretScanResult, *, json_output: bool) -> Non
     if result.truncated:
         print(
             "Scan coverage is partial. Increase the configured bounds or resolve the "
-            "reported Git error before treating it as clean."
+            "reported input error before treating it as clean."
         )
     for error in result.errors:
         print(f"Warning: {error}", file=sys.stderr)

@@ -121,6 +121,31 @@ def test_installed_and_ownership_checks_do_not_depend_on_changed_file_filters(wo
     assert "paths-ignore" not in trigger
 
 
+def test_working_secret_reader_correctness_runs_before_wheel_build_on_all_platforms() -> None:
+    workflow = yaml.safe_load((ROOT / ".github/workflows/native-wheel-ci.yml").read_text(encoding="utf-8"))
+    jobs = workflow["jobs"]
+    files = ("tests/test_guard_secret_working_file_reader.py", "tests/test_guard_secret_working_parity.py")
+    for name in ("linux-x64", "macos", "windows-x64"):
+        steps = jobs[name]["steps"]
+        selected = [
+            (index, step) for index, step in enumerate(steps) if all(path in step.get("run", "") for path in files)
+        ]
+        assert len(selected) == 1
+        index, step = selected[0]
+        assert "uv run --no-sync pytest" in step["run"]
+        assert any(option in step["run"].split() for option in ("-rs", "-rPs"))
+        if name == "macos":
+            assert "-rPs" in step["run"].split()  # Retain passed Darwin witness stdout.
+        assert "if" not in step and not step.get("continue-on-error", False)
+        assert index < next(i for i, item in enumerate(steps) if item.get("name") == "Build pure Python wheel")
+    assert jobs["linux-x64"]["runs-on"] == "ubuntu-latest"
+    assert jobs["windows-x64"]["runs-on"] == "windows-latest"
+    assert {item["target"] for item in jobs["macos"]["strategy"]["matrix"]["include"]} == {
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+    }
+
+
 @pytest.mark.parametrize("changed_path", _NATIVE_BOUNDARY_CHANGES)
 @pytest.mark.parametrize("workflow", ("rust-runtime.yml", "rust-runtime-performance.yml", "rust-runtime-recovery.yml"))
 def test_native_boundary_changes_select_runtime_performance_and_recovery(workflow: str, changed_path: str) -> None:

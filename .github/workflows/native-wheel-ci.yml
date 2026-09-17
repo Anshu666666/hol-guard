@@ -34,7 +34,10 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Run wheel-builder contracts
-        run: uv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py --tb=short
+        run: >-
+          uv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py
+          tests/test_guard_secret_working_file_reader.py tests/test_guard_secret_working_parity.py
+          --tb=short -rs
       - name: Install pinned Rust toolchain and musl target
         run: |
           rustup toolchain install 1.88.0 --profile minimal
@@ -197,9 +200,11 @@ jobs:
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Verify Darwin reaped descendant CPU accounting
         run: >-
-          uv run --no-sync pytest -rP tests/test_native_slo_darwin_resources.py
+          uv run --no-sync pytest -rPs tests/test_native_slo_darwin_resources.py
           tests/test_native_slo_darwin_resources_live.py
-          tests/test_native_slo_resources.py tests/test_native_slo_resource_accounting.py --tb=short
+          tests/test_native_slo_resources.py tests/test_native_slo_resource_accounting.py
+          tests/test_guard_secret_working_file_reader.py tests/test_guard_secret_working_parity.py
+          --tb=short
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.88.0 --profile minimal
@@ -327,7 +332,9 @@ jobs:
       - name: Verify Windows process-tree memory sampling
         run: >-
           uv run --no-sync pytest tests/test_native_slo_windows_memory.py
-          tests/test_native_slo_rss.py --tb=short
+          tests/test_native_slo_rss.py
+          tests/test_guard_secret_working_file_reader.py tests/test_guard_secret_working_parity.py
+          --tb=short -rs
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |

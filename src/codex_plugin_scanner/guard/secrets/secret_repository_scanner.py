@@ -242,24 +242,9 @@ def _scan_blob(
 
 
 def _read_working_file(root: Path, relative_path: str, max_file_bytes: int) -> bytes | None:
-    candidate = root / relative_path
-    try:
-        resolved = candidate.resolve(strict=True)
-        resolved.relative_to(root.resolve())
-    except (OSError, ValueError):
-        return None
-    if not resolved.is_file() or resolved.is_symlink():
-        return None
-    try:
-        size = resolved.stat().st_size
-    except OSError:
-        return None
-    if size > max_file_bytes:
-        return None
-    try:
-        return resolved.read_bytes()
-    except OSError:
-        return None
+    from .working_file_reader import read_working_bytes
+
+    return read_working_bytes(root, relative_path, max_file_bytes)
 
 
 def _git_commits(root: Path, max_commits: int) -> list[str] | None:
@@ -298,6 +283,8 @@ def scan_repository_secrets(
     max_findings: int = DEFAULT_MAX_FINDINGS,
 ) -> RepositorySecretScanResult:
     """Scan a local file/directory and optionally bounded Git history."""
+
+    from .working_file_reader import WorkingFileReadError
 
     root = target.expanduser().resolve()
     if not root.exists():
@@ -344,7 +331,13 @@ def scan_repository_secrets(
             truncation_reasons.update(active_reasons)
             truncated = True
             break
-        data = _read_working_file(scan_root, relative_path, max_file_bytes)
+        try:
+            data = _read_working_file(scan_root, relative_path, max_file_bytes)
+        except WorkingFileReadError:
+            truncated = True
+            if "working_tree_file_unavailable_or_changed" not in errors:
+                errors.append("working_tree_file_unavailable_or_changed")
+            continue
         if data is None:
             continue
         if bytes_scanned + len(data) > max_total_bytes:

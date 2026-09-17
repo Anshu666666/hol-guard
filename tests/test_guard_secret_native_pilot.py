@@ -7,6 +7,7 @@ import os
 import random
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -235,6 +236,82 @@ def test_full_cli_staged_divergence_includes_native_boundary(binary, tmp_path):
     assert sample["native_pilot_native_files"] == 2
     assert sample["native_pilot_python_fallback_files"] == 0
     assert sample["full_cli_process_tree_cpu_ms"] > 0
+
+
+@pytest.mark.parametrize("case", ["invalid_working", "invalid_staged", "links_git", "links_filesystem"])
+def test_full_cli_encoding_and_scanned_link_parity(binary, tmp_path, case):
+    from codex_plugin_scanner.guard.secrets.secret_repository_scanner import scan_repository_secrets
+    from codex_plugin_scanner.guard.secrets.secret_staged_scanner import scan_staged_secrets
+    from scripts.scanner_pilot_process import full_cli
+    from tests.fixtures.guard_secret_working_inputs import CONTENT, SECRET, create
+
+    workflow, paths, count = create(tmp_path / "repository", case)
+    target = tmp_path / "repository"
+    root = Path(__file__).resolve().parents[1]
+    arguments = {"extra_args": ("--fail-on-findings",), "expected_exit": 3}
+    _, expected = full_cli(root, target, workflow, **arguments)
+    sample, actual = full_cli(root, target, workflow, native_pilot_binary=binary, **arguments)
+    assert actual == expected
+    assert [finding["path"] for finding in actual["findings"]] == list(paths)
+    assert actual["files_scanned"] == count and actual["bytes_scanned"] == len(CONTENT) * len(paths)
+    assert actual["errors"] == [] and not actual["truncated"]
+    assert SECRET not in str(actual)
+    assert sample["native_pilot_native_files"] == len(paths)
+    # Malformed source bytes are omitted by the original decoder before regex;
+    # do not misreport them as a valid Unicode Python fallback.
+    assert sample["native_pilot_python_fallback_files"] == 0
+    scan = scan_staged_secrets if workflow == "staged" else scan_repository_secrets
+    before = scan(target)
+    installed = pilot.install(binary)
+    try:
+        after = scan(target)
+    finally:
+        installed.close()
+    assert before == after
+    assert [f.to_public_dict(fingerprint_key=b"tenant-a") for f in before.findings] == [
+        f.to_public_dict(fingerprint_key=b"tenant-a") for f in after.findings
+    ]
+
+
+def test_admitted_read_failure_preserves_native_partial_result_and_cli_exit(binary, tmp_path, monkeypatch, capsys):
+    import json
+
+    from codex_plugin_scanner.guard.secrets import secret_repository_scanner as repository
+    from codex_plugin_scanner.guard.secrets import working_file_reader as reader
+    from codex_plugin_scanner.guard.secrets.cli import main
+    from tests.fixtures.guard_secret_working_inputs import CONTENT, SECRET
+
+    (tmp_path / "a.env").write_bytes(CONTENT)
+    target = tmp_path / "b.env"
+    target.write_bytes(CONTENT)
+    identity = target.stat().st_ino
+    original_read = reader.os.read
+
+    def fail_admitted_read(descriptor, size):
+        if os.fstat(descriptor).st_ino == identity:
+            raise OSError("synthetic private path detail")
+        return original_read(descriptor, size)
+
+    monkeypatch.setattr(reader, "os", SimpleNamespace(**(vars(os) | {"read": fail_admitted_read})))
+    arguments = ["scan", str(tmp_path), "--json", "--fail-on-findings"]
+    expected = repository.scan_repository_secrets(tmp_path)
+    assert main(arguments) == 2
+    expected_cli = capsys.readouterr()
+    installed = pilot.install(binary)
+    try:
+        actual = repository.scan_repository_secrets(tmp_path)
+        assert main(arguments) == 2
+        actual_cli = capsys.readouterr()
+    finally:
+        installed.close()
+    assert actual == expected
+    assert actual_cli == expected_cli
+    assert json.loads(actual_cli.out) == actual.to_public_dict()
+    assert actual.errors == ("working_tree_file_unavailable_or_changed",) and actual.truncated
+    assert [finding.path for finding in actual.findings] == ["a.env"]
+    assert SECRET not in actual_cli.out and "private path" not in actual_cli.out
+    assert installed.client.stats["native_files"] == 2 and installed.client.stats["python_fallback_files"] == 0
+    assert actual.findings[0].fingerprint(b"tenant-a") == expected.findings[0].fingerprint(b"tenant-a")
 
 
 def test_whitespace_translation_rejects_unsupported_context():

@@ -1,4 +1,5 @@
-import { j as jsxRuntimeExports, S as SectionLabel, z as HiMiniXMark, P as Badge, aE as Tag, b as HiMiniCommandLine, M as HiMiniExclamationTriangle, bM as scopeLabel, i as harnessDisplayName, A as ActionButton, aY as guardAwareHref, w as formatRelativeTime$1, bN as HiMiniDocumentText, o as HiMiniCheckCircle, bO as HiMiniCloudArrowUp, bP as HiMiniCheck, bQ as HiMiniCodeBracket, bR as HiMiniClipboardDocument, bS as HiMiniUsers, bq as HiMiniBeaker, aQ as HiMiniFolder, af as HiMiniLockClosed, t as HiMiniShieldCheck, aJ as HiMiniInformationCircle, bx as HiMiniCloudArrowDown, aX as HiMiniArrowTopRightOnSquare, bT as HiMiniIdentification, bU as policyActionLabel, r as reactExports, bV as createCloudExceptionRequest, bW as HiMiniArrowRight, m as EmptyState, aB as HiMiniMagnifyingGlass, B as HiMiniChevronUp, C as HiMiniChevronDown, c as HiMiniChevronRight, bX as HiMiniPuzzlePiece, a1 as HiMiniGlobeAlt, bo as HiMiniClock, bY as fetchCloudExceptions, bZ as fetchCloudExceptionRequests, b_ as downloadBlob, b$ as PolicyStatField, c0 as PaginationControls, aW as HiMiniNoSymbol, aO as HiMiniCube, a0 as HiMiniArrowPath, I as HiMiniCloud, ae as HiMiniAdjustmentsHorizontal, c1 as HiMiniArrowDownTray, c2 as HiMiniQueueList, aA as WorkspacePageHeader, bK as lazyWorkspace, bL as __vitePreload } from "../guard-dashboard.js";
+import { j as jsxRuntimeExports, S as SectionLabel, C as HiMiniXMark, R as Badge, aJ as Tag, b as HiMiniCommandLine, P as HiMiniExclamationTriangle, bT as scopeLabel, i as harnessDisplayName, A as ActionButton, b2 as guardAwareHref, y as formatRelativeTime$1, bU as HiMiniDocumentText, s as HiMiniCheckCircle, bV as HiMiniCloudArrowUp, a_ as HiMiniCheck, bW as HiMiniCodeBracket, bX as HiMiniClipboardDocument, bY as HiMiniUsers, bx as HiMiniBeaker, aU as HiMiniFolder, af as HiMiniLockClosed, w as HiMiniShieldCheck, aO as HiMiniInformationCircle, bE as HiMiniCloudArrowDown, b1 as HiMiniArrowTopRightOnSquare, bZ as HiMiniIdentification, b_ as policyActionLabel, r as reactExports, b$ as createCloudExceptionRequest, c0 as HiMiniArrowRight, n as EmptyState, aG as HiMiniMagnifyingGlass, F as HiMiniChevronUp, I as HiMiniChevronDown, c as HiMiniChevronRight, c1 as HiMiniPuzzlePiece, aR as HiMiniGlobeAlt, bv as HiMiniClock, c2 as fetchCloudExceptions, c3 as fetchCloudExceptionRequests, c4 as downloadBlob, c5 as PolicyStatField, c6 as PaginationControls, a$ as HiMiniNoSymbol, aS as HiMiniCube, am as HiMiniArrowPath, K as HiMiniCloud, ah as HiMiniAdjustmentsHorizontal, c7 as HiMiniArrowDownTray, c8 as HiMiniQueueList, aF as WorkspacePageHeader, bR as lazyWorkspace, bS as __vitePreload } from "../guard-dashboard.js";
+import { C as ConnectGuardCloudButton } from "./connect-guard-cloud-button.js";
 const CLOUD_EXCEPTION_EXPIRING_SOON_DAYS = 7;
 function parseCloudExceptionTimestamp(value) {
   if (!value || !value.trim()) {
@@ -2886,7 +2887,6 @@ function PolicyCloudExceptionsTab({
   const [actionFilter, setActionFilter] = reactExports.useState("all");
   const cloudControlsUrl = resolveCloudPolicyControlsUrl(snapshot);
   const cloudConnected = resolveCloudExceptionsConnected(snapshot);
-  snapshot.connect_url?.trim() || null;
   const reloadData = reactExports.useCallback(async () => {
     if (!cloudConnected) {
       setExceptions([]);
@@ -4224,16 +4224,15 @@ function PolicyPageToolbar({ snapshot, onReloadPolicy, reloading = false }) {
 function PolicyExceptionsToolbar({
   cloudConnected,
   cloudControlsUrl,
-  connectUrl,
   onRequestException
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center justify-end gap-2", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { variant: "primary", onClick: onRequestException, disabled: !cloudConnected, children: "+ Request cloud exception" }),
-    cloudControlsUrl ? /* @__PURE__ */ jsxRuntimeExports.jsxs(ActionButton, { href: cloudControlsUrl, variant: "secondary", children: [
+    cloudConnected && cloudControlsUrl ? /* @__PURE__ */ jsxRuntimeExports.jsxs(ActionButton, { href: cloudControlsUrl, variant: "secondary", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCloudArrowUp, { className: "mr-1.5 h-4 w-4", "aria-hidden": "true" }),
       "Open Guard Cloud"
     ] }) : null,
-    !cloudConnected && connectUrl ? /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { href: connectUrl, variant: "secondary", children: "Connect Guard Cloud" }) : null
+    !cloudConnected ? /* @__PURE__ */ jsxRuntimeExports.jsx(ConnectGuardCloudButton, { variant: "secondary" }) : null
   ] });
 }
 const PolicyWorkspace = lazyWorkspace(
@@ -4286,7 +4285,6 @@ function PolicyWorkspacePage(props) {
           {
             cloudConnected,
             cloudControlsUrl,
-            connectUrl: props.snapshot.connect_url?.trim() || null,
             onRequestException: () => setExceptionRequestOpen(true)
           }
         ) : /* @__PURE__ */ jsxRuntimeExports.jsx(

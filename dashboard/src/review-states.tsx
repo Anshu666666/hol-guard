@@ -23,10 +23,6 @@ import type {
 import { normalizeGuardAction } from "./guard-action";
 import { LoggedActionPanel } from "./logged-action-panel";
 import { protectionHealthFor, unavailableProtectionHealth, useProtectionPresentationState } from "./protection-health";
-import { ActionExplanationSummary } from "./action-explanation-summary";
-import { usePresentationMode } from "./presentation-mode-provider";
-import { useActionExplanation } from "./use-action-explanation";
-import { GuardTechnicalDisclosure } from "./guard-technical-disclosure";
 
 const PROTECTION_APPEARANCE = {
   protected: {

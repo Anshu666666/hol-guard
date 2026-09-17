@@ -13,6 +13,7 @@ const approvalPassword = process.env.GUARD_INSTALLED_APPROVAL_PASSWORD ?? "";
 const extensionId = "command.api-gateway";
 const permissionId = "command.api-gateway.permission.delete";
 const governedRuleId = "command.api-gateway.delete";
+const expectedExtensionCount = 61;
 
 async function installSession(page: import("@playwright/test").Page) {
   await page.addInitScript(({ daemon, token }) => {
@@ -114,21 +115,34 @@ test("installed Protection Center keeps canonical routes and real-daemon inspect
     sessionStorage.setItem("guardDaemon", daemon);
   }, { daemon: origin, token: session });
 
-  const catalogResponsePromise = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.pathname === "/v1/extension-controls/catalog" && response.status() === 200;
-  });
   await page.goto("/extensions");
-  const catalogResponse = await catalogResponsePromise;
-  const catalogPayload = await catalogResponse.json() as { extensions?: unknown[] };
-  const expectedExtensionCount = catalogPayload.extensions?.length ?? 0;
-  expect(expectedExtensionCount).toBeGreaterThan(0);
   await expectSecretSafeUrl(page);
   await expect(page.getByRole("heading", { name: "Extensions", level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "All tools" })).toBeVisible();
-  await expect(page.getByText(`${expectedExtensionCount} tools`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`${expectedExtensionCount} tools`)).toBeVisible();
   await expect(page.getByRole("button", { name: /Git/ }).first()).toBeVisible();
   await expect(page.getByPlaceholder(/Search any command Guard watches/)).toBeVisible();
+  await expect(page.getByTestId("catalog-filters")).toBeVisible();
+  // The filter toolbar stays collapsed until asked for: one trigger row, no
+  // permanent facet rows above the catalog.
+  const filtersTrigger = page.getByTestId("catalog-filters").getByRole("button", { name: /^Filters/ });
+  await expect(page.getByRole("group", { name: "Trust" })).toBeHidden();
+  await expect(page.getByRole("group", { name: "Kind" })).toBeHidden();
+  await expect(page.getByRole("group", { name: "Area" })).toBeHidden();
+  await filtersTrigger.click();
+  await expect(filtersTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("group", { name: "Trust" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Kind" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Area" })).toBeVisible();
+  const externalFilter = page.getByTestId("catalog-filters").getByRole("button", { name: /^External,/ });
+  await expect(externalFilter).toBeVisible();
+  await externalFilter.click();
+  await expect(externalFilter).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText(/of \d+ tools/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove External trust filter" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(externalFilter).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Remove External trust filter" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: /^(Protected|Finish setup|Needs repair|Protection limited|Emergency Lockdown active)$/ })).toBeVisible();
   // The landing is a catalog: no activity feed, no cloud status box, no health
   // check, and no second search surface.

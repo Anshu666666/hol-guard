@@ -48,7 +48,7 @@ def _run(script: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 def test_missing_frontend_dependency_is_incomplete_before_any_proof_runs(tmp_path: Path, script: str) -> None:
     path, env = _fixture(tmp_path, script)
     result = _run(path, env)
-    assert result.returncode != 0
+    assert result.returncode == 2
     assert "incomplete" in result.stderr.lower()
     assert "tsx" in result.stderr
     assert "python-required-check" not in result.stdout

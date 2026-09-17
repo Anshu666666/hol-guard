@@ -2316,9 +2316,9 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_json(_settings_response_payload(store.guard_home, editable_guard_settings(config)))
             return
         if parsed.path == "/v1/cloud-review":
-            from .cloud_review_settings import cloud_review_settings_status
+            from .cloud_review_settings_route import handle_cloud_review_status
 
-            self._write_json(cloud_review_settings_status(store), extra_headers={"Cache-Control": "no-store"})
+            handle_cloud_review_status(self._daemon_server(), self._write_json)
             return
         if parsed.path == "/v1/update/status":
             self._write_json(

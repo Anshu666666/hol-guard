@@ -43,16 +43,16 @@ def test_diagnostic_is_bounded_read_only_and_cannot_choose_an_arbitrary_source()
         "matrix": {
             "profile": [
                 {
-                    "name": "foundation",
-                    "label": "Foundation e449",
-                    "commit": diagnostic.FOUNDATION_SHA,
-                    "artifact": "codeql-foundation-e449",
+                    "name": "foundation-cdd",
+                    "label": "Foundation cdd",
+                    "commit": diagnostic.CURRENT_FOUNDATION_SHA,
+                    "artifact": "codeql-foundation-cdd",
                 },
                 {
-                    "name": "implementation",
-                    "label": "Implementation abf",
-                    "commit": diagnostic.IMPLEMENTATION_SHA,
-                    "artifact": "codeql-implementation-abf",
+                    "name": "implementation-d8",
+                    "label": "Prepared implementation d8",
+                    "commit": diagnostic.PREPARED_IMPLEMENTATION_SHA,
+                    "artifact": "codeql-implementation-d8",
                 },
             ],
             "language": ["actions", "javascript-typescript", "python"],
@@ -166,7 +166,7 @@ def _write_sarif(root: Path, body: object | None = None) -> bytes:
     return raw
 
 
-@pytest.mark.parametrize("profile_name", ["foundation", "implementation"])
+@pytest.mark.parametrize("profile_name", ["foundation", "implementation", "foundation-cdd"])
 def test_complete_diagnostic_retains_exact_bytes_without_clearing_findings(
     tmp_path: Path, pinned_source: None, profile_name: str
 ) -> None:
@@ -300,7 +300,7 @@ def test_verifier_cli_rejects_unavailable_source(tmp_path: Path, monkeypatch: py
     assert failure.value.code == 1
 
 
-@pytest.mark.parametrize("profile_name", ["foundation", "implementation"])
+@pytest.mark.parametrize("profile_name", ["foundation", "implementation", "foundation-cdd"])
 @pytest.mark.parametrize("language", ["actions", "javascript-typescript", "python"])
 def test_each_snapshot_language_retains_its_own_original_alert_and_analysis_provenance(
     tmp_path: Path, pinned_source: None, profile_name: str, language: str
@@ -327,6 +327,15 @@ def test_each_snapshot_language_retains_its_own_original_alert_and_analysis_prov
             "high": 3,
             "jobs": {"actions": 105229666643, "javascript-typescript": 105229666837, "python": 105229666277},
         },
+        "foundation-cdd": {
+            "commit": "cdd14176ef0e0a258d4655c64210524d7047a257",
+            "tree": "efb4e859e19b5456f2bdfbac17b2de784adf36a7",
+            "merge": "c92e557349cabd633db408912c644471c002ee4d",
+            "run": 35269310464,
+            "check": 105364546143,
+            "high": 8,
+            "jobs": {"actions": 105364320958, "javascript-typescript": 105364320271, "python": 105364320646},
+        },
     }[profile_name]
     assert report["profile"] == profile_name
     assert report["expected_commit"] == report["source"]["commit"] == expected["commit"]
@@ -336,20 +345,53 @@ def test_each_snapshot_language_retains_its_own_original_alert_and_analysis_prov
     assert report["original_analysis_job"] == expected["jobs"][language]
     assert report["original_alert_check"] == expected["check"]
     assert report["original_high_alert_count"] == expected["high"]
+    assert report["observation_provenance_available"] is True
     assert report["original_alert_overlap_known"] is False
     assert report["original_security_alerts_resolved"] is False
     assert report["sarif"]["sha256"] == hashlib.sha256(raw).hexdigest()
     assert json.loads((tmp_path / "diagnostic.json").read_text()) == report
 
 
-def test_six_matrix_jobs_have_distinct_source_language_and_artifact_scopes() -> None:
+@pytest.mark.parametrize("language", ["actions", "javascript-typescript", "python"])
+def test_prepared_snapshot_does_not_inherit_observed_security_results(
+    tmp_path: Path, pinned_source: None, language: str
+) -> None:
+    raw = _write_sarif(tmp_path)
+    (tmp_path / "python.sarif").rename(tmp_path / diagnostic.SARIF_FILES[language])
+    report = diagnostic.collect(
+        tmp_path, tmp_path, language, "2.27.0", "success", "success", profile_name="implementation-d8"
+    )
+    assert report["expected_commit"] == "d8bde000de992009be3b2ed009347d2b3707ef0d"
+    assert report["expected_tree"] == "1967a2127a325ae340d313bf73e80c60abb4d1f6"
+    assert report["observation_provenance_available"] is False
+    for key in (
+        "original_analyzed_merge",
+        "original_workflow_run",
+        "original_analysis_job",
+        "original_alert_check",
+        "original_high_alert_count",
+        "original_cli_build",
+        "original_bundled_query_pack_version",
+        "original_paths_ignore",
+    ):
+        assert report[key] is None
+    assert report["original_alert_overlap_known"] is False
+    assert report["original_security_alerts_resolved"] is False
+    assert report["diagnostic_paths_ignore"] == ["src/codex_plugin_scanner/guard/stable_digest.py"]
+    assert report["diagnostic_analysis_complete"] is True
+    assert report["sarif"]["sha256"] == hashlib.sha256(raw).hexdigest()
+    assert json.loads((tmp_path / "diagnostic.json").read_text()) == report
+
+
+def test_six_current_matrix_jobs_have_distinct_source_language_and_artifact_scopes() -> None:
     job = _workflow()["jobs"]["snapshot"]
     matrix = job["strategy"]["matrix"]
     pairs = [(profile, language) for profile in matrix["profile"] for language in matrix["language"]]
     assert len(pairs) == 6
     assert len({(profile["commit"], language) for profile, language in pairs}) == 6
     assert len({(profile["artifact"], language) for profile, language in pairs}) == 6
-    assert {profile["name"] for profile, _ in pairs} == set(diagnostic.PROFILES)
+    assert {profile["name"] for profile, _ in pairs} == {"foundation-cdd", "implementation-d8"}
+    assert {"foundation", "implementation"} <= set(diagnostic.PROFILES)
     assert all(profile["commit"] == diagnostic.PROFILES[profile["name"]].commit for profile, _ in pairs)
     artifact = next(step for step in job["steps"] if step.get("uses", "").startswith("actions/upload-artifact@"))
     assert artifact["with"]["name"] == (
@@ -357,9 +399,19 @@ def test_six_matrix_jobs_have_distinct_source_language_and_artifact_scopes() -> 
     )
 
 
-@pytest.mark.parametrize("actual_profile", ["foundation", "implementation"])
+@pytest.mark.parametrize(
+    "actual_profile,other_profile",
+    [
+        ("foundation", "implementation"),
+        ("implementation", "foundation"),
+        ("foundation-cdd", "implementation-d8"),
+        ("implementation-d8", "foundation-cdd"),
+        ("foundation", "foundation-cdd"),
+        ("implementation", "implementation-d8"),
+    ],
+)
 def test_one_clean_snapshot_cannot_satisfy_the_other_snapshot_pin(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, actual_profile: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, actual_profile: str, other_profile: str
 ) -> None:
     actual = diagnostic.PROFILES[actual_profile]
 
@@ -369,7 +421,6 @@ def test_one_clean_snapshot_cannot_satisfy_the_other_snapshot_pin(
         return subprocess.CompletedProcess(argv, 0)
 
     monkeypatch.setattr(diagnostic.subprocess, "run", git_result)
-    other_profile = "implementation" if actual_profile == "foundation" else "foundation"
     assert diagnostic.source_identity(tmp_path, actual_profile)["matches_pin"] is True
     assert diagnostic.source_identity(tmp_path, other_profile)["matches_pin"] is False
     _write_sarif(tmp_path)

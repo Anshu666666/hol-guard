@@ -1,0 +1,168 @@
+{
+  "scope": "Three diagnostic files only; no local CodeQL database or security analysis.",
+  "base_local_commit": "a6d55341b4d51423ccac24c800960a2cf189a16e",
+  "initial_sources": {
+    ".github/workflows/codeql-foundation-diagnostic.yml": {
+      "bytes": 6376,
+      "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+    },
+    "scripts/ci/codeql_foundation_diagnostic.py": {
+      "bytes": 16810,
+      "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+    },
+    "tests/test_codeql_foundation_diagnostic.py": {
+      "bytes": 28141,
+      "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+    }
+  },
+  "checks": [
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "scripts/ci/codeql_foundation_diagnostic.py",
+        "tests/test_codeql_foundation_diagnostic.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds_including_lock_wait": 0.077356,
+      "before": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "after": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "sources_stable": true,
+      "log": {
+        "file": "ruff.log",
+        "bytes": 19,
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      }
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "scripts/ci/codeql_foundation_diagnostic.py",
+        "tests/test_codeql_foundation_diagnostic.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds_including_lock_wait": 0.068601,
+      "before": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "after": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "sources_stable": true,
+      "log": {
+        "file": "format.log",
+        "bytes": 26,
+        "sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938"
+      }
+    },
+    {
+      "name": "focused-tests",
+      "command": [
+        "flock",
+        "--close",
+        "-w",
+        "180",
+        "/workspace/scratch/c911dc702e23/performance-measurement.lock",
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_codeql_foundation_diagnostic.py",
+        "tests/test_workflow_token_permissions.py",
+        "-q",
+        "--basetemp=/tmp/hol-guard-fresh-codeql-diagnostic-validation"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds_including_lock_wait": 7.49791,
+      "before": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "after": {
+        ".github/workflows/codeql-foundation-diagnostic.yml": {
+          "bytes": 6376,
+          "sha256": "85d6b6dbda95fa9c8b913e5d6256d9b3d298d93bd8b4633c7874677401f585c4"
+        },
+        "scripts/ci/codeql_foundation_diagnostic.py": {
+          "bytes": 16810,
+          "sha256": "096648a5194d565160dd76cb8e72e6b1b9a5651cf234cb99fd110981bb82dc83"
+        },
+        "tests/test_codeql_foundation_diagnostic.py": {
+          "bytes": 28141,
+          "sha256": "23ebe02d492d2a6782a6f5cc9105e04c4b6aa27a4d9f8b43d7244b10e1413057"
+        }
+      },
+      "sources_stable": true,
+      "log": {
+        "file": "focused-tests.log",
+        "bytes": 180,
+        "sha256": "5d0ef8b430875459324c9d66f8a3dfff4cf950f9b34a3cf7df93f3a4d9bdc5b7"
+      }
+    }
+  ]
+}

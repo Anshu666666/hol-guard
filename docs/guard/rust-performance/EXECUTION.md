@@ -8,13 +8,19 @@ verified by its title, full conversation, linked documents and implementation
 instruction authorizes this session to take over implementation through GitHub
 on `release/3.2`. The original proposal-only wording does not narrow that scope.
 
-This checkpoint reconciles local source `591d5c81e6bb341c6c3271332f3a6615a01bc748`, dated
-2026-09-17. That source and its scoped-config validation are not a new published
-artifact or hosted pass; publication and fresh analysis remain pending. The ledger records
+This checkpoint reconciles local source `27a102aac076ca68fcb1fac0323c3089a96daa1f`,
+dated 2026-09-17, the separate remote package-audit reader fix, and actual prepared
+GitHub checkpoint `d8bde000de992009be3b2ed009347d2b3707ef0d`. Prepared tree identity
+does not establish the current PR head or a fresh hosted pass; read the authoritative PR
+heads and checks below. The ledger records
 **74 DONE, 31 OPEN, 29 BLOCKED and 10 DEFERRED**. These are individual acceptance
 records, not a release-completion percentage. Installed qualification, review
 and rollout remain incomplete. [TAKEAWAY.md](TAKEAWAY.md) is the current execution
 prompt; obsolete checkpoint instructions remain available in Git history.
+
+The later foundation cdd observation and its fixture/probe corrections retain their
+own source and evidence pins below. The earlier prepared d8 tree and its scan do not
+include those later changes or establish a passing final integrated head.
 
 The [machine ledger](execution-ledger.json) retains all original fields and the
 complete dependency prose for every task, including RSP-134's requirement to
@@ -34,12 +40,15 @@ justification automatically.
 | Original release/3.2 target | `4b89e0d2d496a85f04922b2e019a4aea15326bb9` |
 | Main lineage already carried by release squash | `c996b1d243ddafe8bef04d26ba939615edebb1e7` |
 | Reconciled local foundation | `c4bd916fb0d0f375a4e2de0d1e498a0a533f63c8` |
-| Foundation, current shared-reader publication | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `a7b675a84b732ead542cdf77e5153c57b4257d9b`; new CodeQL analysis has ten open alerts |
+| Foundation, retained shared-reader hosted checkpoint | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `a7b675a84b732ead542cdf77e5153c57b4257d9b`; new CodeQL analysis has ten open alerts |
+| Foundation, later published hosted checkpoint | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `cdd14176ef0e0a258d4655c64210524d7047a257`; external CodeQL fails with eight high findings despite successful Actions analysis |
 | Foundation, earlier retained checks | `e449594e86c717e66e14598a4130475de79c536f` |
-| Last published implementation before this checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `9db62e8844c2ba2627f55b6b00e58cb5b175185d` |
-| Verified published Git tree | `47ba580366672b3b92cb46e6bb1d19c670444e94` |
+| Last retained installed-test checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `9db62e8844c2ba2627f55b6b00e58cb5b175185d` |
+| Historical installed-test Git tree | `47ba580366672b3b92cb46e6bb1d19c670444e94` |
 | Actual native-wheel build at that checkpoint | GitHub test-merge `c9859a5b5d04526fa7e663d7c494e442ee4298c4`, same Git tree; paired candidate wheels explicitly build `9db62e884` |
-| Current local source cutoff | `591d5c81e6bb341c6c3271332f3a6615a01bc748`; final scoped-source checks retained, publication and fresh hosted analysis pending |
+| Current local source/evidence cutoff | `27a102aac076ca68fcb1fac0323c3089a96daa1f`; historical 591 scoped-source and 73 remote-audit checks retain their scopes, with later probe/test/diagnostic corrections separately pinned |
+| Actual prepared GitHub checkpoint | [`d8bde000de992009be3b2ed009347d2b3707ef0d`](https://github.com/hashgraph-online/hol-guard/commit/d8bde000de992009be3b2ed009347d2b3707ef0d), tree `1967a2127a325ae340d313bf73e80c60abb4d1f6`, equal to historical source `73e83ddfac66ef1e04771a2aa51e96cdb1fbee77`; unreferenced when prepared |
+| Authoritative current branch heads and checks | Read [implementation #2954](https://github.com/hashgraph-online/hol-guard/pull/2954) and [foundation #2951](https://github.com/hashgraph-online/hol-guard/pull/2951); no branch movement or new hosted pass is asserted by the prepared checkpoint |
 | Package / Rust / diagnostic Python | `3.0.1` / `1.88.0` / CPython `3.12.14`, locked dependencies |
 
 The release branch contains a squash of earlier main changes. Reconciliation
@@ -282,7 +291,7 @@ lateness and queue wait; timeout outcomes cannot be replaced by later success.
 
 ## Exact published CI observation and pending verification
 
-The latest retained published checkpoint is 9db62e884. Its
+The last retained installed-test checkpoint is historical 9db62e884. Its
 [complete inventory](evidence/takeover-9db62e/github-check-inventory.json) records
 **37 Actions workflows: 34 successful, three failed**. The separate population
 of **207 completed check attempts has 178 successful, 20 skipped and nine failed**.
@@ -456,14 +465,14 @@ sum them or promote them to a new full-source gate. The earlier alias/assertion
 failures and disk-full attempt remain recorded, with the complete disk-full log
 retained. The successful retry kept the original `/tmp` fixture location.
 
-The final local [scoped-config receipt](../evidence/daemon-scoped-config-validation/manifest.json)
+The historical 591 [scoped-config receipt](../evidence/daemon-scoped-config-validation/manifest.json)
 binds source `591d5c81e6bb341c6c3271332f3a6615a01bc748` and 44 retained artifacts.
 
 Local source 591d5c81 pins the trusted configured home alias to its construction-time
 canonical home and compares the admitted workspace parent before opening a config leaf.
 Authorization uses held-parent metadata under existing hook-root/owned-temporary rules.
 The same capture/reader is carried through publisher, daemon worker, hook-process CLI,
-package reload, persisted approval and remote command/resume paths. Publisher reuse
+package reload, persisted approval and remote approval/resume paths. Publisher reuse
 requires the same capture object; rejected scoped capture withdraws ACK. Missing-parent
 semantics remain empty input, not authorization of an absent path; standalone unscoped
 CLI behavior is unchanged. This binds a canonical path and held directory during
@@ -484,6 +493,30 @@ These populations overlap and are not summed. Initial failures, a 180-second loc
 timeout with no tests executed, a wrong pytest path with no tests executed, and the
 first verifier lint failure remain retained. Hosted and installed qualification are not
 established.
+
+The later [remote-audit
+receipt](../evidence/remote-audit-config-validation/manifest.json) binds source
+`73e83ddfac66ef1e04771a2aa51e96cdb1fbee77` and 12 retained artifacts. Source
+73e83ddfac66ef1e04771a2aa51e96cdb1fbee77 separately carries the existing scoped reader
+into guard.packageShims.audit and its home configuration load through three transport
+lines. Rejected capture returns the existing failure before the audit callback. The
+remote-reader/update suites pass 18 cases in 5.23 seconds; the changed production file
+has zero type errors/five warnings in 1.506 analyzer seconds. The preceding
+180.259-second empty-log type attempt timed out acquiring the lock and executed no
+analyzer. AST transport equivalence and unchanged before/after inventories of all 1,255
+production files are retained. These checks are separate from the overlapping 591
+scoped-reader populations; no final full-production type rerun or hosted/installed pass
+is inferred.
+
+The [prepared-checkpoint Gitleaks
+receipt](../security/gitleaks-prepared-d8bde000de99/receipt.json) records the full
+release-base scan of actual GitHub checkpoint
+`d8bde000de992009be3b2ed009347d2b3707ef0d`: zero findings with pinned 8.24.2 in 12.69
+seconds including lock acquisition. Its tree equals
+`1967a2127a325ae340d313bf73e80c60abb4d1f6`; the reviewed ignore input is unchanged. This
+scan preceded branch movement and the later documentation/evidence child, which requires
+its own full-range scan. Historical 9db remains the last retained installed-test
+checkpoint; read both authoritative PR heads and checks for current state.
 
 The root-checkout correction stages the exact collector outside, preserves the
 workflow definition, places the pinned tree at the actual extractor root and
@@ -536,19 +569,116 @@ missing installed measurements are not the only outstanding work. Conditional
 ports must follow optimized-baseline profiling and the original decision rule;
 large unmeasured workloads cannot inherit a small-workload no-go.
 
-Foundation #2951 now publishes the shared-reader fix at
+Foundation #2951's retained shared-reader hosted checkpoint is
 `a7b675a84b732ead542cdf77e5153c57b4257d9b`, with exact branch readback. Its new
 CodeQL analysis fixes old 343/344 but reports eight new path findings and two
-inherited Actions findings; all ten remain open in that retained hosted observation. Local 591 scoped
-capture and propagation fixes require newly published foundation/implementation
-analysis; no additional alert has been dismissed. Earlier e449's
+inherited Actions findings; all ten remain open in that retained hosted observation.
+Scoped capture and the later 73 remote-audit propagation require fresh
+foundation/implementation analysis; no additional alert has been dismissed. Earlier e449's
 179 check records remain **159 successful, 19 skipped and one failed CodeQL
-check** at that historical scope. Protected auto-merge and Greptile 5/5 still do
+check** at that historical scope. Protected auto-merge and the historical e449 Greptile 5/5 still do
 not supply the required independent last-push CODEOWNER approval. The separate
 abf and 9db application checks retain their three-high-alert failures despite
 successful CodeQL Actions workflows; 9db Sonar also remains failed. Implementation
 #2954 remains draft pending coherent final code, passing required checks, final
 Greptile review and independent approval.
+
+The later foundation checkpoint `cdd14176ef0e0a258d4655c64210524d7047a257` was published
+on 2026-09-17. Its actual hosted checkout/build uses test merge
+`c92e557349cabd633db408912c644471c002ee4d`, with the same tree
+`efb4e859e19b5456f2bdfbac17b2de784adf36a7` and release-base/cdd parents. The [external
+CodeQL check](https://github.com/hashgraph-online/hol-guard/runs/105364546143) still
+fails with eight high-severity findings; the [CodeQL Actions
+workflow](https://github.com/hashgraph-online/hol-guard/actions/runs/35269310464)
+succeeds. Workflow success does not clear the external gate, and no new alert dismissal
+is recorded. Read the actual PR heads and checks for later state.
+
+The [frozen cdd hosted receipt](../evidence/foundation-cdd-ci-attempt/manifest.json),
+observed through 2026-09-17 20:35 UTC, is explicitly interim: 25 workflows comprise 22
+successes, two failures and one running; 178 check attempts comprise 144 successes, 22
+skips, 11 failures and one running. These are separate inventories. Kilo fails because
+its model output limit was reached and reports zero annotations; this is not an inferred
+code finding. Linux passed default-auto assemble/install and installed SLO steps, but
+its later 100,000-request/250,000-receipt soak is still pending at that cutoff. Its
+running log was unavailable, so internal progress is unknown. The original 45-minute
+limit covers the entire job; no attempt was cancelled or rerun. A later foundation push
+would cancel a still-running job under the unchanged concurrency rule, so read its
+actual status before advancing that branch. No complete cohort or hosted correction
+qualification is claimed.
+
+The stale Desktop report is corrected by independent full 51,000-case regeneration in
+[foundation](../evidence/desktop-source-refresh-20260917/foundation-cdd/manifest.json)
+and
+[implementation](../evidence/desktop-source-refresh-20260917/implementation-prepublication/manifest.json).
+Both generator checks pass. Exactly five expected source bindings change; every other
+decoded report, decision, oracle and corpus field is identical, with unchanged-content
+SHA-256 `ebfd48ed52410b62aa1d5c1c8105da84cc5605e2ccb5f6311a743bea3fc28cd6`. The 392
+foundation and 395 implementation bound source hashes are verified. Foundation
+regressions retain 15 passes and one failure against the unchanged 45-second budget in
+132.03 seconds; the truncated original assertion does not reveal the exact second
+elapsed value. Implementation regressions pass all 16 cases in 117.42 seconds. Its
+broader source snapshot observes a concurrent edit to the separate maintenance test
+fixture, outside the bound inventory and selected regression modules; those bound
+sources were verified again. No product, oracle, deadline or threshold changes, repeated
+generation, or fresh hosted pass are claimed.
+
+The test-only [worker fixture
+correction](../evidence/daemon-worker-fixture-keywords/manifest.json) makes the two
+existing startup/refresh doubles accept the explicit `config_reader` keyword. The
+separate [maintenance fixture
+correction](../evidence/daemon-maintenance-fixture-reader/manifest.json) gives its
+construction-bypassing fake server the reader field and adapts its load double. Main
+commit `703d33e37c8b471deee725d596217b7722ac116e` retains two focused passes in 15.11
+seconds and the separate maintenance pass in 0.98 seconds, each failed node run once
+under the shared lock, plus Ruff and format checks. Return values, recording,
+assertions, global-home/no-workspace semantics, retention, production behavior and
+deadlines remain unchanged. Original hosted failures are from foundation cdd/c92; the
+original fixture bytes were identical in main, but no hosted main failure is claimed.
+The receipts pin the owned test files, not every concurrently edited checkout file;
+these local checks do not replace a complete hosted shard.
+
+The [default-auto probe
+correction](../evidence/native-default-auto-scope-admission/manifest.json), main commit
+`e14d9b82403aefba0b164ac8156e2dcc5ce9e72d`, admits the newly created workspace
+canonically once before direct-worker registration and keeps that value through the
+route corpus. It adds a fixed-code, privacy-filtered readiness-error diagnostic. The
+real scoped-capture/publisher witness rejects a lexical alias, accepts canonical
+admission with the same capture object, then rejects a retarget and withdraws ACK.
+Deadlines, held-parent authorization, capture identity and ACK rules are unchanged; no
+production module changes. Main final focused validation has 39 passes, separate from
+repeated earlier runs, two-file Ruff/format and one-file types with zero errors/42
+warnings. Initial lint failure and all original outcomes remain retained. Synthetic
+native status/binding in this source witness does not qualify native IPC or installed
+resident ACK. Historical foundation cdd Linux passes default-auto assembly; macOS
+Intel/ARM and Windows fail policy readiness. Their original logs lack the publisher
+error code, so the demonstrated alias mechanism does not prove every hosted cause;
+Windows remains unexplained. No new hosted platform pass or threshold change is claimed.
+
+The [fresh diagnostic
+preparation](../evidence/codeql-current-snapshot-diagnostic/manifest.json) fixes six
+jobs to cdd/d8 crossed with Actions, JavaScript/TypeScript and Python. Historical
+e449/abf profiles remain unchanged and do not rerun. d8 has no observed original
+security-analysis run: original merge, run, job, check, count, CLI-build, query-pack and
+path-ignore observations remain null. The cdd external check has eight high findings,
+but their individual identities and overlap with earlier findings are not established
+here. Final source validation has 138 tests in 2.77 seconds, collector-only typing with
+zero errors/warnings, and Ruff/format passes; the earlier 135-test result remains
+separate. Exact source/tree/layout and workflow/collector checks remain enforced.
+Security-result upload stays never, database upload stays false, and only raw SARIF plus
+diagnostic metadata are retained. No new hosted diagnostic SARIF or passing security
+gate exists in this preparation receipt. Retrieve and verify the six actual run
+artifacts after completion before interpreting their findings.
+
+Actual prepared foundation correction `3d11976aaf0e0beb91ebaab30d13666b90465909` has
+parent cdd and tree `72749b8a0a3ae04c8d1a86832c7c1cf0270b987a`, equal to local
+`0984ddd35c91fa5710d66a8dea204661726c5305`. Its [full release-base
+scan](../security/gitleaks-prepared-3d11976aaf0e/receipt.json) reports zero findings
+with pinned Gitleaks 8.24.2 in 9.634 seconds including lock acquisition, with unchanged
+ignore input and no new suppression or alert disposition. The receipt records no
+branch-ref movement; read the actual foundation PR head for later publication. This scan
+does not clear cdd's external CodeQL failure or qualify the corrections on hosted
+platforms.
+
 The [release ruleset](https://github.com/hashgraph-online/hol-guard/rules/14511015)
 requires strict `quality`, resolved conversations and one independent last-push
 code-owner approval, with stale approvals dismissed and no configured bypass
@@ -563,3 +693,56 @@ then verify the restored runtime and acknowledged policy on new requests. Never
 lower persistent floors or reopen hidden Python fallback; ambiguous tool
 execution is not automatically retried. No merge, canary or release completion
 is recorded at this checkpoint.
+
+The final publication package includes artifact-only correction
+`27a102aac076ca68fcb1fac0323c3089a96daa1f`. It preserves the original probe
+manifest and exact archived patch bytes using lossless gzip after the whole-net
+whitespace check identified the patch's context-only blank lines. The failed
+preflight is retained; the corrected full-range diff passes. The current probe
+manifest covers 30 artifacts. Probe and test source hashes are unchanged, so the
+39-case and focused type results remain their original observations; no test or
+type run was repeated for this packaging change.
+
+The [completed cdd hosted attempt](../evidence/foundation-cdd-ci-attempt/FINAL.md)
+retains all 25 terminal workflows (22 successful, three failed) and 178 check
+attempts (145 successful, 22 skipped, 11 failed). Linux completed its original
+100,000-request and 250,000-receipt soak naturally; its older foundation contract
+does not establish strict implementation capacity conservation. The other three
+platform failures remain recorded, and the artifact's hardcoded Windows waiver
+is not accepted as proof. The earlier interim receipt remains unchanged.
+
+Foundation [26cd4dff3f138990a8e9f6a729a970c1dbd90fa4](https://github.com/hashgraph-online/hol-guard/pull/2951)
+is now published after that soak completed. Its [exact full-range secrets scan
+and readback](../security/gitleaks-foundation-26cd4/README.md) verify zero findings
+with the unchanged ignore input and the tested local tree. Fresh hosted checks,
+Greptile 5/5 and genuine independent last-push CODEOWNER approval remain required.
+The cdd security failure and dismissed historical approvals remain separate.
+
+The [later 26cd hosted checkpoint](../evidence/foundation-26cd-ci-attempt/README.md)
+proves 21/21 native-resident default-auto decisions on Windows and both Macs.
+Windows native-wheel, Desktop and the four previously failing CI shards pass.
+Both Macs then fail the separate Pi probe. Its [once-only root admission
+correction](../evidence/installed-pi-scope-admission/README.md) has 32 focused
+passes per branch and retains the five-second deadline. Its focused type gate
+still has three pre-existing errors and 158 warnings; every diagnostic matches
+the archived original after accounting for filename and two inserted lines.
+
+The same hosted fairness case accounts for 238 of 240 requests, with two Claude
+RemoteDisconnected exceptions and no established cause. The [bounded client
+phase diagnostic](../evidence/daemon-acceptance-failure-stages/README.md) has
+14 focused main passes and eight foundation passes while preserving retries,
+deadlines and accounting. Its counters describe caught client exceptions and
+do not prove server execution. This is diagnostic evidence, not a transport fix.
+Sonar was skipped after the test failure, and external CodeQL still reports
+eight high findings. Linux soak and Kilo remain incomplete at the frozen
+21:09:39 UTC checkpoint; subsequent outcomes require separate evidence.
+
+Foundation [a001b2691f481b7b5a66dd14d68e48d61c44cb78](https://github.com/hashgraph-online/hol-guard/pull/2951)
+is published with [exact full-range secrets-scan and readback
+evidence](../security/gitleaks-foundation-a001b/README.md): zero findings,
+unchanged ignore input and the validated local tree. The current implementation
+source/evidence cutoff is `e7b8110732b15e8a215358c0ca237d9fd21231f8`. Its production Python/Rust trees equal
+prepared d8; later probe/test/docs changes have separate receipts. All 144
+original tasks, full dependency prose, thresholds and status counts remain
+unchanged. Fresh installed qualification, security gates and independent
+last-push review remain incomplete.

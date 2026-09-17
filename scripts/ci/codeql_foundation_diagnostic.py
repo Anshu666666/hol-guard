@@ -21,6 +21,11 @@ OBSERVED_MERGE_SHA = "b9395b11c216a52a0bea9eb937d7cd7cf6b2770b"
 IMPLEMENTATION_SHA = "abf319d5a345d761d88e26ba787026e98370c26f"
 IMPLEMENTATION_TREE = "62eb319323cc7c9de7513af6ef7f05009d411189"
 IMPLEMENTATION_MERGE_SHA = "70b456e93a77fff48522ee7aa6ddeec6d157f6e6"
+CURRENT_FOUNDATION_SHA = "cdd14176ef0e0a258d4655c64210524d7047a257"
+CURRENT_FOUNDATION_TREE = "efb4e859e19b5456f2bdfbac17b2de784adf36a7"
+CURRENT_FOUNDATION_MERGE_SHA = "c92e557349cabd633db408912c644471c002ee4d"
+PREPARED_IMPLEMENTATION_SHA = "d8bde000de992009be3b2ed009347d2b3707ef0d"
+PREPARED_IMPLEMENTATION_TREE = "1967a2127a325ae340d313bf73e80c60abb4d1f6"
 CODEQL_ACTION_SHA = "8aad20d150bbac5944a9f9d289da16a4b0d87c1e"
 CODEQL_VERSION = "2.27.0"
 OBSERVED_CLI_BUILD = "b47b3e59262c95aff4eeb84ac72d09e25a9c37e9"
@@ -35,14 +40,16 @@ WORKFLOW_FILE = ".github/workflows/codeql-foundation-diagnostic.yml"
 class SnapshotProfile:
     commit: str
     tree: str
-    analyzed_merge: str
-    workflow_run: int
-    alert_check: int
-    high_alerts: int
-    analysis_jobs: dict[str, int]
+    analyzed_merge: str | None
+    workflow_run: int | None
+    alert_check: int | None
+    high_alerts: int | None
+    analysis_jobs: dict[str, int | None]
 
 
-# Only these observed snapshots may be selected; the CLI accepts no Git ref.
+# Only these fixed snapshots may be selected; the CLI accepts no Git ref.
+# Historical profiles retain their observed provenance without being rerun by
+# the current matrix. A prepared snapshot has no original security observation.
 PROFILES = {
     "foundation": SnapshotProfile(
         FOUNDATION_SHA,
@@ -61,6 +68,24 @@ PROFILES = {
         105229882410,
         3,
         {"actions": 105229666643, "javascript-typescript": 105229666837, "python": 105229666277},
+    ),
+    "foundation-cdd": SnapshotProfile(
+        CURRENT_FOUNDATION_SHA,
+        CURRENT_FOUNDATION_TREE,
+        CURRENT_FOUNDATION_MERGE_SHA,
+        35269310464,
+        105364546143,
+        8,
+        {"actions": 105364320958, "javascript-typescript": 105364320271, "python": 105364320646},
+    ),
+    "implementation-d8": SnapshotProfile(
+        PREPARED_IMPLEMENTATION_SHA,
+        PREPARED_IMPLEMENTATION_TREE,
+        None,
+        None,
+        None,
+        None,
+        {"actions": None, "javascript-typescript": None, "python": None},
     ),
 }
 
@@ -269,15 +294,19 @@ def collect(
         "original_analysis_job": profile.analysis_jobs[language],
         "original_alert_check": profile.alert_check,
         "original_high_alert_count": profile.high_alerts,
+        "observation_provenance_available": profile.workflow_run is not None,
         "original_alert_overlap_known": False,
         "language": language,
         "codeql_action": CODEQL_ACTION_SHA,
         "expected_cli_version": CODEQL_VERSION,
-        "original_cli_build": OBSERVED_CLI_BUILD,
+        "original_cli_build": OBSERVED_CLI_BUILD if profile.workflow_run is not None else None,
         "observed_cli_version": observed_version[:64],
-        "original_bundled_query_pack_version": QUERY_PACKS[language],
+        "original_bundled_query_pack_version": QUERY_PACKS[language] if profile.workflow_run is not None else None,
         "query_selection": "bundle_default_queries",
-        "original_paths_ignore": ["src/codex_plugin_scanner/guard/stable_digest.py"],
+        "original_paths_ignore": (
+            ["src/codex_plugin_scanner/guard/stable_digest.py"] if profile.workflow_run is not None else None
+        ),
+        "diagnostic_paths_ignore": ["src/codex_plugin_scanner/guard/stable_digest.py"],
         "diff_filter": False,
         "security_result_upload": "never",
         "database_upload": False,

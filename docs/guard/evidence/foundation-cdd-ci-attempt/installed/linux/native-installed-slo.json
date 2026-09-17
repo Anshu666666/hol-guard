@@ -1,0 +1,180 @@
+{
+  "concurrency": {
+    "sixteen": {
+      "deadline_ms": 1000.0,
+      "errors": 0,
+      "latency": {
+        "count": 16,
+        "max_ms": 299.849,
+        "p50_ms": 273.642,
+        "p95_ms": 299.849,
+        "p99_ms": 299.849
+      },
+      "overloaded": 0
+    },
+    "sixty_four": {
+      "bounded": true,
+      "errors": 0,
+      "fail_safe": 22,
+      "latency": {
+        "count": 64,
+        "max_ms": 561.645,
+        "p50_ms": 392.697,
+        "p95_ms": 548.389,
+        "p99_ms": 561.645
+      },
+      "latency_ceiling_ms": null,
+      "overloaded": 30
+    }
+  },
+  "corpus": {
+    "corpus_origin": "installed_wheel_ownership_contract",
+    "fail_safe_decisions": 0,
+    "fail_safe_rate": 0.0,
+    "harnesses": 13,
+    "installed": {
+      "fail_safe": 0,
+      "oneshot": 0,
+      "python_semantic": 0,
+      "python_semantic_decisions": 0,
+      "resident": 21,
+      "routes": 21
+    },
+    "observations": 146,
+    "oneshot_decisions": 0,
+    "python_fallback_decisions": 0,
+    "python_semantic_decisions": 0,
+    "resident_share": 1.0,
+    "route_corpus": "installed_routes",
+    "routes": 21,
+    "rss_baseline_bytes": 665161728,
+    "rss_growth": 0.008073,
+    "rss_peak_bytes": 670531584,
+    "safe_failure_rate": 0.0,
+    "safe_failures": 0,
+    "safe_failures_by_size": {},
+    "security_denials": 54,
+    "security_denials_by_size": {
+      "1k": 30,
+      "1m": 8,
+      "250k": 8,
+      "5m": 8
+    },
+    "warm_failures": 0
+  },
+  "errors_16": 0,
+  "errors_64": 0,
+  "gates": {
+    "1m_latency": true,
+    "250k_latency": true,
+    "5m_latency": true,
+    "cold_latency": true,
+    "concurrency": true,
+    "concurrency_64_bounded": true,
+    "installed_corpus": true,
+    "python_fallback": true,
+    "readiness": true,
+    "recovery_latency": true,
+    "resident_share": true,
+    "rss": true,
+    "safe_corpus": true,
+    "warm_latency": true
+  },
+  "latency": {
+    "cold_native_oneshot": {
+      "count": 2,
+      "max_ms": 8.322,
+      "p50_ms": 7.677,
+      "p95_ms": 8.322,
+      "p99_ms": 8.322
+    },
+    "readiness": {
+      "count": 2,
+      "max_ms": 36.177,
+      "p50_ms": 31.428,
+      "p95_ms": 36.177,
+      "p99_ms": 36.177
+    },
+    "resident_recovery": {
+      "count": 2,
+      "max_ms": 86.761,
+      "p50_ms": 71.241,
+      "p95_ms": 86.761,
+      "p99_ms": 86.761
+    },
+    "size_classes": {
+      "1k": {
+        "count": 122,
+        "max_ms": 561.645,
+        "p50_ms": 183.63,
+        "p95_ms": 537.109,
+        "p99_ms": 551.753
+      },
+      "1m": {
+        "count": 8,
+        "max_ms": 35.362,
+        "p50_ms": 25.63,
+        "p95_ms": 35.362,
+        "p99_ms": 35.362
+      },
+      "250k": {
+        "count": 8,
+        "max_ms": 30.887,
+        "p50_ms": 27.079,
+        "p95_ms": 30.887,
+        "p99_ms": 30.887
+      },
+      "5m": {
+        "count": 8,
+        "max_ms": 30.524,
+        "p50_ms": 25.59,
+        "p95_ms": 30.524,
+        "p99_ms": 30.524
+      }
+    },
+    "warm_all_harnesses": {
+      "count": 42,
+      "max_ms": 35.742,
+      "p50_ms": 25.63,
+      "p95_ms": 35.399,
+      "p99_ms": 35.742
+    },
+    "warm_by_event": {
+      "PostToolUse": {
+        "count": 16,
+        "max_ms": 35.742,
+        "p50_ms": 25.502,
+        "p95_ms": 35.742,
+        "p99_ms": 35.742
+      },
+      "PreToolUse": {
+        "count": 26,
+        "max_ms": 35.713,
+        "p50_ms": 25.737,
+        "p95_ms": 35.399,
+        "p99_ms": 35.713
+      }
+    }
+  },
+  "passed": true,
+  "python_semantic_decisions": 0,
+  "routes": {
+    "native_fail_safe": 22,
+    "native_resident": 124
+  },
+  "runtime": {
+    "mode": "auto",
+    "package_origin": "installed",
+    "protocol_version": 1,
+    "runtime_version": "3.0.1",
+    "target": "x86_64-linux"
+  },
+  "schema": "hol-guard.native-installed-slo.v1",
+  "scope": "installed_adapter_to_decision",
+  "thresholds": {
+    "direct_cold_p95_ms": 150.0,
+    "installed_adapter_concurrent_p99_ms": 1000.0,
+    "installed_adapter_p95_ms": 1000.0,
+    "readiness_p95_ms": 400.0
+  }
+}

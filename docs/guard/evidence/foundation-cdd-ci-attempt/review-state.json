@@ -1,0 +1,88 @@
+{
+  "active_approved_review_count": 0,
+  "all_first_pages_complete": true,
+  "auto_merge_method": "squash",
+  "codeowners_at_head_and_release_base": "* @kantorcodes @deep-purple-boots",
+  "fresh_inline_findings": [
+    {
+      "additional_product_patch_justified_by_review": false,
+      "allegation": "Resident workspace aliases reach scoped capture without canonical admission.",
+      "claim_scope": "Finite source trace of the alleged public resident-hook path; no claim that every possible private direct caller is an authenticated ingress.",
+      "created_at": "2026-09-17T20:16:07Z",
+      "id": 4041076205,
+      "original_commit_id": "cdd14176ef0e0a258d4655c64210524d7047a257",
+      "path": "src/codex_plugin_scanner/guard/daemon/config_read_scope.py",
+      "reason": "Resolving a different parent during each capture would defeat rejection of a canonical workspace replaced after admission.",
+      "review_id": 5240984087,
+      "reviewer": "gitar-bot[bot]",
+      "source_points": [
+        "daemon/server.py:_handle_runtime_hook",
+        "daemon/server.py:_validate_hook_directory_path",
+        "daemon/server.py:_handle_runtime_hook_fast",
+        "daemon/server.py:_handle_runtime_hook_compatibility_cli",
+        "daemon/hook_process_request.py:coerce_resident_hook_request"
+      ],
+      "source_review": "The public server calls _validated_hook_directory_string before policy preparation and worker dispatch; _validate_hook_directory_path applies realpath and root checks. Both fast worker and compatibility process receive the resulting canonical workspace. The internal coerce_resident_hook_request preserves this already admitted path. The independent direct installed probe had bypassed that admission; the local probe-only correction is retained separately.",
+      "suggested_recapture_resolution_accepted": false
+    },
+    {
+      "alert_number": 367,
+      "classification": "Existing security review scope; no disposition made in this read-only review.",
+      "created_at": "2026-09-17T20:16:46Z",
+      "id": 4041081491,
+      "line": 191,
+      "original_commit_id": "cdd14176ef0e0a258d4655c64210524d7047a257",
+      "path": "src/codex_plugin_scanner/guard/config_source_io.py",
+      "review_id": 5240990092,
+      "reviewer": "github-advanced-security[bot]"
+    }
+  ],
+  "greptile": {
+    "fresh_head_score_available": false,
+    "historical_approval_current_state": "DISMISSED",
+    "historical_approval_review_id": 5234047440,
+    "historical_score": "5/5",
+    "score_comment_id": 5708058753,
+    "score_comment_updated_at": "2026-09-17T10:05:13Z",
+    "score_source_head": "e449594e86c717e66e14598a4130475de79c536f"
+  },
+  "inline_comments": 89,
+  "issue_comment_findings": {
+    "gitar_ci_comment_id": 5720647357,
+    "gitar_ci_scope": "Repeats known keyword, Desktop fixture and default-auto probe failures; no independent new source point.",
+    "kilo_check_id": 105364299658,
+    "kilo_current_annotations": 0,
+    "kilo_current_failure": "The model output limit was reached",
+    "kilo_old_comment_is_current_review": false,
+    "qodo_bug_source_review": "The historical formatter emits a parenthesized string expression with the mapping separator outside the parentheses. A parse-only witness confirms ast.Constant with the original string, not ast.Tuple; the stated parser mismatch does not follow from this source.",
+    "qodo_comment_id": 5708113146,
+    "qodo_remaining_bug_title": "Long extension names cannot be applied",
+    "qodo_remaining_rule_comments": 19,
+    "qodo_rule_scope": "Historical size-rule comments whose links may be rewritten to the current head; they are not newly submitted cdd inline reviews."
+  },
+  "issue_comments": 9,
+  "limitation": "GitHub may update commit_id on old inline comments; original_commit_id and created_at distinguish new submissions.",
+  "mergeable_state": "blocked",
+  "merged": false,
+  "observed_at_utc": "2026-09-17T20:41:47Z",
+  "other_review_services": {
+    "coderabbit": {
+      "actual_comment_scope": "Review skipped because auto reviews are disabled on non-default base branches",
+      "comment_id": 5707986822,
+      "commit_status": "success"
+    },
+    "qodo": {
+      "billing_comment_id": 5708023244,
+      "billing_comment_scope": "Reviews paused because trial ended; historical summary links alone do not establish a new review",
+      "current_review_execution_proven": false
+    }
+  },
+  "pr": 2951,
+  "remote_review_comments_or_resolutions_sent": false,
+  "requested_reviewers": [
+    "deep-purple-boots"
+  ],
+  "review_records": 54,
+  "security_alert_dispositions_changed": false,
+  "source_head": "cdd14176ef0e0a258d4655c64210524d7047a257"
+}

@@ -645,7 +645,7 @@ def test_command_queue_worker_refresh_serializes_with_shutdown(
     monkeypatch.setattr(
         daemon_server_module,
         "start_command_queue_worker",
-        lambda *_args: starts.append("start") or None,
+        lambda *_args, config_reader=None: starts.append("start") or None,
     )
     lifecycle_daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
     lifecycle_daemon.start()

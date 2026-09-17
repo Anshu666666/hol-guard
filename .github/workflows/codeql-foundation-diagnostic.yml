@@ -32,19 +32,19 @@ jobs:
       max-parallel: 3
       matrix:
         profile:
-          - name: foundation
-            label: Foundation e449
-            commit: e449594e86c717e66e14598a4130475de79c536f
-            artifact: codeql-foundation-e449
-          - name: implementation
-            label: Implementation abf
-            commit: abf319d5a345d761d88e26ba787026e98370c26f
-            artifact: codeql-implementation-abf
+          - name: foundation-cdd
+            label: Foundation cdd
+            commit: cdd14176ef0e0a258d4655c64210524d7047a257
+            artifact: codeql-foundation-cdd
+          - name: implementation-d8
+            label: Prepared implementation d8
+            commit: d8bde000de992009be3b2ed009347d2b3707ef0d
+            artifact: codeql-implementation-d8
         language: [actions, javascript-typescript, python]
     env:
       # Both fixed snapshots are independent of the executing PR2954 head.
-      # Its diff must never filter either snapshot's findings. Both original
-      # runs also performed full analysis after exceeding the diff cap.
+      # Its diff must never filter either snapshot's findings. The observed cdd
+      # run exceeded the diff cap; d8 has no original security-analysis run.
       CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
     steps:
       - name: Check out the diagnostic definition

@@ -21,6 +21,7 @@ _PRODUCTION_FILES: Final = (
     "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
     "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
     "src/codex_plugin_scanner/guard/daemon/server.py",
+    "src/codex_plugin_scanner/guard/daemon/initial_header_reader.py",
     "src/codex_plugin_scanner/guard/native_pretool.py",
     "src/codex_plugin_scanner/guard/native_runtime.py",
 )
@@ -39,6 +40,10 @@ _ROOTS: Final = (
     ("src/codex_plugin_scanner/guard/daemon/hook_worker.py", "HookWorker", "_review_post_tool_http"),
     ("src/codex_plugin_scanner/guard/daemon/server.py", "_GuardDaemonHandler", "_handle_runtime_hook_fast"),
     ("src/codex_plugin_scanner/guard/daemon/server.py", "_GuardDaemonHandler", "_execute_runtime_hook"),
+    *(
+        ("src/codex_plugin_scanner/guard/daemon/initial_header_reader.py", "InitialHeaderReader", method)
+        for method in ("__init__", "readinto", "close")
+    ),
     ("src/codex_plugin_scanner/guard/native_pretool.py", None, "review_pre_tool_native"),
     ("src/codex_plugin_scanner/guard/native_runtime.py", None, "review_post_tool_native"),
 )

@@ -1,0 +1,118 @@
+name: MCP Python component rebaseline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, release/3.2]
+    paths:
+      - '.github/workflows/mcp-performance-rebaseline.yml'
+      - 'scripts/bench_mcp_rebaseline.py'
+      - 'scripts/mcp_rebaseline_*.py'
+      - 'scripts/native_slo_resources.py'
+      - 'scripts/native_slo_evidence_*.py'
+      - 'tests/test_mcp_rebaseline*.py'
+      - 'tests/mcp_public_fixture.py'
+      - 'docs/guard/rust-performance/qualification-recipient.pem'
+      - 'src/codex_plugin_scanner/guard/proxy/**'
+      - 'src/codex_plugin_scanner/guard/mcp_tool_calls*.py'
+      - 'src/codex_plugin_scanner/guard/store*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-rebaseline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-stdio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    env:
+      MCP_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MCP_RECIPIENT_ID: d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: ${{ env.MCP_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Check out frozen baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: baseline-src
+          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - name: Install one locked dependency environment for both sources
+        working-directory: candidate-src
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Validate controller and frozen oracles
+        working-directory: candidate-src
+        run: >-
+          .venv/bin/python -m pytest -q tests/test_mcp_rebaseline.py
+          tests/test_mcp_rebaseline_ci.py tests/test_mcp_rebaseline_public.py
+      - name: Run five alternating independent pairs in three separate modes
+        id: matrix
+        run: |
+          candidate-src/.venv/bin/python candidate-src/scripts/bench_mcp_rebaseline.py \
+            --baseline "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate "$GITHUB_WORKSPACE/candidate-src" \
+            --expected-candidate "$MCP_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/mcp-evidence/private_samples" \
+            --lock "$RUNNER_TEMP/mcp-rebaseline.lock" --runs 5 --calls 13
+      - name: Publish bounded component status and aggregate
+        if: always()
+        env:
+          MCP_MATRIX_OUTCOME: ${{ steps.matrix.outcome }}
+        run: |
+          python -I -S candidate-src/scripts/mcp_rebaseline_ci.py \
+            --private "$GITHUB_WORKSPACE/mcp-evidence/private_samples" \
+            --public "$GITHUB_WORKSPACE/mcp-evidence/public/component.json" \
+            --candidate "$MCP_CANDIDATE_SHA" --matrix-outcome "${MCP_MATRIX_OUTCOME:-skipped}"
+      - name: Encrypt private component observations
+        if: always()
+        run: |
+          receipt="$GITHUB_WORKSPACE/mcp-evidence/archive-receipt.json"
+          if ! (uv sync --frozen --extra dev --project candidate-src && \
+            uv run --frozen --no-sync --project candidate-src \
+            python candidate-src/scripts/native_slo_evidence_archive.py encrypt \
+            --source "$GITHUB_WORKSPACE/mcp-evidence/private_samples" \
+            --output "$GITHUB_WORKSPACE/mcp-evidence/encrypted/observations.hge" \
+            --public-key "$GITHUB_WORKSPACE/candidate-src/docs/guard/rust-performance/qualification-recipient.pem" \
+            --recipient-id "$MCP_RECIPIENT_ID" --receipt "$receipt" \
+            --source-sha "$MCP_CANDIDATE_SHA" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"); then
+            if [ ! -e "$receipt" ]; then
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py \
+                failure-receipt --receipt "$receipt" || true
+            fi
+            exit 1
+          fi
+      - name: Retain public component evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mcp-component-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            mcp-evidence/public/component.json
+            mcp-evidence/archive-receipt.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain encrypted private component observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mcp-component-encrypted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mcp-evidence/encrypted/observations.hge
+          if-no-files-found: warn
+          retention-days: 30

@@ -29,15 +29,19 @@ def _run_required_checks(checks: tuple[tuple[str, list[str]], ...], *, cwd: Path
 
 
 def _build(
-    source: Path, *, target: str, platform_tag: str, deployment_target: str
+    source: Path, *, environment_root: Path, target: str, platform_tag: str, deployment_target: str
 ) -> tuple[Path, Path, dict[str, object]]:
     source = source.resolve(strict=True)
-    python = source / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-    _run(["uv", "sync", "--frozen", "--extra", "dev", "--python", "3.12"], cwd=source)
+    environment_root = environment_root.resolve()
+    if environment_root.is_relative_to(source):
+        raise ValueError("qualification installed environment must be outside the source checkout")
+    python = environment_root / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    environment = dict(os.environ)
+    environment["UV_PROJECT_ENVIRONMENT"] = str(environment_root)
+    _run(["uv", "sync", "--frozen", "--extra", "dev", "--python", "3.12"], cwd=source, environment=environment)
     version = _run([str(python), "scripts/sync_repo_version.py", "--check"], cwd=source).splitlines()[-1]
     sha = _run(["git", "rev-parse", "HEAD"], cwd=source).splitlines()[-1]
     _run([str(python), "-m", "build", "--wheel", "--outdir", "qualification-pure"], cwd=source)
-    environment = dict(os.environ)
     environment["HOL_GUARD_BUILD_SHA"] = sha
     environment["HOL_GUARD_PACKAGE_VERSION"] = version
     if deployment_target:
@@ -123,14 +127,18 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "qualification"), default="smoke")
     args = parser.parse_args()
+    destination = args.output_dir.resolve()
+    destination.mkdir(parents=True, exist_ok=True)
     baseline_python, baseline_wheel, baseline = _build(
         args.baseline,
+        environment_root=destination / "environments" / "baseline",
         target=args.target,
         platform_tag=args.platform_tag,
         deployment_target=args.deployment_target,
     )
     candidate_python, candidate_wheel, candidate = _build(
         args.candidate,
+        environment_root=destination / "environments" / "candidate",
         target=args.target,
         platform_tag=args.platform_tag,
         deployment_target=args.deployment_target,
@@ -147,8 +155,6 @@ def main() -> int:
     dependency = "psutil==" + versions.pop()
     for python in (baseline_python, candidate_python):
         _run(["uv", "pip", "install", "--python", str(python), "--no-deps", dependency], cwd=args.candidate.resolve())
-    destination = args.output_dir.resolve()
-    destination.mkdir(parents=True, exist_ok=True)
     (destination / "build-metadata.json").write_text(
         json.dumps({"baseline": baseline, "candidate": candidate}, indent=2) + "\n"
     )

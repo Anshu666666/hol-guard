@@ -38,3 +38,28 @@ fn bounded_read_rejects_source_growth_beyond_limit() {
     ));
     let _ = fs::remove_dir_all(dir);
 }
+
+#[cfg(any(unix, windows))]
+#[test]
+fn source_size_boundaries_are_complete_and_never_truncated() {
+    let dir = fixture_root("exact-sizes");
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("source.rs");
+    for size in [250_000, 1_000_000, guard_rules::MAX_SCAN_BYTES] {
+        let bytes = vec![b'x'; size];
+        fs::write(&path, &bytes).unwrap();
+        let read = read_bounded(&path, size).unwrap();
+        assert_eq!(read.bytes, bytes);
+        assert_eq!(read.identity.size, size as u64);
+        assert!(matches!(
+            read_bounded(&path, size - 1),
+            Err(SecureReadError::TooLarge)
+        ));
+    }
+    fs::write(&path, vec![b'x'; guard_rules::MAX_SCAN_BYTES + 1]).unwrap();
+    assert!(matches!(
+        read_bounded(&path, usize::MAX),
+        Err(SecureReadError::TooLarge)
+    ));
+    let _ = fs::remove_dir_all(dir);
+}

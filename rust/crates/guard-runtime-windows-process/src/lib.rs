@@ -20,6 +20,9 @@ mod windows;
 pub use windows::ManagedChild;
 
 #[cfg(windows)]
+pub use windows::{open_bound_read_file, BoundReadFile, ReadFileIdentity};
+
+#[cfg(windows)]
 pub use windows::{
     bind_directory, bind_private_directory, create_private_directory, create_private_file,
     delete_private_file_handle, open_private_directory, open_private_file, process_start_marker,

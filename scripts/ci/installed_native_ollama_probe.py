@@ -25,7 +25,6 @@ if str(_ROOT) not in sys.path:
 
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings  # noqa: E402
 from codex_plugin_scanner.guard.approvals import apply_approval_resolution  # noqa: E402
-from codex_plugin_scanner.guard.native_approval_errors import NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES  # noqa: E402
 from codex_plugin_scanner.guard.native_command_control_binding import load_native_command_program_metadata  # noqa: E402
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status  # noqa: E402
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY  # noqa: E402
@@ -56,10 +55,11 @@ from scripts.ci.native_ollama_contract import (  # noqa: E402
     validate_review,
     validated_build_sha,
 )
+from scripts.ci.native_ollama_diagnostics import OllamaProbeProgress, publisher_state  # noqa: E402
 from scripts.native_slo_adapter import route_counts  # noqa: E402
 from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
 from scripts.native_slo_contract import MAX_READINESS_P95_MS, assert_privacy_safe  # noqa: E402
-from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
+from scripts.native_slo_failure import failure_evidence  # noqa: E402
 from scripts.native_slo_session import AdapterSession, _request  # noqa: E402
 from scripts.native_slo_workloads import configuration_text  # noqa: E402
 
@@ -183,67 +183,34 @@ def commit_controls(store: GuardStore, password: str, layer: ExtensionControlLay
     return view.revision
 
 
-_READINESS_PHASES = frozenset(
-    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
-)
-_PUBLISHER_ERRORS = (
-    frozenset(
-        {
-            "native_policy_snapshot_workspace_capacity",
-            "native_policy_snapshot_expired",
-            "native_policy_snapshot_publish_failed",
-            "native_policy_snapshot_resident_changed",
-            "native_policy_snapshot_native_disabled",
-            "native_policy_snapshot_runtime_unavailable",
-            "native_policy_snapshot_protocol_unsupported",
-            "native_policy_snapshot_integrity_key_unavailable",
-            "native_policy_snapshot_ack_invalid",
-            "native_policy_snapshot_ack_mismatch",
-            "native_client_containment_failed",
-            "native_client_process_failed",
-            "native_client_launcher_failed",
-            "native_client_timed_out",
-            "native_client_output_limit_exceeded",
-            "native_client_status_missing",
-            "native_client_exit_nonzero",
-            "native_client_output_missing",
-            "native_command_control_binding_changed",
-            "permissionerror",
-            "oserror",
-            "timeouterror",
-            "runtimeerror",
-            "valueerror",
-            "typeerror",
-            "attributeerror",
-            "operationalerror",
-        }
-    )
-    | NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
-)
-
-
-def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict[str, object]:
+def ready_binding(
+    session: AdapterSession, revision: int, *, progress: OllamaProbeProgress | None = None
+) -> dict[str, object]:
     worker = session.daemon._server.hook_worker
+    publisher = worker.policy_snapshot_publisher
+    before = publisher_state(publisher) if progress is not None else {}
     started = time.monotonic()
     deadline = started + MAX_READINESS_P95_MS / 1000
-    snapshot = worker.prepare_workspace_policy(session.workspace, deadline=deadline)
-    finished = time.monotonic()
-    if snapshot is None or finished > deadline:
-        publisher = worker.policy_snapshot_publisher
-        error = publisher.last_error
-        detail = failure_evidence(AssertionError("installed_ollama_native_readiness_failed"))
-        detail["phase"] = phase if phase in _READINESS_PHASES else "unknown"
-        detail["readiness"] = {
-            "expected_revision": revision,
-            "budget_ms": MAX_READINESS_P95_MS,
-            "elapsed_ms": round((finished - started) * 1000, 3),
-            "snapshot_returned": snapshot is not None,
-            "budget_exhausted": finished > deadline,
-            "publisher_ready_after_failure": publisher.is_ready(),
-            "publisher_closed_after_failure": publisher.closed,
-            "publisher_error": error if error in _PUBLISHER_ERRORS else "unclassified" if error else "none",
-        }
-        raise FixtureFailureError(detail)
+    snapshot = None
+    raised = True
+    try:
+        snapshot = worker.prepare_workspace_policy(session.workspace, deadline=deadline)
+        raised = False
+    finally:
+        finished = time.monotonic()
+        if progress is not None:
+            progress.observe_readiness(
+                publisher,
+                revision=revision,
+                before=before,
+                elapsed_ms=(finished - started) * 1000,
+                returned_snapshot=snapshot is not None,
+                within_budget=finished <= deadline,
+                raised=raised,
+            )
+    # Preserve the exact prepare-call barrier; post-attempt observation cannot
+    # turn a missing or late snapshot into readiness, trigger retry, or publish.
+    require(snapshot is not None and finished <= deadline, "native_readiness_failed")
     current = worker.policy_snapshot_publisher.current_snapshot()
     require(current is not None and worker.policy_snapshot_publisher.is_ready(), "policy_ack_missing")
     current = cast(dict[str, Any], current)
@@ -362,16 +329,21 @@ def approve_review(store: GuardStore, password: str, approval_id: str) -> None:
     )
 
 
-def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
+def run_probe(expected: Mapping[str, object], *, progress: OllamaProbeProgress | None = None) -> dict[str, object]:
+    progress = progress if progress is not None else OllamaProbeProgress()
     runtime, identity = artifact_identity(expected)
+    progress.at(step="construct")
     session = AdapterSession(runtime, configuration=configuration_text("normal"))
     results: list[dict[str, object]] = []
     entered = False
     try:
+        progress.at(step="authority")
         password = prepare_fixture_authority(session.store)
         # AdapterSession owns cleanup once entry starts, including failed start.
         entered = True
+        progress.at(step="start")
         with session:
+            progress.adapter_readiness_ms = session.readiness_ms
             require(session.daemon._server.hook_worker.test_oracle is None, "python_oracle_present")
             revision = 0
             previous_generation = 0
@@ -383,35 +355,49 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                 ("settings_rollback", control_layer(enabled=True), ACTIVE_CASES),
             )
             for phase, layer, cases in phases:
+                progress.at(phase=phase, step="control_commit" if layer is not None else "ready")
                 if layer is not None:
                     revision = commit_controls(session.store, password, layer, revision=revision)
-                snapshot = ready_binding(session, revision, phase=phase)
+                progress.at(step="ready")
+                snapshot = ready_binding(session, revision, progress=progress)
                 generation = cast(int, snapshot["generation"])
                 require(generation > previous_generation, "generation_did_not_advance")
                 previous_generation = generation
                 for case in cases:
+                    progress.at(phase=phase, step="review", case=case.name)
                     record, approval_id = review_case(session, phase, case, snapshot)
                     results.append(record)
+                    progress.record_case(record)
                     if phase == "enabled" and case.name == "push":
                         require(approval_id is not None, "approval_missing")
+                        progress.at(phase="approved_retry", step="approve", case=case.name)
                         approve_review(session.store, password, cast(str, approval_id))
-                        current = ready_binding(session, revision, phase="approved_retry")
+                        progress.at(step="ready", case=case.name)
+                        current = ready_binding(session, revision, progress=progress)
+                        progress.at(step="review", case=case.name)
                         record, _ = review_case(session, "approved_retry", case, current, approval_reused=True)
                         results.append(record)
+                        progress.record_case(record)
+            progress.at(phase="stale_write_rejected", step="control_commit")
             try:
                 commit_controls(session.store, password, control_layer(enabled=False), revision=1)
             except ExtensionControlAuthorityError:
                 pass
             else:
                 raise AssertionError("installed_ollama_stale_revision_accepted")
-            snapshot = ready_binding(session, revision, phase="stale_write_rejected")
+            progress.at(step="ready")
+            snapshot = ready_binding(session, revision, progress=progress)
+            progress.at(step="review", case=ACTIVE_CASES[0].name)
             record, _ = review_case(session, "stale_write_rejected", ACTIVE_CASES[0], snapshot)
             results.append(record)
+            progress.record_case(record)
     finally:
         if not entered:
             session.close()
+    progress.at(step="artifact_recheck")
     _, after = artifact_identity(expected)
     require(after == identity, "artifact_changed_during_probe")
+    progress.at(step="complete")
     return assert_privacy_safe(
         {
             "schema": "hol-guard.installed-native-ollama.v1",
@@ -429,6 +415,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
             "stale_control_write_rejected": True,
             "prior_approval_did_not_bypass_disabled_controls": True,
             "native_approval_consume_qualified": False,
+            "progress": progress.evidence(),
         }
     )
 
@@ -437,10 +424,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expected", type=Path, required=True)
     args = parser.parse_args()
+    progress = OllamaProbeProgress()
     try:
-        result = run_probe(json.loads(args.expected.read_text(encoding="utf-8")))
+        result = run_probe(json.loads(args.expected.read_text(encoding="utf-8")), progress=progress)
     except Exception as error:
-        print(json.dumps(failure_evidence(error), sort_keys=True), flush=True)
+        print(json.dumps({**failure_evidence(error), "progress": progress.evidence()}, sort_keys=True), flush=True)
         return 1
     print(json.dumps(result, sort_keys=True), flush=True)
     return 0

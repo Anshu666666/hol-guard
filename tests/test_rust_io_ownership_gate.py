@@ -42,6 +42,10 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     assert "synchronous_posture_config" in categories
     assert "synchronous_authority_fence" in categories
     assert "approval_identity" in categories
+    header_operations = {
+        item["operation"] for item in report["inventory"] if item["category"] == "initial_header_transport"
+    }
+    assert header_operations == {"gettimeout", "dup", "setblocking", "recv_into", "register", "select", "close"}
     config_reads = [
         item
         for item in report["inventory"]
@@ -59,6 +63,30 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     } <= categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
+
+
+def test_header_transport_scope_cannot_admit_semantic_io_or_other_socket_functions() -> None:
+    path = "src/codex_plugin_scanner/guard/daemon/initial_header_reader.py"
+    assert (
+        MODULE._category(path, "socket_transport", "InitialHeaderReader.readinto", "recv_into")
+        == "initial_header_transport"
+    )
+    assert MODULE._category(path, "socket_transport", "InitialHeaderReader.readinto", "dup").startswith("unclassified_")
+    assert MODULE._category(path, "filesystem", "InitialHeaderReader.readinto", "open").startswith("unclassified_")
+    assert MODULE._category(path, "hash", "InitialHeaderReader.readinto", "sha256").startswith("unclassified_")
+    assert MODULE._category(path, "decode", "InitialHeaderReader.readinto", "loads").startswith("unclassified_")
+    assert MODULE._category(path, "socket_transport", "unrelated", "recv_into").startswith("unclassified_")
+
+
+def test_gate_rejects_content_read_in_header_transport(tmp_path: Path) -> None:
+    _copy_gate_sources(tmp_path)
+    reader = tmp_path / "src/codex_plugin_scanner/guard/daemon/initial_header_reader.py"
+    source = reader.read_text(encoding="utf-8")
+    marker = "        view = memoryview(target)\n"
+    assert marker in source
+    reader.write_text(source.replace(marker, marker + '        open("source.rs")\n', 1), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="reachable unclassified Python I/O"):
+        MODULE.validate(tmp_path)
 
 
 def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path) -> None:

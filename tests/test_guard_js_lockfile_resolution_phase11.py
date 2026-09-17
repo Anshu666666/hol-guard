@@ -230,7 +230,7 @@ def test_lockfile_parse_result_rejects_incomplete_or_unsupported_inputs(
     assert result.entries == ()
     assert result.error_reason == error_reason
     assert result.source_hash == stable_digest_hex(lockfile_text.encode("utf-8"))
-    assert result.parser_version == "complete-v1"
+    assert result.parser_version == "complete-v2"
     assert result.budget_ms == pytest.approx(
         evaluator_module._lockfile_parse_budget_seconds(len(lockfile_text.encode("utf-8"))) * 1000
     )

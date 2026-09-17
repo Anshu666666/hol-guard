@@ -103,7 +103,9 @@ class FaultFixture:
             self.stack.enter_context(patch.object(scheduler, "reserve_bytes", reserve))
             self.evidence["fault_scope"] = "configured_byte_limit_rejection"
         elif self.setup == "review_queue_failed":
-
+            # Both pinned production queue helpers call persist(request, now)
+            # positionally. Rejecting that call at argument binding would yield
+            # a caught TypeError without ever witnessing this injected failure.
             def approval_failed(*_args: object, **_kwargs: object) -> None:
                 self.observed["approval_persistence_failed"] = True
                 raise sqlite3.OperationalError("synthetic qualification write failure")

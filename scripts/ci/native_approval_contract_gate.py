@@ -61,6 +61,7 @@ ACTIVE_RUST_FILES: Final = (
     Path("rust/crates/guard-runtime/src/policy_store_command_floor_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_fixture_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_tests.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_fixture_tests.rs"),
     Path("rust/crates/guard-runtime/src/resident_protocol.rs"),
 )
 DECODER = Path("src/codex_plugin_scanner/guard/native_response_decoder.py")

@@ -2423,7 +2423,7 @@ def test_lockfile_parse_cache_is_evaluation_scoped(monkeypatch: pytest.MonkeyPat
     assert calls == 1
 
 
-def test_incomplete_lockfile_parse_is_not_cached(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_incomplete_lockfile_parse_is_reused_only_within_its_evaluation(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = 0
 
     def incomplete_parse(*_args: object, **_kwargs: object) -> LockfileParseResult:
@@ -2442,12 +2442,23 @@ def test_incomplete_lockfile_parse_is_not_cached(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(evaluator_module, "parse_lockfile_with_budget", incomplete_parse)
     token = evaluator_module._LOCKFILE_PARSE_CACHE.set({})
     try:
-        evaluator_module._parse_lockfile_text_result("bun.lock", "{}")
-        evaluator_module._parse_lockfile_text_result("bun.lock", "{}")
+        first = evaluator_module._parse_lockfile_text_result("bun.lock", "{}")
+        second = evaluator_module._parse_lockfile_text_result("bun.lock", "{}")
+        assert first is second
+        assert second.complete is False
+        assert second.error_reason == "deadline_exceeded"
+        assert calls == 1
     finally:
         evaluator_module._LOCKFILE_PARSE_CACHE.reset(token)
 
-    assert calls == 2
+    token = evaluator_module._LOCKFILE_PARSE_CACHE.set({})
+    try:
+        third = evaluator_module._parse_lockfile_text_result("bun.lock", "{}")
+        assert third is not first
+        assert third.complete is False
+        assert calls == 2
+    finally:
+        evaluator_module._LOCKFILE_PARSE_CACHE.reset(token)
 
 
 def test_transitive_lockfile_timeout_pauses_without_using_partial_entries(
@@ -2501,7 +2512,7 @@ def test_transitive_lockfile_timeout_pauses_without_using_partial_entries(
     assert any(reason["code"] == "lockfile_parse_incomplete" for reason in result.reasons)
     assert result.packages[0]["lockfileParseError"] == "deadline_exceeded"
     assert result.packages[0]["lockfileParseComplete"] is False
-    assert result.packages[0]["lockfileParserVersion"] == "complete-v1"
+    assert result.packages[0]["lockfileParserVersion"] == "complete-v2"
     assert "npm-package-lock" in result.user_copy.harness_message
 
 

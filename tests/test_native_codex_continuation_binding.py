@@ -310,6 +310,134 @@ def test_terminal_row_forged_after_precheck_cannot_skip_atomic_consume(tmp_path,
     )
 
 
+@pytest.mark.parametrize("stage", ["final_helper", "record_helper", "consumed_replay"])
+def test_final_rereads_cannot_substitute_another_signed_native_identity(tmp_path, monkeypatch, stage):
+    from datetime import datetime, timedelta, timezone
+
+    from codex_plugin_scanner.guard import codex_live_decision
+
+    store, workspace, edge, hook, row = _fixture(tmp_path)
+    _resolve(store, row)
+    alternate = store.record_local_once_approval(
+        request_id=row["request_id"],
+        harness="codex",
+        artifact_id=row["artifact_id"],
+        artifact_hash="e" * 64,
+        workspace=str(workspace),
+        publisher=None,
+        action="allow",
+        created_at=_now(),
+        expires_at=(datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+    )
+    assert alternate is not None
+    if stage == "consumed_replay":
+        assert store.claim_local_once_approval(alternate, claimed_at=_now())
+    real_get = store.get_approval_request
+
+    def substituted(request_id):
+        original = real_get(request_id)
+        return {**original, "artifact_hash": "e" * 64}
+
+    owner = codex_live_decision if stage == "record_helper" else completion
+    name = "record_live_hook_completion" if stage == "record_helper" else "complete_codex_live_decision"
+    real_finalize = getattr(owner, name)
+
+    def retarget_after_native_proof(*args, **kwargs):
+        assert kwargs["expected_request_identity"]["artifact_hash"] == edge["receipt"]["request_digest"]
+        with monkeypatch.context() as scoped:
+            scoped.setattr(store, "get_approval_request", substituted)
+            if stage == "consumed_replay":
+                scoped.setattr(
+                    store,
+                    "get_request_resume",
+                    lambda request_id: {"request_id": request_id, "resolution_action": "allow", "status": "sent"},
+                )
+            return real_finalize(*args, **kwargs)
+
+    monkeypatch.setattr(owner, name, retarget_after_native_proof)
+    assert _complete(store, workspace, edge, hook, row)["completed"] is False
+    assert (
+        resolve_codex_live_allow_authority(
+            store, request=store.get_approval_request(row["request_id"]), request_id=row["request_id"], now=_now()
+        )
+        is not None
+    )
+
+
+def test_third_terminal_read_cannot_skip_the_fixed_signed_consume(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+
+    from codex_plugin_scanner.guard import codex_live_decision, continuation_runtime
+
+    store, workspace, edge, hook, row = _fixture(tmp_path)
+    _resolve(store, row)
+    real_record = codex_live_decision.record_live_hook_completion
+
+    def raced_terminal(*args, **kwargs):
+        with monkeypatch.context() as scoped:
+            original = store.get_request_resume(row["request_id"])
+            offer = continuation_runtime._offer_from_request(
+                store,
+                request_row=store.get_approval_request(row["request_id"]),
+                request_id=row["request_id"],
+                observed_at=datetime.now(timezone.utc),
+                headless=False,
+            )
+            forged = {
+                **original,
+                "resolution_action": "allow",
+                "status": "sent",
+                "continuation_status": "resumed",
+                "continuation_action": "allow_once",
+                "continuation_completed_at": _now(),
+                "continuation_offer_hash": continuation_runtime._offer_hash(offer),
+                "continuation_evidence": [{"evidenceId": "synthetic-unsigned-terminal"}],
+            }
+            assert continuation_runtime._previous_result(forged, offer=offer, action="allow_once") is not None
+            scoped.setattr(
+                store,
+                "get_request_resume",
+                lambda request_id: forged,
+            )
+            return real_record(*args, **kwargs)
+
+    monkeypatch.setattr(codex_live_decision, "record_live_hook_completion", raced_terminal)
+    assert _complete(store, workspace, edge, hook, row)["completed"] is False
+    assert (
+        resolve_codex_live_allow_authority(
+            store, request=store.get_approval_request(row["request_id"]), request_id=row["request_id"], now=_now()
+        )
+        is not None
+    )
+
+
+def test_atomic_finalize_consumes_the_fixed_verified_grant_after_row_drift(tmp_path, monkeypatch):
+    store, workspace, edge, hook, row = _fixture(tmp_path)
+    _resolve(store, row)
+    authority = resolve_codex_live_allow_authority(
+        store, request=store.get_approval_request(row["request_id"]), request_id=row["request_id"], now=_now()
+    )
+    real_finalize = store.finalize_continuation_attempt
+
+    def drift(**kwargs):
+        assert kwargs["approval_decision"]["approval_id"] == authority["approval_id"]
+        assert kwargs["approval_decision"]["artifact_hash"] == edge["receipt"]["request_digest"]
+        with store._connect() as connection:
+            connection.execute(
+                "update approval_requests set artifact_hash = ? where request_id = ?", ("e" * 64, row["request_id"])
+            )
+        return real_finalize(**kwargs)
+
+    monkeypatch.setattr(store, "finalize_continuation_attempt", drift)
+    assert _complete(store, workspace, edge, hook, row)["completed"] is True
+    with store._connect() as connection:
+        consumed = connection.execute(
+            "select artifact_hash, claimed_at from guard_local_once_approvals where approval_id = ?",
+            (authority["approval_id"],),
+        ).fetchone()
+    assert consumed["artifact_hash"] == edge["receipt"]["request_digest"] and consumed["claimed_at"] is not None
+
+
 def test_registered_waiter_cannot_reuse_a_legacy_resolved_row(tmp_path):
     from codex_plugin_scanner.guard.daemon.hook_native_review_approval import pause_native_pre_tool_for_approval
     from codex_plugin_scanner.guard.live_process_identity import (

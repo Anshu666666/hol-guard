@@ -1,11 +1,11 @@
 # Current decision and performance contract
 
-This contract describes the implementation identified in [EXECUTION.md](EXECUTION.md),
-including the 2026-09-17 takeover corrections to Codex continuation, package
-parsing and MCP notification delivery. It includes native command execution,
-control authority and live-process attestation. Source support
-is distinct from installed activation and release qualification; exact evidence
-and remaining acceptance are in the [execution ledger](EXECUTION_LEDGER.md).
+This contract describes local source `ce8fce7f504bd67c213d67a60fbca34da724d25e`.
+It incorporates the current remote `5ee52a03` through reconciliation `1580a018b`
+and subsequent reviewed source corrections. Source support is distinct from
+installed activation and release qualification. [RELEASE_REVIEW.md](RELEASE_REVIEW.md)
+records exact current evidence; [EXECUTION.md](EXECUTION.md) retains older rounds.
+All original requirements remain in the [PRD](PRD.md) and [TODO](TODO.md).
 
 ## Ownership and timing boundaries
 
@@ -14,8 +14,9 @@ Ordinary local HTTP hooks enter `guard/daemon/server.py`, dispatch directly into
 `daemon/hook_worker_native.py`. `native_hook_edge.review_raw_hook_native` calls
 the persistent native client helper through `native_resident_client.py` and
 `native_resident_stream.py`; the Rust resident owns the semantic decision. A
-Python guardian/evaluator pool remains relevant to verified compatibility and
-Codex approval revalidation paths. Ordinary hooks must not be described as
+Python guardian/evaluator pool remains relevant to verified compatibility and legacy Codex
+revalidation paths. The integrated native Codex browser completion uses fresh native-worker
+evaluation instead of that pool. Ordinary hooks must not be described as
 traversing that pool merely because it exists in the daemon process tree.
 
 | Boundary | Start and completion | Exclusions that must be stated |
@@ -56,15 +57,6 @@ oracle must evaluate both benign and malicious fixtures and cannot enter a
 production fallback path. The frozen workload corpus contains independent
 expectations, rather than only asserting equivalence with Python.
 
-Full source-reference review has a platform boundary. The audited baseline and
-current candidate both deliberately reject non-Unix secure file opening until
-an equivalent handle-bound path walk exists. On Windows, a source-ref-only
-request therefore returns `no_output_to_review`; Watch may transform its delivered
-response but does not create a native content review. Qualification records this
-as unsupported full-source coverage and excludes it from successful content-review
-timings. Passing Windows inline hooks or package identity checks does not close
-that gap. Direct pathname opening is not an acceptable performance workaround.
-
 ## Limits and authority
 
 | Existing boundary | Limit or rule |
@@ -93,7 +85,11 @@ catalogs have additional memory cost. A performance
 optimization must not weaken duplicate-key rejection, strict UTF-8, unknown-field
 policy, byte versus character distinctions, collection/depth bounds, canonical
 field ordering or digest domains. Exact-byte identities retain CRLF and Unicode
-semantics. Every native API change requires negotiated capability and strict
+semantics. Borrowed canonical serialization feeds the request hash directly,
+while a bounded counting writer enforces envelope size without a temporary
+serialized buffer. Object keys remain sorted and only the original root
+transport fields are omitted; the digest version and domain are unchanged. Every native API change
+requires negotiated capability and strict
 result validation; legacy optional-field absence must retain legacy encoding.
 
 Executable status binds package version, manifest/runtime digest, target and
@@ -104,6 +100,25 @@ Stat metadata can invalidate a cache but cannot prove content integrity. A new
 spawn requires fresh full validation; death between lookup and dispatch must not
 let a cached digest authorize its replacement. Unsupported platform/filesystem
 proof retains full validation.
+
+## Package parsing and completeness
+
+RSP-052 is DONE at its original source/component acceptance boundary. Integrated 17c531a10 completes
+single-traversal Yarn/pnpm/Gemfile manifest and direct-selector views alongside the existing shared
+JSON/JSONC/TOML decode. Immutable complete-v2 results preserve exact bytes, supported
+duplicate/alias behavior and typed completeness; a failed parse is reused only within one evaluation
+and a new evaluation parses again. Numeric 8 MiB/100,000-entry/250,000-node/depth-128/deadline
+limits remain unchanged, with explicit text-node/depth/projection accounting. Owner batches passed
+49 new and 142 existing tests; a broader 275-case run had 274 passes and one old retry expectation,
+then the corrected context-reuse regression passed in the final 50-case and single-case runs. All
+392 frozen-base direct-selector comparisons agreed. No timing, native package or installed
+qualification is claimed.
+
+See the [text lockfile contract](../rsp-text-lockfile-contract.md). JSONC/UTF-8 and
+duplicate semantics stay with the existing supported parsers. Text admission now
+explicitly counts grammar nodes, indentation/bracket depth and selector projections;
+newly over-budget text becomes typed incomplete. The contract does not claim full
+YAML/Bundler/Yarn validation. RSP-050/054/059 and installed/native comparisons remain separate.
 
 ## Native program and control authority
 
@@ -125,10 +140,15 @@ command extension field is absent preserve their previous canonical encoding.
 Control mutation holds a retained exclusive lock and durably writes an
 authenticated closed marker **before** credential/SQLite semantic effects. A
 committed marker identifies the verified result. Native publication/admission,
-evaluation and final approval authority use the overlapping shared lock. Stable
+evaluation and final approval authority use shared leases on the same retained
+lock; an exclusive mutation lease excludes those operations and vice versa. Stable
 Python reconciliation also uses shared access; a semantic-write sentinel releases
 it and re-verifies under a new exclusive lease before effects. There is no
-in-place shared-to-exclusive upgrade. Compilation is outside the critical lease.
+in-place shared-to-exclusive upgrade. Compilation is outside the critical lease. Windows uses actual `LockFileEx`
+shared/exclusive byte-zero locking on the admitted private handle. The CRT
+`msvcrt` read-lock constant was exclusive and is no longer used as a shared
+lease. Cross-process raw whole-file overlap and bundled-Rust verifier probes
+are wired; successful installed Windows execution is still a separate proof.
 
 Local and managed floors remain independent and monotonic. Explicit recovery
 chooses the new key/epoch before effects and links the exact prior authenticated
@@ -153,7 +173,7 @@ flushes are cooperative boundaries: elapsed checks before/after a read cannot
 preempt a kernel operation already blocked. The Python edge's normal capture
 budget and caller admission bound must not be advertised as hard OS-I/O preemption.
 
-Ordinary local approval retry uses **resolved-row reuse**. The queued action
+Ordinary local approval continuation is **resolved-row reuse**. The queued action
 contains a validated `guard.native-review-policy-binding.v1` derived from the
 native result, binding policy/rule/runtime and compact command observations.
 Request metadata cannot manufacture it. A resolved allow is eligible only for the
@@ -170,24 +190,38 @@ The installed controlled-approval helper uses the existing local resolution API
 with policy persistence disabled. That path does not call the exported native
 v3/v4 one-time challenge/claim/consume APIs and must not be described as doing so.
 
-Codex browser-wait continuation has a distinct production path. The queue attaches
-one live waiting operation to the original bridge process, home, workspace,
-request digest and deadline. A local Allow once resolution authorizes only that
-operation. Completion requires a fresh real native evaluation and verified
-receipt under the shared control lease before atomically consuming the signed
-local authority. A current native block or uncertainty remains restrictive.
-The original process and deadline are checked again after durable finalization;
-a late allow is refused while the consumed record remains available for exact
-retry reconciliation. A mutable terminal approval row alone cannot authorize
-replay. The qualifier independently checks the canonical redacted command and
-workspace projection against the exact private approval row; it cannot create
-missing authority by copying metadata into the row.
+Claude ask → local resolve → retry and native Codex browser-wait completion
+have distinct authority. At this source cutoff, eligible registered native Codex
+reviews preserve the original independently live process, validated home context
+and bounded wait deadline. Their local-once grant is narrowly created for that
+verified waiting operation even when general policy persistence is disabled.
 
-This corrects the earlier `exact_approval_authority_missing` continuation defect.
-Source and real-store tests cover the handoff, stale/mutated bindings, expiry,
-process replacement and late durable outcomes. Actual installed platform coverage
-is reported separately. Claude resolve-and-retry and Codex live continuation must
-not be treated as interchangeable test witnesses.
+The queued native receipt's full-input `request_digest` becomes the MAC-bound
+`artifact_hash`. Completion re-evaluates the exact raw hook with the original
+source context and acknowledged policy, then validates the native receipt's
+policy generation/digest, runtime identity, program and command observations.
+Fresh request digest must equal both the stored receipt commitment and signed
+artifact identity. The six fixed fields—request ID, harness, artifact ID, artifact
+hash, workspace and publisher—are compared at final rereads. Mutable display
+metadata cannot select another signed grant or skip the final native check.
+Generation renewal conservatively requires new approval for this route; ordinary
+resolved-row reuse keeps its separately documented effective-binding behavior.
+
+The shared control lease spans fresh native evaluation, final checks and atomic
+one-time consumption. Only strict native allow or review outcomes are eligible;
+independent blocks and uncertainty retain their floors. Terminal replay requires
+an exact, unexpired, MAC-verified consumed grant, with claimed time no later than
+now. Unsigned resume status cannot supply authority, and a newly terminal row
+cannot bypass consumption. The original bridge must remain live and within its
+original wait deadline; final elapsed checks include database finalization and
+lease retirement. A late consumed result is not delivered as timely allow.
+
+Integrated source `ae0725300` and getter `f5e96de0f` have 72 final focused passes.
+The broader 117-test run had 115 passes and two failures: the two-second
+app-server adapter timeout reproduced on unchanged source, and the waiting case
+passed alone. No limits were raised and no socket-environment excuse is used.
+Actual installed Codex browser continuation is still pending; source tests and
+qualification assertions are not an installed success.
 
 Native v3/v4 approval APIs have separate authority-bound challenge, claim and
 transactional consume tests. Their final consume holds the shared fence. Actual
@@ -201,11 +235,7 @@ authority, input and entrypoint freshness are revalidated at the final boundary,
 including the existing 5 ms quiet drain. `tools/list_changed` notifications during
 approval invalidate saved catalog authority. Out-of-order responses retain their
 JSON-RPC IDs. Ambiguous writes are terminal; they are not transparently replayed.
-Bounded framing keeps notification processing live while approvals are pending
-and while the client is idle. The idle reader drains the existing bounded child
-multiplexer before its next client poll; a server catalog invalidation no longer
-waits for another client request. The existing operation limits and final 5 ms
-prewrite barrier remain in force.
+Bounded framing keeps notification processing live while approvals are pending.
 Overflow, malformed frames and timed-out/ambiguous writes retire the captured
 stream generation and quarantine the child. No subsequent normal result or
 forward is permitted. Quiet drains cannot reset the deadline or discard catalog
@@ -224,11 +254,146 @@ without a stable occurrence timestamp retain their documented best-effort behavi
 `scripts/ci/rust_pretool_no_python_gate.py` and `rust_io_ownership_gate.py` protect
 the authority/I/O boundary. The latter follows recording-mode callers and labels
 decision-time config access `synchronous_posture_config`; it does not relabel it
-as background work. Background captured-byte policy compilation and foreground
-native receipt validation retain their distinct ownership.
+as background work. The narrow Python shared lease is classified as synchronous authority fencing,
+not asynchronous publication. Background captured-byte policy compilation and
+foreground native receipt validation retain their distinct ownership.
 
 Current test suites cover native contracts, malformed/source mutation, separate
 native approval APIs and ordinary local review reuse, Watch/availability,
 policy publication and scanner parity. Those tests
 are necessary but do not establish installed performance or final code-owner
 approval. The [execution ledger](EXECUTION_LEDGER.md) records those remaining gates.
+
+## Qualification fixture scope
+
+Fresh command qualification sessions use a real generated authority key,
+encrypted storage, durable empty state and independent protected-health readback
+before daemon construction. The publisher must establish an actual native ACK
+within the unchanged 400 ms deadline. Interactive enrollment is unexercised.
+Large eligible output requires the native reviewed-content digest. Source/kernel,
+HTTP delivery, actual registered-launcher and instrumented phase evidence remain
+separate. A failed or missing observation cannot become a successful sample.
+
+Both installed environments are outside source checkouts. Runtime, wheel,
+manifest and canonical build SHA remain bound to the tested artifact; Ollama
+identity uses `build_sha` through both privacy projections. One readiness attempt
+retains phase, prior completed cases, elapsed/returned state and nonblocking
+cached publisher diagnostics. Observations cannot retry, publish, renew state or
+authorize readiness. Approval-queue injection matches the real positional
+`persist(request, now)` signature in frozen and candidate code.
+
+A contained baseline failure is retained before an independent candidate attempt.
+The pair stays incomplete and has no valid comparison. Lost containment stops
+further work. Exact case journals record offered and terminal outcomes before
+assertions; unknown normalized adapter HTTP status is explicitly unobserved.
+Declared oversize transport uses the frozen `request_body_too_large` refusal.
+The separate malformed, approval, nonpriority and mixed scenarios retain their
+own outcomes; instrumented phase work does not enter headline latency.
+
+### Watch and native boundaries
+
+The authenticated raw native edge preserves intrinsic secret deny/block and its
+unprefixed reason. The daemon separately renders Watch delivery as warn/allow,
+with the original output digest where the harness exposes it. That operation
+does not invent `observe_mode` or `observed_policy_action` fields. The direct
+`guard-hook-core` observe API has a different response contract. Regression
+vectors pass through the real frozen and candidate Python worker/renderer paths;
+they do not claim an installed Rust run. Unavailable Watch remains separate from
+completed native evaluation. Production policy was not changed to fit the corpus.
+
+### Bounded HTTP and concurrent evidence
+
+Initially partial headers are observed through `InitialHeaderReader`; framing
+ownership changes under the classification lock before the parser can hide the
+terminator. Waiting occurs outside the lock against the original absolute
+400 ms deadline. CPython retains syntax, line and header-count validation.
+Body and subsequent-request bytes are preserved. Watchdog and overload eviction
+recheck the exact socket/deadline under the same lock before closure; request
+capacity is released once outside that lock.
+
+The scheduler notifies queued waiters only when dispatch changes work state.
+Permit release explicitly wakes byte reservations. Deadlines, fairness,
+predictive admission and capacity are unchanged. The confirmed unchanged-state
+notification cycle is fixed; the separate historical CI deadline failure still
+requires an installed/batch rerun.
+
+Concurrent response routes remain `pending_batch_validation` because shared
+counter deltas cannot identify a single overlapping request. An isolated wave
+must conserve exact attempts, completions, errors, resident decisions, native
+fail-safe decisions and explicit engine-bypass overloads. c16 requires exactly
+16 completed requests with no overload; c64 requires exactly 64 accounted
+outcomes. Generic denials cannot be inferred as overload from health counters.
+HTTP503 requires the exact production capacity body or a known typed capacity
+reason; unknown, unauthenticated, malformed and oversized responses fail.
+No unsupported individual route attribution or retry changes a zero-error gate.
+
+### Windows source-read support
+
+The frozen baseline rejects non-Unix secure opens and reports
+`no_output_to_review`; that failure remains visible. The candidate Windows reader
+walks relative to retained directory handles, rejects ambiguous names/reparse
+points, preserves ancestry, denies write/delete sharing and verifies full
+128-bit file identity, volume, metadata and security descriptor around a bounded
+read. The source layer retains the one-link rule, digest and byte/deadline limits.
+The common read facade allows separately controlled package-file policies.
+
+`native-source-handle-read-v1` is advertised on implemented Unix/Windows targets.
+The qualification selector verifies the actual bundled runtime and exact path
+before consulting that capability. An old Windows artifact gets only its known
+refusal oracle, excluded from successful source-review timing. A capable Windows
+candidate gets the original full-content, malicious-content and digest oracles;
+a candidate refusal cannot select the old baseline exemption. The Windows wheel
+workflow now invokes installed SLO checks and retains failed reports. Cross-target
+compilation is not Windows execution, and neither proves an installed latency SLO.
+
+Numeric daemon binding already delegates to `TCPServer.server_bind` and records
+its actual numeric host/port without reverse DNS (`9cca767fe`). Existing IPv4/IPv6
+metadata and real IPv4 binding tests pass. The frozen macOS baseline still hangs
+in `getfqdn`; its PTR fixture received zero queries. Candidate startup and OS
+resolver behavior require separate observed CI evidence.
+
+## Private qualification evidence
+
+[The encrypted archive contract](private-qualification-evidence.md) accepts only
+explicit bounded flat JSON/JSONL files. Filenames, hashes and context remain
+inside authenticated AES-256-GCM ciphertext; fresh keys are wrapped to the
+committed RSA-3072 public recipient using OAEP/SHA-256. A public receipt exposes
+only bounded status and ciphertext metadata. Empty/missing input records no
+observations. Every tag, manifest hash, name and bound is verified before recovery.
+Windows publication retains its handle; Unix uses the documented OS-user
+filesystem boundary. Raw observations and the private recovery key stay out of Git.
+
+Local archive/recovery tests include exact interrupted JSONL and private Unix
+modes. Actual CI retention, download, recovery and Windows ACL behavior remain
+required. Public MCP evidence is reconstructed recursively from finite typed
+fields and exact attempt/phase conservation. Scanner cache errors expose fixed
+categories instead of OS messages. Historical scanner digests cover the specified
+12 scanner/security files, not the full CLI/harness/dependency environment.
+
+## Source baselines and conditional ports
+
+Immutable `complete-v2` package results reuse one bounded parse per evaluation,
+including text formats and both direct/manifest projections. Composer transitive
+identity now preserves canonical ASCII `vendor/package` names; invalid paths and
+non-ASCII normalization tricks remain rejected, npm behavior is unchanged, and
+direct dependencies are excluded by their qualified identity. The frozen
+Composer omission is a coverage defect and not a comparable performance result.
+
+The independent package matrix and isolated MCP runner retain real routes,
+strict semantic coverage, failed attempts and artifact identity. Their source
+validation does not select a Rust port. The rich scanner and 1/10/100-workspace
+source baselines meet RSP-062 and RSP-128 respectively. Native comparisons,
+installed load, full process-tree resources and rollout remain separate tasks.
+The archive profile retains failed observations and does not close RSP-070.
+
+The dormant Claude launcher pilot is integrated behind the default-off
+`native-claude-launcher-pilot` Cargo feature. Authenticated daemon responses retain
+supported denial bytes; unsupported response profiles return an explicit block,
+while actual availability failures keep the existing continuation policy.
+Authority and package files use retained read-only handles with their separate
+verification rules. The four peer findings are corrected. Source tests and
+explicit default/pilot executable checks pass on Linux; the four-platform feature
+workflow is wired and awaits execution. Registration, supported-domain parity,
+installed lifecycle/recovery, stalled-stdio containment and paired performance
+benefit remain separate acceptance gates. The [ledger](EXECUTION_LEDGER.md)
+retains every conditional go/no-go and installed release requirement.

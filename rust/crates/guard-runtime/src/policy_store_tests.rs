@@ -33,6 +33,7 @@ mod command_floor_tests;
 mod fault_tests;
 #[path = "policy_store_fixture_tests.rs"]
 mod fixture_tests;
+use fixture_tests::{fixture_directory, fixture_file};
 #[path = "policy_store_migration_tests.rs"]
 mod migration_tests;
 
@@ -59,29 +60,6 @@ fn policy_with_default(default_action: &str) -> EffectiveNativePolicyV3 {
     let mut value = policy();
     value.default_action = default_action.to_owned();
     value
-}
-
-fn fixture_directory(path: &Path) {
-    #[cfg(windows)]
-    {
-        crate::resident_state::ensure_private_directory(path, true).unwrap();
-    }
-    #[cfg(not(windows))]
-    fs::create_dir(path).unwrap();
-}
-
-fn fixture_file(path: &Path, bytes: &[u8]) {
-    #[cfg(windows)]
-    {
-        use std::io::Write;
-        let private_root = path.parent().unwrap_or(path);
-        // Match fs::write below: fault and marker fixtures intentionally replace
-        // existing bytes. CREATE_NEW correctly rejects those repeated writes.
-        let mut file = crate::resident_state::private_file(path, false, private_root).unwrap();
-        file.write_all(bytes).unwrap();
-    }
-    #[cfg(not(windows))]
-    fs::write(path, bytes).unwrap();
 }
 
 fn signed_snapshot(generation: u64, key: &[u8], guard_home: &Path) -> PolicySnapshotV3 {

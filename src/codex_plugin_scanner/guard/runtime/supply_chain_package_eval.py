@@ -57,8 +57,6 @@ from .npm_policy_range import (
 from .npm_source_spec import NpmSourceSpec, parse_npm_source_spec
 from .offline_archive_inspection import inspect_archive_offline
 from .package_intent_common import split_python_extras
-from .package_lock_versions import direct_lockfile_version as _direct_lockfile_version
-from .package_lock_versions import exact_lockfile_version as _exact_version
 from .package_manifest_diff import (
     _DeadlineExceededError,
     _dependency_map_for_path,
@@ -132,6 +130,9 @@ _NAMED_SOURCE_SEPARATOR_RE = re.compile(
     r"@(?=(?:https?|git\+|github|gitlab|bitbucket|file):)",
     re.IGNORECASE,
 )
+# Composer's published package-name grammar, with non-overlapping separator
+# groups to avoid nested ambiguous repetition (https://getcomposer.org/schema.json).
+_COMPOSER_PACKAGE_NAME_RE = re.compile(r"[a-z0-9]+(?:[_.-][a-z0-9]+)*/[a-z0-9]+(?:(?:[_.]|-{1,2})[a-z0-9]+)*")
 _LOCKFILE_PARSE_BUDGET_SECONDS = 0.5
 _LOCKFILE_PARSE_BUDGET_PER_MIB_SECONDS = 0.75
 _LOCKFILE_PARSE_MAX_BUDGET_SECONDS = 1.5
@@ -2367,7 +2368,7 @@ def _parse_lockfile_text_result(path: str, source: str | bytes) -> LockfileParse
         dependency_parser=_dependency_map_for_path,
         package_lock_parser=_package_lock_entries,
     )
-    if cache is not None and result.complete:
+    if cache is not None:
         cache[cache_key] = result
     return result
 
@@ -2630,7 +2631,7 @@ def _transitive_lockfile_results(
             package_name = (
                 entry.package_name
                 if lockfile_path.name == "package-lock.json"
-                else _dependency_package_name(normalized_dependency_path)
+                else _dependency_package_name(entry.dependency_path, ecosystem=lockfile_ecosystem)
             )
             if package_name is None:
                 continue
@@ -2639,7 +2640,8 @@ def _transitive_lockfile_results(
                     entry.dependency_path,
                     package_name,
                     entry.version,
-                    normalized_dependency_path in direct_target_names,
+                    (package_name if lockfile_ecosystem == "packagist" else normalized_dependency_path)
+                    in direct_target_names,
                 )
             )
         for dependency_path, package_name, version, direct in dependency_entries:
@@ -2659,16 +2661,13 @@ def _transitive_lockfile_results(
                 now=now_timestamp,
             )
             if offline.emergency_deny and offline.action == "block":
+                namespace, leaf_name = _split_namespace_name(package_name, ecosystem=lockfile_ecosystem or "npm")
                 results.append(
                     {
                         "decision": "block",
                         "ecosystem": lockfile_ecosystem or "npm",
-                        "name": package_name.rsplit("/", 1)[-1],
-                        "namespace": (
-                            package_name.rsplit("/", 1)[0]
-                            if package_name.startswith("@") and "/" in package_name
-                            else None
-                        ),
+                        "name": leaf_name,
+                        "namespace": namespace,
                         "requestedVersion": version,
                         "resolvedVersion": version,
                         "recommendedFixVersion": offline.recommended_fix_version,
@@ -2682,12 +2681,8 @@ def _transitive_lockfile_results(
                                 "code": offline.reason,
                                 "message": _emergency_deny_bundle_message(
                                     target={
-                                        "name": package_name.rsplit("/", 1)[-1],
-                                        "namespace": (
-                                            package_name.rsplit("/", 1)[0]
-                                            if package_name.startswith("@") and "/" in package_name
-                                            else None
-                                        ),
+                                        "name": leaf_name,
+                                        "namespace": namespace,
                                         "ecosystem": lockfile_ecosystem or "npm",
                                     },
                                     resolved_version=version,
@@ -3749,10 +3744,10 @@ def _lockfile_dependency_versions(
             versions.update(_package_lock_target_versions_from_entries(parse_result, targets))
             continue
         if lockfile_path.name == "pnpm-lock.yaml":
-            versions.update(_target_versions_from_direct_map(targets, dict(parse_result.direct_version_candidates)))
+            versions.update(_pnpm_lock_target_versions(parse_result, targets))
             continue
         if lockfile_path.name == "yarn.lock":
-            versions.update(_yarn_lock_target_versions_from_entries(parse_result, targets))
+            versions.update(_yarn_lock_target_versions(parse_result, targets))
             continue
         if lockfile_path.name == "bun.lock":
             versions.update(_bun_lock_target_versions(parse_result, targets))
@@ -4001,127 +3996,36 @@ def _gemfile_lock_target_versions(
 
 
 def _pnpm_lock_target_versions(
-    text: str,
+    parse_result: LockfileParseResult,
     targets: tuple[dict[str, object], ...],
 ) -> dict[tuple[str, str | None], str]:
+    if not parse_result.complete:
+        return {}
     direct_versions: dict[str, str] = {}
-    section: str | None = None
-    importer: str | None = None
-    dependency_block: str | None = None
-    dependency_name: str | None = None
-    top_level_dependency_sections = {"dependencies", "devDependencies", "optionalDependencies"}
-    for raw_line in text.splitlines():
-        stripped = raw_line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        indent = len(raw_line) - len(raw_line.lstrip(" "))
-        if indent == 0:
-            section = stripped.removesuffix(":")
-            importer = None
-            dependency_block = None
-            dependency_name = None
-            continue
-        if section in top_level_dependency_sections:
-            if indent == 2 and ":" in stripped:
-                raw_name, _, raw_value = stripped.partition(":")
-                dependency_name = raw_name.strip().strip('"').strip("'")
-                direct_value = raw_value.strip().strip('"').strip("'")
-                exact_version = _direct_lockfile_version(direct_value)
-                if exact_version is not None:
-                    direct_versions[dependency_name] = exact_version
-                    dependency_name = None
-                continue
-            if dependency_name is not None and indent >= 4 and stripped.startswith("version:"):
-                exact_version = _direct_lockfile_version(stripped.partition(":")[2].strip().strip('"').strip("'"))
-                if exact_version is not None:
-                    direct_versions[dependency_name] = exact_version
-                dependency_name = None
-            continue
-        if section != "importers":
-            continue
-        if indent == 2 and stripped.endswith(":"):
-            importer = stripped[:-1].strip('"').strip("'")
-            dependency_block = None
-            dependency_name = None
-            continue
-        if importer not in {".", "default"}:
-            continue
-        if indent == 4 and stripped.endswith(":"):
-            block_name = stripped.removesuffix(":")
-            dependency_block = block_name if "dependencies" in block_name.lower() else None
-            dependency_name = None
-            continue
-        if dependency_block is None:
-            continue
-        if indent == 6 and ":" in stripped:
-            raw_name, _, raw_value = stripped.partition(":")
-            dependency_name = raw_name.strip().strip('"').strip("'")
-            direct_value = raw_value.strip().strip('"').strip("'")
-            exact_version = _direct_lockfile_version(direct_value)
-            if exact_version is not None:
-                direct_versions[dependency_name] = exact_version
-                dependency_name = None
-            continue
-        if dependency_name is not None and indent >= 8 and stripped.startswith("version:"):
-            exact_version = _direct_lockfile_version(stripped.partition(":")[2].strip().strip('"').strip("'"))
-            if exact_version is not None:
-                direct_versions[dependency_name] = exact_version
-            dependency_name = None
+    for name, candidates in parse_result.text_direct_candidates:
+        for raw_version in candidates:
+            version = _direct_lockfile_version(raw_version)
+            if version is not None:
+                direct_versions[name] = version
+                break
     return _target_versions_from_direct_map(targets, direct_versions)
 
 
 def _yarn_lock_target_versions(
-    text: str,
-    targets: tuple[dict[str, object], ...],
-) -> dict[tuple[str, str | None], str]:
-    versions: dict[tuple[str, str | None], str] = {}
-    current_selectors: tuple[str, ...] = ()
-    target_selectors = {_lockfile_target_key(target): set(_expected_yarn_selectors(target)) for target in targets}
-    for raw_line in text.splitlines():
-        stripped = raw_line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if not raw_line.startswith((" ", "\t")):
-            current_selectors = tuple(
-                selector
-                for selector in (part.strip().strip('"').strip("'") for part in stripped.removesuffix(":").split(","))
-                if selector and selector != "__metadata"
-            )
-            continue
-        if not current_selectors:
-            continue
-        version_match = re.match(r'^version\s+"([^"]+)"$', stripped) or re.match(
-            r'^version:\s*"?([^"\s]+)"?$',
-            stripped,
-        )
-        if version_match is None:
-            continue
-        version = version_match.group(1)
-        selector_set = set(current_selectors)
-        for target_key, expected_selectors in target_selectors.items():
-            if target_key in versions or not expected_selectors:
-                continue
-            if selector_set & expected_selectors:
-                versions[target_key] = version
-    return versions
-
-
-def _yarn_lock_target_versions_from_entries(
     parse_result: LockfileParseResult,
     targets: tuple[dict[str, object], ...],
 ) -> dict[tuple[str, str | None], str]:
-    # A selector's first declaration wins, including when one target has several
-    # accepted spellings. Dependency-map projection separately remains last-wins.
-    selector_first: dict[str, tuple[int, str]] = {}
-    for index, (selectors, version) in enumerate(parse_result.yarn_selector_versions):
-        for selector in selectors:
-            selector_first.setdefault(selector, (index, version))
+    if not parse_result.complete:
+        return {}
+    selectors = {
+        selector: (ordinal, version) for selector, version, ordinal in parse_result.selector_version_candidates
+    }
     versions: dict[tuple[str, str | None], str] = {}
     target_selectors = {_lockfile_target_key(target): _expected_yarn_selectors(target) for target in targets}
     for target_key, expected_selectors in target_selectors.items():
-        matches = [selector_first[selector] for selector in expected_selectors if selector in selector_first]
-        if matches:
-            versions[target_key] = min(matches, key=lambda item: item[0])[1]
+        candidates = [selectors[selector] for selector in expected_selectors if selector in selectors]
+        if candidates:
+            versions[target_key] = min(candidates)[1]
     return versions
 
 
@@ -4255,11 +4159,33 @@ def _target_versions_from_direct_map(
     return versions
 
 
+def _direct_lockfile_version(value: str) -> str | None:
+    normalized = value.split("(", 1)[0].strip()
+    if normalized.startswith("npm:"):
+        normalized = normalized.partition("npm:")[2]
+    if "@" in normalized and not normalized.startswith("@"):
+        candidate = normalized.rsplit("@", 1)[-1]
+        if _exact_version(candidate) is not None:
+            return candidate
+    if _exact_version(normalized) is not None:
+        return normalized
+    return None
+
+
 def _lockfile_target_key(target: dict[str, object]) -> tuple[str, str | None]:
     return str(target["normalized_name"]), _optional_string(target.get("alias"))
 
 
-def _dependency_package_name(dependency_path: str) -> str | None:
+def _dependency_package_name(dependency_path: str, *, ecosystem: str | None = None) -> str | None:
+    if ecosystem == "packagist":
+        # Composer paths are package identities, not node_modules filesystem
+        # paths. Do not strip slash/dot components into a different identity.
+        if not dependency_path.isascii():
+            return None
+        normalized = dependency_path.lower()
+        if _COMPOSER_PACKAGE_NAME_RE.fullmatch(normalized) is None:
+            return None
+        return parse_package_identity(ecosystem=ecosystem, package_name=normalized, version="*").qualified_name
     normalized_dependency_path = dependency_path.strip("/").lower()
     if not normalized_dependency_path:
         return None
@@ -4798,6 +4724,19 @@ def _split_namespace_name(value: str, *, ecosystem: str) -> tuple[str | None, st
     except PackageIdentityError:
         return None, value
     return identity.namespace, identity.name
+
+
+def _exact_version(value: str | None) -> str | None:
+    normalized = _optional_string(value)
+    if normalized is None:
+        return None
+    if parse_npm_source_spec(normalized) is not None:
+        return None
+    if normalized.startswith(("^", "~", "<", ">", "!", "*")):
+        return None
+    if any(token in normalized for token in ("||", " - ", ",")):
+        return None
+    return normalized
 
 
 def _npm_source_spec(value: str | None, *, ecosystem: str) -> NpmSourceSpec | None:

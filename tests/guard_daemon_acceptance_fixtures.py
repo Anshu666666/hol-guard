@@ -16,11 +16,13 @@ import urllib.request
 from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict, cast
 from unittest.mock import patch
 
+from codex_plugin_scanner.guard.daemon.bounded_http import daemon_admission_snapshot
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.coverage_ci import under_coverage_scale
@@ -67,6 +69,9 @@ class WorkloadResult:
     inbox_requests: int
     dispatch_counts: dict[str, int]
     failure_reasons: dict[str, int]
+    transport_rejections: int
+    request_rejections: int
+    scheduler_rejections: dict[str, int]
     transport_counts: dict[str, int]
 
 
@@ -112,20 +117,7 @@ def run_clients(
     clients: list[ClientSpec], review: Callable[[str, str, int], None], *, request_timeout_seconds: float
 ) -> None:
     """Retain each client's declared concurrency throughout a mixed workload."""
-
-    def lane(client: ClientSpec, first: int) -> None:
-        for index in range(first, client["requests"], client["concurrency"]):
-            review(client["harness"], client["client"], index)
-
-    workers = sum(min(client["concurrency"], client["requests"]) for client in clients)
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = [
-            (executor.submit(lane, client, first), len(range(first, client["requests"], client["concurrency"])))
-            for client in clients
-            for first in range(min(client["concurrency"], client["requests"]))
-        ]
-        for future, requests in futures:
-            future.result(timeout=request_timeout_seconds * requests)
+    _run_client_requests(clients, review, timeout_seconds=request_timeout_seconds)
 
 
 def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
@@ -152,6 +144,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
     initial_workers = threading.active_count()
     initial_rss = _rss_bytes()
     initial_inbox = len(store.list_approval_requests(status=None, limit=None))
+    initial_transport_rejections = daemon_admission_snapshot()["rejected"]
     outcomes: Counter[str] = Counter()
     dispatch: Counter[str] = Counter()
     failure_reasons: Counter[str] = Counter()
@@ -222,7 +215,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                             headers={"Content-Type": "application/json", "Connection": "keep-alive"},
                         )
                         challenge_response = connection.getresponse()
-                        challenge_body = challenge_response.read()
+                        challenge_body = challenge_response.read(4097)
                         if retry_admission(
                             challenge_response.status,
                             challenge_response.reason,
@@ -232,7 +225,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         ):
                             continue
                         if challenge_response.status != 200:
-                            raise RuntimeError(f"challenge-status-{challenge_response.status}")
+                            raise _http_status_failure("challenge", challenge_response.status, challenge_body)
                         challenge = cast(dict[str, object], json.loads(challenge_body))
                         if connection.sock is not None:
                             connection.sock.settimeout(max(0.001, transport_deadline - time.monotonic()))
@@ -251,7 +244,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                             },
                         )
                         hook_response = connection.getresponse()
-                        hook_body = hook_response.read()
+                        hook_body = hook_response.read(4097)
                         if retry_admission(
                             hook_response.status,
                             hook_response.reason,
@@ -261,7 +254,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         ):
                             continue
                         if hook_response.status != 200:
-                            raise RuntimeError(f"hook-status-{hook_response.status}")
+                            raise _http_status_failure("hook", hook_response.status, hook_body)
                         result = cast(dict[str, object], json.loads(hook_body))
                         break
                     finally:
@@ -285,10 +278,9 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                         with urllib.request.urlopen(
                             request, timeout=max(0.001, transport_deadline - time.monotonic())
                         ) as response:
-                            result = cast(dict[str, object], json.loads(response.read()))
+                            result = cast(dict[str, object], json.loads(response.read(4097)))
                         break
                     except urllib.error.HTTPError as error:
-                        error.close()
                         if not retry_admission(
                             error.code,
                             str(error.reason),
@@ -297,6 +289,7 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                             deadline=transport_deadline,
                         ):
                             raise
+                        error.close()
             blocked = _response_blocks_action(result)
             reason_code = result.get("reason_code")
             outcome = (
@@ -314,12 +307,16 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
                     failure_reasons[str(result.get("reason_code", result.get("decision", "unexpected-response")))] += 1
         except Exception as error:
             outcome = "generic_failure"
+            if isinstance(error, urllib.error.HTTPError):
+                try:
+                    error_key = str(_http_status_failure("hook", error.code, error.read(4097)))
+                except OSError:
+                    error_key = f"hook-status-{error.code}:unreadable_error"
+                finally:
+                    error.close()
+            else:
+                error_key = f"{type(error).__name__}:{error}"
             with lock:
-                error_key = (
-                    f"HTTPError:{error.code}"
-                    if isinstance(error, urllib.error.HTTPError)
-                    else f"{type(error).__name__}:{error}"
-                )
                 failure_reasons[error_key] += 1
         elapsed_ms = (time.monotonic() - started) * 1000
         with lock:
@@ -335,6 +332,8 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
             run_clients(spec["clients"], review, request_timeout_seconds=review_timeout_seconds)
         worker_stats = daemon._server.hook_process_runner.stats()
         scheduler_stats = daemon._server.runtime_hook_scheduler.stats()
+        transport_rejections = daemon_admission_snapshot()["rejected"] - initial_transport_rejections
+        request_rejections = daemon._server.rejected_requests
         final_inbox = len(store.list_approval_requests(status=None, limit=None))
     finally:
         daemon.stop()
@@ -364,8 +363,58 @@ def run_workload(spec: WorkloadSpec, *, root: Path) -> WorkloadResult:
         inbox_requests=max(0, final_inbox - initial_inbox),
         dispatch_counts=dict(dispatch),
         failure_reasons=dict(failure_reasons),
+        transport_rejections=transport_rejections,
+        request_rejections=request_rejections,
+        scheduler_rejections=dict(scheduler_stats["rejected"]),
         transport_counts=dict(transport_counts),
     )
+
+
+def _run_client_requests(
+    clients: list[ClientSpec],
+    review: Callable[[str, str, int], None],
+    *,
+    timeout_seconds: float,
+) -> None:
+    """Honor every client's concurrency while offering all clients together."""
+    with ExitStack() as stack:
+        executors = [stack.enter_context(ThreadPoolExecutor(max_workers=client["concurrency"])) for client in clients]
+        # A single FIFO pool let one client's whole batch occupy every worker.
+        # Round-robin offers plus distinct pools retain both the declared total
+        # and each per-client bound; a fast client cannot borrow another's slots.
+        futures = [
+            executor.submit(review, client["harness"], client["client"], index)
+            for index in range(max((client["requests"] for client in clients), default=0))
+            for client, executor in zip(clients, executors, strict=True)
+            if index < client["requests"]
+        ]
+        for future in futures:
+            future.result(timeout=timeout_seconds)
+
+
+def _http_status_failure(stage: str, status: int, body: bytes) -> RuntimeError:
+    """Identify the failed admission boundary without copying response content."""
+    reason = "unclassified"
+    if len(body) > 4096:
+        reason = "oversized_error"
+    elif body.startswith(b"<!DOCTYPE HTML>") and b"<p>Message: Guard daemon request capacity reached.</p>" in body:
+        reason = "request_capacity"
+    else:
+        try:
+            value = json.loads(body)
+        except (ValueError, UnicodeDecodeError):
+            pass
+        else:
+            public_error = value.get("error") if isinstance(value, dict) else None
+            if isinstance(public_error, str) and public_error in {
+                "daemon_overloaded",
+                "daemon_identity_unavailable",
+                "managed_runtime_publish_failed",
+                "request_body_timeout",
+                "incomplete_request_body",
+            }:
+                reason = public_error
+    return RuntimeError(f"{stage}-status-{status}:{reason}")
 
 
 def is_pre_dispatch_refusal(status: int, reason: str) -> bool:

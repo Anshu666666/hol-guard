@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hol-guard.claude-launcher-pilot.v1",
+  "title": "Dormant package-bound Claude launcher configuration",
+  "description": "Explicit preparation only; no default registration. Signed discovery admits Unicode scalar strings and i64/u64 integers, not floating numbers or lone surrogates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "guard_home", "home", "workspace", "query", "runtime_path", "runtime_size", "runtime_sha256", "manifest_sha256", "package_version", "target", "build_sha", "rule_digest", "daemon"],
+  "properties": {
+    "schema": {"const": "hol-guard.claude-launcher-pilot.v1"},
+    "guard_home": {"type": "string", "minLength": 1},
+    "home": {"type": "string", "minLength": 1},
+    "workspace": {"type": ["string", "null"]},
+    "query": {"type": "string", "minLength": 1},
+    "runtime_path": {"type": "string", "minLength": 1},
+    "runtime_size": {"type": "integer", "minimum": 1, "maximum": 134217728},
+    "runtime_sha256": {"$ref": "#/$defs/sha256"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "package_version": {"type": "string", "minLength": 1},
+    "target": {"type": "string", "minLength": 1},
+    "build_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "rule_digest": {"$ref": "#/$defs/sha256"},
+    "daemon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compatibility_version", "package_version", "source_root", "runtime_fingerprint"],
+      "properties": {
+        "compatibility_version": {"const": 2},
+        "package_version": {"type": "string", "minLength": 1},
+        "source_root": {"type": "string", "minLength": 1},
+        "runtime_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+  "x-native-admission": {
+    "maximum_config_bytes": 16384,
+    "absolute_canonical_paths_required": true,
+    "query_must_equal_bound_context": true,
+    "current_executable_and_manifest_hash_required": true,
+    "feature": "native-claude-launcher-pilot",
+    "default_feature_enabled": false,
+    "capability": "claude-launcher-pilot-v1",
+    "events": ["PreToolUse", "PostToolUse"],
+    "maximum_hook_bytes": 1000000,
+    "maximum_response_bytes": 1000000,
+    "maximum_http_header_bytes": 16384,
+    "maximum_http_header_lines": 64,
+    "http_profile": "HTTP/1.0 or HTTP/1.1 final status, CRLF, bounded fields, equal explicit Content-Length values, no transfer encoding",
+    "hook_response_profile": "opaque bounded JSON object; duplicate members and wide arrays accepted; serde_json unsupported numeric, surrogate and recursion domains rejected explicitly",
+    "unsupported_response_outcome": "event-specific block, never ordinary availability",
+    "launcher_deadline_ms": 8000,
+    "authenticated_attempt_ms": 2000,
+    "hook_replay": false,
+    "automatic_recovery": false,
+    "registration_changed": false,
+    "qualified": false
+  }
+}

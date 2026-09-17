@@ -1,0 +1,200 @@
+name: Package Python component rebaseline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, release/3.2]
+    paths:
+      - '.github/workflows/package-performance-rebaseline.yml'
+      - 'scripts/package_benchmark*.py'
+      - 'scripts/package_rebaseline_ci.py'
+      - 'scripts/native_slo_evidence_*.py'
+      - 'tests/test_package_benchmark*.py'
+      - 'tests/test_package_rebaseline_ci.py'
+      - 'docs/guard/rust-performance/qualification-recipient.pem'
+      - 'src/codex_plugin_scanner/guard/local_supply_chain.py'
+      - 'src/codex_plugin_scanner/guard/store_evidence*.py'
+      - 'src/codex_plugin_scanner/guard/stable_digest.py'
+      - 'src/codex_plugin_scanner/guard/runtime/supply_chain*.py'
+      - 'src/codex_plugin_scanner/guard/runtime/lockfile*.py'
+      - 'src/codex_plugin_scanner/guard/runtime/text_lockfile_parse.py'
+      - 'src/codex_plugin_scanner/guard/runtime/package_intent*.py'
+      - 'src/codex_plugin_scanner/guard/runtime/package_manifest*.py'
+      - 'src/codex_plugin_scanner/guard/runtime/manifest_dependency_targets.py'
+      - 'src/codex_plugin_scanner/guard/runtime/workspace_path_guard.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-rebaseline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-component:
+    name: Package ${{ matrix.plan }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - plan: format-preflight
+            timeout: 25
+          - plan: diagnostic
+            timeout: 30
+    env:
+      PACKAGE_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PACKAGE_RECIPIENT_ID: d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: ${{ env.PACKAGE_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Check out frozen baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: baseline-src
+          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - name: Install one locked environment for both source arms
+        id: setup
+        working-directory: candidate-src
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Validate finite corpus and failure handling
+        id: correctness
+        working-directory: candidate-src
+        run: >-
+          .venv/bin/python -m pytest -q -p tests.package_offline
+          tests/test_package_benchmark_matrix.py tests/test_package_benchmark_controller.py
+          tests/test_package_rebaseline_ci.py
+      - name: Validate every supported format and both real source routes
+        id: preflight
+        if: matrix.plan == 'format-preflight'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/format-preflight" \
+            --preset format-preflight --runs 1 --samples 1 --max-attempts 40 \
+            --measurement validation --timeout-seconds 20
+      - name: Observe the original independent cardinality matrix once
+        id: cardinality
+        if: matrix.plan == 'diagnostic'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/cardinality" \
+            --preset cardinality --runs 1 --samples 1 --max-attempts 72 \
+            --measurement timing --timeout-seconds 15
+      - name: Retain the genuine unresolved full-route witness
+        id: unresolved
+        if: always() && matrix.plan == 'diagnostic' && steps.correctness.outcome == 'success'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/unresolved" \
+            --preset unresolved --runs 1 --samples 1 --max-attempts 2 \
+            --measurement validation --timeout-seconds 15
+      - name: Run five independent alternating protect-dry-run pairs
+        id: hotroute
+        if: always() && matrix.plan == 'diagnostic' && steps.correctness.outcome == 'success'
+        run: |
+          flock -n "$RUNNER_TEMP/package-rebaseline.lock" \
+            candidate-src/.venv/bin/python candidate-src/scripts/package_benchmark_matrix.py \
+            --baseline-root "$GITHUB_WORKSPACE/baseline-src" \
+            --candidate-root "$GITHUB_WORKSPACE/candidate-src" --candidate-sha "$PACKAGE_CANDIDATE_SHA" \
+            --output "$GITHUB_WORKSPACE/package-evidence/private_samples/hot-route" \
+            --preset hot-route --runs 5 --samples 1 --max-attempts 10 \
+            --measurement timing --timeout-seconds 15
+      - name: Publish bounded status and stage all known private records
+        if: always()
+        env:
+          PACKAGE_PLAN: ${{ matrix.plan }}
+          PACKAGE_PREFLIGHT_OUTCOME: ${{ steps.preflight.outcome }}
+          PACKAGE_CARDINALITY_OUTCOME: ${{ steps.cardinality.outcome }}
+          PACKAGE_UNRESOLVED_OUTCOME: ${{ steps.unresolved.outcome }}
+          PACKAGE_HOTROUTE_OUTCOME: ${{ steps.hotroute.outcome }}
+        run: |
+          outcomes=(--outcome "format-preflight=${PACKAGE_PREFLIGHT_OUTCOME:-skipped}")
+          if [ "$PACKAGE_PLAN" = diagnostic ]; then
+            outcomes=(--outcome "cardinality=${PACKAGE_CARDINALITY_OUTCOME:-skipped}" \
+              --outcome "unresolved=${PACKAGE_UNRESOLVED_OUTCOME:-skipped}" \
+              --outcome "hot-route=${PACKAGE_HOTROUTE_OUTCOME:-skipped}")
+          fi
+          python -I -S candidate-src/scripts/package_rebaseline_ci.py \
+            --private "$GITHUB_WORKSPACE/package-evidence/private_samples" \
+            --public "$GITHUB_WORKSPACE/package-evidence/public/component.json" \
+            --staging "$GITHUB_WORKSPACE/package-evidence/archive-private" \
+            --candidate "$PACKAGE_CANDIDATE_SHA" --plan "$PACKAGE_PLAN" "${outcomes[@]}"
+      - name: Encrypt bounded private archive groups
+        if: always()
+        env:
+          PACKAGE_PLAN: ${{ matrix.plan }}
+        run: |
+          groups=(format-preflight)
+          if [ "$PACKAGE_PLAN" = diagnostic ]; then
+            groups=(cardinality-d100 cardinality-d1000 cardinality-d10000 unresolved hot-route)
+          fi
+          status=0
+          for group in "${groups[@]}"; do
+            receipt="$GITHUB_WORKSPACE/package-evidence/public/archive-$group.json"
+            if [ ! -x candidate-src/.venv/bin/python ]; then
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py failure-receipt --receipt "$receipt" || true
+              status=1
+            elif ! candidate-src/.venv/bin/python candidate-src/scripts/native_slo_evidence_archive.py encrypt \
+              --source "$GITHUB_WORKSPACE/package-evidence/archive-private/$group" \
+              --output "$GITHUB_WORKSPACE/package-evidence/encrypted/$group.hge" \
+              --public-key "$GITHUB_WORKSPACE/candidate-src/docs/guard/rust-performance/qualification-recipient.pem" \
+              --recipient-id "$PACKAGE_RECIPIENT_ID" --receipt "$receipt" \
+              --source-sha "$PACKAGE_CANDIDATE_SHA" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"; then
+              status=1
+            fi
+          done
+          exit "$status"
+      - name: Retain fixed public component evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: package-${{ matrix.plan }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            package-evidence/public/component.json
+            package-evidence/public/archive-format-preflight.json
+            package-evidence/public/archive-cardinality-d100.json
+            package-evidence/public/archive-cardinality-d1000.json
+            package-evidence/public/archive-cardinality-d10000.json
+            package-evidence/public/archive-unresolved.json
+            package-evidence/public/archive-hot-route.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain encrypted private observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: package-encrypted-${{ matrix.plan }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            package-evidence/encrypted/format-preflight.hge
+            package-evidence/encrypted/cardinality-d100.hge
+            package-evidence/encrypted/cardinality-d1000.hge
+            package-evidence/encrypted/cardinality-d10000.hge
+            package-evidence/encrypted/unresolved.hge
+            package-evidence/encrypted/hot-route.hge
+          if-no-files-found: warn
+          retention-days: 30

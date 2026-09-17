@@ -29,7 +29,6 @@ from scripts.native_slo_priority_launchers import LauncherSession, launcher_payl
 from scripts.native_slo_qualification import confidence_summary
 from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
 from scripts.native_slo_resources import ResourceSampler
-from scripts.native_slo_workloads import source_reference_supported
 
 _PLATFORMS = ("linux-x64", "macos-x64", "macos-arm64", "windows-x64")
 _REQUIRED_CASES = (
@@ -89,8 +88,8 @@ def workload_matrix(
     launcher_corpus: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Declare coverage and remaining obligations without inferring missing routes."""
-    source_supported = source_reference_supported()
     platform_scope = corpus.get("platform_scope", {})
+    source_supported = isinstance(platform_scope, Mapping) and platform_scope.get("reference_review_supported") is True
     source_qualified = isinstance(platform_scope, Mapping) and platform_scope.get("reference_review_qualified") is True
     missing_source = (
         []
@@ -152,7 +151,9 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
     identity = _runtime_summary(runtime)
     validate_receipt_profile(receipt_profile, identity)
     routes = route_matrix()
-    contract_corpus = run_contract_corpus(runtime)
+    contract_corpus = run_contract_corpus(
+        runtime, evidence_file=raw_file.with_name(raw_file.stem + "-daemon-contract.jsonl")
+    )
     launcher_corpus = run_registered_contract_corpus(
         runtime, evidence_file=raw_file.with_name(raw_file.stem + "-launcher-contract.jsonl")
     )
@@ -261,7 +262,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
                 "malformed_launcher_input",
                 "native_phase_attribution",
                 "all_platforms",
-                *matrix["missing_reference_scopes"],
+                *cast(list[str], matrix["missing_reference_scopes"]),
             ],
         }
     )

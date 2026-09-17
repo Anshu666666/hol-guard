@@ -2,14 +2,60 @@
 
 from __future__ import annotations
 
+import json
+import math
+import time
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
 
+_HARNESSES = frozenset(
+    {
+        "claude-code",
+        "cline",
+        "codex",
+        "copilot",
+        "cursor",
+        "grok",
+        "hermes",
+        "kimi",
+        "omp",
+        "openclaw",
+        "opencode",
+        "pi",
+        "zcode",
+    }
+)
+_REASONS = frozenset(
+    {
+        "source_full_scan_allow",
+        "no_output_to_review",
+        "source_secret_match",
+        "sensitive_path",
+        "output_too_large",
+        "native_policy_warning",
+        "native_policy_blocked",
+        "native_policy_expired",
+        "native_policy_snapshot_expired",
+        "native_policy_snapshot_not_current",
+        "native_post_tool_unavailable",
+        "native_hook_edge_unavailable",
+        "native_policy_unavailable",
+        "native_policy_deny",
+        "native_review_required",
+    }
+)
+
+
+def _known(value: object, allowed: frozenset[str]) -> str:
+    return value if isinstance(value, str) and value in allowed else "other"
+
 
 @contextmanager
-def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterator[None]:
+def source_review_witness(
+    worker: Any, request: Mapping[str, object], *, harness: str | None = None, size_class: str | None = None
+) -> Iterator[None]:
     reference = request.get("guard_source_ref")
     if not isinstance(reference, Mapping):
         yield
@@ -23,9 +69,12 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
         raise RuntimeError("source SLO reference digest is invalid")
     original = worker._review_raw_hook_native
     observations: list[tuple[object, object, object, object, object]] = []
+    diagnostics: list[dict[str, object]] = []
 
     def capture(**kwargs: object) -> object:
+        entered = time.monotonic()
         edge = original(**kwargs)
+        elapsed = time.monotonic() - entered
         result = edge.get("result") if isinstance(edge, Mapping) else None
         if len(observations) >= 2:
             return edge
@@ -41,6 +90,31 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
             )
         else:
             observations.append((None, None, None, None, None))
+        # Keep only fixed enums/booleans. A failed installed run must reveal
+        # which proof failed without echoing paths, output, or arbitrary native
+        # reason strings. Two records distinguish missing/single/multiple calls.
+        result = result if isinstance(result, Mapping) else {}
+        reviewed = result.get("reviewed_output_sha256")
+        deadline = kwargs.get("deadline")
+        remaining = (
+            max(0, min(9_000, int((deadline - entered) * 1_000)))
+            if isinstance(deadline, (int, float)) and not isinstance(deadline, bool) and math.isfinite(deadline)
+            else None
+        )
+        diagnostics.append(
+            {
+                "rust_authority": isinstance(edge, Mapping) and edge.get("authority") == "rust",
+                "decision": _known(result.get("decision"), frozenset({"allow", "deny"})),
+                "model_output_action": _known(
+                    result.get("model_output_action"), frozenset({"allow_original", "block", "not_applicable"})
+                ),
+                "reason_code": _known(result.get("reason_code"), _REASONS),
+                "reviewed_digest_present": isinstance(reviewed, str) and len(reviewed) == 64,
+                "reviewed_digest_matches": reviewed == digest,
+                "deadline_remaining_ms": remaining,
+                "native_elapsed_ms": max(0, min(10_000, int(elapsed * 1_000))),
+            }
+        )
         return edge
 
     # The large-source matrix is sequential. This fixture-only wrapper uses
@@ -53,7 +127,16 @@ def source_review_witness(worker: Any, request: Mapping[str, object]) -> Iterato
         or observations[0][:4] != ("rust", "allow", "allow_original", digest)
         or observations[0][4] not in {"source_full_scan_allow", "native_policy_warning"}
     ):
-        raise RuntimeError("source SLO did not witness one complete native content review")
+        diagnostic = {
+            "harness": _known(harness, _HARNESSES),
+            "size_class": _known(size_class, frozenset({"250k", "1m", "5m"})),
+            "observed_calls_capped_at_two": len(diagnostics),
+            "observations": diagnostics,
+        }
+        raise RuntimeError(
+            "source SLO did not witness one complete native content review: "
+            + json.dumps(diagnostic, sort_keys=True, separators=(",", ":"))
+        )
 
 
 @contextmanager

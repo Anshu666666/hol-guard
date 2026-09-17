@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor, wait
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
+from typing import Protocol
 
 from scripts.bench_guard_native_installed_slo_runtime import _require
-from scripts.native_probe_receipts import wait_for_route_corpus
-from scripts.native_slo_adapter import Observation, process_rss_bytes, route_counts
+from scripts.native_slo_adapter import Observation, process_rss_bytes
 from scripts.native_slo_baseline import steady_state_rss_baseline as _steady_state_rss_baseline
-from scripts.native_slo_batch import validate_batch_routes
+from scripts.native_slo_capacity_routes import CapacityRouteEvidence, capacity_route_evidence
 from scripts.native_slo_session import AdapterSession
 
 _MAX_CONCURRENCY = 64
@@ -23,6 +22,18 @@ _CONCURRENT_WAVE_TIMEOUT_SECONDS = 6.0
 _HOOK_WORKER_STABILIZATION_TIMEOUT_SECONDS = 30.0
 
 
+class _ConcurrentObserver(Protocol):
+    def observe(self, harness: str, event: str, size_class: str) -> Observation: ...
+
+
+@dataclass(frozen=True)
+class _UnattributedObserver:
+    session: AdapterSession
+
+    def observe(self, harness: str, event: str, size_class: str) -> Observation:
+        return self.session.observe_unattributed(harness, event, size_class)
+
+
 @dataclass(frozen=True)
 class CapacityMeasurements:
     concurrent_16: list[Observation]
@@ -31,18 +42,10 @@ class CapacityMeasurements:
     errors_64: int
     rss_baseline: int
     rss_peak: int
-    routes_16: dict[str, int]
-    routes_64: dict[str, int]
-    native_overloads_16: int
-    native_overloads_64: int
-
-
-@dataclass(frozen=True)
-class CapacityWave:
-    observations: list[Observation]
-    errors: int
-    routes: dict[str, int]
-    native_overloads: int
+    routes_16: CapacityRouteEvidence | None = None
+    routes_64: CapacityRouteEvidence | None = None
+    native_overloads_16: int | None = None
+    native_overloads_64: int | None = None
 
 
 def _load_executor_worker(barrier: threading.Barrier) -> int:
@@ -67,7 +70,7 @@ def _prime_load_executor(executor: ThreadPoolExecutor, concurrency: int) -> int:
 
 
 def _run_concurrent(
-    session: AdapterSession,
+    session: _ConcurrentObserver,
     routes: tuple[tuple[str, str], ...],
     concurrency: int,
     executor: ThreadPoolExecutor,
@@ -129,7 +132,8 @@ def _prewarm_ready_hook_workers(
     concurrency: int,
     executor: ThreadPoolExecutor,
 ) -> tuple[list[Observation], int]:
-    wave = _run_capacity_wave(session, routes, concurrency, executor)
+    observations, errors, evidence = _run_capacity_wave(session, routes, concurrency, executor)
+    _require(evidence.qualifies(expected=concurrency, allow_overload=False), "RSS warmup route proof failed")
     stats = session.daemon._server.hook_process_runner.stats()
     _require(
         stats["target"] == concurrency
@@ -138,38 +142,7 @@ def _prewarm_ready_hook_workers(
         and stats["busy"] == 0,
         "hook worker capacity was not steady after prewarm",
     )
-    _require(not any(item.overloaded for item in wave.observations), "resident prewarm returned overload")
-    return wave.observations, wave.errors
-
-
-def _classify_native_overloads(
-    observations: list[Observation],
-    *,
-    overload_delta: int,
-    native_fail_safe_delta: int,
-) -> list[Observation]:
-    """Recognize denied native overloads only from exact whole-wave evidence.
-
-    Overlapping per-hook counter spans cannot identify any individual route.
-    A native health increment accounts for one native fail-safe; explicit
-    capacity responses may also have bypassed the engine. Matching the complete
-    native fail-safe count rules out borrowing an overload increment to hide an
-    unrelated native failure. Batch conservation separately checks every allow.
-    """
-    candidates = [
-        index
-        for index, observation in enumerate(observations)
-        if not observation.allowed and not observation.overloaded
-    ]
-    # Explicit responses may include native overloads as well as daemon
-    # admission bypasses. Without an individual native witness, their health
-    # increments cannot be borrowed to classify another unknown denial.
-    explicit = sum(item.overloaded for item in observations)
-    if not candidates:
-        return observations
-    if explicit or overload_delta != native_fail_safe_delta or overload_delta != len(candidates):
-        return observations
-    return [replace(item, overloaded=True) if index in candidates else item for index, item in enumerate(observations)]
+    return observations, errors
 
 
 def _run_capacity_wave(
@@ -177,47 +150,30 @@ def _run_capacity_wave(
     routes: tuple[tuple[str, str], ...],
     concurrency: int,
     executor: ThreadPoolExecutor,
-) -> CapacityWave:
-    """Conserve one isolated completed wave before attributing successful routes."""
-    metrics = session.daemon._server.hook_worker.metrics
-    initial = metrics.snapshot()
-    initial_routes = initial.get("routes") if isinstance(initial, Mapping) else None
-    _require(
-        isinstance(initial_routes, Mapping)
-        and all(isinstance(name, str) and type(value) is int and value >= 0 for name, value in initial_routes.items()),
-        "concurrent capacity route counters were invalid",
-    )
-    before = route_counts(initial)
+) -> tuple[list[Observation], int, CapacityRouteEvidence]:
+    before_idle = session.wait_for_capacity_bookkeeping()
+    before = session.capacity_route_snapshot()
     overloads_before = session.native_overload_count()
-    observations, errors = _run_concurrent(session, routes, concurrency, executor)
+    untracked = _UnattributedObserver(session)
+    observations, errors = _run_concurrent(untracked, routes, concurrency, executor)
+    after_idle = session.wait_for_capacity_bookkeeping()
+    after = session.capacity_route_snapshot()
     overloads_after = session.native_overload_count()
-    _require(
-        type(overloads_before) is int and type(overloads_after) is int and overloads_before >= 0,
-        "native overload counters were invalid",
+    overloads = (
+        overloads_after - overloads_before
+        if (type(overloads_before) is int and type(overloads_after) is int and overloads_before >= 0)
+        else None
     )
-    overload_delta = overloads_after - overloads_before
-    _require(
-        type(overload_delta) is int and 0 <= overload_delta <= len(observations),
-        "native overload counters were invalid",
-    )
-    _require(
-        type(errors) is int and errors >= 0 and len(observations) + errors == concurrency,
-        "concurrent capacity wave accounting was incomplete",
-    )
-    _require(
-        not any(item.allowed and item.overloaded for item in observations),
-        "concurrent capacity response was both allowed and overloaded",
-    )
-    expected = sum(before.values()) + sum(item.allowed for item in observations) + overload_delta
-    after = route_counts(wait_for_route_corpus(metrics, expected=max(1, expected)))
-    observations = _classify_native_overloads(
+    evidence = capacity_route_evidence(
         observations,
-        overload_delta=overload_delta,
-        native_fail_safe_delta=after.get("native_fail_safe", 0) - before.get("native_fail_safe", 0),
+        attempted=concurrency,
+        errors=errors,
+        before=before,
+        after=after,
+        bookkeeping_complete=before_idle and after_idle,
+        native_overloads=overloads,
     )
-    attributed, witnessed = validate_batch_routes(observations, before, after)
-    _require(overload_delta == witnessed.get("native_fail_safe", 0), "native overload route evidence did not match")
-    return CapacityWave(attributed, errors, witnessed, overload_delta)
+    return observations, errors, evidence
 
 
 def _measure_c16(
@@ -225,19 +181,19 @@ def _measure_c16(
     routes: tuple[tuple[str, str], ...],
     *,
     include_capacity: bool,
-) -> CapacityWave:
+) -> tuple[list[Observation], int, CapacityRouteEvidence | None]:
     if not include_capacity:
-        return CapacityWave([], 0, {}, 0)
+        return [], 0, None
     executor = ThreadPoolExecutor(max_workers=16)
     try:
         _prime_load_executor(executor, 16)
-        wave = _run_capacity_wave(session, routes, 16, executor)
+        observations, errors, evidence = _run_capacity_wave(session, routes, 16, executor)
     except BaseException:
         executor.shutdown(wait=False, cancel_futures=True)
         raise
     else:
         executor.shutdown(wait=True)
-    return wave
+    return observations, errors, evidence
 
 
 def _measure_rss_and_c64(
@@ -246,9 +202,11 @@ def _measure_rss_and_c64(
     ready_workers: int,
     *,
     include_capacity: bool,
-) -> tuple[int, int, CapacityWave]:
+) -> tuple[int, int, list[Observation], int, CapacityRouteEvidence | None]:
     load_concurrency = _MAX_CONCURRENCY if include_capacity else ready_workers
-    wave = CapacityWave([], 0, {}, 0)
+    observations: list[Observation] = []
+    errors = 0
+    evidence = None
     executor = ThreadPoolExecutor(max_workers=load_concurrency)
     try:
         _prime_load_executor(executor, load_concurrency)
@@ -259,14 +217,14 @@ def _measure_rss_and_c64(
         )
         rss_peak = rss_baseline
         if include_capacity:
-            wave = _run_capacity_wave(session, routes, _MAX_CONCURRENCY, executor)
+            observations, errors, evidence = _run_capacity_wave(session, routes, _MAX_CONCURRENCY, executor)
         rss_peak = max(rss_peak, process_rss_bytes())
     except BaseException:
         executor.shutdown(wait=False, cancel_futures=True)
         raise
     else:
         executor.shutdown(wait=True)
-    return rss_baseline, rss_peak, wave
+    return rss_baseline, rss_peak, observations, errors, evidence
 
 
 def measure_capacity(
@@ -276,22 +234,22 @@ def measure_capacity(
     include_capacity: bool,
 ) -> CapacityMeasurements:
     ready_workers = _stabilize_ready_hook_workers(session)
-    wave_16 = _measure_c16(session, routes, include_capacity=include_capacity)
-    rss_baseline, rss_peak, wave_64 = _measure_rss_and_c64(
+    concurrent_16, errors_16, routes_16 = _measure_c16(session, routes, include_capacity=include_capacity)
+    rss_baseline, rss_peak, concurrent_64, errors_64, routes_64 = _measure_rss_and_c64(
         session,
         routes,
         ready_workers,
         include_capacity=include_capacity,
     )
     return CapacityMeasurements(
-        concurrent_16=wave_16.observations,
-        concurrent_64=wave_64.observations,
-        errors_16=wave_16.errors,
-        errors_64=wave_64.errors,
+        concurrent_16=concurrent_16,
+        concurrent_64=concurrent_64,
+        errors_16=errors_16,
+        errors_64=errors_64,
         rss_baseline=rss_baseline,
         rss_peak=rss_peak,
-        routes_16=wave_16.routes,
-        routes_64=wave_64.routes,
-        native_overloads_16=wave_16.native_overloads,
-        native_overloads_64=wave_64.native_overloads,
+        routes_16=routes_16,
+        routes_64=routes_64,
+        native_overloads_16=routes_16.native_overloads if routes_16 else None,
+        native_overloads_64=routes_64.native_overloads if routes_64 else None,
     )

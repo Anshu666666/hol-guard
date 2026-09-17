@@ -41,8 +41,9 @@ def test_windows_source_cases_prove_existing_platform_denial_without_full_review
         assert not case.semantic_sample
         assert case.native_expected is not None
         assert case.native_expected.decision == "deny"
-        reason = "observe_no_output_to_review" if case.setup == "watch" else "no_output_to_review"
-        assert case.native_expected.reason_code == reason
+        assert case.native_expected.reason_code == "no_output_to_review"
+        assert "observe_mode" not in case.native_expected.fields
+        assert "observed_policy_action" not in case.native_expected.fields
         validate_native_result(case, dict(case.native_expected.fields))
         validate_case(case, _delivered(case), case.expected_route)
         assert not replace(case, validation_scope="full_semantics").semantic_sample
@@ -161,10 +162,11 @@ def test_unsupported_source_probes_continue_and_never_return_latency_observation
 
     session = SimpleNamespace(
         workspace=tmp_path,
+        runtime=tmp_path / "runtime",
         probe_source_reference_denial=denied,
         observe=lambda *_args: pytest.fail("source refusal entered headline observation path"),
     )
-    monkeypatch.setattr(installed, "source_reference_supported", lambda: False)
+    monkeypatch.setattr(installed, "source_reference_supported", lambda **_kwargs: False)
     evidence = []
     samples = installed._run_sizes(
         session, (("pi", "PostToolUse"), ("codex", "PostToolUse")), unsupported_evidence=evidence
@@ -186,6 +188,7 @@ def test_windows_slo_continues_supported_work_after_refusal_probes(
 
     session = SimpleNamespace(
         workspace=tmp_path,
+        runtime=tmp_path / "runtime",
         readiness_ms=1,
         probe_source_reference_denial=probe,
         observe=lambda *_args: ordinary,
@@ -202,7 +205,7 @@ def test_windows_slo_continues_supported_work_after_refusal_probes(
         native_overloads_16=0,
         native_overloads_64=0,
     )
-    monkeypatch.setattr(installed, "source_reference_supported", lambda: False)
+    monkeypatch.setattr(installed, "source_reference_supported", lambda **_kwargs: False)
     monkeypatch.setattr(installed, "AdapterSession", lambda _runtime: nullcontext(session))
     monkeypatch.setattr(installed, "_run_cold", lambda *_args: completed.append("cold") or [1])
     monkeypatch.setattr(installed, "_run_warm", lambda *_args: completed.append("warm") or [ordinary])
@@ -241,8 +244,7 @@ def test_windows_slo_continues_supported_work_after_refusal_probes(
     ]
 
 
-def test_platform_scope_survives_sanitized_block_roundtrip(windows_cases, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(qualification, "source_reference_supported", lambda: False)
+def test_platform_scope_survives_sanitized_block_roundtrip(windows_cases) -> None:
     scope = platform_scope_summary(windows_cases, [case.case_id for case in windows_cases])
     corpus = {
         "coverage": {},
@@ -286,8 +288,7 @@ def test_denied_large_source_observation_cannot_enter_size_latency_summary() -> 
     assert summary.security_denials_by_size["5m"] == 1
 
 
-def test_windows_missing_source_scope_cannot_be_qualified_by_supported_routes(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(qualification, "source_reference_supported", lambda: False)
+def test_windows_missing_source_scope_cannot_be_qualified_by_supported_routes() -> None:
     corpus = {
         "coverage": {"size": {"1m": 30}},
         "declared_cases": 30,

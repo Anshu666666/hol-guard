@@ -200,6 +200,14 @@ def complete_native_codex_live_decision(
                 now=_now(),
                 fresh_allow_authorized=True,
                 require_consumed_once_for_replay=True,
+                expected_request_identity={
+                    "request_id": request_id,
+                    "harness": "codex",
+                    "artifact_id": request.get("artifact_id"),
+                    "artifact_hash": receipt["request_digest"],
+                    "workspace": request.get("workspace"),
+                    "publisher": request.get("publisher"),
+                },
             )
         # Database acquisition/finalization and lock retirement consume the
         # same absolute budget. A consumed-but-undelivered decision may be

@@ -16,6 +16,7 @@ on:
       - 'tests/test_guard_supply_chain*.py'
       - 'tests/fixtures/guard-native-qualification/**'
       - 'src/codex_plugin_scanner/guard/**'
+      - 'docs/guard/rust-performance/qualification-recipient.pem'
       - 'contracts/extensions/**'
       - 'contributions/extensions/**'
       - 'rust/**'
@@ -115,6 +116,31 @@ jobs:
             --target "$QUALIFICATION_TARGET" --platform-tag "$QUALIFICATION_PLATFORM" \
             --deployment-target "$QUALIFICATION_DEPLOYMENT" \
             --mode "$QUALIFICATION_MODE" --output-dir qualification-evidence
+      - name: Encrypt private qualification observations
+        if: always()
+        id: private-evidence
+        shell: bash
+        env:
+          QUALIFICATION_RECIPIENT: d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+          QUALIFICATION_TARGET: ${{ matrix.target }}
+        run: |
+          receipt="$GITHUB_WORKSPACE/qualification-evidence/archive-receipt.json"
+          source_sha="$(git -C candidate-src rev-parse --verify HEAD)"
+          if ! (uv sync --frozen --no-dev --no-install-project --project candidate-src && \
+            uv run --frozen --no-sync --project candidate-src \
+            python candidate-src/scripts/native_slo_evidence_archive.py encrypt \
+            --source "$GITHUB_WORKSPACE/qualification-evidence/private_samples" \
+            --output "$GITHUB_WORKSPACE/qualification-evidence/encrypted/observations.hge" \
+            --public-key "$GITHUB_WORKSPACE/candidate-src/docs/guard/rust-performance/qualification-recipient.pem" \
+            --recipient-id "$QUALIFICATION_RECIPIENT" --receipt "$receipt" \
+            --source-sha "$source_sha" --target "$QUALIFICATION_TARGET" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"); then
+            if [ ! -e "$receipt" ]; then
+              python -I -S candidate-src/scripts/native_slo_evidence_archive.py \
+                failure-receipt --receipt "$receipt" || true
+            fi
+            exit 1
+          fi
       - name: Retain aggregate evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -123,5 +149,21 @@ jobs:
           path: |
             qualification-evidence/aggregate/*.json
             qualification-evidence/build-metadata.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain encrypted private observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-performance-encrypted-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qualification-evidence/encrypted/*.hge
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Retain public archive receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-performance-archive-receipt-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: qualification-evidence/archive-receipt.json
           if-no-files-found: warn
           retention-days: 30

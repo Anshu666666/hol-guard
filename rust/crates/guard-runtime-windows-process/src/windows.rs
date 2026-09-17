@@ -41,6 +41,12 @@ mod directory_binding;
 mod private_files;
 #[path = "process_lifecycle.rs"]
 mod process_lifecycle;
+#[path = "read_file_identity.rs"]
+mod read_file_identity;
+#[path = "read_file_path.rs"]
+mod read_file_path;
+#[path = "read_files.rs"]
+mod read_files;
 pub use directory_binding::{
     bind_directory, bind_private_directory, create_private_directory, PrivateDirectoryBinding,
 };
@@ -51,6 +57,8 @@ pub use private_files::{
 pub use process_lifecycle::{
     process_start_marker, terminate_process, terminate_process_verified, wait_for_process_exit,
 };
+pub use read_file_identity::ReadFileIdentity;
+pub use read_files::{open_bound_read_file, BoundReadFile};
 
 // SAFETY: This module is the sole Win32 FFI boundary; borrowed handles remain valid
 // for each call, and newly owned handles are wrapped exactly once before returning.

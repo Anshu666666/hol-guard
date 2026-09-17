@@ -33,6 +33,19 @@ def test_production_hook_callgraph_has_no_python_semantic_reachability() -> None
     assert MODULE._graph_failures(ROOT) == []
 
 
+def test_header_transport_cannot_call_python_semantics(tmp_path: Path) -> None:
+    _copy_sources(tmp_path)
+    reader = tmp_path / "src/codex_plugin_scanner/guard/daemon/initial_header_reader.py"
+    source = reader.read_text(encoding="utf-8")
+    marker = "        view = memoryview(target)\n"
+    assert marker in source
+    reader.write_text(source.replace(marker, marker + "        evaluate_command(target)\n", 1), encoding="utf-8")
+    failures = MODULE._graph_failures(tmp_path)
+    assert any(
+        "initial_header_reader.py:readinto" in failure and "semantic hook evaluator" in failure for failure in failures
+    )
+
+
 def test_callgraph_rejects_semantic_import_in_worker(tmp_path: Path) -> None:
     _copy_sources(tmp_path)
     worker = tmp_path / "src/codex_plugin_scanner/guard/daemon/hook_worker.py"

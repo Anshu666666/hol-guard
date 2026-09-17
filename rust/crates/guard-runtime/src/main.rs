@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
 mod approval;
+#[cfg(feature = "native-claude-launcher-pilot")]
+mod claude_launcher;
 mod edge;
 mod hardening;
 mod managed_resident;
@@ -95,6 +97,13 @@ fn write_bytes_response(response: &[u8]) -> Result<(), String> {
 
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
+    #[cfg(feature = "native-claude-launcher-pilot")]
+    if args
+        .first()
+        .is_some_and(|argument| argument == "claude-launcher-v1")
+    {
+        return claude_launcher::run(&args[1..]);
+    }
     match args.as_slice() {
         [command] if command == "capabilities" => write_json(&capabilities()),
         [command, flag] if command == "capabilities" && flag == "--json" => {

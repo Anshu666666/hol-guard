@@ -214,6 +214,9 @@ def test_bounded_server_recovers_after_client_abort() -> None:
 
 def test_bounded_server_returns_fast_retryable_overload(monkeypatch) -> None:
     monkeypatch.setenv("HOL_GUARD_DAEMON_MAX_ACTIVE_REQUESTS", "2")
+    # Metrics are cumulative across servers; preserve the collector while late
+    # worker cleanup can still finish, and assert this test's exact deltas.
+    before = daemon_admission_snapshot()
     _Handler.release.clear()
     _Handler.entered.clear()
     _Handler.two_holds.clear()
@@ -236,8 +239,9 @@ def test_bounded_server_returns_fast_retryable_overload(monkeypatch) -> None:
             assert first.result(timeout=2)[0] == 200
             assert second.result(timeout=2)[0] == 200
         snapshot = daemon_admission_snapshot()
-        assert snapshot["high_water"] <= 2
-        assert snapshot["rejected"] >= 1
+        assert snapshot["high_water"] <= max(before["high_water"], before["active"] + 2)
+        assert snapshot["accepted"] == before["accepted"] + 2
+        assert snapshot["rejected"] == before["rejected"] + 1
     finally:
         _Handler.release.set()
         server.shutdown()

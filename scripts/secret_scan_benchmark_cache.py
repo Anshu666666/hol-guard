@@ -9,6 +9,17 @@ import sys
 from pathlib import Path
 
 
+def cache_failure_reason(error: OSError | RuntimeError) -> str:
+    """Export fixed cache states without operating-system paths or messages."""
+    if isinstance(error, OSError):
+        return "cache_system_error"
+    known = {
+        "verified fixture-data eviction requires Linux fadvise and mincore": "cache_eviction_unsupported",
+        "fixture-data eviction could not be verified; refusing a cold-cache label": "cache_eviction_unverified",
+    }
+    return known.get(str(error), "cache_preparation_failed")
+
+
 def _resident_pages(fd: int, size: int) -> tuple[int, int]:
     if not size:
         return 0, 0

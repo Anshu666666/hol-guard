@@ -63,14 +63,16 @@ def _raw_child(path: Path, shared: bool) -> int:
     close = kernel32.CloseHandle
     close.argtypes = [ctypes.c_void_p]
     close.restype = ctypes.c_int
-    handle = _raw_child_file(kernel32, path)
+    try:
+        handle = _raw_child_file(kernel32, path)
+    except RuntimeError:
+        print(json.dumps({"stage": "open", "acquired": False, "win32_error": ctypes.get_last_error()}))
+        return 0
     try:
         record = Overlapped()
         acquired = bool(lock(handle, 1 if shared else 3, 0, 0xFFFFFFFF, 0xFFFFFFFF, ctypes.byref(record)))
         code = 0 if acquired else ctypes.get_last_error()
-        if not acquired and code != 33:  # ERROR_LOCK_VIOLATION only
-            raise RuntimeError("installed_command_control_lock_unexpected_win32_error")
-        print(json.dumps({"acquired": acquired, "win32_error": code}))
+        print(json.dumps({"stage": "lock", "acquired": acquired, "win32_error": code}))
         return 0
     finally:
         # Closing releases the child's lease, including the success case.
@@ -98,8 +100,18 @@ def _child_result(path: Path, *, shared: bool) -> bool:
         result = json.loads(completed.stdout)
     except (ValueError, UnicodeError) as error:
         raise RuntimeError("installed_command_control_lock_child_invalid") from error
-    if result not in ({"acquired": True, "win32_error": 0}, {"acquired": False, "win32_error": 33}):
+    if not isinstance(result, dict) or set(result) != {"stage", "acquired", "win32_error"}:
         raise RuntimeError("installed_command_control_lock_child_invalid")
+    stage, acquired, code = result["stage"], result["acquired"], result["win32_error"]
+    if (
+        stage not in {"open", "lock"}
+        or type(acquired) is not bool
+        or type(code) is not int
+        or not 0 <= code <= 0xFFFFFFFF
+    ):
+        raise RuntimeError("installed_command_control_lock_child_invalid")
+    if stage != "lock" or (acquired, code) not in {(True, 0), (False, 33)}:
+        raise RuntimeError(f"installed_command_control_lock_child_failed:stage={stage}:win32_error={code}")
     return result["acquired"]
 
 

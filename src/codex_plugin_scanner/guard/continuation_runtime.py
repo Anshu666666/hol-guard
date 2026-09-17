@@ -248,11 +248,16 @@ def record_live_hook_completion(
     action: str,
     now: str,
     approval_decision: Mapping[str, object] | None = None,
+    expected_request_identity: Mapping[str, object] | None = None,
 ) -> dict[str, object] | None:
     """Record proof that the original browser-waiting Codex hook consumed a decision."""
 
     request = store.get_approval_request(request_id)
     if not isinstance(request, Mapping):
+        return None
+    if expected_request_identity is not None and any(
+        request.get(key) != value for key, value in expected_request_identity.items()
+    ):
         return None
     normalized_action = _continuation_action(action)
     offer = _offer_from_request(
@@ -266,6 +271,11 @@ def record_live_hook_completion(
         return None
     previous = _previous_result(store.get_request_resume(request_id), offer=offer, action=normalized_action)
     if previous is not None and previous.status != "waiting":
+        # The native caller already checked authenticated consumed authority
+        # for replay. A newly terminal row here cannot skip its fixed signed
+        # approval_decision; retry through that authenticated replay check.
+        if expected_request_identity is not None:
+            return None
         return _payload(offer, previous, replayed=True)
     if normalized_action == "allow_once":
         result = _result(offer, "resumed", "live_hook_completed", now)

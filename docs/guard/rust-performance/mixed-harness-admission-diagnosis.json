@@ -1,0 +1,155 @@
+{
+  "schema": "guard.daemon-mixed-admission-diagnosis.v1",
+  "source_base": "6971a4331",
+  "fixture": "mixed-harness-fairness",
+  "oracle": "test-only Python semantic oracle through actual daemon HTTP",
+  "performance_qualification": false,
+  "timing_context": "Shared local host, unreserved diagnostic executions; no paired timing claim. Each execution retained independently, including failures.",
+  "changes_between_records": "First three records have per-client pools and bounded error diagnostics. Final record also has at most50ms general request permit handoff within the existing socket deadline. These records predate the final diagnostic-only error-name refinement.",
+  "records": [
+    {
+      "stage": "fixture_per_client_coverage",
+      "result": {
+        "fixture_id": "mixed-harness-fairness",
+        "requests": 240,
+        "routine_allowed": 177,
+        "secrets_denied": 21,
+        "capacity_denials": 41,
+        "generic_failures": 1,
+        "pid_stable": true,
+        "workers_stable": true,
+        "queue_bounded": true,
+        "rss_growth_bytes": 8474624,
+        "p95_ms": 5585.747,
+        "p99_ms": 6377.431,
+        "browser_launches": 0,
+        "inbox_requests": 0,
+        "dispatch_counts": {
+          "opencode": 60,
+          "pi": 60,
+          "codex": 59,
+          "claude-code": 60
+        },
+        "failure_reasons": {
+          "daemon_hook_deadline_exhausted": 41,
+          "RemoteDisconnected:Remote end closed connection without response": 1
+        },
+        "transport_rejections": 0,
+        "request_rejections": 0,
+        "scheduler_rejections": {}
+      },
+      "traces": []
+    },
+    {
+      "stage": "fixture_per_client_untraced",
+      "result": {
+        "fixture_id": "mixed-harness-fairness",
+        "requests": 240,
+        "routine_allowed": 214,
+        "secrets_denied": 22,
+        "capacity_denials": 0,
+        "generic_failures": 4,
+        "pid_stable": true,
+        "workers_stable": false,
+        "queue_bounded": true,
+        "rss_growth_bytes": 7213056,
+        "p95_ms": 1999.191,
+        "p99_ms": 2152.971,
+        "browser_launches": 0,
+        "inbox_requests": 0,
+        "dispatch_counts": {
+          "pi": 60,
+          "claude-code": 58,
+          "codex": 59,
+          "opencode": 59
+        },
+        "failure_reasons": {
+          "hook-status-503:general_request_capacity": 1,
+          "RemoteDisconnected:Remote end closed connection without response": 1,
+          "BrokenPipeError:[Errno 32] Broken pipe": 2
+        },
+        "transport_rejections": 0,
+        "request_rejections": 1,
+        "scheduler_rejections": {}
+      },
+      "traces": []
+    },
+    {
+      "stage": "fixture_per_client_boundary_trace",
+      "result": {
+        "fixture_id": "mixed-harness-fairness",
+        "requests": 240,
+        "routine_allowed": 215,
+        "secrets_denied": 24,
+        "capacity_denials": 0,
+        "generic_failures": 1,
+        "pid_stable": true,
+        "workers_stable": true,
+        "queue_bounded": true,
+        "rss_growth_bytes": 6926336,
+        "p95_ms": 1914.524,
+        "p99_ms": 2202.995,
+        "browser_launches": 0,
+        "inbox_requests": 0,
+        "dispatch_counts": {
+          "opencode": 60,
+          "pi": 60,
+          "codex": 60,
+          "claude-code": 59
+        },
+        "failure_reasons": {
+          "RuntimeError:hook-status-503:general_request_capacity": 1
+        },
+        "transport_rejections": 0,
+        "request_rejections": 1,
+        "scheduler_rejections": {}
+      },
+      "traces": [
+        {
+          "event": "claim_reject",
+          "kind": "general",
+          "previous": "critical",
+          "thread": "guard-http-general-30",
+          "kinds": {
+            "general": 32
+          },
+          "active": 42,
+          "ages_min": 0.08931545399900642,
+          "ages_max": 1.9682045519984968
+        }
+      ]
+    },
+    {
+      "stage": "fixture_and_bounded_general_handoff",
+      "result": {
+        "fixture_id": "mixed-harness-fairness",
+        "requests": 240,
+        "routine_allowed": 215,
+        "secrets_denied": 24,
+        "capacity_denials": 0,
+        "generic_failures": 1,
+        "pid_stable": true,
+        "workers_stable": true,
+        "queue_bounded": true,
+        "rss_growth_bytes": 6529024,
+        "p95_ms": 1708.144,
+        "p99_ms": 2025.011,
+        "browser_launches": 0,
+        "inbox_requests": 0,
+        "dispatch_counts": {
+          "pi": 60,
+          "claude-code": 59,
+          "codex": 60,
+          "opencode": 60
+        },
+        "failure_reasons": {
+          "RuntimeError:hook-status-408:unclassified": 1
+        },
+        "transport_rejections": 0,
+        "request_rejections": 0,
+        "scheduler_rejections": {}
+      },
+      "traces": []
+    }
+  ]
+}

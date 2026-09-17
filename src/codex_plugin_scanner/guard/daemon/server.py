@@ -7,6 +7,7 @@ import errno
 import hashlib
 import hmac
 import inspect
+import io
 import json
 import logging
 import math
@@ -258,6 +259,7 @@ from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_opti
 from .hook_process_runner import HookProcessRunner
 from .hook_request_auth import CHALLENGE_HOOK_PATHS, challenge_auth, request_auth
 from .hook_worker_responses import prepare_native_hook_policy
+from .initial_header_reader import InitialHeaderReader
 from .lifecycle_journal import record_daemon_lifecycle_event
 from .local_approval_continuation import apply_local_approval_continuation
 from .local_cli_api import LocalCliApiService
@@ -411,6 +413,7 @@ _RUNTIME_POST_HOOK_PROCESS_TIMEOUT_SECONDS = 2.75
 _DAEMON_REQUEST_READ_TIMEOUT_SECONDS = 0.4
 _DAEMON_SERVE_THREAD_START_TIMEOUT_SECONDS = 5.0
 _DAEMON_CONNECTION_ADMISSION_WAIT_SECONDS = 0.05
+_DAEMON_REQUEST_ADMISSION_WAIT_SECONDS = 0.05
 _DAEMON_CONTROL_ADMISSION_WAIT_SECONDS = 1.0
 _DAEMON_UNCLASSIFIED_WATCHDOG_POLL_SECONDS = 0.025
 _AIBOM_REFRESH_STOP_JOIN_TIMEOUT_SECONDS = 5.0
@@ -741,6 +744,14 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
 
     def _process_request_worker(self, request_socket: socket.socket, client_address: tuple[str, int]) -> None:
         try:
+            # Transfer complete buffered headers before the parser consumes
+            # them; the watchdog must not mistake an emptied socket buffer for
+            # an incomplete request while this handler is being scheduled.
+            with self.unclassified_connections_lock:
+                if id(request_socket) in self.unclassified_connections and self._buffered_request_headers_complete(
+                    request_socket
+                ):
+                    self.unclassified_connections.pop(id(request_socket), None)
             self.finish_request(request_socket, client_address)
             self.shutdown_request(request_socket)
         except BaseException:
@@ -821,7 +832,15 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
         with self.unclassified_connections_lock:
             oldest = next(iter(self.unclassified_connections.values()), None)
         if oldest is not None:
-            self._discard_request(oldest[0])
+            request, _deadline = oldest
+            with self.unclassified_connections_lock:
+                if self.unclassified_connections.get(id(request)) != oldest:
+                    return
+                self.unclassified_connections.pop(id(request), None)
+                self._close_unclassified_socket(request)
+            # Cleanup reacquires the classification lock; keep it outside the
+            # eviction boundary and preserve its existing idempotent accounting.
+            self._release_request_capacity(request)
             with self.request_capacity_lock:
                 self.rejected_requests += 1
 
@@ -856,20 +875,31 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
         while not self.unclassified_watchdog_stop.wait(_DAEMON_UNCLASSIFIED_WATCHDOG_POLL_SECONDS):
             now = time.monotonic()
             with self.unclassified_connections_lock:
-                expired = [request for request, deadline in self.unclassified_connections.values() if deadline <= now]
-            for request in expired:
-                if self._buffered_request_headers_complete(request):
-                    self.classify_connection(request)
-                else:
-                    self._close_unclassified_socket(request)
+                expired = [entry for entry in self.unclassified_connections.values() if entry[1] <= now]
+            for request, deadline in expired:
+                complete = self._buffered_request_headers_complete(request)
+                with self.unclassified_connections_lock:
+                    if self.unclassified_connections.get(id(request)) != (request, deadline):
+                        continue
+                    self.unclassified_connections.pop(id(request), None)
+                    if not complete:
+                        # Classification and expiry share this final boundary.
+                        # A stale snapshot may never close a transferred socket.
+                        self._close_unclassified_socket(request)
 
     @staticmethod
     def _buffered_request_headers_complete(request: socket.socket) -> bool:
-        nonblocking_flag = getattr(socket, "MSG_DONTWAIT", None)
-        if nonblocking_flag is None:
+        # Admitted sockets already use OS nonblocking mode with a Python
+        # timeout. MSG_DONTWAIT alone does not bypass Python's timeout readiness
+        # wait, and is absent on Windows. A duplicate has independent Python
+        # timeout metadata; keeping its existing OS nonblocking mode avoids
+        # both a network wait and a mode change beneath the active parser.
+        if request.gettimeout() is None:
             return False
         try:
-            buffered = request.recv(65_536, socket.MSG_PEEK | nonblocking_flag)
+            with request.dup() as probe:
+                probe.setblocking(False)
+                buffered = probe.recv(65_536, socket.MSG_PEEK)
         except (BlockingIOError, InterruptedError, OSError):
             return False
         return b"\r\n\r\n" in buffered or b"\n\n" in buffered
@@ -886,6 +916,15 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             if capacity_kind in {"critical", "control"}
             else capacity.acquire(blocking=False)
         )
+        if not admitted and capacity_kind == "general":
+            # A challenge connection can enter this lane from either executor.
+            # Its next request may arrive after another response is delivered
+            # but before that handler releases its permit. Allow a bounded
+            # handoff; waiting consumes the original socket admission deadline.
+            remaining = self.request_deadline(request, _RUNTIME_HOOK_ADMISSION_TIMEOUT_SECONDS) - time.monotonic()
+            wait_seconds = min(_DAEMON_REQUEST_ADMISSION_WAIT_SECONDS, remaining)
+            if wait_seconds > 0:
+                admitted = capacity.acquire(timeout=wait_seconds)
         if not admitted:
             with self.request_capacity_lock:
                 self.rejected_requests += 1
@@ -2110,6 +2149,29 @@ _GuardDaemonHttpServer = _GuardDaemonHTTPServer
 class _GuardDaemonHandler(BaseHTTPRequestHandler):
     _MAX_BODY_BYTES = 1_000_000
     server: _GuardDaemonHttpServer  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    def setup(self) -> None:
+        super().setup()
+        daemon_server = self._daemon_server()
+        with daemon_server.unclassified_connections_lock:
+            needs_observer = id(self.request) in daemon_server.unclassified_connections
+        if needs_observer:
+            observer = None
+            try:
+                observer = InitialHeaderReader(
+                    self.request,
+                    pending=daemon_server.unclassified_connections,
+                    lock=daemon_server.unclassified_connections_lock,
+                    monotonic=time.monotonic,
+                )
+                self.rfile.close()
+                self.rfile = io.BufferedReader(observer)
+            except BaseException:
+                if observer is not None:
+                    observer.close()
+                self.rfile.close()
+                self.wfile.close()
+                raise
 
     def parse_request(self) -> bool:
         parsed = super().parse_request()

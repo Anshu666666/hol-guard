@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TypedDict, cast
@@ -15,6 +16,7 @@ from scripts.bench_guard_native_installed_slo import (
     _stabilize_ready_hook_workers,
 )
 from scripts.native_slo_adapter import Observation, payload, process_resources, route_matrix, source_payloads
+from scripts.native_slo_capacity_routes import capacity_route_evidence
 from scripts.native_slo_contract import (
     MAX_COLD_P95_MS,
     MAX_EVIDENCE_BYTES,
@@ -290,13 +292,39 @@ def test_sixty_four_gate_accepts_explicit_overload_without_latency_ceiling() -> 
         sizes=[],
         recovery=[],
         cold=[],
-        concurrent_16=[Observation("codex", "PostToolUse", "1k", 1.0, "native_resident", True)],
-        concurrent_64=[Observation("codex", "PostToolUse", "1k", 60_000.0, "native_fail_safe", False, overloaded=True)],
+        concurrent_16=[Observation("codex", "PostToolUse", "1k", 1.0, "pending_batch_validation", True)] * 16,
+        concurrent_64=[
+            Observation("codex", "PostToolUse", "1k", 60_000.0, "pending_batch_validation", False, overloaded=True)
+        ]
+        * 64,
         errors_16=0,
         errors_64=0,
         readiness=[],
         rss_baseline=1,
         rss_peak=1,
+    )
+    measurements = replace(
+        measurements,
+        native_overloads_16=0,
+        native_overloads_64=64,
+        routes_16=capacity_route_evidence(
+            measurements.concurrent_16,
+            attempted=16,
+            errors=0,
+            before={},
+            after={"native_resident": 16},
+            bookkeeping_complete=True,
+            native_overloads=0,
+        ),
+        routes_64=capacity_route_evidence(
+            measurements.concurrent_64,
+            attempted=64,
+            errors=0,
+            before={},
+            after={"native_fail_safe": 64},
+            bookkeeping_complete=True,
+            native_overloads=64,
+        ),
     )
     summary = summarize_measurements(measurements)
     gates = slo_gates(
@@ -313,7 +341,7 @@ def test_sixty_four_gate_accepts_explicit_overload_without_latency_ceiling() -> 
         include_capacity=True,
     )
 
-    assert summary.concurrent_64_overloads == 1
+    assert summary.concurrent_64_overloads == 64
     assert gates["concurrency"]
     assert gates["concurrency_64_bounded"]
 

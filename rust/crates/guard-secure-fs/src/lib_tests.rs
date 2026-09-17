@@ -1,5 +1,4 @@
 use super::*;
-#[cfg(unix)]
 use std::{fs::File, io::Write};
 
 #[cfg(unix)]
@@ -13,7 +12,7 @@ fn fixture_root(name: &str) -> PathBuf {
     temporary_root.join(format!("guard-secure-fs-{name}-{}", std::process::id()))
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn bounded_read_hashes_regular_file() {
     let dir = fixture_root("read");
@@ -25,20 +24,6 @@ fn bounded_read_hashes_regular_file() {
     let read = read_bounded(&path, MAX_SCAN_BYTES).unwrap();
     assert_eq!(read.bytes, b"fn main() {}\n");
     assert_eq!(read.sha256.len(), 64);
-    let _ = fs::remove_dir_all(dir);
-}
-
-#[cfg(windows)]
-#[test]
-fn bounded_read_fails_closed_on_windows_without_descriptor_path_walk() {
-    let dir = fixture_root("read");
-    fs::create_dir_all(&dir).unwrap();
-    let path = dir.join("sample.rs");
-    fs::write(&path, b"fn main() {}\n").unwrap();
-    assert!(matches!(
-        read_bounded(&path, MAX_SCAN_BYTES),
-        Err(SecureReadError::PathChanged)
-    ));
     let _ = fs::remove_dir_all(dir);
 }
 
@@ -68,7 +53,7 @@ fn bounded_read_rejects_oversized_windows_file_before_path_walk() {
     assert!(matches!(result, Err(SecureReadError::TooLarge)));
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 #[test]
 fn bounded_read_rejects_hard_linked_source() {
     let dir = fixture_root("hard-link");

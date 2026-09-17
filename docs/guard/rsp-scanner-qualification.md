@@ -10,10 +10,19 @@ entropy, finding positions, HMACs and public output remain unchanged.
 The tested baseline is `fb8d57a8efc364068860f74ea41414d595ee976c`, which already
 contains bounded Git object batching, scan-local finding reuse and shared
 plugin traversal. The candidate is
-`5ea667e15fdeada0a25533fe2d098119cea0dde8`. Both complete source digests are in
+`5ea667e15fdeada0a25533fe2d098119cea0dde8`. Digests covering the 12 scanner and
+security-check source files are in
 the [raw evidence](evidence/rsp-scanner-rich-linux.json). The earlier
 comparison against the original `2e672d2d` implementation remains in the
 [initial scanner report](rust-performance-scanner-review.md).
+
+The recorded candidate commit is not available in the reconciled local Git
+history. An independent review matched the current 12-file source digest to
+the recorded candidate digest and reproduced the baseline digest. These
+digests do not attest the full CLI, benchmark harness or dependency environment.
+The earlier rich evidence also predates the explicit `run_complete` checkpoint
+field, so it is not a proof of the later checkpoint contract. This diagnostic
+evidence does not qualify an installed release or a native scanner.
 
 ## Correctness and coverage
 

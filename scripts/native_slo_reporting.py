@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from scripts.native_slo_adapter import Observation
-from scripts.native_slo_batch import validate_batch_routes
+from scripts.native_slo_capacity_routes import CapacityRouteEvidence, capacity_route_evidence
 from scripts.native_slo_contract import (
     MAX_COLD_P95_MS,
     MAX_INSTALLED_ADAPTER_P95_MS,
@@ -37,8 +37,8 @@ class SloMeasurements:
     rss_baseline: int
     rss_peak: int
     installed_launcher: dict[str, object] | None = None
-    routes_16: dict[str, int] | None = None
-    routes_64: dict[str, int] | None = None
+    routes_16: CapacityRouteEvidence | None = None
+    routes_64: CapacityRouteEvidence | None = None
     native_overloads_16: int | None = None
     native_overloads_64: int | None = None
     source_reference_denials: list[dict[str, object]] = field(default_factory=list)
@@ -127,7 +127,9 @@ def _failure_counts(
     denials = [
         observation
         for observation in observations
-        if not observation.allowed and (observation.route != "native_fail_safe" or observation.overloaded)
+        if not observation.allowed
+        and (observation.route != "pending_batch_validation" or observation.overloaded)
+        and (observation.route != "native_fail_safe" or observation.overloaded)
     ]
     return (
         len(safe),
@@ -144,32 +146,15 @@ def _rss_growth(measurements: SloMeasurements) -> float:
 
 
 def _capacity_route_counts(
-    observations: Sequence[Observation], witnessed: Mapping[str, int] | None, native_overloads: int | None
+    observations: Sequence[Observation], witnessed: CapacityRouteEvidence | None, _native_overloads: int | None
 ) -> Counter[str]:
-    """Retain actual batch counts without assigning an overload to a route."""
-    if witnessed is None:
-        _require(
-            all(item.route in SAFE_ROUTE_NAMES for item in observations),
-            "capacity batch route evidence was missing",
-        )
-        return Counter(item.route for item in observations)
-    _require(
-        all(type(value) is int and value > 0 for value in witnessed.values()),
-        "capacity batch route evidence was invalid",
-    )
-    attributed, actual = validate_batch_routes(
-        observations, {}, {name: value for name, value in witnessed.items() if name != "engine_bypassed"}
-    )
-    _require(actual == witnessed, "capacity batch route evidence did not conserve observations")
-    _require(
-        all(item.route == verified.route for item, verified in zip(observations, attributed, strict=True)),
-        "capacity batch observations were not validated",
-    )
-    _require(
-        type(native_overloads) is int and native_overloads == actual.get("native_fail_safe", 0),
-        "capacity native overload evidence was invalid",
-    )
-    return Counter(actual)
+    """Keep engine counters separate from unattributed per-response outcomes."""
+    if not isinstance(witnessed, CapacityRouteEvidence):
+        return Counter(item.route for item in observations if item.route in SAFE_ROUTE_NAMES)
+    counts = Counter(witnessed.engine_routes)
+    if witnessed.engine_bypassed:
+        counts["engine_bypassed"] += witnessed.engine_bypassed
+    return counts
 
 
 def summarize_measurements(measurements: SloMeasurements) -> SloSummary:
@@ -220,26 +205,27 @@ def summarize_measurements(measurements: SloMeasurements) -> SloSummary:
 def _concurrent_observations_are_bounded(
     observations: Sequence[Observation],
     *,
+    evidence: CapacityRouteEvidence | None,
+    expected: int,
+    errors: int,
+    native_overloads: int | None,
     allow_overload: bool,
 ) -> bool:
-    """Require a resident decision or an explicitly bounded overload result."""
-
-    if not observations:
+    """Require exact whole-wave proof without asserting individual engine routes."""
+    if not isinstance(evidence, CapacityRouteEvidence) or not evidence.qualifies(
+        expected=expected, allow_overload=allow_overload
+    ):
         return False
-    if allow_overload:
-        return all(
-            (
-                observation.overloaded
-                and not observation.allowed
-                and observation.route in {"native_fail_safe", "overload_batch_validated"}
-            )
-            or (not observation.overloaded and observation.allowed and observation.route == "native_resident")
-            for observation in observations
-        )
-    return all(
-        not observation.overloaded and observation.allowed and observation.route == "native_resident"
-        for observation in observations
+    reconstructed = capacity_route_evidence(
+        observations,
+        attempted=expected,
+        errors=errors,
+        before={},
+        after=evidence.engine_routes,
+        bookkeeping_complete=evidence.bookkeeping_complete,
+        native_overloads=native_overloads,
     )
+    return reconstructed == evidence and all(item.route == "pending_batch_validation" for item in observations)
 
 
 def slo_gates(
@@ -271,11 +257,22 @@ def slo_gates(
     gates["concurrency"] = gates["concurrency"] and _concurrent_observations_are_bounded(
         measurements.concurrent_16,
         allow_overload=False,
+        evidence=measurements.routes_16,
+        expected=16,
+        errors=measurements.errors_16,
+        native_overloads=measurements.native_overloads_16,
     )
     gates["concurrency_64_bounded"] = (
         include_capacity
         and measurements.errors_64 == 0
-        and _concurrent_observations_are_bounded(measurements.concurrent_64, allow_overload=True)
+        and _concurrent_observations_are_bounded(
+            measurements.concurrent_64,
+            allow_overload=True,
+            evidence=measurements.routes_64,
+            expected=64,
+            errors=measurements.errors_64,
+            native_overloads=measurements.native_overloads_64,
+        )
     )
     gates["installed_corpus"] = (
         installed_corpus["routes"] == route_count
@@ -383,9 +380,12 @@ def slo_result(
                 "overloaded": summary.concurrent_16_overloads,
                 "routes": dict(sorted(summary.concurrent_16_routes.items())),
                 "route_attribution": "isolated_batch_counter_conservation"
-                if measurements.routes_16 is not None
+                if isinstance(measurements.routes_16, CapacityRouteEvidence)
                 else "per_observation",
                 "native_overloads": measurements.native_overloads_16,
+                "wave_evidence": measurements.routes_16.report()
+                if isinstance(measurements.routes_16, CapacityRouteEvidence)
+                else None,
                 "deadline_ms": MAX_INSTALLED_ADAPTER_P99_MS,
             },
             "sixty_four": {
@@ -395,9 +395,12 @@ def slo_result(
                 "fail_safe": summary.concurrent_64_routes["native_fail_safe"],
                 "routes": dict(sorted(summary.concurrent_64_routes.items())),
                 "route_attribution": "isolated_batch_counter_conservation"
-                if measurements.routes_64 is not None
+                if isinstance(measurements.routes_64, CapacityRouteEvidence)
                 else "per_observation",
                 "native_overloads": measurements.native_overloads_64,
+                "wave_evidence": measurements.routes_64.report()
+                if isinstance(measurements.routes_64, CapacityRouteEvidence)
+                else None,
                 "latency_ceiling_ms": None,
                 "bounded": gates.get("concurrency_64_bounded", False),
             },

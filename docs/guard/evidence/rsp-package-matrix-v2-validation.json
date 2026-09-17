@@ -1,0 +1,190 @@
+{
+  "RSP_050_complete": false,
+  "RSP_054_complete": false,
+  "ci_followup_validation": {
+    "actual_actions_run": false,
+    "combined_correctness_tests": {
+      "command": "python -m pytest -p tests.package_offline tests/test_package_benchmark_matrix.py tests/test_package_benchmark_controller.py tests/test_package_rebaseline_ci.py -q",
+      "failed": 0,
+      "passed": 75
+    },
+    "final_ci_tests_after_added_encrypted_roundtrip_and_semantic_retention": {
+      "command": "python -m pytest -p tests.package_offline tests/test_package_rebaseline_ci.py -q",
+      "failed": 0,
+      "passed": 15
+    },
+    "independent_review": {
+      "finding": "completed non-kernel semantic retention required",
+      "independent_test_run": false,
+      "kind": "source_only",
+      "measurement": false,
+      "resolution": "fixed and regression-tested by implementation owner; reviewer confirmed source closure",
+      "scope": "source selection, pair identities/outcomes, public projection, bounds, archive completeness, fixed encrypted-only upload paths"
+    },
+    "isolated_without_site_cli_load": "passed",
+    "private_archive_roundtrip": "generated fixture recipient; partial JSONL byte equivalence",
+    "static_check": {
+      "errors": 0,
+      "files": 1,
+      "warnings": 67
+    },
+    "timing_run": false,
+    "workflow_yaml_parse": "passed; two matrix jobs"
+  },
+  "correctness_tests": {
+    "command": "python -m pytest -p tests.package_offline tests/test_package_benchmark_matrix.py tests/test_package_benchmark_controller.py -q",
+    "failed": 0,
+    "passed": 62
+  },
+  "earlier_format_preflight": {
+    "offered_journals": 20,
+    "qualified": false,
+    "reason": "workspace_storage_exhausted",
+    "status": "interrupted"
+  },
+  "matrix_digest": "ff04d755f0c1a40fc175dacea5f22bd12ec761e54af69c946842f99bbdb7fba6",
+  "paired_validation": {
+    "comparisons": [
+      {
+        "case_id": "evaluator.npm.exact.d100.b100",
+        "comparable": true,
+        "performance_qualified": false,
+        "reason": "validation_only",
+        "run": 0,
+        "sample": 0
+      }
+    ],
+    "decision": "native_comparison_not_available",
+    "descriptive_summaries": [
+      {
+        "case_id": "evaluator.npm.exact.d100.b100",
+        "comparable_pairs": 1,
+        "native_benefit_proven": false,
+        "offered_pairs": 1,
+        "tail_qualified": false
+      }
+    ],
+    "failures": [],
+    "installed_qualified": false,
+    "native_activation_authorized": false,
+    "observations": [
+      {
+        "arm": "baseline",
+        "case_id": "evaluator.npm.exact.d100.b100",
+        "complete": true,
+        "containment_failed": false,
+        "cpu_scope": "self_plus_waited_children",
+        "decision": "block",
+        "entries": 100,
+        "entry_sha256": "ed808a0f2e476139b5bfc47c6f9345f752e8890c5db018006110337e0ae7490d",
+        "environment": {
+          "cpu_model": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+          "distributions_sha256": "d1ab1310bae6e62abb7ddd8fb91d91e6ca26a0f9db8a582a43a64cd1ad320a25",
+          "executable_sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+          "implementation": "CPython",
+          "installed_artifact": false,
+          "logical_cpus": 9,
+          "machine": "x86_64",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "power_mode": "unavailable",
+          "python": "3.12.14",
+          "ram_bytes": 23109894144
+        },
+        "evidence_rows": 100,
+        "evidence_sha256": "eb1394e70da5af473b6e06084509cf741f3a7d5ac24ece82f562e2dd642b7398",
+        "fixture_sha256": "754c0656ad1ca99805697379a056b8d87010f9c888d44510847053f69b202471",
+        "harness_sha256": "508f60c1d5a698f021e743c617c04f7cba47888c115ce7e7bc0530bff0058f22",
+        "input_bytes": 5134,
+        "input_sha256": "fc999eba9472b086b7b8bad7650585f4379e336b361cf1e32b29379e4cb9d4af",
+        "installed_artifact": false,
+        "measurement": "validation",
+        "native_activation_authorized": false,
+        "output_limit_exceeded": false,
+        "packages": 100,
+        "parser_version": "complete-v1",
+        "protect_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+        "returncode": 0,
+        "run": 0,
+        "sample": 0,
+        "schema": "hol-guard.package-attempt.v2",
+        "semantic_sha256": "cfdaf5198380e0c16fd347017dec7b4c2bbd4f6757ff379896b0cadd0923473b",
+        "signed_response_sha256": "2b4badc8597982c864afc3511bb882dbbddd4de34bed9cc0b5f22f19dc68c701",
+        "source": {
+          "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+          "source_sha256": "6cfa85e572b369f86ae7a210b03e0bb97e7a5366921fffa324cbfbdb02c88e76",
+          "uv_lock_sha256": "7689c0564c9a0d02ebbc51ac9e34bd5b35c323be5e873cf4f9e76cd676f9ce5a"
+        },
+        "status": "completed",
+        "timed_out": false,
+        "worker_address_space_limit": 4294967296,
+        "worker_file_size_limit": 67108864
+      },
+      {
+        "arm": "candidate",
+        "case_id": "evaluator.npm.exact.d100.b100",
+        "complete": true,
+        "containment_failed": false,
+        "cpu_scope": "self_plus_waited_children",
+        "decision": "block",
+        "entries": 100,
+        "entry_sha256": "ed808a0f2e476139b5bfc47c6f9345f752e8890c5db018006110337e0ae7490d",
+        "environment": {
+          "cpu_model": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+          "distributions_sha256": "d1ab1310bae6e62abb7ddd8fb91d91e6ca26a0f9db8a582a43a64cd1ad320a25",
+          "executable_sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+          "implementation": "CPython",
+          "installed_artifact": false,
+          "logical_cpus": 9,
+          "machine": "x86_64",
+          "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "power_mode": "unavailable",
+          "python": "3.12.14",
+          "ram_bytes": 23109894144
+        },
+        "evidence_rows": 100,
+        "evidence_sha256": "eb1394e70da5af473b6e06084509cf741f3a7d5ac24ece82f562e2dd642b7398",
+        "fixture_sha256": "754c0656ad1ca99805697379a056b8d87010f9c888d44510847053f69b202471",
+        "harness_sha256": "508f60c1d5a698f021e743c617c04f7cba47888c115ce7e7bc0530bff0058f22",
+        "input_bytes": 5134,
+        "input_sha256": "fc999eba9472b086b7b8bad7650585f4379e336b361cf1e32b29379e4cb9d4af",
+        "installed_artifact": false,
+        "measurement": "validation",
+        "native_activation_authorized": false,
+        "output_limit_exceeded": false,
+        "packages": 100,
+        "parser_version": "complete-v2",
+        "protect_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+        "returncode": 0,
+        "run": 0,
+        "sample": 0,
+        "schema": "hol-guard.package-attempt.v2",
+        "semantic_sha256": "cfdaf5198380e0c16fd347017dec7b4c2bbd4f6757ff379896b0cadd0923473b",
+        "signed_response_sha256": "2b4badc8597982c864afc3511bb882dbbddd4de34bed9cc0b5f22f19dc68c701",
+        "source": {
+          "commit": "27da1a51bfa3d896c1481d87cad5b17bd022db58",
+          "source_sha256": "5a93889717036a01e2fa9a4365b945d96fee3204ff06014417ab80c625f8ccd9",
+          "uv_lock_sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+        },
+        "status": "completed",
+        "timed_out": false,
+        "worker_address_space_limit": 4294967296,
+        "worker_file_size_limit": 67108864
+      }
+    ],
+    "schema": "hol-guard.package-pairs.v2",
+    "status": "completed",
+    "tail_qualified": false,
+    "threshold": {
+      "other_metric_max_regression": 0.05,
+      "primary_reduction": 0.3
+    }
+  },
+  "schema": "hol-guard.package-matrix-validation.v2",
+  "scope": "source correctness only; no timings, installed qualification or native candidate",
+  "static_check": {
+    "errors": 0,
+    "files": 6,
+    "warnings": 240
+  },
+  "timing_run": false
+}

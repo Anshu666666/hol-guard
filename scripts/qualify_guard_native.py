@@ -42,6 +42,11 @@ def _text_field(report: Mapping[str, object], field: str) -> str:
     return value
 
 
+def _write_evidence(path: Path, report: Mapping[str, object]) -> None:
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(report, indent=2) + "\n")
+
+
 def _run_pair(args: argparse.Namespace) -> dict[str, object]:
     import os
 
@@ -72,9 +77,23 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     private = args.output_dir / "private_samples"
     public = args.output_dir / "aggregate"
+    if (
+        private.is_symlink()
+        or public.is_symlink()
+        or (private.exists() and any(private.iterdir()))
+        or (
+            public.exists()
+            and any(
+                item.name != "runner-resolver.json" or not item.is_file() or item.is_symlink()
+                for item in public.iterdir()
+            )
+        )
+    ):
+        raise ValueError("paired sampling requires fresh aggregate and private evidence directories")
     private.mkdir(mode=0o700, exist_ok=True)
     public.mkdir(exist_ok=True)
     reports: dict[str, list[dict[str, object]]] = {"baseline": [], "candidate": []}
+    failures: list[dict[str, object]] = []
     for run in range(args.runs):
         for arm in paired_order(run):
             raw_file = private / f"{run:02d}-{arm}.json"
@@ -122,13 +141,17 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
                     containment_failed=completed.containment_failed,
                 )
                 failure = assert_privacy_safe(failure)
-                (public / f"{run:02d}-{arm}-failure.json").write_text(
-                    json.dumps(failure, indent=2) + "\n", encoding="utf-8"
-                )
+                _write_evidence(public / f"{run:02d}-{arm}-failure.json", failure)
                 # Raw stderr/tracebacks remain private; expose only bounded
                 # generated failure identifiers from our worker protocol.
                 print(json.dumps(failure, sort_keys=True), file=sys.stderr, flush=True)
-                raise RuntimeError(f"paired block failed: run={run} arm={arm} reason={failure.get('reason')}")
+                failures.append(failure)
+                # A contained failed arm must not erase the other artifact's
+                # independent evidence. Failed blocks are never paired with a
+                # different run or omitted from the final result.
+                if completed.containment_failed:
+                    raise RuntimeError(f"paired block failed containment: run={run} arm={arm}")
+                continue
             report = json.loads(completed.stdout)
             if not isinstance(report, dict) or report.get("schema") != "hol-guard.native-qualification-block.v1":
                 raise RuntimeError("paired block returned invalid evidence")
@@ -141,9 +164,27 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
             if not raw_file.is_file():
                 raise RuntimeError("paired block did not retain numeric observations")
             safe["artifact_sha256"] = artifact_digests[arm]
-            (public / f"{run:02d}-{arm}.json").write_text(json.dumps(safe, indent=2) + "\n", encoding="utf-8")
+            _write_evidence(public / f"{run:02d}-{arm}.json", safe)
             reports[arm].append(safe)
             print(f"completed paired block {run + 1}/{args.runs} {arm}", file=sys.stderr, flush=True)
+    if failures:
+        incomplete = assert_privacy_safe(
+            {
+                "schema": "hol-guard.native-paired-incomplete.v1",
+                "evidence_class": "qualification_sampling" if args.mode == "qualification" else "smoke",
+                "plan": plan,
+                "order": "alternating_baseline_candidate_blocks",
+                "artifact_digests": artifact_digests,
+                "completed_blocks": {arm: len(items) for arm, items in reports.items()},
+                "failed_blocks": failures,
+                "sampling_passed": False,
+                "qualification_complete": False,
+                "program_qualification_complete": False,
+                "comparison_available": False,
+            }
+        )
+        _write_evidence(public / "incomplete.json", incomplete)
+        raise RuntimeError(f"paired block failed: {len(failures)} retained failed blocks; comparison unavailable")
     combined = reports["baseline"] + reports["candidate"]
     if len({_text_field(report, "corpus_digest") for report in combined}) != 1:
         raise RuntimeError("paired artifacts used different corpus definitions")
@@ -198,7 +239,7 @@ def _run_pair(args: argparse.Namespace) -> dict[str, object]:
             "program_qualification_complete": False,
         }
     )
-    (public / "comparison.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    _write_evidence(public / "comparison.json", result)
     return result
 
 

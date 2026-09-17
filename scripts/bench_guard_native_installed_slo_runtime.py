@@ -22,6 +22,7 @@ from scripts.native_slo_contract import (  # noqa: E402
     proof_environment_violations,
 )
 from scripts.native_slo_session import AdapterSession  # noqa: E402
+from scripts.native_slo_source_capability import SOURCE_HANDLE_READ_FEATURE  # noqa: E402
 
 
 def _require(condition: bool, reason: object) -> None:
@@ -82,4 +83,7 @@ def _runtime_summary(runtime: Path) -> dict[str, object]:
         "runtime_sha256": identity.sha256,
         "rule_digest": capabilities.rule_digest,
         "build_sha": capabilities.build_sha,
+        "reference_reader_capability": SOURCE_HANDLE_READ_FEATURE
+        if SOURCE_HANDLE_READ_FEATURE in capabilities.features
+        else "absent",
     }

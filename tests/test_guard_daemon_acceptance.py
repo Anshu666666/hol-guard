@@ -63,6 +63,10 @@ def test_packaged_correctness_workloads(
     assert result.transport_counts.get("hook_admission_refusals", 0) == result.transport_counts.get(
         "hook_admission_retries", 0
     )
+    # Preserve refusal/retry diagnostics without allowing recovered transport
+    # errors to satisfy the unchanged zero-error acceptance criterion.
+    assert result.transport_counts.get("hook_admission_refusals", 0) == 0
+    assert result.transport_counts.get("challenge_admission_refusals", 0) == 0
     assert result.pid_stable
     assert result.workers_stable
     assert result.queue_bounded

@@ -17,6 +17,7 @@ import threading
 from pathlib import Path
 
 REVERSE_NAME = "1.0.0.127.in-addr.arpa"
+_REVERSE_LABELS = tuple(part.encode("ascii") for part in REVERSE_NAME.split("."))
 LOOPBACK_NAME = "hol-guard-qualification.localhost"
 RESOLVER_DIRECTORY = Path("/etc/resolver")
 MAX_QUERY_BYTES = 512
@@ -45,7 +46,7 @@ def ptr_response(packet: bytes) -> bytes | None:
         cursor += length
     else:
         return None
-    if b".".join(labels).lower() != REVERSE_NAME.encode("ascii") or cursor + 4 > len(packet):
+    if tuple(label.lower() for label in labels) != _REVERSE_LABELS or cursor + 4 > len(packet):
         return None
     if struct.unpack("!HH", packet[cursor : cursor + 4]) != (12, 1):
         return None

@@ -76,7 +76,6 @@ fn source_growth_after_expected_output_is_not_equivalent() {
     let _ = fs::remove_dir_all(root);
 }
 
-#[cfg(unix)]
 #[test]
 fn invalid_utf8_source_is_fail_closed_without_materializing_bytes() {
     let root =
@@ -91,6 +90,64 @@ fn invalid_utf8_source_is_fail_closed_without_materializing_bytes() {
     assert_eq!(response.decision, "deny");
     assert_eq!(response.reason_code, "no_output_to_review");
     assert!(!serialized.contains("f0"));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn classified_source_is_read_scanned_and_bound_to_exact_digest() {
+    let root = std::env::temp_dir().join(format!(
+        "guard-hook-core-valid-source-{}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("source.rs");
+    let original = b"fn main() {}\n";
+    fs::write(&path, original).unwrap();
+    let classified = guard_secure_fs::classify_source_path("source.rs", &root, Some(&root), false);
+    assert!(classified.allowed);
+    assert_eq!(
+        classified.resolved_path,
+        Some(fs::canonicalize(&path).unwrap())
+    );
+    let read = guard_secure_fs::read_bounded(&path, original.len()).unwrap();
+    assert_eq!(read.bytes, original);
+    assert_eq!(read.sha256, digest(original));
+    let response = review_post_tool(&source_request(
+        &root,
+        digest(original),
+        original.len() as i64,
+    ));
+    assert_eq!(response.decision, "allow");
+    assert_eq!(response.reason_code, "source_full_scan_allow");
+    assert_eq!(response.reviewed_output_sha256, Some(digest(original)));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn source_secret_is_denied_after_successful_secure_read() {
+    let root = std::env::temp_dir().join(format!(
+        "guard-hook-core-secret-source-{}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("source.rs");
+    let bytes = format!("const TOKEN: &str = \"ghp_{}\";\n", "A".repeat(36));
+    fs::write(&path, &bytes).unwrap();
+    assert_eq!(
+        guard_secure_fs::read_bounded(&path, bytes.len())
+            .unwrap()
+            .sha256,
+        digest(bytes.as_bytes())
+    );
+    let response = review_post_tool(&source_request(
+        &root,
+        digest(bytes.as_bytes()),
+        bytes.len() as i64,
+    ));
+    assert_eq!(response.decision, "deny");
+    assert_eq!(response.reason_code, "source_secret_match");
     let _ = fs::remove_dir_all(root);
 }
 

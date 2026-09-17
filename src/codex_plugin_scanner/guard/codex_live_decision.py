@@ -9,6 +9,9 @@ from .continuation_runtime import record_live_hook_completion
 from .store import GuardStore
 
 _REVIEW_ACTIONS = frozenset({"review", "require-reapproval"})
+_NATIVE_REQUEST_IDENTITY_FIELDS = frozenset(
+    {"request_id", "harness", "artifact_id", "artifact_hash", "workspace", "publisher"}
+)
 
 
 def complete_codex_live_decision(
@@ -18,12 +21,21 @@ def complete_codex_live_decision(
     now: str,
     fresh_allow_authorized: bool = False,
     require_consumed_once_for_replay: bool = False,
+    expected_request_identity: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Consume exact authority and persist terminal continuation evidence."""
 
     request = store.get_approval_request(request_id)
     if not isinstance(request, Mapping):
         return _failure("request_not_found")
+    if require_consumed_once_for_replay and (
+        expected_request_identity is None or set(expected_request_identity) != _NATIVE_REQUEST_IDENTITY_FIELDS
+    ):
+        return _failure("fresh_policy_revalidation_failed")
+    if expected_request_identity is not None and any(
+        request.get(key) != value for key, value in expected_request_identity.items()
+    ):
+        return _failure("fresh_policy_revalidation_failed")
     if request.get("harness") != "codex" or request.get("status") != "resolved":
         return _failure("request_not_resolved")
     raw_action = request.get("resolution_action")
@@ -63,6 +75,7 @@ def complete_codex_live_decision(
         action=action,
         now=now,
         approval_decision=approval_decision,
+        expected_request_identity=expected_request_identity,
     )
     expected_status = "resumed" if action == "allow" else "blocked_not_resumed"
     if not isinstance(completion, Mapping) or completion.get("continuationStatus") != expected_status:

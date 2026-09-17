@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import threading
+import time
 from fnmatch import fnmatchcase
 from pathlib import Path
 
@@ -65,8 +67,13 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
             {"status": "deadline_exceeded", "loopback_label": False, "elapsed_ms": 5000},
         ]
     )
+
+    def diagnostics():
+        row = next(probes)
+        return {kind: dict(row) for kind in resolver._QUERIES}
+
     monkeypatch.setattr(resolver.sys, "platform", "darwin")
-    monkeypatch.setattr(resolver, "resolver_probe", lambda: next(probes))
+    monkeypatch.setattr(resolver, "resolver_diagnostics", diagnostics)
     monkeypatch.setattr(resolver, "LoopbackPTRResponder", Responder)
     monkeypatch.setattr(resolver, "_run_helper", helper)
     monkeypatch.setattr(resolver.secrets, "token_hex", lambda size: "a" * 32)
@@ -89,6 +96,11 @@ def test_one_environment_encloses_paired_command_and_restores_it(
     assert resolver.run_wrapped(command, output) == 0
     assert events == ["responder_start", "install", "both_arms", "remove", "responder_stop"]
     report = json.loads(output.read_text())
+    for phase in ("before", "after", "after_cleanup"):
+        assert set(report[f"probes_{phase}"]) == set(resolver._QUERIES)
+        assert report[phase] == report[f"probes_{phase}"]["legacy_getfqdn"]
+    assert report["probe_timeout_seconds"] == 5
+    assert report["probe_execution"] == "independent_concurrent_subprocesses"
     assert report["before"]["status"] == "deadline_exceeded" and report["after"]["loopback_label"] is True
     assert report["after_cleanup"]["status"] == "deadline_exceeded"
     assert report["configuration_cleanup"] == "completed"
@@ -146,7 +158,11 @@ def test_healthy_or_other_platform_execution_does_not_configure_dns(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, platform: str
 ) -> None:
     monkeypatch.setattr(resolver.sys, "platform", platform)
-    monkeypatch.setattr(resolver, "resolver_probe", lambda: {"status": "completed", "loopback_label": True})
+    monkeypatch.setattr(
+        resolver,
+        "resolver_diagnostics",
+        lambda: {kind: {"status": "completed", "loopback_label": True} for kind in resolver._QUERIES},
+    )
 
     def forbidden(*_args):
         raise AssertionError("no DNS fixture was needed")
@@ -165,6 +181,43 @@ def test_workflow_wraps_the_entire_pair_without_hosts_or_cache_mutation() -> Non
     assert lines[start + 1] == "--output qualification-evidence/aggregate/runner-resolver.json -- \\"
     assert lines[start + 2] == "python candidate-src/scripts/build_native_qualification_artifacts.py \\"
     assert "--baseline baseline-src --candidate candidate-src" in workflow
+    source = Path(resolver.__file__).read_text()
+    assert all(
+        token not in source
+        for token in (
+            "--apply-fixed-entry",
+            "--repair-localhost",
+            "/etc/hosts",
+            "dscacheutil",
+            "killall",
+        )
+    )
+
+
+def test_workflow_retains_encryption_recipient_and_excludes_plaintext_uploads() -> None:
+    import yaml
+
+    workflow = yaml.load(
+        Path(".github/workflows/native-performance-qualification.yml").read_text(), Loader=yaml.BaseLoader
+    )
+    assert "docs/guard/rust-performance/qualification-recipient.pem" in workflow["on"]["pull_request"]["paths"]
+    steps = workflow["jobs"]["paired-artifacts"]["steps"]
+    encryption = next(step for step in steps if step.get("name") == "Encrypt private qualification observations")
+    assert encryption["if"] == "always()"
+    assert (
+        encryption["env"]["QUALIFICATION_RECIPIENT"]
+        == "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+    )
+    assert "native_slo_evidence_archive.py encrypt" in encryption["run"]
+    assert "qualification-evidence/private_samples" in encryption["run"]
+    uploads = [step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")]
+    assert len(uploads) == 3 and all(step["if"] == "always()" for step in uploads)
+    assert {path for step in uploads for path in step["with"]["path"].splitlines()} == {
+        "qualification-evidence/aggregate/*.json",
+        "qualification-evidence/build-metadata.json",
+        "qualification-evidence/encrypted/*.hge",
+        "qualification-evidence/archive-receipt.json",
+    }
 
 
 @pytest.mark.parametrize(
@@ -194,3 +247,79 @@ def test_qualification_path_filters_include_selected_python_routes_and_harness_i
     assert workflow["permissions"] == {"contents": "read"}
     assert "head.repo.full_name == github.repository" in str(workflow)
     assert "github.event.label.name == 'rust-performance-qualification'" in workflow["jobs"]["paired-artifacts"]["if"]
+
+
+@pytest.mark.parametrize("kind", ["legacy_getfqdn", "reverse_getnameinfo", "numeric_getnameinfo"])
+def test_each_probe_runs_exact_fixed_query_and_retains_no_resolved_names(monkeypatch, kind):
+    def run(arguments, **kwargs):
+        assert arguments == [resolver.sys.executable, "-I", "-c", resolver._query(kind)]
+        assert kwargs["timeout"] == 5 and kwargs["capture_output"] is True
+        return subprocess.CompletedProcess(
+            arguments, 0, resolver._STARTED + '\n{"loopback_label":false}\n', "private stderr name"
+        )
+
+    monkeypatch.setattr(resolver.subprocess, "run", run)
+    report = resolver.resolver_probe(kind)
+    assert report["status"] == "completed" and report["call_started"] is True
+    assert report["loopback_label"] is False
+    assert "private" not in json.dumps(report)
+    query = resolver._query(kind)
+    if kind == "numeric_getnameinfo":
+        assert "NI_NUMERICHOST|socket.NI_NUMERICSERV" in query and "NI_NAMEREQD" not in query
+    elif kind == "reverse_getnameinfo":
+        assert "NI_NAMEREQD|socket.NI_NUMERICSERV" in query
+
+
+@pytest.mark.parametrize("started", [False, True])
+def test_timeout_distinguishes_unstarted_child_from_resolver_call(monkeypatch, started):
+    output = (resolver._STARTED + "\n").encode() if started else b"private startup output"
+
+    def run(arguments, **kwargs):
+        raise subprocess.TimeoutExpired(arguments, kwargs["timeout"], output=output, stderr=b"private trace")
+
+    monkeypatch.setattr(resolver.subprocess, "run", run)
+    report = resolver.resolver_probe()
+    assert report["status"] == "deadline_exceeded" and report["call_started"] is started
+    assert "private" not in json.dumps(report)
+
+
+def test_three_distinct_probes_run_concurrently_and_keep_all_outcomes(monkeypatch):
+    barrier = threading.Barrier(3)
+    deadlines = []
+    statuses = dict(zip(resolver._QUERIES, ("deadline_exceeded", "failed", "completed"), strict=True))
+
+    def probe(kind, *, deadline):
+        deadlines.append(deadline)
+        barrier.wait(timeout=1)
+        return {"status": statuses[kind], "call_started": True}
+
+    monkeypatch.setattr(resolver, "resolver_probe", probe)
+    report = resolver.resolver_diagnostics()
+    assert {kind: row["status"] for kind, row in report.items()} == statuses
+    assert len(set(deadlines)) == 1 and 0 < deadlines[0] - time.monotonic() <= 5
+
+
+def test_expired_shared_phase_budget_never_launches_a_child(monkeypatch):
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("expired phase must not start another five-second probe")
+
+    monkeypatch.setattr(resolver.subprocess, "run", forbidden)
+    result = resolver.resolver_probe(deadline=time.monotonic() - 1)
+    assert result["status"] == "deadline_exceeded" and result["call_started"] is False
+
+
+@pytest.mark.parametrize(
+    "stdout",
+    [
+        '{"loopback_label":true}',
+        resolver._STARTED + '\n{"loopback_label":true,"private":"name"}\n',
+        resolver._STARTED + '\n{"loopback_label":1}\n',
+        resolver._STARTED + '\n{"loopback_label":true}\nextra',
+    ],
+)
+def test_nonconforming_output_cannot_become_completed(monkeypatch, stdout):
+    monkeypatch.setattr(
+        resolver.subprocess, "run", lambda *args, **_: subprocess.CompletedProcess(args, 0, stdout, "private stderr")
+    )
+    report = resolver.resolver_probe()
+    assert report["status"] == "failed" and "private" not in json.dumps(report)

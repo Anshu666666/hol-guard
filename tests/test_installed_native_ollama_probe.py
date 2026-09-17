@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import subprocess
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -33,7 +34,7 @@ from scripts.ci.native_ollama_contract import (
 )
 from scripts.ci.verify_native_ollama_install import builder_evidence
 from scripts.native_slo_contract import assert_privacy_safe
-from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+from scripts.native_slo_failure import failure_evidence
 from tests.test_native_command_observations import _edge, _evidence, _observations, _receipt, _rehash
 
 
@@ -270,6 +271,39 @@ def test_installed_worker_success_cannot_hide_process_failure_or_wrong_wheel(
     assert "unpublished fixture context" not in json.dumps(report)
 
 
+@pytest.mark.parametrize("identity_state", ("matching", "missing_build", "wrong_build"))
+def test_installed_worker_full_build_identity_survives_public_sanitization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, identity_state: str
+) -> None:
+    expected = {
+        "build_sha": "a" * 40,
+        "wheel_sha256": "b" * 64,
+        "installed_package_sha256": "c" * 64,
+        "contribution_sha256": "d" * 64,
+        "program_sha256": "e" * 64,
+    }
+    identity = dict(expected)
+    if identity_state == "missing_build":
+        identity.pop("build_sha")
+    elif identity_state == "wrong_build":
+        identity["build_sha"] = "f" * 40
+    # The installed child emits sanitized evidence before the parent validates
+    # it. Exercise both real sanitizer calls, including the positive case.
+    document = driver.assert_privacy_safe(
+        {"schema": "hol-guard.installed-native-ollama.v1", "passed": True, "identity": identity}
+    )
+    monkeypatch.setattr(
+        driver,
+        "run_isolated_hook_process",
+        lambda *_args, **_kwargs: BoundedHookProcessResult(
+            0, json.dumps(document), output_limit_exceeded=False, timed_out=False
+        ),
+    )
+    okay, evidence = driver.installed_native_evidence(tmp_path / "python", expected)
+    assert okay is (identity_state == "matching")
+    assert evidence["native"]["identity"] == identity
+
+
 def test_builder_runs_when_installed_worker_cannot_start(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     called = []
     monkeypatch.setattr(driver, "_sha256", lambda _: "a" * 64)
@@ -333,16 +367,18 @@ def test_expected_build_identity_requires_an_exact_canonical_commit(value, tmp_p
     ("snapshot", "elapsed", "last_error", "expected_error"),
     [
         (None, 0.4, "native_policy_snapshot_ack_invalid", "native_policy_snapshot_ack_invalid"),
-        (None, 0.01, "private-fixture-diagnostic", "unclassified"),
-        ({"generation": 2}, 0.425, None, "none"),
+        (None, 0.01, "private-fixture-diagnostic", "redacted"),
+        ({"generation": 2}, 0.425, None, "absent"),
     ],
 )
 def test_readiness_failure_keeps_phase_and_fixed_budget_without_publisher_private_context(
     monkeypatch: pytest.MonkeyPatch, snapshot, elapsed: float, last_error, expected_error: str
 ) -> None:
     clock = iter((100.0, 100.0 + elapsed))
-    monkeypatch.setattr(probe.time, "monotonic", lambda: next(clock))
-    publisher = SimpleNamespace(last_error=last_error, closed=False, is_ready=lambda: snapshot is not None)
+    monkeypatch.setattr(probe, "time", SimpleNamespace(monotonic=lambda: next(clock)))
+    publisher = SimpleNamespace(_condition=threading.Condition(), _last_error=last_error, _closed=False)
+    progress = probe.OllamaProbeProgress()
+    progress.at(phase="enabled", step="ready")
 
     def prepare(workspace, *, deadline):
         assert workspace == Path("synthetic-workspace")
@@ -353,14 +389,15 @@ def test_readiness_failure_keeps_phase_and_fixed_budget_without_publisher_privat
     session = SimpleNamespace(
         workspace=Path("synthetic-workspace"), daemon=SimpleNamespace(_server=SimpleNamespace(hook_worker=worker))
     )
-    with pytest.raises(FixtureFailureError) as error:
-        probe.ready_binding(session, 1, phase="enabled")
-    evidence = failure_evidence(error.value)
+    with pytest.raises(AssertionError, match="installed_ollama_native_readiness_failed"):
+        probe.ready_binding(session, 1, progress=progress)
+    evidence = progress.evidence()
     assert evidence["phase"] == "enabled"
-    readiness = evidence["readiness"]
-    assert readiness["budget_ms"] == 400.0
+    readiness = evidence["readiness"][0]
+    assert probe.MAX_READINESS_P95_MS == 400.0
     assert readiness["elapsed_ms"] == round(elapsed * 1000, 3)
-    assert readiness["snapshot_returned"] is (snapshot is not None)
-    assert readiness["publisher_error"] == expected_error
+    assert readiness["returned_snapshot"] is (snapshot is not None)
+    assert readiness["within_budget"] is (elapsed <= 0.4)
+    assert readiness["after"]["last_error"] == expected_error
     assert "private-fixture-diagnostic" not in json.dumps(evidence)
-    assert evidence["reason"] == "qualification_fixture.installed_ollama_native_readiness_failed"
+    assert evidence["observations_authorize_readiness"] is False

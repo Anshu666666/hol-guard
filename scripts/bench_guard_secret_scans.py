@@ -26,7 +26,7 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
 
-from secret_scan_benchmark_cache import prepare_cache
+from secret_scan_benchmark_cache import cache_failure_reason, prepare_cache
 from secret_scan_benchmark_fixtures import WORKLOADS, context_examples, create_fixture, provider_examples
 
 
@@ -421,7 +421,7 @@ def main() -> int:
                                 "workflow": case.workflow,
                                 "cache_state": cache_state,
                                 "status": "cache-unavailable",
-                                "reason": str(error),
+                                "reason": cache_failure_reason(error),
                                 "samples": {},
                             }
                         )

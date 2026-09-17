@@ -285,7 +285,7 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
                     (launcher.harness, launcher.event): launcher
                     for launcher in install_priority_launchers(cast(LauncherSession, cast(object, session)))
                 }
-                for original in build_cases(session.workspace):
+                for original in build_cases(session.workspace, runtime=runtime):
                     if (
                         original.setup != setup
                         or not _selected(original)
@@ -365,7 +365,7 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
     if review_only and remaining:
         raise RuntimeError("installed launcher approval corpus coverage incomplete")
     platform_scope = platform_scope_summary(tuple(selected_cases.values()), validated_ids)
-    remaining.update(platform_scope["missing_scopes"])
+    remaining.update(cast(list[str], platform_scope["missing_scopes"]))
     return assert_privacy_safe(
         {
             "schema": "hol-guard.registered-launcher-corpus.v1",

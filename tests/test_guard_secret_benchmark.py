@@ -91,6 +91,29 @@ def test_small_sample_percentile_preserves_outlier(benchmark: ModuleType) -> Non
     assert result["wall_ms"] == {"median": 2, "p95": 100, "min": 1, "max": 100, "samples": 5}
 
 
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        (OSError(5, "PRIVATE_MESSAGE", "/private/PRIVATE_PATH"), "cache_system_error"),
+        (RuntimeError("PRIVATE_MESSAGE /private/PRIVATE_PATH"), "cache_preparation_failed"),
+        (
+            RuntimeError("verified fixture-data eviction requires Linux fadvise and mincore"),
+            "cache_eviction_unsupported",
+        ),
+        (
+            RuntimeError("fixture-data eviction could not be verified; refusing a cold-cache label"),
+            "cache_eviction_unverified",
+        ),
+    ],
+)
+def test_cache_failure_exports_only_fixed_reason(
+    benchmark: ModuleType, error: OSError | RuntimeError, expected: str
+) -> None:
+    reason = benchmark.cache_failure_reason(error)
+    assert reason == expected
+    assert "PRIVATE" not in json.dumps({"reason": reason})
+
+
 def test_cli_exit_mismatch_fails_qualification(benchmark: ModuleType, tmp_path: Path) -> None:
     with pytest.raises(RuntimeError, match="CLI exit 2 differs from expected 0"):
         benchmark._full_cli(ROOT, tmp_path / "absent", "working", expected_exit=0)

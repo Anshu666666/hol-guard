@@ -9,12 +9,15 @@ from collections import Counter
 from collections.abc import Mapping
 from http.client import HTTPConnection
 from pathlib import Path
+from typing import cast
 
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import route_counts
+from scripts.native_slo_corpus_evidence import CorpusEvidence
 from scripts.native_slo_daemon_fixture import DaemonFixture, witnessed_route
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence
 from scripts.native_slo_semantic_diagnostic import semantic_diagnostic
+from scripts.native_slo_workloads import QualificationCase
 
 _IMPLEMENTED_SETUPS = frozenset(
     {
@@ -66,18 +69,72 @@ def _transport_boundary(
     return response, status
 
 
-def run_contract_corpus(runtime: Path) -> dict[str, object]:
+def _observe_case(session: DaemonFixture, case: QualificationCase, journal: CorpusEvidence) -> tuple[str, int]:
+    from scripts.native_slo_workloads import validate_case, validate_native_result, validate_setup
+
+    metrics = session.daemon._server.hook_worker.metrics
+    with journal.attempt(case) as observed:
+        observed.stage = "setup"
+        session.control("case_before")
+        observed.route_before = route_counts(metrics.snapshot())
+        observed.stage = "delivery"
+        if case.expected_http_status != 200:
+            observed.response, observed.http_status = _transport_boundary(session, case.harness, case.payload)
+            observed.http_status_observation = "wire_response"
+            validation_status = observed.http_status
+        else:
+            observed.response, _elapsed = session.request(case.harness, case.payload)
+            # The adapter API normalizes capacity failures and returns no
+            # wire status. Keep the existing delivered-response projection
+            # validation, but never label its returned object as observed200.
+            observed.http_status_observation = "unavailable_in_normalized_adapter_api"
+            validation_status = 200
+        observed.stage = "route"
+        if case.expected_route == "engine_bypassed":
+            observed.route_after = route_counts(metrics.snapshot())
+        else:
+            observed.route_after = route_counts(
+                wait_for_route_corpus(metrics, expected=sum(observed.route_before.values()) + 1)
+            )
+        observed.route = witnessed_route(observed.route_before, observed.route_after)
+        observed.stage = "witness"
+        evidence = session.control("case_result")
+        native_result = evidence.get("native_result")
+        setup = evidence.get("setup")
+        if native_result is not None and not isinstance(native_result, Mapping):
+            raise RuntimeError("qualification native result evidence must be an object")
+        if not isinstance(setup, Mapping):
+            raise RuntimeError("qualification setup evidence must be an object")
+        observed.native_result = cast(Mapping[str, object] | None, native_result)
+        validate_setup(case, cast(Mapping[str, object], setup))
+        try:
+            validate_case(case, observed.response, observed.route, http_status=validation_status)
+            validate_native_result(case, observed.native_result)
+        except AssertionError as error:
+            detail = failure_evidence(error)
+            detail["observed_semantics"] = semantic_diagnostic(observed.response, observed.native_result, (case,))
+            raise FixtureFailureError(detail) from error
+        observed.stage = "complete"
+        return observed.route, validation_status
+
+
+def run_contract_corpus(runtime: Path, *, evidence_file: Path | None = None) -> dict[str, object]:
+    with CorpusEvidence(evidence_file) as journal:
+        return _run_contract_corpus(runtime, journal)
+
+
+def _run_contract_corpus(runtime: Path, journal: CorpusEvidence) -> dict[str, object]:
     from scripts.native_slo_workloads import (
         build_cases,
         corpus_manifest,
         platform_scope_summary,
-        validate_case,
-        validate_native_result,
-        validate_setup,
     )
 
     manifest = corpus_manifest()
-    setups = sorted(manifest["setup_requirements"])
+    requirements = manifest["setup_requirements"]
+    if not isinstance(requirements, Mapping) or any(not isinstance(key, str) for key in requirements):
+        raise RuntimeError("qualification setup requirements must be an object")
+    setups = sorted(cast(Mapping[str, object], requirements))
     counted: set[str] = set()
     validated: list[str] = []
     counters = {
@@ -86,37 +143,18 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
     }
     semantic = 0
     syntax_rejections = 0
+    cases: tuple[QualificationCase, ...] = ()
     for setup in setups:
         if setup not in _IMPLEMENTED_SETUPS:
             continue
         with DaemonFixture(runtime, setup=setup) as session:
-            cases = build_cases(session.workspace)
+            cases = build_cases(session.workspace, runtime=runtime)
             counted.update(case.case_id for case in cases)
             metrics = session.daemon._server.hook_worker.metrics
             for case in cases:
                 if case.setup != setup:
                     continue
-                session.control("case_before")
-                before = route_counts(metrics.snapshot())
-                if case.expected_http_status != 200:
-                    response, http_status = _transport_boundary(session, case.harness, case.payload)
-                else:
-                    response, _elapsed = session.request(case.harness, case.payload)
-                    http_status = 200
-                if case.expected_route == "engine_bypassed":
-                    after = route_counts(metrics.snapshot())
-                else:
-                    after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
-                route = witnessed_route(before, after)
-                evidence = session.control("case_result")
-                try:
-                    validate_setup(case, evidence["setup"])
-                    validate_case(case, response, route, http_status=http_status)
-                    validate_native_result(case, evidence["native_result"])
-                except AssertionError as error:
-                    detail = failure_evidence(error)
-                    detail["observed_semantics"] = semantic_diagnostic(response, evidence["native_result"], cases)
-                    raise FixtureFailureError(detail) from error
+                route, http_status = _observe_case(session, case, journal)
                 validated.append(case.case_id)
                 semantic += int(case.semantic_sample)
                 for name, value in (
@@ -159,6 +197,7 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
         "semantic_observations": semantic,
         "syntax_rejections": syntax_rejections,
         "oversize_transport_semantics": "declared_length_rejected_before_body_transfer",
+        "http_status_count_semantics": "normalized_success_projection_or_observed_non200_boundary",
         "platform_scope": platform_scope,
         "complete": len(validated) == len(counted) and not platform_scope["missing_scopes"],
         "implemented_scope_passed": True,

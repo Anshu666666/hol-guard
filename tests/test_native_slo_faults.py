@@ -90,27 +90,47 @@ def test_integrity_fault_observes_the_handler_local_import_without_faking_reject
     assert hook_payload_reference.hook_payload_reference_size is original
 
 
-def test_approval_persistence_fault_is_witnessed_through_real_positional_caller(tmp_path: Path) -> None:
+@pytest.mark.parametrize("harness", ["claude-code", "codex"])
+def test_review_queue_fault_is_witnessed_by_real_persistence_call_and_restored(tmp_path: Path, harness: str) -> None:
     from codex_plugin_scanner.guard.daemon.hook_native_review_approval import pause_native_pre_tool_for_approval
     from codex_plugin_scanner.guard.store import GuardStore
 
     session = _session(tmp_path)
     session.store = GuardStore(session.guard_home)
     original = session.store.add_approval_request
+    # This test starts at the already-decided review/queue boundary. It does not
+    # fake a resident result or claim HTTP/installed-native qualification.
+    arguments = {
+        "harness": harness,
+        "payload": {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Bash",
+            "tool_input": {"command": "git diff --output=/tmp/guard-qualification.diff README.md"},
+        },
+        "native_result": {
+            "decision": "deny",
+            "minimum_action": "review",
+            "policy_action": "review",
+            "reason_code": "native_command_review_required",
+            "reason": "HOL Guard requires review before this action can execute.",
+        },
+        "workspace": session.workspace,
+        "guard_home": session.guard_home,
+    }
     with FaultFixture(session, "review_queue_failed") as fault:
         assert "approval_persistence_failed" not in fault.result()["setup"]
-        response = pause_native_pre_tool_for_approval(
-            session.store,
-            harness="claude-code",
-            payload={"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "git diff"}},
-            native_result={"decision": "deny", "minimum_action": "review", "policy_action": "review"},
-            workspace=session.workspace,
-            guard_home=session.guard_home,
-        )
+        response = pause_native_pre_tool_for_approval(session.store, **arguments)
         assert fault.result()["setup"]["approval_persistence_failed"] is True
         assert response["reason_code"] == "native_review_queue_failed"
         assert response["policy_action"] == "block"
+        assert "approval_request_id" not in response and "approval_url" not in response
         assert session.store.list_approval_requests(status="pending") == []
         fault.before_case()
         assert "approval_persistence_failed" not in fault.result()["setup"]
     assert session.store.add_approval_request == original
+    # Restoration must actually persist and retrieve an approval, rather than
+    # merely restoring a function-shaped object.
+    restored = pause_native_pre_tool_for_approval(session.store, **arguments)
+    assert restored["policy_action"] == "review"
+    request_id = restored["approval_request_id"]
+    assert session.store.get_approval_request(request_id)["policy_action"] == "review"

@@ -39,6 +39,22 @@ def test_bounded_edns0_question_uses_same_fixed_answer() -> None:
 
 
 @pytest.mark.parametrize(
+    "labels",
+    [
+        [dns.REVERSE_NAME.encode("ascii")],
+        [b"1.0", b"0", b"127", b"in-addr", b"arpa"],
+        [b"1", b"0", b"0", b"127", b"in-addr.arpa"],
+    ],
+)
+def test_literal_dots_inside_a_label_do_not_match_the_fixed_reverse_name(labels: list[bytes]) -> None:
+    # Textual joining hides DNS label boundaries; these are distinct questions.
+    assert b".".join(labels) == dns.REVERSE_NAME.encode("ascii")
+    name = b"".join(bytes([len(label)]) + label for label in labels) + b"\0"
+    query = struct.pack("!6H", 0x1234, 0x0100, 1, 0, 0, 0) + name + struct.pack("!HH", 12, 1)
+    assert dns.ptr_response(query) is None
+
+
+@pytest.mark.parametrize(
     "query",
     [
         b"",

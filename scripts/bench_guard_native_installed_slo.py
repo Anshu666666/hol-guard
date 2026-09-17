@@ -152,9 +152,10 @@ def _run_sizes(
     selected = post_routes or (routes[0],)
     large_payloads = source_payloads(session.workspace)
     observations: list[Observation] = []
+    source_supported = source_reference_supported(runtime=session.runtime)
     for size_class in SIZE_CLASSES[1:]:
         request_payload = large_payloads[size_class]
-        if not source_reference_supported():
+        if not source_supported:
             if unsupported_evidence is None:
                 raise RuntimeError("unsupported source review requires a separate evidence destination")
             unsupported_evidence.extend(

@@ -1,9 +1,10 @@
 #[cfg(not(unix))]
 use std::fs;
+#[cfg(not(windows))]
 use std::fs::File;
 #[cfg(unix)]
 use std::fs::{self, Metadata};
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::io;
 use std::path::Path;
 #[cfg(unix)]
@@ -18,7 +19,7 @@ use std::os::unix::fs::MetadataExt;
 
 #[derive(Debug)]
 pub(crate) enum SecureOpenError {
-    #[cfg(unix)]
+    #[cfg(any(unix, windows))]
     Io(io::Error),
     PathChanged,
 }
@@ -101,7 +102,26 @@ pub(crate) fn is_oversized_regular_file(path: &Path, max_bytes: usize) -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+pub(crate) fn secure_open(
+    path: &Path,
+    canonical_path: &Path,
+) -> Result<guard_runtime_windows_process::BoundReadFile, SecureOpenError> {
+    // Validate and bind the original spelling too: canonicalization must not
+    // launder an ADS, device path, reparse point, or ambiguous component.
+    let original =
+        guard_runtime_windows_process::open_bound_read_file(path).map_err(SecureOpenError::Io)?;
+    let opened = guard_runtime_windows_process::open_bound_read_file(canonical_path)
+        .map_err(SecureOpenError::Io)?;
+    if original.identity().map_err(SecureOpenError::Io)?
+        != opened.identity().map_err(SecureOpenError::Io)?
+    {
+        return Err(SecureOpenError::PathChanged);
+    }
+    Ok(opened)
+}
+
+#[cfg(all(not(unix), not(windows)))]
 pub(crate) fn secure_open(_path: &Path, _canonical_path: &Path) -> Result<File, SecureOpenError> {
     // Opening the caller-provided path directly would reintroduce a TOCTOU
     // window. Keep non-Unix platforms fail-closed until they have an

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -28,6 +29,7 @@ def _edge(**changes):
 def test_complete_source_scan_is_witnessed_before_restoring_method() -> None:
     def original(**kwargs):
         return _edge()
+
     worker = SimpleNamespace(_review_raw_hook_native=original)
     with source_review_witness(worker, _REQUEST):
         worker._review_raw_hook_native()
@@ -48,6 +50,7 @@ def test_complete_source_scan_is_witnessed_before_restoring_method() -> None:
 def test_allowed_no_output_wrong_digest_or_non_native_edge_never_qualifies(result) -> None:
     def original(**kwargs):
         return result
+
     worker = SimpleNamespace(_review_raw_hook_native=original)
     with (
         pytest.raises(RuntimeError, match="one complete native content review"),
@@ -77,7 +80,97 @@ def test_non_source_work_does_not_change_native_method() -> None:
 def test_transport_exception_is_preserved_and_wrapper_retired() -> None:
     def original(**kwargs):
         return _edge()
+
     worker = SimpleNamespace(_review_raw_hook_native=original)
     with pytest.raises(OSError, match="transport"), source_review_witness(worker, _REQUEST):
         raise OSError("transport")
     assert worker._review_raw_hook_native is original
+
+
+def _failure_diagnostic(worker, request=_REQUEST, **context):
+    with pytest.raises(RuntimeError) as raised, source_review_witness(worker, request, **context):
+        worker._review_raw_hook_native()
+    prefix = "source SLO did not witness one complete native content review: "
+    message = str(raised.value)
+    assert message.startswith(prefix)
+    assert len(message) < 1_024
+    return json.loads(message.removeprefix(prefix)), message
+
+
+def test_failed_native_review_retains_exact_fixed_reason_and_case_scope() -> None:
+    worker = SimpleNamespace(
+        _review_raw_hook_native=lambda **kwargs: _edge(
+            decision="deny", model_output_action="block", reason_code="no_output_to_review", reviewed_output_sha256=None
+        )
+    )
+    diagnostic, _ = _failure_diagnostic(worker, harness="claude-code", size_class="1m")
+    elapsed = diagnostic["observations"][0].pop("native_elapsed_ms")
+    assert type(elapsed) is int and 0 <= elapsed <= 10_000
+    assert diagnostic == {
+        "harness": "claude-code",
+        "size_class": "1m",
+        "observed_calls_capped_at_two": 1,
+        "observations": [
+            {
+                "rust_authority": True,
+                "decision": "deny",
+                "model_output_action": "block",
+                "reason_code": "no_output_to_review",
+                "reviewed_digest_present": False,
+                "reviewed_digest_matches": False,
+                "deadline_remaining_ms": None,
+            }
+        ],
+    }
+
+
+def test_diagnostics_never_echo_arbitrary_reason_authority_digest_or_context() -> None:
+    private = "private-path-and-secret" * 2_000
+    worker = SimpleNamespace(
+        _review_raw_hook_native=lambda **kwargs: {
+            "authority": private,
+            "result": {
+                "decision": private,
+                "model_output_action": private,
+                "reason_code": private,
+                "reviewed_output_sha256": "b" * 64,
+            },
+        }
+    )
+    diagnostic, message = _failure_diagnostic(worker, harness=private, size_class=private)
+    assert "private-path" not in message and "b" * 64 not in message and _DIGEST not in message
+    assert diagnostic["harness"] == diagnostic["size_class"] == "other"
+    observation = diagnostic["observations"][0]
+    assert observation["decision"] == observation["model_output_action"] == observation["reason_code"] == "other"
+    assert observation["reviewed_digest_present"] is True and observation["reviewed_digest_matches"] is False
+
+
+def test_missing_native_call_diagnostic_is_distinct_from_failed_native_result() -> None:
+    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: _edge())
+    with (
+        pytest.raises(RuntimeError) as raised,
+        source_review_witness(worker, _REQUEST, harness="codex", size_class="250k"),
+    ):
+        pass
+    assert '"observed_calls_capped_at_two":0' in str(raised.value)
+    assert '"observations":[]' in str(raised.value)
+
+
+def test_failure_diagnostic_preserves_owned_budget_without_refreshing_it(monkeypatch) -> None:
+    from scripts import native_slo_source_witness as witness
+
+    clock = iter([20.0, 20.75])
+    monkeypatch.setattr(witness.time, "monotonic", lambda: next(clock))
+    worker = SimpleNamespace(
+        _review_raw_hook_native=lambda **kwargs: _edge(
+            decision="deny", model_output_action="block", reason_code="no_output_to_review", reviewed_output_sha256=None
+        )
+    )
+    with (
+        pytest.raises(RuntimeError) as raised,
+        source_review_witness(worker, _REQUEST, harness="claude-code", size_class="5m"),
+    ):
+        worker._review_raw_hook_native(deadline=20.5)
+    diagnostic = json.loads(str(raised.value).split(": ", 1)[1])
+    assert diagnostic["observations"][0]["deadline_remaining_ms"] == 500
+    assert diagnostic["observations"][0]["native_elapsed_ms"] == 750

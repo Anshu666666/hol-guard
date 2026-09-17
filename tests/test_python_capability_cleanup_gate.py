@@ -20,9 +20,9 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 104
+    assert payload["scope_files"] == 105
     assert payload["capabilities"] == {
-        "hook_control_and_transport": 81,
+        "hook_control_and_transport": 82,
         "python_reference_oracle": 17,
         "hook_evidence_persistence": 4,
         "legacy_python_resident_transport": 2,
@@ -51,6 +51,7 @@ def test_native_review_and_codex_continuation_files_have_explicit_control_owners
         "daemon/hook_native_review_approval.py",
         "daemon/hook_native_review_continuation.py",
         "daemon/codex_native_live_decision.py",
+        "daemon/initial_header_reader.py",
         "codex_live_decision.py",
         "store_consumed_once_authority.py",
         "store_event_receipts.py",

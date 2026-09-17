@@ -21,6 +21,8 @@ pub use source_path::{classify_source_path, sensitive_path_family, source_like};
 pub struct FileIdentity {
     pub dev: Option<u64>,
     pub ino: Option<u64>,
+    /// Full Windows file ID; the older 64-bit index is not unique on ReFS.
+    pub windows_file_id: Option<[u8; 16]>,
     pub size: u64,
     pub mtime_ns: u128,
     /// The permission/type bits are part of identity so a permission change
@@ -162,6 +164,7 @@ fn identity(metadata: &Metadata) -> FileIdentity {
     FileIdentity {
         dev,
         ino,
+        windows_file_id: None,
         size: metadata.len(),
         mtime_ns,
         mode,
@@ -172,11 +175,11 @@ fn identity(metadata: &Metadata) -> FileIdentity {
 fn map_secure_open_error(error: SecureOpenError) -> SecureReadError {
     match error {
         SecureOpenError::PathChanged => SecureReadError::PathChanged,
-        #[cfg(unix)]
+        #[cfg(any(unix, windows))]
         SecureOpenError::Io(error) if error.kind() == io::ErrorKind::PermissionDenied => {
             SecureReadError::PermissionDenied
         }
-        #[cfg(unix)]
+        #[cfg(any(unix, windows))]
         SecureOpenError::Io(_) => SecureReadError::ReadFailed,
     }
 }
@@ -193,9 +196,15 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
     // Canonicalize around a descriptor-bound read to close path races.
     let canonical_before = fs::canonicalize(path).map_err(|_| SecureReadError::ReadFailed)?;
     let mut file = secure_open(path, &canonical_before).map_err(map_secure_open_error)?;
+    #[cfg(windows)]
+    let windows_before = file.identity().map_err(|_| SecureReadError::ReadFailed)?;
     let before_metadata = file.metadata().map_err(|_| SecureReadError::ReadFailed)?;
     if !before_metadata.is_file() {
         return Err(SecureReadError::NotRegularFile);
+    }
+    #[cfg(windows)]
+    if windows_before.links != 1 {
+        return Err(SecureReadError::HardLinkedFile);
     }
     #[cfg(unix)]
     {
@@ -211,6 +220,8 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
         return Err(SecureReadError::TooLarge);
     }
     let before = identity(&before_metadata);
+    #[cfg(windows)]
+    let before = windows_identity(before, &windows_before);
     let mut bytes = Vec::with_capacity(before.size as usize);
     file.by_ref()
         .take(max_bytes as u64 + 1)
@@ -220,6 +231,11 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
         return Err(SecureReadError::TooLarge);
     }
     let after = identity(&file.metadata().map_err(|_| SecureReadError::ReadFailed)?);
+    #[cfg(windows)]
+    let after = windows_identity(
+        after,
+        &file.identity().map_err(|_| SecureReadError::ReadFailed)?,
+    );
     if before != after {
         return Err(SecureReadError::Changed);
     }
@@ -230,6 +246,9 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
     if canonical_before != canonical_after {
         return Err(SecureReadError::PathChanged);
     }
+    #[cfg(windows)]
+    file.validate_unchanged(&windows_before)
+        .map_err(|_| SecureReadError::Changed)?;
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     Ok(SecureRead {
@@ -237,6 +256,18 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
         identity: after,
         sha256: hex::encode(hasher.finalize()),
     })
+}
+
+#[cfg(windows)]
+fn windows_identity(
+    mut value: FileIdentity,
+    windows: &guard_runtime_windows_process::ReadFileIdentity,
+) -> FileIdentity {
+    value.dev = Some(windows.volume);
+    value.windows_file_id = Some(windows.id);
+    value.mode = windows.attributes;
+    value.nlink = u64::from(windows.links);
+    value
 }
 
 #[cfg(test)]

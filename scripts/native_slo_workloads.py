@@ -12,10 +12,12 @@ import hashlib
 import json
 import platform
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import cast
+
+from scripts.native_slo_source_capability import SOURCE_HANDLE_READ_FEATURE, verified_runtime_features
 
 _CORPUS_PATH = Path(__file__).resolve().parents[1] / "tests/fixtures/guard-native-qualification/corpus.v1.json"
 _MAX_CASES = 2_048
@@ -194,9 +196,6 @@ def _post_expected(harness: str, kind: str, reason: str, digest: str | None = No
         )
         if allowed and digest is not None:
             fields["reviewed_output_sha256"] = digest
-        if kind == "watch":
-            fields["observe_mode"] = True
-            fields["observed_policy_action"] = "block"
     else:
         fields["hookSpecificOutput.hookEventName"] = "PostToolUse"
         if not allowed:
@@ -264,8 +263,9 @@ def _native_post(kind: str, reason: str, digest: str) -> ExpectedResponse:
     }
     if kind == "benign":
         fields["reviewed_output_sha256"] = digest
-    if kind == "watch":
-        fields.update(observe_mode=True, observed_policy_action="block")
+    # This tap observes the authenticated raw edge before the daemon's Watch
+    # rewrite. The edge preserves the intrinsic block and its original reason;
+    # direct guard-hook-core observe_mode metadata belongs to another boundary.
     return ExpectedResponse(str(fields["decision"]), str(fields["model_output_action"]), kind, fields)
 
 
@@ -276,9 +276,12 @@ def _content(size: int, secret: bool) -> bytes:
     return prefix + (unit * ((size + len(unit) - 1) // len(unit)))[: size - len(prefix)]
 
 
-def source_reference_supported(*, system: str | None = None) -> bool:
-    """The audited non-Unix secure opener has no Windows handle-bound walk."""
-    return (platform.system() if system is None else system) != "Windows"
+def source_reference_supported(
+    *, system: str | None = None, features: Collection[str] = (), runtime: Path | None = None
+) -> bool:
+    """Windows support requires the new capability from the selected artifact."""
+    selected = verified_runtime_features(runtime) if runtime is not None else features
+    return (platform.system() if system is None else system) != "Windows" or SOURCE_HANDLE_READ_FEATURE in selected
 
 
 def platform_scope_summary(
@@ -317,7 +320,13 @@ def platform_scope_summary(
     }
 
 
-def build_cases(workspace: Path, *, system: str | None = None) -> tuple[QualificationCase, ...]:
+def build_cases(
+    workspace: Path,
+    *,
+    system: str | None = None,
+    features: Collection[str] = (),
+    runtime: Path | None = None,
+) -> tuple[QualificationCase, ...]:
     """Materialize a bounded corpus with shared immutable synthetic source files.
 
     The caller supplies a private, disposable workspace. Case IDs and output
@@ -578,8 +587,6 @@ def build_cases(workspace: Path, *, system: str | None = None) -> tuple[Qualific
                         if kind == "benign"
                         else ("source_secret_match" if source else "output_secret_match")
                     )
-                    if kind == "watch":
-                        reason = "observe_" + reason
                     add(
                         harness,
                         event,
@@ -706,15 +713,16 @@ def build_cases(workspace: Path, *, system: str | None = None) -> tuple[Qualific
                 )
     if len(cases) > _MAX_CASES or len({case.case_id for case in cases}) != len(cases):
         raise ValueError("native_qualification_case_bound_or_duplicate")
-    if not source_reference_supported(system=system):
+    if not source_reference_supported(system=system, features=features, runtime=runtime):
         for index, case in enumerate(cases):
             if case.payload_kind != "source_file_ref":
                 continue
-            # Both pinned artifacts deliberately reject Windows source opens.
-            # This is a separate denial witness, never full-content coverage.
+            # The pinned baseline has no Windows handle-bound opener. Keep
+            # its denial evidence separate; capable candidates use the full
+            # original content/digest oracles above without modification.
             watch = case.setup == "watch"
             kind = "watch" if watch else "block"
-            reason = "observe_no_output_to_review" if watch else "no_output_to_review"
+            reason = "no_output_to_review"
             reference = cast(Mapping[str, object], case.payload["guard_source_ref"])
             digest = str(reference["output_sha256"])
             cases[index] = replace(

@@ -1,0 +1,109 @@
+name: Native Claude launcher dormant pilot
+
+on:
+  pull_request:
+    branches: [main, release/3.2]
+    paths:
+      - "rust/**"
+      - "contracts/launchers/**"
+      - "src/codex_plugin_scanner/guard/**"
+      - "scripts/ci/*claude_launcher*.py"
+      - "tests/test_*claude_launcher*.py"
+      - ".github/workflows/native-claude-launcher-pilot.yml"
+      - ".gitattributes"
+      - "pyproject.toml"
+      - "uv.lock"
+  push:
+    branches: [main, release/3.2]
+    paths:
+      - "rust/**"
+      - "contracts/launchers/**"
+      - "src/codex_plugin_scanner/guard/**"
+      - "scripts/ci/*claude_launcher*.py"
+      - "tests/test_*claude_launcher*.py"
+      - ".github/workflows/native-claude-launcher-pilot.yml"
+      - ".gitattributes"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-claude-launcher-pilot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-correctness:
+    name: Dormant source correctness (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            executable_suffix: ""
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            executable_suffix: ""
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            executable_suffix: ""
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            executable_suffix: ".exe"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONPATH: src
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_INCREMENTAL: "0"
+      HOL_GUARD_BUILD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Install Linux target linker
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install pinned Rust toolchain and target
+        run: >-
+          rustup toolchain install 1.88.0 --profile minimal
+          --component rustfmt --component clippy --target "${{ matrix.target }}"
+      - name: Check source fixtures and preparation isolation
+        run: |
+          uv run --no-sync python scripts/ci/generate_claude_launcher_fixtures.py --check
+          uv run --no-sync pytest -q tests/test_prepare_native_claude_launcher.py tests/test_native_claude_launcher_pilot.py
+          cargo +1.88.0 fmt --manifest-path rust/Cargo.toml --all --check
+      - name: Lint feature-enabled source
+        run: >-
+          cargo +1.88.0 clippy --manifest-path rust/Cargo.toml --locked
+          --target "${{ matrix.target }}" -p hol-guard-runtime
+          --features native-claude-launcher-pilot --all-targets -- -D warnings
+      - name: Run feature tests including platform readers
+        run: >-
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked
+          --target "${{ matrix.target }}" -p hol-guard-runtime
+          --features native-claude-launcher-pilot claude_launcher -- --nocapture
+      - name: Build and prove default command exclusion
+        run: |
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --target "${{ matrix.target }}" -p hol-guard-runtime
+          uv run --no-sync python scripts/ci/check_claude_launcher_capability.py --runtime "rust/target/${{ matrix.target }}/debug/hol-guard-runtime${{ matrix.executable_suffix }}" --expect disabled
+      - name: Build and prove explicit pilot command inclusion
+        run: |
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --target "${{ matrix.target }}" -p hol-guard-runtime --features native-claude-launcher-pilot
+          uv run --no-sync python scripts/ci/check_claude_launcher_capability.py --runtime "rust/target/${{ matrix.target }}/debug/hol-guard-runtime${{ matrix.executable_suffix }}" --expect enabled
+      # No wheel publication, harness registration or performance sampling here.

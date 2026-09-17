@@ -11,15 +11,15 @@ from typing import TYPE_CHECKING, Protocol
 
 from ..stable_digest import stable_digest_hex
 from .jsonc import loads_jsonc
-from .lockfile_text_projection import TextLockfileValidationError, parse_text_lockfile
 from .package_manifest_diff import _DeadlineExceededError
+from .text_lockfile_parse import TextLockfileValidationError, parse_text_lockfile
 
 if TYPE_CHECKING or sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover - Python 3.10 runtime compatibility
     tomllib = importlib.import_module("tomli")
 
-LOCKFILE_PARSER_VERSION = "complete-v1"
+LOCKFILE_PARSER_VERSION = "complete-v2"
 LOCKFILE_MAX_BYTES = 8 * 1024 * 1024
 LOCKFILE_MAX_ENTRIES = 100_000
 LOCKFILE_MAX_NODES = 250_000
@@ -64,7 +64,8 @@ class LockfileParseResult:
     parser_version: str = LOCKFILE_PARSER_VERSION
     manifest_dependencies: tuple[tuple[str, str], ...] | None = None
     direct_version_candidates: tuple[tuple[str, str], ...] = ()
-    yarn_selector_versions: tuple[tuple[tuple[str, ...], str], ...] = ()
+    text_direct_candidates: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    selector_version_candidates: tuple[tuple[str, str, int], ...] = ()
     source_hash_complete: bool = True
     source_byte_count: int | None = None
     source_byte_limit: int | None = None
@@ -152,28 +153,32 @@ def parse_lockfile_text(
         lower_name = path.rsplit("/", 1)[-1].lower()
         if lower_name not in _JSON_LOCKFILES | _JSONC_LOCKFILES | _TOML_LOCKFILES | _TEXT_LOCKFILES:
             raise _LockfileValidationError("unsupported_format")
-        document = (
-            None if lower_name in _TEXT_LOCKFILES else _validate_lockfile_structure(lower_name, text, deadline=deadline)
-        )
+        document = None
         manifest_dependencies = None
-        direct_version_candidates = ()
-        yarn_selector_versions = ()
+        text_direct_candidates: tuple[tuple[str, tuple[str, ...]], ...] = ()
+        selector_version_candidates: tuple[tuple[str, str, int], ...] = ()
         if lower_name in _TEXT_LOCKFILES:
-            projection = parse_text_lockfile(lower_name, text, deadline=deadline, max_entries=LOCKFILE_MAX_ENTRIES)
-            entries = tuple(
-                LockfileDependencyEntry(package_name, package_name, version, False)
-                for package_name, version in projection.dependencies
+            parsed = parse_text_lockfile(
+                lower_name,
+                text,
+                check_deadline=lambda: _ensure_within_deadline(deadline),
+                max_entries=LOCKFILE_MAX_ENTRIES,
+                max_nodes=LOCKFILE_MAX_NODES,
+                max_depth=LOCKFILE_MAX_DEPTH,
             )
-            direct_version_candidates = projection.direct_versions
-            yarn_selector_versions = projection.yarn_selector_versions
-        elif lower_name == "package-lock.json":
+            dependency_map = dict(parsed.dependencies)
+            text_direct_candidates = parsed.direct_candidates
+            selector_version_candidates = parsed.selector_versions
+        else:
+            document = _validate_lockfile_structure(lower_name, text, deadline=deadline)
+            dependency_map = dependency_parser(path, text, deadline=deadline, document=document)
+        if lower_name == "package-lock.json":
             raw_entries = package_lock_parser(text, deadline=deadline, document=document)
             entries = tuple(LockfileDependencyEntry(*entry) for entry in raw_entries)
             # The manifest resolver retains its legacy empty-packages fallback.
             # Both extraction views consume the same validated JSON document.
-            manifest_dependencies = tuple(dependency_parser(path, text, deadline=deadline, document=document).items())
+            manifest_dependencies = tuple(dependency_map.items())
         else:
-            dependency_map = dependency_parser(path, text, deadline=deadline, document=document)
             entries = tuple(
                 LockfileDependencyEntry(
                     dependency_path=package_name,
@@ -188,8 +193,7 @@ def parse_lockfile_text(
             manifest_dependencies is not None and len(manifest_dependencies) > LOCKFILE_MAX_ENTRIES
         ):
             raise _LockfileValidationError("entry_limit_exceeded")
-        if lower_name not in _TEXT_LOCKFILES:
-            direct_version_candidates = _direct_version_candidates(lower_name, document, deadline=deadline)
+        direct_version_candidates = _direct_version_candidates(lower_name, document, deadline=deadline)
         if len(direct_version_candidates) > LOCKFILE_MAX_ENTRIES:
             raise _LockfileValidationError("entry_limit_exceeded")
         _ensure_within_deadline(deadline)
@@ -202,7 +206,8 @@ def parse_lockfile_text(
             budget_ms=budget_ms,
             manifest_dependencies=manifest_dependencies,
             direct_version_candidates=direct_version_candidates,
-            yarn_selector_versions=yarn_selector_versions,
+            text_direct_candidates=text_direct_candidates,
+            selector_version_candidates=selector_version_candidates,
         )
     except _DeadlineExceededError:
         error_reason = "deadline_exceeded"
@@ -298,7 +303,7 @@ def _validate_lockfile_structure(name: str, text: str, *, deadline: float) -> di
         if packages is not None and not isinstance(packages, list):
             raise _LockfileValidationError("unsupported_shape")
         return payload
-    raise _LockfileValidationError("unsupported_format")
+    return None
 
 
 def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:

@@ -400,7 +400,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .venv\Scripts\python.exe ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $runtime = .venv\Scripts\python.exe -I -c 'from codex_plugin_scanner.guard.native_runtime import native_runtime_status; status = native_runtime_status(); assert status.identity is not None; print(status.identity.path)'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .venv\Scripts\python.exe scripts/bench_guard_native_installed_slo.py `
+            --runtime $runtime `
+            --warm-iterations 2 `
+            --cold-iterations 2 `
+            --recovery-iterations 2 `
+            --readiness-samples 2 `
+            --json native-installed-slo.json `
+            --enforce
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
         with:
           name: hol-guard-native-wheel-windows-x64
           path: |
@@ -408,4 +420,5 @@ jobs:
             native-default-auto.json
             native-installed-identity.json
             native-installed-control-lock.json
+            native-installed-slo.json
           if-no-files-found: error

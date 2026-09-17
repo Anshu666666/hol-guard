@@ -25,7 +25,7 @@ from typing import Final, cast
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.ci.rust_io_ownership_contract import capability_contract, scoped_io_category
+from scripts.ci import rust_io_ownership_contract as io_contract
 from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call, scoped_nodes
 
 SCHEMA: Final = "hol-guard.decision-critical-io.v1"
@@ -165,6 +165,7 @@ ROOTS: Final = (
     RootSpec(
         "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py", "complete_native_codex_live_decision"
     ),
+    *(RootSpec(*parts) for parts in io_contract.INITIAL_HEADER_ROOTS),
 )
 
 
@@ -257,7 +258,7 @@ def _category(path: str, kind: str, function: str = "", operation: str = "") -> 
         return "transport_identity"
     if path in _TRANSPORT_DECODE_PATHS and kind == "decode":
         return "transport_decode"
-    scoped = scoped_io_category(path, kind, function, operation)
+    scoped = io_contract.scoped_io_category(path, kind, function, operation)
     if scoped is not None:
         return scoped
     if (
@@ -282,7 +283,7 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
     path = record.path
     if record.name in _EQUIVALENCE_FUNCTIONS:
         yield IoObservation(path, record.node.lineno, record.name, "equivalence", _category(path, "equivalence"), True)
-    for node, function in scoped_nodes(record):
+    for node, function in scoped_nodes(cast(FunctionRecordLike, cast(object, record))):
         if isinstance(node, ast.Call):
             name = _call_name(node)
             chain = _attribute_chain(node.func)
@@ -298,6 +299,8 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
                 kind, operation = "decode", name
             elif name in _ARCHIVE_MODULES:
                 kind, operation = "archive", name
+            elif io_contract.initial_header_transport_operation(path, name):
+                kind, operation = "socket_transport", name
             if kind is not None and operation is not None:
                 yield IoObservation(
                     path, node.lineno, operation, kind, _category(path, kind, function, operation), True
@@ -433,7 +436,7 @@ def _inventory(
 
 
 def _capability_contract() -> list[dict[str, object]]:
-    return capability_contract(COMPATIBILITY_MODES)
+    return io_contract.capability_contract(COMPATIBILITY_MODES)
 
 
 def validate(root: Path) -> dict[str, object]:

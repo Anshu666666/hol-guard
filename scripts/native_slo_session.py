@@ -28,27 +28,13 @@ from codex_plugin_scanner.guard.native_resident_client import close_native_resid
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
+from scripts.native_slo_capacity_http import MAX_HTTP_RESPONSE_BYTES as _MAX_HTTP_RESPONSE_BYTES
+from scripts.native_slo_capacity_http import capacity_http_response
+from scripts.native_slo_capacity_http import is_explicit_capacity_response as _is_explicit_capacity_response
 from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
-from scripts.native_slo_source_witness import source_reference_denial_witness, source_review_witness
+from scripts.native_slo_source_witness import source_review_witness
 
-_MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
-_CAPACITY_FAIL_SAFE = {
-    "decision": "deny",
-    "model_output_action": "block",
-    "policy_action": "deny",
-    "reason_code": "daemon_capacity",
-}
-_CAPACITY_REASON_CODES = frozenset(
-    {
-        "daemon_capacity",
-        "daemon_overloaded",
-        "daemon_hook_queue_capacity",
-        "daemon_hook_queue_bytes",
-        "daemon_hook_deadline_exhausted",
-        "native_overloaded",
-    }
-)
 _STOP_DIAGNOSTIC_SCHEMA = "hol-guard.native-resident-stop-diagnostic.v1"
 _STOP_DIAGNOSTIC_PATH_ENV = "NATIVE_STOP_DIAGNOSTIC_PATH"
 _STOP_DIAGNOSTIC_FIELDS = (
@@ -228,9 +214,7 @@ def _request(
                 ),
             )
         except _DaemonResponseError as error:
-            if error.status != 503:
-                raise RuntimeError("adapter request failed") from error
-            return _CAPACITY_FAIL_SAFE.copy()
+            return capacity_http_response(error.status, error.detail, authenticated=error.authenticated)
     elif harness == "claude-code":
         try:
             response = json.loads(
@@ -242,9 +226,7 @@ def _request(
                 )
             )
         except _DaemonResponseError as error:
-            if error.status != 503:
-                raise RuntimeError("adapter request failed") from error
-            return _CAPACITY_FAIL_SAFE.copy()
+            return capacity_http_response(error.status, error.detail, authenticated=error.authenticated)
         except (OSError, ValueError) as error:
             raise RuntimeError("adapter request failed") from error
     else:
@@ -263,32 +245,28 @@ def _request(
                 connection.request("POST", path, body=encoded.encode("utf-8"), headers=headers)
                 opened = connection.getresponse()
             status = opened.status
-            raw = opened.read(_MAX_HTTP_RESPONSE_BYTES + 1)
-            opened.close()
+            try:
+                raw = opened.read(_MAX_HTTP_RESPONSE_BYTES + 1)
+            finally:
+                opened.close()
         except urllib.error.HTTPError as error:
-            if error.code == 503:
-                return _CAPACITY_FAIL_SAFE.copy()
-            raise RuntimeError("adapter request failed") from error
+            try:
+                raw = error.read(_MAX_HTTP_RESPONSE_BYTES + 1)
+            finally:
+                error.close()
+            status = error.code
         except (OSError, urllib.error.URLError) as error:
             raise RuntimeError("adapter request failed") from error
         if len(raw) > _MAX_HTTP_RESPONSE_BYTES:
             raise RuntimeError("adapter response exceeded bound")
-        if status == 503:
-            return _CAPACITY_FAIL_SAFE.copy()
         try:
-            response = json.loads(raw.decode("utf-8"))
+            text = raw.decode("utf-8")
+            response = capacity_http_response(status, text) if status != 200 else json.loads(text)
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
             raise RuntimeError("adapter response was not JSON") from error
     if not isinstance(response, Mapping):
         raise RuntimeError("native_installed_slo_failed: adapter response was not an object")
     return response
-
-
-def _is_explicit_capacity_response(response: Mapping[str, object]) -> bool:
-    """Recognize only the daemon's bounded overload/capacity outcomes."""
-
-    reason_code = response.get("reason_code")
-    return isinstance(reason_code, str) and reason_code in _CAPACITY_REASON_CODES
 
 
 class AdapterSession:
@@ -376,7 +354,7 @@ class AdapterSession:
     ) -> Observation:
         request = request_payload or payload(event, size_class)
         before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        with source_review_witness(self.daemon._server.hook_worker, request):
+        with source_review_witness(self.daemon._server.hook_worker, request, harness=harness, size_class=size_class):
             started = time.perf_counter()
             response = _request(
                 self.daemon,
@@ -398,61 +376,32 @@ class AdapterSession:
             _is_explicit_capacity_response(response),
         )
 
+    def observe_unattributed(self, harness: str, event: str, size_class: str) -> Observation:
+        from scripts.native_slo_capacity_observer import observe_unattributed
+
+        return observe_unattributed(self, harness, event, size_class)
+
+    def capacity_route_snapshot(self) -> Mapping[str, object]:
+        from scripts.native_slo_capacity_observer import capacity_route_snapshot
+
+        return capacity_route_snapshot(self)
+
+    def wait_for_capacity_bookkeeping(self, timeout_seconds: float = 5.0) -> bool:
+        from scripts.native_slo_capacity_observer import wait_for_capacity_bookkeeping
+
+        return wait_for_capacity_bookkeeping(self, timeout_seconds)
+
     def native_overload_count(self) -> int:
         """Return the process-local native overload counter for this session."""
 
         return native_runtime_health(self.guard_home).overloads
 
     def probe_source_reference_denial(
-        self,
-        harness: str,
-        event: str,
-        size_class: str,
-        request: Mapping[str, object],
+        self, harness: str, event: str, size_class: str, request: Mapping[str, object]
     ) -> dict[str, object]:
-        """Retain a platform denial proof outside every SLO sample collection."""
-        from scripts.native_slo_workloads import QualificationCase, _post_expected, validate_case
+        from scripts.native_slo_source_denial import probe_source_reference_denial
 
-        before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        with source_reference_denial_witness(self.daemon._server.hook_worker, request):
-            response = _request(
-                self.daemon,
-                guard_home=self.guard_home,
-                workspace=self.workspace,
-                harness=harness,
-                request_payload=request,
-                connection=self._connection,
-            )
-        after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        route = route_delta(before, after)
-        case = QualificationCase(
-            f"{harness}/{event}/platform-source-denial/{size_class}",
-            harness,
-            event,
-            "PostToolUse",
-            size_class,
-            request,
-            _post_expected(harness, "block", "no_output_to_review"),
-            "native_resident",
-            "normal",
-            "platform_source_reference_denial",
-            0,
-            0,
-            "source_file_ref",
-            validation_scope="platform_source_reference_denial",
-        )
-        validate_case(case, response, route)
-        return {
-            "harness": harness,
-            "event": event,
-            "size_class": size_class,
-            "route": route,
-            "reason_code": "no_output_to_review",
-            "native_denial_validated": True,
-            "delivered_denial_validated": True,
-            "full_review": False,
-            "headline_timing_eligible": False,
-        }
+        return probe_source_reference_denial(self, harness, event, size_class, request)
 
     def close(self) -> None:
         try:

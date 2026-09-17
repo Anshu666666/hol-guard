@@ -5,9 +5,34 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 _GUARD = "src/codex_plugin_scanner/guard/"
-# Each entry names a complete lexical function and only its observed primitive
-# operations. Siblings, nested functions and new content operations stay closed.
+_INITIAL_HEADER_PATH = _GUARD + "daemon/initial_header_reader.py"
+INITIAL_HEADER_ROOTS = tuple(
+    (_INITIAL_HEADER_PATH, name, "InitialHeaderReader") for name in ("__init__", "readinto", "close")
+)
+_INITIAL_HEADER_OPERATIONS = frozenset({"gettimeout", "dup", "setblocking", "recv_into", "register", "select", "close"})
+# Each entry names a complete lexical function and its observed primitives.
+# Other functions and primitives do not inherit these purpose classifications.
 _SCOPED_IO = {
+    ("daemon/initial_header_reader.py", "InitialHeaderReader.__init__", "socket_transport"): (
+        "initial_header_transport",
+        frozenset({"gettimeout", "dup", "setblocking"}),
+    ),
+    ("daemon/initial_header_reader.py", "InitialHeaderReader.readinto", "socket_transport"): (
+        "initial_header_transport",
+        frozenset({"recv_into"}),
+    ),
+    ("daemon/initial_header_reader.py", "InitialHeaderReader._wait_for_data", "socket_transport"): (
+        "initial_header_transport",
+        frozenset({"register", "select"}),
+    ),
+    ("daemon/initial_header_reader.py", "InitialHeaderReader._close_observer", "socket_transport"): (
+        "initial_header_transport",
+        frozenset({"close"}),
+    ),
+    ("daemon/initial_header_reader.py", "InitialHeaderReader.close", "socket_transport"): (
+        "initial_header_transport",
+        frozenset({"close"}),
+    ),
     ("native_command_control_binding.py", "native_command_control_floor_mac", "decode"): (
         "transport_decode",
         frozenset({"decode"}),
@@ -56,6 +81,11 @@ _SCOPED_IO = {
 }
 
 
+def initial_header_transport_operation(path: str, operation: str | None) -> bool:
+    """Inventory only this helper's socket primitives, without exempting content I/O."""
+    return path == _INITIAL_HEADER_PATH and operation in _INITIAL_HEADER_OPERATIONS
+
+
 def scoped_io_category(path: str, kind: str, function: str, operation: str = "") -> str | None:
     if not path.startswith(_GUARD):
         return None
@@ -67,6 +97,15 @@ def scoped_io_category(path: str, kind: str, function: str, operation: str = "")
 
 def capability_contract(compatibility_modes: Iterable[str]) -> list[dict[str, object]]:
     return [
+        {
+            "id": "initial_http_header_transport",
+            "authority": "python_byte_transport",
+            "python_decision_time_disk_io": False,
+            "inventory_category": "initial_header_transport",
+            "python_semantic_fallback": False,
+            "scope": "initially_incomplete_headers_original_absolute_deadline_and_atomic_ownership_transfer",
+            "failure": "request_closed_without_dispatch",
+        },
         {
             "id": "native_codex_browser_continuation_control",
             "authority": "python_control_plane_with_verified_rust_decision",

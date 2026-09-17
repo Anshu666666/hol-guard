@@ -70,3 +70,31 @@ Focused source regression run after this audit: 133 tests passed across the
 session fixture, source witness, fault setup, SLO contracts, startup, installed
 Ollama controls, wheel probes and default-auto suites. Platform runs must
 still establish actual installed admission and large-source success.
+
+## Round-four source witness failure diagnostics
+
+The macOS Intel native-wheel job `105154528161` in run `35206822343` failed
+the exact source witness after its installed identity, default-auto and OMP
+plugin probes succeeded. The recorded merge source was
+`f7293abfe50cfb8f6b05e99f3e1b9c0449ada61c`. That source already canonicalized
+the temporary workspace and wrote eligible `.rs` fixtures with exact byte
+writes. The original exception omitted the failing harness, content size and
+native result, so it cannot establish whether the cause was absent native
+review, a source denial, a deadline, or a digest mismatch. No source-policy
+relaxation or retrospective diagnosis is justified by that traceback.
+
+The strict witness now reports a bounded failure summary: allowlisted harness
+and size, at most two native observations, fixed authority/decision/action/reason
+fields, and digest-present/matching booleans. It also retains bounded native-call
+elapsed milliseconds and the original deadline's remaining milliseconds at
+entry. These values diagnose elapsed-budget failure; they never refresh or
+extend that budget. Two monotonic clock reads and the tiny metadata callback
+execute inside the measured HTTP interval; failure formatting remains outside.
+No source text, paths, digest values or arbitrary reason strings enter the
+failure summary. Unknown values become `other`.
+
+Acceptance still requires exactly one actual Rust `allow/allow_original` result
+whose reviewed digest equals the offered full-content digest. Missing output,
+multiple calls, denials, wrong digest and non-native results continue to fail.
+Installed source qualification remains open until a fresh platform run passes
+or identifies a concrete underlying defect through these retained diagnostics.

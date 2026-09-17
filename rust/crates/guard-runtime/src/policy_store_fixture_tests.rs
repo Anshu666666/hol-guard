@@ -1,8 +1,33 @@
-use super::{fixture_file, test_root};
+//! Filesystem fixture setup and its overwrite/create-only security regression.
+
+use super::test_root;
 use std::fs;
 use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+
+pub(super) fn fixture_directory(path: &Path) {
+    #[cfg(windows)]
+    {
+        crate::resident_state::ensure_private_directory(path, true).unwrap();
+    }
+    #[cfg(not(windows))]
+    fs::create_dir(path).unwrap();
+}
+
+pub(super) fn fixture_file(path: &Path, bytes: &[u8]) {
+    #[cfg(windows)]
+    {
+        let private_root = path.parent().unwrap_or(path);
+        // Match fs::write below: fault and marker fixtures intentionally replace
+        // existing bytes. CREATE_NEW correctly rejects those repeated writes.
+        let mut file = crate::resident_state::private_file(path, false, private_root).unwrap();
+        file.write_all(bytes).unwrap();
+    }
+    #[cfg(not(windows))]
+    fs::write(path, bytes).unwrap();
+}
 
 #[test]
 fn fixture_rewrite_truncates_private_file_without_weakening_create_new() {

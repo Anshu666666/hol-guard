@@ -252,8 +252,10 @@ def _canonical_content_digest(content: list[dict[str, Any]]) -> str:
 
 
 def _write_cli_wrapper(path: Path, *, python_path: Path, log_path: Path, negative: bool) -> None:
+    # Bind the shebang to the probe interpreter. `env python3` is missing or slow
+    # on some hosted macOS Intel images, so recovery/CLI timeouts skip the wrapper.
     source = f"""\
-#!/usr/bin/env python3
+#!{python_path}
 import base64
 import json
 import os
@@ -1258,6 +1260,12 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
         real_output_evidence = _assert_real_results(real_results, cases)
         real_fetch_evidence = _assert_fetch_evidence(real_fetches, real_results, cases)
         native_routes = _wait_for_native_route_metrics(daemon, len(cases))
+        # Negative cases must use the fail-closed CLI wrapper, not the still-running
+        # positive daemon. Stop it first so recovery cannot starve wrapper spawn.
+        _cleanup_installed_daemon(daemon)
+        daemon = None
+        _cleanup_native(identity, guard_home)
+        native_started = False
         negative_home = root / "negative-home"
         negative_guard_home = root / "negative-guard-home"
         negative_workspace = root / "negative-workspace"
@@ -1267,13 +1275,23 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
         negative_cli = negative_home / ".local" / "bin" / "hol-guard"
         negative_cli.parent.mkdir(mode=0o700, parents=True)
         _write_cli_wrapper(negative_cli, python_path=python_path, log_path=negative_log, negative=True)
-        negative_extension = root / "negative-extension.ts"
-        _generate_extension(
-            negative_extension,
-            guard_home=negative_guard_home,
-            home=negative_home,
-            settings_path=root / "negative-settings.json",
-        )
+        negative_settings = root / "negative-settings.json"
+        negative_settings.write_text("{}\n", encoding="utf-8")
+        previous_owner = os.environ.get("HOL_GUARD_DESKTOP_RUNTIME_OWNER")
+        os.environ["HOL_GUARD_DESKTOP_RUNTIME_OWNER"] = str(negative_cli)
+        try:
+            negative_extension = root / "negative-extension.ts"
+            _generate_extension(
+                negative_extension,
+                guard_home=negative_guard_home,
+                home=negative_home,
+                settings_path=negative_settings,
+            )
+        finally:
+            if previous_owner is None:
+                os.environ.pop("HOL_GUARD_DESKTOP_RUNTIME_OWNER", None)
+            else:
+                os.environ["HOL_GUARD_DESKTOP_RUNTIME_OWNER"] = previous_owner
         negative_cases_path = root / "negative-cases.json"
         negative_cases = _negative_cases()
         negative_cases_path.write_text(json.dumps(negative_cases, ensure_ascii=True), encoding="utf-8")

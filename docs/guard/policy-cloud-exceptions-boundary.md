@@ -17,6 +17,8 @@ hardening beyond the live-state check in `policy_bundle_is_enforceable`.
 ## What still holds
 
 - Local Review/Inbox decides the live pause. That is not Policy.
+- Evidence is the receipt and history workspace for what already happened. It is
+  not Policy and not a place to author exceptions.
 - Cloud exceptions are governed risk acceptances delivered in a signed bundle.
   Local Policy must not author broad exceptions on the device. Cloud scope
   remains `GuardExceptionScope`: `artifact`, `publisher`, or `harness`. Broader

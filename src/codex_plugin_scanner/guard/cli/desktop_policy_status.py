@@ -27,8 +27,11 @@ def _revision(value: object) -> str | None:
 
 
 def policy_application_evidence(
-    bundle: dict[str, object], acknowledgement: object,
-    *, workspace_id: str | None, device_id: str | None,
+    bundle: dict[str, object],
+    acknowledgement: object,
+    *,
+    workspace_id: str | None,
+    device_id: str | None,
 ) -> dict[str, object]:
     """A transport timestamp or an unrelated applied ACK is not this authority."""
     evidence: dict[str, object] = {
@@ -65,18 +68,22 @@ def read_policy_application_evidence(store: GuardStore) -> dict[str, object]:
     if bundle is not None:
         summary = store.get_sync_payload("runtime_session_summary")
         device = summary.get("runtime_device_id") if isinstance(summary, dict) else None
-        evidence.update(policy_application_evidence(
-            bundle, store.get_sync_payload("policy_bundle_ack"),
-            workspace_id=store.get_cloud_workspace_id(),
-            device_id=device if isinstance(device, str) else None,
-        ))
+        evidence.update(
+            policy_application_evidence(
+                bundle,
+                store.get_sync_payload("policy_bundle_ack"),
+                workspace_id=store.get_cloud_workspace_id(),
+                device_id=device if isinstance(device, str) else None,
+            )
+        )
         with store._connect() as connection:
             row = connection.execute(
                 "select installation_id from guard_devices where device_key = 'local-device'",
             ).fetchone()
         installation_id = row["installation_id"] if row is not None else None
         if not isinstance(installation_id, str) or not canonical_policy_enforcement_enabled(
-            device_id=installation_id, workspace_id=store.get_cloud_workspace_id(),
+            device_id=installation_id,
+            workspace_id=store.get_cloud_workspace_id(),
         ):
             evidence.pop("appliedRevision", None)
             evidence.pop("policyLastAckAt", None)

@@ -19,7 +19,11 @@ if TYPE_CHECKING:
 
 
 def run_desktop_status_command(
-    args: argparse.Namespace, *, guard_home: Path, context: HarnessContext, output_stream: TextIO | None = None,
+    args: argparse.Namespace,
+    *,
+    guard_home: Path,
+    context: HarnessContext,
+    output_stream: TextIO | None = None,
 ) -> int:
     store = None
     try:
@@ -28,7 +32,12 @@ def run_desktop_status_command(
         # product config fields are not included in this contract.
         config = GuardConfig(guard_home=guard_home, workspace=context.workspace_dir)
         return _run_guard_desktop_command(
-            args, guard_home=guard_home, context=context, store=store, config=config, output_stream=output_stream,
+            args,
+            guard_home=guard_home,
+            context=context,
+            store=store,
+            config=config,
+            output_stream=output_stream,
         )
     except (OSError, sqlite3.DatabaseError, ValueError):
         print("Guard status could not be read. Open Guard to check local setup or repair it.", file=sys.stderr)

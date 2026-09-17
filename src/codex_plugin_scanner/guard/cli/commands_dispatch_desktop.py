@@ -421,11 +421,14 @@ def _run_guard_desktop_command(
     )
     from .desktop_policy_status import read_policy_application_evidence
 
-    payload["cloud"].update(read_policy_application_evidence(store))
-    if command == "status":
-        payload["dashboard"]["available"] = bool(payload["daemon"]["running"])
+    cloud = payload.get("cloud")
+    if isinstance(cloud, dict):
+        cloud.update(read_policy_application_evidence(store))
     dashboard = payload.get("dashboard")
+    daemon = payload.get("daemon")
     if isinstance(dashboard, dict):
+        if command == "status" and isinstance(daemon, dict):
+            dashboard["available"] = bool(daemon.get("running"))
         if session_url is not None:
             dashboard["sessionUrl"] = session_url
         dashboard["canonical"] = True

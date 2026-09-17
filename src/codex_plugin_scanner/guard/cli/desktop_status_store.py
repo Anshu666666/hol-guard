@@ -25,7 +25,10 @@ class DesktopStatusStore(GuardStore):
     from any inherited reader, including future changes to those readers.
     """
 
-    def __init__(self, guard_home: Path, *, source: str = "default") -> None:
+    def __init__(  # pyright: ignore[reportMissingSuperCall]
+        self, guard_home: Path, *, source: str = "default"
+    ) -> None:
+        # Passive status deliberately bypasses the mutating GuardStore constructor.
         self.guard_home = guard_home
         self.path = guard_home / "guard.db"
         self._guard_source = _normalize_source_name(source)
@@ -61,7 +64,8 @@ class DesktopStatusStore(GuardStore):
         metadata = self._oauth_local_credentials_metadata(payload)
         secret = _read_existing_oauth_secret(self.guard_home, payload)
         healthy = (
-            metadata is not None and secret is not None
+            metadata is not None
+            and secret is not None
             and self._build_oauth_local_credentials_result(metadata=metadata, secret_payload=secret) is not None
         )
         return {"configured": True, "state": "healthy" if healthy else "degraded"}
@@ -108,8 +112,12 @@ class DesktopStatusStore(GuardStore):
             blocked += int(action == "block")
             approved += int(action in {"allow", "warn"})
         latest = self._connection.execute("select max(timestamp) from runtime_receipts").fetchone()
-        return {"total": total, "blocked": blocked, "approved": approved,
-                "latest_at": latest[0] if latest is not None else None}
+        return {
+            "total": total,
+            "blocked": blocked,
+            "approved": approved,
+            "latest_at": latest[0] if latest is not None else None,
+        }
 
 
 def _read_existing_oauth_secret(guard_home: Path, metadata: dict[str, object]) -> dict[str, object] | None:
@@ -118,13 +126,19 @@ def _read_existing_oauth_secret(guard_home: Path, metadata: dict[str, object]) -
 
     secret_ref = metadata.get(_OAUTH_LOCAL_CREDENTIALS_REF_KEY)
     secret_hash = metadata.get(_OAUTH_LOCAL_CREDENTIALS_HASH_KEY)
-    if (not isinstance(secret_ref, str) or not 0 < len(secret_ref) <= 512 or "\\" in secret_ref
-            or not isinstance(secret_hash, str)):
+    if (
+        not isinstance(secret_ref, str)
+        or not 0 < len(secret_ref) <= 512
+        or "\\" in secret_ref
+        or not isinstance(secret_hash, str)
+    ):
         return None
     normalized_ref = secret_ref.replace("/", "_").replace(":", "_")
     key = read_private_regular_text(guard_home / "secrets" / "key.bin", max_bytes=4096, require_private_parent=True)
     encrypted = read_private_regular_text(
-        guard_home / "secrets" / f"{normalized_ref}.enc", max_bytes=131072, require_private_parent=True,
+        guard_home / "secrets" / f"{normalized_ref}.enc",
+        max_bytes=131072,
+        require_private_parent=True,
     )
     if key is None or encrypted is None:
         return None

@@ -31,7 +31,9 @@ _OUTPUT_LIMIT = 128 * 1024
 _PLIST_LIMIT = 128 * 1024
 _EXECUTABLE_LIMIT = 128 * 1024 * 1024
 _LABEL = re.compile(r"com\.apple\.mDNSResponder(?:\.reloaded)?\Z")
-_ANCHOR = ("/usr/bin/codesign", "--verify", "--strict", "-R", "anchor apple", str(_EXECUTABLE))
+# codesign treats an unprefixed requirement operand as a filename. The leading
+# equals sign selects inline source, as in Apple's documented -R="anchor apple".
+_ANCHOR = ("/usr/bin/codesign", "--verify", "--strict", "-R", "=anchor apple", str(_EXECUTABLE))
 
 
 def _limit_child_output() -> None:

@@ -126,6 +126,19 @@ def test_readonly_host_probe_binds_actual_label_signature_program_and_unchanged_
         assert report[field] is False
 
 
+def test_signature_invocation_passes_inline_requirement_with_the_original_apple_policy(monkeypatch):
+    calls, _ = _host(monkeypatch)
+    diagnostic.collect()
+    assert calls[0] == (
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "-R",
+        "=anchor apple",
+        "/usr/sbin/mDNSResponder",
+    )
+
+
 @pytest.mark.parametrize("options", [{"signature": 1}, {"printed": 113}, {"changed": True}])
 def test_rejection_or_changed_file_never_earns_identity_credit(monkeypatch, options):
     calls, _ = _host(monkeypatch, **options)

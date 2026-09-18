@@ -261,11 +261,13 @@ def test_withdrawal_between_actual_batches_stops_optional_rows_but_keeps_control
 
     monkeypatch.setattr(runner, "_urlopen_json_with_timeout_retry", receive)
     runner.sync_receipts(store, auth_context=AUTH)
-    assert len(requests) == 2 and len(requests[0]["receipts"]) == 1
+    assert len(requests) == 2
+    first_receipts = requests[0]["receipts"]
+    assert isinstance(first_receipts, list) and len(first_receipts) == 1
     assert requests[1]["receipts"] == []
     state = cursor(store)
     assert isinstance(state, dict)
-    sent_receipt = requests[0]["receipts"][0]
+    sent_receipt = first_receipts[0]
     assert isinstance(sent_receipt, dict)
     # Exactly the first accepted local row advances, while the other remains pending.
     rows = store.list_receipts_since_rowid(after_rowid=state["last_rowid"], limit=10)
@@ -279,6 +281,7 @@ def test_authentication_retry_rechecks_scope_and_local_consent(
     mutation: str,
 ) -> None:
     import urllib.error
+    from email.message import Message
 
     from tests.test_workspace_preferences import OTHER
 
@@ -296,7 +299,7 @@ def test_authentication_retry_rechecks_scope_and_local_consent(
     def receive(**kwargs):
         attempts.append(json.loads(kwargs["request"].data))
         if len(attempts) == 1:
-            raise urllib.error.HTTPError(str(AUTH["sync_url"]), 401, "expired", {}, None)
+            raise urllib.error.HTTPError(str(AUTH["sync_url"]), 401, "expired", Message(), None)
         return {"syncedAt": NOW, "receiptsStored": 0, "workspacePreferences": wire(), "receiptSyncAccepted": True}
 
     monkeypatch.setattr(runner, "_resolve_guard_sync_auth_context", resolve)

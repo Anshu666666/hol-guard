@@ -19,6 +19,7 @@ from typing import Any
 
 BASE = "bc0479bcab1cbc925421c9ebc7a7b926bccd131d"
 BASE_TREE = "28ad4a5c3f0f3f5860f81a19c150b43aca7b6ba6"
+PARENT = "5dc6b72ecca8bceb9bf57971df54d4a0461b2175"
 HTTP = "tests/test_guard_bounded_http_exception_compatibility.py"
 LIFECYCLE = "tests/test_guard_daemon_lifecycle_transition.py"
 LIFECYCLE_CASE = "test_failed_start_retains_ownership_when_serve_join_returns_a_live_thread"
@@ -156,7 +157,7 @@ def verify_source() -> dict[str, object]:
         raise RuntimeError("source_identity")
     if git("rev-parse", "HEAD^{tree}").decode().strip() != tree:
         raise RuntimeError("source_identity")
-    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != BASE:
+    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != PARENT:
         raise RuntimeError("source_parent")
     if git("rev-parse", BASE + "^{tree}").decode().strip() != BASE_TREE:
         raise RuntimeError("source_base")

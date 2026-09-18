@@ -1,0 +1,7 @@
+# Combined MCP security integration checks
+
+Exact local source `b9b3d6975e3e0879f6a26a56538d6e07ab2f2144` combines published implementation 590 with the three separately reviewed MCP corrections, the explicit historical-adapter test reconciliation, and the actual 590 publication receipt. Native authority, Python semantic boundary, I/O ownership and full-production Ruff pass. All tracked executable-source hashes remain identical before and after these checks. Raw commands, logs, durations including any shared-lock wait, and source inventories are retained.
+
+The root separately verifies the four component manifests, including original failed mutation/capture/completed-receipt witnesses and their fixes; every changed MCP source/test file matches the exact independently reviewed source. The component's 87-case finite validation remains separate from these integration gates. All 395 Desktop source bindings still match the unchanged fixture; these MCP files are outside that inventory and no regeneration ran.
+
+The default still derives risk categories twice. No per-call optimization, E/F campaign replay, installed qualification, independent GitHub approval or activation is established by this source check. The current published 590 cohort tests its own earlier source and does not qualify these later MCP changes. The original 144 task constraints, status counts and complete RSP-106 remain unchanged.

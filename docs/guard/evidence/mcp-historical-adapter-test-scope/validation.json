@@ -1,0 +1,68 @@
+{
+  "archived_obsolete_case_count": 36,
+  "current_production_binding_cases": 24,
+  "final_tests": {
+    "elapsed_seconds": 8.52,
+    "passed": 87,
+    "raw": "test-scope-final.log.gz",
+    "receipt": "test-scope-final-receipt.json"
+  },
+  "initial_tests": {
+    "elapsed_seconds": 9.0,
+    "passed": 84,
+    "raw": "test-scope-first.log.gz",
+    "receipt": "test-scope-first-receipt.json"
+  },
+  "measurement_workers": "Forbidden by test-only fixture; accounting predicates use stubbed workers.",
+  "new_current_runtime_incompatibility_cases": 18,
+  "original_records_verified": 14,
+  "retained_helper_case_count": 45,
+  "scope": "Finite current-production source validation, not repository CI, performance, E/F activation, or replacement historical evidence.",
+  "source_base": "a9290fda493b93ce1df0113865d7eb487ebd57d5",
+  "static_checks": [
+    {
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "tests/test_mcp_owned_preparation_pilot.py",
+        "tests/test_mcp_streaming_preparation_pilot.py"
+      ],
+      "exit_code": 0,
+      "output": "All checks passed!\n"
+    },
+    {
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "tests/test_mcp_owned_preparation_pilot.py",
+        "tests/test_mcp_streaming_preparation_pilot.py"
+      ],
+      "exit_code": 0,
+      "output": "2 files already formatted\n"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "unchanged_scopes_from_source_base": [
+    "src",
+    "scripts",
+    "contracts",
+    "pyproject.toml",
+    "uv.lock",
+    "docs/guard/rust-performance",
+    "docs/guard/rust-performance-mcp-owned-preparation.md",
+    "docs/guard/rust-performance-mcp-streaming-preparation.md"
+  ]
+}

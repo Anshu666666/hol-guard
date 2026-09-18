@@ -1,0 +1,112 @@
+{
+  "schema": "guard.mcp-tool-call-binding.capture.v1",
+  "parent_commit": "9ca32244684f1c4aa4e4d5bd77698c2d914bc1ef",
+  "cwd": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+  "python": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+  "environment": {
+    "PYTHONPATH": "src"
+  },
+  "lock": "/workspace/scratch/c25672eb4c10/validation.lock",
+  "source_files": {
+    "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py": "892fb2a5fe47170f4ca39dd947d40f056819e73e319d945c4d8d7b93186c20fc",
+    "tests/test_runtime_mcp_tool_call_binding.py": "01eafdbc1ced70c5aadb13815eae314c70ca66e51a93098f4fcb8b5ca9223fd4"
+  },
+  "records": [
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_plain_dict_capture_failure_never_selects_unsupported_fallback"
+      ],
+      "stage": "before repair",
+      "exit_code": 1,
+      "failed": 1,
+      "seconds": 0.4,
+      "raw": "capture-failure-before.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "stage": "repair before exception suffix rename",
+      "exit_code": 0,
+      "passed": 21,
+      "seconds": 0.88,
+      "raw": "capture-failure-after.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "stage": "final source",
+      "exit_code": 0,
+      "passed": 21,
+      "seconds": 0.95,
+      "raw": "capture-failure-final.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "basedpyright",
+        "--outputjson",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "files_analyzed": 1,
+      "errors": 0,
+      "warnings": 18,
+      "seconds": 0.445,
+      "raw": "capture-failure-types.json.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "capture-failure-ruff.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "capture-failure-format.log.gz"
+    }
+  ],
+  "initial_lint_failure": {
+    "code": "N818",
+    "meaning": "Initial exception class name lacked Error suffix; renamed before final source checks."
+  },
+  "scope": {
+    "production_runtime_unchanged_from_parent": true,
+    "original_evidence_manifest_unchanged": true,
+    "historical_adapters_not_rerun": true,
+    "performance_runs_started": false,
+    "risk_reuse_implemented": false,
+    "rsp100_complete": false
+  }
+}

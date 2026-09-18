@@ -171,7 +171,14 @@ fn run() -> Result<(), String> {
                 && flag == "--stdin" =>
         {
             let bytes = read_stdin_bounded()?;
-            let timeout = managed_resident::client_timeout(&bytes);
+            let timeout = match managed_resident::client_timeout(&bytes) {
+                Ok(timeout) => timeout,
+                Err(error) => {
+                    return write_bytes_response(&resident_protocol::safe_error_response(
+                        &error, false,
+                    ));
+                }
+            };
             let response = managed_resident::client_request(
                 std::path::Path::new(state_dir),
                 &bytes,

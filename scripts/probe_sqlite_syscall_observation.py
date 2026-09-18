@@ -21,6 +21,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.sqlite_syscall_probe_supervision import RAW_CALLS, _run_child
+from scripts.sqlite_syscall_trace_diagnostics import SyntaxDiagnostics
 
 PAYLOAD_SENTINEL = b"rsp131-private-value-never-in-observer-report"
 PRIVATE_MARKER = b"rsp131-private"
@@ -28,7 +29,9 @@ _LINE = re.compile(r"^(?:\[pid\s+(\d+)\]\s+|(\d+)\s+)?(.*)$")
 _CALL = re.compile(r"^([a-z][a-z0-9_]*)\((.*)\)\s+=\s+(.+)$")
 
 
-def parse_calls(trace: bytes, owner_pid: int) -> tuple[list[tuple[int, str, str, str]], bool]:
+def parse_calls(
+    trace: bytes, owner_pid: int, diagnostics: SyntaxDiagnostics | None = None
+) -> tuple[list[tuple[int, str, str, str]], bool]:
     """Retain no raw lines in returned errors; incomplete pairs fail closed."""
     calls: list[tuple[int, str, str, str]] = []
     pending: dict[int, str] = {}
@@ -36,11 +39,15 @@ def parse_calls(trace: bytes, owner_pid: int) -> tuple[list[tuple[int, str, str,
     for line in trace.decode("utf-8", errors="replace").splitlines():
         match = _LINE.fullmatch(line)
         if match is None:
+            if diagnostics is not None:
+                diagnostics.record("invalid_prefix", line)
             valid = False
             continue
         tid = int(match[1] or match[2] or owner_pid)
         body = match[3]
         if body.endswith(" <unfinished ...>"):
+            if diagnostics is not None and tid in pending:
+                diagnostics.record("duplicate_unfinished", line)
             valid &= tid not in pending
             pending[tid] = body.removesuffix(" <unfinished ...>")
             continue
@@ -48,6 +55,15 @@ def parse_calls(trace: bytes, owner_pid: int) -> tuple[list[tuple[int, str, str,
             resumed = re.fullmatch(r"<\.\.\. ([a-z][a-z0-9_]*) resumed>(.*)", body)
             prefix = pending.pop(tid, None)
             if resumed is None or prefix is None or not prefix.startswith(resumed[1] + "("):
+                if diagnostics is not None:
+                    reason = (
+                        "malformed_resumed"
+                        if resumed is None
+                        else "unmatched_resumed"
+                        if prefix is None
+                        else "mismatched_resumed"
+                    )
+                    diagnostics.record(reason, line)
                 valid = False
                 continue
             body = prefix + resumed[2]
@@ -55,7 +71,12 @@ def parse_calls(trace: bytes, owner_pid: int) -> tuple[list[tuple[int, str, str,
         if call is not None:
             calls.append((tid, call[1], call[2], call[3]))
         elif not (body.startswith(("+++ ", "--- ", "strace: Process "))):
+            if diagnostics is not None:
+                diagnostics.record("unrecognized_record", line)
             valid = False
+    if diagnostics is not None:
+        for prefix in pending.values():
+            diagnostics.record("dangling_unfinished", prefix)
     return calls, valid and not pending
 
 
@@ -192,6 +213,7 @@ def run_probe() -> dict[str, object]:
         Path(__file__),
         Path(__file__).with_name("sqlite_syscall_probe_child.py"),
         Path(__file__).with_name("sqlite_syscall_probe_supervision.py"),
+        Path(__file__).with_name("sqlite_syscall_trace_diagnostics.py"),
     ]
     report: dict[str, Any] = {
         "schema": "guard.sqlite-syscall-feasibility.v1",
@@ -248,7 +270,9 @@ def run_probe() -> dict[str, object]:
         else:
             actual = measured["child"]
             identity = actual["identity"]
-            calls, parsed = parse_calls(trace, identity["pid"])
+            syntax = SyntaxDiagnostics()
+            calls, parsed = parse_calls(trace, identity["pid"], syntax)
+            report["trace_syntax_diagnostic"] = syntax.summary()
             serial = descriptor_witness(calls, observed, actual)
             sqlite_keys = (
                 "sqlite_version",

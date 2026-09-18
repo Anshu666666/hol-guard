@@ -18,14 +18,16 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 FROZEN_HELPERS = {
-    "scripts/probe_sqlite_syscall_observation.py": "75a10242b231d0fa4089e0cc1eb2168bc39bd5a8b9f18d14da10753d8e1f5cf7",
+    "scripts/probe_sqlite_syscall_observation.py": "0c044d4755e8696d884bbe64876b933b88b28093248bf9e266529a0050f6da2f",
     "scripts/sqlite_syscall_probe_child.py": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
     "scripts/sqlite_syscall_probe_supervision.py": "640c72b86482f4b7564e9c2d87988f6f08655c274790a6bb05d8b4d17e896f37",
+    "scripts/sqlite_syscall_trace_diagnostics.py": "41a7426caf762e779490f37041ec4640b0a8b594bc3fbb6dc13f6b0c411530e9",
     "tests/test_sqlite_syscall_probe_parser.py": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
 }
 HOSTED_SOURCES = (
     "scripts/ci/run_sqlite_syscall_diagnostic.py",
     "tests/test_sqlite_syscall_hosted_diagnostic.py",
+    "tests/test_sqlite_syscall_trace_diagnostics.py",
     ".github/workflows/sqlite-syscall-feasibility-diagnostic.yml",
 )
 
@@ -47,7 +49,13 @@ def source_identity(root: Path, expected_commit: str) -> dict[str, object]:
         if hashlib.sha256(committed).hexdigest() != digest or digest != FROZEN_HELPERS.get(name, digest):
             raise ValueError("source bytes mismatch")
         hashes[name] = digest
-    return {"commit": actual, "sha256": hashes, "frozen_probe_commit": "978f1d7c2a6b6e7d9d61e5db7fdf0d0ba381c016"}
+    return {
+        "commit": actual,
+        "sha256": hashes,
+        "original_probe_commit": "978f1d7c2a6b6e7d9d61e5db7fdf0d0ba381c016",
+        "probe_profile": "additive_bounded_syntax_diagnostics_v2",
+        "original_hosted_ambiguous_run": 35380331993,
+    }
 
 
 def python_sqlite_identity() -> dict[str, object]:

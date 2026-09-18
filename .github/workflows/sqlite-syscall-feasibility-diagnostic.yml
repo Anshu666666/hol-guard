@@ -9,8 +9,10 @@ on:
       - 'scripts/probe_sqlite_syscall_observation.py'
       - 'scripts/sqlite_syscall_probe_child.py'
       - 'scripts/sqlite_syscall_probe_supervision.py'
+      - 'scripts/sqlite_syscall_trace_diagnostics.py'
       - 'tests/test_sqlite_syscall_probe_parser.py'
       - 'tests/test_sqlite_syscall_hosted_diagnostic.py'
+      - 'tests/test_sqlite_syscall_trace_diagnostics.py'
 
 permissions:
   contents: read
@@ -56,8 +58,9 @@ jobs:
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: >-
-          python -m pytest --noconftest -c /dev/null -q
+          python -m pytest --noconftest -p no:cacheprovider -c /dev/null -q
           tests/test_sqlite_syscall_probe_parser.py tests/test_sqlite_syscall_hosted_diagnostic.py
+          tests/test_sqlite_syscall_trace_diagnostics.py
       - name: Run bounded unprivileged disposable probe
         id: diagnostic
         if: always()

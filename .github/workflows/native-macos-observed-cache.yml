@@ -1,0 +1,102 @@
+name: macOS observed resolver cache diagnostic
+run-name: One verified macOS resolver cache signal
+
+on:
+  push:
+    branches: [codex/rsp-macos-observed-cache-diagnostic]
+    paths:
+      - '.github/workflows/native-macos-observed-cache.yml'
+      - 'scripts/ci/native_macos_observed_cache.py'
+      - 'scripts/ci/native_macos_service_identity.py'
+      - 'scripts/ci/native_loopback_cache.py'
+      - 'scripts/ci/native_loopback_lookup.py'
+      - 'tests/test_native_macos_observed_cache.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-macos-observed-cache-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  observed-cache:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            architecture: x86_64
+          - runner: macos-15
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact cache diagnostic driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: validation-src
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - name: Bind the diagnostic source and workflow identity
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          root = Path('validation-src')
+          def git(*arguments):
+              return subprocess.check_output(['git', '-C', str(root), *arguments], timeout=5, text=True).strip()
+          head = git('rev-parse', 'HEAD')
+          dirty = git('status', '--porcelain', '--untracked-files=no')
+          paths = ['scripts/ci/native_macos_observed_cache.py', 'scripts/ci/native_macos_service_identity.py',
+                   'scripts/ci/native_loopback_cache.py', 'scripts/ci/native_loopback_lookup.py',
+                   '.github/workflows/native-macos-observed-cache.yml']
+          report = {
+              'head': head, 'tree': git('rev-parse', 'HEAD^{tree}'), 'source_clean': not dirty,
+              'workflow_commit': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
+              'attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'source_sha256': {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in paths},
+              'qualification_pass': False, 'installed_baseline_startup_verified': False,
+          }
+          output = Path('macos-observed-cache-evidence')
+          output.mkdir(exist_ok=True)
+          (output / 'source-before.json').write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
+          assert head == os.environ['GITHUB_SHA'] and not dirty, 'diagnostic source binding failed'
+          PY
+      - name: Verify the actual Apple service and measure one cache signal
+        shell: bash
+        run: |
+          python -I validation-src/scripts/ci/native_macos_observed_cache.py \
+            --output macos-observed-cache-evidence/observed-cache.json
+      - name: Verify tracked diagnostic sources remain unchanged
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          def git(*arguments):
+              return subprocess.check_output(['git', '-C', 'validation-src', *arguments], timeout=5, text=True).strip()
+          report = {
+              'head': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}'),
+              'source_clean': not git('status', '--porcelain', '--untracked-files=no'),
+              'workflow_commit': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
+              'attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+          }
+          output = Path('macos-observed-cache-evidence')
+          output.mkdir(exist_ok=True)
+          (output / 'source-after.json').write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
+          assert report['head'] == report['workflow_commit'] and report['source_clean'], 'diagnostic source changed'
+          PY
+      - name: Retain the original bounded diagnostic outcome
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macos-observed-cache-${{ matrix.architecture }}-driver-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: macos-observed-cache-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 30

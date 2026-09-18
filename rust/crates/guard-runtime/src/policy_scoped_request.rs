@@ -12,7 +12,7 @@ use guard_contracts::GuardHookEnvelopeV2;
 use guard_policy_snapshot::scoped_authority::{
     ExactPolicyContextInputs, PolicyIdentityInputs, ScopedPolicyRequest,
 };
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::path::Path;
 
 #[path = "policy_scoped_tool_request.rs"]
@@ -25,6 +25,26 @@ fn display_text(value: Option<&Value>) -> Option<&str> {
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty())
+}
+
+// The Python ingress maps each camel-case selector before constructing the
+// artifact. Preserve that single value; conflicting aliases never pick a
+// convenient default identity.
+fn selector_text<'a>(
+    payload: &'a Map<String, Value>,
+    primary: &str,
+    alias: &str,
+) -> Result<Option<&'a str>, String> {
+    match (payload.get(primary), payload.get(alias)) {
+        (None, None) => Ok(None),
+        (Some(value), None) | (None, Some(value)) => value
+            .as_str()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(Some)
+            .ok_or_else(|| UNSUPPORTED.to_owned()),
+        _ => Err(UNSUPPORTED.to_owned()),
+    }
 }
 
 fn generic_shell_artifact(envelope: &GuardHookEnvelopeV2, harness: &str) -> Result<String, String> {
@@ -94,11 +114,11 @@ fn generic_shell_artifact(envelope: &GuardHookEnvelopeV2, harness: &str) -> Resu
     if !benign && !destination_only {
         return Err(UNSUPPORTED.to_owned());
     }
-    let scope = display_text(payload.get("source_scope")).unwrap_or("project");
+    let scope = selector_text(payload, "source_scope", "sourceScope")?.unwrap_or("project");
     if scope != "project" {
         return Err(UNSUPPORTED.to_owned());
     }
-    Ok(display_text(payload.get("artifact_id"))
+    Ok(selector_text(payload, "artifact_id", "artifactId")?
         .map(str::to_owned)
         .unwrap_or_else(|| format!("{harness}:{scope}:{tool}")))
 }
@@ -109,6 +129,9 @@ pub(crate) fn derive_scoped_policy_request(
     envelope: &GuardHookEnvelopeV2,
     canonical_harness: &str,
 ) -> Result<ScopedPolicyRequest, String> {
+    if crate::edge::authoritative_event(envelope)? != "PreToolUse" {
+        return Err(UNSUPPORTED.to_owned());
+    }
     let (artifact, digest) = if exact_shell_command_from_hook(&envelope.raw_payload).is_some() {
         let artifact = generic_shell_artifact(envelope, canonical_harness)?;
         let command = exact_shell_command_from_hook(&envelope.raw_payload).ok_or(UNSUPPORTED)?;
@@ -295,5 +318,64 @@ mod tests {
             .select_generic(&derive_scoped_policy_request(&forged, "codex").unwrap(), 1)
             .unwrap()
             .is_none());
+    }
+
+    #[test]
+    fn raw_compatibility_aliases_match_actual_python_identity_vectors() {
+        let fixture: Value =
+            serde_json::from_str(include_str!("policy_scoped_alias_fixture.json")).unwrap();
+        let workspace =
+            std::env::temp_dir().join(format!("guard-scoped-aliases-{}", std::process::id()));
+        std::fs::create_dir_all(&workspace).unwrap();
+        std::fs::write(workspace.join("guide.md"), "Synthetic guide.\n").unwrap();
+        let cases = fixture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 12);
+        for case in cases {
+            let mut source = envelope(case["payload"].clone());
+            source.harness = case["harness"].as_str().unwrap().to_owned();
+            source.source.cwd = Some(workspace.to_string_lossy().into_owned());
+            let actual = derive_scoped_policy_request(&source, &source.harness).unwrap();
+            assert_eq!(actual.artifact_id(), case["artifactId"].as_str());
+        }
+        std::fs::remove_dir_all(workspace).unwrap();
+    }
+
+    #[test]
+    fn aliases_cannot_invent_project_identity_or_choose_a_conflicting_selector() {
+        let sources = [
+            json!({"tool_name":"Bash","tool_input":{"command":"printf synthetic"}}),
+            json!({"tool_name":"mcp__synthetic__inspect","tool_input":{}}),
+        ];
+        for payload in sources {
+            for changes in [
+                json!({"sourceScope":"user"}),
+                json!({"source_scope":"project","sourceScope":"project"}),
+                json!({"source_scope":"project","sourceScope":"user"}),
+                json!({"artifact_id":"first","artifactId":"second"}),
+                json!({"artifact_id":"same","artifactId":"same"}),
+                json!({"artifactId":false}),
+                json!({"sourceScope":false}),
+            ] {
+                let mut source = envelope(payload.clone());
+                source
+                    .raw_payload
+                    .as_object_mut()
+                    .unwrap()
+                    .extend(changes.as_object().unwrap().clone());
+                assert!(derive_scoped_policy_request(&source, "codex").is_err());
+            }
+            for key in [
+                "event",
+                "eventName",
+                "hook_event_name",
+                "hookEventName",
+                "hook_name",
+                "hookName",
+            ] {
+                let mut source = envelope(payload.clone());
+                source.raw_payload[key] = json!("PostToolUse");
+                assert!(derive_scoped_policy_request(&source, "codex").is_err());
+            }
+        }
     }
 }

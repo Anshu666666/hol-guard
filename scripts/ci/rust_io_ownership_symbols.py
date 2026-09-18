@@ -119,14 +119,18 @@ def _bindings(body: list[ast.stmt], name: str) -> list[tuple[ast.AST, bool]]:
     return found
 
 
-def require_exact_import(body: list[ast.stmt], name: str, node: ast.AST | None) -> None:
+def require_exact_import(
+    body: list[ast.stmt], name: str, node: ast.AST | None, *, allow_conditional_local: bool = False
+) -> None:
     sites = _bindings(body, name)
     if node is None:
         valid = not sites
     else:
         valid = (
             len(sites) == 1
-            and sites[0][1]
+            and (sites[0][1] or allow_conditional_local)
+            and isinstance(node, (ast.Import, ast.ImportFrom))
+            and all(alias.name != "*" for alias in node.names)
             and type(sites[0][0]) is type(node)
             and getattr(sites[0][0], "lineno", None) == getattr(node, "lineno", None)
         )

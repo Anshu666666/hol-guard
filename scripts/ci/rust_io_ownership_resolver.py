@@ -138,9 +138,16 @@ def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: s
                 else _repository_module_path(root, alias.name)
             )
             if target is None:
+                if isinstance(node, ast.ImportFrom) and node.level:
+                    raise RuntimeError(f"unresolved repository import {name!r}")
                 continue
             for index in range(visible.scope, len(bodies)):
-                require_exact_import(bodies[index], parts[0], node if index == visible.scope else None)
+                require_exact_import(
+                    bodies[index],
+                    parts[0],
+                    node if index == visible.scope else None,
+                    allow_conditional_local=index > 0,
+                )
             for scope in scopes[max(visible.scope - 1, 0) :]:
                 arguments = scope.args
                 names = [arg.arg for arg in (*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs)]
@@ -196,7 +203,11 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
                 raise RuntimeError(f"unresolved lexical helper {name!r}")
             return ImportedCallable(record.path, qualname)
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            if not direct:
+            # One local import makes this name local throughout the function.
+            # If its branch does not execute, lookup is unbound, never an outer
+            # callable. Retain the possible exact edge instead of dropping it.
+            local = isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef))
+            if (not direct and not local) or any(alias.name == "*" for alias in node.names):
                 raise RuntimeError(f"ambiguous lexical import binding {name!r}")
             alias = next(
                 a
@@ -209,6 +220,8 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
                 else _repository_module_path(root, alias.name)
             )
             if path is None:
+                if isinstance(node, ast.ImportFrom) and node.level:
+                    raise RuntimeError(f"unresolved repository import {name!r}")
                 return None
             result = resolve_import(root, record.path, node, alias, ())
             if result is None:

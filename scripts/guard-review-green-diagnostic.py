@@ -15,8 +15,8 @@ import tempfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-BASE = "cc42b9c70f45471869bb53c7f211ed26a063e0a1"
-TREE = "2aa102c4fbd7bed851c605602a174333fea03957"
+BASE = "960c531722ac7b4d2cb555d24da48f4dcbc9940c"
+TREE = "c6f4f2f89dc1eea7bec1297549028005fcbf394c"
 WORKFLOW = ".github/workflows/ci.yml"
 SCRIPT = "scripts/guard-review-green-diagnostic.py"
 SOURCE_COUNT = 4087
@@ -26,7 +26,7 @@ TEST_BLOBS = {
     "tests/test_guard_review_policy_memory_command.py": "e9c2c51e32150c507814f7e1d5101f2c317f83dc",
     "tests/test_policy_bundle_activation_atomicity.py": "0f548a7f04459123c68c9081539836a4c6f31cd5",
     "tests/test_policy_bundle_delivery_local_race.py": "a99cb7cada55997852efc4f7437bcdbda51c1308",
-    "tests/test_policy_bundle_delivery_runtime.py": "538e0cbc25bb311eacc57d6b09f11e63d802e214",
+    "tests/test_policy_bundle_delivery_runtime.py": "19812397eeeae65ded2fb387975c201486b04a9b",
     "tests/test_policy_bundle_future_sync_retention.py": "4929c4bdd7aff06f450cfa885cba0d0f2a0b0c82",
     "tests/test_policy_bundle_generic_ack_contract.py": "9482e7f72bb0c4e6a289e6b7b1b0c7aab61f0ba9",
     "tests/test_policy_bundle_generic_acknowledgement.py": "0f4edceb5e3aa871cac2436dc09ba317ac0fbe57",
@@ -83,6 +83,7 @@ RUFF_PATHS = (
     "tests/test_native_slo_load_executor.py",
     "tests/test_policy_authority_explanations.py",
     "tests/test_policy_bundle_delivery_local_race.py",
+    "tests/test_policy_bundle_delivery_runtime.py",
     "tests/test_policy_bundle_future_sync_retention.py",
     "tests/test_policy_bundle_sync_outcomes.py",
     "tests/test_policy_generic_validated_ack_retention.py",

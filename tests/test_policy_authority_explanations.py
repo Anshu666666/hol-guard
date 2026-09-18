@@ -103,4 +103,6 @@ def test_generic_one_shot_consumption_depends_on_selected_persisted_action(
         assert claimed_at is None
     else:
         assert result["source"] == "approval-gate-once"
-        assert datetime.fromisoformat(claimed_at.replace("Z", "+00:00")) == datetime.fromisoformat("2026-09-17T12:02:00+00:00")
+        assert datetime.fromisoformat(claimed_at.replace("Z", "+00:00")) == datetime.fromisoformat(
+            "2026-09-17T12:02:00+00:00"
+        )

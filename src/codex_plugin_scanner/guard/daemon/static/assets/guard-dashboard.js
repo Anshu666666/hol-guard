@@ -15390,11 +15390,11 @@ function computePeriodComparison(receipts, days, now2) {
 function nonNegativeNumber(value) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 }
-function isRecord$6(value) {
+function isRecord$7(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function normalizeOperatorHealth(raw) {
-  if (!isRecord$6(raw)) {
+  if (!isRecord$7(raw)) {
     return void 0;
   }
   const state = raw["state"];
@@ -15456,7 +15456,7 @@ const PROTECTION_CHECK_IDS = [
 ];
 const CORE_CHECK_IDS = PROTECTION_CHECK_IDS.filter((checkId) => checkId !== "decision_stream");
 const STABLE_ID$1 = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/;
-function isRecord$5(value) {
+function isRecord$6(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function copyForState(state) {
@@ -15489,7 +15489,7 @@ function deriveState(checks) {
   return byId.get("decision_stream")?.status === "pass" ? "protected" : "partial";
 }
 function normalizeCheck(value) {
-  if (!isRecord$5(value)) return null;
+  if (!isRecord$6(value)) return null;
   const checkId = value.check_id;
   const status = value.status;
   const reasonCode = value.reason_code;
@@ -15580,7 +15580,7 @@ function useProtectionPresentationState(health) {
   });
 }
 function normalizeApp(value) {
-  if (!isRecord$5(value)) return null;
+  if (!isRecord$6(value)) return null;
   const harness = value.harness;
   if (typeof harness !== "string" || harness.length > 64 || !STABLE_ID$1.test(harness)) return null;
   const checks = normalizeChecks(value.checks);
@@ -15588,7 +15588,7 @@ function normalizeApp(value) {
   return { harness, ...healthFromChecks(checks) };
 }
 function normalizeProtectionHealth(value) {
-  if (!isRecord$5(value) || value.schema_version !== "guard.protection-health.v1") {
+  if (!isRecord$6(value) || value.schema_version !== "guard.protection-health.v1") {
     return unavailableProtectionHealth();
   }
   const checks = normalizeChecks(value.checks);
@@ -15678,7 +15678,7 @@ function remainingProtectionRepairMessage(health, displayName) {
     message: `${remaining} Open the repair details below for the exact check.`
   };
 }
-function isRecord$4(value) {
+function isRecord$5(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 function stringValue$2(value) {
@@ -15705,7 +15705,7 @@ function normalizeSupplyChainRepairResult(result) {
   const failures = [];
   if (Array.isArray(result.failed_steps)) {
     for (const candidate of result.failed_steps) {
-      if (!isRecord$4(candidate)) continue;
+      if (!isRecord$5(candidate)) continue;
       const parsed = failedStep(candidate);
       if (parsed !== null) failures.push(parsed);
     }
@@ -15713,7 +15713,7 @@ function normalizeSupplyChainRepairResult(result) {
   const remaining = [];
   if (Array.isArray(result.remaining_steps)) {
     for (const candidate of result.remaining_steps) {
-      if (!isRecord$4(candidate)) continue;
+      if (!isRecord$5(candidate)) continue;
       const parsed = remainingStep(candidate);
       if (parsed !== null) remaining.push(parsed);
     }
@@ -15875,7 +15875,7 @@ function getDemoDiff(artifactId, harness) {
   }
   return demoDiff;
 }
-function isRecord$3(value) {
+function isRecord$4(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function readString$1(value) {
@@ -15886,18 +15886,18 @@ function readString$1(value) {
   return trimmed.length > 0 ? trimmed : null;
 }
 function isSupplyChainAuditIncomplete(detail) {
-  if (!isRecord$3(detail)) {
+  if (!isRecord$4(detail)) {
     return false;
   }
   return readString$1(detail.audit_status) === "incomplete";
 }
 function resolveSupplyChainAuditFailure(detail) {
-  if (!isRecord$3(detail) || !isSupplyChainAuditIncomplete(detail)) {
+  if (!isRecord$4(detail) || !isSupplyChainAuditIncomplete(detail)) {
     return null;
   }
   const outcome = readString$1(detail.audit_outcome);
   const message = readString$1(detail.message);
-  const supplyChain = isRecord$3(detail.supply_chain) ? detail.supply_chain : null;
+  const supplyChain = isRecord$4(detail.supply_chain) ? detail.supply_chain : null;
   const supplyStatus = readString$1(supplyChain?.status);
   if (outcome === "sync_required" || supplyStatus === "sync_required") {
     return message ?? "Guard supply-chain intel is not synced on this device. Run Sync, then audit again.";
@@ -15939,7 +15939,7 @@ async function readJson(input, init) {
 async function requestErrorMessage(response, fallback) {
   try {
     const payload = await response.clone().json();
-    if (!isRecord$2(payload)) {
+    if (!isRecord$3(payload)) {
       return fallback;
     }
     const message = payload["message"];
@@ -16096,7 +16096,7 @@ async function probeGuardDaemonHealth(origin) {
     if (!response.ok) {
       return false;
     }
-    if (!isRecord$2(payload)) {
+    if (!isRecord$3(payload)) {
       return false;
     }
     return payload.ok === true && payload.compatibility_version === 2;
@@ -16202,7 +16202,7 @@ function constantTimeHexEqual(left, right) {
   return difference === 0;
 }
 function parseReconnectAuthorization(payload) {
-  if (!isRecord$2(payload)) {
+  if (!isRecord$3(payload)) {
     return null;
   }
   if (payload["protocol_version"] !== GUARD_DAEMON_RECONNECT_PROTOCOL_VERSION || payload["surface"] !== "dashboard" || !isHexDigest(payload["reconnect_id"]) || !isHexDigest(payload["verifier"]) || !isHexDigest(payload["installation_id"]) || !isHexDigest(payload["guard_home_id"]) || typeof payload["issued_at_ms"] !== "number" || typeof payload["expires_at_ms"] !== "number" || payload["expires_at_ms"] <= payload["issued_at_ms"]) {
@@ -16224,7 +16224,7 @@ function parseReconnectAuthorization(payload) {
   };
 }
 function parseReconnectChallenge(payload, authorization, candidateOrigin, clientNonce) {
-  if (!isRecord$2(payload)) {
+  if (!isRecord$3(payload)) {
     return null;
   }
   const stringFields = ["state_id"];
@@ -16360,7 +16360,7 @@ async function authenticateGuardDaemonCandidate(origin, authorization) {
       guardDaemonReconnectDiagnostic = "dashboard_reconnect_client_proof_rejected";
       return false;
     }
-    if (!isRecord$2(verificationPayload) || verificationPayload["verified"] !== true) {
+    if (!isRecord$3(verificationPayload) || verificationPayload["verified"] !== true) {
       guardDaemonReconnectDiagnostic = "dashboard_reconnect_client_proof_rejected";
       return false;
     }
@@ -16596,7 +16596,7 @@ function guardAuthHeadersForToken(guardToken) {
   return guardToken ? { "X-Guard-Dashboard-Session": guardToken } : {};
 }
 function parseDashboardSessionToken(payload) {
-  if (!isRecord$2(payload)) {
+  if (!isRecord$3(payload)) {
     return null;
   }
   const dashboardSessionToken = payload["dashboard_session_token"];
@@ -16645,7 +16645,7 @@ function guardAwareHref(href) {
   }
   return `${url.pathname}${url.search}${url.hash}`;
 }
-function isRecord$2(value) {
+function isRecord$3(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 function isGuardActionType(value) {
@@ -16667,7 +16667,7 @@ function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 function isGuardHarnessActionErrorPayload(value) {
-  return isRecord$2(value) && isNonEmptyString(value["error"]);
+  return isRecord$3(value) && isNonEmptyString(value["error"]);
 }
 function isApprovalPageStatus(value) {
   return value === "pending" || value === "resolved" || value === "all";
@@ -16681,7 +16681,7 @@ function matchingAliasedField(raw, snakeKey, camelKey) {
   return { matches: true, value: hasSnake ? raw[snakeKey] : raw[camelKey] };
 }
 function parseActionEnvelope(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return null;
   }
   const allowedActionFields = /* @__PURE__ */ new Set([
@@ -16741,7 +16741,7 @@ function parseActionEnvelope(raw) {
   if (!isStringArray(targetPaths) || !isStringArray(networkHosts) || packageTargets !== void 0 && !isStringArray(packageTargets)) {
     return null;
   }
-  if (!isRecord$2(rawPayloadRedacted)) {
+  if (!isRecord$3(rawPayloadRedacted)) {
     return null;
   }
   return {
@@ -16791,14 +16791,14 @@ function isRiskSignalV2Array(value) {
     return false;
   }
   return value.every((item) => {
-    if (!isRecord$2(item)) {
+    if (!isRecord$3(item)) {
       return false;
     }
     return isNonEmptyString(item["signal_id"]) && isRiskSignalV2Category(item["category"]) && isRiskSignalV2Severity(item["severity"]) && isDecisionV2Confidence(item["confidence"]) && isNonEmptyString(item["detector"]) && isNonEmptyString(item["title"]) && isNonEmptyString(item["plain_reason"]) && isStringOrNull(item["technical_detail"]) && isStringOrNull(item["evidence_ref"]) && isRiskSignalV2RedactionLevel(item["redaction_level"]) && isStringOrNull(item["false_positive_hint"]) && isStringOrNull(item["advisory_id"]);
   });
 }
 function parseDecisionV2(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return null;
   }
   const allowedActionFields = /* @__PURE__ */ new Set(["guard_action", "action"]);
@@ -16834,7 +16834,7 @@ function parseDecisionV2(raw) {
   };
 }
 function parseLegacyPackageActionMetadata(raw) {
-  if (!isRecord$2(raw) || raw["schema_version"] !== void 0 || !("policy_action" in raw) || typeof raw["package_manager"] !== "string" || !isStringArray(raw["package_targets"]) || typeof raw["redacted_command"] !== "string") {
+  if (!isRecord$3(raw) || raw["schema_version"] !== void 0 || !("policy_action" in raw) || typeof raw["package_manager"] !== "string" || !isStringArray(raw["package_targets"]) || typeof raw["redacted_command"] !== "string") {
     return { recognized: false, action: null };
   }
   if (Object.keys(raw).some((key) => isActionBearingKey(key) && key !== "policy_action")) {
@@ -16899,9 +16899,9 @@ function normalizeApprovalRequest(item) {
   const scopeContractVersion = parseOptionalString(item.scope_contract_version);
   const scopeContractDigest = parseOptionalString(item.scope_contract_digest);
   const hasCompleteScopeContract = scopeContractVersion !== null && scopeContractDigest !== null;
-  const rawAllowedByAction = isRecord$2(item.allowed_scopes_by_action) ? item.allowed_scopes_by_action : {};
-  const rawRecommendedByAction = isRecord$2(item.recommended_scope_by_action) ? item.recommended_scope_by_action : {};
-  const rawTaskEligibility = isRecord$2(item.task_capability_eligibility) ? item.task_capability_eligibility : null;
+  const rawAllowedByAction = isRecord$3(item.allowed_scopes_by_action) ? item.allowed_scopes_by_action : {};
+  const rawRecommendedByAction = isRecord$3(item.recommended_scope_by_action) ? item.recommended_scope_by_action : {};
+  const rawTaskEligibility = isRecord$3(item.task_capability_eligibility) ? item.task_capability_eligibility : null;
   const taskReasonCodes = parseStringList(rawTaskEligibility?.reason_codes);
   const taskCapabilityEligibility = typeof rawTaskEligibility?.eligible === "boolean" && taskReasonCodes !== null ? {
     eligible: rawTaskEligibility.eligible,
@@ -16938,7 +16938,7 @@ function normalizeApprovalRequests(items) {
   return items.map(normalizeApprovalRequest);
 }
 function normalizeOptionalApprovalRequest(item) {
-  return isRecord$2(item) ? normalizeApprovalRequest(item) : null;
+  return isRecord$3(item) ? normalizeApprovalRequest(item) : null;
 }
 function normalizeApprovalPage(payload, statusFallback = "pending") {
   return {
@@ -16950,7 +16950,7 @@ function normalizeApprovalPage(payload, statusFallback = "pending") {
   };
 }
 function normalizeQueueSummary(raw, pendingCount) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return {
       active_request_id: null,
       next_request_id: null,
@@ -16976,7 +16976,7 @@ function normalizeProcessPathStatus(value) {
   return "missing";
 }
 function normalizePackageManagerProtection(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return void 0;
   }
   const pathStatus = raw["path_status"] === "in_path" ? "in_path" : raw["path_status"] === "restart_required" ? "restart_required" : "missing_from_path";
@@ -17001,7 +17001,7 @@ function normalizePackageManagerProtection(raw) {
   };
 }
 function normalizeSupplyChainSnapshot(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return void 0;
   }
   const packageManagerProtection = normalizePackageManagerProtection(raw["package_manager_protection"]);
@@ -17013,7 +17013,7 @@ function normalizeSupplyChainSnapshot(raw) {
   };
 }
 function normalizeManagedInstall(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return void 0;
   }
   const harness = raw["harness"];
@@ -17022,7 +17022,7 @@ function normalizeManagedInstall(raw) {
   }
   const active = raw["active"] === true;
   const workspace = isStringOrNull(raw["workspace"]) ? raw["workspace"] : null;
-  const manifest = isRecord$2(raw["manifest"]) ? raw["manifest"] : {};
+  const manifest = isRecord$3(raw["manifest"]) ? raw["manifest"] : {};
   const updatedAt = typeof raw["updated_at"] === "string" ? raw["updated_at"] : "";
   return {
     harness,
@@ -17046,11 +17046,11 @@ function normalizeManagedInstalls(raw) {
   return result;
 }
 function normalizeCloudCommandCapability(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return void 0;
   }
   const pending = Array.isArray(raw["pending_commands"]) ? raw["pending_commands"].flatMap((item) => {
-    if (!isRecord$2(item)) return [];
+    if (!isRecord$3(item)) return [];
     const id = item["id"];
     const operation = item["operation"];
     const issuer = item["issuer"];
@@ -17101,7 +17101,7 @@ function normalizeRuntimeSnapshot(snapshot) {
   };
 }
 function normalizeRuntimeState(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return null;
   }
   const sessionId = raw["session_id"];
@@ -17150,7 +17150,7 @@ function isMatchingRuntimeUrl(value, daemonHost, daemonPort) {
   }
 }
 function normalizeQueueCopy(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return null;
   }
   const title2 = raw["title"];
@@ -17164,7 +17164,7 @@ function isCodexResumeStatus(value) {
   return typeof value === "string" && CODEX_RESUME_STATUSES.some((s) => s === value);
 }
 function normalizeCodexResume(raw) {
-  if (!isRecord$2(raw)) {
+  if (!isRecord$3(raw)) {
     return null;
   }
   const status = raw["status"];
@@ -17627,7 +17627,7 @@ async function fetchReceipts() {
   return normalizeReceipts(payload.items);
 }
 function normalizeReceiptAnalyticsBucket(raw) {
-  if (!isRecord$2(raw)) return null;
+  if (!isRecord$3(raw)) return null;
   const dateKey = raw["date_key"];
   const label = raw["label"];
   if (typeof dateKey !== "string" || typeof label !== "string") return null;
@@ -17640,13 +17640,13 @@ function normalizeReceiptAnalyticsBucket(raw) {
   };
 }
 function normalizeReceiptAnalytics(raw) {
-  if (!isRecord$2(raw)) return null;
+  if (!isRecord$3(raw)) return null;
   const dailyRaw = raw["daily_activity"];
   const trendRaw = raw["trend_buckets"];
   const harnessRaw = raw["by_harness"];
   const artifactRaw = raw["top_artifacts"];
   const daily_activity = Array.isArray(dailyRaw) ? dailyRaw.map((entry) => {
-    if (!isRecord$2(entry) || typeof entry["date_key"] !== "string") return null;
+    if (!isRecord$3(entry) || typeof entry["date_key"] !== "string") return null;
     return {
       date_key: entry["date_key"],
       total: isNonNegativeNumber(entry["total"]) ? entry["total"] : 0
@@ -17654,7 +17654,7 @@ function normalizeReceiptAnalytics(raw) {
   }).filter((entry) => entry !== null) : [];
   const trend_buckets = Array.isArray(trendRaw) ? trendRaw.map(normalizeReceiptAnalyticsBucket).filter((entry) => entry !== null) : [];
   const by_harness = Array.isArray(harnessRaw) ? harnessRaw.map((entry) => {
-    if (!isRecord$2(entry) || typeof entry["harness"] !== "string") return null;
+    if (!isRecord$3(entry) || typeof entry["harness"] !== "string") return null;
     return {
       harness: entry["harness"],
       total: isNonNegativeNumber(entry["total"]) ? entry["total"] : 0,
@@ -17663,7 +17663,7 @@ function normalizeReceiptAnalytics(raw) {
     };
   }).filter((entry) => entry !== null) : [];
   const top_artifacts = Array.isArray(artifactRaw) ? artifactRaw.map((entry) => {
-    if (!isRecord$2(entry) || typeof entry["name"] !== "string") return null;
+    if (!isRecord$3(entry) || typeof entry["name"] !== "string") return null;
     return {
       name: entry["name"],
       total: isNonNegativeNumber(entry["total"]) ? entry["total"] : 0,
@@ -17787,7 +17787,7 @@ async function publishInsightsShare(input) {
   throw new Error("Invalid insights share response");
 }
 function normalizeGuardCloudConnectStatus(value) {
-  if (!isRecord$2(value)) {
+  if (!isRecord$3(value)) {
     return { connect_required: false, connect_flow: null };
   }
   return {
@@ -18115,7 +18115,7 @@ async function resolveRequestWithQueueResult(input) {
     let payload2 = null;
     try {
       const candidate = await response.clone().json();
-      payload2 = isRecord$2(candidate) ? candidate : null;
+      payload2 = isRecord$3(candidate) ? candidate : null;
     } catch {
       payload2 = null;
     }
@@ -18223,9 +18223,9 @@ async function repairProtectionCheck(checkId) {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new GuardProtectionRepairError(response.status, isRecord$2(payload) ? payload : null);
+    throw new GuardProtectionRepairError(response.status, isRecord$3(payload) ? payload : null);
   }
-  if (!isRecord$2(payload) || payload.repaired !== true || payload.repair_scope !== "local_integrity" || !Array.isArray(payload.check_ids)) {
+  if (!isRecord$3(payload) || payload.repaired !== true || payload.repair_scope !== "local_integrity" || !Array.isArray(payload.check_ids)) {
     throw new Error("Guard returned an invalid protection repair result.");
   }
   return {
@@ -18236,7 +18236,7 @@ async function repairProtectionCheck(checkId) {
   };
 }
 function normalizeGuardUpdateVersionCheck(raw) {
-  const value = isRecord$2(raw) ? raw : {};
+  const value = isRecord$3(raw) ? raw : {};
   return {
     source: stringValue$1(value.source) ?? "pypi",
     status: stringValue$1(value.status) ?? "unavailable",
@@ -18246,7 +18246,7 @@ function normalizeGuardUpdateVersionCheck(raw) {
   };
 }
 function normalizeGuardUpdateStatus(raw, fallbackReleaseChannel = null) {
-  const value = isRecord$2(raw) ? raw : {};
+  const value = isRecord$3(raw) ? raw : {};
   const versionCheck = normalizeGuardUpdateVersionCheck(value.version_check);
   const currentVersion = stringValue$1(value.current_version) ?? versionCheck.current_version ?? "unknown";
   const latestVersion = stringValue$1(value.latest_version) ?? versionCheck.latest_version;
@@ -18286,7 +18286,7 @@ async function fetchGuardUpdateStatus() {
     });
   }
   const payload = await readJson("/v1/update/status", { cache: "no-store" });
-  const declaredChannel = isRecord$2(payload) && isGuardUpdateChannel(payload.release_channel) ? payload.release_channel : null;
+  const declaredChannel = isRecord$3(payload) && isGuardUpdateChannel(payload.release_channel) ? payload.release_channel : null;
   const status = normalizeGuardUpdateStatus(payload, readRememberedGuardUpdateChannel());
   if (declaredChannel) {
     rememberGuardUpdateChannel(declaredChannel);
@@ -18331,10 +18331,10 @@ async function setGuardUpdateChannel(channel, proof) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const value = isRecord$2(payload) ? payload : {};
+    const value = isRecord$3(payload) ? payload : {};
     throw new Error(stringValue$1(value.message) ?? `Update channel failed with ${response.status}`);
   }
-  const declaredChannel = isRecord$2(payload) && isGuardUpdateChannel(payload.release_channel) ? payload.release_channel : channel;
+  const declaredChannel = isRecord$3(payload) && isGuardUpdateChannel(payload.release_channel) ? payload.release_channel : channel;
   rememberGuardUpdateChannel(declaredChannel);
   return normalizeGuardUpdateStatus(payload, declaredChannel);
 }
@@ -18387,7 +18387,7 @@ function numberValue(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 function normalizePackageFirewallEntitlement(value) {
-  const record2 = isRecord$2(value) ? value : {};
+  const record2 = isRecord$3(value) ? value : {};
   return {
     allowed: booleanValue$1(record2.allowed),
     reason: stringValue$1(record2.reason) ?? "unknown",
@@ -18397,7 +18397,7 @@ function normalizePackageFirewallEntitlement(value) {
   };
 }
 function normalizePackageFirewallReceipt(value) {
-  if (!isRecord$2(value)) {
+  if (!isRecord$3(value)) {
     return null;
   }
   const id = stringValue$1(value.id);
@@ -18410,7 +18410,7 @@ function normalizePackageFirewallReceipt(value) {
   return { id, operation, status, timestamp };
 }
 function normalizePackageFirewallActions(value) {
-  if (!isRecord$2(value)) {
+  if (!isRecord$3(value)) {
     return {};
   }
   const allowedStates = /* @__PURE__ */ new Set([
@@ -18427,7 +18427,7 @@ function normalizePackageFirewallActions(value) {
   return Object.fromEntries(entries);
 }
 function normalizePackageFirewallCliFallback(value) {
-  if (!isRecord$2(value)) {
+  if (!isRecord$3(value)) {
     return null;
   }
   const fallback = {};
@@ -18450,7 +18450,7 @@ function normalizePackageFirewallCliFallback(value) {
   return Object.keys(fallback).length > 0 ? fallback : null;
 }
 function normalizePackageFirewallConnectFlow(value) {
-  if (!isRecord$2(value)) {
+  if (!isRecord$3(value)) {
     return null;
   }
   const state = value.state;
@@ -18507,7 +18507,7 @@ function readLastInterceptProofAtByManager(status) {
     readPackageShimField(status, "last_test_at", "lastTestAt")
   ];
   for (const source of sources) {
-    if (!isRecord$2(source)) {
+    if (!isRecord$3(source)) {
       continue;
     }
     for (const [manager, timestamp] of Object.entries(source)) {
@@ -18555,9 +18555,9 @@ function normalizePackageShimEntry(manager, detail, pathStatus, coverage) {
   };
 }
 function normalizePackageShimEntries(value, supportedManagers, pathStatus) {
-  const status = isRecord$2(value) ? value : {};
+  const status = isRecord$3(value) ? value : {};
   const managerDetailsValue = readPackageShimField(status, "manager_details", "managerDetails");
-  const detailRows = Array.isArray(managerDetailsValue) ? managerDetailsValue.filter(isRecord$2) : [];
+  const detailRows = Array.isArray(managerDetailsValue) ? managerDetailsValue.filter(isRecord$3) : [];
   const detailByManager = /* @__PURE__ */ new Map();
   for (const detail of detailRows) {
     const manager = stringValue$1(detail.manager);
@@ -18574,7 +18574,7 @@ function normalizePackageShimEntries(value, supportedManagers, pathStatus) {
   const bypassesValue = readPackageShimField(status, "bypasses", "bypasses");
   if (Array.isArray(bypassesValue)) {
     for (const entry of bypassesValue) {
-      if (!isRecord$2(entry)) {
+      if (!isRecord$3(entry)) {
         continue;
       }
       const manager = stringValue$1(entry.manager);
@@ -18617,9 +18617,9 @@ function actionResultSummary(operation, detail) {
   return `${operation} completed.`;
 }
 function normalizePackageFirewallStatus(value) {
-  const record2 = isRecord$2(value) ? value : {};
+  const record2 = isRecord$3(value) ? value : {};
   const supportedManagers = normalizeStringArray(record2.supported_managers);
-  const shimStatus = isRecord$2(record2.package_shims) ? record2.package_shims : {};
+  const shimStatus = isRecord$3(record2.package_shims) ? record2.package_shims : {};
   const installedManagers = readPackageShimStringArray(shimStatus, "installed_managers", "installedManagers");
   const activeManagers = readPackageShimStringArray(shimStatus, "active_managers", "activeManagers");
   const missingManagers = readPackageShimStringArray(shimStatus, "missing_managers", "missingManagers");
@@ -18671,8 +18671,8 @@ function normalizePackageFirewallStatus(value) {
   };
 }
 function normalizePackageFirewallAction(value) {
-  const record2 = isRecord$2(value) ? value : {};
-  const result = isRecord$2(record2.result) ? record2.result : {};
+  const record2 = isRecord$3(value) ? value : {};
+  const result = isRecord$3(record2.result) ? record2.result : {};
   const operation = stringValue$1(record2.operation) ?? "unknown";
   return {
     entitlement: normalizePackageFirewallEntitlement(record2.entitlement),
@@ -18745,7 +18745,7 @@ async function activatePackageFirewallRuntime() {
     return;
   }
   const payloadBody = await response.json().catch(() => null);
-  if (isRecord$2(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
+  if (isRecord$3(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
     throw new Error(payloadBody.message);
   }
   throw new Error("Unable to activate package protection.");
@@ -18857,7 +18857,7 @@ async function repairSupplyChainProtection(credentials) {
       isGuardHarnessActionErrorPayload(payloadBody) ? payloadBody : null
     );
   }
-  if (!isRecord$2(payloadBody) || !isRecord$2(payloadBody.result)) {
+  if (!isRecord$3(payloadBody) || !isRecord$3(payloadBody.result)) {
     throw new Error("Guard returned an invalid supply-chain repair result.");
   }
   const result = payloadBody.result;
@@ -18877,7 +18877,7 @@ function normalizeMcpPolicyStatus(value) {
   return "pending";
 }
 function normalizeMcpPolicyApplyResult(value) {
-  const record2 = isRecord$2(value) ? value : {};
+  const record2 = isRecord$3(value) ? value : {};
   const inserted = record2["inserted"];
   const replaced = record2["replaced"];
   return {
@@ -18889,7 +18889,7 @@ function asStringList(value) {
   return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
 }
 function normalizeMcpPolicyWritePlan(value) {
-  const record2 = isRecord$2(value) ? value : {};
+  const record2 = isRecord$3(value) ? value : {};
   return {
     additions: asStringList(record2["additions"]),
     replacements: asStringList(record2["replacements"]),
@@ -18897,7 +18897,7 @@ function normalizeMcpPolicyWritePlan(value) {
   };
 }
 function normalizeMcpPolicySemanticDiff(value) {
-  const record2 = isRecord$2(value) ? value : {};
+  const record2 = isRecord$3(value) ? value : {};
   const additionCount = record2["additionCount"];
   const replacementCount = record2["replacementCount"];
   const removalCount = record2["removalCount"];
@@ -18908,7 +18908,7 @@ function normalizeMcpPolicySemanticDiff(value) {
   };
 }
 function normalizeMcpPolicyRequest(raw) {
-  const record2 = isRecord$2(raw) ? raw : {};
+  const record2 = isRecord$3(raw) ? raw : {};
   const expectedPolicyGeneration = record2["expectedPolicyGeneration"];
   return {
     requestId: typeof record2["requestId"] === "string" ? record2["requestId"] : "",
@@ -18963,7 +18963,7 @@ async function resolveMcpPolicyRequest(input) {
       isGuardHarnessActionErrorPayload(payloadBody) ? payloadBody : null
     );
   }
-  const record2 = isRecord$2(payloadBody) ? payloadBody : {};
+  const record2 = isRecord$3(payloadBody) ? payloadBody : {};
   return {
     resolved: record2["resolved"] === true,
     requestId: typeof record2["requestId"] === "string" ? record2["requestId"] : "",
@@ -19232,11 +19232,11 @@ class CloudRequestTimeoutError extends Error {
     this.name = "CloudRequestTimeoutError";
   }
 }
-function isRecord$1(value) {
+function isRecord$2(value) {
   return typeof value === "object" && value !== null;
 }
 function connectFlowFromPayload(value) {
-  if (!isRecord$1(value)) return null;
+  if (!isRecord$2(value)) return null;
   const connectUrl = typeof value.connect_url === "string" ? safeCloudConnectUrl(value.connect_url) : null;
   if (!connectUrl) return null;
   return {
@@ -19252,7 +19252,7 @@ function connectFlowFromPayload(value) {
   };
 }
 function parseGuardCloudConnectHttp(status, payload) {
-  const record2 = isRecord$1(payload) ? payload : {};
+  const record2 = isRecord$2(payload) ? payload : {};
   const dashboardUrl = typeof record2.dashboard_url === "string" ? safeCloudConnectUrl(record2.dashboard_url) : null;
   if (status === 409 && record2.error === "guard_cloud_connect_not_required") {
     return {
@@ -19265,7 +19265,12 @@ function parseGuardCloudConnectHttp(status, payload) {
     throw new Error("This Guard window needs a signed local session before Guard Cloud sign-in can start.");
   }
   if (status < 200 || status >= 300) {
-    const message = typeof record2.message === "string" && record2.message.trim() ? record2.message : typeof record2.error === "string" && record2.error.trim() ? `${record2.error} (${status})` : `Request failed with ${status}`;
+    let message = `Request failed with ${status}`;
+    if (typeof record2.message === "string" && record2.message.trim()) {
+      message = record2.message;
+    } else if (typeof record2.error === "string" && record2.error.trim()) {
+      message = `${record2.error} (${status})`;
+    }
     throw new Error(message);
   }
   return {
@@ -19941,14 +19946,14 @@ function AlphaChannelDialog({
   onApprovalPasswordChange,
   onApprovalTotpCodeChange
 }) {
-  const title = useAlpha ? "Return to stable updates" : "Try alpha updates";
+  const title2 = useAlpha ? "Return to stable updates" : "Try alpha updates";
   const description = useAlpha ? "Stable updates receive the most thoroughly tested Guard releases. You can enable alpha updates again whenever you need early access." : "Alpha releases arrive before stable builds. They can include unfinished changes and may require a restart.";
   const confirmLabel = useAlpha ? "Use stable updates" : "Enable alpha updates";
   const confirmDisabled = pending || approvalGate?.enabled === true && isApprovalProofSubmitDisabled(approvalGate, { approvalPassword, approvalTotpCode }, false);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg bg-white shadow-xl", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-base font-semibold text-brand-dark", children: title }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-base font-semibold text-brand-dark", children: title2 }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm leading-relaxed text-brand-dark/70", children: description })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -29428,7 +29433,7 @@ function blockButtonLabel(scope) {
 }
 function ActionExplanationSummary({ explanation }) {
   const { everyday, confidence, redaction } = explanation;
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "mt-3 space-y-3", "data-guard-action-explanation": explanation.schema_version, children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "mt-3 space-y-3", "data-guard-action-explanation": explanation.schema_version, "data-action-explanation": true, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-base font-semibold text-brand-dark", children: everyday.headline }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 break-words text-sm text-slate-600", children: everyday.summary })
@@ -31659,7 +31664,8 @@ function ApprovalCenterLayout(props) {
     updatePhase,
     updateError,
     onUpdateGuard,
-    onReinstallGuard
+    onReinstallGuard,
+    onSetUpdateChannel
   } = useGuardUpdate({ onReconnected: props.onGuardReconnected, enabled: props.enableUpdateStatus });
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-h-screen bg-white text-brand-dark", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -31676,6 +31682,7 @@ function ApprovalCenterLayout(props) {
         updateError,
         onUpdateGuard,
         onReinstallGuard,
+        onSetUpdateChannel,
         approvalGate: props.approvalGate ?? null,
         cloudUserProfile: props.runtime.kind === "ready" ? props.runtime.snapshot.cloud_user_profile : null,
         workspaceId: props.runtime.kind === "ready" ? props.runtime.snapshot.cloud_pairing_state.workspace_id ?? null : null,
@@ -31881,17 +31888,6 @@ function LazyFallback() {
 }
 function navigate(pathname) {
   commitDashboardLocation(guardAwareHref(pathname));
-}
-function focusVisibleDashboardSearch() {
-  const candidates = document.querySelectorAll(
-    'input[type="search"], input[role="searchbox"]'
-  );
-  for (const input of candidates) {
-    if (input.closest("[hidden], [inert]")) continue;
-    input.focus();
-    return true;
-  }
-  return false;
 }
 function focusVisibleDashboardSearch() {
   const candidates = document.querySelectorAll(
@@ -32690,7 +32686,7 @@ clientExports.createRoot(container).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(PresentationModeProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) })
 );
 export {
-  safeCloudConnectUrl as $,
+  remainingProtectionRepairParts as $,
   ActionButton as A,
   HiMiniSparkles as B,
   HiMiniXMark as C,
@@ -32711,170 +32707,173 @@ export {
   Badge as R,
   SectionLabel as S,
   HiMiniMinusCircle as T,
-  hasRepairableProtectionGap as U,
-  isUnsupportedPlatformCheck as V,
+  readJson as U,
+  HiMiniArrowPath as V,
   WatchProtectionBanner as W,
-  remainingProtectionRepairParts as X,
-  ProtectionRepairFlowError as Y,
-  waitForAuthorizeUrl as Z,
-  startOrRecoverCloudConnect as _,
+  HiMiniGlobeAlt as X,
+  HiMiniShieldExclamation as Y,
+  hasRepairableProtectionGap as Z,
+  isUnsupportedPlatformCheck as _,
   EvidenceActivityHeatmapMini as a,
-  HiMiniNoSymbol as a$,
-  openPackageFirewallAuthorizeFallback as a0,
-  waitForCloudConnection as a1,
-  activeFailedHarnesses as a2,
-  HiMiniWrenchScrewdriver as a3,
-  HiMiniExclamationCircle as a4,
-  ProofStrip as a5,
-  HiMiniEye as a6,
-  HiMiniXCircle as a7,
-  HiMiniClipboardDocumentCheck as a8,
-  HiMiniClipboard as a9,
-  clearEvidence as aA,
-  exportDiagnostics as aB,
-  repairApprovalCenter as aC,
-  exportSettings as aD,
-  setupDesktopNotifications as aE,
-  WorkspacePageHeader as aF,
-  HiMiniMagnifyingGlass as aG,
-  isProtectionPosture as aH,
-  deriveProtectionPosture as aI,
-  Tag as aJ,
-  approvalGateCooldownLabel as aK,
-  fetchLocalCliApi as aL,
-  fetchExtensionControlApi as aM,
-  useResolvedApprovalGate as aN,
-  HiMiniInformationCircle as aO,
-  buildApprovalProofCredentials as aP,
-  GenIcon as aQ,
-  HiMiniGlobeAlt as aR,
-  HiMiniCube as aS,
-  HiMiniServerStack as aT,
-  HiMiniFolder as aU,
-  FaWindows as aV,
-  FaAws as aW,
-  approvalProofRecentlySatisfied as aX,
-  HiMiniArrowLeft as aY,
-  HiMiniPlus as aZ,
-  HiMiniCheck as a_,
-  PROTECTION_POSTURE_COPY as aa,
-  POSTURE_OUTCOME_COLUMNS as ab,
-  getDefaultExportFromCjs as ac,
-  React as ad,
-  HiMiniKey as ae,
-  HiMiniLockClosed as af,
-  HiMiniBellAlert as ag,
-  HiMiniAdjustmentsHorizontal as ah,
-  HiMiniCircleStack as ai,
-  TabBar as aj,
-  fetchCloudReviewSettings as ak,
-  isApprovalProofSubmitDisabled as al,
-  HiMiniArrowPath as am,
-  ApprovalProofFieldInputs as an,
-  changeCloudReviewSettings as ao,
-  resolveProtectionLevelCopy as ap,
-  fetchSettings as aq,
-  fetchRuntimeSnapshot as ar,
-  clearPolicy as as,
-  clearReviewQueue as at,
-  revokeApprovalGateCooldown as au,
-  disableApprovalGateTotp as av,
-  importSettings as aw,
-  resetSettings as ax,
-  enrollApprovalGateTotp as ay,
-  verifyApprovalGateTotp as az,
+  approvalProofRecentlySatisfied as a$,
+  ProtectionRepairFlowError as a0,
+  waitForAuthorizeUrl as a1,
+  startOrRecoverCloudConnect as a2,
+  safeCloudConnectUrl as a3,
+  openPackageFirewallAuthorizeFallback as a4,
+  waitForCloudConnection as a5,
+  activeFailedHarnesses as a6,
+  HiMiniWrenchScrewdriver as a7,
+  HiMiniExclamationCircle as a8,
+  ProofStrip as a9,
+  disableApprovalGateTotp as aA,
+  importSettings as aB,
+  resetSettings as aC,
+  enrollApprovalGateTotp as aD,
+  verifyApprovalGateTotp as aE,
+  clearEvidence as aF,
+  exportDiagnostics as aG,
+  repairApprovalCenter as aH,
+  exportSettings as aI,
+  setupDesktopNotifications as aJ,
+  WorkspacePageHeader as aK,
+  HiMiniMagnifyingGlass as aL,
+  isProtectionPosture as aM,
+  deriveProtectionPosture as aN,
+  Tag as aO,
+  approvalGateCooldownLabel as aP,
+  fetchLocalCliApi as aQ,
+  fetchExtensionControlApi as aR,
+  useResolvedApprovalGate as aS,
+  HiMiniInformationCircle as aT,
+  buildApprovalProofCredentials as aU,
+  GenIcon as aV,
+  HiMiniCube as aW,
+  HiMiniServerStack as aX,
+  HiMiniFolder as aY,
+  FaWindows as aZ,
+  FaAws as a_,
+  HiMiniEye as aa,
+  HiMiniXCircle as ab,
+  HiMiniClipboardDocumentCheck as ac,
+  HiMiniClipboard as ad,
+  PROTECTION_POSTURE_COPY as ae,
+  POSTURE_OUTCOME_COLUMNS as af,
+  getDefaultExportFromCjs as ag,
+  React as ah,
+  HiMiniKey as ai,
+  usePresentationMode as aj,
+  HiMiniAdjustmentsHorizontal as ak,
+  HiMiniLockClosed as al,
+  HiMiniBellAlert as am,
+  HiMiniCircleStack as an,
+  TabBar as ao,
+  fetchCloudReviewSettings as ap,
+  isApprovalProofSubmitDisabled as aq,
+  ApprovalProofFieldInputs as ar,
+  changeCloudReviewSettings as as,
+  resolveProtectionLevelCopy as at,
+  fetchSettings as au,
+  fetchRuntimeSnapshot as av,
+  withoutPresentationSettings as aw,
+  clearPolicy as ax,
+  clearReviewQueue as ay,
+  revokeApprovalGateCooldown as az,
   HiMiniCommandLine as b,
-  createCloudExceptionRequest as b$,
-  startGuardCloudConnect as b0,
-  HiMiniArrowTopRightOnSquare as b1,
-  guardAwareHref as b2,
-  runHarnessAction as b3,
-  GuardHarnessActionError as b4,
-  HiMiniRocketLaunch as b5,
-  HiMiniTrash as b6,
-  isGuardDemoMode as b7,
-  fetchGuardApi as b8,
-  formatHarnessCommand as b9,
-  HiMiniBugAnt as bA,
-  GuardModalLayer as bB,
-  ConnectFlowCard as bC,
-  ApprovalProofInline as bD,
-  HiMiniCloudArrowDown as bE,
-  fetchPackageFirewallStatus as bF,
-  runPackageAudit as bG,
-  resolveSupplyChainAuditFailure as bH,
-  runPackageSync as bI,
-  startPackageFirewallConnect as bJ,
-  PACKAGE_FIREWALL_CONNECT_POPUP_BLOCKED_MESSAGE as bK,
-  repairSupplyChainProtection as bL,
-  runPackageFirewallAction as bM,
-  parseInterceptProofSnapshot as bN,
-  activatePackageFirewallRuntime as bO,
-  EntitlementNotice as bP,
-  fetchReceipts as bQ,
-  lazyWorkspace as bR,
-  __vitePreload as bS,
-  scopeLabel as bT,
-  HiMiniDocumentText as bU,
-  HiMiniCloudArrowUp as bV,
-  HiMiniCodeBracket as bW,
-  HiMiniClipboardDocument as bX,
-  HiMiniUsers as bY,
-  HiMiniIdentification as bZ,
-  policyActionLabel as b_,
-  fetchApprovalPage as ba,
-  fetchPolicy as bb,
-  HiMiniHome as bc,
-  appSetupTarget as bd,
-  guardActionPresentation as be,
-  DEFAULT_FILTER_STATE as bf,
-  filterEvidence as bg,
-  sortEvidence as bh,
-  computeMetrics as bi,
-  CommandActivityWorkspace as bj,
-  EvidenceFilterBar as bk,
-  EvidenceInsightStrip as bl,
-  EvidenceActionList as bm,
-  EvidenceActionDetail as bn,
-  policyIdentityKey as bo,
-  clearLabelForScope as bp,
-  HiMiniChartBar as bq,
-  isSupplyChainAuditIncomplete as br,
-  isSupplyChainAuditEvidence as bs,
-  readString$1 as bt,
-  isRecord$3 as bu,
-  HiMiniClock as bv,
-  IconActionButton as bw,
-  HiMiniBeaker as bx,
-  ActivationSummary as by,
-  ActionResultPanel as bz,
+  HiMiniClipboardDocument as b$,
+  HiMiniArrowLeft as b0,
+  HiMiniPlus as b1,
+  HiMiniCheck as b2,
+  HiMiniNoSymbol as b3,
+  startGuardCloudConnect as b4,
+  HiMiniArrowTopRightOnSquare as b5,
+  guardAwareHref as b6,
+  runHarnessAction as b7,
+  GuardHarnessActionError as b8,
+  HiMiniRocketLaunch as b9,
+  IconActionButton as bA,
+  HiMiniBeaker as bB,
+  ActivationSummary as bC,
+  ActionResultPanel as bD,
+  HiMiniBugAnt as bE,
+  GuardModalLayer as bF,
+  ConnectFlowCard as bG,
+  ApprovalProofInline as bH,
+  HiMiniCloudArrowDown as bI,
+  fetchPackageFirewallStatus as bJ,
+  runPackageAudit as bK,
+  resolveSupplyChainAuditFailure as bL,
+  runPackageSync as bM,
+  startPackageFirewallConnect as bN,
+  PACKAGE_FIREWALL_CONNECT_POPUP_BLOCKED_MESSAGE as bO,
+  repairSupplyChainProtection as bP,
+  runPackageFirewallAction as bQ,
+  parseInterceptProofSnapshot as bR,
+  activatePackageFirewallRuntime as bS,
+  EntitlementNotice as bT,
+  fetchReceipts as bU,
+  lazyWorkspace as bV,
+  __vitePreload as bW,
+  scopeLabel as bX,
+  HiMiniDocumentText as bY,
+  HiMiniCloudArrowUp as bZ,
+  HiMiniCodeBracket as b_,
+  HiMiniTrash as ba,
+  isGuardDemoMode as bb,
+  fetchGuardApi as bc,
+  formatHarnessCommand as bd,
+  fetchApprovalPage as be,
+  fetchPolicy as bf,
+  HiMiniHome as bg,
+  appSetupTarget as bh,
+  guardActionPresentation as bi,
+  DEFAULT_FILTER_STATE as bj,
+  filterEvidence as bk,
+  sortEvidence as bl,
+  computeMetrics as bm,
+  CommandActivityWorkspace as bn,
+  EvidenceFilterBar as bo,
+  EvidenceInsightStrip as bp,
+  EvidenceActionList as bq,
+  EvidenceActionDetail as br,
+  policyIdentityKey as bs,
+  clearLabelForScope as bt,
+  HiMiniChartBar as bu,
+  isSupplyChainAuditIncomplete as bv,
+  isSupplyChainAuditEvidence as bw,
+  readString$1 as bx,
+  isRecord$4 as by,
+  HiMiniClock as bz,
   HiMiniChevronRight as c,
-  HiMiniArrowRight as c0,
-  HiMiniPuzzlePiece as c1,
-  fetchCloudExceptions as c2,
-  fetchCloudExceptionRequests as c3,
-  downloadBlob as c4,
-  PolicyStatField as c5,
-  PaginationControls as c6,
-  HiMiniArrowDownTray as c7,
-  HiMiniQueueList as c8,
-  Surface as c9,
-  HiMiniCheckBadge as ca,
-  fetchMcpPolicyRequest as cb,
-  resolveMcpPolicyRequest as cc,
-  HiMiniDocumentPlus as cd,
-  HiMiniDocumentMagnifyingGlass as ce,
-  fetchSupplyChainBundle as cf,
-  isSupplyChainScannerEvidence as cg,
-  isBlockedGuardAction as ch,
-  HiMiniShieldExclamation as ci,
-  HiMiniComputerDesktop as cj,
-  HiMiniChevronLeft as ck,
-  HiMiniFunnel as cl,
-  HiMiniArrowDown as cm,
-  HiMiniArrowUp as cn,
-  runAuditRemediation as co,
-  HiMiniSignal as cp,
+  HiMiniUsers as c0,
+  HiMiniIdentification as c1,
+  policyActionLabel as c2,
+  createCloudExceptionRequest as c3,
+  HiMiniArrowRight as c4,
+  HiMiniPuzzlePiece as c5,
+  fetchCloudExceptions as c6,
+  fetchCloudExceptionRequests as c7,
+  downloadBlob as c8,
+  PolicyStatField as c9,
+  PaginationControls as ca,
+  HiMiniArrowDownTray as cb,
+  HiMiniQueueList as cc,
+  Surface as cd,
+  HiMiniCheckBadge as ce,
+  fetchMcpPolicyRequest as cf,
+  resolveMcpPolicyRequest as cg,
+  HiMiniDocumentPlus as ch,
+  HiMiniDocumentMagnifyingGlass as ci,
+  fetchSupplyChainBundle as cj,
+  isSupplyChainScannerEvidence as ck,
+  isBlockedGuardAction as cl,
+  HiMiniComputerDesktop as cm,
+  HiMiniChevronLeft as cn,
+  HiMiniFunnel as co,
+  HiMiniArrowDown as cp,
+  HiMiniArrowUp as cq,
+  runAuditRemediation as cr,
+  HiMiniSignal as cs,
   createCommandActivityClient as d,
   updateSettings as e,
   fetchCommandActivityApi as f,

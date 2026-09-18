@@ -20,6 +20,7 @@ class StoreApprovalsMixin:
         launch_target: str,
         workspace: str | None,
         now: str,
+        policy_binding: Mapping[str, object] | None = None,
     ) -> bool:
         with self._connect() as connection:
             return consume_native_retry(
@@ -31,6 +32,7 @@ class StoreApprovalsMixin:
                 launch_target=launch_target,
                 workspace=workspace,
                 now=now,
+                policy_binding=policy_binding,
             )
 
     def add_approval_request(self, request: GuardApprovalRequest, now: str) -> str:

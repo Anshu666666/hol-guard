@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass
 from http.client import HTTPConnection, HTTPResponse
@@ -28,7 +28,15 @@ from codex_plugin_scanner.guard.native_resident_client import close_native_resid
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
+from scripts.native_slo_capacity_diagnostic import retain_capacity_delivery
+from scripts.native_slo_command_fixture import prepare_empty_command_authority
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
+from scripts.native_slo_observation_failure import (
+    contextual_failure,
+    retain_failed_recovery_observation,
+    verdict_evidence,
+)
+from scripts.native_slo_source_witness import source_reference_denial_witness, source_review_witness
 
 _MAX_HTTP_RESPONSE_BYTES = 2 * 1024 * 1024
 _CAPACITY_FAIL_SAFE = {
@@ -292,19 +300,39 @@ def _is_explicit_capacity_response(response: Mapping[str, object]) -> bool:
 class AdapterSession:
     """One private daemon and workspace, with deterministic resident cleanup."""
 
-    def __init__(self, runtime: Path) -> None:
+    def __init__(
+        self,
+        runtime: Path,
+        *,
+        configuration: str | None = None,
+        progress: Callable[[str], None] | None = None,
+    ) -> None:
+        report = progress or (lambda _stage: None)
+        report("construct_workspace")
         self.temporary = tempfile.TemporaryDirectory(prefix="hol-guard-slo-")
         # Keep the synthetic paths canonical. macOS may expose ``/tmp`` as
         # ``/private/tmp`` after the daemon validates a hook workspace; using
         # one spelling avoids registering the same workspace twice and
         # invalidating the ACKed native policy snapshot on the first request.
         self.root = Path(self.temporary.name).resolve()
-        self.guard_home = self.root / "guard-home"
+        # Use the production home shape inside the disposable synthetic HOME.
+        # File-hook registrations such as Cline resolve this exact default.
+        self.guard_home = self.root / ".hol-guard"
         self.workspace = self.root / "workspace"
         self.guard_home.mkdir(mode=0o700)
         self.workspace.mkdir(mode=0o700)
+        if configuration is not None:
+            (self.guard_home / "config.toml").write_text(configuration, encoding="utf-8")
+        report("construct_store")
         self.store = GuardStore(self.guard_home)
+        self.command_authority_fixture = prepare_empty_command_authority(self.store)
+        report("construct_daemon")
         self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
+        # Match the installed ownership probe: register the canonical workspace
+        # as fixture setup before timing the adapter readiness barrier. The
+        # isolated qualification fixture separately measures the full startup.
+        report("register_workspace")
+        self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)
         self.runtime = runtime
         self.readiness_ms = 0.0
         self._connection: HTTPConnection | None = None
@@ -354,18 +382,36 @@ class AdapterSession:
     ) -> Observation:
         request = request_payload or payload(event, size_class)
         before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        started = time.perf_counter()
-        response = _request(
-            self.daemon,
-            guard_home=self.guard_home,
-            workspace=self.workspace,
-            harness=harness,
-            request_payload=request,
-            connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
-        )
-        elapsed_ms = (time.perf_counter() - started) * 1_000.0
+        response = None
+        try:
+            with source_review_witness(self.daemon._server.hook_worker, request):
+                started = time.perf_counter()
+                response = _request(
+                    self.daemon,
+                    guard_home=self.guard_home,
+                    workspace=self.workspace,
+                    harness=harness,
+                    request_payload=request,
+                    connection=self._connection if threading.get_ident() == self._owner_thread_id else None,
+                )
+                elapsed_ms = (time.perf_counter() - started) * 1_000.0
+                retain_capacity_delivery(response)
+        except Exception as error:
+            after = None
+            with suppress(Exception):
+                after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+            raise contextual_failure(
+                error,
+                harness=harness,
+                event=event,
+                size_class=size_class,
+                routes_before=before,
+                routes_after=after,
+                route=route_delta(before, after) if after is not None else "unobserved",
+                observed_semantics=verdict_evidence(response),
+            ) from error
         after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
-        return Observation(
+        observation = Observation(
             harness,
             event,
             size_class,
@@ -374,11 +420,64 @@ class AdapterSession:
             is_allowed(event, response),
             _is_explicit_capacity_response(response),
         )
+        retain_failed_recovery_observation(observation, response, before, after)
+        return observation
 
     def native_overload_count(self) -> int:
         """Return the process-local native overload counter for this session."""
 
         return native_runtime_health(self.guard_home).overloads
+
+    def probe_source_reference_denial(
+        self,
+        harness: str,
+        event: str,
+        size_class: str,
+        request: Mapping[str, object],
+    ) -> dict[str, object]:
+        """Retain a platform denial proof outside every SLO sample collection."""
+        from scripts.native_slo_workloads import QualificationCase, _post_expected, validate_case
+
+        before = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+        with source_reference_denial_witness(self.daemon._server.hook_worker, request):
+            response = _request(
+                self.daemon,
+                guard_home=self.guard_home,
+                workspace=self.workspace,
+                harness=harness,
+                request_payload=request,
+                connection=self._connection,
+            )
+        after = route_counts(self.daemon._server.hook_worker.metrics.snapshot())
+        route = route_delta(before, after)
+        case = QualificationCase(
+            f"{harness}/{event}/platform-source-denial/{size_class}",
+            harness,
+            event,
+            "PostToolUse",
+            size_class,
+            request,
+            _post_expected(harness, "block", "no_output_to_review"),
+            "native_resident",
+            "normal",
+            "platform_source_reference_denial",
+            0,
+            0,
+            "source_file_ref",
+            validation_scope="platform_source_reference_denial",
+        )
+        validate_case(case, response, route)
+        return {
+            "harness": harness,
+            "event": event,
+            "size_class": size_class,
+            "route": route,
+            "reason_code": "no_output_to_review",
+            "native_denial_validated": True,
+            "delivered_denial_validated": True,
+            "full_review": False,
+            "headline_timing_eligible": False,
+        }
 
     def close(self) -> None:
         try:

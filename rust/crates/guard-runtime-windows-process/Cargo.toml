@@ -24,5 +24,8 @@ winapi = { workspace = true, features = [
 ] }
 windows-permissions.workspace = true
 
+[target.'cfg(windows)'.dev-dependencies]
+winapi = { workspace = true, features = ["jobapi"] }
+
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

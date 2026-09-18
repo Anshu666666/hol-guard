@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..store import GuardStore
 
 from ..dashboard_launcher import build_desktop_dashboard_session_url, desktop_bootstrap_is_preflight
+from ._commands_shared import *  # noqa: F403
 from .desktop_presentation import (
     presentation_projection as _presentation_projection,
 )
@@ -214,6 +215,47 @@ def _cloud_projection(status_payload: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _protection_summary(
+    *, runtime_status: str, managed_harnesses: int, pending_count: int, apps: list[dict[str, object]]
+) -> tuple[str, str, str, str]:
+    protected_count = sum(1 for app in apps if app["protection"] == "protected")
+    needs_repair = any(app["protection"] == "needs_repair" for app in apps)
+    if managed_harnesses == 0:
+        return (
+            "not_configured",
+            "No detected app is currently managed by Guard.",
+            "setup_required",
+            "Connect a detected AI app to start local protection.",
+        )
+    if runtime_status != "active":
+        return (
+            "degraded",
+            "Guard-managed apps exist, but the local runtime is not active.",
+            "attention_required",
+            "Guard is installed, but the local runtime needs attention.",
+        )
+    if needs_repair or protected_count < managed_harnesses:
+        return (
+            "partial",
+            "Some Guard-managed apps need repair or verification.",
+            "attention_required",
+            "Some protected apps need attention.",
+        )
+    if pending_count > 0:
+        return (
+            "protected",
+            "Guard is active and enforcing local policy.",
+            "attention_required",
+            "Guard is active. One or more requests need your decision.",
+        )
+    return (
+        "protected",
+        "Guard is active and enforcing local policy.",
+        "ready",
+        "Guard is active and this machine is protected.",
+    )
+
+
 def build_desktop_bootstrap_payload(
     *,
     status_payload: dict[str, object],
@@ -234,34 +276,12 @@ def build_desktop_bootstrap_payload(
 
     managed_harnesses = _int(status_payload.get("managed_harnesses"))
     pending_count = _int(status_payload.get("pending_approvals"), len(pending_requests))
-    protected_count = sum(1 for app in apps if app["protection"] == "protected")
-    needs_repair = any(app["protection"] == "needs_repair" for app in apps)
-
-    if managed_harnesses == 0:
-        protection_state = "not_configured"
-        protection_detail = "No detected app is currently managed by Guard."
-        desktop_status = "setup_required"
-        message = "Connect a detected AI app to start local protection."
-    elif runtime_status != "active":
-        protection_state = "degraded"
-        protection_detail = "Guard-managed apps exist, but the local runtime is not active."
-        desktop_status = "attention_required"
-        message = "Guard is installed, but the local runtime needs attention."
-    elif needs_repair or protected_count < managed_harnesses:
-        protection_state = "partial"
-        protection_detail = "Some Guard-managed apps need repair or verification."
-        desktop_status = "attention_required"
-        message = "Some protected apps need attention."
-    elif pending_count > 0:
-        protection_state = "protected"
-        protection_detail = "Guard is active and enforcing local policy."
-        desktop_status = "attention_required"
-        message = "Guard is active. One or more requests need your decision."
-    else:
-        protection_state = "protected"
-        protection_detail = "Guard is active and enforcing local policy."
-        desktop_status = "ready"
-        message = "Guard is active and this machine is protected."
+    protection_state, protection_detail, desktop_status, message = _protection_summary(
+        runtime_status=runtime_status,
+        managed_harnesses=managed_harnesses,
+        pending_count=pending_count,
+        apps=apps,
+    )
 
     pending_projections = [
         projection

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import importlib.metadata
+import json
+import platform
 import sys
 from pathlib import Path
 
@@ -12,6 +16,7 @@ if str(_REPO_ROOT) not in sys.path:
 import codex_plugin_scanner  # noqa: E402
 from codex_plugin_scanner.guard.config import hook_fast_path_enabled  # noqa: E402
 from codex_plugin_scanner.guard.native_runtime import native_mode, native_runtime_status  # noqa: E402
+from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
 from scripts.native_slo_contract import (  # noqa: E402
     clear_proof_environment,
     proof_environment_violations,
@@ -54,7 +59,13 @@ def _runtime_summary(runtime: Path) -> dict[str, object]:
     package_path = Path(codex_plugin_scanner.__file__).resolve()
     source_package = (_REPO_ROOT / "src" / "codex_plugin_scanner").resolve()
     package_origin = "source_tree" if package_path.is_relative_to(source_package) else "installed"
+    distribution = importlib.metadata.distribution("hol-guard")
+    direct_url = json.loads(distribution.read_text("direct_url.json") or "{}")
+    directory_info = direct_url.get("dir_info") if isinstance(direct_url, dict) else None
+    if isinstance(directory_info, dict) and directory_info.get("editable") is True:
+        package_origin = "source_tree"
     _require(package_origin == "installed", "benchmark imported the source tree")
+    assert_installed_import_origin(distribution)
     _require(hook_fast_path_enabled(), "native hook fast path is disabled")
     return {
         "mode": status.mode,
@@ -62,4 +73,13 @@ def _runtime_summary(runtime: Path) -> dict[str, object]:
         "runtime_version": capabilities.runtime_version,
         "protocol_version": capabilities.protocol_version,
         "package_origin": package_origin,
+        "package_version": distribution.version,
+        "package_record_sha256": hashlib.sha256((distribution.read_text("RECORD") or "").encode()).hexdigest(),
+        "installed_package_sha256": installed_package_digest(distribution),
+        "python_version": platform.python_version(),
+        "architecture": platform.machine(),
+        "system": platform.system(),
+        "runtime_sha256": identity.sha256,
+        "rule_digest": capabilities.rule_digest,
+        "build_sha": capabilities.build_sha,
     }

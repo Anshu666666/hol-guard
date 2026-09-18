@@ -186,6 +186,8 @@ def persist_deferred_post_hook_command_activity(
     succeeded: bool,
     has_command: bool,
     invocation_preview: str | None = None,
+    activity_id: str | None = None,
+    occurred_at: datetime | None = None,
 ) -> bool:
     """Persist a sanitized deferred post-hook record."""
 
@@ -211,8 +213,8 @@ def persist_deferred_post_hook_command_activity(
     if not has_command:
         return False
     evidence = build_unpaired_post_evidence(
-        activity_id=_activity_id(),
-        occurred_at=_utc_now(),
+        activity_id=activity_id or _activity_id(),
+        occurred_at=occurred_at or _utc_now(),
         harness=harness,
         succeeded=succeeded,
     )

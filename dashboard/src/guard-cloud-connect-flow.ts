@@ -67,11 +67,12 @@ export function parseGuardCloudConnectHttp(
     throw new Error("This Guard window needs a signed local session before Guard Cloud sign-in can start.");
   }
   if (status < 200 || status >= 300) {
-    const message = typeof record.message === "string" && record.message.trim()
-      ? record.message
-      : typeof record.error === "string" && record.error.trim()
-        ? `${record.error} (${status})`
-        : `Request failed with ${status}`;
+    let message = `Request failed with ${status}`;
+    if (typeof record.message === "string" && record.message.trim()) {
+      message = record.message;
+    } else if (typeof record.error === "string" && record.error.trim()) {
+      message = `${record.error} (${status})`;
+    }
     throw new Error(message);
   }
   return {

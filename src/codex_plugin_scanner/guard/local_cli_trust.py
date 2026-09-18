@@ -94,11 +94,15 @@ def apply_local_mcp_extension_decision(
     artifact: GuardArtifact,
     current_action: GuardAction,
 ) -> tuple[GuardAction, str, str] | None:
+    from .mcp_authority_binding import check_current_mcp_authority
+
+    check_current_mcp_authority()
     matched = matching_local_mcp_grant(
         store=store,
         artifact=artifact,
         current_action=current_action,
     )
+    check_current_mcp_authority()
     if matched == "blocked":
         return (
             "block",
@@ -113,7 +117,9 @@ def apply_local_mcp_extension_decision(
         )
     from .runtime.mcp_server_grants import apply_contributed_mcp_decision
 
-    return apply_contributed_mcp_decision(store, artifact, current_action)
+    result = apply_contributed_mcp_decision(store, artifact, current_action)
+    check_current_mcp_authority()
+    return result
 
 
 def matching_local_mcp_grant(
@@ -124,6 +130,8 @@ def matching_local_mcp_grant(
 ) -> LocalCliGrantState | None:
     """Return a this-device MCP extension grant for a live tools/call."""
 
+    from .mcp_authority_binding import check_current_mcp_authority
+
     if current_action not in {"review", "require-reapproval", "warn"}:
         return None
     lookup = getattr(store, "read_local_mcp_grant", None)
@@ -133,6 +141,7 @@ def matching_local_mcp_grant(
     if identity_hash is None:
         return None
     command, args_hash = _mcp_server_launch(artifact)
+    check_current_mcp_authority()
     grant = lookup(
         identity_hash,
         command=command,
@@ -141,6 +150,7 @@ def matching_local_mcp_grant(
         package_version=_mcp_server_package_field(artifact, "package_version"),
         package_source=_mcp_server_package_field(artifact, "package_source"),
     )
+    check_current_mcp_authority()
     if not isinstance(grant, Mapping):
         return None
     raw_state = grant.get("state")

@@ -121,8 +121,11 @@ def _windows_open_configuration(
         # no-delete barrier; it must not also deny FILE_SHARE_WRITE.
         share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE
         if rename_parent:
+            # The rename target's internal write-data open is compatible with
+            # this attribute-only handle. Keep the no-delete parent barrier
+            # while permitting resident and publisher read/write overlap.
             desired_access = _WINDOWS_FILE_TRAVERSE | _WINDOWS_FILE_READ_ATTRIBUTES
-            share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE | _WINDOWS_FILE_SHARE_DELETE
+            share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE
         elif lock:
             share_mode = _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE
     else:

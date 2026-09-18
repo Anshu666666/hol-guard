@@ -72,6 +72,28 @@ def test_wrong_expected_plan_never_writes(tmp_path: Path, write: bool) -> None:
     assert file_snapshot(repository) == before
 
 
+@pytest.mark.parametrize("kind", ["cli", "mcp"])
+def test_maximum_slug_applies_multiline_staging_literal(tmp_path: Path, kind: str) -> None:
+    base = make_kit(tmp_path, kind)
+    discovery = normalized_discovery(
+        replace(base.discovery.metadata, slug="long-" + "a" * 35),
+        base.discovery.adapter,
+        base.discovery.source_sha256,
+        base.discovery.operations,
+        base.discovery.limitations,
+    )
+    kit = build_kit(discovery, default_review(discovery))
+    repository = repository_fixture(tmp_path)
+    plan = apply_kit(kit, repository)
+    result = apply_kit(kit, repository, write=True, expected_plan=plan["planDigest"])
+    assert result["written"] is True
+    assert (repository / contribution_path(kit.discovery.metadata)).is_file()
+    assert ": (\n" in (repository / STAGING_PATH).read_text(encoding="utf-8")
+    before = file_snapshot(repository)
+    apply_kit(kit, repository, write=True)
+    assert file_snapshot(repository) == before
+
+
 def test_intervening_repository_change_invalidates_inspected_plan(tmp_path: Path) -> None:
     kit = make_kit(tmp_path)
     repository = repository_fixture(tmp_path)

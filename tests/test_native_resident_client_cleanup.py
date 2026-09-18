@@ -63,14 +63,17 @@ def test_stream_close_does_not_stop_shared_resident(
     assert stopped == []
 
 
+@pytest.mark.parametrize("existing_state", [True, False])
 def test_close_native_residents_stops_tracked_production_pool(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    existing_state: bool,
 ) -> None:
     client_module.close_native_resident_clients()
     guard_home = tmp_path / "guard-home"
     state_dir = guard_home / "native-runtime"
-    state_dir.mkdir(parents=True)
+    if existing_state:
+        state_dir.mkdir(parents=True)
     executable = tmp_path / "runtime"
     executable.write_text("binary", encoding="utf-8")
     with client_module._RESIDENTS_LOCK:
@@ -85,6 +88,9 @@ def test_close_native_residents_stops_tracked_production_pool(
     )
     try:
         _ = client_module._client_pool_for(executable, state_dir, {})
+        # A first successful client request creates the resident's state only
+        # after _client_pool_for() has registered its lifecycle ownership.
+        state_dir.mkdir(parents=True, exist_ok=True)
         assert client_module.close_native_residents(guard_home)
         assert stopped == [state_dir]
         with client_module._RESIDENTS_LOCK:

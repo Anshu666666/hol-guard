@@ -197,6 +197,14 @@ def _maximum_inventory(binary: Path, root: Path, environment: dict[str, str]) ->
     }
 
 
+def _verify_installed_origin(package: Path, python: Path, source: Path) -> None:
+    package = package.resolve()
+    environment_root = python.parent.parent.resolve()
+    source_package = (source / "src" / "codex_plugin_scanner").resolve()
+    if not package.is_relative_to(environment_root) or package.is_relative_to(source_package):
+        raise AssertionError("Authoring was imported from source instead of the isolated installed wheel")
+
+
 def verify(python: Path, wheel: Path, source: Path) -> dict[str, object]:
     binary = python.with_name("hol-guard.exe" if os.name == "nt" else "hol-guard")
     with tempfile.TemporaryDirectory(prefix="guard-builder-install-") as temporary:
@@ -214,9 +222,7 @@ def verify(python: Path, wheel: Path, source: Path) -> dict[str, object]:
             environment,
         )
         package = Path(str(identity["path"])).resolve()
-        environment_root = python.parent.parent.resolve()
-        if not package.is_relative_to(environment_root) or package.is_relative_to(source):
-            raise AssertionError("Authoring was imported from source instead of the isolated installed wheel")
+        _verify_installed_origin(package, python, source)
         results = [_example(binary, source, root, environment, kind) for kind in ("cli", "mcp")]
         maximum = _maximum_inventory(binary, root, environment)
         if list((root / "home").glob(".hol-guard*")):

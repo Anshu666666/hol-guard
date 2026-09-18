@@ -7,9 +7,13 @@ computed request identity and consume it at most once, in the same transaction.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import sqlite3
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
+
+from .daemon.hook_native_review_binding import native_review_binding_matches
 
 _NATIVE_REVIEW_BINDING = re.compile(r"native-review-v4:[0-9a-f]{64}(?::[a-z0-9_-]{1,128}){4}")
 
@@ -38,6 +42,7 @@ def consume_native_review_approval(
     launch_target: str,
     workspace: str | None,
     now: str,
+    policy_binding: Mapping[str, object] | None = None,
 ) -> bool:
     """Consume only the chronologically latest matching five-minute allow."""
 
@@ -46,7 +51,8 @@ def consume_native_review_approval(
         return False
     _ = connection.execute("begin immediate")
     rows = connection.execute(
-        """select request_id, resolved_at, resolution_action, resolution_scope from approval_requests
+        """select request_id, resolved_at, resolution_action, resolution_scope,
+                  action_envelope_json, continuation_snapshot_json from approval_requests
            where status = 'resolved'
              and harness = ? and artifact_id = ? and artifact_name = ?
              and artifact_hash = ? and launch_target = ? and workspace is ?""",
@@ -71,6 +77,8 @@ def consume_native_review_approval(
         return False
     if not timedelta(0) <= current - approved_at <= timedelta(minutes=5):
         return False
+    if any(not _matches_policy_domain(row, harness=harness, current=policy_binding) for row in latest_rows):
+        return False
     row = min(latest_rows, key=lambda candidate: str(candidate["request_id"]))
     request_id = str(row["request_id"])
     # Spend all equivalent decisions at this instant as one capability. This
@@ -85,3 +93,21 @@ def consume_native_review_approval(
         (effect_key, request_id, artifact_hash, current.isoformat()),
     )
     return inserted.rowcount == 1
+
+
+def _matches_policy_domain(row: sqlite3.Row, *, harness: str, current: Mapping[str, object] | None) -> bool:
+    """Check the stored native domain inside the one-use consumption transaction."""
+    try:
+        envelope = json.loads(row["action_envelope_json"]) if row["action_envelope_json"] is not None else None
+        continuation = (
+            json.loads(row["continuation_snapshot_json"]) if row["continuation_snapshot_json"] is not None else None
+        )
+    except (TypeError, ValueError):
+        return False
+    if envelope is not None and not isinstance(envelope, dict):
+        return False
+    if continuation is not None and not isinstance(continuation, dict):
+        return False
+    if harness == "codex" and isinstance(continuation, dict) and continuation.get("capability") == "suspended-response":
+        return False
+    return native_review_binding_matches({"action_envelope_json": envelope}, current)

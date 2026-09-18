@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from typing import cast
 
 from .jsonc import loads_jsonc
+from .payload_coercion import object_map
 
 _MAX_PACKAGE_JSON_BYTES = 16 * 1024 * 1024
 
@@ -79,12 +80,10 @@ def _unique_json_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
 def object_mapping(value: object) -> dict[str, object] | None:
     """Return a str-keyed dict view, rejecting non-dicts and non-str keys."""
 
-    if not isinstance(value, dict):
+    mapping = object_map(value)
+    if mapping is None:
         return None
-    raw = cast(dict[object, object], value)
-    if not all(isinstance(key, str) for key in raw):
-        return None
-    return {str(key): item for key, item in raw.items()}
+    return {str(key): item for key, item in mapping.items()}
 
 
 def require(condition: bool, reason: str, reasons: list[str]) -> None:

@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
+from collections.abc import Mapping
 
+import pytest
+
+from codex_plugin_scanner.guard.daemon.hook_native_review_binding import NATIVE_REVIEW_BINDING_FIELD
 from codex_plugin_scanner.guard.store_native_review_approvals import consume_native_review_approval
 
 _BINDING = f"native-review-v4:{'a' * 64}:deny:review:review:native_sensitive_access_review"
@@ -25,7 +30,9 @@ def _connection() -> sqlite3.Connection:
             workspace text,
             resolved_at text,
             resolution_action text,
-            resolution_scope text
+            resolution_scope text,
+            action_envelope_json text,
+            continuation_snapshot_json text
         );
         create table guard_continuation_effects (
             effect_key text primary key,
@@ -56,16 +63,23 @@ def _insert_resolution(
     )
 
 
-def _consume(connection: sqlite3.Connection, *, now: str) -> bool:
+def _consume(
+    connection: sqlite3.Connection,
+    *,
+    now: str,
+    harness: str = "cursor",
+    policy_binding: Mapping[str, object] | None = None,
+) -> bool:
     return consume_native_review_approval(
         connection,
-        harness="cursor",
-        artifact_id="cursor:native-pretool:Bash",
+        harness=harness,
+        artifact_id=f"{harness}:native-pretool:Bash",
         artifact_name="Bash",
         artifact_hash=_BINDING,
         launch_target="cat .env",
         workspace="/workspace",
         now=now,
+        policy_binding=policy_binding,
     )
 
 
@@ -158,3 +172,46 @@ def test_legacy_unbound_hash_cannot_authorize_retry() -> None:
         )
         is False
     )
+
+
+def test_policy_mismatch_does_not_spend_the_atomic_retry() -> None:
+    connection = _connection()
+    _insert_resolution(connection, request_id="bound", resolved_at="2026-09-10T16:05:00+00:00", action="allow")
+    recorded = {"policy_digest": "a" * 64}
+    connection.execute(
+        "update approval_requests set action_envelope_json = ?",
+        (json.dumps({NATIVE_REVIEW_BINDING_FIELD: recorded}),),
+    )
+    assert not _consume(connection, now="2026-09-10T16:05:30+00:00", policy_binding={"policy_digest": "b" * 64})
+    assert connection.execute("select count(*) from guard_continuation_effects").fetchone()[0] == 0
+    connection.commit()
+    assert _consume(connection, now="2026-09-10T16:05:30+00:00", policy_binding=recorded)
+    connection.commit()
+    assert not _consume(connection, now="2026-09-10T16:05:30+00:00", policy_binding=recorded)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("action_envelope_json", "malformed"),
+    ("action_envelope_json", "[]"),
+    ("continuation_snapshot_json", "malformed"),
+    ("continuation_snapshot_json", "[]"),
+])
+def test_invalid_stored_security_metadata_cannot_authorize_retry(field: str, value: str) -> None:
+    connection = _connection()
+    _insert_resolution(connection, request_id="invalid", resolved_at="2026-09-10T16:05:00+00:00", action="allow")
+    assert field in {"action_envelope_json", "continuation_snapshot_json"}
+    connection.execute(f"update approval_requests set {field} = ?", (value,))
+    assert not _consume(connection, now="2026-09-10T16:05:30+00:00")
+    assert connection.execute("select count(*) from guard_continuation_effects").fetchone()[0] == 0
+
+
+def test_codex_suspended_response_cannot_be_spent_as_a_local_retry() -> None:
+    connection = _connection()
+    _insert_resolution(connection, request_id="live", resolved_at="2026-09-10T16:05:00+00:00", action="allow")
+    connection.execute(
+        """update approval_requests set harness = 'codex', artifact_id = 'codex:native-pretool:Bash',
+           continuation_snapshot_json = ?""",
+        (json.dumps({"capability": "suspended-response"}),),
+    )
+    assert not _consume(connection, now="2026-09-10T16:05:30+00:00", harness="codex")
+    assert connection.execute("select count(*) from guard_continuation_effects").fetchone()[0] == 0

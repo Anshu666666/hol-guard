@@ -10,6 +10,7 @@ import pytest
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli import commands_hook
 from codex_plugin_scanner.guard.config import GuardConfig
+from codex_plugin_scanner.guard.config_source_io import CapturedGuardConfig
 from codex_plugin_scanner.guard.store import GuardStore
 
 
@@ -23,6 +24,12 @@ def test_cli_retries_native_after_compatibility_payload_preparation(
     args = type("HookArgs", (), {"harness": "codex", "runtime_harness": None, "event_file": None, "json": True})()
     raw_payload = {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "true"}}
     routed: list[dict[str, object]] = []
+
+    def reader(_path):
+        return {}
+
+    def capture(_path):
+        return CapturedGuardConfig(b"", None)
 
     monkeypatch.setattr(commands_hook, "_require_guard_context", lambda _value: context)
     monkeypatch.setattr(commands_hook, "_require_guard_store", lambda _value: store)
@@ -44,6 +51,8 @@ def test_cli_retries_native_after_compatibility_payload_preparation(
     )
 
     def route(*_args: object, **kwargs: object) -> int | None:
+        assert kwargs["config_reader"] is reader
+        assert kwargs["config_capture"] is capture
         payload = kwargs["payload"]
         assert isinstance(payload, dict)
         routed.append(
@@ -64,6 +73,8 @@ def test_cli_retries_native_after_compatibility_payload_preparation(
         store=store,
         config=config,
         input_text=json.dumps(raw_payload),
+        config_reader=reader,
+        config_capture=capture,
     )
 
     assert result == 23

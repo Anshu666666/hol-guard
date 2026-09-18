@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import {
   HiMiniCheckCircle,
   HiMiniExclamationCircle,
@@ -31,6 +31,7 @@ import {
   type DetectedAppStatus,
 } from "./harness-detection";
 import { protectionHealthFor, useProtectionPresentationState } from "./protection-health";
+import { NetworkSandboxStatusPanel } from "./network-sandbox-status-panel";
 import { ConnectGuardCloudButton } from "./connect-guard-cloud-button";
 import { resolveFleetHeroCopy } from "./fleet-hero-copy";
 import { FleetProtectionRecovery } from "./fleet-protection-recovery";
@@ -209,6 +210,24 @@ export function FleetWorkspace(props: FleetWorkspaceProps) {
       connect_url: props.runtime.connect_url,
     }
   );
+  let primaryCta: ReactNode = null;
+  let secondaryCta: ReactNode = null;
+  if (protectionHealth.state === "protected") {
+    if (heroCopy.primaryCtaStartsCloudConnect) {
+      primaryCta = <ConnectGuardCloudButton label={heroCopy.primaryCtaLabel} variant="primary" />;
+    } else {
+      primaryCta = <ActionButton href={heroCopy.primaryCtaHref}>{heroCopy.primaryCtaLabel}</ActionButton>;
+    }
+    if (heroCopy.secondaryCtaStartsCloudConnect) {
+      secondaryCta = <ConnectGuardCloudButton label={heroCopy.secondaryCtaLabel} variant="outline" />;
+    } else {
+      secondaryCta = (
+        <ActionButton href={heroCopy.secondaryCtaHref} variant="outline">
+          {heroCopy.secondaryCtaLabel}
+        </ActionButton>
+      );
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -216,22 +235,8 @@ export function FleetWorkspace(props: FleetWorkspaceProps) {
         status={heroCopy.status}
         headline={heroCopy.headline}
         subheadline={heroCopy.subheadline}
-        cta={
-          protectionHealth.state !== "protected" ? null : heroCopy.primaryCtaStartsCloudConnect ? (
-            <ConnectGuardCloudButton label={heroCopy.primaryCtaLabel} variant="primary" />
-          ) : (
-            <ActionButton href={heroCopy.primaryCtaHref}>{heroCopy.primaryCtaLabel}</ActionButton>
-          )
-        }
-        secondaryCta={
-          protectionHealth.state !== "protected" ? null : heroCopy.secondaryCtaStartsCloudConnect ? (
-            <ConnectGuardCloudButton label={heroCopy.secondaryCtaLabel} variant="outline" />
-          ) : (
-            <ActionButton href={heroCopy.secondaryCtaHref} variant="outline">
-              {heroCopy.secondaryCtaLabel}
-            </ActionButton>
-          )
-        }
+        cta={primaryCta}
+        secondaryCta={secondaryCta}
       />
 
       <ProofStrip
@@ -242,6 +247,8 @@ export function FleetWorkspace(props: FleetWorkspaceProps) {
           { label: "Runtime", value: runtimeState ? "active" : "offline", tone: runtimeState ? "green" : "slate" },
         ]}
       />
+
+      <NetworkSandboxStatusPanel />
 
       {protectionState !== "checking" && protectionHealth.state !== "protected" ? (
         <FleetProtectionRecovery

@@ -31,9 +31,6 @@ def test_repair_message_does_not_blame_apps_for_shared_evidence_failure() -> Non
     flow_source = (
         Path(__file__).parents[1].joinpath("dashboard/src/protection-repair-flow.ts").read_text(encoding="utf-8")
     )
-    flow_source = Path(__file__).parents[1].joinpath("dashboard/src/protection-repair-flow.ts").read_text(
-        encoding="utf-8"
-    )
     assert "remainingProtectionRepairParts" in health_source
     assert "remainingProtectionRepairMessage(remainingHealth, input.displayName)" in flow_source
     assert "Command evidence still needs repair." in health_source

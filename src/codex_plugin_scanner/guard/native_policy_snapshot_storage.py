@@ -13,9 +13,10 @@ from pathlib import Path
 from typing import Any, cast
 
 from . import native_policy_snapshot_storage_windows as _windows_storage
+from .durable_io import write_all
+from .native_command_control_binding import native_command_control_floor_mac
 from .native_policy_snapshot_codec import (
     _canonical_json_bytes_v3,
-    _generation_floor_mac_v3,
     _strict_json_loads_v3,
     _valid_digest_v3,
 )
@@ -74,8 +75,13 @@ def _authority_snapshot_v3(
     policy_digest = value.get("policy_digest")
     floor_mac = value.get("floor_mac")
     snapshot = value.get("snapshot")
+    fields = {"schema", "generation_floor", "policy_digest", "snapshot", "floor_mac"}
+    if "command_control_floor" in value:
+        if value["command_control_floor"] is None:
+            raise NativePolicySnapshotError("native_policy_snapshot_cache_invalid")
+        fields.add("command_control_floor")
     if (
-        set(value) != {"schema", "generation_floor", "policy_digest", "snapshot", "floor_mac"}
+        set(value) != fields
         or _canonical_json_bytes_v3(value) != payload
         or isinstance(generation_floor, bool)
         or not isinstance(generation_floor, int)
@@ -87,7 +93,9 @@ def _authority_snapshot_v3(
         or snapshot.get("policy_digest") != policy_digest
         or not hmac.compare_digest(
             cast(str, floor_mac),
-            _generation_floor_mac_v3(generation_floor, cast(str, policy_digest), verifier_key),
+            native_command_control_floor_mac(
+                generation_floor, cast(str, policy_digest), value.get("command_control_floor"), verifier_key
+            ),
         )
     ):
         raise NativePolicySnapshotError("native_policy_snapshot_cache_invalid")
@@ -225,9 +233,7 @@ def _write_v3_snapshot_file(
     except OSError as error:
         raise NativePolicySnapshotError("native_policy_snapshot_cache_write_failed") from error
     try:
-        written = 0
-        while written < len(payload):
-            written += os.write(descriptor, payload[written:])
+        write_all(descriptor, payload)
         os.fsync(descriptor)
     except OSError as error:
         raise NativePolicySnapshotError("native_policy_snapshot_cache_write_failed") from error
@@ -465,9 +471,11 @@ def _write_v3_generation_state(guard_home: Path, *, generation: int, policy_dige
     except OSError as error:
         raise NativePolicySnapshotError("native_policy_snapshot_generation_state_write_failed") from error
     try:
-        os.write(descriptor, payload)
+        write_all(descriptor, payload)
         os.fsync(descriptor)
     except OSError as error:
+        with suppress(OSError):
+            temporary.unlink()
         raise NativePolicySnapshotError("native_policy_snapshot_generation_state_write_failed") from error
     finally:
         os.close(descriptor)

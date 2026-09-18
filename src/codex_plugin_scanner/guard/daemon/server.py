@@ -289,8 +289,6 @@ from .service_lifecycle import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_LOGGER = logging.getLogger(__name__)
-
 _HEADLESS_CLOUD_SYNC_STATE_LOCK = threading.Lock()
 _HEADLESS_CLOUD_SYNC_IN_FLIGHT: set[str] = set()
 _AUDIT_REMEDIATION_ACTIONS = {"package_shim_path"}
@@ -648,7 +646,11 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
         self.unclassified_connections_lock = threading.Lock()
         self.unclassified_watchdog_stop = threading.Event()
         self.unclassified_watchdog_thread = None
-        self.hook_process_runner = HookProcessRunner(guard_home=store.guard_home)
+        from .config_read_scope import HookConfigReadScope
+
+        self.hook_config_scope = HookConfigReadScope.for_guard_home(store.guard_home)
+        self.hook_config_reader = self.hook_config_scope.read_toml
+        self.hook_process_runner = HookProcessRunner(guard_home=self.hook_config_scope.canonical_home)
         self.hook_process_runner.set_capacity_listener(self.runtime_hook_process_scheduler.set_active_limit)
         self.runtime_hook_process_scheduler.set_queue_listener(self.hook_process_runner.notify_queued_work)
         self.runtime_heartbeat = RuntimeHeartbeatWriter(
@@ -667,7 +669,12 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
         from .hook_worker import HookWorker
 
         try:
-            self.hook_worker = HookWorker(store=self.store, activity_writer=self.runtime_hook_evidence_writer)
+            self.hook_worker = HookWorker(
+                store=self.store,
+                activity_writer=self.runtime_hook_evidence_writer,
+                config_reader=self.hook_config_reader,
+                config_capture=self.hook_config_scope,
+            )
             self.extension_control_runtime = ExtensionControlRuntime(
                 self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
             )
@@ -681,6 +688,7 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
                 store=self.store,
                 runtime=self.runtime,
                 opener=open_browser_url,
+                config_reader=self.hook_config_reader,
             )
             self.general_request_executor = _BoundedRequestExecutor(
                 name="general",
@@ -706,7 +714,16 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             raise
 
     def refresh_extension_control_runtime(self) -> ExtensionControlRuntimeSnapshot:
-        view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+        from ..native_command_control_authority_io import NativeCommandControlMutationRequiredError
+
+        try:
+            view = self.store.read_extension_control_authority_for_registry(
+                BUILT_IN_COMMAND_EXTENSION_REGISTRY, read_only=True
+            )
+        except NativeCommandControlMutationRequiredError:
+            # The shared lease has unwound. Reread under the mutation lease only
+            # when migration or recovery requires a durable authority change.
+            view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
         return self.extension_control_runtime.refresh(view)
 
     def process_request(self, request: Any, client_address: Any) -> None:
@@ -2237,7 +2254,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 store=store,
                 managed_controls_publish=_managed_controls_publish_for(self._daemon_server()),
             )
-            config = load_guard_config(store.guard_home)
+            config = load_guard_config(store.guard_home, config_reader=self._daemon_server().hook_config_reader)
             include_receipts = self._query_bool(parsed.query, "include_receipts", default=True)
             snapshot = build_runtime_snapshot(
                 store=store,
@@ -2315,7 +2332,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_json({"items": enriched, "available": uninstalled})
             return
         if parsed.path == "/v1/settings/export":
-            config = load_guard_config(store.guard_home)
+            config = load_guard_config(store.guard_home, config_reader=self._daemon_server().hook_config_reader)
             self._write_json(_settings_export_payload(config))
             return
         if parsed.path == "/v1/settings":
@@ -3062,6 +3079,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             harness=resolved_harness,
             copy=copy,
             now=_now,
+            config_reader=self._daemon_server().hook_config_reader,
         )
         updated["copy"] = copy
         updated["retry_hint"] = copy["body"]
@@ -3814,7 +3832,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         if operation == "audit":
             if context.workspace_dir is None:
                 raise ValueError("workspace_dir_required")
-            config = load_guard_config(store.guard_home)
+            config = load_guard_config(store.guard_home, config_reader=self._daemon_server().hook_config_reader)
             now = datetime.now(timezone.utc).isoformat()
             audit_payload, exit_code = build_workspace_audit_payload(
                 command_name="audit",
@@ -4744,7 +4762,9 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     repaired_check_ids.extend(containment_repaired)
                     failed_check_ids.extend(containment_failed)
                     try:
-                        config = load_guard_config(store.guard_home)
+                        config = load_guard_config(
+                            store.guard_home, config_reader=self._daemon_server().hook_config_reader
+                        )
                         _repair_command_activity_persistence_health(store)
                         store.maintain_command_activity(
                             now=datetime.now(timezone.utc),
@@ -4794,7 +4814,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             return
         if check_id == "decision_stream":
             try:
-                config = load_guard_config(store.guard_home)
+                config = load_guard_config(store.guard_home, config_reader=self._daemon_server().hook_config_reader)
                 _repair_command_activity_persistence_health(store)
                 store.maintain_command_activity(
                     now=datetime.now(timezone.utc),
@@ -4836,7 +4856,9 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_json({"error": missing_error}, status=400)
             return
         guard_home = self.server.store.guard_home  # type: ignore[attr-defined]
-        previous_redaction_level = load_guard_config(guard_home).receipt_redaction_level
+        previous_redaction_level = load_guard_config(
+            guard_home, config_reader=self._daemon_server().hook_config_reader
+        ).receipt_redaction_level
         gate_payload = settings.get("approval_gate")
         gate_input = (
             approval_gate_input_from_mapping({"approval_gate": gate_payload})
@@ -4871,6 +4893,8 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     approval_gate_grant=approval_gate_grant,
                 )
             config_settings = {key: value for key, value in settings.items() if key != "approval_gate"}
+            if missing_error == "invalid_settings_import":
+                config_settings.pop("presentation_revision", None)
             entitlement = resolve_package_firewall_entitlement(self.server.store)  # type: ignore[attr-defined]
             config = update_guard_settings(
                 guard_home,
@@ -4885,7 +4909,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     gate_payload,
                     approval_gate_grant=approval_gate_grant,
                 )
-                config = load_guard_config(guard_home)
+                config = load_guard_config(guard_home, config_reader=self._daemon_server().hook_config_reader)
             if config.receipt_redaction_level != previous_redaction_level:
                 _requeue_cloud_review_privacy_projection(  # type: ignore[arg-type]
                     self.server.store,
@@ -4933,7 +4957,9 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_json({"error": "confirmation_required", "confirm": "reset-local-settings"}, status=400)
             return
         guard_home = self.server.store.guard_home  # type: ignore[attr-defined]
-        previous_redaction_level = load_guard_config(guard_home).receipt_redaction_level
+        previous_redaction_level = load_guard_config(
+            guard_home, config_reader=self._daemon_server().hook_config_reader
+        ).receipt_redaction_level
         try:
             approval_gate_grant = require_high_risk(
                 guard_home,
@@ -4964,7 +4990,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_approval_gate_error(error)
             return
         gate = revoke_approval_gate_cooldown(guard_home).to_dict()
-        config = load_guard_config(guard_home)
+        config = load_guard_config(guard_home, config_reader=self._daemon_server().hook_config_reader)
         settings = editable_guard_settings(config)
         settings["approval_gate"] = gate
         self._write_json(_settings_response_payload(guard_home, settings))
@@ -4981,7 +5007,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         except ApprovalGateError as error:
             self._write_approval_gate_error(error)
             return
-        config = load_guard_config(guard_home)
+        config = load_guard_config(guard_home, config_reader=self._daemon_server().hook_config_reader)
         settings = editable_guard_settings(config)
         settings["approval_gate"] = approval_gate_public_config(guard_home).to_dict()
         response = _settings_response_payload(guard_home, settings)
@@ -4998,7 +5024,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         except ApprovalGateError as error:
             self._write_approval_gate_error(error)
             return
-        config = load_guard_config(guard_home)
+        config = load_guard_config(guard_home, config_reader=self._daemon_server().hook_config_reader)
         settings = editable_guard_settings(config)
         settings["approval_gate"] = gate.to_dict()
         self._write_json(_settings_response_payload(guard_home, settings))
@@ -5013,7 +5039,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         except ApprovalGateError as error:
             self._write_approval_gate_error(error)
             return
-        config = load_guard_config(guard_home)
+        config = load_guard_config(guard_home, config_reader=self._daemon_server().hook_config_reader)
         settings = editable_guard_settings(config)
         settings["approval_gate"] = gate.to_dict()
         self._write_json(_settings_response_payload(guard_home, settings))
@@ -5345,6 +5371,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 open_key=self._optional_string(payload.get("open_key")),
                 opener=open_browser_url,
                 redaction_level=redaction_level,
+                config_reader=self._daemon_server().hook_config_reader,
             )
         except ValueError as error:
             self._write_json({"error": str(error)}, status=400)
@@ -5503,6 +5530,19 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
 
     def _handle_codex_live_decision(self, request_id: str, payload: Mapping[str, object]) -> None:
         request = self.server.store.get_approval_request(request_id)  # type: ignore[attr-defined]
+        from .codex_native_live_decision import complete_native_codex_live_decision, is_native_codex_review
+
+        if is_native_codex_review(request):
+            daemon_server = self._daemon_server()
+            result = complete_native_codex_live_decision(
+                daemon_server.store,
+                worker=daemon_server.hook_worker,
+                request_id=request_id,
+                payload=payload,
+                deadline=time.monotonic() + _RUNTIME_HOOK_PROCESS_TIMEOUT_SECONDS,
+            )
+            self._write_json(result, status=200 if result.get("completed") is True else 409)
+            return
         previous = self.server.store.get_request_resume(request_id)  # type: ignore[attr-defined]
         claimed_hash, claimed_request_id = _codex_live_replay_authority(request, previous)
         if isinstance(request, Mapping) and request.get("resolution_action") == "allow":
@@ -5527,6 +5567,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             request_id=request_id,
             now=_now(),
             fresh_allow_authorized=fresh_allow_authorized,
+            config_reader=self._daemon_server().hook_config_reader,
         )
         self._write_json(result, status=200 if result.get("completed") is True else 409)
 
@@ -5844,7 +5885,15 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         workspace_path, home_path = self._validated_fail_safe_hook_paths(params)
         guard_home = None if daemon_server is None else cast(_GuardDaemonHttpServer, daemon_server).store.guard_home
         try:
-            loaded = None if guard_home is None else load_guard_config(guard_home, workspace=workspace_path)
+            loaded = (
+                None
+                if guard_home is None
+                else load_guard_config(
+                    guard_home,
+                    workspace=workspace_path,
+                    config_reader=cast(_GuardDaemonHttpServer, daemon_server).hook_config_reader,
+                )
+            )
             observe_mode = loaded is not None and protection_is_off(posture=loaded.protection_posture, mode=loaded.mode)
         except (OSError, RuntimeError, TypeError, ValueError):
             observe_mode = False
@@ -7574,18 +7623,13 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             candidate = os.path.realpath(expanded)
         except OSError:
             raise _HookPathValidationError("guard-home", "path_resolve_failed") from None
-        expected = os.path.realpath(os.fspath(self._daemon_server().store.guard_home.expanduser()))
+        expected = os.fspath(self._daemon_server().hook_config_scope.canonical_home)
         if candidate != expected:
             raise _HookPathValidationError("guard-home", "unexpected_guard_home")
         return expected
 
     def _hook_safe_roots(self) -> tuple[Path, ...]:
-        current_home = Path.home().resolve()
-        roots: list[Path] = [current_home]
-        guard_home_root = self._daemon_server().store.guard_home.expanduser().resolve().parent
-        if not self._path_is_within_root(guard_home_root, current_home):
-            roots.append(guard_home_root)
-        return tuple(roots)
+        return self._daemon_server().hook_config_scope.allowed_roots
 
     @staticmethod
     def _path_is_within_root(candidate: Path | str, root: Path | str) -> bool:
@@ -8103,7 +8147,9 @@ class GuardDaemonServer:
             self._start_supply_chain_bundle_refresh()
             self._start_aibom_inventory_refresh()
             self._start_extension_control_refresh()
-            self._command_queue_worker = start_command_queue_worker(self._server.store, self._command_queue_worker)
+            self._command_queue_worker = start_command_queue_worker(
+                self._server.store, self._command_queue_worker, config_reader=self._server.hook_config_reader
+            )
             self._cloud_review_sync_worker = start_cloud_sync_sync_worker(
                 self._server.store,
                 self._cloud_review_sync_worker,
@@ -8139,6 +8185,7 @@ class GuardDaemonServer:
                 self._server.store,
                 self._command_queue_worker,
                 shutting_down=self._shutdown_started.is_set(),
+                config_reader=self._server.hook_config_reader,
             )
             from ..runtime.cloud_review_sync_worker import refresh_cloud_review_sync_worker
 
@@ -8179,7 +8226,7 @@ class GuardDaemonServer:
     def _maintain_command_activity_best_effort(self) -> None:
         now = datetime.now(timezone.utc)
         try:
-            config = load_guard_config(self._server.store.guard_home)
+            config = load_guard_config(self._server.store.guard_home, config_reader=self._server.hook_config_reader)
             self._server.store.maintain_command_activity(
                 now=now,
                 detail_retain_days=config.evidence_retain_days,
@@ -8195,6 +8242,7 @@ class GuardDaemonServer:
         try:
             config = load_guard_config(
                 self._server.store.guard_home,
+                config_reader=self._server.hook_config_reader,
             )
             receipt_detail_limit = (
                 config.receipt_detail_limit if config.receipt_detail_limit is not None else DEFAULT_RECEIPT_DETAIL_LIMIT

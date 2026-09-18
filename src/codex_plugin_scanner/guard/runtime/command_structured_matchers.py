@@ -235,6 +235,10 @@ class EnvironmentNameMatcher:
 def structured_matcher_index_hints(matcher: CommandMatcher) -> tuple[frozenset[str], frozenset[str]] | None:
     """Return conservative registry hints for matchers in this module."""
 
+    from .command_path_set_matcher import ExecutablePathSetMatcher
+
+    if type(matcher) is ExecutablePathSetMatcher:
+        return matcher.executables, frozenset()
     from .command_operand_matchers import operand_matcher_index_hints
 
     operand_hints = operand_matcher_index_hints(matcher)

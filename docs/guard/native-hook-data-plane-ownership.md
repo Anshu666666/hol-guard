@@ -80,18 +80,26 @@ machine-checkable. In `auto` and `force`, Rust exclusively owns:
 - policy-snapshot admission and its fail-closed decision binding.
 
 Python source readers, scanners, and decision cache remain differential-test
-fixtures only. Python may inspect the package-bound native
-executable to establish transport identity, and the policy publisher may read
-configuration on its background thread; neither is a source decision or a
-request-time policy read. Unknown, changed, unreadable, oversized, malformed,
-or encoding-invalid input is not eligible for an allow result.
+fixtures on the ordinary native hook route. Python inspects the package-bound
+native executable to establish transport identity. The policy publisher reads
+configuration on its background thread; the hook bridge also reads configuration
+synchronously to determine recording-only posture. These are distinct ownership
+categories. Unknown, changed, unreadable, oversized, malformed, or encoding-invalid
+input is not eligible for a native evaluated allow. An availability continuation
+is a separate delivered response and must never be counted as evaluated allow.
 
 ## NHD-071–078 evaluator boundary
 
 The resident worker has no production import or lazy construction path for the
 Python semantic evaluator, content scanner, or decision cache. Supported
 `PreToolUse` and `PostToolUse` requests enter the Rust edge in `auto` and
-`force`; native failure is fail-closed. `HOL_GUARD_NATIVE=off` is an explicit
+`force`. When review is unavailable, `availability_harness_response` applies the
+current event-specific delivery contract: ordinary PreToolUse unavailability
+continues with a warning, designated integrity failures deny, permission requests
+use their own unavailable response, and lifecycle events continue observation.
+Watch can also transform a native denial into a recording-only response. These
+bridges do not turn the unavailable request into a native allow and do not invoke
+the Python semantic evaluator. `HOL_GUARD_NATIVE=off` is an explicit
 fail-safe disablement, not permission to restore Python authority. `shadow`
 comparison is permitted only when `HOL_GUARD_NATIVE_DIAGNOSTIC=1` is present
 on a declared non-production surface.
@@ -156,7 +164,10 @@ Current material gaps include:
 - Python compiles and publishes authenticated policy snapshots asynchronously;
   the resident validates and applies the installed effective policy from memory
   for each hook request. Workspace and managed-policy overlays are composed
-  before publication; no hook request loads Python configuration.
+  before publication. Rust evaluation does not read Python configuration; the
+  current Python delivery bridge can still read home/workspace posture on the
+  request path. The Rust performance program inventories that synchronous read
+  separately and removes it only when the acknowledged binding is sufficient.
 - Rust owns the request-bound approval artifact, external Ed25519 authority,
   resident-memory replay state, and final consume fence. Python may present
   the opaque challenge and forward the external artifact, but it never signs,
@@ -176,8 +187,10 @@ Installed native artifacts must prove all listed environment variables are absen
 Unset mode selects `auto`; an invalid mode also selects `auto`. Auto mode uses
 only the package-bound, manifest-attested runtime and ignores a binary override.
 Unset fast-path configuration enables the resident worker. No production path
-searches `PATH` or downloads a runtime. Native unavailability produces a
-deterministic fail-safe result.
+searches `PATH` or downloads a runtime. Native unavailability produces the
+deterministic event-specific response described above. See
+`tests/test_hook_availability_policy.py` and the Watch response tests for the
+current fixtures; historical blanket fail-closed wording is superseded.
 
 The stable native-wheel matrix exercises Linux x64, macOS x64, macOS arm64, and
 Windows x64. Desktop Core stages the runtime from an attested native wheel,

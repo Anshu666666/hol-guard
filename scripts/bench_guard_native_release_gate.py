@@ -4,9 +4,11 @@
 Only aggregate synthetic measurements are emitted; benchmark output excludes
 user commands, file contents, secrets, and machine paths.
 
-The enforced warm comparison measures the production adapter-to-decision path
-against a persistent Python worker; direct resident IPC is also reported as a diagnostic.
-The Python reference disables native authority and varies synthetic samples to avoid cache distortion.
+The enforced warm comparison measures NATIVE_CLIENT, from the Python native
+adapter to a decision, against an isolated benchmark-only Python semantic engine
+process. Direct resident IPC is also a NATIVE_CLIENT diagnostic. Neither timer
+includes daemon HTTP ingress or an installed launcher. Both arms must correctly
+allow a benign fixture and block a synthetic credential before timing.
 Relative speed remains informative because trivial allow payloads can favor Python, while release acceptance follows
 the contract: native p95 must stay below the absolute ceiling or materially improve over the pinned Python
 reference. Cold comparison retains the stronger relative-speedup gate.
@@ -16,24 +18,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import statistics
 import sys
 import tempfile
 import time
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from collections.abc import Mapping
 from pathlib import Path
 
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process
-from codex_plugin_scanner.guard.daemon.hook_process_runner import HookProcessRunner
+from codex_plugin_scanner.guard.native_hook_edge import _decode_edge, _encode_hook_envelope
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
+from codex_plugin_scanner.guard.native_resident_client import close_native_residents, native_resident_client_request
 from codex_plugin_scanner.guard.native_route_receipt import native_hook_route, reset_native_hook_route
 from codex_plugin_scanner.guard.native_runtime import (
+    native_runtime_health,
     native_runtime_status,
     review_post_tool_native,
 )
-from codex_plugin_scanner.guard.native_runtime_resident import close_resident_native_runtimes, resident_native_request
 from codex_plugin_scanner.guard.runtime.hook_review_types import HookReviewRequest
 
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -44,27 +47,27 @@ _MAX_COLD_P95_MS = 150.0
 _MAX_NATIVE_READINESS_MS = 400.0
 
 
-@contextmanager
-def _python_reference_mode() -> Iterator[None]:
-    previous = os.environ.get("HOL_GUARD_NATIVE")
-    os.environ["HOL_GUARD_NATIVE"] = "off"
-    try:
-        yield
-    finally:
-        if previous is None:
-            os.environ.pop("HOL_GUARD_NATIVE", None)
-        else:
-            os.environ["HOL_GUARD_NATIVE"] = previous
+# A scripts-only oracle must not be imported by any production entry point.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.append(str(_REPO_ROOT))
+
+from scripts.native_benchmark_oracle import (  # noqa: E402
+    BenchmarkPythonOracle,
+    synthetic_payload,
+    validate_semantic_response,
+)
 
 
 def _percentile(values: list[float], quantile: float) -> float:
     ordered = sorted(values)
-    index = min(len(ordered) - 1, max(0, int(len(ordered) * quantile)))
+    index = min(len(ordered) - 1, max(0, math.ceil(len(ordered) * quantile) - 1))
     return ordered[index]
 
 
 def _summary(values: list[float]) -> dict[str, float]:
     return {
+        "count": len(values),
         "p50_ms": round(statistics.median(values), 3),
         "p95_ms": round(_percentile(values, 0.95), 3),
         "p99_ms": round(_percentile(values, 0.99), 3),
@@ -72,14 +75,41 @@ def _summary(values: list[float]) -> dict[str, float]:
     }
 
 
-def _payload(sample: int | None = None) -> dict[str, object]:
-    sample_marker = "" if sample is None else f"// benchmark sample {sample}\n"
-    return {
-        "hook_event_name": "PostToolUse",
-        "tool_name": "Read",
-        "tool_input": {"file_path": "src/example.ts"},
-        "tool_response": [{"type": "text", "text": ("export const value = 1;\n" * 40) + sample_marker}],
-    }
+def _payload(sample: int | None = None, *, case: str = "benign") -> dict[str, object]:
+    return synthetic_payload(sample, case=case)
+
+
+def _prepare_benchmark_policy(guard_home: Path) -> None:
+    """Give both semantic arms the same explicit policy before any timing."""
+    from scripts.native_slo_workloads import configuration_text
+
+    with (guard_home / "config.toml").open("x", encoding="utf-8") as handle:
+        handle.write(configuration_text("normal"))
+
+
+def _require_benchmark_policy(snapshot: Mapping[str, object]) -> None:
+    effective = snapshot.get("effective_policy")
+    if not isinstance(effective, Mapping):
+        raise RuntimeError("benchmark acknowledged policy missing")
+    actions = (
+        "default_action",
+        "subprocess_action",
+        "unknown_publisher_action",
+        "changed_hash_action",
+        "new_network_domain_action",
+    )
+    selectors = ("artifact_actions", "harness_actions", "publisher_actions", "harness_risk_actions")
+    risks = effective.get("risk_actions")
+    if (
+        snapshot.get("mode") != "enforce"
+        or effective.get("protection_posture") != "protected"
+        or any(effective.get(name) != "allow" for name in actions)
+        or any(effective.get(name) != {} for name in selectors)
+        or not isinstance(risks, Mapping)
+        or not risks
+        or any(action != "allow" for action in risks.values())
+    ):
+        raise RuntimeError("benchmark acknowledged policy does not match explicit semantic fixture")
 
 
 def _request(
@@ -88,11 +118,12 @@ def _request(
     guard_home: Path,
     request_id: str,
     sample: int | None = None,
+    case: str = "benign",
 ) -> HookReviewRequest:
     return HookReviewRequest(
         harness="claude-code",
         event_name="PostToolUse",
-        payload=_payload(sample),
+        payload=_payload(sample, case=case),
         payload_kind="inline",
         config_path=None,
         cwd=workspace,
@@ -110,6 +141,7 @@ def _wire_request(
     guard_home: Path,
     request_id: str = "native-benchmark-oneshot",
     sample: int | None = None,
+    case: str = "benign",
 ) -> str:
     return json.dumps(
         {
@@ -117,7 +149,7 @@ def _wire_request(
             "request_id": request_id,
             "harness": "claude-code",
             "event_name": "PostToolUse",
-            "payload": _payload(sample),
+            "payload": _payload(sample, case=case),
             "cwd": str(workspace),
             "home_dir": str(workspace),
             "guard_home": str(guard_home),
@@ -157,92 +189,79 @@ def _stop_native_resident(runtime: Path, state_dir: Path, workspace: Path) -> No
 
 
 def _python_review(
-    runner: HookProcessRunner,
+    runner: BenchmarkPythonOracle,
     *,
-    workspace: Path,
-    guard_home: Path,
     sample: int | None = None,
+    case: str = "benign",
 ) -> None:
-    result = runner.review(
-        payload=_payload(sample),
-        harness="claude-code",
-        home_dir=workspace,
-        guard_home=guard_home,
-        workspace=workspace,
-        hook_env={},
-        deadline=time.monotonic() + 5.0,
+    result = runner.review(sample=sample, case=case)
+    validate_semantic_response(
+        result,
+        route=str(result.get("route")),
+        expected_route="python_semantic",
+        case=case,
     )
-    if result.payload is None:
-        raise RuntimeError(f"Python hook process did not return a decision: {result.reason_code}")
-
-
-def _bench_python_warm(
-    runner: HookProcessRunner,
-    *,
-    workspace: Path,
-    guard_home: Path,
-    iterations: int,
-) -> list[float]:
-    values: list[float] = []
-    for index in range(iterations):
-        started = time.perf_counter()
-        _python_review(runner, workspace=workspace, guard_home=guard_home, sample=index)
-        values.append((time.perf_counter() - started) * 1_000.0)
-    return values
 
 
 def _bench_python_warm_reference(*, workspace: Path, guard_home: Path, iterations: int) -> list[float]:
-    with _python_reference_mode():
-        runner = HookProcessRunner(guard_home=guard_home, process_limit=1)
+    runner = BenchmarkPythonOracle(workspace=workspace, guard_home=guard_home)
+    values: list[float] = []
+    try:
         runner.start()
-        try:
-            _python_review(runner, workspace=workspace, guard_home=guard_home)
-            return _bench_python_warm(
-                runner,
-                workspace=workspace,
-                guard_home=guard_home,
-                iterations=iterations,
+        for case in ("benign", "secret"):
+            _python_review(runner, case=case)
+        for index in range(iterations):
+            started = time.perf_counter()
+            response = runner.review(sample=index)
+            values.append((time.perf_counter() - started) * 1_000.0)
+            validate_semantic_response(
+                response, route=str(response.get("route")), expected_route="python_semantic", case="benign"
             )
-        finally:
-            runner.close()
+    finally:
+        runner.close()
+    return values
 
 
 def _bench_native_warm(
-    *,
-    workspace: Path,
-    guard_home: Path,
-    iterations: int,
+    *, workspace: Path, guard_home: Path, iterations: int, policy_snapshot: Mapping[str, object]
 ) -> list[float]:
-    """Measure direct authenticated resident IPC as a diagnostic."""
+    """Measure generation-bound authenticated resident IPC as a diagnostic."""
     status = native_runtime_status()
     if status.identity is None:
         raise RuntimeError("Native resident runtime identity is unavailable")
     values: list[float] = []
     for index in range(iterations):
-        request = _wire_request(
-            workspace=workspace,
+        request = _encode_hook_envelope(
+            payload=_payload(index),
+            harness="claude-code",
+            event="PostToolUse",
             guard_home=guard_home,
-            request_id=f"native-warm-{index}",
-            sample=index,
+            home_dir=workspace,
+            cwd=workspace,
+            source_ref_external_allowed=False,
+            deadline_budget_ms=5_000,
+            snapshot=policy_snapshot,
         )
+        if request is None:
+            raise RuntimeError("native benchmark envelope encoding failed")
         started = time.perf_counter()
-        response_bytes = resident_native_request(
+        response_bytes = native_resident_client_request(
             executable=status.identity.path,
-            identity_sha256=status.identity.sha256,
             guard_home=guard_home,
             environment=_native_environment(workspace),
-            payload=request.encode("utf-8"),
+            payload=request,
             timeout_seconds=5.0,
+            raw_hook_envelope=True,
         )
         values.append((time.perf_counter() - started) * 1_000.0)
         if response_bytes is None:
             raise RuntimeError("Native resident IPC request failed")
-        response = json.loads(response_bytes)
-        if response.get("decision") != "allow":
-            raise RuntimeError(
-                "Native resident runtime did not return the expected allow decision: "
-                f"sample={index} response={response!r}"
-            )
+        edge = _decode_edge(json.loads(response_bytes))
+        if edge is None:
+            raise RuntimeError("native benchmark response receipt validation failed")
+        validate_semantic_response(
+            edge["result"], route="native_resident", expected_route="native_resident", case="benign"
+        )
     return values
 
 
@@ -253,7 +272,7 @@ def _bench_native_warm_production(
     iterations: int,
     policy_snapshot: Mapping[str, object] | None = None,
 ) -> list[float]:
-    """Measure the production adapter-to-decision route over a warm resident."""
+    """Measure NATIVE_CLIENT: the Python native adapter over a warm resident."""
     values: list[float] = []
     for index in range(iterations):
         reset_native_hook_route()
@@ -273,31 +292,30 @@ def _bench_native_warm_production(
                 policy_snapshot=policy_snapshot,
             )
         values.append((time.perf_counter() - started) * 1_000.0)
-        if native_hook_route() != "native_resident":
-            raise RuntimeError(
-                "Native production warm benchmark did not use the authenticated resident route: "
-                f"sample={index} route={native_hook_route()!r}"
-            )
-        if response is None or response.decision != "allow":
-            raise RuntimeError(
-                "Native production warm benchmark returned an unexpected decision: "
-                f"sample={index} reason_code={getattr(response, 'reason_code', None)}"
-            )
+        validate_semantic_response(
+            response,
+            route=native_hook_route(),
+            expected_route="native_resident",
+            case="benign",
+        )
     return values
 
 
 def _bench_python_cold(*, workspace: Path, guard_home: Path, iterations: int) -> list[float]:
     values: list[float] = []
-    with _python_reference_mode():
-        for _ in range(iterations):
-            runner = HookProcessRunner(guard_home=guard_home, process_limit=1)
-            started = time.perf_counter()
+    for index in range(iterations):
+        runner = BenchmarkPythonOracle(workspace=workspace, guard_home=guard_home)
+        started = time.perf_counter()
+        try:
             runner.start()
-            try:
-                _python_review(runner, workspace=workspace, guard_home=guard_home)
-                values.append((time.perf_counter() - started) * 1_000.0)
-            finally:
-                runner.close()
+            response = runner.review(sample=index)
+            values.append((time.perf_counter() - started) * 1_000.0)
+            validate_semantic_response(
+                response, route=str(response.get("route")), expected_route="python_semantic", case="benign"
+            )
+            _python_review(runner, case="secret")
+        finally:
+            runner.close()
     return values
 
 
@@ -325,9 +343,41 @@ def _bench_native_oneshot(
         if result.returncode != 0 or result.timed_out or result.containment_failed:
             raise RuntimeError("Cold native one-shot runtime failed")
         response = json.loads(result.stdout)
-        if response.get("decision") != "allow":
-            raise RuntimeError("Cold native one-shot runtime returned an unexpected decision")
+        validate_semantic_response(response, route="native_oneshot", expected_route="native_oneshot", case="benign")
     return values
+
+
+def _validate_native_cases(
+    *, runtime: Path, workspace: Path, guard_home: Path, policy_snapshot: Mapping[str, object]
+) -> None:
+    """Prove semantic work for both native adapters, outside timing samples."""
+    for case in ("benign", "secret"):
+        reset_native_hook_route()
+        response = review_post_tool_native(
+            _request(workspace=workspace, guard_home=guard_home, request_id=f"native-check-{case}", case=case),
+            observe_mode=False,
+            policy_snapshot=policy_snapshot,
+        )
+        try:
+            validate_semantic_response(response, route=native_hook_route(), expected_route="native_resident", case=case)
+        except RuntimeError as error:
+            # Health reasons are bounded product identifiers; never log the
+            # native response or the hook's content to diagnose a failed gate.
+            health = native_runtime_health(guard_home)
+            raise RuntimeError(f"{error} health={health.reason} failures={health.resident_failures}") from None
+        result = run_isolated_hook_process(
+            (str(runtime), "hook", "--stdin"),
+            input_text=_wire_request(workspace=workspace, guard_home=guard_home, case=case),
+            cwd=runtime.parent,
+            environment=_native_environment(workspace),
+            timeout_seconds=5.0,
+            output_limit=_MAX_RESPONSE_BYTES,
+        )
+        if result.returncode != 0 or result.timed_out or result.containment_failed:
+            raise RuntimeError("native semantic qualification process failed")
+        validate_semantic_response(
+            json.loads(result.stdout), route="native_oneshot", expected_route="native_oneshot", case=case
+        )
 
 
 def _speedup(slower_p95: float, faster_p95: float) -> float:
@@ -367,6 +417,7 @@ def _run_benchmarks(
         workspace = Path(temp_dir)
         guard_home = workspace / "guard-home"
         guard_home.mkdir(mode=0o700)
+        _prepare_benchmark_policy(guard_home)
 
         python_warm = _bench_python_warm_reference(
             workspace=workspace,
@@ -374,9 +425,10 @@ def _run_benchmarks(
             iterations=warm_iterations,
         )
 
-        close_resident_native_runtimes()
+        close_native_residents()
         try:
             with native_policy_snapshot(guard_home) as snapshot:
+                _require_benchmark_policy(snapshot)
                 reset_native_hook_route()
                 # Snapshot materialization is durable policy bookkeeping, not resident readiness.
                 # Start the gate when the production adapter begins its first authenticated request.
@@ -393,6 +445,9 @@ def _run_benchmarks(
                     or native_hook_route() != "native_resident"
                 ):
                     raise _readiness_failure(readiness_response)
+                _validate_native_cases(
+                    runtime=runtime, workspace=workspace, guard_home=guard_home, policy_snapshot=snapshot
+                )
                 native_warm = _bench_native_warm_production(
                     workspace=workspace,
                     guard_home=guard_home,
@@ -403,10 +458,11 @@ def _run_benchmarks(
                     workspace=workspace,
                     guard_home=guard_home,
                     iterations=warm_iterations,
+                    policy_snapshot=snapshot,
                 )
         finally:
             _stop_native_resident(runtime, guard_home / "native-runtime", workspace)
-            close_resident_native_runtimes()
+            close_native_residents()
 
         python_cold = _bench_python_cold(
             workspace=workspace,
@@ -446,19 +502,41 @@ def main() -> int:
     warm_speedup = _speedup(python_warm_summary["p95_ms"], native_warm_summary["p95_ms"])
     cold_speedup = _speedup(python_cold_summary["p95_ms"], native_oneshot_summary["p95_ms"])
     result = {
-        "schema": "hol-guard-native-performance.v1",
+        "schema": "hol-guard-native-performance.v2",
+        "evidence_class": "smoke",
+        "qualification_complete": False,
+        "percentile_estimator": "nearest_rank",
+        "timing_boundaries": {
+            "KERNEL": "not_measured",
+            "NATIVE_CLIENT": "python_native_adapter_and_authenticated_ipc",
+            "DAEMON_INGRESS": "not_measured",
+            "INSTALLED_LAUNCHER": "not_measured",
+        },
+        "reference": {
+            "implementation": "isolated_benchmark_python_semantic_engine",
+            "production_fallback": False,
+            "cases_validated": ["benign", "secret"],
+            "comparison_scope": "semantic_engine_process_not_legacy_guardian_topology",
+            "shared_policy_fixture": "explicit_protected_allow_policy",
+            "acknowledged_policy_validated": True,
+        },
         "warm": {
-            "python_hook_process": python_warm_summary,
+            "boundary": "NATIVE_CLIENT",
+            "python_semantic_oracle_process": python_warm_summary,
             "native_resident": native_warm_summary,
             "native_resident_ipc_diagnostic": native_warm_ipc_summary,
             "p95_speedup": warm_speedup,
         },
         "cold": {
-            "python_hook_process": python_cold_summary,
+            "boundary": "NATIVE_CLIENT",
+            "process_startup_included": True,
+            "python_semantic_oracle_process": python_cold_summary,
             "native_oneshot": native_oneshot_summary,
             "p95_speedup": cold_speedup,
         },
         "native_readiness_ms": round(native_readiness_ms, 3),
+        "readiness_excludes_snapshot_materialization": True,
+        "direct_concurrent_16": "not_measured",
         "gates": {
             "warm_acceptance": "p95_ms_lte_maximum_or_speedup_gte_minimum",
             "minimum_warm_p95_speedup": _MIN_WARM_P95_SPEEDUP,

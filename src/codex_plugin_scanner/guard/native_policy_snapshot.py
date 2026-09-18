@@ -30,6 +30,7 @@ from . import native_policy_snapshot_windows_io as _windows_io
 from . import native_policy_snapshot_windows_key as _windows_key
 from . import native_policy_snapshot_windows_state as _windows_state
 from . import native_policy_snapshot_windows_support as _windows_support
+from .config_source_io import GuardConfigCapture
 from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
 
 globals().update({name: getattr(_constants, name) for name in _constants.__all__})
@@ -386,15 +387,17 @@ def notify_native_policy_mutation(guard_home: Path) -> None:
         publisher.request_publish()
 
 
-def get_native_policy_snapshot_publisher(store: GuardStore) -> NativePolicySnapshotPublisher:
+def get_native_policy_snapshot_publisher(
+    store: GuardStore, *, config_capture: GuardConfigCapture | None = None
+) -> NativePolicySnapshotPublisher:
     """Return the per-Guard-home publisher shared by daemon hook workers."""
 
     key = _publisher_key(Path(store.guard_home))
     with _PUBLISHER_LOCK:
         for publisher in _PUBLISHERS.get(key, ()):
-            if not publisher.closed:
+            if not publisher.closed and publisher.config_capture is config_capture:
                 return publisher
-        publisher = NativePolicySnapshotPublisher(store=store)
+        publisher = NativePolicySnapshotPublisher(store=store, config_capture=config_capture)
         _PUBLISHERS.setdefault(key, set()).add(publisher)
         return publisher
 

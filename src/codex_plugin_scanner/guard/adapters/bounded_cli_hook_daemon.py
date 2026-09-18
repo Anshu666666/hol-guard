@@ -6,9 +6,9 @@ import json
 import sqlite3
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse, urlsplit, urlunsplit
 
 from ..action_lattice import is_guard_action
 from ..daemon.hook_availability_policy import hook_reason_continues_session
@@ -208,6 +208,62 @@ def _consistent_native_response(
     return response, "allow"
 
 
+def _copilot_command_response(response: dict[str, object], *, event_name: str) -> tuple[str, str, int]:
+    """Deliver Copilot's binary command-hook contract without losing a denial.
+
+    Post-tool metadata is observational: exit zero does not cancel a tool that
+    has already completed or claim that Copilot withheld its original output.
+    The full Guard action and output evidence remain in the daemon receipt.
+    """
+    consistent, action = _consistent_native_response(response, harness="copilot", event_name=event_name)
+    native_permission = response.get("permissionDecision")
+    if "permissionDecision" in response:
+        if native_permission != "allow":
+            action = "block"
+        elif not any(key in response for key in ("policy_action", "decision", "hookSpecificOutput")):
+            action = "allow"
+    elif not any(key in response for key in ("decision", "hookSpecificOutput")):
+        action = _policy_action_from_daemon(response)
+    nested = consistent.get("hookSpecificOutput")
+    nested = nested if isinstance(nested, dict) else {}
+    if (
+        "policy_action" not in response
+        and "permissionDecision" not in response
+        and consistent.get("decision") not in ("allow", "ask", "deny", "block")
+        and nested.get("permissionDecision") not in ("allow", "ask", "deny", "block")
+    ):
+        action = "block"
+    raw_action = response.get("policy_action")
+    if "policy_action" in response and (not isinstance(raw_action, str) or not is_guard_action(raw_action.strip())):
+        action = "block"
+    if response.get("model_output_action") == "block":
+        action = "block"
+    denied = action not in {"allow", "warn"}
+    payload: dict[str, object] = {"permissionDecision": "deny" if denied else "allow"}
+    original_reason = response.get("permissionDecisionReason")
+    if not denied and isinstance(original_reason, str) and original_reason.strip():
+        payload["permissionDecisionReason"] = original_reason
+    if denied:
+        reasons = (
+            response.get("permissionDecisionReason"),
+            nested.get("permissionDecisionReason"),
+            response.get("permission_decision_reason"),
+            response.get("reason"),
+            response.get("stopReason"),
+        )
+        payload["permissionDecisionReason"] = next(
+            (value for value in reasons if isinstance(value, str) and value.strip()),
+            "HOL Guard blocked this action because its review result was incomplete.",
+        )
+    reuse = response.get("approval_reuse")
+    if isinstance(reuse, dict):
+        payload["approval_reuse"] = reuse
+    evidence = response.get("scanner_evidence")
+    if isinstance(evidence, list) and evidence and all(isinstance(item, dict) for item in evidence):
+        payload["scanner_evidence"] = evidence
+    return json.dumps(payload, ensure_ascii=True, separators=(",", ":")), "", 0
+
+
 def _daemon_response_to_native(
     daemon_response: dict[str, object],
     *,
@@ -216,6 +272,9 @@ def _daemon_response_to_native(
 ) -> tuple[str, str, int]:
     """Transform daemon policy data into harness-native output."""
     canonical = harness.strip().lower().replace("_", "-")
+    compact_event = event_name.replace("_", "").replace("-", "").lower()
+    if canonical == "copilot" and compact_event in {"pretooluse", "posttooluse"}:
+        return _copilot_command_response(daemon_response, event_name=event_name)
     if canonical == "grok" and not daemon_response:
         from .grok_hooks import is_grok_observe_only_event
 
@@ -338,11 +397,24 @@ def try_daemon_hook(
     harness: str,
     input_text: str,
     timeout_seconds: float,
+    cli_args: Sequence[str] | None = None,
     _endpoint_loader: Callable[[Path, str], str | None] | None = None,
     _token_loader: Callable[[Path], str | None] | None = None,
     _opener_builder: Callable[[], urllib.request.OpenerDirector] | None = None,
 ) -> tuple[str, str, int] | None:
     """POST the hook payload to the running daemon; return native stdout or None."""
+    context: dict[str, str] = {}
+    if cli_args is not None:
+        from .bounded_cli_hook_bridge import _validated_frozen_cli_args
+
+        # The fast path must carry the same admitted context as its configured
+        # CLI command. Unknown grammar retains the existing CLI fallback.
+        validated = _validated_frozen_cli_args(cli_args, guard_home=guard_home, harness=harness)
+        if validated is None:
+            return None
+        context["guard-home"] = validated[2]
+        for index in range(5, len(validated) - 1, 2):
+            context[validated[index].removeprefix("--")] = validated[index + 1]
     endpoint = (_endpoint_loader or _daemon_hook_endpoint)(guard_home, harness)
     if endpoint is None:
         return None
@@ -350,6 +422,9 @@ def try_daemon_hook(
         _assert_loopback_http_url(endpoint)
     except ValueError:
         return None
+    if context:
+        parsed_endpoint = urlsplit(endpoint)
+        endpoint = urlunsplit(parsed_endpoint._replace(query=urlencode(context)))
     token = (_token_loader or _read_daemon_auth_token)(guard_home)
     if token is None:
         return None

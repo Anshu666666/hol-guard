@@ -41,14 +41,25 @@ ACTIVE_RUST_FILES: Final = (
     Path("rust/crates/guard-runtime/src/approval_v3_lifecycle_tests.rs"),
     Path("rust/crates/guard-runtime/src/approval_v3_tests.rs"),
     Path("rust/crates/guard-runtime/src/edge.rs"),
+    Path("rust/crates/guard-runtime/src/edge_identity.rs"),
+    Path("rust/crates/guard-runtime/src/edge_identity_tests.rs"),
+    Path("rust/crates/guard-runtime/src/edge_serialization.rs"),
+    Path("rust/crates/guard-runtime/src/edge_serialization_tests.rs"),
     Path("rust/crates/guard-runtime/src/edge_tests.rs"),
     Path("rust/crates/guard-runtime/src/managed_resident.rs"),
     Path("rust/crates/guard-runtime/src/managed_resident_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_enforcement.rs"),
+    Path("rust/crates/guard-runtime/src/policy_enforcement_admission.rs"),
     Path("rust/crates/guard-runtime/src/policy_enforcement_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_approval.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_authority.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_request.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_authority.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_authority_tests.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_floor.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_command_floor_tests.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_fixture_tests.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_tests.rs"),
     Path("rust/crates/guard-runtime/src/resident_protocol.rs"),
 )
@@ -251,8 +262,12 @@ def _check_authority_fence(root: Path) -> None:
         raise RuntimeError("authority fence is not SHA-256 based")
     if "DefaultHasher" in source or "hash_map::DefaultHasher" in source:
         raise RuntimeError("authority fence uses a non-cryptographic hash")
-    if "authority_unchanged_fenced" not in _read(root / Path("rust/crates/guard-runtime/src/policy_store.rs")):
+    request = _read(root / Path("rust/crates/guard-runtime/src/policy_store_request.rs"))
+    approval = _read(root / Path("rust/crates/guard-runtime/src/policy_store_approval.rs"))
+    if "authority_unchanged_fenced" not in request or "validate_request_snapshot_locked" not in approval:
         raise RuntimeError("approval path has no fenced authority recheck")
+    if "command_authority_lease" not in approval:
+        raise RuntimeError("approval path has no command control authority lease")
 
 
 def _check_contracts(root: Path) -> None:
@@ -336,7 +351,15 @@ def _check_ownership_contract(root: Path) -> None:
         raise RuntimeError("approval owner lock has no two-process contention test")
     edge = _read(root / Path("rust/crates/guard-runtime/src/edge.rs"))
     edge_tests = _read(root / Path("rust/crates/guard-runtime/src/edge_tests.rs"))
-    if "request_payload_identity" not in edge or "timestamp" not in edge_tests:
+    identity = _read(root / Path("rust/crates/guard-runtime/src/edge_identity.rs"))
+    identity_tests = _read(root / Path("rust/crates/guard-runtime/src/edge_identity_tests.rs"))
+    if (
+        "mod identity;" not in edge
+        or "request_identity_for_event" not in edge
+        or "canonical_map(self.0, OMITTED_PAYLOAD_KEYS, serializer)" not in identity
+        or "borrowed_identity_preserves_legacy_bytes_and_root_only_omissions" not in identity_tests
+        or "validated_identity_retains_cross_language_golden_digest" not in edge_tests
+    ):
         raise RuntimeError("semantic request digest stability coverage is missing")
     policy = _read(root / Path("rust/crates/guard-runtime/src/policy_enforcement.rs"))
     policy_tests = _read(root / Path("rust/crates/guard-runtime/src/policy_enforcement_tests.rs"))

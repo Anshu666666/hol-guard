@@ -21,7 +21,6 @@ from .managed_controls_policy_bundle import (
 )
 from .runtime.command_dns_extensions import expand_legacy_dns_layers
 from .runtime.command_extensions import CommandSafetyExtensionRegistry
-from .runtime.command_matcher_contracts import MatcherContractError, canonical_contract_value
 from .runtime.extension_control_authority import (
     SNAPSHOT_PURPOSE,
     TRANSITION_PURPOSE,
@@ -64,13 +63,6 @@ from .store_extension_control_authority_support import (
 from .store_extension_control_authority_transitions import _ExtensionControlAuthorityTransitionMixin
 
 
-def _canonical_contract_value(value: object) -> object:
-    try:
-        return canonical_contract_value(value)
-    except MatcherContractError as exc:
-        raise ExtensionControlAuthorityError(str(exc)) from exc
-
-
 class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMixin):
     """GuardStore mixin for the local extension-control authority."""
 
@@ -94,11 +86,15 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         registry: CommandSafetyExtensionRegistry,
         *,
         include_managed_controls: bool = True,
+        read_only: bool = False,
     ) -> ExtensionControlAuthorityView:
+        from .native_command_control_authority_io import NativeCommandControlMutationRequiredError
+
         catalog_digest = registry.catalog_digest
         self._extension_control_last_catalog_digest = catalog_digest
         try:
-            with self._extension_control_authority_lock():
+            self._catalog_target_manifest(registry)
+            with self._extension_control_authority_lock(shared=read_only):
                 self._require_compatible_extension_control_schema()
                 view = self._read_extension_control_authority_locked(catalog_digest, migration_registry=registry)
                 stale_manifest: dict[str, str] | None = None
@@ -126,6 +122,8 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                         replace=True,
                     )
                 return composed
+        except NativeCommandControlMutationRequiredError:
+            raise
         except ExtensionControlAuthorityError:
             return self._tampered_view(catalog_digest)
         except Exception:
@@ -187,50 +185,46 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             catalog_digest=active_catalog_digest,
             authority_key=key,
         )
-        fingerprint_refresh = (
-            current_manifest is not None
-            and previous_manifest is not None
-            and previous_manifest != current_manifest
-            and active_catalog_digest == view.catalog_digest
-        )
-        if active_catalog_digest != view.catalog_digest or fingerprint_refresh:
-            if any(layer.catalog_digest != active_catalog_digest for layer in managed_layers):
-                raise ExtensionControlAuthorityError("managed controls activation layer catalog mismatch")
-            if current_manifest is None:
-                raise ExtensionControlAuthorityError("managed controls current catalog manifest is missing")
-            # A missing prior manifest must not act as an implicit fingerprint
-            # match: stale managed allows remain disabled until cloud refresh.
-            if fingerprint_refresh:
-                if previous_manifest is None:
-                    raise ExtensionControlAuthorityError("managed controls current catalog manifest is missing")
-                prior_manifest: Mapping[str, str] = previous_manifest
-            else:
-                prior_manifest = self._load_catalog_manifest(active_catalog_digest, key=key) or {}
-            managed_layers = tuple(
-                replace(
-                    layer,
-                    catalog_digest=view.catalog_digest,
-                    controls=tuple(
-                        (
-                            control
-                            if preserve_managed_extension_control(
-                                control,
-                                previous_manifest=prior_manifest,
-                                current_manifest=current_manifest,
-                            )
-                            else replace(control, state=ControlState.DISABLED)
-                        )
-                        for control in layer.controls
-                    ),
-                )
-                for layer in managed_layers
-            )
         durable_revision = managed_controls_revision_from_state(
             revision_state,
             authority_key=key,
         )
         if managed_revision != durable_revision:
             raise ExtensionControlAuthorityError("managed controls activation revision mismatch")
+        if any(layer.catalog_digest != active_catalog_digest for layer in managed_layers):
+            raise ExtensionControlAuthorityError("managed controls activation layer catalog mismatch")
+        if current_manifest is None:
+            from .runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
+
+            if (
+                active_catalog_digest != view.catalog_digest
+                or view.catalog_digest != BUILT_IN_COMMAND_EXTENSION_REGISTRY.catalog_digest
+            ):
+                raise ExtensionControlAuthorityError("managed controls current catalog manifest is missing")
+            current_manifest = self._catalog_target_manifest(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+        from .store import GuardStore
+        from .store_managed_control_manifest_context import pin_managed_manifest_context
+
+        context = pin_managed_manifest_context(cast(GuardStore, self), active=active, layers=managed_layers, key=key)
+        # Compare every read with the activation's immutable source contracts.
+        # A mutable current manifest cannot erase a previously required clamp.
+        managed_layers = tuple(
+            replace(
+                layer,
+                catalog_digest=view.catalog_digest,
+                controls=tuple(
+                    control
+                    if preserve_managed_extension_control(
+                        control,
+                        previous_manifest=context.manifest,
+                        current_manifest=current_manifest,
+                    )
+                    else replace(control, state=ControlState.DISABLED)
+                    for control in layer.controls
+                ),
+            )
+            for layer in managed_layers
+        )
         local_layers = tuple(layer for layer in view.layers if layer.kind is ControlLayerKind.LOCAL_ADMIN)
         composed = ExtensionControlAuthorityView(
             view.health,
@@ -322,6 +316,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         layers_json = layers_to_json(layers)
         self._validate_serialized_layers(layers_json)
         with self._extension_control_authority_lock():
+            self._invalidate_native_extension_control_policy()
             current = self._read_extension_control_authority_locked(catalog_digest)
             key = self._authority_key(required=True)
             assert key is not None
@@ -569,6 +564,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         migration_registry: CommandSafetyExtensionRegistry | None = None,
     ) -> ExtensionControlAuthorityView:
         with self._extension_control_authority_lock():
+            self._invalidate_native_extension_control_policy(explicit_recovery=True)
             key = self._authority_key(required=False)
             if key is None:
                 return self._reset_extension_control_authority(
@@ -671,6 +667,13 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         reason: str,
     ) -> ExtensionControlAuthorityView:
         # Never import rows with an unverifiable chain; re-establish an empty protected authority.
+        from .native_command_control_authority_store import begin_native_command_control_recovery
+        from .store import GuardStore
+
+        recovered_key = key if key is not None else secrets.token_bytes(32)
+        begin_native_command_control_recovery(cast(GuardStore, self), new_authority_key=recovered_key)
+        if key is None:
+            self._secret_store().set_secret(self._key_ref(), base64.urlsafe_b64encode(recovered_key).decode())
         reset_at = _now()
         with self._connect() as connection:
             ensure_extension_control_authority_schema(connection)
@@ -735,11 +738,18 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             connection.execute("delete from extension_control_authority_proof")
             connection.execute("delete from extension_control_authority_transition")
             connection.execute("delete from extension_control_authority_snapshot")
-        return self._bootstrap_extension_control_authority(catalog_digest, key=key)
+            if key is None:
+                # These rows authenticate with the lost key. They cannot be
+                # reused under the explicit new-key recovery epoch. Managed
+                # activation remains independently authenticated and fail-closed.
+                connection.execute("delete from extension_control_catalog_manifest")
+        return self._bootstrap_extension_control_authority(catalog_digest, key=recovered_key)
 
     def acknowledge_extension_control_degraded_mode(self) -> ExtensionControlAuthorityView:
-        self._extension_control_degraded_acknowledged = True
-        return self._degraded_view(self._extension_control_last_catalog_digest)
+        with self._extension_control_authority_lock():
+            self._invalidate_native_extension_control_policy()
+            self._extension_control_degraded_acknowledged = True
+            return self._degraded_view(self._extension_control_last_catalog_digest)
 
     def _read_extension_control_authority_locked(
         self,
@@ -848,69 +858,9 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
 
     @staticmethod
     def _catalog_target_manifest(registry: CommandSafetyExtensionRegistry) -> dict[str, str]:
-        manifest: dict[str, str] = {}
-        for extension in registry.extensions:
-            rule_contracts = {
-                rule.rule_id: {
-                    "rule_version": rule.rule_version,
-                    "severity": rule.severity,
-                    "risk_classes": rule.risk_classes,
-                    "action_classes": rule.action_classes,
-                    "default_mode": rule.default_mode,
-                    "matcher": _canonical_contract_value(rule.matcher),
-                    "safe_variants": tuple(
-                        (item.variant_id, _canonical_contract_value(item.matcher)) for item in rule.safe_variants
-                    ),
-                    "compatibility_fallback": rule.compatibility_fallback,
-                    "family": rule.family,
-                }
-                for rule in extension.rules
-            }
-            extension_contract = {
-                "extension_id": extension.extension_id,
-                "required": extension.required,
-                "source": extension.source,
-                "aliases": extension.aliases,
-                "dependencies": extension.dependencies,
-                "conflicts": extension.conflicts,
-                "delegated_protection": extension.delegated_protection,
-                "ecosystem_ids": extension.ecosystem_ids,
-                "executables": extension.executables,
-                "project_markers": extension.project_markers,
-                "action_classes": extension.action_classes,
-                "risk_classes": extension.risk_classes,
-                "rules": rule_contracts,
-            }
-            extension_fingerprint = hashlib.sha256(
-                json.dumps(extension_contract, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
-            ).hexdigest()
-            manifest[f"extension:{extension.extension_id}"] = extension_fingerprint
-            for permission in extension.permissions:
-                permission_contract = {
-                    "permission_id": permission.permission_id,
-                    "extension_id": permission.extension_id,
-                    "risk_tier": permission.risk_tier,
-                    "baseline_floor": permission.baseline_floor,
-                    "default_enabled": permission.default_enabled,
-                    "configurable": permission.configurable,
-                    "fixed_reason": permission.fixed_reason,
-                    "typed_capabilities": permission.typed_capabilities,
-                    "action_classes": permission.action_classes,
-                    "rule_ids": permission.rule_ids,
-                    "dependencies": permission.dependencies,
-                    "conflicts": permission.conflicts,
-                    "implied_permissions": permission.implied_permissions,
-                    "family": permission.family,
-                    "extension_required": extension.required,
-                    "extension_dependencies": extension.dependencies,
-                    "extension_conflicts": extension.conflicts,
-                    "extension_delegated_protection": extension.delegated_protection,
-                    "rules": {rule_id: rule_contracts[rule_id] for rule_id in permission.rule_ids},
-                }
-                manifest[f"permission:{permission.permission_id}"] = hashlib.sha256(
-                    json.dumps(permission_contract, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
-                ).hexdigest()
-        return manifest
+        from .store_extension_control_manifest import catalog_target_manifest
+
+        return catalog_target_manifest(registry)
 
     def _sync_trusted_catalog_manifest(
         self,
@@ -919,13 +869,34 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         *,
         key: bytes,
     ) -> tuple[ExtensionControlAuthorityView, dict[str, str] | None]:
+        from .store import GuardStore
+        from .store_managed_control_manifest_context import (
+            active_managed_manifest_context,
+            managed_manifest_revision_required,
+        )
+
         current = self._catalog_target_manifest(registry)
+        store = cast(GuardStore, self)
+        context = active_managed_manifest_context(store, key=key)
         with self._connect() as connection:
             existing = connection.execute(
                 "select 1 from extension_control_catalog_manifest where catalog_digest = ?",
                 (registry.catalog_digest,),
             ).fetchone()
         if existing is None:
+            if (
+                context is not None
+                and any(control.state is ControlState.ENABLED for layer in context.layers for control in layer.controls)
+                and managed_manifest_revision_required(
+                    store,
+                    context,
+                    catalog_digest=registry.catalog_digest,
+                    current_manifest=current,
+                    revision=view.revision,
+                    key=key,
+                )
+            ):
+                view = self._migrate_extension_control_catalog(view, registry=registry, key=key)
             self._write_catalog_manifest(registry, key=key, manifest=current)
             return view, None
         persisted = self._load_catalog_manifest(registry.catalog_digest, key=key)
@@ -952,7 +923,23 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             )
             for layer in view.layers
         )
-        if rebound != view.layers:
+        managed_revision_needed = False
+        if context is not None and any(
+            control.state is ControlState.ENABLED
+            and persisted.get(f"{control.target.kind.value}:{control.target.target_id}")
+            != current.get(f"{control.target.kind.value}:{control.target.target_id}")
+            for layer in context.layers
+            for control in layer.controls
+        ):
+            managed_revision_needed = managed_manifest_revision_required(
+                store,
+                context,
+                catalog_digest=registry.catalog_digest,
+                current_manifest=current,
+                revision=view.revision,
+                key=key,
+            )
+        if rebound != view.layers or managed_revision_needed:
             view = self._migrate_extension_control_catalog(view, registry=registry, key=key)
         return view, persisted
 
@@ -975,6 +962,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             key=key,
             purpose=self._catalog_manifest_purpose,
         )
+        self._invalidate_native_extension_control_policy()
         with self._connect() as connection:
             if replace:
                 connection.execute(
@@ -1125,6 +1113,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
     ) -> ExtensionControlAuthorityView:
         """Rebind authenticated controls to a trusted built-in catalog update."""
 
+        self._invalidate_native_extension_control_policy()
         catalog_digest = registry.catalog_digest
         previous_manifest = self._load_catalog_manifest(previous.catalog_digest, key=key) or {}
         current_manifest = self._catalog_target_manifest(registry)
@@ -1277,6 +1266,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
     def _bootstrap_extension_control_authority(
         self, catalog_digest: str, *, key: bytes | None
     ) -> ExtensionControlAuthorityView:
+        self._invalidate_native_extension_control_policy()
         if key is None:
             key = secrets.token_bytes(32)
             self._secret_store().set_secret(self._key_ref(), base64.urlsafe_b64encode(key).decode())

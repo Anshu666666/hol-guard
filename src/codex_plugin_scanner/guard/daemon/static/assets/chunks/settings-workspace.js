@@ -1,4 +1,4 @@
-import { aa as PROTECTION_POSTURE_COPY, ab as POSTURE_OUTCOME_COLUMNS, j as jsxRuntimeExports, r as reactExports, ac as getDefaultExportFromCjs, ad as React, M as useFocusTrap, ae as HiMiniKey, S as SectionLabel, A as ActionButton, w as HiMiniShieldCheck, af as HiMiniLockClosed, ag as HiMiniBellAlert, ah as HiMiniAdjustmentsHorizontal, ai as HiMiniCircleStack, aj as TabBar, c as HiMiniChevronRight, ak as fetchCloudReviewSettings, al as isApprovalProofSubmitDisabled, K as HiMiniCloud, am as HiMiniArrowPath, C as HiMiniXMark, an as ApprovalProofFieldInputs, ao as changeCloudReviewSettings, ap as resolveProtectionLevelCopy, aq as fetchSettings, ar as fetchRuntimeSnapshot, e as updateSettings, as as clearPolicy, at as clearReviewQueue, au as revokeApprovalGateCooldown, av as disableApprovalGateTotp, aw as importSettings, ax as resetSettings, ay as enrollApprovalGateTotp, az as verifyApprovalGateTotp, aA as clearEvidence, aB as exportDiagnostics, aC as repairApprovalCenter, aD as exportSettings, aE as setupDesktopNotifications, n as EmptyState, aF as WorkspacePageHeader, W as WatchProtectionBanner, aG as HiMiniMagnifyingGlass, I as HiMiniChevronDown, s as HiMiniCheckCircle, P as HiMiniExclamationTriangle, aH as isProtectionPosture, aI as deriveProtectionPosture, aJ as Tag, aK as approvalGateCooldownLabel } from "../guard-dashboard.js";
+import { ae as PROTECTION_POSTURE_COPY, af as POSTURE_OUTCOME_COLUMNS, j as jsxRuntimeExports, r as reactExports, ag as getDefaultExportFromCjs, ah as React, M as useFocusTrap, ai as HiMiniKey, S as SectionLabel, A as ActionButton, aj as usePresentationMode, ak as HiMiniAdjustmentsHorizontal, w as HiMiniShieldCheck, al as HiMiniLockClosed, am as HiMiniBellAlert, an as HiMiniCircleStack, ao as TabBar, c as HiMiniChevronRight, ap as fetchCloudReviewSettings, aq as isApprovalProofSubmitDisabled, K as HiMiniCloud, V as HiMiniArrowPath, C as HiMiniXMark, ar as ApprovalProofFieldInputs, as as changeCloudReviewSettings, at as resolveProtectionLevelCopy, au as fetchSettings, av as fetchRuntimeSnapshot, aw as withoutPresentationSettings, e as updateSettings, ax as clearPolicy, ay as clearReviewQueue, az as revokeApprovalGateCooldown, aA as disableApprovalGateTotp, aB as importSettings, aC as resetSettings, aD as enrollApprovalGateTotp, aE as verifyApprovalGateTotp, aF as clearEvidence, aG as exportDiagnostics, aH as repairApprovalCenter, aI as exportSettings, aJ as setupDesktopNotifications, n as EmptyState, aK as WorkspacePageHeader, W as WatchProtectionBanner, aL as HiMiniMagnifyingGlass, I as HiMiniChevronDown, s as HiMiniCheckCircle, P as HiMiniExclamationTriangle, aM as isProtectionPosture, aN as deriveProtectionPosture, aO as Tag, aP as approvalGateCooldownLabel } from "../guard-dashboard.js";
 import { f as filterSettingsBySearch, R as RISK_CONTROL_CONSEQUENCES } from "./app-catalog.js";
 import { C as ConnectGuardCloudButton } from "./connect-guard-cloud-button.js";
 const POSTURE_ORDER = ["protected", "extra_careful", "watch"];
@@ -2716,7 +2716,7 @@ function CloudReviewSettings() {
         }
       )
     ] }),
-    status ? /* @__PURE__ */ jsxRuntimeExports.jsxs("dl", { className: "mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-3", children: [
+    status && /* @__PURE__ */ jsxRuntimeExports.jsxs("dl", { className: "mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-3", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "text-xs text-slate-600", children: "Cloud connection" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { className: "mt-1 font-medium text-brand-dark", children: status.connected ? "Connected" : "Not connected" })
@@ -2734,7 +2734,7 @@ function CloudReviewSettings() {
           minute: "2-digit"
         }) }) : "Not recorded yet" })
       ] })
-    ] }) : null,
+    ] }),
     status?.connected ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 flex flex-wrap gap-2", children: [
       !status.enabled || needsRecovery ? /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
@@ -2834,53 +2834,41 @@ function CloudReviewSettings() {
   ] });
 }
 const PRESENTATION_SCHEMA_VERSION = 1;
-const LEGACY = {
-  simple: "everyday",
-  advanced: "technical",
-  developer: "technical"
-};
 function resolvePresentationMode(input) {
   const revision = typeof input.revision === "number" && Number.isSafeInteger(input.revision) && input.revision >= 0 ? input.revision : 0;
   const writable = input.writable !== false;
-  const resolved = (value, source, explicit, diagnostic2 = null) => ({
+  const resolved = (value, source, explicit, diagnostic = null) => ({
     value,
     source,
     explicit,
     writable,
     schemaVersion: PRESENTATION_SCHEMA_VERSION,
     revision,
-    diagnostic: diagnostic2
+    diagnostic
   });
   if (input.readError) return resolved("everyday", "read-error", false, "presentation_settings_unavailable");
   if (input.sessionPreview === "everyday" || input.sessionPreview === "technical") {
     return resolved(input.sessionPreview, "session-preview", true);
   }
-  const unsupportedSchema = input.schemaVersion !== void 0 && input.schemaVersion !== PRESENTATION_SCHEMA_VERSION;
-  const persistedMode = !unsupportedSchema && (input.value === "everyday" || input.value === "technical") ? input.value : null;
+  if (input.schemaVersion !== void 0 && input.schemaVersion !== PRESENTATION_SCHEMA_VERSION) {
+    return resolved("everyday", "default", false, "unsupported_presentation_schema_fell_back_to_everyday");
+  }
+  const persistedMode = input.value === "everyday" || input.value === "technical" ? input.value : null;
   if (persistedMode !== null && input.explicit === true) {
     return resolved(persistedMode, "local-explicit", true);
   }
-  if (!unsupportedSchema && typeof input.value === "string" && LEGACY[input.value]) {
-    return resolved(LEGACY[input.value], "migrated", true, `migrated_legacy_${input.value}_presentation_mode`);
-  }
+  const invalidDiagnostic = input.value !== void 0 && input.value !== null && input.value !== "" && persistedMode === null ? "unknown_presentation_mode_fell_back_to_everyday" : null;
   if (input.cloudProfile === "everyday" || input.cloudProfile === "technical") {
-    return resolved(input.cloudProfile, "cloud-profile", false);
+    return resolved(input.cloudProfile, "cloud-profile", false, invalidDiagnostic);
+  }
+  if (invalidDiagnostic !== null) {
+    return resolved("everyday", "default", false, invalidDiagnostic);
   }
   if (persistedMode !== null) {
     return resolved(persistedMode, "default", false);
   }
-  let diagnostic = null;
-  if (unsupportedSchema) {
-    diagnostic = "unsupported_presentation_schema_fell_back_to_everyday";
-  } else if (input.value !== void 0 && input.value !== null && input.value !== "") {
-    diagnostic = "unknown_presentation_mode_fell_back_to_everyday";
-  }
-  return resolved("everyday", "default", false, diagnostic);
+  return resolved("everyday", "default", false);
 }
-const presentationModeOptions = [
-  { value: "everyday", label: "Everyday Mode - clear summaries" },
-  { value: "technical", label: "Technical Mode - show more detail" }
-];
 function resolveSettingsPresentation(settings) {
   const resolved = resolvePresentationMode({
     value: settings.presentation_mode,
@@ -2940,26 +2928,6 @@ function normalizePresentationSettings(settings) {
     },
     presentation_diagnostic: presentation.diagnostic
   };
-}
-function parsePresentationMode(value) {
-  if (value === "everyday" || value === "technical") {
-    return value;
-  }
-  return null;
-}
-function applyPresentationMode(settings, mode) {
-  return {
-    ...settings,
-    presentation_mode: mode,
-    presentation_mode_explicit: true,
-    presentation_schema_version: PRESENTATION_SCHEMA_VERSION
-  };
-}
-function presentationModeStatus(presentation) {
-  if (presentation.source === "migrated") {
-    return presentation.explicit ? "Chosen on this device. Your previous display preference was migrated." : "Recommended default. Your previous display preference was migrated.";
-  }
-  return presentation.explicit ? "Chosen on this device." : "Recommended default.";
 }
 const PRESENTATION_PAYLOAD_KEYS = /* @__PURE__ */ new Set([
   "presentation_mode",
@@ -3392,12 +3360,6 @@ function SettingsWorkspace({ onApprovalGateChange }) {
     },
     []
   );
-  const handlePresentationModeChange = reactExports.useCallback((event) => {
-    const nextMode = parsePresentationMode(event.target.value);
-    if (nextMode === null) return;
-    setDraft((value) => value === null ? value : applyPresentationMode(value, nextMode));
-    setSaveError(null);
-  }, []);
   const handleSecurityLevelChange = reactExports.useCallback((securityLevel) => {
     setDraft((value) => {
       if (value === null) return value;
@@ -3628,16 +3590,11 @@ function SettingsWorkspace({ onApprovalGateChange }) {
       if (scope === "approval-gate") {
         settingsToSave = { approval_gate: approvalGateUpdate };
       } else {
-        const presentationOnlyPayload = presentationOnlySavePayload(draft, savedSettingsRef.current);
-        if (presentationOnlyPayload !== null) {
-          settingsToSave = presentationOnlyPayload;
-        } else {
-          settingsToSave = {
-            ...buildSettingsUpdatePayload(draft, savedSettingsRef.current),
-            risk_actions: draft.security_level === "custom" ? draft.risk_actions : draft.risk_action_overrides,
-            approval_gate: approvalGateUpdate
-          };
-        }
+        settingsToSave = {
+          ...withoutPresentationSettings(draft),
+          risk_actions: draft.security_level === "custom" ? draft.risk_actions : draft.risk_action_overrides,
+          approval_gate: approvalGateUpdate
+        };
       }
       const payload = await updateSettings(settingsToSave);
       const normalizedPayload = normalizeSettingsPayload(payload);
@@ -3833,7 +3790,7 @@ function SettingsWorkspace({ onApprovalGateChange }) {
       wasConfigured: savedGateConfig?.configured === true,
       draftGateEnabled: approvalGateEnabled
     });
-    if (requiresSettingsSaveProof(proofKind) && !isPresentationOnlyChange(draft, savedSettingsRef.current)) {
+    if (requiresSettingsSaveProof(proofKind)) {
       openProofModal(proofKind, { kind: "save" });
       return;
     }
@@ -4113,7 +4070,6 @@ function SettingsWorkspace({ onApprovalGateChange }) {
   }
   const consequenceSummary = buildConsequenceSummary(draft);
   const selectedPosture = currentProtectionPosture(draft);
-  const resolvedPresentation = resolveSettingsPresentation(draft);
   const protectionCapabilities = state.kind === "ready" ? state.payload.protection_capabilities ?? [] : [];
   const searchMatches = filterSettingsBySearch(searchQuery);
   const hasSearch = searchQuery.trim().length > 0;
@@ -4124,7 +4080,7 @@ function SettingsWorkspace({ onApprovalGateChange }) {
       WorkspacePageHeader,
       {
         eyebrow: "This machine",
-        title: "Protection",
+        title: activeTab === "experience" ? "Experience" : "Protection",
         description: "Guard stops dangerous actions automatically and asks once about new or unknown work."
       }
     ),
@@ -4200,18 +4156,6 @@ function SettingsWorkspace({ onApprovalGateChange }) {
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsFormSection, { title: "Timing and features", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4 py-3", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                SettingsSelectRow,
-                {
-                  label: "Presentation mode",
-                  description: "Choose whether Guard leads with clear everyday explanations or opens with technical detail. This never changes protection or enforcement.",
-                  value: resolvedPresentation.value,
-                  onChange: handlePresentationModeChange,
-                  options: presentationModeOptions,
-                  disabled: !resolvedPresentation.writable
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "guard-settings-caption -mt-2 text-slate-500", children: presentationModeStatus(resolvedPresentation) }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("label", { htmlFor: "approval-wait", className: "guard-settings-body font-medium text-brand-dark", children: "How long to wait for your answer" }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "guard-settings-caption text-slate-500", children: "Seconds before Guard returns control to your AI app" }),
@@ -4712,7 +4656,7 @@ function ApprovalGateCard(props) {
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs text-slate-500", children: "Use a password before allow or trust changes stick. Turn on strict mode to require proof for block decisions too." })
     ] }) }),
     failClosed && props.enabled && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg border border-brand-purple/20 bg-brand-purple/[0.04] px-3 py-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-brand-purple", children: "Guard needs your approval setup fixed before trust or policy changes can continue." }) }),
-    showGateDetails ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+    showGateDetails && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         ApprovalPasswordSection,
         {
@@ -4831,7 +4775,7 @@ function ApprovalGateCard(props) {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { onClick: props.onRevokeCooldown, variant: "outline", children: "Revoke cooldown" }) })
       ] })
-    ] }) : null
+    ] })
   ] });
 }
 function TotpSetupConfirmStep(props) {

@@ -63,6 +63,7 @@ from codex_plugin_scanner.guard.policy_bundle_parser import (
     validated_policy_bundle_payload,
 )
 from codex_plugin_scanner.guard.proxy import RemoteGuardProxy, StdioGuardProxy
+from codex_plugin_scanner.guard.proxy import framing as proxy_framing
 from codex_plugin_scanner.guard.proxy import stdio as stdio_proxy_module
 from codex_plugin_scanner.guard.receipts import build_receipt
 from codex_plugin_scanner.guard.runtime import runner as guard_runner_module
@@ -94,15 +95,6 @@ from tests.policy_bundle_signing_helpers import (
     sign_policy_bundle,
 )
 from tests.support.network import stub_authenticated_urlopen
-
-COPILOT_NATIVE_DENY_COMMANDS = (
-    """node -e "require('fs').unlinkSync('dangerous-marker.json')" """,
-    "git rm --force dangerous-shell-marker.txt",
-    "find . -name dangerous-shell-marker.txt -exec rm {} ;",
-    "git -C /mock-workspace rm --force dangerous-shell-marker.txt",
-    """node -e "console.log(`x ${require('fs').unlinkSync('dangerous-marker.json')}`)" """,
-    """node -e "console.log(`x ${/}/.test('a') || require('fs').unlinkSync('dangerous-marker.json')}`)" """,
-)
 
 COPILOT_NATIVE_DENY_COMMANDS = (
     """node -e "require('fs').unlinkSync('dangerous-marker.json')" """,
@@ -401,10 +393,16 @@ class _RemoteProxyHandler(BaseHTTPRequestHandler):
 
 class _LineOnlyInput:
     def __init__(self, lines: list[str]) -> None:
-        self._lines = lines
+        self._stream = io.StringIO("".join(lines))
+        self.read_limits: list[int] = []
 
     def __iter__(self):
-        return iter(self._lines)
+        return iter(self._stream)
+
+    def readline(self, size: int = -1) -> str:
+        assert 0 < size <= proxy_framing.MAX_LINE_BYTES + 1, "streamed input requires an explicit bounded read"
+        self.read_limits.append(size)
+        return self._stream.readline(size)
 
     def read(self) -> str:
         raise AssertionError("read() should not be used for streamed MCP proxy input")
@@ -19700,20 +19698,23 @@ def test_stdio_proxy_stream_does_not_wait_for_notification_replies():
         ],
     )
     output_stream = _FlushTrackingOutput()
-
+    input_stream = _LineOnlyInput(
+        [
+            '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}\n',
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n',
+        ]
+    )
     exit_code = proxy.run_stream(
-        input_stream=_LineOnlyInput(
-            [
-                '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}\n',
-                '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n',
-            ]
-        ),
+        input_stream=input_stream,
         output_stream=output_stream,
         error_stream=io.StringIO(),
     )
 
     assert exit_code == 0
-    assert '"id":1' in output_stream.getvalue()
+    assert [json.loads(line) for line in output_stream.getvalue().splitlines()] == [
+        {"jsonrpc": "2.0", "id": 1, "result": {"ok": True}}
+    ]
+    assert input_stream.read_limits
 
 
 def test_stdio_proxy_stream_forwards_interleaved_notifications():
@@ -19735,17 +19736,21 @@ def test_stdio_proxy_stream_forwards_interleaved_notifications():
         ],
     )
     output_stream = _FlushTrackingOutput()
+    input_stream = _LineOnlyInput(['{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n'])
 
     exit_code = proxy.run_stream(
-        input_stream=_LineOnlyInput(['{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n']),
+        input_stream=input_stream,
         output_stream=output_stream,
         error_stream=io.StringIO(),
     )
     output_lines = [json.loads(line) for line in output_stream.getvalue().splitlines()]
 
     assert exit_code == 0
-    assert output_lines[0]["method"] == "tools/progress"
-    assert output_lines[1]["id"] == 1
+    assert output_lines == [
+        {"jsonrpc": "2.0", "method": "tools/progress", "params": {"step": 1}},
+        {"jsonrpc": "2.0", "id": 1, "result": {"ok": True}},
+    ]
+    assert input_stream.read_limits
 
 
 def test_stdio_proxy_blocks_sensitive_file_reads_without_forwarding(tmp_path):

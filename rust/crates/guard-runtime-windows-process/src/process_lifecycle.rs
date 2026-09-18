@@ -1,4 +1,5 @@
 use std::io;
+use std::mem::{size_of, zeroed};
 use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle};
 use std::ptr::null_mut;
 use std::time::Duration;
@@ -6,11 +7,19 @@ use std::time::Duration;
 use winapi::shared::minwindef::{DWORD, FALSE};
 use winapi::shared::ntdef::HANDLE;
 use winapi::shared::winerror::{ERROR_INVALID_PARAMETER, WAIT_TIMEOUT};
-use winapi::um::jobapi2::{AssignProcessToJobObject, CreateJobObjectW, TerminateJobObject};
+use winapi::um::jobapi2::{
+    AssignProcessToJobObject, CreateJobObjectW, QueryInformationJobObject, SetInformationJobObject,
+    TerminateJobObject,
+};
 use winapi::um::processthreadsapi::{GetProcessTimes, ResumeThread, TerminateProcess};
 use winapi::um::synchapi::WaitForSingleObject;
 use winapi::um::winbase::{WAIT_FAILED, WAIT_OBJECT_0};
-use winapi::um::winnt::{PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE, SYNCHRONIZE};
+use winapi::um::winnt::{
+    JobObjectBasicAccountingInformation, JobObjectExtendedLimitInformation,
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+    SYNCHRONIZE,
+};
 
 const MAX_FINITE_WAIT_MILLIS: DWORD = u32::MAX - 1;
 
@@ -148,7 +157,66 @@ pub(super) fn create_process_job() -> io::Result<OwnedHandle> {
         Err(io::Error::last_os_error())
     } else {
         // SAFETY: CreateJobObjectW returned this handle exactly once.
-        Ok(unsafe { OwnedHandle::from_raw_handle(job as RawHandle) })
+        let job = unsafe { OwnedHandle::from_raw_handle(job as RawHandle) };
+        set_job_kill_on_close(&job, true)?;
+        Ok(job)
+    }
+}
+
+pub(super) fn set_job_kill_on_close(job: &OwnedHandle, enabled: bool) -> io::Result<()> {
+    // SAFETY: this C output structure has a valid all-zero representation.
+    let mut limits = unsafe { zeroed::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() };
+    // SAFETY: the owned Job and correctly sized writable output remain live.
+    if unsafe {
+        QueryInformationJobObject(
+            job.as_raw_handle() as HANDLE,
+            JobObjectExtendedLimitInformation,
+            &mut limits as *mut _ as *mut _,
+            size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
+            null_mut(),
+        )
+    } == FALSE
+    {
+        return Err(io::Error::last_os_error());
+    }
+    if enabled {
+        limits.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    } else {
+        limits.BasicLimitInformation.LimitFlags &= !JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    }
+    // SAFETY: this updates only the close-kill flag on the same owned Job.
+    if unsafe {
+        SetInformationJobObject(
+            job.as_raw_handle() as HANDLE,
+            JobObjectExtendedLimitInformation,
+            &mut limits as *mut _ as *mut _,
+            size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
+        )
+    } == FALSE
+    {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
+pub(super) fn job_active_processes(job: &OwnedHandle) -> io::Result<u32> {
+    // SAFETY: this C output structure has a valid all-zero representation.
+    let mut accounting = unsafe { zeroed::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() };
+    // SAFETY: the owned Job and correctly sized writable output remain live.
+    if unsafe {
+        QueryInformationJobObject(
+            job.as_raw_handle() as HANDLE,
+            JobObjectBasicAccountingInformation,
+            &mut accounting as *mut _ as *mut _,
+            size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as DWORD,
+            null_mut(),
+        )
+    } == FALSE
+    {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(accounting.ActiveProcesses)
     }
 }
 

@@ -60,6 +60,7 @@ def _replace_active_managed_control(
     *,
     target_kind: ControlTargetKind,
     target_id: str,
+    include_source_manifest: bool = True,
 ) -> None:
     active = store.get_sync_payload(MANAGED_CONTROLS_ACTIVE_STATE_KEY)
     assert isinstance(active, dict)
@@ -74,7 +75,20 @@ def _replace_active_managed_control(
     )
     unsigned = dict(active)
     unsigned.pop("authentication", None)
-    unsigned["signedCloudLayersJson"] = layers_to_json((replace(layers[0], controls=(control,)),))
+    changed_layers = (replace(layers[0], controls=(control,)),)
+    unsigned["signedCloudLayersJson"] = layers_to_json(changed_layers)
+    from codex_plugin_scanner.guard.store_managed_control_manifest_context import (
+        MANAGED_CONTROLS_SOURCE_MANIFEST_FIELD,
+        bounded_source_manifest,
+    )
+
+    if include_source_manifest:
+        unsigned[MANAGED_CONTROLS_SOURCE_MANIFEST_FIELD] = bounded_source_manifest(
+            changed_layers,
+            store._catalog_target_manifest(activation_support.BUILT_IN_COMMAND_EXTENSION_REGISTRY),
+        )
+    else:
+        unsigned.pop(MANAGED_CONTROLS_SOURCE_MANIFEST_FIELD, None)
     acknowledgement = unsigned.get("acknowledgement")
     assert isinstance(acknowledgement, dict)
     unsigned["acknowledgement"] = {
@@ -186,6 +200,7 @@ def test_catalog_upgrade_fails_closed_when_managed_manifest_is_missing(
         store,
         target_kind=ControlTargetKind.PERMISSION,
         target_id=permission_id,
+        include_source_manifest=False,
     )
     active_before_projection = store.get_sync_payload(MANAGED_CONTROLS_ACTIVE_STATE_KEY)
     with store._connect() as connection:

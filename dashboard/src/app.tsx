@@ -127,18 +127,6 @@ function focusVisibleDashboardSearch(): boolean {
   return false;
 }
 
-function focusVisibleDashboardSearch(): boolean {
-  const candidates = document.querySelectorAll<HTMLInputElement>(
-    'input[type="search"], input[role="searchbox"]',
-  );
-  for (const input of candidates) {
-    if (input.closest("[hidden], [inert]")) continue;
-    input.focus();
-    return true;
-  }
-  return false;
-}
-
 function parseRequestId(pathname: string): string | null {
   if (pathname.startsWith("/requests/")) {
     return pathname.slice("/requests/".length);

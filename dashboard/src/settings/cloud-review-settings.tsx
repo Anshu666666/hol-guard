@@ -139,7 +139,7 @@ export function CloudReviewSettings() {
           <HiMiniArrowPath aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
-      {status ? (
+      {status && (
         <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-xs text-slate-600">Cloud connection</dt>
@@ -158,7 +158,7 @@ export function CloudReviewSettings() {
             </dd>
           </div>
         </dl>
-      ) : null}
+      )}
       {status?.connected ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {!status.enabled || needsRecovery ? (

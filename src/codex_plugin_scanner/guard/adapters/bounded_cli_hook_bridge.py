@@ -343,6 +343,7 @@ def run_bounded_cli_hook(config: Mapping[str, object], *, input_text: str) -> in
         harness=harness,
         input_text=input_text,
         timeout_seconds=float(timeout_seconds),
+        cli_args=cli_args,
     )
     if daemon_result is not None:
         remaining = max(0.0, deadline - time.monotonic())
@@ -397,6 +398,17 @@ def run_bounded_cli_hook(config: Mapping[str, object], *, input_text: str) -> in
             continue_session=True,
         )
     if compact_payload is not None:
+        event_name = _event_name(input_text)
+        if harness.strip().lower() == "copilot" and event_name in {"PreToolUse", "PostToolUse"}:
+            stdout, stderr, _ = _daemon_response_to_native(
+                compact_payload,
+                harness=harness,
+                event_name=event_name,
+            )
+            _ = sys.stdout.write(stdout + "\n")
+            if stderr:
+                print(stderr, file=sys.stderr)
+            return result.returncode
         _ = sys.stdout.write(json.dumps(compact_payload, ensure_ascii=True, separators=(",", ":")) + "\n")
     elif result.stdout:
         _ = sys.stdout.write(result.stdout)

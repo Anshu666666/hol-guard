@@ -30,15 +30,18 @@ fn bounded_read_hashes_regular_file() {
 
 #[cfg(windows)]
 #[test]
-fn bounded_read_fails_closed_on_windows_without_descriptor_path_walk() {
+fn bounded_read_hashes_windows_file_with_held_identity() {
     let dir = fixture_root("read");
     fs::create_dir_all(&dir).unwrap();
     let path = dir.join("sample.rs");
     fs::write(&path, b"fn main() {}\n").unwrap();
-    assert!(matches!(
-        read_bounded(&path, MAX_SCAN_BYTES),
-        Err(SecureReadError::PathChanged)
-    ));
+    let read = read_bounded(&path, MAX_SCAN_BYTES).unwrap();
+    assert_eq!(read.bytes, b"fn main() {}\n");
+    assert_eq!(read.sha256.len(), 64);
+    assert!(read.identity.dev.is_some());
+    assert!(read.identity.ino.is_some());
+    assert_eq!(read.identity.nlink, 1);
+    assert_eq!(read.identity.size, read.bytes.len() as u64);
     let _ = fs::remove_dir_all(dir);
 }
 
@@ -58,7 +61,7 @@ fn bounded_read_fails_closed_without_descriptor_path_walk() {
 
 #[cfg(windows)]
 #[test]
-fn bounded_read_rejects_oversized_windows_file_before_path_walk() {
+fn bounded_read_rejects_oversized_windows_file_from_held_metadata() {
     let dir = fixture_root("oversized");
     fs::create_dir_all(&dir).unwrap();
     let path = dir.join("sample.rs");
@@ -68,7 +71,21 @@ fn bounded_read_rejects_oversized_windows_file_before_path_walk() {
     assert!(matches!(result, Err(SecureReadError::TooLarge)));
 }
 
-#[cfg(unix)]
+#[cfg(windows)]
+#[test]
+fn bounded_windows_read_respects_the_callers_byte_limit() {
+    let dir = fixture_root("caller-bound");
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("source.rs");
+    fs::write(&path, b"12345678").unwrap();
+    assert_eq!(read_bounded(&path, 8).unwrap().bytes, b"12345678");
+    assert!(matches!(read_bounded(&path, 7), Err(SecureReadError::TooLarge)));
+    fs::write(&path, b"").unwrap();
+    assert!(read_bounded(&path, 0).unwrap().bytes.is_empty());
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[cfg(any(unix, windows))]
 #[test]
 fn bounded_read_rejects_hard_linked_source() {
     let dir = fixture_root("hard-link");

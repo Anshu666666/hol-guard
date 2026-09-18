@@ -116,9 +116,11 @@ assert(settingsWorkspaceSource.includes('window.removeEventListener("popstate", 
 assert(settingsWorkspaceSource.includes('label="Cloud receipt privacy"'), "receipt privacy: redaction control is visible in settings");
 assert(settingsWorkspaceSource.includes("<SettingsSelectRow"), "receipt privacy: redaction control uses the accessible select primitive");
 assert(settingsWorkspaceSource.includes('handleStringChange("receipt_redaction_level")'), "receipt privacy: redaction changes persist through settings save");
-assert(settingsWorkspaceSource.includes('label="Presentation mode"'), "presentation: mode control is visible in settings");
-assert(settingsWorkspaceSource.includes("handlePresentationModeChange"), "presentation: mode changes use the dedicated save handler");
-assert(settingsWorkspaceSource.includes("resolveSettingsPresentation"), "presentation: settings use the authoritative resolved mode");
+const presentationSettingsSource = readFileSync(new URL("./settings/presentation-mode-settings.tsx", import.meta.url), "utf8");
+assert(resolveInitialSettingsTab("?section=experience") === "experience", "presentation: display preferences have an Experience section");
+assert(presentationSettingsSource.includes('role="switch"') && presentationSettingsSource.includes("Technical Mode"), "presentation: Experience has an accessible mode control");
+assert(presentationSettingsSource.includes("usePresentationMode") && presentationSettingsSource.includes("void setMode("), "presentation: mode changes use the Core-backed preference provider");
+assert(settingsWorkspaceSource.includes("withoutPresentationSettings(draft)"), "presentation: generic settings saves preserve the independently updated display preference");
 assert(settingsWorkspaceSource.includes("disabled={totpEnabled}"), "approval-gate: cooldown selector is disabled while authenticator MFA is enabled");
 assert(settingsWorkspaceSource.includes("effectiveApprovalGateCooldownSeconds"), "approval-gate: settings render the effective cooldown when MFA is enabled");
 assert(settingsWorkspaceSource.includes("Authenticator approvals do not use the password cooldown"), "approval-gate: settings explain why MFA disables password cooldown");

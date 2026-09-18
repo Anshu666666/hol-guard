@@ -581,34 +581,7 @@ def check_license(plugin_dir: Path) -> CheckResult:
         )
 
 
-def check_no_hardcoded_secrets(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
-    findings: list[tuple[str, int]] = []
-    resolved_plugin_dir = plugin_dir.resolve()
-    try:
-        for fpath in _scan_all_files(resolved_plugin_dir, files):
-            relative_path = fpath.relative_to(resolved_plugin_dir)
-            try:
-                content = read_text_file_within_root(
-                    resolved_plugin_dir,
-                    fpath,
-                    max_bytes=MAX_SCAN_FILE_BYTES,
-                    errors="ignore",
-                )
-            except (OSError, UnicodeError):
-                return unreadable_scan_input_failure(
-                    "No hardcoded secrets", max_points=7, path=relative_path.as_posix()
-                )
-            line_number = _first_hardcoded_secret_line(relative_path, content)
-            if line_number is not None:
-                findings.append((relative_path.as_posix(), line_number))
-    except ScanInputUnreadableError as exc:
-        return unreadable_scan_input_failure(
-            "No hardcoded secrets",
-            max_points=7,
-            reason=str(exc),
-        )
-    except ScanBudgetExceededError as exc:
-        return _resource_budget_failure("No hardcoded secrets", max_points=7, reason=str(exc))
+def _hardcoded_secret_result(findings: list[tuple[str, int]]) -> CheckResult:
     if not findings:
         return CheckResult(
             name="No hardcoded secrets", passed=True, points=7, max_points=7, message="No hardcoded secrets detected"
@@ -844,38 +817,7 @@ def check_mcp_transport_security(plugin_dir: Path) -> CheckResult:
     )
 
 
-def check_no_approval_bypass_defaults(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
-    findings: list[str] = []
-    resolved_plugin_dir = plugin_dir.resolve()
-    try:
-        for file_path in _scan_all_files(resolved_plugin_dir, files):
-            relative_path = file_path.relative_to(resolved_plugin_dir)
-            if not file_path.name.endswith((".json", ".md", ".yaml", ".yml", ".toml")):
-                continue
-            try:
-                content = read_text_file_within_root(
-                    resolved_plugin_dir,
-                    file_path,
-                    max_bytes=MAX_SCAN_FILE_BYTES,
-                    errors="ignore",
-                )
-            except (OSError, UnicodeError):
-                return unreadable_scan_input_failure(
-                    "No approval bypass defaults",
-                    max_points=3,
-                    path=relative_path.as_posix(),
-                )
-            if any(pattern.search(content) for pattern in RISKY_APPROVAL_PATTERNS):
-                findings.append(relative_path.as_posix())
-    except ScanInputUnreadableError as exc:
-        return unreadable_scan_input_failure(
-            "No approval bypass defaults",
-            max_points=3,
-            reason=str(exc),
-        )
-    except ScanBudgetExceededError as exc:
-        return _resource_budget_failure("No approval bypass defaults", max_points=3, reason=str(exc))
-
+def _approval_bypass_result(findings: list[str]) -> CheckResult:
     if not findings:
         return CheckResult(
             name="No approval bypass defaults",
@@ -908,12 +850,97 @@ def check_no_approval_bypass_defaults(plugin_dir: Path, files: tuple[Path, ...] 
     )
 
 
-def run_security_checks(plugin_dir: Path) -> tuple[CheckResult, ...]:
+def _scan_content_checks(
+    plugin_dir: Path,
+    files: tuple[Path, ...] | None = None,
+    *,
+    scan_secrets: bool = True,
+    scan_bypass: bool = True,
+) -> tuple[CheckResult, CheckResult]:
+    """Enumerate once and give both checks the same bounded immutable text.
+
+    Content is retained for one file only. A failure remains attached to its
+    check while the other check finishes its applicable input. Independent
+    callers can select a single check without changing read/exclusion behavior.
+    """
+
+    resolved_plugin_dir = plugin_dir.resolve()
+    secret_findings: list[tuple[str, int]] = []
+    bypass_findings: list[str] = []
+    failures: dict[str, CheckResult] = {}
+    checks = {
+        "secrets": ("No hardcoded secrets", 7, scan_secrets),
+        "bypass": ("No approval bypass defaults", 3, scan_bypass),
+    }
+    try:
+        for file_path in _scan_all_files(resolved_plugin_dir, files):
+            relative_path = file_path.relative_to(resolved_plugin_dir)
+            wants_secrets = scan_secrets and "secrets" not in failures
+            wants_bypass = (
+                scan_bypass
+                and "bypass" not in failures
+                and file_path.name.endswith((".json", ".md", ".yaml", ".yml", ".toml"))
+            )
+            if not wants_secrets and not wants_bypass:
+                continue
+            try:
+                content = read_text_file_within_root(
+                    resolved_plugin_dir,
+                    file_path,
+                    max_bytes=MAX_SCAN_FILE_BYTES,
+                    errors="ignore",
+                )
+            except (OSError, UnicodeError):
+                for key, wanted in (("secrets", wants_secrets), ("bypass", wants_bypass)):
+                    if wanted:
+                        name, points, _enabled = checks[key]
+                        failures[key] = unreadable_scan_input_failure(
+                            name, max_points=points, path=relative_path.as_posix()
+                        )
+                continue
+            if wants_secrets:
+                try:
+                    line_number = _first_hardcoded_secret_line(relative_path, content)
+                    if line_number is not None:
+                        secret_findings.append((relative_path.as_posix(), line_number))
+                except ScanBudgetExceededError as error:
+                    failures["secrets"] = _resource_budget_failure(
+                        "No hardcoded secrets", max_points=7, reason=str(error)
+                    )
+            if wants_bypass and any(pattern.search(content) for pattern in RISKY_APPROVAL_PATTERNS):
+                bypass_findings.append(relative_path.as_posix())
+    except (ScanInputUnreadableError, ScanBudgetExceededError) as error:
+        for key, (name, points, enabled) in checks.items():
+            if enabled and key not in failures:
+                failure = (
+                    _resource_budget_failure
+                    if isinstance(error, ScanBudgetExceededError)
+                    else unreadable_scan_input_failure
+                )
+                failures[key] = failure(name, max_points=points, reason=str(error))
     return (
-        check_security_md(plugin_dir),
-        check_license(plugin_dir),
-        check_no_hardcoded_secrets(plugin_dir),
+        failures.get("secrets") or _hardcoded_secret_result(secret_findings),
+        failures.get("bypass") or _approval_bypass_result(bypass_findings),
+    )
+
+
+def check_no_hardcoded_secrets(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
+    return _scan_content_checks(plugin_dir, files, scan_bypass=False)[0]
+
+
+def check_no_approval_bypass_defaults(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
+    return _scan_content_checks(plugin_dir, files, scan_secrets=False)[1]
+
+
+def run_security_checks(plugin_dir: Path) -> tuple[CheckResult, ...]:
+    security_md = check_security_md(plugin_dir)
+    license_result = check_license(plugin_dir)
+    secrets, approval_defaults = _scan_content_checks(plugin_dir)
+    return (
+        security_md,
+        license_result,
+        secrets,
         check_no_dangerous_mcp(plugin_dir),
         check_mcp_transport_security(plugin_dir),
-        check_no_approval_bypass_defaults(plugin_dir),
+        approval_defaults,
     )

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +17,22 @@ from scripts.native_slo_session import AdapterSession
 def test_load_executor_is_fully_started_before_rss_baseline() -> None:
     with ThreadPoolExecutor(max_workers=4) as executor:
         assert capacity._prime_load_executor(executor, 4) == 4
+
+
+def test_capacity_delivery_errors_keep_bounded_digests_without_exception_text() -> None:
+    message = "private fixture body must not appear in exported diagnostics"
+
+    def fail(*_args: object) -> object:
+        raise ValueError(message)
+
+    session = cast(AdapterSession, SimpleNamespace(observe=fail))
+    failures: list[dict[str, object]] = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        observations, errors = capacity._run_concurrent(session, (("codex", "PreToolUse"),), 8, executor, failures)
+    assert observations == [] and errors == 8
+    assert len(failures) == 4
+    assert all(item["diagnostic_digest"] == hashlib.sha256(message.encode()).hexdigest() for item in failures)
+    assert message not in json.dumps(failures)
 
 
 def test_timed_out_capacity_wave_returns_without_waiting_for_running_worker(
@@ -74,15 +92,15 @@ def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseli
         _routes: object,
         concurrency: int,
         executor: ThreadPoolExecutor,
-    ) -> tuple[list[object], int]:
+    ) -> capacity.CapacityWave:
         calls.append((f"c{concurrency}", id(executor)))
-        return [], 0
+        return capacity.CapacityWave([], 0, {}, 0)
 
     monkeypatch.setattr(capacity, "_stabilize_ready_hook_workers", lambda *_args, **_kwargs: 2)
     monkeypatch.setattr(capacity, "_prime_load_executor", fake_prime)
     monkeypatch.setattr(capacity, "_prewarm_ready_hook_workers", fake_prewarm)
     monkeypatch.setattr(capacity, "_steady_state_rss_baseline", fake_baseline)
-    monkeypatch.setattr(capacity, "_run_concurrent", fake_concurrent)
+    monkeypatch.setattr(capacity, "_run_capacity_wave", fake_concurrent)
     monkeypatch.setattr(capacity, "process_rss_bytes", lambda: 100)
 
     session = cast(AdapterSession, FakeSession())
@@ -106,7 +124,9 @@ def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseli
 def test_capacity_proof_supports_skip_capacity(monkeypatch: pytest.MonkeyPatch) -> None:
     session = cast(AdapterSession, object())
     monkeypatch.setattr(capacity, "_stabilize_ready_hook_workers", lambda *_args, **_kwargs: 2)
-    monkeypatch.setattr(capacity, "_measure_rss_and_c64", lambda *_args, **_kwargs: (100, 100, [], 0))
+    monkeypatch.setattr(
+        capacity, "_measure_rss_and_c64", lambda *_args, **_kwargs: (100, 100, capacity.CapacityWave([], 0, {}, 0))
+    )
 
     measured = capacity.measure_capacity(session, (("codex", "PreToolUse"),), include_capacity=False)
 

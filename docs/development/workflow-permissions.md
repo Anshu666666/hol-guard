@@ -30,7 +30,6 @@ uv run --no-sync pytest tests/test_privileged_workflow_policy.py tests/test_work
 | `publish-mcp-registry.yml` / `publish` | `id-token` | Authenticates the MCP Registry publisher. |
 | `codeql.yml`, `fuzz.yml`, and `scorecard.yml` analysis jobs | `security-events` | Uploads code-scanning findings. Scorecard also uses `id-token` to publish its results. |
 | `guarded-repository.yml` / `scan` | `security-events`, `attestations`, `artifact-metadata`, `id-token` | Scans, attests, and registers the caller's repository. The caller must authorize the required scopes. |
-| `extension-claim-notice.yml` / `notify` | `pull-requests` | Comments on verified merged contribution PRs. Separate `issues: write` is unnecessary. |
 | `wake-desktop-core-alpha-feed.yml` / `wake` | `actions` | Dispatches the existing Core feed producer. |
 
 These grants are not exemptions from the policy. They are explicit job-level

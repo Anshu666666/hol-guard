@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from ..config_source_io import GuardConfigCapture
 from ..daemon.hook_availability_policy import availability_harness_response
 from ..daemon.hook_request_parsing import runtime_hook_event_name
 from ..runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
@@ -96,6 +98,8 @@ def _run_guard_hook_command(
     _claimed_saved_allow_hash: str | None = None,
     _claimed_trusted_request_override: bool = False,
     _claimed_approval_request_id: str | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+    config_capture: GuardConfigCapture | None = None,
 ) -> int:
     if guard_home is None:
         raise RuntimeError("Guard home is required")
@@ -121,6 +125,8 @@ def _run_guard_hook_command(
         runtime_workspace=workspace,
         store=store,
         allow_compatibility=False,
+        config_reader=config_reader,
+        config_capture=config_capture,
     )
     if raw_routed is not None:
         return raw_routed
@@ -176,13 +182,15 @@ def _run_guard_hook_command(
         payload=payload,
         runtime_workspace=runtime_workspace,
         store=store,
+        config_reader=config_reader,
+        config_capture=config_capture,
     )
     if routed is not None:
         return routed
 
     def fresh_copilot_tool_call_authority():
         fresh_config = overlay_synced_guard_policy(
-            load_guard_config(guard_home, workspace=runtime_workspace),
+            load_guard_config(guard_home, workspace=runtime_workspace, config_reader=config_reader),
             _synced_policy_payload(store),
         )
         fresh_tool_call = _copilot_runtime_tool_call(
@@ -209,6 +217,7 @@ def _run_guard_hook_command(
         runtime_workspace=runtime_workspace,
         store=store,
         fresh_tool_call_authority_provider=fresh_copilot_tool_call_authority,
+        config_reader=config_reader,
     )
     if result is not None:
         return result
@@ -236,6 +245,7 @@ def _run_guard_hook_command(
         runtime_workspace=runtime_workspace,
         store=store,
         fresh_tool_call_authority_provider=fresh_copilot_tool_call_authority,
+        config_reader=config_reader,
     )
     if result is not None:
         return result
@@ -306,11 +316,12 @@ def _run_guard_hook_command(
             _claimed_trusted_request_override=_claimed_trusted_request_override,
             _claimed_approval_request_id=_claimed_approval_request_id,
             _claim_saved_approval=_claim_saved_approval,
+            config_reader=config_reader,
         )
 
     def revalidate_generic_after_claim(claimed_artifact_hash: str) -> int:
         fresh_config = overlay_synced_guard_policy(
-            load_guard_config(guard_home, workspace=runtime_workspace),
+            load_guard_config(guard_home, workspace=runtime_workspace, config_reader=config_reader),
             _synced_policy_payload(store),
         )
         fresh_action_envelope = _hook_action_envelope(
@@ -331,6 +342,7 @@ def _run_guard_hook_command(
             store=store,
             _claimed_saved_allow_hash=claimed_artifact_hash,
             _claim_saved_approval=False,
+            config_reader=config_reader,
         )
 
     return _run_hook_generic_payload(
@@ -346,6 +358,7 @@ def _run_guard_hook_command(
         post_claim_revalidator=revalidate_generic_after_claim,
         _claimed_saved_allow_hash=_claimed_saved_allow_hash,
         _claim_saved_approval=_claim_saved_approval,
+        config_reader=config_reader,
     )
 
 
@@ -364,9 +377,10 @@ def _fresh_runtime_artifact_evaluation(
     claimed_approval_request_id: str | None = None,
     trusted_request_override_hash: str | None = None,
     post_claim_revalidator=None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ):
     fresh_config = overlay_synced_guard_policy(
-        load_guard_config(guard_home, workspace=runtime_workspace),
+        load_guard_config(guard_home, workspace=runtime_workspace, config_reader=config_reader),
         _synced_policy_payload(store),
     )
     fresh_action_envelope = _hook_action_envelope(
@@ -409,6 +423,7 @@ def _fresh_runtime_artifact_evaluation(
         _claimed_package_approval_consumed=claimed_package_approval_consumed,
         _claimed_approval_request_id=claimed_approval_request_id,
         _claim_saved_approval=claimed_saved_allow_hash is None and claim_saved_approval,
+        config_reader=config_reader,
     )
 
 
@@ -431,6 +446,7 @@ def _run_runtime_artifact_hook_flow(
     _claimed_trusted_request_override: bool,
     _claimed_approval_request_id: str | None,
     _claim_saved_approval: bool,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> int:
     def revalidate_runtime_after_claim(claimed_hash, trusted_override, approval_request_id, package_consumed):
         return _fresh_runtime_artifact_evaluation(
@@ -446,6 +462,7 @@ def _run_runtime_artifact_hook_flow(
             claimed_package_approval_consumed=package_consumed,
             claimed_approval_request_id=approval_request_id,
             post_claim_revalidator=revalidate_runtime_after_claim,
+            config_reader=config_reader,
         )
 
     evaluated = _evaluate_runtime_artifact_hook(
@@ -464,6 +481,7 @@ def _run_runtime_artifact_hook_flow(
         _claimed_trusted_request_override=_claimed_trusted_request_override,
         _claimed_approval_request_id=_claimed_approval_request_id,
         _claim_saved_approval=_claim_saved_approval,
+        config_reader=config_reader,
     )
     if isinstance(evaluated, int):
         return evaluated
@@ -478,6 +496,7 @@ def _run_runtime_artifact_hook_flow(
         payload=payload,
         store=store,
         workspace=workspace,
+        config_reader=config_reader,
     )
     if result is not None:
         return result
@@ -492,6 +511,7 @@ def _run_runtime_artifact_hook_flow(
             store=store,
             claim_saved_approval=_claim_saved_approval,
             trusted_request_override_hash=evaluated.runtime_artifact_hash,
+            config_reader=config_reader,
         )
         return fresh if isinstance(fresh, RuntimeArtifactHookState) else None
 

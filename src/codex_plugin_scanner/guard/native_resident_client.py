@@ -22,6 +22,7 @@ from .codex_hook_launch_runtime import (
 )
 from .native_approval_errors import NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
 from .native_resident_stream import _PersistentNativeClient, _StreamFailure
+from .native_runtime_identity import runtime_pool_generation_hint
 
 # Retain the old runner name as a test seam. Production always leaves this
 # binding untouched and uses the persistent Rust client below.
@@ -89,6 +90,7 @@ class _PersistentNativeClientPool:
         self._executable = executable
         self._state_dir = state_dir
         self._environment = environment
+        self._runtime_generation_hint = runtime_pool_generation_hint(executable)
         self._clients: set[_PersistentNativeClient] = set()
         self._idle: list[_PersistentNativeClient] = []
         self._condition = threading.Condition()
@@ -157,21 +159,27 @@ _CLIENT_POOLS: dict[tuple[str, str], _PersistentNativeClientPool] = {}
 def _client_pool_for(executable: Path, state_dir: Path, environment: Mapping[str, str]) -> _PersistentNativeClientPool:
     normalized_state_dir = state_dir.expanduser().resolve()
     key = (str(executable), str(normalized_state_dir))
-    evicted: _PersistentNativeClientPool | None = None
+    generation_hint = runtime_pool_generation_hint(executable)
+    evicted: list[_PersistentNativeClientPool] = []
     with _CLIENTS_LOCK:
         pool = _CLIENT_POOLS.get(key)
+        if pool is not None and pool._runtime_generation_hint != generation_hint:
+            # Metadata only retires a pool. The replacement process still needs
+            # full admission; an old stream's attestation cannot launch it.
+            evicted.append(_CLIENT_POOLS.pop(key))
+            pool = None
         if pool is None:
             if len(_CLIENT_POOLS) >= _MAX_PERSISTENT_POOLS:
                 evicted_key = next(iter(_CLIENT_POOLS))
-                evicted = _CLIENT_POOLS.pop(evicted_key)
+                evicted.append(_CLIENT_POOLS.pop(evicted_key))
             pool = _PersistentNativeClientPool(
                 executable=executable,
                 state_dir=normalized_state_dir,
                 environment=environment,
             )
             _CLIENT_POOLS[key] = pool
-    if evicted is not None:
-        evicted.close()
+    for old_pool in evicted:
+        old_pool.close()
     _track_resident(executable, normalized_state_dir, environment)
     return pool
 
@@ -221,8 +229,8 @@ atexit.register(close_native_resident_clients)
 
 
 def _track_resident(executable: Path, state_dir: Path, environment: Mapping[str, str]) -> None:
-    if not state_dir.is_dir():
-        return
+    # First use creates this directory after the pool is registered. Retain
+    # its normalized identity now so shutdown can also retire that resident.
     with _RESIDENTS_LOCK:
         _RESIDENTS[(executable, state_dir)] = dict(environment)
 

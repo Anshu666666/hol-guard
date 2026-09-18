@@ -63,8 +63,8 @@ fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
 
 fn evaluate_isolated(envelope: GuardHookEnvelopeV2) -> Result<Vec<u8>, String> {
     let guard_home = std::path::PathBuf::from(&envelope.source.guard_home);
-    let result = validate_envelope_shape(&envelope)
-        .and_then(|_| evaluate_validated_envelope(envelope, None));
+    let result = validate_envelope_shape(envelope, Instant::now())
+        .and_then(|validated| evaluate_validated_envelope(validated, None));
     std::fs::remove_dir_all(guard_home).expect("remove edge generation fixture");
     result
 }
@@ -151,6 +151,55 @@ fn request_digest_excludes_deadline_and_json_field_order() {
     let (_, first_digest) = request_identity(&first).unwrap();
     let (_, second_digest) = request_identity(&second).unwrap();
     assert_eq!(first_digest, second_digest);
+}
+
+#[test]
+fn validated_identity_retains_cross_language_golden_digest() {
+    let mut request = envelope(
+        "pre_tool_use",
+        serde_json::json!({
+            "hook_event_name": "PreToolUse", "timestamp": 200,
+            "tool_input": {"command": "printf café", "timestamp": 10}
+        }),
+    );
+    let cleanup = request.source.guard_home.clone();
+    request.request_id = None;
+    request.source.guard_home = "/fixture/guard".into();
+    request.policy_snapshot["rule_digest"] = Value::String("c".repeat(64));
+    let validated = validate_envelope_shape(request, Instant::now()).unwrap();
+    // SHA-256 of Python json.dumps(..., sort_keys=True,
+    // ensure_ascii=False, separators=(",", ":")) for the v3 identity.
+    assert_eq!(
+        validated.request_digest,
+        "d1e2b4464e947504737f9f7de8ee45f601862a8449d6c0294955202655809595"
+    );
+    assert_eq!(
+        validated.request_id,
+        format!("sha256:{}", validated.request_digest)
+    );
+    let response = evaluate_validated_envelope(validated, None).unwrap();
+    let edge: GuardHookEdgeResultV2 = serde_json::from_slice(&response).unwrap();
+    assert_eq!(
+        edge.receipt.request_digest,
+        "d1e2b4464e947504737f9f7de8ee45f601862a8449d6c0294955202655809595"
+    );
+    std::fs::remove_dir_all(cleanup).unwrap();
+}
+
+#[test]
+fn ingress_time_consumes_the_original_edge_deadline() {
+    let request = envelope(
+        "PreToolUse",
+        serde_json::json!({"tool_input": {"command": "pwd"}}),
+    );
+    let cleanup = request.source.guard_home.clone();
+    let validated =
+        validate_envelope_shape(request, Instant::now() - Duration::from_secs(1)).unwrap();
+    assert_eq!(
+        evaluate_validated_envelope(validated, None).unwrap_err(),
+        "native_request_deadline_exceeded"
+    );
+    std::fs::remove_dir_all(cleanup).unwrap();
 }
 
 #[test]

@@ -472,6 +472,7 @@ def queue_blocked_approvals(
     notify: bool = True,
     redaction_level: str = "full",
     continuation_operation: Mapping[str, object] | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> list[dict[str, object]]:
     timestamp = now or _now()
     artifacts_by_id = {artifact.artifact_id: artifact for artifact in detection.artifacts}
@@ -599,6 +600,7 @@ def queue_blocked_approvals(
                 now=timestamp,
                 headless=True,
                 operation=continuation_operation,
+                config_reader=config_reader,
             ),
         )
         persisted_request_id = store.add_approval_request(request, timestamp)
@@ -613,7 +615,7 @@ def queue_blocked_approvals(
         if created_new_request:
             _record_created_event(store, request, timestamp)
         if notify:
-            _notify_pending_approval(store=store, request=request)
+            _notify_pending_approval(store=store, request=request, config_reader=config_reader)
         request_payload = store.get_approval_request(persisted_request_id)
         if request_payload is None:
             raise RuntimeError(f"Persisted approval request not found: {persisted_request_id}")
@@ -789,6 +791,16 @@ def apply_approval_resolution(
     )
     persisted_rule = persist_policy is True or (persist_policy is None and scope != "artifact")
     local_once_fallback = False
+    native_codex_once = (
+        action == "allow"
+        and scope == "artifact"
+        and request.get("harness") == "codex"
+        and isinstance(request_artifact_id, str)
+        and request_artifact_id.startswith("codex:native-pretool:")
+        and requires_local_once_approval(request)
+        and temporary_mcp_selection is None
+        and local_tool_selection is None
+    )
     if persisted_rule:
         store.ensure_policy_integrity_ready_for_write(
             harness=decision.harness if decision.harness != "*" else None,
@@ -804,7 +816,7 @@ def apply_approval_resolution(
                 harness=_approval_policy_harness(request),
                 created_at=resolved_at,
             )
-    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None:
+    elif persist_policy is None and scope == "artifact" and temporary_mcp_selection is None and not native_codex_once:
         once_decision = replace(
             decision,
             expires_at=_approval_once_policy_expires_at(resolved_at),
@@ -827,6 +839,24 @@ def apply_approval_resolution(
                 harness=_approval_policy_harness(request),
                 created_at=resolved_at,
             )
+    elif native_codex_once:
+        # A live native waiter needs signed, exact one-use authority even
+        # when the reviewer chooses not to save a policy. Keep its original
+        # artifact and workspace; runtime selectors must not broaden it.
+        local_once_fallback = _record_local_once_approval(
+            store,
+            request_id=request_id,
+            decision=replace(
+                decision,
+                artifact_id=request_artifact_id,
+                artifact_hash=request_artifact_hash,
+                workspace=_string_or_none(request.get("workspace")),
+                publisher=request_publisher,
+                expires_at=_approval_once_policy_expires_at(resolved_at),
+            ),
+            harness="codex",
+            created_at=resolved_at,
+        )
 
     temporary_mcp_result: dict[str, object] | None = None
     temporary_mcp_resolved_ids: list[str] = []
@@ -1164,11 +1194,17 @@ def _append_guard_token_to_url(url: str, auth_token: str) -> str:
     return urlunparse(parsed._replace(fragment=urlencode(fragment_pairs)))
 
 
-def _notify_pending_approval(*, store: GuardStore, request: GuardApprovalRequest) -> None:
+def _notify_pending_approval(
+    *,
+    store: GuardStore,
+    request: GuardApprovalRequest,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
+) -> None:
     try:
         config = load_guard_config(
             store.guard_home,
             Path(request.workspace) if request.workspace is not None else None,
+            config_reader=config_reader,
         )
     except Exception:
         config = None

@@ -27,6 +27,9 @@ mod owner_lock;
 mod resident_state_retirement;
 #[path = "resident_restart_budget.rs"]
 mod restart_budget;
+#[cfg(windows)]
+#[path = "managed_resident_windows_handoff.rs"]
+mod windows_handoff;
 
 #[cfg(all(test, unix))]
 const MANAGED_OWNER_LOCK_FILE_NAME: &str = owner_lock::MANAGED_OWNER_LOCK_FILE_NAME;
@@ -36,6 +39,7 @@ use crate::resident_state::{
     process_start_marker, runtime_digest, state_scope, token_from_state,
     validate_package_process_identity, validate_runtime_process_identity,
 };
+use containment::try_live_or_restart;
 
 pub(crate) fn client_stream(state_base: &Path) -> Result<(), String> {
     client_stream::run(state_base)
@@ -45,17 +49,6 @@ const CLIENT_START_TIMEOUT: Duration =
     Duration::from_millis(if cfg!(windows) { 6_000 } else { 600 });
 const CLIENT_RETRY_DELAY: Duration = Duration::from_millis(5);
 
-fn try_live_or_restart(
-    state_base: &Path,
-    payload: &[u8],
-    deadline: Instant,
-    preferred_digest: &str,
-) -> Result<Option<Vec<u8>>, String> {
-    match try_home_states(state_base, payload, deadline, preferred_digest) {
-        Err(error) if error == "native_resident_live_request_failed" => Ok(None),
-        other => other,
-    }
-}
 const MANAGED_IDLE_TIMEOUT: Duration = Duration::from_secs(60 * 60);
 const MANAGED_STOP_TIMEOUT: Duration = Duration::from_secs(2);
 static MANAGED_SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
@@ -174,28 +167,27 @@ fn try_home_states(
     Ok(None)
 }
 
-pub(crate) fn client_request(
+pub(crate) fn client_request_at_deadline(
     state_base: &Path,
     payload: &[u8],
-    timeout: Duration,
+    deadline: Instant,
 ) -> Result<Vec<u8>, String> {
     let client_lease = lease::acquire(state_base)?;
-    client_request_with_lease(state_base, payload, timeout, &client_lease)
+    client_request_with_lease(state_base, payload, deadline, &client_lease)
 }
 
 fn client_request_with_lease(
     state_base: &Path,
     payload: &[u8],
-    timeout: Duration,
+    overall_deadline: Instant,
     _client_lease: &lease::ClientLease,
 ) -> Result<Vec<u8>, String> {
-    if timeout.is_zero() {
+    if Instant::now() >= overall_deadline {
         return Err("native_client_deadline_exceeded".to_owned());
     }
     // Keep the caller's budget intact. Windows spawn already has
     // CLIENT_START_TIMEOUT; shrinking every live request by 300ms makes the
     // 250ms command-model SLO miss the ready serve entirely.
-    let overall_deadline = Instant::now() + timeout;
     let digest = runtime_digest()?;
     let scope = state_scope(state_base, &digest)?;
     if let Some(response) = try_home_states(state_base, payload, overall_deadline, &digest)? {
@@ -257,14 +249,30 @@ fn client_request_with_lease(
         thread::sleep(CLIENT_RETRY_DELAY);
     };
     match request_result {
-        Ok(Some(response)) => Ok(response),
-        Ok(None) => {
-            containment::abort_spawned_managed(&mut spawned, &scope, &digest, generation, &token);
-            Err("native_resident_start_timeout".to_owned())
+        Ok(Some(response)) => {
+            #[cfg(windows)]
+            windows_handoff::complete(
+                &spawned,
+                &scope,
+                &digest,
+                generation,
+                &token,
+                overall_deadline,
+            )?;
+            Ok(response)
         }
-        Err(error) => {
-            containment::abort_spawned_managed(&mut spawned, &scope, &digest, generation, &token);
-            Err(error)
+        outcome => {
+            let error = outcome
+                .err()
+                .unwrap_or_else(|| "native_resident_start_timeout".to_owned());
+            Err(containment::abort_spawned_managed(
+                &mut spawned,
+                &scope,
+                &digest,
+                generation,
+                &token,
+                &error,
+            ))
         }
     }
 }
@@ -470,13 +478,9 @@ pub(crate) fn parse_process_id(value: &str) -> Result<u32, String> {
 }
 
 pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
-    let budget = crate::strict_json_value(payload)
+    let budget = crate::strict_json::deadline_budget_ms(payload)
         .ok()
-        .and_then(|value| {
-            value
-                .get("deadline_budget_ms")
-                .and_then(serde_json::Value::as_u64)
-        })
+        .flatten()
         .unwrap_or(750)
         .clamp(1, 9_000);
     Duration::from_millis(budget)

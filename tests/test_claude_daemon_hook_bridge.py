@@ -477,7 +477,7 @@ def test_recovery_command_preserves_custom_home_and_guard_home(tmp_path: Path) -
     )
 
     assert command[1:3] == ("-I", "-c")
-    assert "recover_guard_daemon_after_hook_failure" in command[3]
+    assert "schedule_guard_daemon_recovery" in command[3]
     assert str(guard_home) in command[3]
     assert str(home_dir) in command[3]
 

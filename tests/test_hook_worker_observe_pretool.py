@@ -96,6 +96,14 @@ def test_hook_worker_watch_native_block_records_without_stopping(
     )
     worker = HookWorker(store=GuardStore(guard_home))
     monkeypatch.setattr(worker, "_native_policy_snapshot", lambda _workspace, **_kwargs: {"mode": "observe"})
+
+    def unexpected_config_reread(**_kwargs: object) -> bool:
+        raise AssertionError("acknowledged observe policy already determines recording-only behavior")
+
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.daemon.hook_worker_native.hook_review_is_recording_only",
+        unexpected_config_reread,
+    )
     try:
         result = worker.review_http_payload(
             payload={"hook_event_name": "PreToolUse", "tool_input": {"command": "rm -rf /"}},

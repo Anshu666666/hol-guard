@@ -16,6 +16,7 @@ from typing import Final
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from scripts.ci.authority_workflow_contract import require_unfiltered_release_pull_requests
 from scripts.ci.hook_data_plane_ownership_contract import SCHEMA, load_manifest, registered_harnesses
 from scripts.ci.python_hook_semantic_callgraph_gate import _graph_failures as _python_semantic_graph_failures
 from scripts.ci.rust_pretool_no_python_gate import _graph_failures
@@ -30,6 +31,7 @@ SELF_PROTECTED_PATHS: Final = frozenset(
         "scripts/ci/native_approval_contract_gate.py",
         "scripts/ci/python_hook_semantic_callgraph_gate.py",
         "scripts/ci/rust_authority_ownership_gate.py",
+        "scripts/ci/authority_workflow_contract.py",
         ".github/workflows/publish.yml",
     }
 )
@@ -69,11 +71,14 @@ TEMPORARY_PATHS: Final = (
     Path("rust/AUTHORITY_BATCH_2_FINAL"),
     Path("rust/AUTHORITY_FINAL"),
 )
+
+
 def _read(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError as exc:
         raise RuntimeError(f"required authority source is missing: {path}") from exc
+
 
 def _python_imports_function(path: Path, module_suffix: str, name: str) -> bool:
     tree = ast.parse(_read(path), filename=str(path))
@@ -233,7 +238,7 @@ def _pretool_gate() -> None:
         r'if event_name\s*==\s*"PreToolUse":[\s\S]*?return self\._review_pre_tool_http',
         hook,
     )
-    region = re.search(r'def _review_pre_tool_http\([\s\S]*?(?=\n    def _review_native_edge)', native_hook)
+    region = re.search(r"def _review_pre_tool_http\([\s\S]*?(?=\n    def _review_native_edge)", native_hook)
     if route is None or region is None:
         raise RuntimeError("daemon has no Rust PreToolUse authority route")
     if "self.engine.review(" in region.group(0):
@@ -339,10 +344,8 @@ def _policy_and_identity_gate() -> None:
 def _workflow_gate() -> None:
     path = Path(".github/workflows/rust-authority-ownership.yml")
     source = _read(path)
-    trigger = source.split("permissions:", maxsplit=1)[0]
-    if "paths:" in trigger or "paths-ignore:" in trigger:
-        raise RuntimeError("authority workflow must be selected for every pull request to main")
-    for required in ("pull_request:\n    branches: [main]", "fetch-depth: 0", "--base-ref"):
+    require_unfiltered_release_pull_requests(source, label="authority workflow")
+    for required in ("fetch-depth: 0", "--base-ref"):
         if required not in source:
             raise RuntimeError(f"authority workflow is missing its always-selected diff gate: {required}")
     required_commands = (
@@ -359,9 +362,7 @@ def _workflow_gate() -> None:
         raise RuntimeError(f"authority workflow integration coverage is incomplete: {missing_commands}")
 
     native_wheel = _read(Path(".github/workflows/native-wheel-ci.yml"))
-    native_trigger = native_wheel.split("permissions:", maxsplit=1)[0]
-    if "paths:" in native_trigger or "paths-ignore:" in native_trigger:
-        raise RuntimeError("installed native-wheel proof must be selected for every pull request to main")
+    require_unfiltered_release_pull_requests(native_wheel, label="installed native-wheel proof")
     for required in (
         "HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH",
         "Remove-Item Env:HOL_GUARD_HOOK_FAST_PATH",

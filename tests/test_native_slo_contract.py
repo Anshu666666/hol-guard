@@ -243,6 +243,8 @@ def test_summary_separates_expected_denials_from_warm_fail_safe_gate() -> None:
 
 def test_proof_environment_clears_native_diagnostic_oracle_and_test_overrides() -> None:
     environment = {
+        "HOL_GUARD_NATIVE": "force",
+        "GUARD_NATIVE": "force",
         "HOL_GUARD_NATIVE_ORACLE": "1",
         "HOL_GUARD_HOOK_FAST_PATH_SHADOW": "1",
         "HOL_GUARD_TEST_CUSTOM": "1",
@@ -254,6 +256,8 @@ def test_proof_environment_clears_native_diagnostic_oracle_and_test_overrides() 
     }
     removed = clear_proof_environment(environment)
     assert set(removed) == {
+        "HOL_GUARD_NATIVE",
+        "GUARD_NATIVE",
         "HOL_GUARD_NATIVE_ORACLE",
         "HOL_GUARD_HOOK_FAST_PATH_SHADOW",
         "HOL_GUARD_TEST_CUSTOM",
@@ -474,6 +478,7 @@ def test_large_classes_use_bounded_local_source_references(tmp_path: Path) -> No
         reference = fixture["guard_source_ref"]
         assert isinstance(reference, dict)
         assert Path(str(reference["path"])).stat().st_size == expected_bytes
+        assert Path(str(reference["path"])).suffix == ".rs"
         assert reference["version"] == 1
         assert reference["output_chars"] == expected_bytes
         assert "tool_response" not in fixture
@@ -481,14 +486,13 @@ def test_large_classes_use_bounded_local_source_references(tmp_path: Path) -> No
 
 def test_installed_proof_and_soak_contract_are_wired_without_force_defaults() -> None:
     workflow = Path(".github/workflows/native-wheel-ci.yml").read_text(encoding="utf-8")
-    documentation = Path("docs/guard/native-runtime-slo-proof.md").read_text(encoding="utf-8").lower()
     assert "--enforce" in workflow
     assert "--requests 100000" in workflow
     assert "--receipts 250000" in workflow
     assert "--enforce-soak" in workflow
     assert "native-installed-slo.json" in workflow
     assert "native-soak.json" in workflow
-    assert re.search(r"\bforce\b", documentation) is None
+    assert re.search(r"(?:HOL_GUARD_NATIVE|GUARD_NATIVE)\s*[:=]\s*['\"]?force\b", workflow) is None
     assert "installed_wheel_ownership_contract" in Path("scripts/bench_guard_native_installed_slo.py").read_text(
         encoding="utf-8"
     )

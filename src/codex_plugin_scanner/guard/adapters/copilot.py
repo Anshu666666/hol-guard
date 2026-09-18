@@ -595,6 +595,22 @@ class CopilotHarnessAdapter(HarnessAdapter):
                 state_path.unlink()
         shim_manifest = remove_guard_shim(self.harness, context)
         remaining_state_entries = self._state_entries(context)
+        authenticated_states = {entry[0] for entry in remaining_state_entries}
+        requested_states = {entry[0] for entry in uninstall_targets}
+        unresolved_artifacts = authenticated_states & requested_states
+        state_root = context.guard_home / "managed" / "copilot"
+        unresolved_artifacts.update(set(state_root.glob("*.state.json")) - authenticated_states)
+        for target_path in self._target_mcp_paths(context):
+            backup_path = self._backup_path(target_path, context)
+            if backup_path.exists() and self._state_path(target_path, context) not in authenticated_states:
+                unresolved_artifacts.add(backup_path)
+        cleanup_complete = not unresolved_artifacts
+        mcp_cleanup_note = "Guard restored the prior Copilot MCP config for the active Copilot surfaces."
+        if not cleanup_complete:
+            mcp_cleanup_note = (
+                "Copilot MCP cleanup is incomplete: legacy, modified, or unreadable lifecycle artifacts remain. "
+                "Unverified state was not used to overwrite or remove MCP configuration."
+            )
         managed_config_paths = [str(target_path) for _state_path, target_path, _backup_path in uninstall_targets]
         backup_paths = [str(backup_path) for _state_path, _target_path, backup_path in uninstall_targets]
         state_paths = [str(state_path) for state_path, _target_path, _backup_path in uninstall_targets]
@@ -642,6 +658,9 @@ class CopilotHarnessAdapter(HarnessAdapter):
         return {
             "harness": self.harness,
             "active": False,
+            "complete": cleanup_complete,
+            "mcp_cleanup_complete": cleanup_complete,
+            "unresolved_lifecycle_artifact_count": len(unresolved_artifacts),
             "config_path": str(config_path),
             **shim_manifest,
             "managed_config_path": primary_target_mcp_path,
@@ -653,7 +672,7 @@ class CopilotHarnessAdapter(HarnessAdapter):
             "notes": [
                 "Guard hook entries removed from ~/.copilot/config.json for Copilot CLI.",
                 "Guard workspace hook entries removed from .github/hooks/hol-guard-copilot.json for VS Code Copilot.",
-                "Guard restored the prior Copilot MCP config for the active Copilot surfaces.",
+                mcp_cleanup_note,
                 *_manifest_notes(shim_manifest),
             ],
         }

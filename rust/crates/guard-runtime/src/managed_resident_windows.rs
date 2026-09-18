@@ -1,8 +1,8 @@
 use std::ffi::{OsStr, OsString};
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::Path;
 
-use guard_runtime_windows_process::{spawn_managed_child, ManagedChild};
+use guard_runtime_windows_process::{managed_cleanup_failed, spawn_managed_child, ManagedChild};
 
 use super::containment::hex_token;
 
@@ -27,12 +27,14 @@ pub(crate) fn spawn_managed(
         OsString::from(digest),
     ];
     let argument_refs: Vec<&OsStr> = arguments.iter().map(OsString::as_os_str).collect();
-    let mut child = spawn_managed_child(&executable, &argument_refs)
-        .map_err(|_| "native_resident_spawn_failed".to_owned())?;
+    let mut child =
+        spawn_managed_child(&executable, &argument_refs).map_err(spawn_failure_reason)?;
     let write_result = {
         let Some(mut stdin) = child.take_stdin() else {
-            let _ = child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT);
-            return Err("native_resident_spawn_stdin_failed".to_owned());
+            return Err(cleanup_failure(
+                "native_resident_spawn_stdin_failed",
+                || child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT),
+            ));
         };
         stdin
             .write_all(hex_token(token).as_bytes())
@@ -40,8 +42,9 @@ pub(crate) fn spawn_managed(
             .and_then(|()| stdin.flush())
     };
     if write_result.is_err() {
-        let _ = child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT);
-        return Err("native_resident_spawn_auth_failed".to_owned());
+        return Err(cleanup_failure("native_resident_spawn_auth_failed", || {
+            child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT)
+        }));
     }
     Ok(child)
 }
@@ -74,32 +77,108 @@ fn supervise_managed_child(
     arguments: &[OsString],
     token: &[u8],
 ) -> Result<(), String> {
+    supervise_managed_child_with_wait(executable, arguments, token, |child| {
+        child.wait_success_with_timeout(super::MANAGED_IDLE_TIMEOUT + super::MANAGED_STOP_TIMEOUT)
+    })
+}
+
+fn supervise_managed_child_with_wait(
+    executable: &Path,
+    arguments: &[OsString],
+    token: &[u8],
+    wait: impl FnOnce(&ManagedChild) -> io::Result<bool>,
+) -> Result<(), String> {
     let argument_refs: Vec<&OsStr> = arguments.iter().map(OsString::as_os_str).collect();
-    let mut child = spawn_managed_child(executable, &argument_refs)
-        .map_err(|_| "native_resident_spawn_failed".to_owned())?;
+    let mut child =
+        spawn_managed_child(executable, &argument_refs).map_err(spawn_failure_reason)?;
     let mut liveness_writer = child.take_stdin().ok_or_else(|| {
-        let _ = child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT);
-        "native_resident_spawn_stdin_failed".to_owned()
+        cleanup_failure("native_resident_spawn_stdin_failed", || {
+            child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT)
+        })
     })?;
     let write_result = liveness_writer
         .write_all(hex_token(token).as_bytes())
         .and_then(|()| liveness_writer.write_all(b"\n"))
         .and_then(|()| liveness_writer.flush());
     if write_result.is_err() {
-        let _ = child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT);
-        return Err("native_resident_spawn_auth_failed".to_owned());
+        drop(liveness_writer);
+        return Err(cleanup_failure("native_resident_spawn_auth_failed", || {
+            child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT)
+        }));
     }
-    let status_result =
-        child.wait_success_with_timeout(super::MANAGED_IDLE_TIMEOUT + super::MANAGED_STOP_TIMEOUT);
-    drop(liveness_writer);
-    let status_success =
-        status_result.map_err(|_| "native_resident_supervisor_wait_failed".to_owned())?;
-    if status_success {
-        Ok(())
+    let status_result = wait(&child);
+    finish_supervisor_wait(
+        liveness_writer,
+        status_result,
+        || child.terminate_with_timeout(super::MANAGED_STOP_TIMEOUT),
+        || child.retire_after_exit_with_timeout(super::MANAGED_STOP_TIMEOUT),
+    )
+}
+
+fn spawn_failure_reason(error: io::Error) -> String {
+    if managed_cleanup_failed(&error) {
+        "native_resident_spawn_failed;native_resident_child_cleanup_failed".to_owned()
     } else {
-        Err("native_resident_managed_exit_failed".to_owned())
+        "native_resident_spawn_failed".to_owned()
     }
 }
+
+fn cleanup_failure(original: &str, cleanup: impl FnOnce() -> io::Result<()>) -> String {
+    match cleanup() {
+        Ok(()) => original.to_owned(),
+        Err(_) => format!("{original};native_resident_child_cleanup_failed"),
+    }
+}
+
+fn finish_supervisor_wait(
+    liveness_writer: impl Write,
+    status_result: io::Result<bool>,
+    cleanup: impl FnOnce() -> io::Result<()>,
+    retire: impl FnOnce() -> io::Result<bool>,
+) -> Result<(), String> {
+    // EOF must reach the child before forced shutdown, including failed waits.
+    drop(liveness_writer);
+    match status_result {
+        Ok(success) => finish_observed_exit(success, retire()),
+        Err(error) => {
+            let original = if error.kind() == io::ErrorKind::TimedOut {
+                "native_resident_supervisor_wait_timed_out"
+            } else {
+                "native_resident_supervisor_wait_failed"
+            };
+            Err(cleanup_failure(original, cleanup))
+        }
+    }
+}
+
+fn finish_observed_exit(success: bool, retirement: io::Result<bool>) -> Result<(), String> {
+    let exit_failure = if success {
+        ""
+    } else {
+        "native_resident_managed_exit_failed;"
+    };
+    match retirement {
+        Ok(true) if success => Ok(()),
+        Ok(true) => Err("native_resident_managed_exit_failed".to_owned()),
+        Ok(false) => Err(format!(
+            "{exit_failure}native_resident_descendant_cleanup_required"
+        )),
+        Err(error) => {
+            let cleanup_failure = if managed_cleanup_failed(&error) {
+                ";native_resident_child_cleanup_failed"
+            } else {
+                ""
+            };
+            Err(format!(
+                "{exit_failure}native_resident_job_retirement_failed{cleanup_failure}"
+            ))
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "managed_resident_windows_wait_tests.rs"]
+mod wait_tests;
 
 #[cfg(test)]
 mod tests {

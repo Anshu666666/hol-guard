@@ -350,7 +350,10 @@ def _changed_request_fields(
 ) -> list[str]:
     """Return field names only so stale-request diagnostics cannot leak values."""
 
-    # Read-time presentation metadata is not a persisted approval input.
+    # The explanation is a read-time presentation projection, not a persisted
+    # approval input. Comparing it would reject an otherwise identical request
+    # whenever its renderer or presentation changes. All persisted inputs remain
+    # in this comparison, including identity, envelope, policy, scope and status.
     keys = sorted((set(current) | set(expected)) - {"action_explanation"})
     return [
         key for key in keys if _request_snapshot({key: current.get(key)}) != _request_snapshot({key: expected.get(key)})

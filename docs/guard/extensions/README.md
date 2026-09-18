@@ -31,7 +31,7 @@ Protection model meanings:
 
 | Extension | What it protects | Rules | Protection model |
 | :--- | :--- | ---: | :--- |
-| `command.container-runtime` | Reviews container lifecycle, cleanup, execution, network, and persistent-data operations that can expose credentials or mutate host state. | 21 | Built in |
+| `command.container-runtime` | Reviews container lifecycle, cleanup, execution, network, and persistent-data operations that can expose credentials or mutate host state. | 25 | Built in |
 | `command.data-protection` | Detects shell flows that can send credentials or local file contents to a network destination. | 2 | Built in |
 | `command.encoded-execution` | Reviews decode-and-execute flows whose effective program is hidden from normal command inspection. | 1 | Built in |
 | `command.filesystem` | Reviews recursive deletion and access-control changes across filesystem trees. | 2 | Required core |
@@ -50,12 +50,13 @@ Protection model meanings:
 | `command.cdn` | Reviews distribution, VPC origin, key-value-store, profile, and endpoint deletion through supported cloud CLIs. | 1 | Built in |
 | `command.cloud.aws` | Reviews a validated AWS CLI operation matrix for permanent resource deletion and service termination across identity, compute, data, delivery, and control-plane services. | 1 | Built in |
 | `command.cloud.azure` | Reviews a validated Azure CLI operation matrix for permanent resource deletion across subscription, identity, network, compute, application, data, messaging, and AI services. | 1 | Built in |
+| `command.cloud.digitalocean` | Reviews destructive DigitalOcean control-plane operations through doctl. | 1 | Built in |
 | `command.cloud.gcp` | Reviews a validated gcloud operation matrix for permanent resource deletion across stable and supported release tracks. | 1 | Built in |
 | `command.dns.aws` | Reviews AWS Route 53 hosted-zone, record, health-check, traffic-policy, DNSSEC, and Resolver deletions. | 6 | Built in |
 | `command.dns.azure` | Reviews Azure public DNS, private DNS, virtual-network link, and DNS resolver deletion through Azure CLI. | 6 | Built in |
 | `command.dns.gcp` | Reviews gcloud Cloud DNS managed-zone, record-set, policy, and response-policy deletions and updates. | 6 | Built in |
-| `command.infrastructure-as-code` | Reviews infrastructure teardown through Terraform, OpenTofu, and Pulumi. | 1 | Built in |
-| `command.kubernetes-operations` | Reviews cluster mutations, remote execution, file transfer, tunnels, certificate decisions, and Helm lifecycle operations. | 28 | Built in |
+| `command.infrastructure-as-code` | Reviews teardown through Terraform, OpenTofu, Pulumi, AWS CDK, AWS SAM, and Serverless Framework. | 3 | Built in |
+| `command.kubernetes-operations` | Reviews Kubernetes/OpenShift mutations, remote execution, tunnels, file transfer, and security changes. | 33 | Built in |
 | `command.load-balancer` | Reviews load-balancer, target-group, listener, and forwarding-rule deletion through supported cloud CLIs. | 1 | Built in |
 
 ### Data and resilience
@@ -66,11 +67,13 @@ Protection model meanings:
 | `command.backup.rclone` | Reviews rclone operations that delete, move, purge, or synchronize data. | 1 | Built in |
 | `command.backup.restic` | Reviews restic operations that remove snapshots or repository data. | 1 | Built in |
 | `command.backup.velero` | Reviews Velero operations that delete backup data or recovery records. | 1 | Built in |
-| `command.database.mongodb` | Reviews restore operations that drop and replace collections. | 1 | Built in |
-| `command.database.mysql` | Reviews mysqladmin database removal operations. | 1 | Built in |
-| `command.database.postgresql` | Reviews explicit PostgreSQL database removal commands. | 1 | Built in |
+| `command.database.bigquery` | Reviews bq operations that remove resources or replace destination data. | 1 | Built in |
+| `command.database.mongodb` | Reviews restore operations that drop and replace collections. | 2 | Built in |
+| `command.database.mysql` | Reviews mysqladmin database removal operations. | 2 | Built in |
+| `command.database.postgresql` | Reviews explicit PostgreSQL database removal commands. | 2 | Built in |
+| `command.database.prisma` | Reviews destructive resets, direct SQL, data-loss pushes, and production migrations. | 2 | Built in |
 | `command.database.redis` | Reviews Redis key deletion and database flush commands. | 1 | Built in |
-| `command.database.sqlite` | Reviews SQLite restore operations that replace database content. | 1 | Built in |
+| `command.database.sqlite` | Reviews SQLite restore operations that replace database content. | 2 | Built in |
 | `command.database.supabase` | Reviews database reset and migration rollback commands. | 1 | Built in |
 | `command.storage.aws-s3` | Reviews AWS CLI high-level S3 commands and S3 API object, bucket, access-control, and configuration operations including copy, list, sync, website, and deletion. | 14 | Built in |
 | `command.storage.azure-blob` | Reviews Azure CLI storage commands including upload, list, copy, and deletion. | 6 | Built in |
@@ -85,8 +88,12 @@ Protection model meanings:
 | `command.cicd.github` | Reviews workflow-run cancellation, deletion, and workflow disabling through GitHub CLI. | 2 | Built in |
 | `command.cicd.gitlab` | Reviews remote pipeline cancellation through GitLab CLI. | 1 | Built in |
 | `command.github` | Reviews distinct GitHub maintenance, content, merge, publication, workflow, and control effects. | 15 | Built in |
+| `command.platform.cloudflare` | Reviews Cloudflare deployment, resource deletion, and secret mutation through Wrangler. | 2 | Built in |
+| `command.platform.firebase` | Reviews production deployment and destructive Firebase application and data operations. | 3 | Built in |
+| `command.platform.fly` | Reviews Fly.io production deploys, destructive resource operations, and secret mutation. | 4 | Built in |
 | `command.platform.heroku` | Reviews app destruction, pipeline promotion, and release rollback. | 2 | Built in |
 | `command.platform.netlify` | Reviews site deletion and production deployments. | 2 | Built in |
+| `command.platform.railway` | Reviews Railway deployment, deletion, variable mutation, and secret-populated shell access. | 4 | Built in |
 | `command.platform.vercel` | Reviews deployment and project deletion plus production deployment, promotion, and rollback. | 2 | Built in |
 | `command.remote.essh` | Reviews essh invocations that execute commands across a host group or delete cached hosts, keys, and workspaces. | 2 | External opt-in |
 | `command.remote.rsync` | Reviews rsync options that delete destination data or remove synchronized source files. | 2 | Built in |
@@ -110,6 +117,7 @@ Protection model meanings:
 
 | Extension | What it protects | Rules | Protection model |
 | :--- | :--- | ---: | :--- |
+| `command.package.dotnet` | Reviews package dependency ingress plus NuGet publication and deletion. | 3 | Built in |
 | `command.package.go` | Routes Go module and tool installation requests through Guard's package firewall. | 0 | Package Firewall |
 | `command.package.jvm` | Routes Maven and Gradle dependency operations through Guard's package firewall. | 0 | Package Firewall |
 | `command.package.node` | Routes Node package installs and one-shot execution through Guard's package firewall. | 0 | Package Firewall |
@@ -131,11 +139,19 @@ Protection model meanings:
 | Extension | What it protects | Rules | Protection model |
 | :--- | :--- | ---: | :--- |
 | `command.blitcp` | Reviews blitcp copies that leave the host, elevate privileges, or skip verification. | 4 | External opt-in |
+| `command.cloud-secrets` | Reviews secret retrieval and credential lifecycle mutations across AWS, Google Cloud, and Azure CLIs. | 2 | Built in |
+| `command.configuration-management.ansible` | Reviews remote Ansible execution and access to encrypted Ansible Vault material. | 2 | Built in |
 | `command.framework.laravel` | Reviews destructive Artisan database wipes, migration resets, and queue purges. | 5 | Built in |
+| `command.gitlab` | Reviews GitLab deletion, merge/rebase, and CI/CD variable access through glab. | 4 | Built in |
+| `command.gitops.argocd` | Reviews destructive GitOps administration and live reconciliation mutations through argocd. | 3 | Built in |
+| `command.gitops.flux` | Reviews destructive Flux administration and forced reconciliation state changes. | 2 | Built in |
 | `command.noodle` | Reviews request and collection execution through the Noodle terminal REST client. | 1 | External opt-in |
 | `command.ollama` | Reviews Ollama commands that publish models to a registry or remove local model data. | 2 | External opt-in |
+| `command.package-publication` | Reviews publish, upload, unpublish, and yank operations across common package ecosystems. | 2 | Built in |
 | `command.probe` | Reviews HTTP execution and OpenCollection workspace mutations through the Probe CLI. | 8 | External opt-in |
 | `command.repo2nb` | Reviews repo2nb commands that can overwrite an existing destination directory or silently drop untracked notebook cells. | 2 | External opt-in |
+| `command.secrets.1password` | Reviews secret reads, secret injection, and destructive object deletion through op. | 3 | Built in |
+| `command.secrets.vault` | Reviews Vault secret reads, destructive secret mutation, and security administration. | 4 | Built in |
 
 <!-- END GENERATED EXTENSION DIRECTORY -->
 

@@ -306,13 +306,13 @@ export function ExtensionManagedControlsPanel(props: {
         </div>
         {connectMessage ? <p role="status" className="mt-3 text-sm text-brand-dark/75">{connectMessage}</p> : null}
         {refreshState === "checking" ? <p role="status" aria-live="polite" className="mt-3 text-sm text-brand-dark/75">Checking current protection status…</p> : null}
-        {refreshState === "complete" ? (
+        {refreshState === "complete" && (
           <p role="status" aria-live="polite" className="mt-3 text-sm text-brand-dark/75">
             {effectiveStatusKey(props.effective, { runtime: props.runtime }) === refreshBaselineRef.current
               ? "Check complete. No change detected; the current verified authority is still in use."
               : "Check complete. Protection status updated."}
           </p>
-        ) : null}
+        )}
         {refreshState === "error" && refreshError ? <p role="alert" className="mt-3 text-sm text-rose-800">{refreshError}</p> : null}
       </div>
       {!connected ? (

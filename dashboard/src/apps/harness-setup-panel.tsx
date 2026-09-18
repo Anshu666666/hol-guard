@@ -349,7 +349,7 @@ export function HarnessSetupPanel(props: {
           Guard could not load approval settings. Keep the app connected and retry disconnect.
         </p>
       ) : null}
-      {showProofModal ? (
+      {showProofModal && (
         <ApprovalProofModal
           title={`Disconnect ${displayName}`}
           detail={
@@ -366,7 +366,7 @@ export function HarnessSetupPanel(props: {
           onCancel={handleCancelDisconnect}
           onConfirm={handleConfirmDisconnect}
         />
-      ) : null}
+      )}
     </div>
   );
 }

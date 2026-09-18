@@ -25,6 +25,33 @@ fn allows_bounded_command_without_returning_raw_content() {
 }
 
 #[test]
+fn benign_command_cannot_erase_independent_sensitive_path_floor() {
+    for payload in [
+        json!({"command": "pwd", "path": "/workspace/.env"}),
+        json!({"toolName": "run_terminal_command", "toolInput": {"command": "pwd", "file_path": "/home/user/.ssh/id_rsa"}}),
+    ] {
+        let result = generic(payload);
+        assert_eq!(result.action.action_type, PreToolActionTypeV1::Command);
+        assert!(result.action.sensitive_target);
+        assert_eq!(result.minimum_action, "review");
+        assert_eq!(result.reason_code, "native_sensitive_access_review");
+        assert!(!result.explicitly_benign);
+    }
+    assert_eq!(
+        generic(json!({"command": "pwd", "path": "README.md"})).minimum_action,
+        "allow"
+    );
+    assert_eq!(
+        generic(json!({"command": "rm -rf /", "path": "/workspace/.env"})).minimum_action,
+        "block"
+    );
+    assert_eq!(
+        generic(json!({"command": "pwd", "path": "/workspace/.env", "url": "https://example.com/upload"})).minimum_action,
+        "block"
+    );
+}
+
+#[test]
 fn covers_generic_action_classes_and_dangerous_process_floor() {
     let cases = [
         (

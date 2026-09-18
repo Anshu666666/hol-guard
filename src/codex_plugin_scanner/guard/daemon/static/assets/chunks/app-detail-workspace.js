@@ -1,4 +1,4 @@
-import { r as reactExports, i as harnessDisplayName, aq as fetchSettings, b3 as runHarnessAction, b4 as GuardHarnessActionError, j as jsxRuntimeExports, S as SectionLabel, A as ActionButton, b5 as HiMiniRocketLaunch, w as HiMiniShieldCheck, am as HiMiniArrowPath, y as formatRelativeTime, P as HiMiniExclamationTriangle, s as HiMiniCheckCircle, b6 as HiMiniTrash, b7 as isGuardDemoMode, b8 as fetchGuardApi, b9 as formatHarnessCommand, ah as HiMiniAdjustmentsHorizontal, ba as fetchApprovalPage, bb as fetchPolicy, x as guardActionDisposition, p as protectionHealthFor, l as useProtectionPresentationState, aY as HiMiniArrowLeft, c as HiMiniChevronRight, t as GuardHero, a5 as ProofStrip, bc as HiMiniHome, Q as HiMiniBolt, bd as appSetupTarget, be as guardActionPresentation, R as Badge, bf as DEFAULT_FILTER_STATE, bg as filterEvidence, bh as sortEvidence, bi as computeMetrics, bj as CommandActivityWorkspace, n as EmptyState, bk as EvidenceFilterBar, bl as EvidenceInsightStrip, bm as EvidenceActionList, bn as EvidenceActionDetail, M as useFocusTrap, bo as policyIdentityKey, K as HiMiniCloud, aJ as Tag, a7 as HiMiniXCircle, bp as clearLabelForScope, bq as HiMiniChartBar } from "../guard-dashboard.js";
+import { r as reactExports, i as harnessDisplayName, au as fetchSettings, b7 as runHarnessAction, b8 as GuardHarnessActionError, j as jsxRuntimeExports, S as SectionLabel, A as ActionButton, b9 as HiMiniRocketLaunch, w as HiMiniShieldCheck, V as HiMiniArrowPath, y as formatRelativeTime, P as HiMiniExclamationTriangle, s as HiMiniCheckCircle, ba as HiMiniTrash, bb as isGuardDemoMode, bc as fetchGuardApi, bd as formatHarnessCommand, ak as HiMiniAdjustmentsHorizontal, be as fetchApprovalPage, bf as fetchPolicy, x as guardActionDisposition, p as protectionHealthFor, l as useProtectionPresentationState, b0 as HiMiniArrowLeft, c as HiMiniChevronRight, t as GuardHero, a9 as ProofStrip, bg as HiMiniHome, Q as HiMiniBolt, bh as appSetupTarget, bi as guardActionPresentation, R as Badge, bj as DEFAULT_FILTER_STATE, bk as filterEvidence, bl as sortEvidence, bm as computeMetrics, bn as CommandActivityWorkspace, n as EmptyState, bo as EvidenceFilterBar, bp as EvidenceInsightStrip, bq as EvidenceActionList, br as EvidenceActionDetail, M as useFocusTrap, bs as policyIdentityKey, K as HiMiniCloud, aO as Tag, ab as HiMiniXCircle, bt as clearLabelForScope, bu as HiMiniChartBar } from "../guard-dashboard.js";
 import { A as ApprovalProofModal } from "./approval-proof-modal.js";
 import { u as useHarnessDetection, i as isHarnessDetected } from "./harness-detection.js";
 function HarnessSetupPanel(props) {
@@ -239,7 +239,7 @@ function HarnessSetupPanel(props) {
     ] }),
     active && disconnectArmed && !gateLoaded && !gateLoadFailed ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-3 text-sm text-muted-foreground", children: "Checking approval requirements before disconnect." }) : null,
     active && disconnectArmed && gateLoadFailed ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-3 text-sm text-brand-attention", role: "alert", children: "Guard could not load approval settings. Keep the app connected and retry disconnect." }) : null,
-    showProofModal ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+    showProofModal && /* @__PURE__ */ jsxRuntimeExports.jsx(
       ApprovalProofModal,
       {
         title: `Disconnect ${displayName}`,
@@ -253,7 +253,7 @@ function HarnessSetupPanel(props) {
         onCancel: handleCancelDisconnect,
         onConfirm: handleConfirmDisconnect
       }
-    ) : null
+    )
   ] });
 }
 async function runDisconnectWithProof(input) {

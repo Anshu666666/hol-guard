@@ -2352,7 +2352,7 @@ def test_transitive_lockfile_resolution_uses_bounded_deadline(tmp_path: Path, mo
     captured: dict[str, float] = {}
 
     def fake_package_lock_entries(
-        lockfile_text: str, *, deadline: float | None = None
+        lockfile_text: str, *, deadline: float | None = None, document: dict[str, object] | None = None
     ) -> list[tuple[str, str, str, bool]]:
         captured["deadline"] = deadline
         assert "minimist" in lockfile_text
@@ -2484,7 +2484,9 @@ def test_transitive_lockfile_timeout_pauses_without_using_partial_entries(
     monkeypatch.setattr(
         evaluator_module,
         "_package_lock_entries",
-        lambda _text, *, deadline=None: (_ for _ in ()).throw(_DeadlineExceededError("deadline_exceeded")),
+        lambda _text, *, deadline=None, document=None: (_ for _ in ()).throw(
+            _DeadlineExceededError("deadline_exceeded")
+        ),
     )
 
     result = evaluate_package_request_artifact(
@@ -2705,14 +2707,14 @@ def test_evaluate_package_request_artifact_pauses_for_unreadable_lockfile(
         json.dumps({"packages": {"": {"name": "demo-app"}}}),
         encoding="utf-8",
     )
-    original_read_bytes = Path.read_bytes
+    original_open = Path.open
 
-    def guarded_read_bytes(path: Path) -> bytes:
+    def guarded_open(path: Path, *args: object, **kwargs: object):
         if path == lockfile_path:
             raise OSError("permission denied")
-        return original_read_bytes(path)
+        return original_open(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "read_bytes", guarded_read_bytes)
+    monkeypatch.setattr(Path, "open", guarded_open)
 
     result = evaluate_package_request_artifact(
         artifact=_artifact_for_targets("left-pad@1.0.0", lockfile_paths=("package-lock.json",)),

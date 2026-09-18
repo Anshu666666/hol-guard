@@ -2,7 +2,7 @@ name: Rust runtime
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/3.2]
     paths:
       - "rust/**"
       - "src/codex_plugin_scanner/guard/native_runtime.py"
@@ -23,8 +23,16 @@ on:
       - "ci/native_runtime/native_hook_client_support.py"
       - "ci/native_runtime/test_native_hook_client_transport.py"
       - ".github/workflows/rust-runtime.yml"
+      - "src/codex_plugin_scanner/guard/**"
+      - "ci/native_runtime/**"
+      - "scripts/*native*.py"
+      - "scripts/release/*native*"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "tests/conftest.py"
+      - "tests/native_*support.py"
   pull_request:
-    branches: [main]
+    branches: [main, release/3.2]
     paths:
       - "rust/**"
       - "src/codex_plugin_scanner/guard/native_runtime.py"
@@ -45,6 +53,14 @@ on:
       - "ci/native_runtime/native_hook_client_support.py"
       - "ci/native_runtime/test_native_hook_client_transport.py"
       - ".github/workflows/rust-runtime.yml"
+      - "src/codex_plugin_scanner/guard/**"
+      - "ci/native_runtime/**"
+      - "scripts/*native*.py"
+      - "scripts/release/*native*"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "tests/conftest.py"
+      - "tests/native_*support.py"
   workflow_dispatch:
 
 permissions:

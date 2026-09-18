@@ -1,21 +1,36 @@
 #![forbid(unsafe_code)]
 
+#[cfg(any(not(windows), test))]
 use guard_rules::MAX_SCAN_BYTES;
+#[cfg(not(windows))]
 use sha2::{Digest, Sha256};
-use std::fs::{self, Metadata};
-use std::io::{self, Read};
+use std::fs;
+#[cfg(not(windows))]
+use std::fs::Metadata;
+use std::io;
+#[cfg(not(windows))]
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
+#[cfg(not(windows))]
 use std::time::SystemTime;
 use thiserror::Error;
 
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
 
+#[cfg(not(windows))]
 mod secure_open;
 mod source_path;
+#[cfg(windows)]
+mod windows;
 
+#[cfg(not(windows))]
 use secure_open::{secure_open, SecureOpenError};
 pub use source_path::{classify_source_path, sensitive_path_family, source_like};
+#[cfg(windows)]
+pub use windows::read_bounded;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileIdentity {
@@ -137,6 +152,8 @@ pub fn contains_symlink_component(path: &Path) -> bool {
         }
         match fs::symlink_metadata(&current) {
             Ok(metadata) if metadata.file_type().is_symlink() => return true,
+            #[cfg(windows)]
+            Ok(metadata) if metadata.file_attributes() & 0x400 != 0 => return true,
             Ok(_) => {}
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(_) => return true,
@@ -145,6 +162,7 @@ pub fn contains_symlink_component(path: &Path) -> bool {
     false
 }
 
+#[cfg(not(windows))]
 fn identity(metadata: &Metadata) -> FileIdentity {
     let mtime_ns = metadata
         .modified()
@@ -169,6 +187,7 @@ fn identity(metadata: &Metadata) -> FileIdentity {
     }
 }
 
+#[cfg(not(windows))]
 fn map_secure_open_error(error: SecureOpenError) -> SecureReadError {
     match error {
         SecureOpenError::PathChanged => SecureReadError::PathChanged,
@@ -181,6 +200,7 @@ fn map_secure_open_error(error: SecureOpenError) -> SecureReadError {
     }
 }
 
+#[cfg(not(windows))]
 pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureReadError> {
     let max_bytes = max_bytes.min(MAX_SCAN_BYTES);
     if contains_symlink_component(path) {

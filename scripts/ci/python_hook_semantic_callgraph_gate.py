@@ -19,11 +19,17 @@ _PRODUCTION_FILES: Final = (
     "src/codex_plugin_scanner/guard/cli/commands_hook_source_ref.py",
     "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py",
     "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+    "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
     "src/codex_plugin_scanner/guard/daemon/server.py",
     "src/codex_plugin_scanner/guard/native_pretool.py",
     "src/codex_plugin_scanner/guard/native_runtime.py",
 )
 _ROOTS: Final = (
+    (
+        "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+        None,
+        "complete_native_codex_live_decision",
+    ),
     ("src/codex_plugin_scanner/guard/cli/commands_hook.py", None, "_run_guard_hook_command"),
     ("src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py", None, "try_native_hook_authority"),
     ("src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py", None, "try_native_or_source_ref_hook"),

@@ -1,4 +1,4 @@
-import { aL as fetchLocalCliApi, r as reactExports, aM as fetchExtensionControlApi, j as jsxRuntimeExports, aN as useResolvedApprovalGate, af as HiMiniLockClosed, P as HiMiniExclamationTriangle, am as HiMiniArrowPath, w as HiMiniShieldCheck, aO as HiMiniInformationCircle, al as isApprovalProofSubmitDisabled, C as HiMiniXMark, an as ApprovalProofFieldInputs, aP as buildApprovalProofCredentials, aQ as GenIcon, Q as HiMiniBolt, aR as HiMiniGlobeAlt, aS as HiMiniCube, K as HiMiniCloud, aT as HiMiniServerStack, b as HiMiniCommandLine, aU as HiMiniFolder, aV as FaWindows, aW as FaAws, s as HiMiniCheckCircle, c as HiMiniChevronRight, I as HiMiniChevronDown, aX as approvalProofRecentlySatisfied, aY as HiMiniArrowLeft, aZ as HiMiniPlus, a8 as HiMiniClipboardDocumentCheck, a9 as HiMiniClipboard, ah as HiMiniAdjustmentsHorizontal, a_ as HiMiniCheck, aG as HiMiniMagnifyingGlass, B as HiMiniSparkles, a$ as HiMiniNoSymbol, b0 as startGuardCloudConnect, b1 as HiMiniArrowTopRightOnSquare, aF as WorkspacePageHeader, b2 as guardAwareHref } from "../guard-dashboard.js";
+import { aQ as fetchLocalCliApi, r as reactExports, aR as fetchExtensionControlApi, j as jsxRuntimeExports, aS as useResolvedApprovalGate, al as HiMiniLockClosed, P as HiMiniExclamationTriangle, V as HiMiniArrowPath, w as HiMiniShieldCheck, aT as HiMiniInformationCircle, aq as isApprovalProofSubmitDisabled, C as HiMiniXMark, ar as ApprovalProofFieldInputs, aU as buildApprovalProofCredentials, aV as GenIcon, Q as HiMiniBolt, X as HiMiniGlobeAlt, aW as HiMiniCube, K as HiMiniCloud, aX as HiMiniServerStack, b as HiMiniCommandLine, aY as HiMiniFolder, aZ as FaWindows, a_ as FaAws, s as HiMiniCheckCircle, c as HiMiniChevronRight, I as HiMiniChevronDown, a$ as approvalProofRecentlySatisfied, b0 as HiMiniArrowLeft, b1 as HiMiniPlus, ac as HiMiniClipboardDocumentCheck, ad as HiMiniClipboard, ak as HiMiniAdjustmentsHorizontal, b2 as HiMiniCheck, aL as HiMiniMagnifyingGlass, B as HiMiniSparkles, b3 as HiMiniNoSymbol, b4 as startGuardCloudConnect, b5 as HiMiniArrowTopRightOnSquare, aK as WorkspacePageHeader, b6 as guardAwareHref } from "../guard-dashboard.js";
 import { A as ApprovalProofModal } from "./approval-proof-modal.js";
 const EXTENSION_ID_PATTERN = /^command\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 const RULE_ID_PATTERN = /^command\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -4441,7 +4441,7 @@ function ProtectionAuthorityNotice(props) {
         ] }),
         props.busy ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: `mt-3 text-sm font-medium ${warning2 ? "text-amber-950" : "text-brand-dark"}`, children: pendingAction === "acknowledge" ? "Confirming the limited state…" : "Repairing local protection…" }) : null,
         checkPending ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: `mt-3 text-sm font-medium ${warning2 ? "text-amber-950" : "text-brand-dark"}`, children: "Checking current protection status…" }) : null,
-        checkComplete ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: `mt-3 text-sm font-medium ${warning2 ? "text-amber-950" : "text-brand-dark"}`, children: effectiveStatusKey(props.effective, { approvalGate: props.approvalGate }) === checkBaselineRef.current ? "Check complete. No change detected; local protection remains in its current fail-safe state." : "Check complete. Protection status updated." }) : null,
+        checkComplete && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: `mt-3 text-sm font-medium ${warning2 ? "text-amber-950" : "text-brand-dark"}`, children: effectiveStatusKey(props.effective, { approvalGate: props.approvalGate }) === checkBaselineRef.current ? "Check complete. No change detected; local protection remains in its current fail-safe state." : "Check complete. Protection status updated." }),
         checkError ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "alert", className: "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800", children: checkError }) : null,
         props.error ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "alert", className: "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800", children: props.error }) : null,
         props.status ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "mt-3 text-sm font-medium text-brand-dark", children: props.status }) : null,
@@ -5447,7 +5447,7 @@ function ExtensionManagedControlsPanel(props) {
       ) }),
       connectMessage ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "mt-3 text-sm text-brand-dark/75", children: connectMessage }) : null,
       refreshState === "checking" ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: "mt-3 text-sm text-brand-dark/75", children: "Checking current protection status…" }) : null,
-      refreshState === "complete" ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: "mt-3 text-sm text-brand-dark/75", children: effectiveStatusKey(props.effective, { runtime: props.runtime }) === refreshBaselineRef.current ? "Check complete. No change detected; the current verified authority is still in use." : "Check complete. Protection status updated." }) : null,
+      refreshState === "complete" && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: "mt-3 text-sm text-brand-dark/75", children: effectiveStatusKey(props.effective, { runtime: props.runtime }) === refreshBaselineRef.current ? "Check complete. No change detected; the current verified authority is still in use." : "Check complete. Protection status updated." }),
       refreshState === "error" && refreshError ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "alert", className: "mt-3 text-sm text-rose-800", children: refreshError }) : null
     ] }),
     !connected ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-brand-dark/75", children: "Guard Cloud is disconnected. Local protection and local tightening remain available on this device; cross-device Control Sets resume after reconnecting." }) : null,
@@ -6468,7 +6468,11 @@ function ProtectionCenterWorkspace(props) {
         setState({ kind: "ready", catalog, effective });
         return effective;
       } catch (error) {
-        setState((current) => current.kind === "ready" ? current : { kind: "error", message: error instanceof Error ? error.message : "Extensions are unavailable" });
+        const message = error instanceof Error ? error.message : "Extensions are unavailable";
+        setState((current) => {
+          if (current.kind === "ready") return current;
+          return { kind: "error", message };
+        });
         return null;
       }
     })();

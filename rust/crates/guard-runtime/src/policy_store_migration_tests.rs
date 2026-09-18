@@ -89,7 +89,8 @@ fn floor_only_migration_preserves_generation_and_allows_only_newer_push() {
             .unwrap(),
             Some(&store),
         )
-        .unwrap(),
+        .unwrap()
+        .response,
     )
     .unwrap();
     assert_eq!(

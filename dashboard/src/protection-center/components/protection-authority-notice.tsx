@@ -225,13 +225,13 @@ export function ProtectionAuthorityNotice(props: {
         </div>
         {props.busy ? <p role="status" className={`mt-3 text-sm font-medium ${warning ? "text-amber-950" : "text-brand-dark"}`}>{pendingAction === "acknowledge" ? "Confirming the limited state…" : "Repairing local protection…"}</p> : null}
         {checkPending ? <p role="status" aria-live="polite" className={`mt-3 text-sm font-medium ${warning ? "text-amber-950" : "text-brand-dark"}`}>Checking current protection status…</p> : null}
-        {checkComplete ? (
+        {checkComplete && (
           <p role="status" aria-live="polite" className={`mt-3 text-sm font-medium ${warning ? "text-amber-950" : "text-brand-dark"}`}>
             {effectiveStatusKey(props.effective, { approvalGate: props.approvalGate }) === checkBaselineRef.current
               ? "Check complete. No change detected; local protection remains in its current fail-safe state."
               : "Check complete. Protection status updated."}
           </p>
-        ) : null}
+        )}
         {checkError ? <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{checkError}</p> : null}
         {props.error ? <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{props.error}</p> : null}
         {props.status ? <p role="status" className="mt-3 text-sm font-medium text-brand-dark">{props.status}</p> : null}

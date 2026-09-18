@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod approval;
+mod claude_launcher_pilot;
 mod edge;
 mod hardening;
 mod managed_resident;
@@ -16,6 +17,9 @@ mod resident_state_encoding;
 mod resident_transport;
 mod resident_transport_service;
 mod strict_json;
+
+#[cfg(all(test, feature = "diagnostic-allocations"))]
+mod native_allocation_diagnostic;
 
 pub(crate) use resident_protocol::{capabilities, encode_response, strict_json_value};
 pub(crate) use resident_transport::{
@@ -93,6 +97,11 @@ fn write_bytes_response(response: &[u8]) -> Result<(), String> {
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
     match args.as_slice() {
+        [command, registration_flag, registration, event_flag, event]
+            if command == "claude-hook-pilot" && registration_flag == "--registration" && event_flag == "--event" =>
+        {
+            claude_launcher_pilot::run(std::path::Path::new(registration), event)
+        }
         [command] if command == "capabilities" => write_json(&capabilities()),
         [command, flag] if command == "capabilities" && flag == "--json" => {
             write_json(&capabilities())
@@ -168,11 +177,12 @@ fn run() -> Result<(), String> {
                 && flag == "--stdin" =>
         {
             let bytes = read_stdin_bounded()?;
+            let started_at = std::time::Instant::now();
             let timeout = managed_resident::client_timeout(&bytes);
-            let response = managed_resident::client_request(
+            let response = managed_resident::client_request_at_deadline(
                 std::path::Path::new(state_dir),
                 &bytes,
-                timeout,
+                started_at + timeout,
             )?;
             write_bytes_response(&response)
         }

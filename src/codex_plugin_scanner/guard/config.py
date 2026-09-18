@@ -9,9 +9,8 @@ import shutil
 import sqlite3
 import sys
 import tempfile
-import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,12 +25,14 @@ from .action_lattice import coerce_guard_action, normalize_guard_action
 from .approval_gate import ApprovalGateGrant, public_config, require_settings_write
 from .config_mutation import notify_native_policy_mutation, record_posture_change_if_needed
 from .config_preset_support import apply_named_posture_harness_policy
+from .config_source_io import GuardConfigParentValidator, capture_guard_config
 from .guard_home_state import database_has_custom_extension_state
 from .mdm.contracts import ManagedPolicy, ManagedPolicyState
 from .mdm.policy import apply_managed_policy, fail_closed_managed_policy, load_managed_policy
 from .models import GUARD_ACTION_VALUES, GuardAction, GuardMode
 from .presentation_mode import (
     PRESENTATION_SCHEMA_VERSION,
+    UNSUPPORTED_PRESENTATION_SCHEMA_DIAGNOSTIC,
     coerce_persisted_presentation_mode,
     coerce_presentation_mode_write,
 )
@@ -52,8 +53,6 @@ from .protection_posture import (
     resolve_posture_defaults,
 )
 from .settings_write_lock import atomic_write_settings, serialize_guard_settings
-
-UNSUPPORTED_PRESENTATION_SCHEMA_DIAGNOSTIC = "unsupported_presentation_schema_fell_back_to_everyday"
 
 DEFAULT_GUARD_DIRNAME = ".hol-guard"
 VALID_UPDATE_CHANNELS = frozenset({"stable", "alpha"})
@@ -493,15 +492,18 @@ def resolve_guard_home_for_user_home(user_home: Path) -> Path:
     return canonical_home
 
 
-def _read_toml(path: Path) -> dict[str, object]:
-    if not path.is_file():
-        return {}
-    try:
-        with path.open("rb") as handle:
-            payload = tomllib.load(handle)
-        return payload if isinstance(payload, dict) else {}
-    except OSError:
-        return {}
+def _parse_toml(content: bytes) -> dict[str, object]:
+    payload = tomllib.loads(content.decode("utf-8"))
+    return payload if isinstance(payload, dict) else {}
+
+
+def _read_toml(path: Path, *, parent_validator: GuardConfigParentValidator | None = None) -> dict[str, object]:
+    captured = capture_guard_config(
+        path,
+        parent_validator=parent_validator,
+        expected_parent=path.parent.absolute() if parent_validator is not None else None,
+    )
+    return _parse_toml(captured.content)
 
 
 def _coerce_loaded_receipt_redaction_level(value: object) -> str:
@@ -515,12 +517,15 @@ def load_guard_config(
     workspace: Path | None = None,
     *,
     managed_policy_state: ManagedPolicyState | None = None,
+    config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> GuardConfig:
     """Load Guard config from home and workspace overrides."""
 
     guard_home.mkdir(parents=True, exist_ok=True)
-    home_config = _read_toml(guard_home / "config.toml")
-    workspace_config = _load_workspace_guard_config(workspace)
+    home_config = (
+        _read_toml(guard_home / "config.toml") if config_reader is None else config_reader(guard_home / "config.toml")
+    )
+    workspace_config = _load_workspace_guard_config(workspace, config_reader=config_reader)
 
     merged = _merge_config_payload(home_config, workspace_config)
     managed_state = managed_policy_state or load_managed_policy()
@@ -544,17 +549,10 @@ def load_guard_config(
     else:
         loaded_posture = derive_protection_posture(loaded_mode, loaded_security_level)
         posture_explicit = False
-    legacy_presentation_value = next(
-        (
-            merged.get(key)
-            for key in ("presentation_mode", "presentation_density", "display_density", "density")
-            if merged.get(key) is not None
-        ),
-        None,
-    )
+    persisted_presentation_value = merged.get("presentation_mode")
     persisted_presentation = coerce_persisted_presentation_mode(
-        legacy_presentation_value,
-        explicit=merged.get("presentation_mode_explicit", legacy_presentation_value is not None),
+        persisted_presentation_value,
+        explicit=merged.get("presentation_mode_explicit", persisted_presentation_value is not None),
         schema_version=merged.get("presentation_schema_version", PRESENTATION_SCHEMA_VERSION),
     )
     presentation_revision = _coerce_loaded_non_negative_int(merged.get("presentation_revision"), 0)
@@ -644,6 +642,7 @@ def load_guard_config(
 def editable_guard_settings(config: GuardConfig) -> dict[str, object]:
     """Return Guard config values that are safe to edit from the local dashboard."""
 
+    presentation_writable = config.presentation_diagnostic != UNSUPPORTED_PRESENTATION_SCHEMA_DIAGNOSTIC
     return {
         "mode": config.mode,
         "presentation_mode": config.presentation_mode,
@@ -654,7 +653,7 @@ def editable_guard_settings(config: GuardConfig) -> dict[str, object]:
             "value": config.presentation_mode,
             "source": config.presentation_source,
             "explicit": config.presentation_mode_explicit,
-            "writable": True,
+            "writable": presentation_writable,
             "schema_version": config.presentation_schema_version,
             "revision": config.presentation_revision,
             "diagnostic": config.presentation_diagnostic,
@@ -690,12 +689,6 @@ def editable_guard_settings(config: GuardConfig) -> dict[str, object]:
     }
 
 
-# The daemon serves settings writes from a bounded threading HTTP server, so
-# the read/validate/write sequence below must be serialized per process to keep
-# optimistic presentation-revision checks meaningful.
-_GUARD_SETTINGS_WRITE_LOCK = threading.Lock()
-
-
 @serialize_guard_settings
 def update_guard_settings(
     guard_home: Path,
@@ -707,28 +700,6 @@ def update_guard_settings(
     skip_approval_gate: bool = False,
 ) -> GuardConfig:
     """Persist safe local Guard settings to config.toml and return the updated config."""
-
-    with _GUARD_SETTINGS_WRITE_LOCK:
-        return _update_guard_settings_locked(
-            guard_home,
-            payload,
-            approval_gate_grant=approval_gate_grant,
-            cloud_sync_entitled=cloud_sync_entitled,
-            event_source=event_source,
-            skip_approval_gate=skip_approval_gate,
-        )
-
-
-def _update_guard_settings_locked(
-    guard_home: Path,
-    payload: dict[str, object],
-    *,
-    approval_gate_grant: ApprovalGateGrant | None = None,
-    cloud_sync_entitled: bool = False,
-    event_source: str = "settings",
-    skip_approval_gate: bool = False,
-) -> GuardConfig:
-
     if not skip_approval_gate:
         require_settings_write(guard_home, approval_gate_grant=approval_gate_grant)
     current = _read_toml(guard_home / "config.toml")
@@ -1424,12 +1395,15 @@ def _raise_when_backup_deadline_elapsed(deadline: float) -> None:
         raise TimeoutError("guard.db migration timed out")
 
 
-def _load_workspace_guard_config(workspace: Path | None) -> dict[str, object]:
+def _load_workspace_guard_config(
+    workspace: Path | None, *, config_reader: Callable[[Path], dict[str, object]] | None = None
+) -> dict[str, object]:
     if workspace is None:
         return {}
     merged: dict[str, object] = {}
     for filename in WORKSPACE_CONFIG_FILENAMES:
-        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(_read_toml(workspace / filename)))
+        payload = _read_toml(workspace / filename) if config_reader is None else config_reader(workspace / filename)
+        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(payload))
     return merged
 
 

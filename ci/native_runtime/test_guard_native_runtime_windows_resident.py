@@ -5,6 +5,7 @@ import json
 import os
 import socket
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,11 @@ from codex_plugin_scanner.guard.native_runtime import (
     review_post_tool_native,
 )
 from codex_plugin_scanner.guard.runtime.hook_review_types import HookReviewRequest
+from codex_plugin_scanner.guard.windows_paths import (
+    windows_process_creation_time,
+    windows_process_liveness,
+    windows_terminate_process_if_creation_time,
+)
 
 _NATIVE_BINARY = os.environ.get("HOL_GUARD_NATIVE_BINARY")
 
@@ -194,4 +200,41 @@ def test_windows_native_runtime_reuses_authenticated_resident_service(
         assert command_model["confidence"] == "exact"
         assert command_model["segments"][0]["executable"] == "git"
     finally:
+        resident.close_resident_native_runtimes()
+
+
+@pytest.mark.skipif(
+    os.name != "nt" or not _NATIVE_BINARY,
+    reason="compiled Windows native runtime is required",
+)
+def test_windows_abrupt_supervisor_exit_retires_its_serving_child(tmp_path: Path) -> None:
+    request = _request(tmp_path, "windows-supervisor-crash")
+    serving_identity: tuple[int, int] | None = None
+    try:
+        with native_policy_snapshot(request.guard_home) as snapshot:
+            result = review_post_tool_native(request, observe_mode=False, policy_snapshot=snapshot)
+            assert result is not None and result.decision == "allow", native_resident_client_failure_code()
+            states = list((request.guard_home / "native-runtime").glob("resident-v3-*/generation-*.json"))
+            assert len(states) == 1
+            state = json.loads(states[0].read_text(encoding="utf-8"))
+            supervisor = int(state["owner_process_id"])
+            serving = int(state["process_id"])
+            owner_marker = str(state["owner_process_start_marker"])
+            serving_marker = str(state["process_start_marker"])
+            assert owner_marker.startswith("windows:") and serving_marker.startswith("windows:")
+            owner_creation = int(owner_marker.removeprefix("windows:"), 16)
+            serving_creation = int(serving_marker.removeprefix("windows:"), 16)
+            assert supervisor != serving and supervisor != os.getpid()
+            assert windows_process_creation_time(supervisor) == owner_creation
+            assert windows_process_creation_time(serving) == serving_creation
+            serving_identity = (serving, serving_creation)
+            assert windows_process_liveness(serving) is True
+            assert windows_terminate_process_if_creation_time(supervisor, owner_creation)
+            deadline = time.monotonic() + 2.0
+            while windows_process_liveness(serving) is not False and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert windows_process_liveness(serving) is False, "serving child survived abrupt supervisor exit"
+    finally:
+        if serving_identity is not None:
+            windows_terminate_process_if_creation_time(*serving_identity)
         resident.close_resident_native_runtimes()

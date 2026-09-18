@@ -186,7 +186,7 @@ def source_payloads(workspace: Path) -> dict[str, Mapping[str, object]]:
     payloads: dict[str, Mapping[str, object]] = {}
     for size_class, target in (("250k", 250 * 1024), ("1m", 1 * 1024 * 1024), ("5m", 5 * 1024 * 1024)):
         content = (unit * ((target + len(unit) - 1) // len(unit))).encode("utf-8")[:target]
-        path = workspace / f"native-slo-{size_class}.txt"
+        path = workspace / f"native-slo-{size_class}.rs"
         path.write_bytes(content)
         payloads[size_class] = {
             "hook_event_name": "PostToolUse",

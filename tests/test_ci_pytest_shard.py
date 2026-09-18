@@ -79,15 +79,15 @@ def test_ci_workflow_cancels_stale_runs_and_uses_precomputed_affinity_shards() -
 def test_sonar_scope_includes_native_rust_workspace() -> None:
     config = (ROOT / "sonar-project.properties").read_text(encoding="utf-8")
     properties = dict(
-        line.split("=", 1)
-        for line in config.splitlines()
-        if line and not line.startswith("#") and "=" in line
+        line.split("=", 1) for line in config.splitlines() if line and not line.startswith("#") and "=" in line
     )
 
     assert properties["sonar.sources"] == "src,rust"
     assert properties["sonar.tests"] == "tests,rust"
     assert properties["sonar.test.inclusions"] == (
-        "**/test_*.py,rust/**/tests/**/*.rs,rust/**/*_tests.rs"
+        "**/test_*.py,rust/**/tests/**/*.rs,rust/**/*_tests.rs,"
+        "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py,"
+        "rust/crates/guard-command/testdata/generate_specialized_fixtures.py"
     )
     assert properties["sonar.rust.cargo.manifestPaths"] == "rust/Cargo.toml"
     assert "src/codex_plugin_scanner/guard/daemon/static/**" in properties["sonar.exclusions"]

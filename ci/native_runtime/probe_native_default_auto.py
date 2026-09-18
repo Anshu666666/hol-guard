@@ -109,6 +109,47 @@ def _permission_decision(response: Mapping[str, object]) -> str | None:
     return value if isinstance(value, str) else None
 
 
+def _prepare_empty_command_authority(store: GuardStore) -> dict[str, str]:
+    """Provision generated production keys only inside this fresh CI fixture.
+
+    An unenrolled installation deliberately blocks native command review. This
+    synthetic allow corpus therefore needs an authenticated empty authority,
+    as does the existing installed Extension Control Center CI fixture. There
+    is no interactive enrollment claim and no invented protected health/ACK.
+    """
+
+    from scripts.native_slo_command_fixture import prepare_empty_command_authority
+
+    return prepare_empty_command_authority(store)
+
+
+def _delivery_diagnostic(response: Mapping[str, object]) -> dict[str, object]:
+    """Fixed public codes only: never log source text or arbitrary reasons."""
+
+    allowed = {
+        "decision": {"allow", "deny", "block", "review", "ask"},
+        "policy_action": {"allow", "warn", "block", "review", "suppress"},
+        "reason_code": {
+            "native_exact_safe_command",
+            "native_command_control_authority_block",
+            "native_command_control_mutation_in_progress",
+            "native_request_invalid_json",
+            "native_policy_warning",
+            "native_policy_block",
+            "native_policy_snapshot_unavailable",
+            "native_hook_unavailable",
+            "output_secret_match",
+        },
+    }
+    result: dict[str, object] = {}
+    for field, choices in allowed.items():
+        value = response.get(field)
+        result[field] = value if isinstance(value, str) and value in choices else (None if value is None else "other")
+    permission = _permission_decision(response)
+    result["permission_decision"] = permission if permission in {None, "allow", "deny", "ask"} else "other"
+    return result
+
+
 def _native_state_files(guard_home: Path) -> list[Path]:
     return list((guard_home / "native-runtime").glob("resident-v3-*/generation-*.json"))
 
@@ -227,8 +268,7 @@ def _exercise_installed_routes(
                 {
                     "harness": harness,
                     "event": event,
-                    "decision": response_payload.get("decision"),
-                    "permission_decision": _permission_decision(response_payload),
+                    **_delivery_diagnostic(response_payload),
                 },
             )
             reason = response_payload.get("reason_code")
@@ -277,12 +317,56 @@ def _exercise_mode_invariants(
     return mode_invariants
 
 
+def _publisher_error_diagnostic(publisher: object) -> str | None:
+    """Retain fixed publication codes without exporting arbitrary error text."""
+
+    code = getattr(publisher, "last_error", None)
+    if code is None:
+        return None
+    allowed = {
+        "guardconfigsourceerror",
+        "oserror",
+        "runtimeerror",
+        "typeerror",
+        "valueerror",
+        "attributeerror",
+        "operationalerror",
+        "databaseerror",
+        "native_policy_snapshot_ack_invalid",
+        "native_policy_snapshot_ack_mismatch",
+        "native_policy_snapshot_expired",
+        "native_policy_snapshot_integrity_key_unavailable",
+        "native_policy_snapshot_native_disabled",
+        "native_policy_snapshot_protocol_unsupported",
+        "native_policy_snapshot_publish_failed",
+        "native_policy_snapshot_resident_changed",
+        "native_policy_snapshot_runtime_unavailable",
+        "native_policy_snapshot_workspace_capacity",
+    }
+    return code if type(code) is str and code in allowed else "other"
+
+
+def _evidence_failure_snapshot(value: object) -> dict[str, int] | None:
+    """Keep diagnostics unavailable for an installed baseline without counters."""
+
+    try:
+        from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
+    except ModuleNotFoundError as error:
+        if error.name != "codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics":
+            raise
+        return None
+    return evidence_failure_snapshot(value)
+
+
 def _installed_hook_corpus(root: Path) -> dict[str, object]:
     guard_home = root / "hook-home"
     workspace = root / "hook-workspace"
     guard_home.mkdir(mode=0o700)
     workspace.mkdir(mode=0o700)
+    # This direct worker probe must perform the canonical admission used by ingress.
+    workspace = workspace.resolve()
     store = GuardStore(guard_home)
+    command_authority_fixture = _prepare_empty_command_authority(store)
     daemon = GuardDaemonServer(
         store,
         host="127.0.0.1",
@@ -310,13 +394,18 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
             deadline=readiness_started + readiness_budget_seconds,
         )
         readiness_elapsed = time.monotonic() - readiness_started
-        _require(
-            prepared_policy is not None and readiness_elapsed <= readiness_budget_seconds,
-            {
-                "elapsed_ms": round(readiness_elapsed * 1_000, 2),
-                "policy_ready": prepared_policy is not None,
-            },
-        )
+        readiness_ok = prepared_policy is not None and readiness_elapsed <= readiness_budget_seconds
+        if not readiness_ok:
+            _require(
+                False,
+                {
+                    "elapsed_ms": round(readiness_elapsed * 1_000, 2),
+                    "policy_ready": prepared_policy is not None,
+                    "publisher_last_error": _publisher_error_diagnostic(
+                        daemon._server.hook_worker.policy_snapshot_publisher
+                    ),
+                },
+            )
         _exercise_installed_routes(daemon, guard_home, workspace, routes, route_receipts, reason_codes)
         worker_stats = wait_for_route_corpus(
             daemon._server.hook_worker.metrics,
@@ -340,6 +429,7 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
     _require(observed_routes.get("native_resident") == expected, worker_stats)
     _require(receipt_corpus_is_complete(evidence_stats, expected=expected), evidence_stats)
     return {
+        "command_authority_fixture": command_authority_fixture,
         "routes": route_receipts,
         "route_count": expected,
         "native_resident_decisions": observed_routes.get("native_resident", 0),
@@ -354,6 +444,10 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
             "dropped": evidence_stats["receipt_dropped"],
             "failures": evidence_stats["receipt_failures"],
             "durable_pending": evidence_stats["receipt_durable_pending"],
+        },
+        "evidence_failure_diagnostics": {
+            "all_evidence": _evidence_failure_snapshot(evidence_stats.get("failure_diagnostics")),
+            "native_receipts": _evidence_failure_snapshot(evidence_stats.get("receipt_failure_diagnostics")),
         },
         "mode_invariants": mode_invariants,
     }
@@ -496,7 +590,9 @@ def _build_probe_receipt(
         "route_receipts": installed_corpus["routes"],
         "reason_code_counts": installed_corpus["reason_code_counts"],
         "receipt_metrics": installed_corpus["receipt_metrics"],
+        "evidence_failure_diagnostics": installed_corpus.get("evidence_failure_diagnostics"),
         "mode_invariants": installed_corpus["mode_invariants"],
+        "command_authority_fixture": installed_corpus["command_authority_fixture"],
     }
 
 

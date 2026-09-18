@@ -25,8 +25,8 @@ from typing import Final, cast
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.ci.rust_io_ownership_contract import capability_contract
-from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call
+from scripts.ci.rust_io_ownership_contract import capability_contract, scoped_io_category
+from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call, scoped_nodes
 
 SCHEMA: Final = "hol-guard.decision-critical-io.v1"
 NATIVE_MODES: Final = frozenset({"auto", "force"})
@@ -71,6 +71,7 @@ _COMPATIBILITY_PATHS: Final = frozenset(
 _TRANSPORT_IDENTITY_PATHS: Final = frozenset(
     {
         "src/codex_plugin_scanner/guard/native_runtime.py",
+        "src/codex_plugin_scanner/guard/native_runtime_identity.py",
         "src/codex_plugin_scanner/guard/native_resident_client.py",
         "src/codex_plugin_scanner/guard/native_runtime_resident.py",
         "src/codex_plugin_scanner/guard/native_runtime_resilience.py",
@@ -93,6 +94,7 @@ _ASYNC_POLICY_PATHS: Final = frozenset(
         "src/codex_plugin_scanner/guard/mdm/managed_file_trust.py",
         "src/codex_plugin_scanner/guard/mdm/contracts.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+        "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
         "src/codex_plugin_scanner/guard/config.py",
@@ -133,6 +135,18 @@ class IoObservation:
     reachable: bool
 
 
+_POSTURE_ROOT: Final = RootSpec(
+    "src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py",
+    "hook_review_is_recording_only",
+)
+# These callables are injected as configuration dependencies. A static call
+# graph cannot follow an arbitrary callable argument, so inventory each actual
+# daemon implementation explicitly, including its held-parent callback.
+_CONFIG_SCOPE_ROOTS: Final = tuple(
+    RootSpec("src/codex_plugin_scanner/guard/daemon/config_read_scope.py", name, "HookConfigReadScope")
+    for name in ("read_toml", "__call__", "_validate_held_parent")
+)
+
 ROOTS: Final = (
     RootSpec(
         "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
@@ -154,6 +168,11 @@ ROOTS: Final = (
     RootSpec(
         "src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py",
         "try_native_or_source_ref_hook",
+    ),
+    _POSTURE_ROOT,
+    *_CONFIG_SCOPE_ROOTS,
+    RootSpec(
+        "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py", "complete_native_codex_live_decision"
     ),
 )
 
@@ -240,14 +259,24 @@ def _calls(record: FunctionRecord) -> tuple[str, ...]:
     return tuple(names)
 
 
-def _category(path: str, kind: str) -> str:
+def _category(path: str, kind: str, function: str = "", operation: str = "") -> str:
     if path in _COMPATIBILITY_PATHS:
         return "compatibility_only"
     if path in _TRANSPORT_IDENTITY_PATHS:
         return "transport_identity"
     if path in _TRANSPORT_DECODE_PATHS and kind == "decode":
         return "transport_decode"
-    if path == "src/codex_plugin_scanner/guard/native_decision_receipt.py" and kind == "hash":
+    scoped = scoped_io_category(path, kind, function, operation)
+    if scoped is not None:
+        return scoped
+    if (
+        path
+        in {
+            "src/codex_plugin_scanner/guard/native_decision_receipt.py",
+            "src/codex_plugin_scanner/guard/native_command_observations.py",
+        }
+        and kind == "hash"
+    ):
         return "transport_integrity"
     if path in _ASYNC_POLICY_PATHS:
         return "asynchronous_policy"
@@ -262,7 +291,7 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
     path = record.path
     if record.name in _EQUIVALENCE_FUNCTIONS:
         yield IoObservation(path, record.node.lineno, record.name, "equivalence", _category(path, "equivalence"), True)
-    for node in ast.walk(record.node):
+    for node, function in scoped_nodes(record):
         if isinstance(node, ast.Call):
             name = _call_name(node)
             chain = _attribute_chain(node.func)
@@ -279,7 +308,9 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
             elif name in _ARCHIVE_MODULES:
                 kind, operation = "archive", name
             if kind is not None and operation is not None:
-                yield IoObservation(path, node.lineno, operation, kind, _category(path, kind), True)
+                yield IoObservation(
+                    path, node.lineno, operation, kind, _category(path, kind, function, operation), True
+                )
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".", maxsplit=1)[0]
@@ -298,8 +329,10 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
 def _reachable_records(
     root: Path,
     records: dict[tuple[str, str], list[FunctionRecord]],
+    *,
+    roots: tuple[RootSpec, ...] = ROOTS,
 ) -> tuple[FunctionRecord, ...]:
-    pending = [_root_record(root, spec, records) for spec in ROOTS]
+    pending = [_root_record(root, spec, records) for spec in roots]
     records_view = cast(Mapping[tuple[str, str], list[FunctionRecordLike]], records)
     seen: set[tuple[str, str]] = set()
     result: list[FunctionRecord] = []
@@ -374,8 +407,13 @@ def _branch_failures(root: Path, records: dict[tuple[str, str], list[FunctionRec
     return failures
 
 
-def _inventory(root: Path, reachable: tuple[FunctionRecord, ...]) -> list[IoObservation]:
+def _inventory(
+    root: Path,
+    reachable: tuple[FunctionRecord, ...],
+    posture: tuple[FunctionRecord, ...] = (),
+) -> list[IoObservation]:
     reachable_ids = {(record.path, record.qualname) for record in reachable}
+    posture_ids = {(record.path, record.qualname) for record in posture}
     observations: list[IoObservation] = []
     source_root = root / "src/codex_plugin_scanner/guard"
     for path in sorted(source_root.rglob("*.py")):
@@ -384,13 +422,16 @@ def _inventory(root: Path, reachable: tuple[FunctionRecord, ...]) -> list[IoObse
         module_records = tuple(_functions(tree, relative))
         for record in module_records:
             for observation in _observations(record):
+                category = observation.category
+                if (record.path, record.qualname) in posture_ids and category == "asynchronous_policy":
+                    category = "synchronous_posture_config"
                 observations.append(
                     IoObservation(
                         observation.path,
                         observation.line,
                         observation.operation,
                         observation.kind,
-                        observation.category,
+                        category,
                         (record.path, record.qualname) in reachable_ids or relative in _COMPATIBILITY_PATHS,
                     )
                 )
@@ -408,8 +449,9 @@ def validate(root: Path) -> dict[str, object]:
     root = root.resolve()
     records = _function_map(root)
     reachable = _reachable_records(root, records)
+    posture = _reachable_records(root, records, roots=(_POSTURE_ROOT, *_CONFIG_SCOPE_ROOTS))
     failures = _branch_failures(root, records)
-    inventory = _inventory(root, reachable)
+    inventory = _inventory(root, reachable, posture)
     reachable_bad = [item for item in inventory if item.reachable and item.category.startswith("unclassified_python")]
     if reachable_bad:
         failures.extend(

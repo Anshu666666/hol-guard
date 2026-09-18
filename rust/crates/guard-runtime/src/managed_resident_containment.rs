@@ -20,6 +20,18 @@ pub(super) type SpawnedManaged = Child;
 #[cfg(windows)]
 pub(super) type SpawnedManaged = ManagedChild;
 
+pub(super) fn try_live_or_restart(
+    state_base: &Path,
+    payload: &[u8],
+    deadline: Instant,
+    preferred_digest: &str,
+) -> Result<Option<Vec<u8>>, String> {
+    match super::try_home_states(state_base, payload, deadline, preferred_digest) {
+        Err(error) if error == "native_resident_live_request_failed" => Ok(None),
+        other => other,
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct ManagedProcessIdentity {
     process_id: u32,
@@ -364,15 +376,16 @@ pub(super) fn abort_spawned_managed(
     digest: &str,
     generation: u64,
     token: &[u8],
-) {
+    original: &str,
+) -> String {
     let process_id = child_process_id(child);
     let known_processes = [ManagedProcessIdentity {
         process_id,
         start_marker: process_start_marker(process_id).ok(),
         runtime_digest: runtime_digest().ok(),
     }];
-    let _ = terminate_spawned_managed(child, Duration::from_millis(100));
-    let _ = wait_for_generation_containment(
+    let termination = terminate_spawned_managed(child, Duration::from_millis(100));
+    let retirement = wait_for_generation_containment(
         scope,
         digest,
         generation,
@@ -380,6 +393,13 @@ pub(super) fn abort_spawned_managed(
         &known_processes,
         Instant::now() + Duration::from_millis(50),
     );
+    #[cfg(windows)]
+    if termination.is_err() || retirement.is_err() {
+        return format!("{original};native_resident_child_cleanup_failed");
+    }
+    #[cfg(not(windows))]
+    let _ = (termination, retirement);
+    original.to_owned()
 }
 
 pub(super) fn is_stale_process_identity_error(error: &str) -> bool {

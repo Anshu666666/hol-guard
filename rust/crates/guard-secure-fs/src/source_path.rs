@@ -187,6 +187,10 @@ fn known_skill_doc_path(target: &str, home: &Path) -> Option<PathBuf> {
         for root in KNOWN_SKILL_DOC_ROOTS {
             let skill_dir = home.join(root).join(candidate);
             let skill_file = skill_dir.join("SKILL.md");
+            #[cfg(windows)]
+            if contains_symlink_component(&skill_file) {
+                continue;
+            }
             let Ok(real_dir) = fs::canonicalize(&skill_dir) else {
                 continue;
             };
@@ -253,6 +257,10 @@ pub fn classify_source_path(
             && fs::symlink_metadata(&safety)
                 .is_ok_and(|metadata| metadata.is_file() && !metadata.file_type().is_symlink())
         {
+            #[cfg(windows)]
+            if contains_symlink_component(&safety) {
+                return SourcePathDecision::deny("symlink_in_path");
+            }
             if let Ok(real) = fs::canonicalize(safety) {
                 return SourcePathDecision::allow("guard_safety_doc_path", real);
             }

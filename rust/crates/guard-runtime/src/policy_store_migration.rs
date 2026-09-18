@@ -27,6 +27,7 @@ pub(super) fn load_legacy_authority(
                     policy_digest: Some(floor.policy_digest),
                     invalid_on_startup: true,
                     migrate: true,
+                    command_control_floor: None,
                 });
             }
             return Err(error);
@@ -41,6 +42,7 @@ pub(super) fn load_legacy_authority(
                 policy_digest: None,
                 invalid_on_startup: false,
                 migrate: false,
+                command_control_floor: None,
             });
         };
         return Ok(LoadedAuthority {
@@ -50,6 +52,7 @@ pub(super) fn load_legacy_authority(
             policy_digest: Some(floor.policy_digest),
             invalid_on_startup: false,
             migrate: true,
+            command_control_floor: None,
         });
     };
 
@@ -90,6 +93,8 @@ pub(super) fn load_legacy_authority(
         .as_ref()
         .map(|candidate| candidate.policy_digest.clone())
         .or_else(|| floor.map(|item| item.policy_digest));
+    let command_control_floor =
+        super::policy_store_command_floor::snapshot_floor(snapshot.as_ref());
     Ok(LoadedAuthority {
         snapshot,
         canonical_bytes,
@@ -97,6 +102,7 @@ pub(super) fn load_legacy_authority(
         policy_digest,
         invalid_on_startup,
         migrate: true,
+        command_control_floor,
     })
 }
 

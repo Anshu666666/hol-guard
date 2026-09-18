@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure installed adapter-to-decision native runtime SLOs.
+"""Measure daemon ingress and registered installed-launcher native SLOs.
 
 Synthetic requests cross the daemon adapter boundary; output is aggregate-only.
 """
@@ -16,7 +16,7 @@ import tempfile
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import cast
+from typing import Protocol, cast
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -51,7 +51,14 @@ from scripts.native_slo_capacity import (  # noqa: E402, F401
     _stabilize_ready_hook_workers,
     measure_capacity,
 )
-from scripts.native_slo_contract import SIZE_CLASSES  # noqa: E402
+from scripts.native_slo_contract import SIZE_CLASSES, assert_privacy_safe  # noqa: E402
+from scripts.native_slo_failure import failure_evidence  # noqa: E402
+from scripts.native_slo_launcher import measure_registered_launcher  # noqa: E402
+from scripts.native_slo_observation_failure import (  # noqa: E402
+    SloProgress,
+    capture_recovery_observation,
+    contextual_failure,
+)
 from scripts.native_slo_reporting import (  # noqa: E402
     SloMeasurements,
     safe_failure_rate,
@@ -60,6 +67,7 @@ from scripts.native_slo_reporting import (  # noqa: E402
     summarize_measurements,
 )
 from scripts.native_slo_session import AdapterSession, stop_native_resident  # noqa: E402
+from scripts.native_slo_workloads import source_reference_supported  # noqa: E402
 
 _DEFAULT_WARM_ITERATIONS = 2
 _DEFAULT_COLD_ITERATIONS = 3
@@ -69,6 +77,15 @@ _INSTALLED_WHEEL_OWNERSHIP_CONTRACT = "installed_wheel_ownership_contract"
 
 # Keep historical private imports available to contract tests and downstream tooling.
 _safe_failure_rate = safe_failure_rate
+
+
+class _LifecycleSession(Protocol):
+    workspace: Path
+    guard_home: Path
+
+    def stop_resident(self) -> bool: ...
+
+    def observe(self, harness: str, event: str, size_class: str) -> Observation: ...
 
 
 def _installed_corpus(runtime: Path, expected_routes: int) -> dict[str, int]:
@@ -131,14 +148,40 @@ def _run_warm(session: AdapterSession, routes: tuple[tuple[str, str], ...], iter
     return observations
 
 
-def _run_sizes(session: AdapterSession, routes: tuple[tuple[str, str], ...]) -> list[Observation]:
+def _run_sizes(
+    session: AdapterSession,
+    routes: tuple[tuple[str, str], ...],
+    *,
+    unsupported_evidence: list[dict[str, object]] | None = None,
+) -> list[Observation]:
     post_routes = tuple((harness, event) for harness, event in routes if event == "PostToolUse")
     selected = post_routes or (routes[0],)
     large_payloads = source_payloads(session.workspace)
     observations: list[Observation] = []
+    completed = 0
     for size_class in SIZE_CLASSES[1:]:
         request_payload = large_payloads[size_class]
-        observations.extend(session.observe(harness, event, size_class, request_payload) for harness, event in selected)
+        for harness, event in selected:
+            try:
+                if not source_reference_supported(runtime=session.runtime):
+                    if unsupported_evidence is None:
+                        raise RuntimeError("unsupported source review requires a separate evidence destination")
+                    unsupported_evidence.append(
+                        session.probe_source_reference_denial(harness, event, size_class, request_payload)
+                    )
+                else:
+                    observations.append(session.observe(harness, event, size_class, request_payload))
+                completed += 1
+            except Exception as error:
+                raise contextual_failure(
+                    error,
+                    harness=harness,
+                    event=event,
+                    size_class=size_class,
+                    sample_index=completed,
+                    sample_phase="sizes",
+                    completed_sample_counts={"sizes": completed},
+                ) from error
     return observations
 
 
@@ -162,7 +205,7 @@ def _wire_request(workspace: Path, guard_home: Path, request_id: str) -> str:
     )
 
 
-def _run_cold(runtime: Path, session: AdapterSession, iterations: int) -> list[float]:
+def _run_cold(runtime: Path, session: _LifecycleSession, iterations: int) -> list[float]:
     values: list[float] = []
     environment = {
         "HOME": str(session.workspace),
@@ -193,7 +236,7 @@ def _run_cold(runtime: Path, session: AdapterSession, iterations: int) -> list[f
     return values
 
 
-def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
+def _run_recovery(session: _LifecycleSession, iterations: int) -> list[float]:
     values: list[float] = []
     for index in range(iterations):
         _ = session.observe("claude-code", "PostToolUse", "1k")
@@ -202,9 +245,26 @@ def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
             f"resident stop failed during recovery sample {index}",
         )
         started = time.perf_counter()
-        observation = session.observe("claude-code", "PostToolUse", "1k")
+        with capture_recovery_observation() as detail:
+            observation = session.observe("claude-code", "PostToolUse", "1k")
         values.append((time.perf_counter() - started) * 1_000.0)
-        _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
+        try:
+            _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
+        except Exception as error:
+            raise contextual_failure(
+                error,
+                sample_phase="resident_recovery",
+                sample_index=index,
+                completed_sample_counts={"recovery": len(values) - 1},
+                harness=observation.harness,
+                event=observation.event,
+                size_class=observation.size_class,
+                route=observation.route,
+                allowed=observation.allowed,
+                overloaded=observation.overloaded,
+                resident_stop_contained=True,
+                **detail,
+            ) from error
     return values
 
 
@@ -217,26 +277,45 @@ def _measure_slo(
     recovery_iterations: int,
     readiness_samples: int,
     include_capacity: bool,
+    launcher_iterations: int = 0,
 ) -> SloMeasurements:
     # Cold probes stop the session's resident before each one-shot call. Keep
     # them separate so this lifecycle exercise does not consume the bounded
     # restart budget used by warmup and recovery.
-    with AdapterSession(runtime) as cold_session:
+    progress = SloProgress()
+    with progress.phase("cold_session"), AdapterSession(runtime) as cold_session, progress.phase("cold"):
         cold = _run_cold(runtime, cold_session, cold_iterations)
-    with AdapterSession(runtime) as session:
-        warm = _run_warm(session, routes, warm_iterations)
-        sizes = _run_sizes(session, routes)
-        recovery = _run_recovery(session, recovery_iterations)
-        warmup_harness, warmup_event = routes[0]
-        serialized_warmup = session.observe(warmup_harness, warmup_event, "1k")
-        _require(
-            serialized_warmup.allowed and serialized_warmup.route == "native_resident",
-            "serialized resident pool warmup did not stay on the allowed native route",
-        )
-        capacity = measure_capacity(session, routes, include_capacity=include_capacity)
+        progress.counts["cold"] = len(cold)
+    with progress.phase("active_session"), AdapterSession(runtime) as session:
+        with progress.phase("warm"):
+            warm = _run_warm(session, routes, warm_iterations)
+            progress.counts["warm"] = len(warm)
+        source_denials: list[dict[str, object]] = []
+        with progress.phase("sizes"):
+            sizes = _run_sizes(session, routes, unsupported_evidence=source_denials)
+            progress.counts["sizes"] = len(sizes) + len(source_denials)
+        with progress.phase("recovery"):
+            recovery = _run_recovery(session, recovery_iterations)
+            progress.counts["recovery"] = len(recovery)
+        with progress.phase("pool_warmup"):
+            warmup_harness, warmup_event = routes[0]
+            serialized_warmup = session.observe(warmup_harness, warmup_event, "1k")
+            _require(
+                serialized_warmup.allowed and serialized_warmup.route == "native_resident",
+                "serialized resident pool warmup did not stay on the allowed native route",
+            )
+        with progress.phase("capacity"):
+            capacity = measure_capacity(session, routes, include_capacity=include_capacity)
+            progress.counts["capacity_16"] = len(capacity.concurrent_16)
+            progress.counts["capacity_64"] = len(capacity.concurrent_64)
         readiness = [session.readiness_ms]
+        with progress.phase("launcher"):
+            launcher = (
+                measure_registered_launcher(session, iterations=launcher_iterations) if launcher_iterations else None
+            )
     if readiness_samples > 1:
-        readiness.extend(_readiness_samples(runtime, readiness_samples - 1))
+        with progress.phase("readiness"):
+            readiness.extend(_readiness_samples(runtime, readiness_samples - 1))
     rss_peak = max(capacity.rss_peak, process_rss_bytes())
     return SloMeasurements(
         warm=warm,
@@ -250,6 +329,12 @@ def _measure_slo(
         readiness=readiness,
         rss_baseline=capacity.rss_baseline,
         rss_peak=rss_peak,
+        installed_launcher=launcher,
+        routes_16=capacity.routes_16,
+        routes_64=capacity.routes_64,
+        native_overloads_16=capacity.native_overloads_16,
+        native_overloads_64=capacity.native_overloads_64,
+        source_reference_denials=source_denials,
     )
 
 
@@ -261,20 +346,26 @@ def run_slo(
     recovery_iterations: int,
     readiness_samples: int,
     include_capacity: bool,
+    launcher_iterations: int = 0,
 ) -> dict[str, object]:
-    _clear_proof_overrides()
-    runtime_summary = _runtime_summary(runtime)
-    routes = route_matrix()
-    installed_corpus = _installed_corpus(runtime, len(routes))
-    measurements = _measure_slo(
-        runtime,
-        routes,
-        warm_iterations=warm_iterations,
-        cold_iterations=cold_iterations,
-        recovery_iterations=recovery_iterations,
-        readiness_samples=readiness_samples,
-        include_capacity=include_capacity,
-    )
+    progress = SloProgress()
+    with progress.phase("runtime_identity"):
+        _clear_proof_overrides()
+        runtime_summary = _runtime_summary(runtime)
+        routes = route_matrix()
+    with progress.phase("installed_corpus"):
+        installed_corpus = _installed_corpus(runtime, len(routes))
+    with progress.phase("measurement"):
+        measurements = _measure_slo(
+            runtime,
+            routes,
+            warm_iterations=warm_iterations,
+            cold_iterations=cold_iterations,
+            recovery_iterations=recovery_iterations,
+            readiness_samples=readiness_samples,
+            include_capacity=include_capacity,
+            launcher_iterations=launcher_iterations,
+        )
     summary = summarize_measurements(measurements)
     gates = slo_gates(
         measurements,
@@ -301,6 +392,7 @@ def main() -> int:
     parser.add_argument("--cold-iterations", type=int, default=_DEFAULT_COLD_ITERATIONS)
     parser.add_argument("--recovery-iterations", type=int, default=_DEFAULT_RECOVERY_ITERATIONS)
     parser.add_argument("--readiness-samples", type=int, default=3)
+    parser.add_argument("--launcher-iterations", type=int, default=2)
     parser.add_argument("--skip-capacity", action="store_true")
     parser.add_argument("--enforce", action="store_true")
     parser.add_argument("--json", type=Path)
@@ -309,21 +401,38 @@ def main() -> int:
         parser.error("iteration counts must be positive")
     if not 1 <= args.readiness_samples <= _MAX_READINESS_SAMPLES:
         parser.error("readiness samples must be between one and eight")
-    runtime = args.runtime.expanduser().resolve(strict=True)
-    _require(runtime.is_file() and not args.runtime.is_symlink(), "runtime must be a regular non-symlink file")
-    result = run_slo(
-        runtime,
-        warm_iterations=args.warm_iterations,
-        cold_iterations=args.cold_iterations,
-        recovery_iterations=args.recovery_iterations,
-        readiness_samples=args.readiness_samples,
-        include_capacity=not args.skip_capacity,
-    )
+    if args.launcher_iterations < 0:
+        parser.error("launcher iterations must be non-negative; zero explicitly skips launcher coverage")
+    failed = False
+    try:
+        runtime = args.runtime.expanduser().resolve(strict=True)
+        _require(runtime.is_file() and not args.runtime.is_symlink(), "runtime must be a regular non-symlink file")
+        result = run_slo(
+            runtime,
+            warm_iterations=args.warm_iterations,
+            cold_iterations=args.cold_iterations,
+            recovery_iterations=args.recovery_iterations,
+            readiness_samples=args.readiness_samples,
+            include_capacity=not args.skip_capacity,
+            launcher_iterations=args.launcher_iterations,
+        )
+    except Exception as error:
+        failed = True
+        result = assert_privacy_safe(
+            {
+                "schema": "hol-guard.native-installed-slo-failure.v1",
+                "scope": "daemon_ingress_and_registered_launcher",
+                "evidence_class": "smoke",
+                "passed": False,
+                "qualification_complete": False,
+                "failure": failure_evidence(error),
+            }
+        )
     rendered = json.dumps(result, indent=2, sort_keys=True)
     print(rendered)
     if args.json is not None:
         args.json.write_text(rendered + "\n", encoding="utf-8")
-    return 0 if not args.enforce or result.get("passed") is True else 1
+    return 0 if not failed and (not args.enforce or result.get("passed") is True) else 1
 
 
 if __name__ == "__main__":

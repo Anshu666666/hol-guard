@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -9,12 +10,29 @@ from typing import Any
 from .native_policy_snapshot_codec import _strict_json_loads_v3, _valid_digest_v3
 from .native_policy_snapshot_constants import (
     _MAX_ACK_BYTES,
+    _PUBLISH_RETRY_MAX_SECONDS,
     _PUBLISH_TIMEOUT_SECONDS,
     POLICY_SNAPSHOT_ACK_REQUIRES_NEW_GENERATION,
     NativePolicySnapshotError,
 )
 from .native_policy_snapshot_contract import _policy_snapshot_push_bytes_v3
 from .native_policy_snapshot_generation import native_policy_snapshot_v3
+
+
+def _publication_retry_delays(
+    failure_count: int,
+    poll_interval_seconds: float,
+    error: str,
+) -> tuple[float, float]:
+    """Retain bounded transport retry backoff and deterministic jitter."""
+
+    delay = min(
+        _PUBLISH_RETRY_MAX_SECONDS,
+        poll_interval_seconds * (2 ** min(failure_count - 1, 5)),
+    )
+    retry_seed = hashlib.sha256(f"{failure_count}:{error}".encode("ascii")).digest()
+    retry_fraction = int.from_bytes(retry_seed[:2], "big") / float(1 << 16)
+    return delay, min(0.1, poll_interval_seconds * 0.25) * retry_fraction
 
 
 def _decode_ack_v3(output: bytes | None) -> dict[str, object] | None:
@@ -76,6 +94,7 @@ def _publish_snapshot_v3(
     identity: Any,
     capabilities: Any,
     config: Mapping[str, object],
+    command_extensions: Mapping[str, object],
     master_key: bytes,
     client: Callable[..., bytes | None],
     renew_after_generation: int | None,
@@ -96,6 +115,7 @@ def _publish_snapshot_v3(
             issued_at_ms=int(publisher._wall_clock() * 1_000),
             deadline_monotonic=publisher._monotonic_clock() + _PUBLISH_TIMEOUT_SECONDS,
             renew_after_generation=renew_after_generation,
+            command_extensions=command_extensions,
         )
         encoded = _policy_snapshot_push_bytes_v3(snapshot)
         output = client(

@@ -25,14 +25,16 @@ MAX_WARM_P95_MS: Final = 20.0
 MAX_250K_P95_MS: Final = 50.0
 MAX_1M_P95_MS: Final = 120.0
 MAX_5M_P95_MS: Final = 350.0
-# The installed proof measures the complete Python adapter/HTTP/daemon path.
+# The normalized daemon-ingress proof measures Python transport/HTTP/daemon.
+# Registered executable startup is a separate INSTALLED_LAUNCHER measurement.
 # Keep its ordinary request budget tied to the existing production hook-engine
 # target instead of applying the direct Rust-runtime latency ceilings here.
 MAX_INSTALLED_ADAPTER_P95_MS: Final = float(HOOK_ENGINE_NORMAL_BUDGET_MS)
 MAX_INSTALLED_ADAPTER_P99_MS: Final = MAX_INSTALLED_ADAPTER_P95_MS
 MAX_COLD_P95_MS: Final = 150.0
 MAX_READINESS_P95_MS: Final = 400.0
-# This is the direct native-runtime concurrency ceiling.  Installed adapter
+# This is a declared direct native-runtime concurrency ceiling; the release
+# benchmark does not currently run direct c16. Installed adapter
 # concurrency uses MAX_INSTALLED_ADAPTER_P99_MS because it includes Python
 # scheduling and HTTP transport overhead.
 MAX_DIRECT_CONCURRENT_P99_MS: Final = 100.0
@@ -84,6 +86,7 @@ PROOF_ENV_KEYS: Final = frozenset(
         "HOL_GUARD_HOOK_FAST_PATH_SHADOW",
         "HOL_GUARD_HOOK_SOURCE_REF",
         "HOL_GUARD_NATIVE_ORACLE",
+        "HOL_GUARD_PYTHON_ORACLE",
         "HOL_GUARD_NATIVE_DIAGNOSTIC",
         "HOL_GUARD_ORACLE",
         "HOL_GUARD_DIAGNOSTIC",
@@ -97,6 +100,7 @@ PROOF_ENV_KEYS: Final = frozenset(
         "GUARD_HOOK_FAST_PATH_SHADOW",
         "GUARD_HOOK_SOURCE_REF",
         "GUARD_NATIVE_ORACLE",
+        "GUARD_PYTHON_ORACLE",
         "GUARD_NATIVE_DIAGNOSTIC",
         "GUARD_ORACLE",
         "GUARD_DIAGNOSTIC",

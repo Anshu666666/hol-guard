@@ -15,9 +15,6 @@ from .frozen_runtime_commands import frozen_codex_bridge_tokens_are_live
 _STATE_PATH_RE = re.compile(r'"state_path"\s*:\s*"([^"]+)"')
 _GUARD_HOME_QUERY_RE = re.compile(r"guard-home=([^&\"'\s]+)")
 
-_STATE_PATH_RE = re.compile(r'"state_path"\s*:\s*"([^"]+)"')
-_GUARD_HOME_QUERY_RE = re.compile(r"guard-home=([^&\"'\s]+)")
-
 
 def remove_manifest_bound_hook_events(
     hooks: dict[str, object],

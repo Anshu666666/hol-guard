@@ -1,13 +1,12 @@
-name: macOS resolver cache diagnostic
-run-name: macOS resolver cache diagnostic smoke - d104ac3
+name: Intel macOS resolver cache diagnostic
+run-name: Intel macOS cache-only diagnostic smoke - d104ac3
 
 on:
   push:
-    branches: [codex/rsp-macos-cache-diagnostic-d104ac3]
+    branches: [codex/rsp-macos-intel-cache-only-d104ac3]
     paths:
-      - '.github/workflows/native-macos-cache-diagnostic.yml'
+      - '.github/workflows/native-macos-intel-cache-only-diagnostic.yml'
       - 'scripts/ci/record_native_macos_diagnostic_checkouts.py'
-      - 'scripts/ci/native_macos_dtrace_availability.py'
       - 'scripts/ci/native_loopback_cache.py'
       - 'scripts/ci/native_loopback_resolver.py'
       - 'scripts/ci/native_loopback_lookup.py'
@@ -17,7 +16,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: native-macos-cache-diagnostic-${{ github.ref }}
+  group: native-macos-intel-cache-only-diagnostic-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,11 +30,6 @@ jobs:
             target: x86_64-apple-darwin
             platform_tag: macosx_13_0_x86_64
             deployment_target: '13.0'
-          - runner: macos-15
-            prior_artifact_id: '10496485020'
-            target: aarch64-apple-darwin
-            platform_tag: macosx_11_0_arm64
-            deployment_target: '11.0'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
     steps:
@@ -89,11 +83,8 @@ jobs:
         run: |
           rustup toolchain install 1.88.0 --profile minimal
           rustup target add --toolchain 1.88.0 ${{ matrix.target }}
-      - name: Record DTrace provider availability without enabling tracing
-        shell: bash
-        run: |
-          python validation-src/scripts/ci/native_macos_dtrace_availability.py \
-            --output macos-cache-diagnostic-evidence/aggregate/dtrace-availability.json
+      # Fresh runner: the separate DTrace listing in run 35370190733 timed out
+      # before this experiment. Keep that failed cohort; no tracing is enabled here.
       - name: Run one cache experiment around the original paired smoke cohort
         env:
           QUALIFICATION_MODE: smoke
@@ -126,7 +117,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: macos-cache-d104ac3-smoke-${{ matrix.target }}-driver-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          name: macos-intel-cache-only-d104ac3-smoke-${{ matrix.target }}-driver-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: |
             macos-cache-diagnostic-evidence/aggregate/*.json
             macos-cache-diagnostic-evidence/build-metadata.json

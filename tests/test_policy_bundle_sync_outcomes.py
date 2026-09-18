@@ -49,6 +49,12 @@ def _v1_bundle(
     return bundle
 
 
+def _stored(store: GuardStore, key: str) -> dict[str, object]:
+    payload = store.get_sync_payload(key)
+    assert isinstance(payload, dict)
+    return payload
+
+
 def _stub_http(monkeypatch: pytest.MonkeyPatch, response: dict[str, object]) -> None:
     stub_authenticated_urlopen(monkeypatch, lambda request, timeout: _Response(response))
     monkeypatch.setattr(runner, "sync_pain_signals", lambda _store, auth_context=None: 0)
@@ -65,7 +71,9 @@ def test_successful_upload_with_tampered_policy_retains_last_good(
     store.set_sync_payload("policy_bundle_keyring", keyring, "2026-07-18T00:00:00Z")
     assert _activate_bundle(store, live, "2026-07-18T00:00:00Z") is not None
     tampered = dict(live)
-    tampered["rules"] = [*list(live["rules"]), {"ruleId": "forged", "action": "allow"}]
+    live_rules = live["rules"]
+    assert isinstance(live_rules, list)
+    tampered["rules"] = [*live_rules, {"ruleId": "forged", "action": "allow"}]
     _stub_http(
         monkeypatch,
         {"syncedAt": "2026-07-18T00:01:00Z", "receiptsStored": 0, "policyBundle": tampered},
@@ -76,9 +84,9 @@ def test_successful_upload_with_tampered_policy_retains_last_good(
     assert summary["receipt_upload_status"] == "success"
     assert summary["policy_validation_status"] == "rejected"
     assert summary["policy_application_status"] == "retained"
-    assert store.get_sync_payload("policy_bundle")["bundleVersion"] == live["bundleVersion"]
-    assert store.get_sync_payload("policy_bundle_ack")["status"] != "applied"
-    assert store.get_sync_payload("policy_bundle_ack")["bundleVersion"] == live["bundleVersion"]
+    assert _stored(store, "policy_bundle")["bundleVersion"] == live["bundleVersion"]
+    assert _stored(store, "policy_bundle_ack")["status"] != "applied"
+    assert _stored(store, "policy_bundle_ack")["bundleVersion"] == live["bundleVersion"]
 
 
 def test_omitted_and_malformed_policy_bundle_cannot_erase_valid_authority(
@@ -99,7 +107,7 @@ def test_omitted_and_malformed_policy_bundle_cannot_erase_valid_authority(
     omitted = runner.sync_receipts(store)
     assert omitted["policy_validation_status"] == "omitted"
     assert omitted["policy_application_status"] == "retained"
-    assert store.get_sync_payload("policy_bundle")["bundleHash"] == retained_hash
+    assert _stored(store, "policy_bundle")["bundleHash"] == retained_hash
 
     _stub_http(
         monkeypatch,
@@ -107,7 +115,7 @@ def test_omitted_and_malformed_policy_bundle_cannot_erase_valid_authority(
     )
     null_summary = runner.sync_receipts(store)
     assert null_summary["policy_validation_status"] == "rejected"
-    assert store.get_sync_payload("policy_bundle")["bundleHash"] == retained_hash
+    assert _stored(store, "policy_bundle")["bundleHash"] == retained_hash
 
     _stub_http(
         monkeypatch,
@@ -115,7 +123,7 @@ def test_omitted_and_malformed_policy_bundle_cannot_erase_valid_authority(
     )
     empty_object = runner.sync_receipts(store)
     assert empty_object["policy_validation_status"] == "rejected"
-    assert store.get_sync_payload("policy_bundle")["bundleHash"] == retained_hash
+    assert _stored(store, "policy_bundle")["bundleHash"] == retained_hash
 
 
 def test_signed_empty_publication_applies_and_acks_new_revision(tmp_path: Path) -> None:
@@ -129,8 +137,8 @@ def test_signed_empty_publication_applies_and_acks_new_revision(tmp_path: Path) 
     )
     assert _activate_bundle(store, live, "2026-07-18T00:00:00Z") is not None
     assert _activate_bundle(store, empty, "2026-07-18T00:01:00Z") is not None
-    assert store.get_sync_payload("policy_bundle")["bundleVersion"] == empty["bundleVersion"]
-    assert store.get_sync_payload("policy_bundle_ack")["bundleVersion"] == empty["bundleVersion"]
+    assert _stored(store, "policy_bundle")["bundleVersion"] == empty["bundleVersion"]
+    assert _stored(store, "policy_bundle_ack")["bundleVersion"] == empty["bundleVersion"]
     assert [row for row in store.list_policy_decisions() if row["source"] == "policy-bundle"] == []
 
 
@@ -146,8 +154,8 @@ def test_stale_older_payload_cannot_resurrect_after_empty_publication(tmp_path: 
     assert _activate_bundle(store, live, "2026-07-18T00:00:00Z") is not None
     assert _activate_bundle(store, empty, "2026-07-18T00:01:00Z") is not None
     retry = _activate_bundle(store, live, "2026-07-18T00:02:00Z")
-    assert retry is None or store.get_sync_payload("policy_bundle")["bundleVersion"] == empty["bundleVersion"]
-    assert store.get_sync_payload("policy_bundle")["bundleHash"] == empty["bundleHash"]
+    assert retry is None or _stored(store, "policy_bundle")["bundleVersion"] == empty["bundleVersion"]
+    assert _stored(store, "policy_bundle")["bundleHash"] == empty["bundleHash"]
 
 
 def test_future_dated_v2_is_rejected_with_stable_code_and_last_good_kept() -> None:

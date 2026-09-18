@@ -25,7 +25,7 @@ jobs:
       - name: Checkout frozen product source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          ref: 960c531722ac7b4d2cb555d24da48f4dcbc9940c
+          ref: bc0479bcab1cbc925421c9ebc7a7b926bccd131d
           path: source
           persist-credentials: false
 
@@ -61,7 +61,7 @@ jobs:
           secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
           (( (8#$secured_mode & 2) == 0 ))
 
-      - name: Execute frozen review regression green and lint
+      - name: Execute frozen review regression green, lint and ACK format check
         working-directory: source
         env:
           PYTHONDONTWRITEBYTECODE: '1'

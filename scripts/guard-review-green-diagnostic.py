@@ -15,12 +15,13 @@ import tempfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-BASE = "960c531722ac7b4d2cb555d24da48f4dcbc9940c"
-TREE = "c6f4f2f89dc1eea7bec1297549028005fcbf394c"
+BASE = "bc0479bcab1cbc925421c9ebc7a7b926bccd131d"
+TREE = "28ad4a5c3f0f3f5860f81a19c150b43aca7b6ba6"
 WORKFLOW = ".github/workflows/ci.yml"
 SCRIPT = "scripts/guard-review-green-diagnostic.py"
 SOURCE_COUNT = 4087
 TEST_BLOBS = {
+    "tests/test_cloud_review_worker_configuration.py": "281a328c3f90a692c4af92753cbe1c5a6e49e6bf",
     "tests/test_daemon_hook_response_lifecycle.py": "e8ac854c5e3d5dd540bd5c0726700d682e352d1a",
     "tests/test_daemon_refresh_worker_fixture_isolation.py": "f4fb093f05628703924b048c656d08a1cbbbf735",
     "tests/test_guard_review_policy_memory_command.py": "e9c2c51e32150c507814f7e1d5101f2c317f83dc",
@@ -38,11 +39,13 @@ TEST_BLOBS = {
     "tests/test_policy_offline_lifetime_truth.py": "5933d39dece635344d47b88030aebddfe0c155ce",
     "tests/test_policy_signer_rotation_runtime.py": "825a741c36eed3593d0b4655ad869eba6a0527c4",
     "tests/test_policy_sync_rejection_truth.py": "221ab5128f294eed9a971a68dfcd1d414a009bb7",
+    "tests/test_policy_sync_truth.py": "1c8916311467843c5af4766459481cfd36b217c5",
     "tests/test_policy_upload_ack_current_device.py": "8c909a0ef18822fe587e3a8c0af69197b6be9ee8",
     "tests/test_synced_policy.py": "8c7eb70fb4e8204d258d467b2ab4ee456760543c",
 }
 
 EXPECTED_CASES = {
+    "tests/test_cloud_review_worker_configuration.py": 34,
     "tests/test_daemon_hook_response_lifecycle.py": 5,
     "tests/test_daemon_refresh_worker_fixture_isolation.py": 4,
     "tests/test_guard_review_policy_memory_command.py": 5,
@@ -60,6 +63,7 @@ EXPECTED_CASES = {
     "tests/test_policy_offline_lifetime_truth.py": 16,
     "tests/test_policy_signer_rotation_runtime.py": 8,
     "tests/test_policy_sync_rejection_truth.py": 8,
+    "tests/test_policy_sync_truth.py": 10,
     "tests/test_policy_upload_ack_current_device.py": 11,
     "tests/test_synced_policy.py": 5,
 }
@@ -76,6 +80,7 @@ RUFF_PATHS = (
     "tests/conftest.py",
     "tests/guard_package_hook_subprocess.py",
     "tests/native_policy_snapshot_windows_storage.py",
+    "tests/test_cloud_review_worker_configuration.py",
     "tests/test_daemon_hook_response_lifecycle.py",
     "tests/test_daemon_refresh_worker_fixture_isolation.py",
     "tests/test_guard_package_hook_phase14.py",
@@ -90,8 +95,13 @@ RUFF_PATHS = (
     "tests/test_policy_memory_malformed_payload.py",
     "tests/test_policy_offline_lifetime_truth.py",
     "tests/test_policy_sync_rejection_truth.py",
+    "tests/test_policy_sync_truth.py",
     "tests/test_policy_upload_ack_current_device.py",
 )
+FORMAT_BLOBS = {
+    "src/codex_plugin_scanner/guard/runtime/policy_sync_acknowledgement.py":
+        "f0502f476c327d9bd9ffe7e220538713f473827a",
+}
 ERROR_CLASSES = {
     "AssertionError", "AttributeError", "TypeError", "ValueError", "KeyError",
     "IndexError", "RuntimeError", "OSError", "FileNotFoundError", "PermissionError",
@@ -116,6 +126,7 @@ SUMMARY: dict[str, object] = {
     "expectedCases": sum(EXPECTED_CASES.values()),
     "testBlobs": TEST_BLOBS,
     "ruffPaths": RUFF_PATHS,
+    "formatBlobs": FORMAT_BLOBS,
 }
 stage = "preflight"
 
@@ -262,19 +273,28 @@ def lint(temporary: Path) -> int:
     stage = "ruff"
     capture, errors = temporary / "private-ruff.json", temporary / "private-ruff.log"
     timed_out = False
+    reap_timed_out = False
     with capture.open("wb") as output, errors.open("wb") as error_output:
-        with subprocess.Popen(
+        process = subprocess.Popen(
             [sys.executable, "-m", "ruff", "check", "--output-format", "json", *RUFF_PATHS],
             cwd=ROOT, stdout=output, stderr=error_output, start_new_session=True,
-        ) as process:
+        )
+        try:
+            result = process.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            timed_out = True
             try:
-                result = process.wait(timeout=120)
-            except subprocess.TimeoutExpired:
-                timed_out = True
                 os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
                 result = process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                reap_timed_out = True
+                result = process.poll()
     SUMMARY.update({
         "ruffExit": result, "ruffTimedOut": timed_out,
+        "ruffReapTimedOut": reap_timed_out,
         "privateRuffOutputSha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
         "privateRuffErrorSha256": hashlib.sha256(errors.read_bytes()).hexdigest(),
     })
@@ -306,6 +326,41 @@ def lint(temporary: Path) -> int:
     return result
 
 
+def format_check(temporary: Path) -> int:
+    global stage
+    stage = "ruff-format-check"
+    capture = temporary / "private-format.log"
+    timed_out = False
+    reap_timed_out = False
+    with capture.open("wb") as output:
+        process = subprocess.Popen(
+            [sys.executable, "-m", "ruff", "format", "--check", *FORMAT_BLOBS],
+            cwd=ROOT, stdout=output, stderr=subprocess.STDOUT, start_new_session=True,
+        )
+        try:
+            result = process.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
+                result = process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                reap_timed_out = True
+                result = process.poll()
+    SUMMARY.update({
+        "formatExit": result, "formatTimedOut": timed_out,
+        "formatReapTimedOut": reap_timed_out,
+        "privateFormatOutputSha256": hashlib.sha256(capture.read_bytes()).hexdigest(),
+        "formatComplete": not timed_out and result in {0, 1},
+    })
+    if timed_out:
+        return 124
+    return result if result in {0, 1} else 2
+
+
 def run() -> int:
     global stage
     if tuple(sys.version_info[:2]) != (3, 12):
@@ -335,30 +390,45 @@ def run() -> int:
             raise ValueError("test_blob_mismatch")
     if any(path not in expected or expected[path][0] != "100644" for path in RUFF_PATHS):
         raise ValueError("lint_path_mismatch")
+    for path, digest in FORMAT_BLOBS.items():
+        if expected.get(path) != ("100644", digest):
+            raise ValueError("format_blob_mismatch")
     known = known_functions()
     SUMMARY["sourcePrecheckPassed"] = True
     with tempfile.TemporaryDirectory(prefix="guard-review-green-", dir=os.environ["RUNNER_TEMP"]) as temporary:
         junit, capture = Path(temporary) / "private.xml", Path(temporary) / "private.log"
         stage = "pytest"
         timed_out = False
+        reap_timed_out = False
         lint_exit = None
+        format_exit = None
         try:
             with capture.open("wb") as output:
-                with subprocess.Popen(
+                process = subprocess.Popen(
                     [sys.executable, "-m", "pytest", "-q", "--tb=no", "--junitxml=" + str(junit),
                      *sorted(EXPECTED_CASES)],
                     cwd=ROOT, stdout=output, stderr=subprocess.STDOUT, start_new_session=True,
-                ) as process:
+                )
+                try:
+                    result = process.wait(timeout=600)
+                except subprocess.TimeoutExpired:
+                    timed_out = True
                     try:
-                        result = process.wait(timeout=600)
-                    except subprocess.TimeoutExpired:
-                        timed_out = True
                         os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    try:
                         result = process.wait(timeout=10)
-                    SUMMARY["pytestExit"] = result
-                    SUMMARY["timedOut"] = timed_out
+                    except subprocess.TimeoutExpired:
+                        reap_timed_out = True
+                        result = process.poll()
+                SUMMARY["pytestExit"] = result
+                SUMMARY["timedOut"] = timed_out
+                SUMMARY["pytestReapTimedOut"] = reap_timed_out
             if not timed_out and result in {0, 1}:
                 lint_exit = lint(Path(temporary))
+                if lint_exit in {0, 1}:
+                    format_exit = format_check(Path(temporary))
         finally:
             if capture.exists():
                 SUMMARY["privateOutputSha256"] = hashlib.sha256(capture.read_bytes()).hexdigest()
@@ -380,11 +450,14 @@ def run() -> int:
             return 124
         stage = "junit"
         selected = summarize(junit, known)
-        complete = selected and result in {0, 1} and lint_exit in {0, 1}
+        complete = (
+            selected and result in {0, 1} and lint_exit in {0, 1}
+            and format_exit in {0, 1}
+        )
         SUMMARY["evidenceComplete"] = complete
         if not complete:
-            return 124 if lint_exit == 124 else 2
-        return result if result != 0 else int(lint_exit or 0)
+            return 124 if 124 in {lint_exit, format_exit} else 2
+        return result or int(lint_exit or 0) or int(format_exit or 0)
 
 
 def main() -> int:

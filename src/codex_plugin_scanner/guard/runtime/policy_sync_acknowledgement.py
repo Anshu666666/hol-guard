@@ -28,9 +28,7 @@ def validated_upload_policy_acknowledgement(
     if acknowledgement.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
         validated, _error = validated_policy_bundle_v2_acknowledgement(acknowledgement)
         if validated is not None and "deliveryId" in validated:
-            delivery_device_id = runtime_summary_device_id(
-                store.get_sync_payload("runtime_session_summary"), device_id
-            )
+            delivery_device_id = runtime_summary_device_id(store.get_sync_payload("runtime_session_summary"), device_id)
             if validated.get("deviceId") != delivery_device_id:
                 return None
         if (

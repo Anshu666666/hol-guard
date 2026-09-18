@@ -1,0 +1,51 @@
+name: Native managed source contract
+on:
+  push:
+    branches: [fix/native-managed-source-validation]
+  pull_request:
+    paths:
+      - "src/codex_plugin_scanner/guard/native_policy_authority_*.py"
+      - "tests/test_native_policy_authority*.py"
+      - "tests/native_managed_source_support.py"
+      - ".github/workflows/native-managed-source-contract.yml"
+      - "basedpyright.native-managed-source.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-managed-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Lint and typecheck the actual source closure
+        run: |
+          uv run --no-sync ruff check src/codex_plugin_scanner/guard/native_policy_authority_{managed,read,sources}.py tests/native_managed_source_support.py tests/test_native_policy_authority_managed_read.py
+          uv run --no-sync ruff format --check src/codex_plugin_scanner/guard/native_policy_authority_{managed,read,sources}.py tests/native_managed_source_support.py tests/test_native_policy_authority_managed_read.py
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --project basedpyright.native-managed-source.json
+          uv run --no-sync python -c "from codex_plugin_scanner.guard import native_policy_authority_managed, native_policy_authority_read, native_policy_authority_sources"
+      - name: Verify signed and local source reconstruction
+        run: |
+          uv run --no-sync pytest -q tests/test_native_policy_authority_managed_read.py tests/test_native_policy_authority_compile.py tests/test_native_policy_authority_exact_sources.py tests/test_native_policy_authority_orphan_sources.py tests/test_native_policy_authority_read.py tests/test_native_policy_snapshot_v4_barrier.py
+      - name: Preserve authority and I/O ownership
+        run: |
+          uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .
+          uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .

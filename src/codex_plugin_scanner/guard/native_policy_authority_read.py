@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY
 from .native_policy_authority_compile import compile_native_policy_authority, compile_native_policy_row
 from .native_policy_authority_contract import NATIVE_AUTHORITY_MAX_ROWS, NativePolicyAuthorityDraft
+from .native_policy_authority_managed import FrozenNativeManagedAuthority, read_frozen_native_managed_authority
 from .native_policy_authority_sources import (
     FrozenNativePolicySources,
     signed_bundle_native_rows,
@@ -111,6 +112,26 @@ def _credentials_for_capture(
 
 
 def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> NativeVerifiedPolicyInputs:
+    """Fence the existing authenticated control reader and the captured policy view."""
+    with store._connect() as observer:
+        # This connection stays outside the captured transaction. A PRAGMA in
+        # that transaction would not observe a concurrent commit until it ended.
+        version = observer.execute("pragma data_version").fetchone()[0]
+        managed = read_frozen_native_managed_authority(store)
+        result = _capture_native_policy_authority_inputs(store, now=now, managed=managed)
+        if managed is not None:
+            managed.require_current_secrets(store)
+        if observer.in_transaction or observer.execute("pragma data_version").fetchone()[0] != version:
+            raise NativePolicySnapshotError("native_policy_authority_capture_changed")
+        return result
+
+
+def _capture_native_policy_authority_inputs(
+    store: GuardStore,
+    *,
+    now: float,
+    managed: FrozenNativeManagedAuthority | None,
+) -> NativeVerifiedPolicyInputs:
     """Reconstruct signed authority and verify local rows from one database view.
 
     The snapshot encoder must still negotiate support, authenticate the
@@ -142,14 +163,15 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
                 raise NativePolicySnapshotError("native_policy_authority_state_invalid")
             payloads[str(row["state_key"])] = value
         controls = connection.execute(
-            "select 1 from extension_control_authority_snapshot where singleton = 1"
+            "select revision, catalog_digest, snapshot_digest "
+            "from extension_control_authority_snapshot where singleton = 1"
         ).fetchone()
-        if controls is not None or any(
+        if managed is not None:
+            managed.validate_capture(payloads, dict(controls) if controls is not None else None)
+        elif controls is not None or any(
             payloads.get(key) is not None
             for key in (MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY)
         ):
-            # A generic snapshot cannot replace either local or Cloud
-            # extension-control authority with an omitted managed field.
             raise NativePolicySnapshotError("native_policy_authority_managed_consumer_required")
         device_row = connection.execute(
             "select installation_id, device_label from guard_devices where device_key = 'local-device'"
@@ -195,7 +217,7 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
             store._normalized_policy_keys,
             store._guard_source,
         )
-        bundle_rows, defaults, bundle_source = signed_bundle_native_rows(state, now=now)
+        bundle_rows, defaults, bundle_source = signed_bundle_native_rows(state, now=now, managed=managed)
         memory_rows, memory_source = signed_memory_native_rows(state, now=now_text)
         rows = bundle_rows + memory_rows
         for row in local_rows:
@@ -239,8 +261,12 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
                 )
                 if identity is not None:
                     rule_identities.append((index, identity))
-        authority = compile_native_policy_authority(active)
-        source_values = [source for source in (bundle_source, memory_source) if source is not None]
+        authority = compile_native_policy_authority(active, managed=managed.authority if managed is not None else None)
+        source_values = [
+            source
+            for source in (bundle_source, memory_source, managed.provenance() if managed is not None else None)
+            if source is not None
+        ]
         sources_json = _canonical(source_values)
         expiries = [row.expires_at_ms for row in authority.rows if row.expires_at_ms is not None]
         if bundle_source is not None and bundle_source.get("expires_at") is not None:

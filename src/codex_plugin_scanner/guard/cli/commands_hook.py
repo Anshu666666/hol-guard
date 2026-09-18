@@ -357,6 +357,7 @@ def _run_guard_hook_command(
         _policy_memory_source=policy_memory_source,
         _claimed_saved_allow_hash=_claimed_saved_allow_hash,
         _claim_saved_approval=_claim_saved_approval,
+        _control_snapshot=extension_control_snapshot,
     )
 
 

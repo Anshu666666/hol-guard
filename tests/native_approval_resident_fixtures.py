@@ -121,7 +121,7 @@ def connected_fixture_store(tmp_path: Path):
     store = GuardStore(tmp_path / "guard-home")
     dpop = generate_dpop_key_pair()
     grant_id, workspace_id = str(uuid4()), str(uuid4())
-    machine_id = "synthetic-native-machine"
+    machine_id = store.get_or_create_installation_id()
     now = datetime.now(timezone.utc).isoformat()
     store.set_oauth_local_credentials(
         issuer="https://hol.org",

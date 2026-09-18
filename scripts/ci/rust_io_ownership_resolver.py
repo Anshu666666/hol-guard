@@ -8,6 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
 
+from scripts.ci.rust_io_ownership_symbols import (
+    ImportedCallable,
+    _import_target_path,
+    _repository_module_path,
+    require_exact_import,
+    resolve_import,
+)
+
 
 class FunctionRecordLike(Protocol):
     """Minimum function-record shape needed by the resolver."""
@@ -66,65 +74,6 @@ def _local_binding_names(record: FunctionRecordLike) -> frozenset[str]:
         elif isinstance(node, ast.ExceptHandler) and node.name:
             names.add(node.name)
     return frozenset(names)
-
-
-def _module_file(root: Path, target: Path) -> str | None:
-    """Resolve a source module/package path to its repository-relative file."""
-
-    candidate = root / target
-    if candidate.is_file() and candidate.suffix == ".py":
-        return target.as_posix()
-    init_file = candidate / "__init__.py"
-    if init_file.is_file():
-        return init_file.relative_to(root).as_posix()
-    module_file = candidate.with_suffix(".py")
-    if module_file.is_file():
-        return module_file.relative_to(root).as_posix()
-    return None
-
-
-def _import_target_path(
-    root: Path,
-    source_path: str,
-    node: ast.ImportFrom,
-    imported_name: str | None = None,
-) -> str | None:
-    """Resolve an ``ImportFrom`` target, including package ``__init__`` files."""
-
-    source_file = root / source_path
-    if node.level:
-        base = source_file.parent
-        for _ in range(node.level - 1):
-            base = base.parent
-        parts = tuple((node.module or "").split(".")) if node.module else ()
-    else:
-        module = node.module
-        if not module:
-            return None
-        parts = tuple(module.split("."))
-        base = root / "src"
-    if not node.module and imported_name:
-        parts = (imported_name,)
-    try:
-        relative_target = (base / Path(*parts)).relative_to(root)
-    except ValueError:
-        return None
-    return _module_file(root, relative_target)
-
-
-def _repository_module_path(root: Path, module_name: str) -> str | None:
-    """Resolve a dotted import to a repository-relative module file."""
-
-    parts = tuple(part for part in module_name.split(".") if part)
-    if not parts:
-        return None
-    for base in (root / "src", root):
-        target = base.joinpath(*parts)
-        relative_target = target.relative_to(root)
-        resolved = _module_file(root, relative_target)
-        if resolved is not None:
-            return resolved
-    return None
 
 
 def _resolve_exported_symbol(
@@ -240,67 +189,74 @@ def _visible_imports(root: Path, record: FunctionRecordLike) -> tuple[_VisibleIm
     return tuple(visible)
 
 
-def _qualified_parts(name: str) -> tuple[str, str] | None:
-    parts = name.split(".")
+def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+    parts = tuple(name.split("."))
     if len(parts) < 2 or any(not part for part in parts):
         return None
-    return parts[0], parts[-1]
+    tree = ast.parse(_read(root / record.path), filename=record.path)
+    scopes = _function_scopes(tree, record.qualname)
+    bodies = [tree.body, *(scope.body for scope in scopes)]
+    imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
+    for visible in reversed(imports):
+        node = visible.node
+        for alias in node.names:
+            local_name = alias.asname or (alias.name.split(".")[0] if isinstance(node, ast.Import) else alias.name)
+            if local_name != parts[0]:
+                continue
+            target = (
+                _import_target_path(root, record.path, node, alias.name)
+                if isinstance(node, ast.ImportFrom)
+                else _repository_module_path(root, alias.name)
+            )
+            if target is None:
+                continue
+            for index in range(visible.scope, len(bodies)):
+                require_exact_import(bodies[index], parts[0], node if index == visible.scope else None)
+            for scope in scopes[max(visible.scope - 1, 0) :]:
+                arguments = scope.args
+                names = [arg.arg for arg in (*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs)]
+                names.extend(arg.arg for arg in (arguments.vararg, arguments.kwarg) if arg is not None)
+                if parts[0] in names:
+                    raise RuntimeError(f"ambiguous repository-qualified parameter binding {parts[0]!r}")
+            result = resolve_import(root, record.path, node, alias, parts[1:])
+            if result is None:
+                raise RuntimeError(
+                    f"unresolved repository-qualified helper call {name!r} from {record.path}:{record.qualname}"
+                )
+            return result
+    return None
 
 
 def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> str | None:
-    """Return the repository path imported for ``name`` at a call site."""
+    """Return the repository path imported for a callable at a call site."""
 
-    qualified = _qualified_parts(name)
-    binding_name, symbol_name = qualified or (name, name)
+    if "." in name:
+        target = _qualified_imported_callable(root, record, name)
+        return target.path if target is not None else None
     imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
     for visible in reversed(imports):
         node = visible.node
         if isinstance(node, ast.ImportFrom):
             for alias in node.names:
-                if qualified is not None:
-                    local_name = alias.asname or alias.name
-                    if alias.name == "*" or local_name != binding_name:
-                        continue
-                    target = _import_target_path(root, record.path, node, alias.name)
-                    if target is None:
-                        continue
-                    resolved = _resolve_exported_symbol(root, target, symbol_name, set())
-                    if resolved is None:
-                        raise RuntimeError(
-                            f"unresolved repository-qualified helper call {name!r} "
-                            f"from {record.path}:{record.qualname}"
-                        )
-                    return resolved
+                local_name = alias.asname or alias.name
+                if alias.name != "*" and local_name != name:
+                    continue
+                target = _import_target_path(root, record.path, node, alias.name if alias.name != "*" else None)
+                if target is None:
+                    continue
+                if alias.name == "*":
+                    resolved = _resolve_exported_symbol(root, target, name, set())
+                    if resolved is not None:
+                        return resolved
                 else:
-                    local_name = alias.asname or alias.name
-                    if alias.name != "*" and local_name != name:
-                        continue
-                    target = _import_target_path(root, record.path, node, alias.name if alias.name != "*" else None)
-                    if target is None:
-                        continue
-                    if alias.name == "*":
-                        resolved = _resolve_exported_symbol(root, target, name, set())
-                        if resolved is not None:
-                            return resolved
-                    else:
-                        return _resolve_exported_symbol(root, target, alias.name, set()) or target
+                    return _resolve_exported_symbol(root, target, alias.name, set()) or target
         else:
             for alias in node.names:
                 local_name = alias.asname or alias.name.split(".", maxsplit=1)[0]
-                if local_name != binding_name:
-                    continue
-                target = _repository_module_path(root, alias.name if alias.asname else local_name)
-                if target is None:
-                    continue
-                if qualified is None:
-                    return target
-                resolved = _resolve_exported_symbol(root, target, symbol_name, set())
-                if resolved is None:
-                    raise RuntimeError(
-                        f"unresolved repository-qualified helper call {name!r} "
-                        f"from {record.path}:{record.qualname}"
-                    )
-                return resolved
+                if local_name == name:
+                    target = _repository_module_path(root, alias.name if alias.asname else local_name)
+                    if target is not None:
+                        return target
     return None
 
 
@@ -314,11 +270,20 @@ def resolve_call(
 
     if "." not in name and name in _local_binding_names(record):
         return None
-    imported_path = imported_symbol_path(root, record, name)
     if "." in name:
-        if imported_path is None:
+        target = _qualified_imported_callable(root, record, name)
+        if target is None:
             return None
-        name = name.rsplit(".", 1)[-1]
+        exact = [
+            candidate
+            for values in records.values()
+            for candidate in values
+            if candidate.path == target.path and candidate.qualname == target.qualname
+        ]
+        if len(exact) != 1:
+            raise RuntimeError(f"ambiguous repository-qualified helper {name!r}: {target}")
+        return exact[0]
+    imported_path = imported_symbol_path(root, record, name)
     matches = [
         candidate
         for (_path, candidate_name), values in records.items()

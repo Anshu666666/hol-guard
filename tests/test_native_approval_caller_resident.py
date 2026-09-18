@@ -27,6 +27,7 @@ from codex_plugin_scanner.guard.review_oauth_binding import guard_review_oauth_m
 from codex_plugin_scanner.guard.runtime.command_queue_authority import authorize_transport_command_queue_job
 from codex_plugin_scanner.guard.runtime.exact_cloud_review_transport import exact_result, exact_transport_job
 from codex_plugin_scanner.guard.runtime.native_review_executor import execute_exact_review_job
+from tests.native_approval_interop_artifact import fixture_build_provenance, synthetic_delivery_companion
 from tests.native_approval_resident_fixtures import (
     connected_fixture_store,
     enroll_fixture_passkey,
@@ -143,6 +144,7 @@ def test_actual_native_review_proof_continues_only_original_hook(tmp_path: Path,
         row = store.get_approval_request(request_id)
         assert row is not None and row["status"] == "pending"
         claim = build_local_review_request_claim(request_row=row, oauth=guard_review_oauth_metadata(store), store=store)
+        assert claim["machineId"] == claim["machineInstallationId"]
         challenge = claim["nativeApprovalChallenge"]
         assert isinstance(challenge, dict)
         proof = sign_fixture_assertion(challenge, passkey, credential)
@@ -233,12 +235,15 @@ def test_actual_native_review_proof_continues_only_original_hook(tmp_path: Path,
                 "browserMfa": False,
                 "toolExecution": False,
                 "runtimeBinarySha256": status.identity.sha256,
+                **fixture_build_provenance(Path(__file__).resolve().parents[1]),
+                **synthetic_delivery_companion(job=job, result=waiting, source_claim=claim),
                 "sourceClaim": event["nativeSourceClaim"],
                 "nativeApplicationResult": event["nativeApplicationResult"],
                 "applicationEvent": projections["full"],
             }
             # The exact allowlist excludes credentials, enrollment private keys,
-            # passkey private keys, browser proof, and private receiver sources.
+            # passkey private keys, OAuth secrets, and private receiver sources.
+            # The synthetic original assertion is public signed proof, not its key.
             encoded = json.dumps(artifact, sort_keys=True, separators=(",", ":")).encode()
             assert len(encoded) < 200_000
             target = Path(output_path)

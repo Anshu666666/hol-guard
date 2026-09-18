@@ -1,0 +1,101 @@
+name: Native extension validation inputs
+
+on:
+  push:
+    branches: [fix/main-native-extension-enforcement]
+    paths: [.github/workflows/native-extension-investigation.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 05fa4760df8401b9710bf098adb4fbb2dc4ff389
+          persist-credentials: false
+      - name: Archive exact public source trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/native-extension-source
+          git fetch --no-tags --depth=1 origin 590ce01334a7724f3f1349b2ab252110a5a268f5
+          git archive --format=tar 05fa4760df8401b9710bf098adb4fbb2dc4ff389 | gzip > /tmp/native-extension-source/main.tar.gz
+          git archive --format=tar 590ce01334a7724f3f1349b2ab252110a5a268f5 | gzip > /tmp/native-extension-source/reference.tar.gz
+          git ls-tree -r --full-tree 05fa4760df8401b9710bf098adb4fbb2dc4ff389 > /tmp/native-extension-source/main-tree.txt
+          git ls-tree -r --full-tree 590ce01334a7724f3f1349b2ab252110a5a268f5 > /tmp/native-extension-source/reference-tree.txt
+          git diff --name-status 05fa4760df8401b9710bf098adb4fbb2dc4ff389 590ce01334a7724f3f1349b2ab252110a5a268f5 > /tmp/native-extension-source/reference-diff.txt
+          cd /tmp/native-extension-source
+          sha256sum *.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-extension-source-inputs
+          path: /tmp/native-extension-source/
+          if-no-files-found: error
+          retention-days: 2
+
+  rust-toolchain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 05fa4760df8401b9710bf098adb4fbb2dc4ff389
+          persist-credentials: false
+      - name: Prepare pinned offline Rust build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+          cargo +1.88.0 fetch --locked --manifest-path rust/Cargo.toml
+          git fetch --no-tags --depth=1 origin 590ce01334a7724f3f1349b2ab252110a5a268f5
+          git checkout --detach 590ce01334a7724f3f1349b2ab252110a5a268f5
+          cargo +1.88.0 fetch --locked --manifest-path rust/Cargo.toml
+          mkdir -p /tmp/native-extension-rust
+          toolchain=$(dirname "$(dirname "$(rustup which --toolchain 1.88.0 rustc)")")
+          tar --exclude=share/doc -C "$toolchain" -czf /tmp/native-extension-rust/toolchain.tar.gz .
+          tar -C "${CARGO_HOME:-$HOME/.cargo}" -czf /tmp/native-extension-rust/registry.tar.gz registry
+          rustup run 1.88.0 rustc --version --verbose > /tmp/native-extension-rust/VERSION.txt
+          cd /tmp/native-extension-rust
+          sha256sum *.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-extension-offline-rust
+          path: /tmp/native-extension-rust/
+          if-no-files-found: error
+          retention-days: 2
+
+  python-wheelhouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 05fa4760df8401b9710bf098adb4fbb2dc4ff389
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Download locked wheels for isolated local installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/native-extension-python/wheels
+          uv export --frozen --no-dev --extra dev --no-emit-project --format requirements-txt --output-file /tmp/native-extension-python/requirements.txt
+          python -m pip download --only-binary=:all: --dest /tmp/native-extension-python/wheels --requirement /tmp/native-extension-python/requirements.txt
+          python -m pip download --only-binary=:all: --dest /tmp/native-extension-python/wheels 'hatchling<1.31'
+          cd /tmp/native-extension-python
+          sha256sum wheels/* > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-extension-offline-python
+          path: /tmp/native-extension-python/
+          if-no-files-found: error
+          retention-days: 2

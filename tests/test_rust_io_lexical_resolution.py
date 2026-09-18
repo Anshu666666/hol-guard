@@ -228,3 +228,117 @@ class Record:
     receiver = resolve(tmp_path, path, "Record.entry", "self.read_source")
     assert bare is not None and bare.qualname == "read_source"
     assert receiver is not None and receiver.qualname == "Record.read_source"
+
+
+@pytest.mark.parametrize(
+    "binding",
+    [
+        "def read_source(): return None",
+        "from .real import actual as read_source",
+    ],
+)
+def test_later_unconditional_binding_supersedes_only_preceding_wildcards(tmp_path, binding):
+    real = write(tmp_path, "real", "def actual(): return None\n")
+    write(tmp_path, "other", "def read_source(): return open('decoy')\n")
+    path = write(tmp_path, "leaf", "from .other import *\n" + binding + "\ndef entry(): return read_source()\n")
+    found = resolve(tmp_path, path, "entry")
+    assert found is not None
+    assert (found.path, found.qualname) == ((real, "actual") if binding.startswith("from") else (path, "read_source"))
+
+
+def test_real_emit_wrapper_retains_actual_render_helper(tmp_path):
+    source_root = Path(__file__).resolve().parents[1]
+    for name in ("cli/commands_support_interaction", "cli/render"):
+        source = source_root / f"src/codex_plugin_scanner/guard/{name}.py"
+        write(tmp_path, name, source.read_text(encoding="utf-8"))
+    path = write(
+        tmp_path,
+        "cli/caller",
+        "from .commands_support_interaction import _emit\ndef entry(): return _emit('x', {}, True)\n",
+    )
+    found = resolve(tmp_path, path, "entry", "_emit")
+    assert found is not None and found.qualname == "_emit"
+    render = resolve(tmp_path, found.path, found.qualname, "emit_guard_payload")
+    assert render is not None and render.path.endswith("/cli/render.py") and render.qualname == "emit_guard_payload"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "from .other import *\ndef read_source(): return None\nfrom .other import *\n",
+        "from .other import *\nif condition:\n    def read_source(): return None\n",
+        "from .other import *\ndef read_source(): return None\nread_source = unknown\n",
+        "def read_source(): return None\nfrom .other import *\ndef read_source(): return None\n",
+    ],
+)
+def test_wildcard_precedence_never_resolves_later_or_conditional_ambiguity(tmp_path, body):
+    write(tmp_path, "other", "def read_source(): return None\n")
+    path = write(tmp_path, "leaf", body + "def entry(): return read_source()\n")
+    with pytest.raises(RuntimeError, match=r"ambiguous|unresolved"):
+        resolve(tmp_path, path, "entry")
+
+
+def test_preceding_wildcard_does_not_validate_unknown_class_decorator(tmp_path):
+    write(tmp_path, "other", "def decorator(cls): return unknown\n")
+    write(tmp_path, "leaf", "from .other import *\n@decorator\nclass Record:\n    def from_dict(value): return value\n")
+    path = write(tmp_path, "caller", "from .leaf import Record\ndef entry(): return Record.from_dict({})\n")
+    with pytest.raises(RuntimeError, match=r"ambiguous|unresolved"):
+        resolve(tmp_path, path, "entry", "Record.from_dict")
+
+
+def test_unconditional_function_after_star_retains_real_gate_io(tmp_path, monkeypatch):
+    write(tmp_path, "other", "def read_source(): return None\n")
+    write(
+        tmp_path,
+        "leaf",
+        "from .other import *\nfrom builtins import open\ndef read_source(): return open('secret').read()\n",
+    )
+    path = write(
+        tmp_path,
+        "caller",
+        """from .leaf import read_source
+def entry(mode):
+    if mode == "auto":
+        return _review_native_edge()
+def post(native_required):
+    if native_required:
+        return review_post_tool_native()
+def _review_native_edge(): return read_source()
+def review_post_tool_native(): return None
+""",
+    )
+    write(tmp_path, "native_policy_snapshot_publisher", "class Publisher:\n    def start(self): pass\n")
+    monkeypatch.setattr(gate, "ROOTS", (gate.RootSpec(path, "entry"), gate.RootSpec(path, "post")))
+    with pytest.raises(RuntimeError, match="reachable unclassified Python I/O"):
+        gate.validate(tmp_path)
+
+
+def test_wildcard_does_not_assume_builtin_name_is_unshadowed(tmp_path):
+    write(tmp_path, "other", "def open(value): return None\n")
+    path = write(tmp_path, "leaf", "from .other import *\ndef entry(): return open('secret')\n")
+    with pytest.raises(RuntimeError, match="ambiguous"):
+        resolve(tmp_path, path, "entry", "open")
+
+
+@pytest.mark.parametrize(
+    ("decorator", "late_import"),
+    [
+        ("dataclass", "from dataclasses import dataclass"),
+        ("dc.dataclass", "import dataclasses as dc"),
+    ],
+)
+def test_later_dataclass_import_cannot_authenticate_earlier_decorator(tmp_path, decorator, late_import):
+    write(tmp_path, "other", "def dataclass(value): return unknown\ndc = unknown\n")
+    write(
+        tmp_path,
+        "leaf",
+        f"""from .other import *
+@{decorator}
+class Record:
+    def from_dict(value): return value
+{late_import}
+""",
+    )
+    path = write(tmp_path, "caller", "from .leaf import Record\ndef entry(): return Record.from_dict({})\n")
+    with pytest.raises(RuntimeError, match=r"ambiguous|unresolved"):
+        resolve(tmp_path, path, "entry", "Record.from_dict")

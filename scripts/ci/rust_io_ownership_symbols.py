@@ -105,6 +105,17 @@ def _bindings(body: list[ast.stmt], name: str) -> list[tuple[ast.AST, bool]]:
     visitor = Visitor()
     for item in body:
         visitor.visit(item)
+    # A later unconditional explicit definition/import replaces values from
+    # preceding stars. No other rebinding or later wildcard is made exact.
+    if (
+        len(found) > 1
+        and found[-1][1]
+        and all(
+            isinstance(node, ast.ImportFrom) and any(alias.name == "*" for alias in node.names)
+            for node, _direct in found[:-1]
+        )
+    ):
+        return found[-1:]
     return found
 
 
@@ -131,6 +142,7 @@ def _known_dataclass(decorator: ast.expr, body: list[ast.stmt]) -> bool:
             len(bindings) == 1
             and bindings[0][1]
             and isinstance(bindings[0][0], ast.ImportFrom)
+            and bindings[0][0].lineno < decorator.lineno
             and (
                 bindings[0][0].module == "dataclasses"
                 and bindings[0][0].level == 0
@@ -146,6 +158,7 @@ def _known_dataclass(decorator: ast.expr, body: list[ast.stmt]) -> bool:
             len(bindings) == 1
             and bindings[0][1]
             and isinstance(bindings[0][0], ast.Import)
+            and bindings[0][0].lineno < decorator.lineno
             and (
                 any(
                     alias.name == "dataclasses" and (alias.asname or alias.name) == value.value.id

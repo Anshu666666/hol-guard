@@ -72,7 +72,7 @@ def test_inventory_does_not_promise_device_command_or_session_row_support(capsys
     assert capability["lifetimes"] == ["permanent", "until"]
     assert capability["maximum_compiled_rows"] == 10_000
     assert capability["device_selection"] == "cloud_installation_id_filter_before_compilation"
-    assert capability["command_expressions"] == "separate_command_runtime"
+    assert capability["command_expressions"] == "cli_evaluator_only; authenticated_application_unsupported"
     assert capability["required_validation"] == "policy validate"
     assert "devices" not in capability["match_fields"]
     assert capability["tool_families"]["shell"] == "tool-action"

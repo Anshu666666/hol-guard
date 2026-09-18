@@ -27,6 +27,11 @@ from ..policy_document_io import (
 )
 from ..policy_document_yaml import PolicyDocumentError, format_policy_document_yaml
 from ..policy_error_guidance import public_policy_document_error
+from ..policy_lane_capabilities import (
+    command_evaluator_document,
+    published_runtime_lane_profiles,
+    validate_policy_runtime_lane,
+)
 from ..policy_matcher_capability import published_generic_matcher_capability
 from ..runtime.command_policy import compile_command_policy_rules, evaluate_command_policy_rules
 from ..store import GuardStore
@@ -107,7 +112,10 @@ def _run_guard_policy_document_command(
                     "capabilities": ["command-pattern-expressions.v1", "generic-matchers.v1"],
                     "generic_matchers": published_generic_matcher_capability(),
                     "local_row_projection": local_row_projection_capabilities(),
+                    "runtime_lanes": published_runtime_lane_profiles(),
                     "command_pattern_expressions": {
+                        "evaluation_scope": "cli_evaluator_only",
+                        "authenticated_application": "unsupported",
                         "combinators": ["all", "any"],
                         "operators": [
                             "exact",
@@ -119,7 +127,9 @@ def _run_guard_policy_document_command(
                         ],
                         "regex_timeout_ms": 50,
                     },
-                    "message": "Command-pattern policy expressions are supported.",
+                    "message": (
+                        "Policy representation and CLI evaluation capabilities; active enforcement is not evaluated."
+                    ),
                 },
                 as_json=as_json,
                 output_stream=output_stream,
@@ -127,6 +137,17 @@ def _run_guard_policy_document_command(
             return 0
 
         if command == "validate":
+            lane = getattr(args, "runtime_lane", None)
+            if isinstance(lane, str):
+                document = load_trusted_policy_document(Path(args.file))
+                result = validate_policy_runtime_lane(document, lane)
+                _write_payload(
+                    "policy validate",
+                    {**result, "document_id": document.metadata.id, "digest": policy_document_digest(document)},
+                    as_json=as_json,
+                    output_stream=output_stream,
+                )
+                return 0 if result["valid"] else 2
             document, compiled, local_store_error = _compile_for_local_store(Path(args.file))
             _write_payload(
                 "policy validate",
@@ -149,7 +170,7 @@ def _run_guard_policy_document_command(
             return 0
 
         if command == "evaluate-command":
-            document = load_trusted_policy_document(Path(args.file))
+            document = command_evaluator_document(load_trusted_policy_document(Path(args.file)))
             evaluation = evaluate_command_policy_rules(
                 compile_command_policy_rules(document),
                 str(args.command_text),

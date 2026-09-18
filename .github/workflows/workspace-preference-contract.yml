@@ -70,6 +70,17 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: uv run --no-sync pytest tests/test_workspace_preferences.py tests/test_workspace_preference_runtime.py --tb=short --junitxml=preference-contract.xml
+      - name: Verify existing optional and mandatory synchronization paths
+        if: matrix.python == '3.12'
+        env:
+          PYTHONPATH: src:.
+        run: |
+          uv run --no-sync pytest --tb=short --junitxml=preference-existing.xml \
+            tests/test_guard_cloud_local_sync.py tests/test_guard_settings_sync_preservation.py \
+            tests/test_policy_bundle_sync_outcomes.py tests/test_policy_sync_truth.py \
+            tests/test_guard_review_key_sync.py tests/test_guard_aibom_cli.py \
+            tests/test_guard_aibom_content_upload.py tests/test_guard_aibom_content_upload_batches.py \
+            tests/test_guard_events.py
       - name: Check actual source and test types
         if: matrix.python == '3.12'
         run: |

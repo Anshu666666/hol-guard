@@ -19,7 +19,7 @@ from af9_fixture_receipts import (
 BASE_COMMIT = "af9b738c4e10f832e955a34db17c7abe6d150e29"
 BASE_TREE = "265ef225bd53885386d7478b3b144afb3eaf7dad"
 GATE_BASE = "05fa4760df8401b9710bf098adb4fbb2dc4ff389"
-BRANCH = "refs/heads/hgp/diagnostic-af9-fixtures-20260918"
+BRANCH = "refs/heads/hgp/diagnostic-af9-network-event-20260918"
 GATE = "scripts/ci/rust_authority_ownership_gate.py"
 PINS = {
     "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",

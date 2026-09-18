@@ -105,6 +105,7 @@ class SourceObservations:
         self.root, self.expected = root, expected
         self.sites = {Path(sysconfig.get_path(name)).resolve() for name in ("purelib", "platlib")}
         self.executed, self.source_denials, self.network_denials = {}, 0, 0
+        self.network_events = []
 
     def binding(self, filename):
         if filename.startswith("<") and filename.endswith(">"):
@@ -123,10 +124,45 @@ class SourceObservations:
             raise ValueError("executed_source_changed")
         return source_id(relative), digest
 
+    def network_stack(self):
+        frames = []
+        current = sys._getframe(2)
+        try:
+            for _ in range(24):
+                if current is None:
+                    break
+                filename = current.f_code.co_filename
+                if filename.startswith("<") and filename.endswith(">"):
+                    current = current.f_back
+                    continue
+                path = Path(filename).resolve()
+                binding = self.binding(filename)
+                if binding is not None:
+                    frames.append({"kind": "repository", "sourceId": binding[0],
+                                   "blob": binding[1], "line": current.f_lineno})
+                else:
+                    for site in self.sites:
+                        if path.is_relative_to(site) and path.suffix == ".py" and path.is_file():
+                            relative = str(path.relative_to(site))
+                            frames.append({"kind": "dependency", "sourceId": source_id(relative),
+                                           "blob": git_blob(path.read_bytes()), "line": current.f_lineno})
+                            break
+                current = current.f_back
+        finally:
+            del current
+        return frames
+
     def audit(self, event, arguments):
         if event in {"socket.connect", "socket.bind", "socket.getaddrinfo",
                      "socket.gethostbyname", "socket.gethostbyaddr", "socket.sendto"}:
             self.network_denials += 1
+            if len(self.network_events) < 4:
+                try:
+                    frames = self.network_stack()
+                except BaseException:
+                    self.source_denials += 1
+                    frames = []
+                self.network_events.append({"event": event, "frames": frames})
             raise OSError("fixture_diagnostic_network_denied")
         if event == "exec":
             try:
@@ -153,7 +189,9 @@ class SourceObservations:
             "loadedSources": loaded, "executedSourceCount": len(self.executed),
             "retainedSourceCount": len(retained), "loadedSourceCount": len(loaded),
             "requiredSourcesComplete": complete, "sourceDenials": self.source_denials,
-            "networkDenials": self.network_denials,
+            "networkDenials": self.network_denials, "networkEvents": self.network_events,
+            "networkEventLimit": 4, "networkStackLimit": 24,
+            "dependencyFrameScope": "Observed installed dependency file hashes; not repository-pinned source.",
             "scope": "Current pytest process executed filenames and retained imports; not bytecode or child-process attestation.",
         }
 

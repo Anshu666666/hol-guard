@@ -10,7 +10,9 @@ import os
 import platform
 import plistlib
 import urllib.parse
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Literal, cast
 
@@ -51,6 +53,24 @@ _TOP_LEVEL_KEYS = {
     "integrityTrust",
 }
 _NETWORK_KEYS = {"proxyMode", "proxyUrl", "caBundlePath", "allowPublicRegistries"}
+_CACHE_UPDATES_ENABLED: ContextVar[bool] = ContextVar("managed_policy_cache_updates_enabled", default=True)
+
+
+@contextmanager
+def managed_policy_cache_read_only() -> Iterator[None]:
+    """Authenticate normal machine authority without refreshing its cache.
+
+    Observation includes indirect signing-key and configuration readers. This
+    task-local scope preserves those reads and trust checks while preventing a
+    cache rewrite from invalidating the observer's own source fingerprint.
+    Publisher and synchronization callers outside the scope keep their normal
+    cache behavior, including after an exception or a nested observation.
+    """
+    token = _CACHE_UPDATES_ENABLED.set(False)
+    try:
+        yield
+    finally:
+        _CACHE_UPDATES_ENABLED.reset(token)
 
 
 class ManagedPolicyError(ValueError):
@@ -391,7 +411,7 @@ def load_managed_policy(
                 )
             payload = _read_policy_file(native_path)
         policy = parse_managed_policy(payload)
-        if policy_path is None and write_cache:
+        if policy_path is None and write_cache and _CACHE_UPDATES_ENABLED.get():
             _write_policy_cache(payload, resolved_system)
         return ManagedPolicyState("active", source, policy=policy)
     except PermissionError:

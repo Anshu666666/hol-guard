@@ -23,6 +23,7 @@ from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapsh
 from codex_plugin_scanner.guard.policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import validate_synced_policy_bundle
 from codex_plugin_scanner.guard.runtime import runner
+from codex_plugin_scanner.guard.runtime.policy_runtime_posture import local_policy_runtime_posture
 from scripts.native_slo_session import stop_native_resident
 from tests.native_sensitive_resident_fixtures import sensitive_test_status
 from tests.support.network import stub_authenticated_urlopen
@@ -150,6 +151,10 @@ def test_ordinary_generic_sync_requires_actual_auto_resident_acceptance(
         evidence = store.get_sync_payload("native_policy_bundle_ack_acceptance")
         assert isinstance(evidence, dict) and evidence["ack"] == ack
         assert evidence["binding"] == publisher.current_snapshot_binding()
+        current = local_policy_runtime_posture(store, device_id=store.get_or_create_installation_id())
+        assert current["selected_enforcement_lane"] == "canonical"
+        assert current["canonical_policy_application_status"] == "current"
+        assert current["canonical_policy_application_mode"] == "enforce"
         assert isinstance(store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY), dict)
         blocked = edge("block")
         assert blocked["receipt"]["policy_digest"] != baseline["receipt"]["policy_digest"]
@@ -190,6 +195,9 @@ def test_ordinary_generic_sync_requires_actual_auto_resident_acceptance(
         withdrawn = sync()
         assert withdrawn["policy_application_status"] != "applied"
         assert not publisher.result_binding_is_current(prior["policy_binding"])
+        current = local_policy_runtime_posture(store, device_id=store.get_or_create_installation_id())
+        assert current["selected_enforcement_lane"] == "unverified"
+        assert current["canonical_incompatibility_reason"] == "canonical_enforcement_disabled"
     finally:
         publisher.close()
         assert stop_native_resident(status.identity.path, store.guard_home, write_diagnostic=False).contained
@@ -284,6 +292,10 @@ def test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident(
         acceptance = store.get_sync_payload("native_policy_bundle_ack_acceptance")
         assert isinstance(acceptance, dict) and acceptance["ack"] == ack
         assert acceptance["binding"] == publisher.current_snapshot_binding()
+        current = local_policy_runtime_posture(store, device_id=store.get_or_create_installation_id())
+        assert current["selected_enforcement_lane"] == "canonical"
+        assert current["canonical_policy_application_status"] == "current"
+        assert current["canonical_policy_application_mode"] == mode
         for event in ("PreToolUse", "PostToolUse"):
             actual = edge(event, compound)
             assert actual["result"]["decision"] == ("allow" if mode == "observe" else "deny")
@@ -323,6 +335,9 @@ def test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident(
         publisher._publish_once()
         assert not publisher.is_ready() and publisher.current_snapshot_binding() is None
         assert not publisher.result_binding_is_current(source_denial["policy_binding"])
+        current = local_policy_runtime_posture(store, device_id=store.get_or_create_installation_id())
+        assert current["selected_enforcement_lane"] != "canonical"
+        assert current.get("canonical_policy_application_status") != "current"
     finally:
         publisher.close()
         assert stop_native_resident(status.identity.path, store.guard_home, write_diagnostic=False).contained

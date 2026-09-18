@@ -16,6 +16,7 @@ import secrets
 import sys
 import time
 from collections.abc import Mapping
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, cast
 
@@ -58,10 +59,12 @@ from scripts.ci.native_ollama_contract import (  # noqa: E402
 )
 from scripts.native_slo_adapter import route_counts  # noqa: E402
 from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
+from scripts.native_slo_config_observer import PublisherConfigObserver  # noqa: E402
 from scripts.native_slo_contract import MAX_READINESS_P95_MS, assert_privacy_safe  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_publisher_diagnostic import publisher_error_diagnostic  # noqa: E402
 from scripts.native_slo_session import AdapterSession, _request  # noqa: E402
+from scripts.native_slo_windows_open_observer import WindowsOpenFailureObserver  # noqa: E402
 from scripts.native_slo_workloads import configuration_text  # noqa: E402
 
 
@@ -223,7 +226,9 @@ _PUBLISHER_ERRORS = (
 )
 
 
-def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict[str, object]:
+def ready_binding(
+    session: AdapterSession, revision: int, *, phase: str, observer: PublisherConfigObserver | None = None
+) -> dict[str, object]:
     worker = session.daemon._server.hook_worker
     started = time.monotonic()
     deadline = started + MAX_READINESS_P95_MS / 1000
@@ -231,6 +236,7 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
     finished = time.monotonic()
     if snapshot is None or finished > deadline:
         publisher = worker.policy_snapshot_publisher
+        stamp = observer.stamp() if observer is not None and observer.publisher is publisher else None
         error = publisher.last_error
         detail = failure_evidence(AssertionError("installed_ollama_native_readiness_failed"))
         detail["phase"] = phase if phase in _READINESS_PHASES else "unknown"
@@ -246,6 +252,9 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
         }
         try:
             cast(dict[str, object], detail["readiness"]).update(publisher_error_diagnostic(error))
+            config_failure = observer.evidence(stamp, detail["readiness"]) if observer is not None else None
+            if config_failure is not None:
+                detail["readiness"]["publisher_config_failure"] = config_failure
         except Exception:
             detail["readiness"]["publisher_error_state"] = "collection_failed"
         raise FixtureFailureError(detail)
@@ -367,17 +376,24 @@ def approve_review(store: GuardStore, password: str, approval_id: str) -> None:
     )
 
 
-def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict[str, object]:
+def _run_probe(
+    expected: Mapping[str, object], progress: dict[str, Any], *, open_observer: WindowsOpenFailureObserver
+) -> dict[str, object]:
     runtime, identity = artifact_identity(expected)
     progress["identity"] = identity
     session = AdapterSession(runtime, configuration=configuration_text("normal"))
     results: list[dict[str, object]] = progress["cases"]
     entered = False
+    diagnostics = ExitStack()
     try:
+        observer = diagnostics.enter_context(
+            PublisherConfigObserver(session.daemon._server.hook_worker.policy_snapshot_publisher)
+        )
         password = prepare_fixture_authority(session.store)
         # AdapterSession owns cleanup once entry starts, including failed start.
         entered = True
         with session:
+            open_observer.close()
             require(session.daemon._server.hook_worker.test_oracle is None, "python_oracle_present")
             revision = 0
             previous_generation = 0
@@ -392,7 +408,7 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
                 progress["phase"] = phase
                 if layer is not None:
                     revision = commit_controls(session.store, password, layer, revision=revision)
-                snapshot = ready_binding(session, revision, phase=phase)
+                snapshot = ready_binding(session, revision, phase=phase, observer=observer)
                 generation = cast(int, snapshot["generation"])
                 require(generation > previous_generation, "generation_did_not_advance")
                 previous_generation = generation
@@ -403,7 +419,7 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
                         progress["phase"] = "approved_retry"
                         require(approval_id is not None, "approval_missing")
                         approve_review(session.store, password, cast(str, approval_id))
-                        current = ready_binding(session, revision, phase="approved_retry")
+                        current = ready_binding(session, revision, phase="approved_retry", observer=observer)
                         record, _ = review_case(session, "approved_retry", case, current, approval_reused=True)
                         results.append(record)
                         progress["phase"] = phase
@@ -414,10 +430,11 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
                 pass
             else:
                 raise AssertionError("installed_ollama_stale_revision_accepted")
-            snapshot = ready_binding(session, revision, phase="stale_write_rejected")
+            snapshot = ready_binding(session, revision, phase="stale_write_rejected", observer=observer)
             record, _ = review_case(session, "stale_write_rejected", ACTIVE_CASES[0], snapshot)
             results.append(record)
     finally:
+        diagnostics.close()
         if not entered:
             session.close()
     _, after = artifact_identity(expected)
@@ -446,8 +463,10 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
 def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
     """Retain completed witnesses when a later phase misses its unchanged gate."""
     progress: dict[str, Any] = {"cases": [], "phase": "identity"}
+    open_observer = WindowsOpenFailureObserver()
     try:
-        return _run_probe(expected, progress)
+        with open_observer:
+            return _run_probe(expected, progress, open_observer=open_observer)
     except Exception as error:
         return assert_privacy_safe(
             {
@@ -456,12 +475,14 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                 **progress,
                 "completed_case_count": len(progress["cases"]),
                 "completed_phase_count": len({record["phase"] for record in progress["cases"]}),
-                "failure": failure_evidence(error),
+                "failure": open_observer.failure_evidence(error),
                 "retained_scope": "completed_cases_only",
                 "package_downgrade_qualified": False,
                 "native_approval_consume_qualified": False,
             }
         )
+    finally:
+        open_observer.close()
 
 
 def main() -> int:

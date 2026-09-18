@@ -34,6 +34,7 @@ from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # 
 from scripts.native_slo_observation_failure import retain_failed_recovery_observation  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
 from scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402
+from scripts.native_slo_windows_open_observer import WindowsOpenFailureObserver  # noqa: E402
 
 _CONTROL_LIMIT = 256 * 1024
 
@@ -341,7 +342,9 @@ def _native_samples(session: Any, count: int) -> dict[str, object]:
     return {"values": values, "benign_and_block_validated": True}
 
 
-def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
+def _serve(
+    runtime: Path, setup: str = "none", policy: str = "none", *, open_observer: WindowsOpenFailureObserver | None = None
+) -> int:
     from contextlib import ExitStack, nullcontext
 
     from scripts.native_slo_faults import FaultFixture
@@ -353,7 +356,7 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none") -> int:
 
         configuration = configuration_text(setup if setup != "none" else policy)
     with ExitStack() as lifetime:
-        with StartupDiagnostic(_emit) as diagnostic:
+        with open_observer or WindowsOpenFailureObserver(), StartupDiagnostic(_emit) as diagnostic:
             diagnostic.progress("construct")
             adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
             diagnostic.progress("start")
@@ -444,10 +447,15 @@ def _serve_session(session: Any, fault: Any) -> None:
 
 
 if __name__ == "__main__":
+    open_observer = WindowsOpenFailureObserver()
     try:
         if len(sys.argv) != 5 or sys.argv[1] != "--serve":
             raise ValueError("private daemon fixture invocation required")
-        raise SystemExit(_serve(Path(sys.argv[2]).resolve(strict=True), sys.argv[3], sys.argv[4]))
+        raise SystemExit(
+            _serve(Path(sys.argv[2]).resolve(strict=True), sys.argv[3], sys.argv[4], open_observer=open_observer)
+        )
     except Exception as error:
-        _emit({"error": "fixture_failed", "detail": failure_evidence(error)})
+        _emit({"error": "fixture_failed", "detail": open_observer.failure_evidence(error)})
         raise SystemExit(1) from None
+    finally:
+        open_observer.close()

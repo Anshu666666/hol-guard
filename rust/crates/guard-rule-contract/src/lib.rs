@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 38] = [
+const COMPONENTS: [(&str, &[u8]); 41] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -84,6 +84,10 @@ const COMPONENTS: [(&str, &[u8]); 38] = [
         include_bytes!("../../guard-command/src/exact_command.rs"),
     ),
     (
+        "guard-policy-managed-configuration",
+        include_bytes!("../../guard-policy-snapshot/src/managed_configuration.rs"),
+    ),
+    (
         "guard-policy-scoped-authority",
         include_bytes!("../../guard-policy-snapshot/src/scoped_authority.rs"),
     ),
@@ -114,6 +118,14 @@ const COMPONENTS: [(&str, &[u8]); 38] = [
     (
         "guard-runtime-policy-scoped-request",
         include_bytes!("../../guard-runtime/src/policy_scoped_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-sensitive-read",
+        include_bytes!("../../guard-runtime/src/policy_scoped_sensitive_read.rs"),
+    ),
+    (
+        "guard-runtime-policy-sensitive-configuration",
+        include_bytes!("../../guard-runtime/src/policy_sensitive_configuration.rs"),
     ),
     (
         "guard-runtime-policy-scoped-tool-request",
@@ -243,6 +255,7 @@ mod tests {
                 "guard-policy-snapshot-crypto",
                 "guard-command-model",
                 "guard-command-exact-command",
+                "guard-policy-managed-configuration",
                 "guard-policy-scoped-authority",
                 "guard-policy-scoped-authority-decode",
                 "guard-policy-command-expression",
@@ -251,6 +264,8 @@ mod tests {
                 "guard-policy-snapshot-v4",
                 "guard-runtime-policy-store-versioned",
                 "guard-runtime-policy-scoped-request",
+                "guard-runtime-policy-scoped-sensitive-read",
+                "guard-runtime-policy-sensitive-configuration",
                 "guard-runtime-policy-scoped-tool-request",
                 "guard-runtime-policy-scoped-managed",
                 "guard-runtime-policy-scoped-managed-catalog",

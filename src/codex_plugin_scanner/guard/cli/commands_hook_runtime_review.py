@@ -59,6 +59,7 @@ from ..action_lattice import is_guard_action, most_restrictive_guard_action
 from ..adapters.cursor_hooks import cursor_hook_requires_approval_center_queue
 from ..daemon.client import GuardSurfaceDaemonClient, load_guard_surface_daemon_client
 from ..models import GuardAction
+from ..runtime.sensitive_read_controls import sensitive_read_control_is_terminal
 from ._commands_shared import *
 from .commands_hook_runtime_state import (
     RuntimeArtifactHookState,
@@ -202,7 +203,7 @@ def _review_runtime_artifact_hook(
         policy_action=policy_action,
         guard_payload=response_payload,
     )
-    observe_mode = config.mode == "observe"
+    observe_mode = config.mode == "observe" and not sensitive_read_control_is_terminal(runtime_artifact.metadata)
     terminal_action = policy_action in {
         "block",
         "sandbox-required",

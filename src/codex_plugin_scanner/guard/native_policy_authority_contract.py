@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Final, cast
 
+from .native_managed_configuration import MANAGED_CONFIGURATION_FEATURE, NativeManagedConfiguration
 from .native_policy_authority_expressions import NATIVE_COMMAND_EXPRESSIONS_FEATURE, NativeScopedCommandExpression
 from .native_policy_snapshot_codec import (
     _canonical_json_bytes_v3,  # pyright: ignore[reportPrivateUsage]
@@ -89,12 +90,14 @@ class NativePolicyAuthorityCapabilities:
             _ = bounded_authority_text(feature)
         _ = bounded_authority_text(self.catalog_digest, optional=True)
 
-    def require(self, *, managed: bool, command_expressions: bool = False) -> None:
+    def require(self, *, managed: bool, command_expressions: bool = False, managed_config: bool = False) -> None:
         required = {NATIVE_SCOPED_AUTHORITY_FEATURE}
         if managed:
             required.add(NATIVE_MANAGED_AUTHORITY_FEATURE)
         if command_expressions:
             required.add(NATIVE_COMMAND_EXPRESSIONS_FEATURE)
+        if managed_config:
+            required.add(MANAGED_CONFIGURATION_FEATURE)
         if self.snapshot_version != 4 or not required.issubset(self.features):
             raise NativePolicySnapshotError("native_policy_authority_capability_unsupported")
 
@@ -256,6 +259,7 @@ class NativePolicyAuthorityDraft:
     rows: tuple[NativeScopedPolicyRow, ...]
     managed: NativeManagedPolicyAuthority | None = None
     command_expressions: tuple[NativeScopedCommandExpression, ...] = ()
+    managed_config: NativeManagedConfiguration | None = None
 
     def __post_init__(self) -> None:
         if type(self.rows) is not tuple or len(self.rows) > NATIVE_AUTHORITY_MAX_ROWS:
@@ -266,6 +270,8 @@ class NativePolicyAuthorityDraft:
             raise NativePolicySnapshotError("native_policy_authority_row_duplicate")
         if self.managed is not None and type(self.managed) is not NativeManagedPolicyAuthority:
             raise NativePolicySnapshotError("native_policy_authority_control_invalid")
+        if self.managed_config is not None and type(self.managed_config) is not NativeManagedConfiguration:
+            raise NativePolicySnapshotError("native_policy_managed_configuration_invalid")
         if type(self.command_expressions) is not tuple or len(self.command_expressions) > len(self.rows):
             raise NativePolicySnapshotError("native_policy_authority_command_expression_invalid")
         by_id = {row.decision_id: row for row in self.rows}
@@ -293,6 +299,8 @@ class NativePolicyAuthorityDraft:
         }
         if self.command_expressions:
             payload["command_expressions"] = [binding.to_mapping() for binding in self.command_expressions]
+        if self.managed_config is not None:
+            payload["managed_config"] = self.managed_config.to_mapping()
         return payload
 
     @property
@@ -300,7 +308,11 @@ class NativePolicyAuthorityDraft:
         return _digest_v3(self._payload())
 
     def for_snapshot(self, capabilities: NativePolicyAuthorityCapabilities) -> dict[str, object]:
-        capabilities.require(managed=self.managed is not None, command_expressions=bool(self.command_expressions))
+        capabilities.require(
+            managed=self.managed is not None,
+            command_expressions=bool(self.command_expressions),
+            managed_config=self.managed_config is not None,
+        )
         if self.managed is not None and capabilities.catalog_digest != self.managed.catalog_digest:
             raise NativePolicySnapshotError("native_policy_authority_catalog_mismatch")
         # Return fresh nested containers so the immutable draft cannot be

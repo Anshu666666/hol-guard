@@ -55,6 +55,10 @@ _COMPONENTS = (
         Path("rust/crates/guard-command/src/exact_command.rs"),
     ),
     (
+        "guard-policy-managed-configuration",
+        Path("rust/crates/guard-policy-snapshot/src/managed_configuration.rs"),
+    ),
+    (
         "guard-policy-scoped-authority",
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority.rs"),
     ),
@@ -85,6 +89,14 @@ _COMPONENTS = (
     (
         "guard-runtime-policy-scoped-request",
         Path("rust/crates/guard-runtime/src/policy_scoped_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-sensitive-read",
+        Path("rust/crates/guard-runtime/src/policy_scoped_sensitive_read.rs"),
+    ),
+    (
+        "guard-runtime-policy-sensitive-configuration",
+        Path("rust/crates/guard-runtime/src/policy_sensitive_configuration.rs"),
     ),
     (
         "guard-runtime-policy-scoped-tool-request",

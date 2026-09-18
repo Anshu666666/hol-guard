@@ -8,6 +8,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from .native_managed_capture import compile_configuration_origins, configuration_origin
+from .native_managed_configuration import MANAGED_CONFIGURATION_INPUT_KEY
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities, NativePolicyAuthorityDraft
 from .native_policy_authority_decode import native_policy_authority_from_mapping
 from .native_policy_snapshot_codec import (
@@ -77,7 +79,9 @@ def validate_snapshot_v4(snapshot: Mapping[str, object], *, allow_empty_mac: boo
         raise NativePolicySnapshotError("native_policy_snapshot_version_invalid")
     if not _valid_digest_v3(snapshot.get("source_input_digest")):
         raise NativePolicySnapshotError("native_policy_snapshot_digest_invalid")
-    _ = native_policy_authority_from_mapping(snapshot.get("scoped_authority"))
+    authority = native_policy_authority_from_mapping(snapshot.get("scoped_authority"))
+    if authority.managed_config is not None and authority.managed_config.mode != snapshot.get("mode"):
+        raise NativePolicySnapshotError("native_policy_managed_configuration_mode_mismatch")
     _validate_snapshot_v3(_base_projection(snapshot), allow_empty_mac=allow_empty_mac)
     if snapshot.get("policy_digest") != policy_digest_v4(snapshot):
         raise NativePolicySnapshotError("native_policy_snapshot_digest_mismatch")
@@ -143,8 +147,16 @@ def build_policy_snapshot_v4(
     if type(authority) is not NativePolicyAuthorityDraft or type(capabilities) is not NativePolicyAuthorityCapabilities:
         raise NativePolicySnapshotError("native_policy_authority_encoding_invalid")
     scoped = authority.for_snapshot(capabilities)
+    origin = configuration_origin(config)
+    if origin != authority.managed_config:
+        raise NativePolicySnapshotError("native_policy_managed_configuration_source_mismatch")
+    base_config = config
+    if origin is not None:
+        compiled = dict(config) if isinstance(config, Mapping) else compile_configuration_origins((config,))
+        compiled.pop(MANAGED_CONFIGURATION_INPUT_KEY)
+        base_config = compiled
     snapshot = build_policy_snapshot_v3(
-        config=config,
+        config=base_config,
         guard_home=guard_home,
         runtime_identity=runtime_identity,
         rule_digest=rule_digest,

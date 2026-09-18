@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
+from .native_managed_capture import bind_configuration_origin
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_decision_context import NativePolicyDecisionContext, capture_native_policy_decision
@@ -55,7 +56,7 @@ def compiled_scoped_policy(
 ) -> tuple[dict[str, object], NativeVerifiedPolicyInputs]:
     inputs = read_native_policy_authority_inputs(publisher.store, now=publisher._wall_clock())
     config = publisher._compiled_effective_policy(cloud_defaults=inputs.defaults)
-    return config, inputs
+    return config, bind_configuration_origin(config, inputs)
 
 
 def scoped_policy_input_changed(publisher: NativePolicySnapshotPublisherInputs, *, force_republish: bool) -> bool:

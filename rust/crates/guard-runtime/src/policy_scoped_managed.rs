@@ -1,8 +1,9 @@
 //! Bounded consumption of authenticated built-in command controls.
 //!
 //! The supported generic shell producer has no command-extension observations.
-//! This is proven against the real Python registry/resolver, not inferred from
-//! an allow result. Read/MCP and typed command facts are not modeled here.
+//! The bounded sensitive-read producer likewise has no command observations.
+//! These facts are proven against the real Python registry/resolver. Other
+//! Read/MCP and typed command facts are not modeled here.
 
 use guard_contracts::GuardHookEnvelopeV2;
 use guard_policy_snapshot::scoped_authority::{ControlTargetKind, ManagedAuthority};
@@ -84,6 +85,11 @@ pub(crate) fn request_is_blocked(
     // Reuse the exact bounded generic command classifier. Merely having an
     // exact digest is insufficient: typed/runtime commands can have one too.
     crate::policy_scoped_request::generic_shell_artifact(envelope, harness)
+        .map(|_| ())
+        .or_else(|_| {
+            crate::policy_scoped_sensitive_read::derive_sensitive_read_artifact(envelope, harness)
+                .map(|_| ())
+        })
         .map_err(|_| UNSUPPORTED.to_owned())?;
     Ok(authority.global_lockdown())
 }

@@ -24,6 +24,9 @@ use serde_json::Value;
 mod policy_enforcement_facts;
 #[path = "policy_enforcement_policy.rs"]
 mod policy_enforcement_policy;
+#[path = "policy_sensitive_configuration.rs"]
+mod policy_sensitive_configuration;
+pub(crate) use policy_sensitive_configuration::sensitive_read_configuration_with_origin;
 
 use policy_enforcement_facts::{
     classify_tool_name, collect_fact_maps, payload_facts, preferred_tool_name, risk_classes,

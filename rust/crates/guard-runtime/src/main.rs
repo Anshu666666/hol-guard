@@ -11,6 +11,7 @@ mod policy_enforcement;
 mod policy_scoped_enforcement;
 mod policy_scoped_managed;
 mod policy_scoped_request;
+mod policy_scoped_sensitive_read;
 mod policy_store;
 mod resident_client;
 mod resident_process_identity;

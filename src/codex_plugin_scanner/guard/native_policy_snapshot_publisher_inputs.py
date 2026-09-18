@@ -17,7 +17,6 @@ from .native_policy_snapshot_constants import (
     NATIVE_RUNTIME_STATE_DIRECTORY,
     NativePolicySnapshotError,
 )
-from .native_policy_snapshot_policy import _merge_effective_native_policies, effective_native_policy_v3
 
 if TYPE_CHECKING:
     from .store import GuardStore
@@ -191,6 +190,7 @@ class NativePolicySnapshotPublisherInputs:
         """Build the native snapshot input off the synchronous hook path."""
 
         from .config import load_guard_config, overlay_synced_guard_policy
+        from .native_managed_capture import compile_configuration_origins
 
         with self._condition:
             workspaces = tuple(sorted(self._workspace_paths, key=str))
@@ -200,9 +200,7 @@ class NativePolicySnapshotPublisherInputs:
             configs = [load_guard_config(self.guard_home)]
             configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
         configs = [overlay_synced_guard_policy(config, cloud_defaults) for config in configs]
-        return _merge_effective_native_policies(
-            tuple(effective_native_policy_v3(config) | {"mode": config.mode} for config in configs)
-        )
+        return compile_configuration_origins(tuple(configs))
 
     def _compiled_native_policy(self) -> tuple[dict[str, object], NativeCloudPolicyInputs]:
         cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())

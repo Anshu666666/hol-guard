@@ -4,7 +4,14 @@ use super::{
     ManagedAuthority, PolicyAction, PolicyScope, PolicySourceKind, RawAuthority,
     ScopedCommandExpression, ScopedPolicyRow,
 };
-use serde::Deserialize;
+use crate::managed_configuration::ManagedConfiguration;
+use serde::{Deserialize, Deserializer};
+
+fn present_managed_config<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<Option<Box<ManagedConfiguration>>, D::Error> {
+    ManagedConfiguration::deserialize(decoder).map(|value| Some(Box::new(value)))
+}
 
 // An untagged value/unit enum reads a present input value. Unlike Option's
 // deserialize_option visitor, it cannot turn a missing field into null.
@@ -71,6 +78,8 @@ pub(super) struct WireAuthority {
     managed: RequiredNullable<ManagedAuthority>,
     #[serde(default)]
     command_expressions: Vec<ScopedCommandExpression>,
+    #[serde(default, deserialize_with = "present_managed_config")]
+    managed_config: Option<Box<ManagedConfiguration>>,
 }
 
 impl From<WireAuthority> for RawAuthority {
@@ -81,6 +90,7 @@ impl From<WireAuthority> for RawAuthority {
             rows: authority.rows,
             managed: authority.managed.into_option(),
             command_expressions: authority.command_expressions,
+            managed_config: authority.managed_config,
         }
     }
 }

@@ -3,6 +3,7 @@
 //! A consumer must authenticate the containing versioned snapshot and derive
 //! its own trusted request facts. V3 snapshots cannot contain this value.
 
+use crate::managed_configuration::ManagedConfiguration;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeSet;
 use std::fmt;
@@ -301,6 +302,8 @@ struct RawAuthority {
     managed: Option<ManagedAuthority>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     command_expressions: Vec<ScopedCommandExpression>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    managed_config: Option<Box<ManagedConfiguration>>,
 }
 
 /// Only validated authority can be deserialized into this wrapper. A snapshot
@@ -341,6 +344,10 @@ impl NativePolicyAuthority {
 
     pub fn managed(&self) -> Option<&ManagedAuthority> {
         self.0.managed.as_ref()
+    }
+
+    pub fn managed_config(&self) -> Option<&ManagedConfiguration> {
+        self.0.managed_config.as_deref()
     }
 
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, AuthorityError> {

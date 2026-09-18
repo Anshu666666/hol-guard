@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from .native_managed_configuration import MANAGED_CONFIGURATION_INPUT_KEY
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
 from .native_policy_snapshot_codec import _strict_json_loads_v3, derive_native_policy_verifier_key
@@ -92,6 +93,8 @@ def reserve_snapshot_v4(
         proposed = cast(dict[str, object], _strict_json_loads_v3(snapshot_bytes_v4(build(1))))
         policy_digest = cast(str, proposed["policy_digest"])
         frozen_config = {**cast(dict[str, object], proposed["effective_policy"]), "mode": proposed["mode"]}
+        if inputs.authority.managed_config is not None:
+            frozen_config[MANAGED_CONFIGURATION_INPUT_KEY] = inputs.authority.managed_config.to_mapping()
         with _v3_generation_lock(guard_home, deadline_monotonic=deadline_monotonic) as descriptor:
             # Provision under the same lock: a concurrent first publisher must
             # not inspect a key file while another publisher is creating it.

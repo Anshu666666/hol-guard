@@ -1,0 +1,93 @@
+{
+  "schema": "guard-windows-cause-log-observation.v1",
+  "run": 35377226314,
+  "job": 105704648644,
+  "driver_commit": "3c73e11818a86a3dc28b47cd94399493d7f01310",
+  "candidate": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+  "evidence_kind": "GitHub job log; archive download and hashes owned by root",
+  "candidate_failure": {
+    "arm": "candidate",
+    "artifact_sha256": "197db1511f4dd59afd98574357297ab58ce2bf2eab4845fdf5503afc5b3fd8bd",
+    "case": "codex.PostToolUse.block.1k",
+    "category": "AssertionError",
+    "containment_failed": false,
+    "diagnostic_digest": "667be95b847ac2fe2d2cc3c5de89d86525910bc3037f1e9e2e68d737f8720734",
+    "field": "route",
+    "line": 758,
+    "native_call_count": 0,
+    "native_call_diagnostic": null,
+    "native_completed_call_count": 0,
+    "observed_semantics": {
+      "delivered": {
+        "available": true,
+        "policy_action": "allow",
+        "reason_code": "native_policy_not_ready",
+        "reason_code_digest": "dc2fcb527b32d42531558b46d919452608cb85e4b0c3247d2a8751d73edab63d"
+      },
+      "native": {
+        "available": false
+      }
+    },
+    "origin": "native_slo_workloads.validate_case",
+    "policy_refusal_count": 1,
+    "policy_refusal_diagnostic": {
+      "capture_context": "original_policy_refusal_reason",
+      "publisher_config_failure": {
+        "capture_context": "original_publisher_record_error",
+        "category": "GuardConfigSourceError",
+        "config_cause_1_category": "BrokenPipeError",
+        "config_cause_1_errno": 32,
+        "config_cause_1_line": 196,
+        "config_cause_1_origin": "safe_output_windows._raise_windows_error",
+        "config_cause_count": 1,
+        "config_diagnostic_available": true,
+        "line": 219,
+        "observer": {
+          "exporter_sha256": "b20d8ebe855e5ee8c816658721a314278e1af3610bdb6ba483b23084c7acaaf0",
+          "installed": true,
+          "observer_sha256": "e829970c61dab9372c8ca80412584c4a0e5edbdedca895b6c5308e66405a6245",
+          "schema": "hol-guard.publisher-config-observer.v1"
+        },
+        "observer_generation": 2,
+        "origin": "config_source_io.capture_guard_config"
+      },
+      "publisher_error_digest": "1cd1ffbcd2024bd72c954dd7b5f67a1d34b7332907c8c1aa2c442d3d116cf50e",
+      "publisher_error_digest_complete": true,
+      "publisher_error_state": "known",
+      "publisher_error_value": "guardconfigsourceerror",
+      "schema": "hol-guard.policy-refusal-diagnostic.v1"
+    },
+    "reason": "qualification_fixture.native_qualification_mismatch",
+    "return_code": 1,
+    "run": 0,
+    "schema": "hol-guard.native-qualification-failure.v1",
+    "timed_out": false,
+    "worker_limit_exceeded": false
+  },
+  "artifact_id": 10561032952,
+  "ollama_cause_excerpt": [
+    "2026-09-18T18:19:11.4921898Z           \"capture_context\": \"original_publisher_record_error\",",
+    "2026-09-18T18:19:11.4922529Z           \"category\": \"GuardConfigSourceError\",",
+    "2026-09-18T18:19:11.4923146Z           \"config_cause_1_category\": \"BrokenPipeError\",",
+    "2026-09-18T18:19:11.4923696Z           \"config_cause_1_errno\": 32,",
+    "2026-09-18T18:19:11.4924189Z           \"config_cause_1_line\": 196,",
+    "2026-09-18T18:19:11.4924809Z           \"config_cause_1_origin\": \"safe_output_windows._raise_windows_error\",",
+    "2026-09-18T18:19:11.4925471Z           \"config_cause_count\": 1,",
+    "2026-09-18T18:19:11.4930810Z           \"observer_generation\": 2,",
+    "2026-09-18T18:19:11.4935003Z         \"publisher_error_value\": \"guardconfigsourceerror\","
+  ],
+  "interpretation": {
+    "numeric_win32_error": 32,
+    "name": "ERROR_SHARING_VIOLATION",
+    "source": "D104 src/codex_plugin_scanner/safe_output_windows.py:195 calls ctypes.get_last_error(), then line196 constructs OSError(error_code,...). The recorded errno is therefore sourced from Windows last-error rather than a POSIX write syscall.",
+    "documentation": "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-",
+    "not_established": [
+      "specific ancestor",
+      "competing handle owner",
+      "open versus inspect failure site",
+      "link to current-f8 installed lifecycle failure",
+      "prior startup NativePolicySnapshotError cause"
+    ]
+  },
+  "headline_qualification": false
+}

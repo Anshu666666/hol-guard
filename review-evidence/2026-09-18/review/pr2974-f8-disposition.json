@@ -1,0 +1,1531 @@
+{
+  "schema": "guard-current-review-disposition.v2",
+  "observed_at": "2026-09-18T18:18:49.184Z",
+  "head": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+  "tree": "a69fa8a8fa6899349b77804c4224fcb126c6090c",
+  "base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+  "remote_mutations": false,
+  "source_method": "Read-only git show of exact published head; no source edits, local tests, or timing workloads performed for this disposition.",
+  "thread_count": 28,
+  "resolved_count": 8,
+  "unresolved_count": 20,
+  "status_counts": {
+    "source_fixed_reply_ready": 6,
+    "inherited_size_debt_open": 10,
+    "already_bot_resolved_source_corroborated": 8,
+    "contract_retirement_design_open": 3,
+    "registration_fixed_real_shutdown_evidence_open": 1
+  },
+  "reviews": [
+    {
+      "id": "PRR_kwDORzZri88AAAABOEyKAQ",
+      "state": "COMMENTED",
+      "author": "greptile-apps",
+      "submitted_at": "2026-09-17T17:55:44Z"
+    },
+    {
+      "id": "PRR_kwDORzZri88AAAABOE4Qsw",
+      "state": "COMMENTED",
+      "author": "qodo-free-for-open-source-projects",
+      "submitted_at": "2026-09-17T18:05:51Z"
+    }
+  ],
+  "independent_approval_present": false,
+  "ci_limit": "Dashboard check is associated with f8, but its checkout is PR merge 975967f4fb9ed9cb86353e38a91c54fa3e3b786b. No new catalog/approval Python test execution or all-CI pass is claimed; current Windows installed failure remains separately under investigation.",
+  "draft_replies": [
+    {
+      "comment_id": 4039909030,
+      "thread_id": "PRRT_kwDORzZri86jeU1Z",
+      "title": "AWS loading",
+      "body": "Addressed in `f8bae764`. Removed the stale `_AWS_SYNC = _aws(...)` assignment. The storage module now imports the AWS rules/specs from `command_storage_aws_s3` and includes them in the aggregate catalog; it has no `_aws` reference. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/command_storage_extensions.py#L7).",
+      "remote_posted": false
+    },
+    {
+      "comment_id": 4039909036,
+      "thread_id": "PRRT_kwDORzZri86jeU1c",
+      "title": "Duplicate dashboard focus helper",
+      "body": "Addressed in `f8bae764`. Kept one `focusVisibleDashboardSearch` implementation alongside the dashboard navigation helper. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/app.tsx#L118). The [dashboard CI job](https://github.com/hashgraph-online/hol-guard/actions/runs/35377269052/job/105704788672) for this PR head passed Vite production build and four browser checks on merge `975967f4`.",
+      "remote_posted": false
+    },
+    {
+      "comment_id": 4039909043,
+      "thread_id": "PRRT_kwDORzZri86jeU1h",
+      "title": "Presentation provider import",
+      "body": "Addressed in `f8bae764`. Restored the `PresentationModeProvider` import; the root render still wraps `App` with that provider. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/main.tsx#L5). The [dashboard CI job](https://github.com/hashgraph-online/hol-guard/actions/runs/35377269052/job/105704788672) for this PR head passed Vite production build and four browser checks on merge `975967f4`.",
+      "remote_posted": false
+    },
+    {
+      "comment_id": 4039909106,
+      "thread_id": "PRRT_kwDORzZri86jeU2M",
+      "title": "Common CLI registry entries",
+      "body": "Addressed in `f8bae764`. The direct extension catalogs now include both Common CLI and repo2nb. Their rule tuples remain additive, so the repo2nb addition no longer replaces Vault/Cloudflare and the other Common CLI entries. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/command_builtin_extension_catalog.py#L52).",
+      "remote_posted": false
+    },
+    {
+      "comment_id": 4039909126,
+      "thread_id": "PRRT_kwDORzZri86jeU2U",
+      "title": "Everyday approval explanations",
+      "body": "Addressed in `f8bae764`. Restored live explanation attachment for list, pending-summary, paginated, single-request, and next-pending reads. Summary projections retrieve the persisted action identity/envelope; Python and the retained frontend use the same domain-separated `act_` identity contract. Exact technical details remain withheld by default. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/store_approval_queries.py#L83).",
+      "remote_posted": false
+    },
+    {
+      "comment_id": 4039909130,
+      "thread_id": "PRRT_kwDORzZri86jeU2b",
+      "title": "Publisher file size",
+      "body": "Addressed in `f8bae764`. Extracted publication context resolution and verifier-key provisioning into `native_policy_snapshot_publisher_context.py`. The publisher is now 483 physical / 450 nonblank lines, and the extracted helper is 95 physical / 85 nonblank lines. [Published source](https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py#L24).",
+      "remote_posted": false
+    }
+  ],
+  "rows": [
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU1Z",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/runtime/command_storage_extensions.py",
+      "line": 8,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909030,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:40Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909030,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909030",
+      "status": "source_fixed_reply_ready",
+      "assessment": "Removed the stale `_AWS_SYNC = _aws(...)` assignment. The storage module now imports the AWS rules/specs from `command_storage_aws_s3` and includes them in the aggregate catalog; it has no `_aws` reference.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/command_storage_extensions.py",
+          "line": 7,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/command_storage_extensions.py#L7",
+          "blob": "4a0332ce29e37ab0096fbbc978138c97283822bf",
+          "sha256": "11053017cba88145f30c9a145ede58607be6893f85b2a15f92ea60a0b774bf84"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU1c",
+      "is_resolved": false,
+      "is_outdated": true,
+      "path": "dashboard/src/app.tsx",
+      "line": 128,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909036,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:40Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909036,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909036",
+      "status": "source_fixed_reply_ready",
+      "assessment": "Kept one `focusVisibleDashboardSearch` implementation alongside the dashboard navigation helper.",
+      "evidence": [
+        {
+          "path": "dashboard/src/app.tsx",
+          "line": 118,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/app.tsx#L118",
+          "blob": "18e1960d05c64478bec9cb9f6cf5a4dc2239dd8c",
+          "sha256": "23a0fc0baace9eb6dcbf6b5e47f316bf09a331f010a19c1c91cf54a7a38b15f3"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU1h",
+      "is_resolved": false,
+      "is_outdated": true,
+      "path": "dashboard/src/main.tsx",
+      "line": 6,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909043,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:40Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909043,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909043",
+      "status": "source_fixed_reply_ready",
+      "assessment": "Restored the `PresentationModeProvider` import; the root render still wraps `App` with that provider.",
+      "evidence": [
+        {
+          "path": "dashboard/src/main.tsx",
+          "line": 5,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/main.tsx#L5",
+          "blob": "d87d4ec321599a1bef7bfa78eaa62f5fed91ee6c",
+          "sha256": "c730f7f624ea50e554080db1e215275de1e6bab2e0aae2dd6c1a2ea282bd4825"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU2M",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/runtime/command_builtin_extension_catalog.py",
+      "line": 53,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909106,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:41Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909106,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909106",
+      "status": "source_fixed_reply_ready",
+      "assessment": "The direct extension catalogs now include both Common CLI and repo2nb. Their rule tuples remain additive, so the repo2nb addition no longer replaces Vault/Cloudflare and the other Common CLI entries.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/command_builtin_extension_catalog.py",
+          "line": 52,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/command_builtin_extension_catalog.py#L52",
+          "blob": "2ddb802b53af4fd75909851ab9462f7f31342a65",
+          "sha256": "006eef01ec32dff97b70fedde3fc69236bc83136a7c1a3a914361d9e2bee619d"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU2U",
+      "is_resolved": false,
+      "is_outdated": true,
+      "path": "src/codex_plugin_scanner/guard/store_approval_queries.py",
+      "line": null,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909126,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:41Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909126,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909126",
+      "status": "source_fixed_reply_ready",
+      "assessment": "Restored live explanation attachment for list, pending-summary, paginated, single-request, and next-pending reads. Summary projections retrieve the persisted action identity/envelope; Python and the retained frontend use the same domain-separated `act_` identity contract. Exact technical details remain withheld by default.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/store_approval_queries.py",
+          "line": 83,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/store_approval_queries.py#L83",
+          "blob": "23d59d4b59239b87895d9e85ed16e18fb9cb708d",
+          "sha256": "6256dcc5cf79087e097c34aa93e5e5a235c03ad78ba3f943292f956401fb1291"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/live_action_explanation.py",
+          "line": 10,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/live_action_explanation.py#L10",
+          "blob": "a6b4deb5c60f8431649cf20f78de6f4bcf4e15c0",
+          "sha256": "4ad791e560cc89537a9a1222dc723275373a5c852f3e465651fe74f24fc582b0"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/action_explanation_projection.py",
+          "line": 84,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/action_explanation_projection.py#L84",
+          "blob": "0c7c6c51bca01f6706a85303812745bbc1dc06c3",
+          "sha256": "c439c74b9effa4a1199b273e29cadfdd38ada8b1bee38bfb853b51d8fd8d0753"
+        },
+        {
+          "path": "dashboard/src/action-explanation-validation.ts",
+          "line": 63,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/action-explanation-validation.ts#L63",
+          "blob": "e4d2eff622821157cfaa29ae4296a86fb4850e1d",
+          "sha256": "c4471dacad55f965650a209ae2d73f17ec0bfb0d1dab9e80693c1aa85075583b"
+        },
+        {
+          "path": "tests/test_guard_everyday_live_wiring.py",
+          "line": 34,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/tests/test_guard_everyday_live_wiring.py#L34",
+          "blob": "ee86d9ac790643b8622b40086271732fc0681ef3",
+          "sha256": "9bc739cb74949cd3cb1572101071a1f0abe707beb1ad63c1c5c3eefbbec8bf69"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jeU2b",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+      "line": 483,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039909130,
+          "author": "greptile-apps",
+          "created_at": "2026-09-17T17:55:41Z",
+          "updated_at": "2026-09-17T17:55:44Z"
+        }
+      ],
+      "comment_id": 4039909130,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039909130",
+      "status": "source_fixed_reply_ready",
+      "assessment": "Extracted publication context resolution and verifier-key provisioning into `native_policy_snapshot_publisher_context.py`. The publisher is now 483 physical / 450 nonblank lines, and the extracted helper is 95 physical / 85 nonblank lines.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+          "line": 24,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py#L24",
+          "blob": "61d09b75a07fde9ff5c907cd79a1c5f7f07e6e4b",
+          "sha256": "f4e224b8c5dedf50ea56a58aaac00214a134e2601aebedd64f4fde2cd76b290a"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py",
+          "line": 15,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py#L15",
+          "blob": "b10ee98a9acb1b590da390fbed1e44edfdd5df85",
+          "sha256": "cff731b569dfca9996d9f5c9d69743dd85c6f87155424a0b5a9bc08cd1248758"
+        }
+      ],
+      "action": "Root may post this bounded source-fix reply after review. No blanket CI or merge-ready claim."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehYt",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/daemon/server.py",
+      "line": 45,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987561,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987561,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987561",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 8792,
+        "nonblank": 8352
+      },
+      "head_count": {
+        "physical": 8896,
+        "nonblank": 8440
+      },
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/daemon/server.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/daemon/server.py#L1",
+          "blob": "77287aca876d7650dd29101b0cb72d067122318d",
+          "sha256": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehYy",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/runtime/runner.py",
+      "line": 824,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987569,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987569,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987569",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 6472,
+        "nonblank": 5965
+      },
+      "head_count": {
+        "physical": 6564,
+        "nonblank": 6043
+      },
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/runner.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/runner.py#L1",
+          "blob": "4e76944db929bc32cf7afa018213fdf74f7791e6",
+          "sha256": "60edce64505dc9782c555b1e93c96a2335ae0b77980590ab55323b0ddd5b8128"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehY5",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/daemon/manager.py",
+      "line": 34,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987581,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987581,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987581",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 3178,
+        "nonblank": 2819
+      },
+      "head_count": {
+        "physical": 3221,
+        "nonblank": 2850
+      },
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/daemon/manager.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/daemon/manager.py#L1",
+          "blob": "dcb72460cf2d97af16ef3a8920c0ca7430f59da5",
+          "sha256": "fc62da187ff5dc55bf653de396ad8122fc388fcc781b7d546425d3f6d945f369"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehY-",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "tests/test_guard_cli.py",
+      "line": 51,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987591,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987591,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987591",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 10115,
+        "nonblank": 9092
+      },
+      "head_count": {
+        "physical": 10116,
+        "nonblank": 9093
+      },
+      "evidence": [
+        {
+          "path": "tests/test_guard_cli.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/tests/test_guard_cli.py#L1",
+          "blob": "e3a60af4be0df0531d375c57e553e439742c9e69",
+          "sha256": "d977df916a22dc0d58dd2f54abe920bf6c18deb95c88a66d93f4cbff070d9594"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZE",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "tests/test_guard_approvals.py",
+      "line": 141,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987600,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987600,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987600",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 3968,
+        "nonblank": 3633
+      },
+      "head_count": {
+        "physical": 3953,
+        "nonblank": 3621
+      },
+      "evidence": [
+        {
+          "path": "tests/test_guard_approvals.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/tests/test_guard_approvals.py#L1",
+          "blob": "89c81d7140686001da46a8fb8d89612bb128ee6f",
+          "sha256": "3cbb9c12d6d149173122531ded9dfa7bb55fe83c12feb19397527fb86cc774ac"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZH",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "tests/test_guard_approval_gate.py",
+      "line": 58,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987608,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987608,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987608",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 2167,
+        "nonblank": 1894
+      },
+      "head_count": {
+        "physical": 2168,
+        "nonblank": 1895
+      },
+      "evidence": [
+        {
+          "path": "tests/test_guard_approval_gate.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/tests/test_guard_approval_gate.py#L1",
+          "blob": "f8f03b0683fe248143b91320794253c4cfe88586",
+          "sha256": "8917d3499a5f9641576d547ee02c83e23cafdee72374aac2f9c8b680db10ac30"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZM",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "dashboard/src/home-dashboard.tsx",
+      "line": 37,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987619,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987619,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987619",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 1178,
+        "nonblank": 1082
+      },
+      "head_count": {
+        "physical": 1181,
+        "nonblank": 1085
+      },
+      "evidence": [
+        {
+          "path": "dashboard/src/home-dashboard.tsx",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/home-dashboard.tsx#L1",
+          "blob": "cb4bf26fc0dcf26281454b5a733b09e6cafb76ad",
+          "sha256": "027a6589c01c2d601e57d7f1fee3dd8d34bbe5c40b3df01e27c27719883b0502"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZP",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "dashboard/src/app.tsx",
+      "line": 25,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987624,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987624,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987624",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 1051,
+        "nonblank": 1000
+      },
+      "head_count": {
+        "physical": 1055,
+        "nonblank": 1006
+      },
+      "evidence": [
+        {
+          "path": "dashboard/src/app.tsx",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/app.tsx#L1",
+          "blob": "18e1960d05c64478bec9cb9f6cf5a4dc2239dd8c",
+          "sha256": "23a0fc0baace9eb6dcbf6b5e47f316bf09a331f010a19c1c91cf54a7a38b15f3"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZW",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/runtime/actions.py",
+      "line": 16,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987635,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:52Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987635,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987635",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 1199,
+        "nonblank": 1026
+      },
+      "head_count": {
+        "physical": 1200,
+        "nonblank": 1028
+      },
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/actions.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/actions.py#L1",
+          "blob": "f1e8f75c3961aac0e04f416daaa7ea154e20980d",
+          "sha256": "cf7c0447706e664da49075ad276a4a6251f64844752653b0f1dd609fa7eaedde"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZa",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_process_runner.py",
+      "line": 11,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987644,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987644,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987644",
+      "status": "inherited_size_debt_open",
+      "assessment": "File was already over 500 lines on the current PR base and remains over the limit. Inheritance explains scope; it is not an exemption or a fix. A cohesive split with behavior-preserving tests remains outstanding.",
+      "base_count": {
+        "physical": 600,
+        "nonblank": 569
+      },
+      "head_count": {
+        "physical": 594,
+        "nonblank": 563
+      },
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/daemon/hook_process_runner.py",
+          "line": 1,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/daemon/hook_process_runner.py#L1",
+          "blob": "642107dd5beb00764aa834caa0f8a198f387368d",
+          "sha256": "a326a905536d34f055a66febfe5688a52c96dd9beeac07c9d681252f369e035d"
+        }
+      ],
+      "action": "Leave unresolved or explicitly track the residual maintenance work; do not delete runtime behavior or tests to satisfy a line count."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZj",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "dashboard/src/guard-cloud-connect-flow.ts",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987655,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:26Z"
+        }
+      ],
+      "comment_id": 4039987655,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987655",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "Cloud-connect normalization now uses if/else-if statements.",
+      "evidence": [
+        {
+          "path": "dashboard/src/guard-cloud-connect-flow.ts",
+          "line": 69,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/guard-cloud-connect-flow.ts#L69",
+          "blob": "05c6f7257bbd123f3e2166fa50921ae34aa22617",
+          "sha256": "d926296a9dea62c9145322337a8a097ea4f5b6c2b4052db208c6d7a8695c8041"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZq",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "dashboard/src/fleet-workspace.tsx",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987666,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:28Z"
+        }
+      ],
+      "comment_id": 4039987666,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987666",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "Primary fleet action selection uses explicit branches before JSX.",
+      "evidence": [
+        {
+          "path": "dashboard/src/fleet-workspace.tsx",
+          "line": 213,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/fleet-workspace.tsx#L213",
+          "blob": "f6d3e180ecb23164b9138cb672203c7bce5b3379",
+          "sha256": "48b84624a17a7998a2bb055d427f1d1b7314f307876dc2436387e6438a858453"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZx",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "dashboard/src/fleet-workspace.tsx",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987675,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:30Z"
+        }
+      ],
+      "comment_id": 4039987675,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987675",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "Secondary fleet action selection uses explicit branches before JSX.",
+      "evidence": [
+        {
+          "path": "dashboard/src/fleet-workspace.tsx",
+          "line": 221,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/fleet-workspace.tsx#L221",
+          "blob": "f6d3e180ecb23164b9138cb672203c7bce5b3379",
+          "sha256": "48b84624a17a7998a2bb055d427f1d1b7314f307876dc2436387e6438a858453"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZ3",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "dashboard/src/protection-center/protection-center-workspace.tsx",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987683,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:31Z"
+        }
+      ],
+      "comment_id": 4039987683,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987683",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "Error message is computed separately and the state updater uses an explicit branch.",
+      "evidence": [
+        {
+          "path": "dashboard/src/protection-center/protection-center-workspace.tsx",
+          "line": 172,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/dashboard/src/protection-center/protection-center-workspace.tsx#L172",
+          "blob": "303bfc47b3aea22f5268d4631b76c407f2164d2a",
+          "sha256": "0f756e4c75733406bbca523359c348930a99cef03a90bd3f4b1bf639fb003c34"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehZ8",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "src/codex_plugin_scanner/guard/runtime/package_evidence_common.py",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987692,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:33Z"
+        }
+      ],
+      "comment_id": 4039987692,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987692",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "object_mapping delegates validation to shared object_map; the compatibility wrapper only makes a typed copy.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/package_evidence_common.py",
+          "line": 80,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/package_evidence_common.py#L80",
+          "blob": "877ee7f087241327c07e50573e85116e5a3ee104",
+          "sha256": "fdd2a251a86c5f1b2d213fee236c2069383ad1636e28ec6fe81b8069c030881a"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehaE",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "src/codex_plugin_scanner/guard/presentation_mode.py",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987703,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:34Z"
+        }
+      ],
+      "comment_id": 4039987703,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987703",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "Presentation values are everyday/technical only; obsolete values fall back with a diagnostic.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/presentation_mode.py",
+          "line": 17,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/presentation_mode.py#L17",
+          "blob": "eabd3533c656cb0a70646275a37c1c851779618b",
+          "sha256": "9b660e94bbaa5bcfec7a4d7310e2aeaf4464b983e1ae9b6f5e2778b865f3b63a"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehaM",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/runtime/command_dns_extensions.py",
+      "line": 417,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987713,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987713,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987713",
+      "status": "contract_retirement_design_open",
+      "assessment": "Persisted aggregate DNS controls still expand onto provider-specific controls with disable dominance; duplicate original controls remain duplicated so composition fails closed. Removing this branch without a migration/retirement design changes persisted policy behavior. Keep open for that explicit design; this is not a claim that the legacy-removal rule is satisfied.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/command_dns_extensions.py",
+          "line": 427,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/runtime/command_dns_extensions.py#L427",
+          "blob": "f5b3e91ea9cb8bac3960c3b0cc741256906896aa",
+          "sha256": "fb99bdeea55b75a5b0388dc32b86e32ce5adad6a0c942f4efaadb3ec03c61007"
+        }
+      ],
+      "action": "Leave unresolved; retain source context and require an explicit migration/refactor decision."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehaS",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py",
+      "line": 668,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987722,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987722,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987722",
+      "status": "contract_retirement_design_open",
+      "assessment": "The legacy Pi/OMP source reconstruction is used for exact-byte verification and owned uninstall. pi.py checks exact managed source before deleting a legacy extension. Removing recognition without an alternative owned-upgrade/removal path could strand existing managed artifacts. Keep open for an explicit retirement decision.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py",
+          "line": 665,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/adapters/pi_extension_source.py#L665",
+          "blob": "611f23bad1616df152b2599a5543e782127f07cc",
+          "sha256": "89d4b8fb5d13b4b6f3b92e51c250f8aab63f0eb16307e923619bf71fd97b3760"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/adapters/pi.py",
+          "line": 677,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/adapters/pi.py#L677",
+          "blob": "6e2b73dff633743ab7e7247d7cf541b57e9a5ffe",
+          "sha256": "4da77cd3377272545327c67f83850c9ddcba749af6c6de68e43ec7f0f186a6c3"
+        }
+      ],
+      "action": "Leave unresolved; retain source context and require an explicit migration/refactor decision."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehad",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+      "line": 297,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987733,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987733,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987733",
+      "status": "contract_retirement_design_open",
+      "assessment": "The one-shot request implementation remains selected only when the module runner binding differs from its captured original; production normally selects the persistent pool. An explicit injectable transport could replace this monkeypatch compatibility seam, but the original parity/differential witnesses must remain effective. This is a retained test seam, not a proven need for indefinite runtime compatibility; keep the refactor request open.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 369,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L369",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        }
+      ],
+      "action": "Leave unresolved; retain source context and require an explicit migration/refactor decision."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehal",
+      "is_resolved": true,
+      "is_outdated": false,
+      "path": "rust/crates/guard-secure-fs/src/secure_open.rs",
+      "line": 109,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987744,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:35Z"
+        }
+      ],
+      "comment_id": 4039987744,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987744",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "The old non-Unix secure_open stub remains, but Windows read_bounded no longer calls it: lib.rs selects windows::read_bounded, which uses SourceFile and handle/path identity checks.",
+      "evidence": [
+        {
+          "path": "rust/crates/guard-secure-fs/src/secure_open.rs",
+          "line": 105,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/rust/crates/guard-secure-fs/src/secure_open.rs#L105",
+          "blob": "68c9333e27fc7549687b786a3e8fa45cb6ce077b",
+          "sha256": "e85febead7be1bb22b9d0def97c9c8f0900963e2b05cc575bcd3c8a8d04278ae"
+        },
+        {
+          "path": "rust/crates/guard-secure-fs/src/lib.rs",
+          "line": 32,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/rust/crates/guard-secure-fs/src/lib.rs#L32",
+          "blob": "3064778cc1020aa3da9f4539ddd32bbf36d2df07",
+          "sha256": "79b9bbe13505614024c3226d0992c5fae05d6686d7468ba79481165154cefe1a"
+        },
+        {
+          "path": "rust/crates/guard-secure-fs/src/windows.rs",
+          "line": 10,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/rust/crates/guard-secure-fs/src/windows.rs#L10",
+          "blob": "a2462ee1ec0e8f7b9cb6d887d8817f489418b909",
+          "sha256": "76c7314f17493e5efd594f57df0305ab945219ea1e59485f86407df56e74d91c"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehar",
+      "is_resolved": false,
+      "is_outdated": false,
+      "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+      "line": 235,
+      "resolved_by": null,
+      "comments": [
+        {
+          "comment_id": 4039987753,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-17T18:05:54Z"
+        }
+      ],
+      "comment_id": 4039987753,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987753",
+      "status": "registration_fixed_real_shutdown_evidence_open",
+      "assessment": "The production request calls _client_pool_for, which normalizes and tracks the state directory before client creation/request even if absent. The focused missing-directory test uses the real pool registration but mocks _state_files and stop_native_resident; it does not start or retire a real resident. The native_resident_client atexit handler closes streams only, intentionally preserving the shared resident. Full explicit cleanup exists, but no current production import of the old native_runtime_resident atexit owner was found. Installed cleanup probes can fall back to explicit Rust stop, so their success alone would not prove registration-owned process retirement.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 159,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L159",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 183,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L183",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 228,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L228",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 231,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L231",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 262,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L262",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+          "line": 389,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_client.py#L389",
+          "blob": "3bd27cf334186c2b34bda9fa8c6d3be84741b9f8",
+          "sha256": "76cf9ef1b068fa8ccd819120a014929c46380e65ce44971ac54248523abe7ae4"
+        },
+        {
+          "path": "tests/test_native_resident_client_cleanup.py",
+          "line": 66,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/tests/test_native_resident_client_cleanup.py#L66",
+          "blob": "2dbe1fde05821822eab6779eaf09d35167f2aa8c",
+          "sha256": "3eaf1cb52878b0eb60fc947b78c33718062776608787d39c9c1f0b1b8b343178"
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/native_runtime_resident.py",
+          "line": 479,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_runtime_resident.py#L479",
+          "blob": "d2eeb3f3db448ffffb5404c5dcb4e0d5c479e015",
+          "sha256": "559bd6a9f67896fe38816727011817492d944d1c41b0004452c647100fb1a5c8"
+        },
+        {
+          "path": "ci/native_runtime/probe_native_default_auto.py",
+          "line": 157,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/ci/native_runtime/probe_native_default_auto.py#L157",
+          "blob": "12d926fd00d1fc3311a0dcdadea15466192eefe0",
+          "sha256": "93a9c12e2ab370b992918150a9d26472984e4877ad807f7ae83d40d99e4150bc"
+        }
+      ],
+      "action": "Leave unresolved for a bounded real resident lifecycle witness and clarification of the shutdown owner; do not replace shared-resident ownership with per-hook unconditional stop."
+    },
+    {
+      "thread_id": "PRRT_kwDORzZri86jehaw",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "src/codex_plugin_scanner/guard/native_resident_stream.py",
+      "line": null,
+      "resolved_by": "qodo-free-for-open-source-projects[bot]",
+      "comments": [
+        {
+          "comment_id": 4039987760,
+          "author": "qodo-free-for-open-source-projects",
+          "created_at": "2026-09-17T18:05:53Z",
+          "updated_at": "2026-09-18T17:57:25Z"
+        }
+      ],
+      "comment_id": 4039987760,
+      "comment_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987760",
+      "status": "already_bot_resolved_source_corroborated",
+      "assessment": "request preserves the caller deadline and rejects expiration after startup before sending a frame.",
+      "evidence": [
+        {
+          "path": "src/codex_plugin_scanner/guard/native_resident_stream.py",
+          "line": 177,
+          "url": "https://github.com/hashgraph-online/hol-guard/blob/f8bae76423f8120cb7c496f57407f7d47945f73d/src/codex_plugin_scanner/guard/native_resident_stream.py#L177",
+          "blob": "7f212e8c86671eb73a34819575a34a52f950b864",
+          "sha256": "68ceffedcf00774abde4825785021090c664711efb88877f9c955f897e0fea3d"
+        }
+      ],
+      "action": "No duplicate reply or resolution needed. Bot resolution is not independent approval or platform qualification."
+    }
+  ],
+  "cross_pr_inherited_size_context": {
+    "prior_rows": 28,
+    "unique_files": 23,
+    "note": "The earlier matrix has 28 inherited-size review rows across PRs2974 and2954, covering23 distinct files. Only the current2974 thread states were refreshed here.",
+    "files": [
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/server.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987561
+          },
+          {
+            "pr": 2954,
+            "comment_id": 4048300699
+          }
+        ],
+        "base_count": {
+          "physical": 8792,
+          "nonblank": 8352
+        },
+        "head_count": {
+          "physical": 8896,
+          "nonblank": 8440
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/runner.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987569
+          },
+          {
+            "pr": 2954,
+            "comment_id": 4048300661
+          }
+        ],
+        "base_count": {
+          "physical": 6472,
+          "nonblank": 5965
+        },
+        "head_count": {
+          "physical": 6564,
+          "nonblank": 6043
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/manager.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987581
+          },
+          {
+            "pr": 2954,
+            "comment_id": 4048300687
+          }
+        ],
+        "base_count": {
+          "physical": 3178,
+          "nonblank": 2819
+        },
+        "head_count": {
+          "physical": 3221,
+          "nonblank": 2850
+        }
+      },
+      {
+        "path": "tests/test_guard_cli.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987591
+          },
+          {
+            "pr": 2954,
+            "comment_id": 4048300728
+          }
+        ],
+        "base_count": {
+          "physical": 10115,
+          "nonblank": 9092
+        },
+        "head_count": {
+          "physical": 10116,
+          "nonblank": 9093
+        }
+      },
+      {
+        "path": "tests/test_guard_approvals.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987600
+          }
+        ],
+        "base_count": {
+          "physical": 3968,
+          "nonblank": 3633
+        },
+        "head_count": {
+          "physical": 3953,
+          "nonblank": 3621
+        }
+      },
+      {
+        "path": "tests/test_guard_approval_gate.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987608
+          }
+        ],
+        "base_count": {
+          "physical": 2167,
+          "nonblank": 1894
+        },
+        "head_count": {
+          "physical": 2168,
+          "nonblank": 1895
+        }
+      },
+      {
+        "path": "dashboard/src/home-dashboard.tsx",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987619
+          }
+        ],
+        "base_count": {
+          "physical": 1178,
+          "nonblank": 1082
+        },
+        "head_count": {
+          "physical": 1181,
+          "nonblank": 1085
+        }
+      },
+      {
+        "path": "dashboard/src/app.tsx",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987624
+          },
+          {
+            "pr": 2954,
+            "comment_id": 4048300762
+          }
+        ],
+        "base_count": {
+          "physical": 1051,
+          "nonblank": 1000
+        },
+        "head_count": {
+          "physical": 1055,
+          "nonblank": 1006
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/actions.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987635
+          }
+        ],
+        "base_count": {
+          "physical": 1199,
+          "nonblank": 1026
+        },
+        "head_count": {
+          "physical": 1200,
+          "nonblank": 1028
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/hook_process_runner.py",
+        "prior_review_rows": [
+          {
+            "pr": 2974,
+            "comment_id": 4039987644
+          }
+        ],
+        "base_count": {
+          "physical": 600,
+          "nonblank": 569
+        },
+        "head_count": {
+          "physical": 594,
+          "nonblank": 563
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/action_runner.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300609
+          }
+        ],
+        "base_count": {
+          "physical": 669,
+          "nonblank": 616
+        },
+        "head_count": {
+          "physical": 690,
+          "nonblank": 637
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/checks/security.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300619
+          }
+        ],
+        "base_count": {
+          "physical": 741,
+          "nonblank": 661
+        },
+        "head_count": {
+          "physical": 946,
+          "nonblank": 850
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/adapters/codex.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300627
+          }
+        ],
+        "base_count": {
+          "physical": 1797,
+          "nonblank": 1661
+        },
+        "head_count": {
+          "physical": 1780,
+          "nonblank": 1644
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/local_supply_chain.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300638
+          }
+        ],
+        "base_count": {
+          "physical": 4513,
+          "nonblank": 4176
+        },
+        "head_count": {
+          "physical": 4545,
+          "nonblank": 4208
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/protect.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300647
+          }
+        ],
+        "base_count": {
+          "physical": 1129,
+          "nonblank": 1004
+        },
+        "head_count": {
+          "physical": 1148,
+          "nonblank": 1019
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/oci_isolation_provider.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300666
+          }
+        ],
+        "base_count": {
+          "physical": 1088,
+          "nonblank": 917
+        },
+        "head_count": {
+          "physical": 1068,
+          "nonblank": 902
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/package_manifest_diff.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300674
+          }
+        ],
+        "base_count": {
+          "physical": 641,
+          "nonblank": 566
+        },
+        "head_count": {
+          "physical": 659,
+          "nonblank": 584
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300681
+          }
+        ],
+        "base_count": {
+          "physical": 4996,
+          "nonblank": 4647
+        },
+        "head_count": {
+          "physical": 5096,
+          "nonblank": 4743
+        }
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300706
+          }
+        ],
+        "base_count": {
+          "physical": 1680,
+          "nonblank": 1456
+        },
+        "head_count": {
+          "physical": 1717,
+          "nonblank": 1489
+        }
+      },
+      {
+        "path": "tests/test_guard_surface_server.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300717
+          }
+        ],
+        "base_count": {
+          "physical": 4622,
+          "nonblank": 4214
+        },
+        "head_count": {
+          "physical": 4714,
+          "nonblank": 4300
+        }
+      },
+      {
+        "path": "tests/test_guard_runtime.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300723
+          }
+        ],
+        "base_count": {
+          "physical": 25498,
+          "nonblank": 22868
+        },
+        "head_count": {
+          "physical": 25560,
+          "nonblank": 22926
+        }
+      },
+      {
+        "path": "tests/test_guard_command_extensions.py",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300731
+          }
+        ],
+        "base_count": {
+          "physical": 993,
+          "nonblank": 860
+        },
+        "head_count": {
+          "physical": 993,
+          "nonblank": 860
+        }
+      },
+      {
+        "path": "dashboard/src/settings-workspace.tsx",
+        "prior_review_rows": [
+          {
+            "pr": 2954,
+            "comment_id": 4048300776
+          }
+        ],
+        "base_count": {
+          "physical": 2461,
+          "nonblank": 2335
+        },
+        "head_count": {
+          "physical": 2476,
+          "nonblank": 2351
+        }
+      }
+    ]
+  }
+}

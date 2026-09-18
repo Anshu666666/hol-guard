@@ -1,0 +1,9 @@
+Read-only independent source review of `f88bb4ffc8bcf52915180560d30c8f309ac3b341`.
+
+The new declaration inventory reaches the actual GuardStore MRO, explicit saved-policy, local-MCP, registry-authority and final-proxy entrypoints, registered integrity listeners, SQLite profiler, secret backend and outbox-wake receiver. The added negative controls cover restored instance callbacks and retain permanent revocation; canonical repeated invocations still have an explicit once-only control. This is a finite application callback boundary review, not a whole-Python-heap proof. No tests or timing were run by this reviewer.
+
+Disposition: a concrete construction-time admission gap remains. `_functions()` returns an empty tuple for a callable object or an unfamiliar descriptor. A replacement installed on a receiver class before prototype construction is captured by the class attribute snapshot, silently omitted from pending function admission (including explicit entrypoint seeds), and accepted later when the snapshot still matches. The instance-field callable rejection does not cover class attributes. The same omission applies to a direct callable global alias reached by admitted repository code when its value is an opaque callable object instead of a recognized function shape.
+
+Acceptance was notified and agreed to reject unsupported callable/descriptor declarations, require recognized shapes at explicit entrypoints, and add actual pre-construction restored class-callable/descriptor parity controls. The earlier 108 finite tests and source checks remain evidence for this exact earlier revision; they do not clear the newly identified negative. Timing remains ineligible pending a fresh functional freeze and independent review.
+
+The hosted SQLite diagnostic is a separate source-only lane and does not supply MCP correctness or performance evidence.

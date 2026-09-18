@@ -1,0 +1,44 @@
+{
+  "commit": "fb28fd6116bbe9bed2ee1a853255c058a15517ef",
+  "files": {
+    "tests/test_installed_transition_windows_membership_support.py": {
+      "blob": "5e3c12c4c20c94ed831aab8601b19316ea673dfd",
+      "sha256": "1daf9bfb49648c795ec06803ef6c2a2931188fb59b92abba4243fd07d320f5ca"
+    },
+    "tests/test_installed_transition_windows_owner.py": {
+      "blob": "1409fbc2a607621ff0d3d76b1d6b28eaa33051b8",
+      "sha256": "26e9b269eaa610dcfd41bdb599e1c1636ea76177a211534616508e61ed554d05"
+    }
+  },
+  "parent": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+  "preserved_hosted_failure": {
+    "breakaway_witness": "Child printed escaped; the test did not measure membership of the exact retained owner Job. It remains a failed ambiguous witness.",
+    "crlf_mismatches": 6,
+    "head": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+    "job": 105704786559,
+    "log": "/workspace/scratch/873d931eb11e/windows-owner-f8-hosted-failure.log",
+    "log_sha256": "7a54d375d6439d91351d83eb935811cd68a9d081e666beb39d531993f0dcc8ca",
+    "run": 35377268691,
+    "tests_failed": 7,
+    "tests_passed": 16
+  },
+  "primary_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/procthread/nested-jobs",
+    "https://github.com/python/cpython/blob/v3.12.10/PC/launcher.c#L781-L814",
+    "https://github.com/python/cpython/blob/v3.12.10/PCbuild/venvlauncher.vcxproj"
+  ],
+  "production_or_collector_changed": false,
+  "repair": "Exact Windows CRLF expectations, no capture normalization. On creation success, real child publishes own PID and creation FILETIME and awaits an observation release. Observer retains query-limited+synchronize process handle, requires matching birth, live child and IsProcessInJob membership of exact retained owner Job, then releases child and requires signaled retained handle after natural empty Job with zero termination. Access5 creation denial remains distinct and valid.",
+  "source_inference": "CPython 3.12 venv redirector creates an inner Job with SILENT_BREAKAWAY_OK. Microsoft nested semantics allow departure from that Job while retaining a non-breakaway ancestor. This explains why creation success alone cannot establish escape, but actual new membership witness is still required.",
+  "tree": "46fd89cb0965a31247e0e5e5621fb458277ba1bd",
+  "validation": {
+    "actual_windows_execution": "required, not performed locally",
+    "actual_windows_skipped": 13,
+    "diff_check": true,
+    "elapsed_seconds": 0.59,
+    "embedded_python_compile": true,
+    "independent_source_review": "ci_repair, no concrete blocker",
+    "local_passed": 10,
+    "ruff": true
+  }
+}

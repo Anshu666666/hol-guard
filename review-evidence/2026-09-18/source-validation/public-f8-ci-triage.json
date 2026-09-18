@@ -1,0 +1,90 @@
+{
+  "head": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+  "tree": "a69fa8a8fa6899349b77804c4224fcb126c6090c",
+  "scope": "actual hosted failure logs; fixes remain separate from failed public head",
+  "families": [
+    {
+      "cause": "Rust 1.88 formatting differs in seven source/test files",
+      "jobs": [
+        105704788054,
+        105704787953,
+        105704787940,
+        105704786984,
+        105704786813,
+        105704786627,
+        105704786161
+      ],
+      "owner": "security_review",
+      "repair_commit": "0b115f65dcf8def3a11575ab2c2512c0da7ace70",
+      "source_gates": "passed before formatting; no authority-rule defect shown"
+    },
+    {
+      "cause": "stale source-bound desktop decision-diff fixture",
+      "jobs": [
+        105704787441,
+        105705159743
+      ],
+      "owner": "root",
+      "scope": "source inventory binding only; preserve all51000 decisions"
+    },
+    {
+      "cause": "outdated test call signatures and global os.fstat mock pollution",
+      "jobs": [
+        105705156748,
+        105705156865,
+        105705157036,
+        105705159743
+      ],
+      "owner": "ci_repair",
+      "repair_commit": "2b00017487f5298ef42382626f127a19896a7e08",
+      "validation": "77 passed; Ruff and format pass; independent source review clear",
+      "production_changes": false
+    },
+    {
+      "cause": "Windows owner tests require CRLF and exact retained-Job membership witness",
+      "jobs": [
+        105704786559
+      ],
+      "owner": "platform_qualification",
+      "status": "source review clear; actual Windows validation pending",
+      "not_established": "Popen success alone does not prove escape from retained non-breakaway ancestor Job"
+    },
+    {
+      "cause": "Windows installed default-auto corpus had3native_resident18native_fail_safe",
+      "jobs": [
+        105704787742
+      ],
+      "owner": "security_review",
+      "status": "failure diagnostic preservation repair in progress; underlying cause unknown",
+      "preserve_gate": "all21 deliveries must be native_resident"
+    },
+    {
+      "cause": "Mac Intel installed SLO exceeds unchanged1000ms bounds",
+      "jobs": [
+        105704788088
+      ],
+      "owner": "root/platform_qualification",
+      "concurrency16_p99_ms": 1415.151,
+      "recovery_p95_ms": 1355.561,
+      "status": "open observed failure; no source cause established",
+      "default_auto": "21resident0fail_safe"
+    }
+  ],
+  "remaining_running_job": {
+    "id": 105704787983,
+    "name": "linux-x64",
+    "step": "Enforce installed native soak",
+    "configured_requests": 100000,
+    "configured_receipts": 250000
+  },
+  "successful_checks": {
+    "mac_arm64_native_wheel": 105704787975,
+    "hosted_gitleaks": 105704788025,
+    "codeql": [
+      105705885109,
+      105705009779
+    ]
+  },
+  "full_public_history_scan_receipt": "/workspace/scratch/873d931eb11e/candidate-source-checks/public-f8-history/receipt.json",
+  "no_remote_mutations": true
+}

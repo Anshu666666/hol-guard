@@ -1,0 +1,79 @@
+{
+  "base": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+  "python": "/workspace/scratch/873d931eb11e/final-validation-venv/bin/python",
+  "source_pythonpath": "/workspace/scratch/873d931eb11e/public-f8-ci-compat/src",
+  "source_hashes": {
+    "tests/test_path_support.py": "552c13b550f0c2e5b6161e194a5a899f2cb0f083f907511807d5eb8a8333386b",
+    "tests/test_native_slo_startup.py": "9aa52719ac27f790895d2a534f785157383249554fca5c4a7ab29c9d2aa8d5da",
+    "tests/test_native_codex_continuation_binding.py": "932c6e6b8d2c4271c3ef969eceb1c104d42bd76dadebab9d7874060244178128",
+    "tests/test_native_codex_live_continuation.py": "17c060804637845fd7fa3b46e08efd5c857217615f6c981bf072b921e59bbfa4"
+  },
+  "checks": [
+    {
+      "command": [
+        "/workspace/scratch/873d931eb11e/final-validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_path_support.py",
+        "tests/test_native_slo_startup.py",
+        "tests/test_native_codex_continuation_binding.py",
+        "tests/test_native_codex_live_continuation.py",
+        "-q",
+        "--junitxml=/workspace/scratch/873d931eb11e/candidate-source-checks/public-f8-ci-compat/junit.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 14.810327937004331,
+      "log": "/workspace/scratch/873d931eb11e/candidate-source-checks/public-f8-ci-compat/check-0.log",
+      "log_sha256": "24767704e7adef8b407fa6c10db225165d9dbc5c581452d07b096d894fb74396"
+    },
+    {
+      "command": [
+        "/workspace/scratch/873d931eb11e/final-validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "tests/test_path_support.py",
+        "tests/test_native_slo_startup.py",
+        "tests/test_native_codex_continuation_binding.py",
+        "tests/test_native_codex_live_continuation.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.06464500400034012,
+      "log": "/workspace/scratch/873d931eb11e/candidate-source-checks/public-f8-ci-compat/check-1.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "command": [
+        "/workspace/scratch/873d931eb11e/final-validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "tests/test_path_support.py",
+        "tests/test_native_slo_startup.py",
+        "tests/test_native_codex_continuation_binding.py",
+        "tests/test_native_codex_live_continuation.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.06435649700142676,
+      "log": "/workspace/scratch/873d931eb11e/candidate-source-checks/public-f8-ci-compat/check-2.log",
+      "log_sha256": "177f260a5645724013185e4b140c7045cc39e56c0c97b120f5cb23599f85f0de"
+    }
+  ],
+  "canonical_lock_held": true,
+  "repair_commit": "2b00017487f5298ef42382626f127a19896a7e08",
+  "validation_summary": {
+    "pytest_passed": 77,
+    "pytest_failed": 0,
+    "pytest_skipped": 0,
+    "pytest_seconds": 10.64,
+    "ruff_exit": 0,
+    "format_exit": 0
+  },
+  "independent_source_review": {
+    "agent": "/root/review_integration",
+    "result": "no_concrete_blocker",
+    "test_rerun": false,
+    "source_scope": "four test-only files at exact repair commit"
+  }
+}

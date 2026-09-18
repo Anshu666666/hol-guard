@@ -1,0 +1,74 @@
+{
+  "head": "978f1d7c2a6b6e7d9d61e5db7fdf0d0ba381c016",
+  "tree": "0ffd5a0dbb8c8fc75b85a0d8c5189c6cfa900233",
+  "parent": "354d0f0e70d3b3634b4d90b8d04d2eab475b6600",
+  "source_files": {
+    "scripts/probe_sqlite_syscall_observation.py": {
+      "sha256": "75a10242b231d0fa4089e0cc1eb2168bc39bd5a8b9f18d14da10753d8e1f5cf7",
+      "physical_lines": 315
+    },
+    "scripts/sqlite_syscall_probe_child.py": {
+      "sha256": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
+      "physical_lines": 149
+    },
+    "scripts/sqlite_syscall_probe_supervision.py": {
+      "sha256": "640c72b86482f4b7564e9c2d87988f6f08655c274790a6bb05d8b4d17e896f37",
+      "physical_lines": 193
+    },
+    "tests/test_sqlite_syscall_probe_parser.py": {
+      "sha256": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
+      "physical_lines": 221
+    }
+  },
+  "finite_tests": {
+    "passed": 23,
+    "duration_seconds": 0.42,
+    "command": "/workspace/scratch/873d931eb11e/performance-validation-venv/bin/python -m pytest -q tests/test_sqlite_syscall_probe_parser.py",
+    "log_sha256": "8eabe360a72bf88c528179ad899e20ab29f195536925b6f1cd491238936d1962"
+  },
+  "types": {
+    "errors": 0,
+    "warnings_filtered": true,
+    "command": "/workspace/scratch/873d931eb11e/performance-validation-venv/bin/python -m basedpyright --pythonpath /workspace/scratch/873d931eb11e/performance-validation-venv/bin/python --level error scripts/probe_sqlite_syscall_observation.py scripts/sqlite_syscall_probe_child.py scripts/sqlite_syscall_probe_supervision.py",
+    "log_sha256": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  },
+  "ruff_check_and_format": "passed_all_four_paths",
+  "independent_review": {
+    "reviewer": "recover_handoff",
+    "disposition": "no_remaining_concrete_blocker_for_disposable_only_scope",
+    "source_only": true,
+    "repairs": [
+      "unreaped_leader_and_start_identity_before_signals",
+      "normalized_failed_reap_and_unconditional_reader_retirement",
+      "short_private_marker_and_raw_numeric_write_arguments",
+      "wal_and_checkpoint_required",
+      "real_closed_nonnegative_fd_error"
+    ]
+  },
+  "actual_probe": {
+    "report_path": "/workspace/scratch/873d931eb11e/rsp131-disposable-probe-v3.json",
+    "sha256": "05ce31868a3847dde9cfb1db19702d356fdd780e434fb7e1a2dc91dfe4eb0b6e",
+    "status": "denied",
+    "reason": "tracing_permission_denied",
+    "baseline_controls_passed": true,
+    "all_workers_contained": true,
+    "all_readers_retired": true,
+    "raw_trace_exported": false,
+    "source_hashes_verified_against_commit": true
+  },
+  "previous_failed_attempts_retained": [
+    "rsp131-disposable-probe-v1.json",
+    "rsp131-disposable-probe-v2.json"
+  ],
+  "qualifies_rsp131": false,
+  "installed_workload_run": false,
+  "actual_sqlite_syscall_counts_proved": false,
+  "observer_overhead_quantified": false,
+  "limits": [
+    "ptrace_denied",
+    "concurrent_sqlite_file_lifetime_attribution_unproved",
+    "installed_daemon_integration_unproved",
+    "overhead_unmeasured",
+    "windows_only_readonly_enumeration_design_reviewed_no_ffi"
+  ]
+}

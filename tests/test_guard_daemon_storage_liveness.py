@@ -128,9 +128,7 @@ def test_locked_storage_hook_burst_fails_safe_without_stranding_daemon(
     try:
         blocker = sqlite3.connect(store.path, timeout=0.1, isolation_level=None)
         _ = blocker.execute("begin exclusive")
-        endpoint = (
-            f"http://127.0.0.1:{daemon.port}/v1/hooks/pi?guard-home={store.guard_home}&home={tmp_path}&workspace={tmp_path}"
-        )
+        endpoint = f"http://127.0.0.1:{daemon.port}/v1/hooks/pi?guard-home={store.guard_home}&home={tmp_path}&workspace={tmp_path}"
 
         def review(index: int) -> tuple[dict[str, object], float]:
             request = urllib.request.Request(

@@ -10,6 +10,7 @@ import pytest
 
 from tests import test_guard_daemon_storage_liveness as storage_liveness
 
+
 # These cases call the actual liveness test under owned external-boundary doubles.
 # They prove cleanup control flow, not latency or actual daemon retirement.
 @pytest.mark.parametrize(

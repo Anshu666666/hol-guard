@@ -35,7 +35,8 @@ def test_actual_managed_capture_preserves_disable_dominance_and_independent_revi
     source = next(item for item in result.sources if item["kind"] == "managed-controls")
     assert source["revision"] == 1 and source["managed_revision"] == 1
     assert source["catalog_digest"] == managed.catalog_digest
-    assert len(source["effective_digest"]) == 64
+    effective_digest = source["effective_digest"]
+    assert isinstance(effective_digest, str) and len(effective_digest) == 64
     assert result.expires_at_ms is not None
     visible = json.dumps(result.sources) + repr(result) + repr(managed)
     assert "PRIVATE KEY" not in visible and "snapshot_mac" not in visible and "authentication" not in visible

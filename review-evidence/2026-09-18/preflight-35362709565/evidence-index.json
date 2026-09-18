@@ -1,0 +1,979 @@
+{
+  "schema": "hol-guard.d104-preflight-evidence-index.v1",
+  "run_id": 35362709565,
+  "attempt": 1,
+  "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+  "candidate": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+  "baseline": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+  "mode": "smoke",
+  "qualification_complete": false,
+  "program_qualification_complete": false,
+  "retrieval": "github_plugin_download_workflow_artifact",
+  "reports": [
+    {
+      "platform": "windows",
+      "job_id": 105657622489,
+      "job_conclusion": "failure",
+      "artifact_id": 10556135151,
+      "archive_sha256": "0054e1877119133d0b73591cd091f1077f56b01253245fc498a76cd99a1bf38c",
+      "archive_bytes": 14057,
+      "bindings": {
+        "before": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "23b55c6b15c109db8ea6dd2efb6ab949c51d9d6a8d902ca5381a8a86ba1609e1",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "before",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        },
+        "after": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "23b55c6b15c109db8ea6dd2efb6ab949c51d9d6a8d902ca5381a8a86ba1609e1",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "after",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        }
+      },
+      "blocks": {
+        "baseline": {
+          "completed": false,
+          "failure": {
+            "case": "cline.PreToolUse.watch-review.small",
+            "category": "AssertionError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "e689adfa99c87f78f539e10a1c625ddc628740e3696b4f29255079a74c634393",
+            "field": "route",
+            "line": 758,
+            "native_call_count": 0,
+            "native_call_diagnostic": null,
+            "native_completed_call_count": 0,
+            "observed_semantics": {
+              "delivered": {
+                "available": true,
+                "policy_action": "warn",
+                "reason_code_digest": "18e549883b610e88d22874a748f4b4f925a4743d9ca43605a01064b8d6601109"
+              },
+              "native": {
+                "available": false
+              }
+            },
+            "origin": "native_slo_workloads.validate_case",
+            "policy_refusal_count": 0,
+            "policy_refusal_diagnostic": null,
+            "reason": "qualification_fixture.native_qualification_mismatch",
+            "schema": "hol-guard.native-qualification-failure.v1",
+            "arm": "baseline",
+            "run": 0,
+            "artifact_sha256": "9cb413b6285ae9fdee5edcb4dc193dee2e4cc5683c4dcf57f2e23a26f61a1e08",
+            "timed_out": false,
+            "containment_failed": false,
+            "worker_limit_exceeded": false,
+            "return_code": 1
+          }
+        },
+        "candidate": {
+          "completed": false,
+          "failure": {
+            "case": "codex.PostToolUse.block.1m",
+            "category": "AssertionError",
+            "diagnostic_digest": "112c97845da2292fe6d3149c36d311f79f72758e84a61f81c206fef0d83165f3",
+            "field": "route",
+            "line": 758,
+            "native_call_count": 0,
+            "native_call_diagnostic": null,
+            "native_completed_call_count": 0,
+            "observed_semantics": {
+              "delivered": {
+                "available": true,
+                "policy_action": "allow",
+                "reason_code": "native_policy_not_ready",
+                "reason_code_digest": "dc2fcb527b32d42531558b46d919452608cb85e4b0c3247d2a8751d73edab63d"
+              },
+              "native": {
+                "available": false
+              }
+            },
+            "origin": "native_slo_workloads.validate_case",
+            "policy_refusal_count": 1,
+            "policy_refusal_diagnostic": {
+              "capture_context": "original_policy_refusal_reason",
+              "publisher_error_digest": "1cd1ffbcd2024bd72c954dd7b5f67a1d34b7332907c8c1aa2c442d3d116cf50e",
+              "publisher_error_digest_complete": true,
+              "publisher_error_state": "known",
+              "publisher_error_value": "guardconfigsourceerror",
+              "schema": "hol-guard.policy-refusal-diagnostic.v1"
+            },
+            "reason": "qualification_fixture.native_qualification_mismatch",
+            "schema": "hol-guard.native-qualification-failure.v1",
+            "arm": "candidate",
+            "run": 0,
+            "artifact_sha256": "efd77d97401f8fe979ba07783a9953022fc3343afe660c8ae566ea1e1a28aba7",
+            "timed_out": false,
+            "containment_failed": false,
+            "worker_limit_exceeded": false,
+            "return_code": 1
+          }
+        }
+      },
+      "transition_phases": [
+        {
+          "phase": "clean_baseline",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_upgrade",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_reinstall",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "baseline_rollback",
+          "passed": false,
+          "return_code": 1,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "81bbb4f24d473bde070c1f20bebbcc946a573697af49c6ec2119b9303a601cc7",
+            "line": 58,
+            "origin": "hook_process_runner_lifecycle.require_initial_capacity",
+            "reason": "unclassified_failure",
+            "schema": "hol-guard.native-qualification-failure.v1"
+          }
+        },
+        {
+          "phase": "compatible_candidate_start",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_rollback",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_restore",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        }
+      ],
+      "files": [
+        {
+          "relative": "aggregate/00-baseline-failure.json",
+          "sha256": "d76b55a29979dd7f402a8ca35a73bf0f8d849cce09bec57cfc74e5bfcba6676b",
+          "bytes": 1103
+        },
+        {
+          "relative": "aggregate/00-candidate-failure.json",
+          "sha256": "16f19d90ca35808d40625fd492571a6bafdd35bc86ed6d302f6001b2b5182ad8",
+          "bytes": 1460
+        },
+        {
+          "relative": "aggregate/checkouts-after.json",
+          "sha256": "fd66cccf38998e794d804b8b32f12cb6386fa53d02629b75f2ed610bcd79d4fd",
+          "bytes": 773
+        },
+        {
+          "relative": "aggregate/checkouts-before.json",
+          "sha256": "96ca7471c27fcf2c60186dc1e01e7b0cced169298b667a6c62d5baa2e49ab459",
+          "bytes": 774
+        },
+        {
+          "relative": "aggregate/incomplete-pair.json",
+          "sha256": "fbf08bf718500f608199363b9bf1659cf7b4b2297e6b0c6e40ab0969cbb7c0bd",
+          "bytes": 3173
+        },
+        {
+          "relative": "aggregate/installed-artifact-transitions.json",
+          "sha256": "e2ee30629f4a11f67233943204803890cf4193d780ac053e61ca8288a173d6cf",
+          "bytes": 23666
+        },
+        {
+          "relative": "aggregate/installed-offline-secrets.json",
+          "sha256": "ae7d33e7ff8e8f56e054ec81c629a6186bd02390a4d39376db5484a3d25d1451",
+          "bytes": 18422
+        },
+        {
+          "relative": "aggregate/installed-ollama.json",
+          "sha256": "9679af41df520b7ee9adfe09fd2cbf5859498c1c64b344d98a7c3395d11a5fa8",
+          "bytes": 4532
+        },
+        {
+          "relative": "aggregate/runner-resolver.json",
+          "sha256": "acdd7f45411dfb368703a5a795a153dbfc814f60ef3a676262a123661a7cffed",
+          "bytes": 363
+        },
+        {
+          "relative": "build-metadata.json",
+          "sha256": "a017bb5ffae03240f436e42727d244294c17f39fe9885833e7c5235cf65cdd71",
+          "bytes": 896
+        }
+      ]
+    },
+    {
+      "platform": "mac_arm64",
+      "job_id": 105657622291,
+      "job_conclusion": "failure",
+      "artifact_id": 10555544926,
+      "archive_sha256": "3f34a22832fb99a5bad3f156ab8dde37f8a97e9f504ebe317513923be2ce17bc",
+      "archive_bytes": 37144,
+      "bindings": {
+        "before": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "before",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        },
+        "after": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "after",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        }
+      },
+      "blocks": {
+        "baseline": {
+          "completed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+            "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+            "schema": "hol-guard.native-qualification-failure.v1",
+            "startup_stack": [
+              {
+                "line": 808,
+                "origin": "socket.getfqdn"
+              },
+              {
+                "line": 138,
+                "origin": "http.server.HTTPServer.server_bind"
+              },
+              {
+                "line": 199,
+                "origin": "bounded_http.__init__"
+              },
+              {
+                "line": 662,
+                "origin": "server.__init__"
+              },
+              {
+                "line": 7907,
+                "origin": "server.__init__"
+              },
+              {
+                "line": 330,
+                "origin": "native_slo_session.__init__"
+              },
+              {
+                "line": 358,
+                "origin": "native_slo_daemon_fixture._serve"
+              }
+            ],
+            "arm": "baseline",
+            "run": 0,
+            "artifact_sha256": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+            "timed_out": false,
+            "containment_failed": false,
+            "worker_limit_exceeded": false,
+            "return_code": 1
+          }
+        },
+        "candidate": {
+          "completed": true,
+          "qualification_complete": false,
+          "artifact_sha256": "e6c323ea764f6098653596e7c786684f7074c0d47739a78a66ea4d949d671ba3"
+        }
+      },
+      "transition_phases": [
+        {
+          "phase": "clean_baseline",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_upgrade",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_reinstall",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "baseline_rollback",
+          "passed": false,
+          "return_code": 1,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "82a942eea26d32569751ab9d6161b67d13b08e33ba06c106e60e2ead9a2c7296",
+            "line": 372,
+            "origin": "native_slo_session.start",
+            "reason": "native_installed_slo_failed:_native_policy_was_not_ready",
+            "schema": "hol-guard.native-qualification-failure.v1"
+          }
+        },
+        {
+          "phase": "compatible_candidate_start",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_rollback",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_restore",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        }
+      ],
+      "files": [
+        {
+          "relative": "aggregate/00-baseline-failure.json",
+          "sha256": "9efc3cf6d5c14c8bd8ba45777d849c698689a0518e7f0923d063e7080475efe1",
+          "bytes": 1072
+        },
+        {
+          "relative": "aggregate/00-candidate.json",
+          "sha256": "8169dbc3196365990e943b54744626fbe105ed8d0f7caf070c9a216e1c5dd21a",
+          "bytes": 111403
+        },
+        {
+          "relative": "aggregate/checkouts-after.json",
+          "sha256": "12e15a13505debeea598d8f2066a50a49a32560348fed417fd4f4ba25fa5822d",
+          "bytes": 751
+        },
+        {
+          "relative": "aggregate/checkouts-before.json",
+          "sha256": "3676ab29840e2ed34315de7c0f740d1f01064f40530f5dd591ea1af941e53893",
+          "bytes": 752
+        },
+        {
+          "relative": "aggregate/incomplete-pair.json",
+          "sha256": "3f63f9f4298d7243b5670a87303c81a309ac3af1e1286d4284d306bffdf8bdae",
+          "bytes": 1550
+        },
+        {
+          "relative": "aggregate/installed-artifact-transitions.json",
+          "sha256": "96d77b2adfca78add37c98164802c76b37f4312df0eb3f0c467360c464e6965e",
+          "bytes": 32569
+        },
+        {
+          "relative": "aggregate/installed-offline-secrets.json",
+          "sha256": "891492b3aad83712b27fb538944af4ee6ee7357b5b5e9c7e32824d0df10657e0",
+          "bytes": 17964
+        },
+        {
+          "relative": "aggregate/installed-ollama.json",
+          "sha256": "b3807f34eab0a95abd6e98716486f7e0b06874cf08111873d199ee43d722c597",
+          "bytes": 18132
+        },
+        {
+          "relative": "aggregate/qualification-interpreters.json",
+          "sha256": "e04753d545efc3e2e930dbdbd69b6d1de97bea095ff4d7964c14d9ea7d2487a2",
+          "bytes": 4219
+        },
+        {
+          "relative": "aggregate/runner-resolver.json",
+          "sha256": "40834f103b0e42ca2ddbf67e861029d20767f807f2f72bdaa80eb7770e037853",
+          "bytes": 11582
+        },
+        {
+          "relative": "build-metadata.json",
+          "sha256": "f6b2da5934b9eebc565c8bf7e1f6727e95c3ea556241798e3218fcbe81f2b62f",
+          "bytes": 872
+        }
+      ]
+    },
+    {
+      "platform": "mac_x64",
+      "job_id": 105657622515,
+      "job_conclusion": "failure",
+      "artifact_id": 10556885454,
+      "archive_sha256": "f8488bcfecac50ee9b938636b228e8cd022ecf74e79f55b0a1282786cc42847f",
+      "archive_bytes": 37183,
+      "bindings": {
+        "before": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "before",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        },
+        "after": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "after",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        }
+      },
+      "blocks": {
+        "baseline": {
+          "completed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+            "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+            "schema": "hol-guard.native-qualification-failure.v1",
+            "startup_stack": [
+              {
+                "line": 808,
+                "origin": "socket.getfqdn"
+              },
+              {
+                "line": 138,
+                "origin": "http.server.HTTPServer.server_bind"
+              },
+              {
+                "line": 199,
+                "origin": "bounded_http.__init__"
+              },
+              {
+                "line": 662,
+                "origin": "server.__init__"
+              },
+              {
+                "line": 7907,
+                "origin": "server.__init__"
+              },
+              {
+                "line": 330,
+                "origin": "native_slo_session.__init__"
+              },
+              {
+                "line": 358,
+                "origin": "native_slo_daemon_fixture._serve"
+              }
+            ],
+            "arm": "baseline",
+            "run": 0,
+            "artifact_sha256": "be8e062a4491e6f2b95594ab705f84005fe1707cda134f6545e8b15328c4d37c",
+            "timed_out": false,
+            "containment_failed": false,
+            "worker_limit_exceeded": false,
+            "return_code": 1
+          }
+        },
+        "candidate": {
+          "completed": true,
+          "qualification_complete": false,
+          "artifact_sha256": "b79cdaf8fdfca1e5a4d19a84f70d9626de46eee68d6d1f0b522ee246a6885bac"
+        }
+      },
+      "transition_phases": [
+        {
+          "phase": "clean_baseline",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_upgrade",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_reinstall",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "baseline_rollback",
+          "passed": false,
+          "return_code": 1,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "81bbb4f24d473bde070c1f20bebbcc946a573697af49c6ec2119b9303a601cc7",
+            "line": 58,
+            "origin": "hook_process_runner_lifecycle.require_initial_capacity",
+            "reason": "unclassified_failure",
+            "schema": "hol-guard.native-qualification-failure.v1"
+          }
+        },
+        {
+          "phase": "compatible_candidate_start",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_rollback",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_restore",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        }
+      ],
+      "files": [
+        {
+          "relative": "aggregate/00-baseline-failure.json",
+          "sha256": "1148e7e88f5dc005251bb2f4221d3517c31b91256b5dcc29e52229d8ae070856",
+          "bytes": 1072
+        },
+        {
+          "relative": "aggregate/00-candidate.json",
+          "sha256": "3815935a14b165bb08770b73460410f8b49bf55fd1e895ed3f58f73ed6b628e5",
+          "bytes": 109516
+        },
+        {
+          "relative": "aggregate/checkouts-after.json",
+          "sha256": "12e15a13505debeea598d8f2066a50a49a32560348fed417fd4f4ba25fa5822d",
+          "bytes": 751
+        },
+        {
+          "relative": "aggregate/checkouts-before.json",
+          "sha256": "3676ab29840e2ed34315de7c0f740d1f01064f40530f5dd591ea1af941e53893",
+          "bytes": 752
+        },
+        {
+          "relative": "aggregate/incomplete-pair.json",
+          "sha256": "20cd652f5d5e6f013962a2f1a85fd18335d6f235ef5735bb707c08256718511a",
+          "bytes": 1550
+        },
+        {
+          "relative": "aggregate/installed-artifact-transitions.json",
+          "sha256": "5c742cae701701a8d175b8ea24c662864eccd8f986558147825af2c95bcf59d6",
+          "bytes": 35563
+        },
+        {
+          "relative": "aggregate/installed-offline-secrets.json",
+          "sha256": "d6ec5cb3e90ff8808f6665047eca6168efb281d17fa000e87fcd059cb0467e55",
+          "bytes": 17965
+        },
+        {
+          "relative": "aggregate/installed-ollama.json",
+          "sha256": "72f19e0eeba3b451a545332b0949fb3662182f6bc87a036aa9de30926da46955",
+          "bytes": 18131
+        },
+        {
+          "relative": "aggregate/qualification-interpreters.json",
+          "sha256": "e04753d545efc3e2e930dbdbd69b6d1de97bea095ff4d7964c14d9ea7d2487a2",
+          "bytes": 4219
+        },
+        {
+          "relative": "aggregate/runner-resolver.json",
+          "sha256": "1e6f2b78c4ba4bd08bae427aec55fd015452948939a267bb0a1771bb36a27438",
+          "bytes": 11462
+        },
+        {
+          "relative": "build-metadata.json",
+          "sha256": "341e623be58faa10a1cc0dd46634019e728ab3f82c1a4619f80c22012c1b88a6",
+          "bytes": 870
+        }
+      ]
+    },
+    {
+      "platform": "linux_x64",
+      "job_id": 105657622568,
+      "job_conclusion": "failure",
+      "artifact_id": 10554844912,
+      "archive_sha256": "5a56e2a01b81b11ea2ed18d08414da49926a71698113397c361b865e68e5bc6a",
+      "archive_bytes": 63266,
+      "bindings": {
+        "before": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "before",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        },
+        "after": {
+          "baseline": {
+            "available": true,
+            "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+          },
+          "binding_driver_sha256": "c267dcfde353d603858c9cd64b87ab2781259e0b56fb1f49e7865a94e0e96ffb",
+          "candidate": {
+            "available": true,
+            "commit": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+            "matches_expected": true,
+            "tracked_files_unchanged": true,
+            "tree": "944c35612ff6b6018e82c5fdeb020be4859da596"
+          },
+          "phase": "after",
+          "schema": "hol-guard.native-qualification-checkouts.v1",
+          "workflow_attempt": "1",
+          "workflow_commit": "cafaa68c3f354ac8e6e76a35845ffaf5c73b1a9f",
+          "workflow_run": "35362709565"
+        }
+      },
+      "blocks": {
+        "baseline": {
+          "completed": true,
+          "qualification_complete": false,
+          "artifact_sha256": "fd4ac4285719f1d5099b5236595ccb4a4b88354a555885bba395bb48be49ec0b"
+        },
+        "candidate": {
+          "completed": true,
+          "qualification_complete": false,
+          "artifact_sha256": "f8ead6af4e27eb8ec7bbfb23dbb95323d3d63a2d6531c3a6054050a87bbccb50"
+        }
+      },
+      "transition_phases": [
+        {
+          "phase": "clean_baseline",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_upgrade",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "candidate_reinstall",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "baseline_rollback",
+          "passed": false,
+          "return_code": 1,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": false,
+          "failure": {
+            "category": "RuntimeError",
+            "config_diagnostic_available": false,
+            "diagnostic_digest": "81bbb4f24d473bde070c1f20bebbcc946a573697af49c6ec2119b9303a601cc7",
+            "line": 58,
+            "origin": "hook_process_runner_lifecycle.require_initial_capacity",
+            "reason": "unclassified_failure",
+            "schema": "hol-guard.native-qualification-failure.v1"
+          }
+        },
+        {
+          "phase": "compatible_candidate_start",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_rollback",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        },
+        {
+          "phase": "compatible_candidate_restore",
+          "passed": true,
+          "return_code": 0,
+          "worker_timed_out": false,
+          "worker_containment_failed": false,
+          "worker_limit_exceeded": false,
+          "cleanup_confirmed": true,
+          "failure": null
+        }
+      ],
+      "files": [
+        {
+          "relative": "aggregate/00-baseline.json",
+          "sha256": "3e8e474066b242ddc6e3b13c7c9f3412310d0c9dfa6f00e526d21c5d0a23bea6",
+          "bytes": 96029
+        },
+        {
+          "relative": "aggregate/00-candidate.json",
+          "sha256": "d734b421263fb7552498cf382e896412374e71aec76d0f562ac828eada12c510",
+          "bytes": 110093
+        },
+        {
+          "relative": "aggregate/checkouts-after.json",
+          "sha256": "12e15a13505debeea598d8f2066a50a49a32560348fed417fd4f4ba25fa5822d",
+          "bytes": 751
+        },
+        {
+          "relative": "aggregate/checkouts-before.json",
+          "sha256": "3676ab29840e2ed34315de7c0f740d1f01064f40530f5dd591ea1af941e53893",
+          "bytes": 752
+        },
+        {
+          "relative": "aggregate/comparison.json",
+          "sha256": "00a74556ab39a19531af95728eff01c4a06833137123e8934f9cb1246b292482",
+          "bytes": 32902
+        },
+        {
+          "relative": "aggregate/installed-artifact-transitions.json",
+          "sha256": "6161c6ff068540208676c99572f578f3ab6bb27c4731a25f1eedabe2837670c5",
+          "bytes": 39310
+        },
+        {
+          "relative": "aggregate/installed-claude-launcher-pilot.json",
+          "sha256": "b9543afff05f9c0580e9d27732822f746ed30a7c895c41271126a9d9346f92d2",
+          "bytes": 61593
+        },
+        {
+          "relative": "aggregate/installed-offline-secrets.json",
+          "sha256": "e44c6d38093deeaad7dcb95a5c7f480dc793ffed18199521152db22cba03923a",
+          "bytes": 17964
+        },
+        {
+          "relative": "aggregate/installed-ollama.json",
+          "sha256": "6e16b40abf25bf1ed27be18ecc61e5dd70e008ef7f9089092480ef899fd18a88",
+          "bytes": 18131
+        },
+        {
+          "relative": "aggregate/qualification-interpreters.json",
+          "sha256": "0f9b1d4dc1827c9f364779955397ee8dd995647560671106f79a365e30da652b",
+          "bytes": 4233
+        },
+        {
+          "relative": "aggregate/runner-resolver.json",
+          "sha256": "eddb90d6948db69f1105d16fd1f2b2b0b03c41b2af4e48d51ee2814091390992",
+          "bytes": 352
+        },
+        {
+          "relative": "build-metadata.json",
+          "sha256": "3c52d9a28393b4f1161ff4dcd408369165d9ea3f45dd493c47dc81d2960523ac",
+          "bytes": 900
+        }
+      ]
+    }
+  ]
+}

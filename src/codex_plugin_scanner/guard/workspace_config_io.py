@@ -31,6 +31,9 @@ def read_workspace_toml(workspace: Path, filename: str) -> dict[str, object]:
         if not _is_directory(supplied_before):
             return {}
         root = supplied_root.resolve(strict=True)
+        # Admission already canonicalizes aliases; later redirects are unsafe.
+        if root != Path(os.path.normpath(supplied_root)):
+            return {}
         root_before = root.lstat()
     except (OSError, RuntimeError):
         return {}

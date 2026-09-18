@@ -11,6 +11,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import pytest
 from native_hook_client_support import (
     _authenticate_state,
     _connect_state,
@@ -175,3 +176,94 @@ def test_native_hook_client_rejects_duplicate_edge_keys_without_fallback(
         "error": "native_request_invalid_json",
         "retryable": False,
     }
+
+
+@pytest.mark.parametrize("command", ["hook-client", "resident-client"])
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        b'{"schema":"guard-hook-envelope.v2","schema":"other"}',
+        b'{"nested":{"key":"first","key":"second"}}',
+        b'{} {"private":"synthetic-canary"}',
+        b'{"private":"synthetic-canary"',
+    ],
+)
+def test_invalid_native_client_input_does_not_start_or_mutate_resident(
+    native_runtime: tuple[Path, Path],
+    command: str,
+    malformed: bytes,
+) -> None:
+    runtime, state_dir = native_runtime
+    # No verifier key or resident state is needed to reject invalid JSON.
+    assert list(state_dir.iterdir()) == []
+    result = subprocess.run(
+        (str(runtime), command, "--stdin", str(state_dir)),
+        input=malformed,
+        check=False,
+        capture_output=True,
+        timeout=3,
+    )
+    assert result.returncode == 0
+    assert json.loads(result.stdout) == {"error": "native_request_invalid_json", "retryable": False}
+    assert result.stderr == b""
+    assert list(state_dir.iterdir()) == []
+
+
+def test_native_client_stream_rejects_invalid_frames_without_startup(
+    native_runtime: tuple[Path, Path],
+) -> None:
+    runtime, state_dir = native_runtime
+    payloads = [b'{"key":1,"key":2}', b'{} {"private":"synthetic-canary"}']
+    frames = b"".join(len(payload).to_bytes(4, "big") + payload for payload in payloads)
+    result = subprocess.run(
+        (str(runtime), "resident-client-stream", "--stdin", str(state_dir)),
+        input=frames,
+        check=False,
+        capture_output=True,
+        timeout=3,
+    )
+    assert result.returncode == 0
+    remaining = result.stdout
+    for _payload in payloads:
+        assert len(remaining) >= 4
+        length = int.from_bytes(remaining[:4], "big")
+        assert 0 < length <= 1024
+        assert len(remaining) >= 4 + length
+        assert json.loads(remaining[4 : 4 + length]) == {
+            "error": "native_request_invalid_json",
+            "retryable": False,
+        }
+        remaining = remaining[4 + length :]
+    assert remaining == result.stderr == b""
+    assert _state_files(state_dir) == []
+    assert not (state_dir / "startup.lock").exists()
+
+
+def test_native_resident_rejects_duplicate_keys_over_authenticated_transport(
+    native_runtime: tuple[Path, Path],
+    tmp_path: Path,
+) -> None:
+    runtime, state_dir = native_runtime
+    _invoke(runtime, state_dir, _request(runtime, tmp_path))
+    state_files = _state_files(state_dir)
+    assert len(state_files) == 1
+    state = json.loads(state_files[0].read_text(encoding="utf-8"))
+    malformed = b'{"schema":"guard-hook-envelope.v2","schema":"other"}'
+    request_id = secrets.token_bytes(32)
+    with _connect_state(state) as client:
+        client.settimeout(1)
+        _authenticate_state(client, state)
+        client.sendall(
+            b"HGR2" + request_id + hashlib.sha256(malformed).digest() + len(malformed).to_bytes(4, "big") + malformed
+        )
+        header = _read_exact(client, 72)
+        assert len(header) == 72
+        assert header[:4] == b"HGS2"
+        assert header[4:36] == request_id
+        length = int.from_bytes(header[-4:], "big")
+        assert 0 < length <= 1024
+        response = _read_exact(client, length)
+        assert len(response) == length
+        assert hmac.compare_digest(header[36:68], hashlib.sha256(response).digest())
+        assert json.loads(response) == {"error": "native_request_invalid_json", "retryable": False}
+    assert _state_files(state_dir) == state_files

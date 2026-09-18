@@ -79,6 +79,7 @@ def _edge(
     payload: dict[str, Any],
     *,
     observe: bool,
+    case_name: str,
 ) -> dict[str, Any]:
     result = native_hook_edge.review_raw_hook_native(
         payload=payload,
@@ -92,7 +93,7 @@ def _edge(
         deadline=time.monotonic() + 5,
         policy_snapshot=publisher.current_snapshot_binding(),
     )
-    assert result is not None, "actual resident response is required"
+    assert result is not None, f"{case_name}: actual resident response is required"
     assert result["schema"] == "guard-hook-edge-result.v3" and result["authority"] == "rust"
     assert publisher.result_binding_is_current(result["policy_binding"])
     assert result["policy_binding"]["selected_decision_id"] is None
@@ -128,7 +129,13 @@ def test_generic_origins_reach_actual_auto_resident(tmp_path: Path, monkeypatch:
             publisher._publish_once()
             assert publisher.is_ready(), (case["name"], publisher.last_error)
             result = _edge(
-                publisher, status, source.workspace, source.home, case["payload"], observe=case["mode"] == "observe"
+                publisher,
+                status,
+                source.workspace,
+                source.home,
+                case["payload"],
+                observe=case["mode"] == "observe",
+                case_name=case["name"],
             )
             expected = case["expected"]
             assert result["result"]["policy_action"] == expected["finalPolicyAction"], case["name"]
@@ -182,7 +189,9 @@ def test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident(
             publisher.request_publish()
             publisher._publish_once()
             assert publisher.is_ready(), publisher.last_error
-            result = _edge(publisher, status, workspace, tmp_path, payload, observe=mode == "observe")
+            result = _edge(
+                publisher, status, workspace, tmp_path, payload, observe=mode == "observe", case_name=f"lockdown-{mode}"
+            )
             assert result["result"]["policy_action"] == "block" and result["result"]["decision"] == "deny"
             assert result["observed_policy_action"] is None
         keyring = store.get_sync_payload("policy_bundle_keyring")
@@ -199,7 +208,9 @@ def test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident(
         store.clear_policy_bundle_authority(now, policy_bundle_last_error={"reason": "synthetic-clear"})
         publisher._publish_once()
         assert publisher.is_ready(), publisher.last_error
-        cleared = _edge(publisher, status, workspace, tmp_path, payload, observe=True)
+        cleared = _edge(
+            publisher, status, workspace, tmp_path, payload, observe=True, case_name="explicit-clear-observe"
+        )
         assert cleared["result"]["policy_action"] == "allow" and cleared["result"]["decision"] == "allow"
         assert cleared["policy_binding"]["source_input_digest"] != result["policy_binding"]["source_input_digest"]
     finally:

@@ -71,28 +71,14 @@ from .commands_support_hook_payload import _coalesce_string
 from .commands_support_runtime_policy import _runtime_data_flow_summary
 from .commands_support_runtime_resolution import _canonical_harness_name, _runtime_policy_path
 
+# isort: split
+# Preserve explicit event identity after the legacy wildcard exports.
+from ..runtime.hook_event_names import _HOOK_EVENT_NAME_MAP, _hook_event_name
+
 
 def _optional_string(value: object | None) -> str | None:
     if isinstance(value, str) and value.strip():
         return value.strip()
-    return None
-
-
-_HOOK_EVENT_NAME_MAP = {
-    "userpromptsubmitted": "UserPromptSubmit",
-    "pretooluse": "PreToolUse",
-    "posttooluse": "PostToolUse",
-    "permissionrequest": "PermissionRequest",
-    "permissionrequestv2": "PermissionRequest",
-}
-
-
-def _hook_event_name(payload: dict[str, object]) -> str | None:
-    for key in ("event", "hook_event_name", "hookEventName", "hook_name"):
-        value = payload.get(key)
-        if isinstance(value, str) and value.strip():
-            normalized = value.strip()
-            return _HOOK_EVENT_NAME_MAP.get(normalized.lower(), normalized)
     return None
 
 

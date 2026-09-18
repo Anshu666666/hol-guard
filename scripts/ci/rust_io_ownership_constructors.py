@@ -13,7 +13,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from scripts.ci.rust_io_ownership_defaults import static_default
-from scripts.ci.rust_io_ownership_symbols import _bindings, _known_dataclass, _known_exception_base
+from scripts.ci.rust_io_ownership_symbols import _bindings, _known_dataclass, _known_exception_base, _known_typing_final
 
 CONSTRUCTOR = "<constructor>"
 _PURE_FACTORIES = frozenset({"dict", "list", "set", "tuple", "frozenset", "str", "bytes", "int", "float", "bool"})
@@ -185,8 +185,14 @@ def constructor_node(
     exception_base = _known_exception_base(cls, module_body)
     if (cls.bases and not exception_base) or cls.keywords:
         return None
-    dataclass_init = _dataclass_init(cls, module_body) if cls.decorator_list else False
-    if cls.decorator_list and dataclass_init is None:
+    markers = [d for d in cls.decorator_list if _known_typing_final(d, module_body, root)]
+    if len(markers) > 1:
+        return None
+    decorated = copy.copy(cls)
+    decorated.decorator_list = [d for d in cls.decorator_list if d not in markers]
+    is_dataclass = bool(decorated.decorator_list)
+    dataclass_init = _dataclass_init(decorated, module_body) if is_dataclass else False
+    if is_dataclass and dataclass_init is None:
         return None
     methods: dict[str, ast.FunctionDef] = {}
     factories: list[ast.expr] = []
@@ -204,7 +210,7 @@ def constructor_node(
                 return None
             fields.add(name)
             if item.value is not None and not literal(item.value):
-                if not cls.decorator_list:
+                if not is_dataclass:
                     return None
                 valid, factory = _field_factory(item.value, module_body, cls.body, literal)
                 if not valid:

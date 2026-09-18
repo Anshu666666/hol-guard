@@ -270,6 +270,15 @@ def _category(path: str, kind: str) -> str:
     return "unclassified_python_io"
 
 
+def _directory_fsync_open(record: FunctionRecord, node: ast.Call) -> bool:
+    # This exact descriptor-only durability primitive remains in the inventory.
+    # Added content reads or other opens keep their ordinary classifications.
+    if record.path != "src/codex_plugin_scanner/guard/durable_io.py" or record.qualname != "fsync_directory":
+        return False
+    expected = ast.parse("os.open(path, os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0))", mode="eval").body
+    return ast.dump(node, include_attributes=False) == ast.dump(expected, include_attributes=False)
+
+
 def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
     path = record.path
     if record.name in _EQUIVALENCE_FUNCTIONS:
@@ -291,7 +300,8 @@ def _observations(record: FunctionRecord) -> Iterable[IoObservation]:
             elif name in _ARCHIVE_MODULES:
                 kind, operation = "archive", name
             if kind is not None and operation is not None:
-                yield IoObservation(path, node.lineno, operation, kind, _category(path, kind), True)
+                category = "persistence_only" if _directory_fsync_open(record, node) else _category(path, kind)
+                yield IoObservation(path, node.lineno, operation, kind, category, True)
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".", maxsplit=1)[0]

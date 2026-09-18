@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 from ._commands_shared import *
 from .commands_parser_helpers import *
+from ..adapters import get_adapter
 from ..runtime.approval_context import build_runtime_launch_identity
 from ..runtime.mcp_protection import McpServerIdentity, build_mcp_server_identity
 from ..synced_policy import synced_policy_payload as _synced_policy_payload

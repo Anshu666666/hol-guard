@@ -181,6 +181,37 @@ def _known_dataclass(decorator: ast.expr, body: list[ast.stmt]) -> bool:
     return False
 
 
+def _known_typing_final(decorator: ast.expr, body: list[ast.stmt], root: Path | None) -> bool:
+    """Trust only an unchanged, earlier standard typing marker import."""
+    if root is None or isinstance(decorator, ast.Call):
+        return False
+    value = decorator
+    head = value if isinstance(value, ast.Name) else value.value if isinstance(value, ast.Attribute) else None
+    if not isinstance(head, ast.Name):
+        return False
+    sites = _bindings(body, head.id)
+    if len(sites) != 1 or not sites[0][1]:
+        return False
+    node = sites[0][0]
+    line = getattr(node, "lineno", None)
+    if not isinstance(line, int) or line >= decorator.lineno:
+        return False
+    if isinstance(value, ast.Name) and isinstance(node, ast.ImportFrom):
+        module = node.module
+        exact = node.level == 0 and any(a.name == "final" and (a.asname or a.name) == head.id for a in node.names)
+    elif isinstance(value, ast.Attribute) and value.attr == "final" and isinstance(node, ast.Import):
+        module = next((a.name for a in node.names if (a.asname or a.name) == head.id), None)
+        exact = True
+    else:
+        return False
+    return (
+        exact
+        and isinstance(module, str)
+        and module in {"typing", "typing_extensions"}
+        and _repository_module_path(root, module) is None
+    )
+
+
 def _known_exception_base(cls: ast.ClassDef, module_body: list[ast.stmt]) -> bool:
     """Admit only direct, unshadowed built-in bases without constructor dispatch."""
     bases = {
@@ -206,13 +237,16 @@ def _known_exception_base(cls: ast.ClassDef, module_body: list[ast.stmt]) -> boo
 
 
 def _class_method(
-    module_path: str, cls: ast.ClassDef, parts: tuple[str, ...], module_body: list[ast.stmt]
+    module_path: str, cls: ast.ClassDef, parts: tuple[str, ...], module_body: list[ast.stmt], root: Path
 ) -> ImportedCallable | None:
     if (
         len(parts) != 1
         or (cls.bases and not _known_exception_base(cls, module_body))
         or cls.keywords
-        or any(not _known_dataclass(d, module_body) for d in cls.decorator_list)
+        or any(
+            not (_known_dataclass(d, module_body) or _known_typing_final(d, module_body, root))
+            for d in cls.decorator_list
+        )
     ):
         return None
     sites = _bindings(cls.body, parts[0])
@@ -286,7 +320,7 @@ def resolve_member(
             if constructor_node(node, tree.body, root=root, module_path=module_path) is not None:
                 return ImportedCallable(module_path, f"{node.name}.{CONSTRUCTOR}")
             return None
-        return _class_method(module_path, node, parts[1:], tree.body)
+        return _class_method(module_path, node, parts[1:], tree.body, root)
     if isinstance(node, (ast.ImportFrom, ast.Import)):
         alias = next(
             a

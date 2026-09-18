@@ -169,12 +169,36 @@ def _known_dataclass(decorator: ast.expr, body: list[ast.stmt]) -> bool:
     return False
 
 
+def _known_exception_base(cls: ast.ClassDef, module_body: list[ast.stmt]) -> bool:
+    """Admit only direct, unshadowed built-in bases without constructor dispatch."""
+    bases = {
+        "Exception",
+        "ValueError",
+        "TypeError",
+        "RuntimeError",
+        "LookupError",
+        "ArithmeticError",
+        "AssertionError",
+        "NotImplementedError",
+        "KeyError",
+        "IndexError",
+    }
+    return (
+        len(cls.bases) == 1
+        and isinstance(cls.bases[0], ast.Name)
+        and cls.bases[0].id in bases
+        and not _bindings(module_body, cls.bases[0].id)
+        and not cls.keywords
+        and not cls.decorator_list
+    )
+
+
 def _class_method(
     module_path: str, cls: ast.ClassDef, parts: tuple[str, ...], module_body: list[ast.stmt]
 ) -> ImportedCallable | None:
     if (
         len(parts) != 1
-        or cls.bases
+        or (cls.bases and not _known_exception_base(cls, module_body))
         or cls.keywords
         or any(not _known_dataclass(d, module_body) for d in cls.decorator_list)
     ):

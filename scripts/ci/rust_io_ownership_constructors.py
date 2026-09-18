@@ -1,6 +1,6 @@
 """Strict constructor call records for the decision-critical I/O graph.
 
-Only source-visible, non-inherited classes are modeled. A generated dataclass
+Only source-visible classes with no repository inheritance are modeled. A generated dataclass
 initializer includes all named factory and post-init edges; no input arguments
 are used to prune possible calls. Unsupported construction is left unresolved.
 """
@@ -13,7 +13,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from scripts.ci.rust_io_ownership_defaults import static_default
-from scripts.ci.rust_io_ownership_symbols import _bindings, _known_dataclass
+from scripts.ci.rust_io_ownership_symbols import _bindings, _known_dataclass, _known_exception_base
 
 CONSTRUCTOR = "<constructor>"
 _PURE_FACTORIES = frozenset({"dict", "list", "set", "tuple", "frozenset", "str", "bytes", "int", "float", "bool"})
@@ -182,7 +182,8 @@ def constructor_node(
     def literal(value: ast.expr) -> bool:
         return _literal(value) or static_default(value, module_body, cls.body, root=root, module_path=module_path)
 
-    if cls.bases or cls.keywords:
+    exception_base = _known_exception_base(cls, module_body)
+    if (cls.bases and not exception_base) or cls.keywords:
         return None
     dataclass_init = _dataclass_init(cls, module_body) if cls.decorator_list else False
     if cls.decorator_list and dataclass_init is None:
@@ -224,7 +225,7 @@ def constructor_node(
             continue
         else:
             return None
-    if "__new__" in methods and not _new_returns_known_type(methods["__new__"], module_body):
+    if "__new__" in methods and (exception_base or not _new_returns_known_type(methods["__new__"], module_body)):
         return None
     calls: list[ast.stmt] = []
 

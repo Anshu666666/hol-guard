@@ -1,0 +1,203 @@
+"""Observe exact registration, request construction and receiver path admission.
+
+No daemon, native runtime, launcher process or network transport is started.
+The request opener is stopped before I/O. The unchanged receiver runs only
+through path validation, stopping before the original policy barrier.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+import tempfile
+import time
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlencode, urlparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--source-root", required=True, type=Path)
+parser.add_argument("--fixture-root", required=True, type=Path)
+parser.add_argument("--output", required=True, type=Path)
+parser.add_argument("--source-commit", required=True)
+args = parser.parse_args()
+source = args.source_root.resolve()
+package = source / "src"
+fixture = args.fixture_root.resolve()
+ROOT = args.output.resolve().parent
+sys.path[:0] = [str(package), str(fixture)]
+
+from codex_plugin_scanner.guard.adapters.base import HarnessContext
+from codex_plugin_scanner.guard.adapters import bounded_cli_hook_bridge as bridge
+from codex_plugin_scanner.guard.adapters import bounded_cli_hook_daemon as bridge_daemon
+from codex_plugin_scanner.guard.daemon import server
+from codex_plugin_scanner.guard.daemon import hook_worker_responses
+from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_slo_command_fixture import prepare_empty_command_authority
+from scripts.native_slo_registered_surfaces import install_registered_surface
+from scripts.native_slo_registered_surfaces_run import surface_cases
+from scripts.native_slo_workloads import build_cases
+
+
+class StopBeforeTransport(BaseException):
+    pass
+
+
+with tempfile.TemporaryDirectory(prefix="pure-admission-", dir=ROOT) as temporary:
+    home = Path(temporary).resolve()
+    guard_home, workspace = home / ".hol-guard", home / "workspace"
+    guard_home.mkdir(mode=0o700)
+    workspace.mkdir(mode=0o700)
+    context = HarnessContext(home_dir=home, workspace_dir=workspace, guard_home=guard_home)
+    store = GuardStore(guard_home)
+    authority = prepare_empty_command_authority(store)
+    managed = {"after_authority_provisioning": store.list_managed_installs()}
+    surfaces = install_registered_surface(context, "copilot")
+    managed["after_copilot_registration"] = store.list_managed_installs()
+    assert all(value == [] for value in managed.values())
+    daemon_metadata = SimpleNamespace(
+        home_dir=home,
+        store=store,
+        request_deadline=lambda _request, timeout: time.monotonic() + timeout,
+    )
+    if (package / "codex_plugin_scanner/guard/daemon/config_read_scope.py").is_file():
+        from codex_plugin_scanner.guard.daemon.config_read_scope import HookConfigReadScope
+
+        daemon_metadata.hook_config_scope = HookConfigReadScope.for_guard_home(guard_home)
+    unmanaged = {
+        harness: hook_worker_responses._hook_harness_is_unmanaged(daemon_metadata, harness)
+        for harness in ("cursor", "copilot", "claude-code", "codex")
+    }
+    assert all(value is False for value in unmanaged.values())
+    handler = object.__new__(server._GuardDaemonHandler)
+    handler.server = daemon_metadata
+    handler.request = object()
+    received = []
+    validated = []
+    original_validator = handler._validated_hook_directory_string
+
+    def trace_validator(parameter, value, *, roots=None):
+        result = original_validator(parameter, value, roots=roots)
+        validated.append({"parameter": parameter, "value": result})
+        return result
+
+    def capture_policy(_handler, _server, payload, params, harness, seen_workspace, _deadline):
+        received.append({"workspace": seen_workspace, "payload": payload, "params": params, "harness": harness})
+        return False
+
+    observed_requests = []
+
+    class Opener:
+        def open(self, request, timeout):
+            observed_requests.append((request, timeout))
+            raise StopBeforeTransport
+
+    state = guard_home / "daemon-state.json"
+    state.write_text(json.dumps({"host": "127.0.0.1", "port": 4871}))
+    state.chmod(0o600)
+    authentication = guard_home / "daemon-auth-token"
+    authentication.write_text("pure-context-witness-only")
+    authentication.chmod(0o600)
+    cases = build_cases(workspace, system="Linux")
+    records = []
+    for surface in surfaces:
+        if surface.event != "preToolUse":
+            continue
+        case = next(item for item in surface_cases(cases, surface) if item.case_id == "copilot/preToolUse/benign/small")
+        payload = dict(case.payload)
+        assert "cwd" not in payload
+        expected_receiver_payload = {key: value for key, value in payload.items() if key not in {"hook_env", "guard_remaining_ms"}}
+        encoded = json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
+        configuration = json.loads(surface.argv[-1])
+        with patch.object(bridge_daemon, "_build_loopback_opener", lambda: Opener()):
+            try:
+                bridge.run_bounded_cli_hook(configuration, input_text=encoded)
+            except StopBeforeTransport:
+                pass
+            else:
+                raise AssertionError("actual request did not reach capture boundary")
+        request, timeout = observed_requests[-1]
+        assert request.data == encoded.encode()
+        actual_query = urlparse(request.full_url).query
+        assert actual_query != ""
+        assert request.get_header("X-guard-token") == "pure-context-witness-only"
+        assert request.get_method() == "POST"
+        cli_args = configuration["cli_args"]
+        configured_query = {}
+        for flag, query_name in (("--guard-home", "guard-home"), ("--home", "home"), ("--workspace", "workspace")):
+            if flag in cli_args:
+                configured_query[query_name] = cli_args[cli_args.index(flag) + 1]
+        assert parse_qs(actual_query) == {key: [value] for key, value in configured_query.items()}
+        comparisons = []
+        for label, query in (("actual_request", actual_query), ("configured_arguments_control", urlencode(configured_query))):
+            validated.clear()
+            with patch.object(server, "_native_mode_requires_rust", lambda: True), patch.object(
+                server, "prepare_native_hook_policy", capture_policy
+            ), patch.object(handler, "_validated_hook_directory_string", trace_validator):
+                handler._handle_runtime_hook(dict(payload), query, default_harness="copilot")
+            observation = received[-1]
+            wanted_workspace = str(workspace) if surface.scope == "project" else None
+            assert observation["workspace"] == wanted_workspace
+            assert observation["payload"] == expected_receiver_payload, {
+                "actual_fields": sorted(observation["payload"]),
+                "expected_fields": sorted(expected_receiver_payload),
+                "changed_fields": [key for key in expected_receiver_payload if observation["payload"].get(key) != expected_receiver_payload[key]],
+            }
+            home_validation = next(item["value"] for item in validated if item["parameter"] == "home")
+            comparisons.append({
+                "boundary": label,
+                "query_fields": sorted(parse_qs(query)),
+                "received_workspace": "configured_workspace" if observation["workspace"] == str(workspace) else None,
+                "validated_home": "configured_home" if home_validation == str(home) else None,
+                "payload_change_only_existing_transport_metadata_removal": observation["payload"] == expected_receiver_payload,
+                "payload_has_cwd": "cwd" in observation["payload"],
+            })
+        records.append({
+            "scope": surface.scope,
+            "harness": surface.harness,
+            "case_id": case.case_id,
+            "payload_fields": sorted(payload),
+            "payload_digest": hashlib.sha256(encoded.encode()).hexdigest(),
+            "registration_digest": surface.registration_sha256,
+            "configured_query_fields": sorted(configured_query),
+            "registered_cwd_is_guard_home": surface.cwd == guard_home,
+            "actual_request_body_unchanged": request.data == encoded.encode(),
+            "actual_request_authentication_unchanged": request.get_header("X-guard-token") == "pure-context-witness-only",
+            "actual_request_method": request.get_method(),
+            "actual_request_timeout_seconds": timeout,
+            "receiver_comparisons": comparisons,
+        })
+
+modules = (bridge, bridge_daemon, server, hook_worker_responses)
+sources = []
+for module in modules:
+    path = Path(module.__file__).resolve()
+    relative = path.relative_to(package.resolve())
+    content = path.read_bytes()
+    assert content == (source / "src" / relative).read_bytes()
+    sources.append({"module": module.__name__, "relative_path": str(relative),
+                    "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
+                    "same_git_source_bytes": True, "from_hosted_wheel": False})
+
+report = {
+    "schema": "hol-guard.registration-receiver-context-witness.v1",
+    "arm": "repaired_local_source",
+    "mapped_commit_sha": args.source_commit,
+    "source_scope": "committed local forwarding repair source; unchanged source590 receiver and fixture",
+    "paired_installed_wheel_observed": False,
+    "scope": "actual registration and request construction; unchanged receiver path admission; controlled configured-query comparison",
+    "sources": sources, "records": records,
+    "managed_install_counts": {phase: len(items) for phase, items in managed.items()},
+    "unmanaged_gate_results": unmanaged,
+    "authority_fixture": authority,
+    "performance_run": False, "launcher_process_executed": False,
+    "daemon_started": False, "authenticated_transport_executed": False,
+    "native_evaluation_executed": False, "qualification_claimed": False,
+    "historical_failed_case_identified": False,
+    "private_temporary_state_exported": False,
+}
+output = args.output
+output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+print(json.dumps({"output": output.name, "sha256": hashlib.sha256(output.read_bytes()).hexdigest(), "records": len(records)}))

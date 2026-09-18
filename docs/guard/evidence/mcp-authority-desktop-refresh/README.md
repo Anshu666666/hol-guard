@@ -1,0 +1,13 @@
+# Desktop corpus refresh after MCP callback authority repair
+
+The repository generator ran once on clean source and ownership commit `6f930c563e4f4e7d43e3bc74171636bc7cbd9d43`, whose production repair is `7e735d294fe3e9b753b8a07ede30c2e865da9d5e`. Fixture-only commit `3ce15cf9db2ebcaef146e1160b510c65b9650847` contains the resulting report. This evidence is carried separately from the code commit.
+
+All 51,000 cases were evaluated. Removing only `bindings.sources_sha256` makes the original and regenerated report objects exactly equal: corpus membership, transition groups, framed case membership digests, legacy/current/proposed outcomes, oracle reconciliation and privacy fields are unchanged. Current/proposed has zero disposition changes and zero lowerings; legacy/current has zero lowerings. Oracle reconciliation retains 51,000 reconciled cases, zero unreconciled cases and no gaps.
+
+The actual generator inventory contains 395 source bindings. The sole changed entry is `src/codex_plugin_scanner/guard/runtime/mcp_server_grants.py`, from `fc08039f1e4f052886f7c8d6a6d005b41f7ea3b5a8b9baa1202de4a91a0097d8` to `edb30cde2475ed5be0e3e43b14f7e4872dac1970a41ea7b80db2f7411acc0c88`. Every regenerated value matches the corresponding current source, and every source remained unchanged throughout generation and validation. The source inventory and corpus limits were not edited.
+
+The original fixture SHA-256 is `2b60b7fa1eb771a3f8d0cff456a26997f31b914836c06d7857044ba2a1cce754`; the regenerated fixture SHA-256 is `327eb243b492245910b9630f6da932fcaa7702c5784a3a976c23040ec991310d`. The regenerated framed report digest is `46cb7cf2075fdc77e9586d2f0ba0dc1da0972d085401a17fd12181af218261cd` and appears in the fixture commit trailer.
+
+The generator completed successfully in 17.775 seconds. The exact command-decision-diff and Desktop contract scope passed all 16 tests in 53.33 seconds (57.505 seconds including process startup). This includes exact reproduction and two fresh processes with different hash seeds, time zones and locales; both retained the existing 45-second and 512-MiB limits. The test logs report pass/fail, not the individual successful subprocess resource values, so no unreported measurements are inferred.
+
+`validation.json` is the original unmodified runner receipt. Original and generated fixtures, raw stdout/stderr, the runner, generator, test sources, changed grant source, ownership mapping and seed manifest are preserved losslessly. `followup.json` records the clean fixture-only commit. `manifest.json` binds every stored artifact and the uncompressed contents of gzip files. No RSP-100 performance cohort, E/F campaign or RSP-106 work ran in this scope.

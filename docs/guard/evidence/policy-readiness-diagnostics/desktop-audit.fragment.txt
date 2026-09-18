@@ -1,0 +1,25 @@
+generator_path = 'tests/guard_command_decision_diff.py'
+generator = (ROOT/generator_path).read_bytes()
+assert generator == original(generator_path)
+tree = ast.parse(generator)
+assignment = next(node for node in tree.body if isinstance(node,ast.AnnAssign) and isinstance(node.target,ast.Name) and node.target.id == '_EVIDENCE_SOURCE_PATHS')
+paths = eval(compile(ast.Expression(assignment.value),generator_path,'eval'),{'REPO_ROOT':ROOT})
+fixture_path = 'tests/fixtures/guard-command-corpus/decision-diff-report.json'
+fixture_bytes = (ROOT/fixture_path).read_bytes()
+fixture = json.loads(fixture_bytes)
+fixture_bindings = fixture['bindings']['sources_sha256']
+inventory = []
+for path in sorted(set(path.resolve() for path in paths)):
+    relative = str(path.relative_to(ROOT))
+    binding_id = 'source-'+sha(relative.encode())[:24]
+    digest = sha(path.read_bytes())
+    inventory.append({'path':relative,'binding_id':binding_id,'sha256':digest,'fixture_sha256':fixture_bindings[binding_id],'matches':digest==fixture_bindings[binding_id]})
+assert len(inventory)==395
+assert all(row['matches'] for row in inventory)
+assert {row['binding_id'] for row in inventory} == set(fixture_bindings)
+changed_paths = CHANGED
+overlap = sorted(set(changed_paths)&{row['path'] for row in inventory})
+assert not overlap
+assert sha(fixture_bytes)=='2b60b7fa1eb771a3f8d0cff456a26997f31b914836c06d7857044ba2a1cce754'
+binding_proof={'source_sha':SOURCE,'checked_at':datetime.now(timezone.utc).isoformat(),'binding_count':395,'fixture_path':fixture_path,'fixture_sha256':sha(fixture_bytes),'generator_path':generator_path,'generator_sha256':sha(generator),'actual_inventory_expression_evaluated_read_only':True,'report_generation_invoked':False,'all_bindings_match':True,'changed_paths':changed_paths,'changed_paths_in_inventory':overlap,'regeneration_required':False,'inventory':inventory}
+(OUT/'desktop-binding-proof.json').write_text(json.dumps(binding_proof,indent=2)+'\n')

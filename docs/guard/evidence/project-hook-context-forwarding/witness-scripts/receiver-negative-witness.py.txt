@@ -1,0 +1,127 @@
+"""Read-only argument/admission controls against the unchanged hosted590 wheel.
+
+These calls stop before native policy preparation. They are not an HTTP request,
+daemon run, repaired production path, paired run, or performance qualification.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+import tempfile
+import time
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+from urllib.parse import urlencode
+
+ROOT = Path(__file__).resolve().parent
+package = ROOT / "hosted-candidate-wheel"
+sys.path.insert(0, str(package))
+from codex_plugin_scanner.guard.adapters.bounded_cli_hook_bridge import _validated_frozen_cli_args
+from codex_plugin_scanner.guard.daemon import server
+from codex_plugin_scanner.guard.daemon.config_read_scope import HookConfigReadScope
+
+with tempfile.TemporaryDirectory(prefix="admission-controls-", dir=ROOT) as temporary:
+    root = Path(temporary).resolve()
+    own_home, other_home = root / "own", root / "peer"
+    guard_home, workspace = own_home / ".hol-guard", own_home / "workspace"
+    peer_guard, peer_workspace = other_home / ".hol-guard", other_home / "workspace"
+    for directory in (guard_home, workspace, peer_guard, peer_workspace):
+        directory.mkdir(mode=0o700, parents=True)
+    prefix = ["guard", "hook", "--guard-home", str(guard_home), "--harness", "copilot"]
+    trusted = [*prefix, "--home", str(own_home), "--workspace", str(workspace)]
+    argument_cases = {
+        "trusted_exact_flags": trusted,
+        "relative_home": [*prefix, "--home", "relative"],
+        "relative_workspace": [*prefix, "--workspace", "relative"],
+        "duplicate_home": [*trusted, "--home", str(other_home)],
+        "duplicate_workspace": [*trusted, "--workspace", str(peer_workspace)],
+        "unknown_path_flag": [*trusted, "--working-directory", str(peer_workspace)],
+        "missing_path_value": [*prefix, "--home"],
+        "cross_session_guard_home": ["guard", "hook", "--guard-home", str(peer_guard), "--harness", "copilot"],
+        "different_harness": ["guard", "hook", "--guard-home", str(guard_home), "--harness", "grok"],
+    }
+    argument_results = []
+    for label, arguments in argument_cases.items():
+        validated = _validated_frozen_cli_args(arguments, guard_home=guard_home, harness="copilot")
+        assert (validated is not None) is (label == "trusted_exact_flags")
+        argument_results.append({"case": label, "accepted_by_unchanged_exact_argument_validator": validated is not None})
+
+    handler = object.__new__(server._GuardDaemonHandler)
+    handler.server = SimpleNamespace(
+        home_dir=own_home,
+        store=SimpleNamespace(guard_home=guard_home),
+        hook_config_scope=HookConfigReadScope.for_guard_home(guard_home),
+        request_deadline=lambda _request, timeout: time.monotonic() + timeout,
+    )
+    handler.request = object()
+    seen = []
+    rejections = []
+
+    def capture_policy(_handler, _server, payload, params, harness, received_workspace, _deadline):
+        seen.append({"workspace": received_workspace, "harness": harness})
+        return False
+
+    def capture_rejection(*, parameter, reason):
+        rejections.append({"parameter": parameter, "reason": reason})
+
+    normal = {"guard-home": str(guard_home), "home": str(own_home), "workspace": str(workspace)}
+    receiver_cases = {
+        "trusted_exact_flags": normal,
+        "relative_home": {**normal, "home": "relative"},
+        "relative_workspace": {**normal, "workspace": "relative"},
+        "cross_session_home": {**normal, "home": str(other_home)},
+        "cross_session_workspace": {**normal, "workspace": str(peer_workspace)},
+        "cross_session_guard_home": {**normal, "guard-home": str(peer_guard)},
+    }
+    receiver_results = []
+    for label, query in receiver_cases.items():
+        rejections.clear()
+        with patch.object(server, "_native_mode_requires_rust", lambda: True), patch.object(
+            server, "prepare_native_hook_policy", capture_policy
+        ), patch.object(handler, "_record_hook_path_rejection", capture_rejection):
+            handler._handle_runtime_hook(
+                {"hook_event_name": "preToolUse", "tool_name": "Bash", "tool_input": {"command": "pwd"}},
+                urlencode(query),
+                default_harness="copilot",
+            )
+        admitted = seen[-1]["workspace"]
+        assert admitted == (str(workspace) if label == "trusted_exact_flags" else None)
+        assert bool(rejections) is (label != "trusted_exact_flags")
+        receiver_results.append({
+            "case": label,
+            "received_workspace": "configured_workspace" if admitted == str(workspace) else None,
+            "path_rejections": list(rejections),
+            "cross_session_path_admitted": admitted == str(peer_workspace),
+        })
+
+modules = (
+    "codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py",
+    "codex_plugin_scanner/guard/daemon/server.py",
+    "codex_plugin_scanner/guard/daemon/config_read_scope.py",
+)
+source_receipts = []
+for relative in modules:
+    content = (package / relative).read_bytes()
+    assert content == (ROOT / "source/candidate/src" / relative).read_bytes()
+    source_receipts.append({"relative_path": relative, "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+report = {
+    "schema": "hol-guard.existing-admission-controls.v1",
+    "mapped_commit_sha": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+    "source_scope": "unchanged hosted native-CI wheel; identical590 source tree",
+    "scope": "pure existing strict argument and receiver path validation",
+    "guard_mode": "existing_native_required_path",
+    "invalid_metadata_behavior": "path rejection and daemon-owned context, before original native policy barrier",
+    "sources": source_receipts,
+    "argument_cases": argument_results,
+    "receiver_cases": receiver_results,
+    "native_policy_preparation_executed": False,
+    "transport_executed": False,
+    "performance_run": False,
+    "production_repair_executed": False,
+    "qualification_claimed": False,
+}
+out = ROOT / "candidate-receiver-negative-witness.json"
+out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+print(json.dumps({"output": out.name, "sha256": hashlib.sha256(out.read_bytes()).hexdigest()}))

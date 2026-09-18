@@ -1,0 +1,80 @@
+{
+  "schema": "guard.windows-policy-readiness.read-only-witness.v1",
+  "source_sha": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+  "scope": "Inert local doubles exercise existing preparation, Ollama failure collection, and production PostToolUse rendering. This demonstrates diagnostic information loss and the existing fail-fast branch, not a reproduction of either hosted cause or any native transport.",
+  "production_files_changed": false,
+  "native_transport_executed": false,
+  "separate_causes_collapse_to_identical_existing_reports": true,
+  "records": [
+    {
+      "injected_fixed_publisher_code": "native_policy_windows_acl_verify_failed",
+      "in_original_ollama_allowlist": false,
+      "original_prepare_calls": [
+        "register_workspace",
+        "start",
+        "current_snapshot_binding",
+        "current_snapshot"
+      ],
+      "original_ollama_failure": {
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "category": "AssertionError",
+        "reason": "qualification_fixture.installed_ollama_native_readiness_failed",
+        "diagnostic_digest": "a31cbd2e1bd90d5aa6a7ea912b3fcf6895ce24da66dc1afd9d0b372654be2ac0",
+        "phase": "enabled",
+        "readiness": {
+          "expected_revision": 1,
+          "budget_ms": 400.0,
+          "elapsed_ms": 0.0,
+          "snapshot_returned": false,
+          "budget_exhausted": false,
+          "publisher_ready_after_failure": false,
+          "publisher_closed_after_failure": false,
+          "publisher_error": "unclassified"
+        }
+      },
+      "original_generated_reason_sha256": "1115da09d7dcd49757f53ff93d940098f895aa85a6dec0df4796a1e3db87027f",
+      "original_posttool_response": {
+        "decision": "allow",
+        "policy_action": "allow",
+        "reason_code": "native_policy_not_ready"
+      },
+      "generated_reason_omitted_by_posttool_rendering": true,
+      "route": "native_fail_safe"
+    },
+    {
+      "injected_fixed_publisher_code": "native_policy_snapshot_generation_lock_timeout",
+      "in_original_ollama_allowlist": false,
+      "original_prepare_calls": [
+        "register_workspace",
+        "start",
+        "current_snapshot_binding",
+        "current_snapshot"
+      ],
+      "original_ollama_failure": {
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "category": "AssertionError",
+        "reason": "qualification_fixture.installed_ollama_native_readiness_failed",
+        "diagnostic_digest": "a31cbd2e1bd90d5aa6a7ea912b3fcf6895ce24da66dc1afd9d0b372654be2ac0",
+        "phase": "enabled",
+        "readiness": {
+          "expected_revision": 1,
+          "budget_ms": 400.0,
+          "elapsed_ms": 0.0,
+          "snapshot_returned": false,
+          "budget_exhausted": false,
+          "publisher_ready_after_failure": false,
+          "publisher_closed_after_failure": false,
+          "publisher_error": "unclassified"
+        }
+      },
+      "original_generated_reason_sha256": "ee508fa1def80215695fdef9011c58cfb6d5406d4e0772fc44b7cd3101ba4129",
+      "original_posttool_response": {
+        "decision": "allow",
+        "policy_action": "allow",
+        "reason_code": "native_policy_not_ready"
+      },
+      "generated_reason_omitted_by_posttool_rendering": true,
+      "route": "native_fail_safe"
+    }
+  ]
+}

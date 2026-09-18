@@ -1,0 +1,42 @@
+{
+  "additional_observed_checks": [
+    {
+      "check": "Ruff check and format on all four changed files",
+      "receipt_kind": "owner observation; independent stdout not retained",
+      "result": "passed; all four files already formatted"
+    },
+    {
+      "check": "Basedpyright on the two changed production modules",
+      "receipt_kind": "owner observation; independent stdout not retained",
+      "result": "0 errors, 0 warnings, 0 notes"
+    }
+  ],
+  "hosted_measurement": false,
+  "initial_test_iteration": {
+    "causes": [
+      "New test initially created its synthetic guard home with permissions rejected by existing private-state checks.",
+      "Four pre-existing test URL assertions expected the bare endpoint and needed exact admitted context assertions."
+    ],
+    "correction_scope": "test fixture and URL assertions only; reviewed production source was unchanged",
+    "failed": 5,
+    "passed": 193,
+    "receipt_kind": "owner observation; complete initial stdout not retained"
+  },
+  "mapped_commit_sha": "d8a4259a7145a5cecc0524b80ea8cb27e287eb21",
+  "qualification_claimed": false,
+  "schema": "hol-guard.project-hook-context-validation.v1",
+  "standalone_after_witness": {
+    "exit_code": 0,
+    "records": 2,
+    "report": "after-receiver-context-witness.json"
+  },
+  "test_command": "PYTHONPATH=src:. /workspace/scratch/c25672eb4c10/validation-venv/bin/python -m pytest tests/test_bounded_cli_hook*.py -q",
+  "test_result": {
+    "duration_seconds": 1.86,
+    "failed": 0,
+    "passed": 198,
+    "raw_tool_result": "final-tests-tool-result.json",
+    "stdout": "final-tests.log"
+  },
+  "working_directory": "/workspace/scratch/c25672eb4c10/project-hook-context-fix"
+}

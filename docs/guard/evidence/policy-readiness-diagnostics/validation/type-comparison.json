@@ -1,0 +1,80 @@
+{
+  "explicit_pythonpath": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+  "error_records_equal": true,
+  "records": [
+    {
+      "stage": "types-baseline-explicit-python",
+      "summary": {
+        "filesAnalyzed": 3,
+        "errorCount": 4,
+        "warningCount": 143,
+        "informationCount": 0,
+        "timeInSec": 1.788
+      },
+      "errors": [
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[SupportsRichComparisonT@sorted]\" in function \"sorted\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[SupportsRichComparisonT@sorted]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
+          "rule": "reportArgumentType",
+          "source_line": "    setups = sorted(manifest[\"setup_requirements\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"evidence\" of type \"Mapping[str, object]\" in function \"validate_setup\"\n\u00a0\u00a0\"object\" is not assignable to \"Mapping[str, object]\"",
+          "rule": "reportArgumentType",
+          "source_line": "                    validate_setup(case, evidence[\"setup\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"response\" of type \"Mapping[str, object] | None\" in function \"validate_native_result\"\n\u00a0\u00a0Type \"object\" is not assignable to type \"Mapping[str, object] | None\"\n\u00a0\u00a0\u00a0\u00a0\"object\" is not assignable to \"Mapping[str, object]\"\n\u00a0\u00a0\u00a0\u00a0\"object\" is not assignable to \"None\"",
+          "rule": "reportArgumentType",
+          "source_line": "                    validate_native_result(case, evidence[\"native_result\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "\"cases\" is possibly unbound",
+          "rule": "reportPossiblyUnboundVariable",
+          "source_line": "    platform_scope = platform_scope_summary(cases, validated)"
+        }
+      ],
+      "new_helper_diagnostics": []
+    },
+    {
+      "stage": "types-final-explicit-python",
+      "summary": {
+        "filesAnalyzed": 4,
+        "errorCount": 4,
+        "warningCount": 148,
+        "informationCount": 0,
+        "timeInSec": 1.784
+      },
+      "errors": [
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"iterable\" of type \"Iterable[SupportsRichComparisonT@sorted]\" in function \"sorted\"\n\u00a0\u00a0\"object\" is incompatible with protocol \"Iterable[SupportsRichComparisonT@sorted]\"\n\u00a0\u00a0\u00a0\u00a0\"__iter__\" is not present",
+          "rule": "reportArgumentType",
+          "source_line": "    setups = sorted(manifest[\"setup_requirements\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"evidence\" of type \"Mapping[str, object]\" in function \"validate_setup\"\n\u00a0\u00a0\"object\" is not assignable to \"Mapping[str, object]\"",
+          "rule": "reportArgumentType",
+          "source_line": "                    validate_setup(case, evidence[\"setup\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"response\" of type \"Mapping[str, object] | None\" in function \"validate_native_result\"\n\u00a0\u00a0Type \"object\" is not assignable to type \"Mapping[str, object] | None\"\n\u00a0\u00a0\u00a0\u00a0\"object\" is not assignable to \"Mapping[str, object]\"\n\u00a0\u00a0\u00a0\u00a0\"object\" is not assignable to \"None\"",
+          "rule": "reportArgumentType",
+          "source_line": "                    validate_native_result(case, evidence[\"native_result\"])"
+        },
+        {
+          "file": "native_slo_corpus_run.py",
+          "message": "\"cases\" is possibly unbound",
+          "rule": "reportPossiblyUnboundVariable",
+          "source_line": "    platform_scope = platform_scope_summary(cases, validated)"
+        }
+      ],
+      "new_helper_diagnostics": []
+    }
+  ]
+}

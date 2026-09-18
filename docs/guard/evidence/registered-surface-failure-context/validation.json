@@ -1,0 +1,78 @@
+{
+  "logs": [
+    {
+      "bytes": 110,
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_native_slo_surface_failure.py",
+        "tests/test_native_slo_launcher_input.py",
+        "tests/test_native_slo_registered_surfaces.py",
+        "tests/test_native_slo_registered_surfaces_evidence.py",
+        "-q"
+      ],
+      "environment": {
+        "PYTHONPATH": "src:."
+      },
+      "exit_code": 0,
+      "file": "pytest.log",
+      "sha256": "1a2af6e771b6be210325af1f4bcca5374adce5b7128296608dc8291b892ccbd1"
+    },
+    {
+      "bytes": 30,
+      "command": [
+        "python",
+        "-m",
+        "basedpyright",
+        "--level",
+        "error",
+        "scripts/native_slo_surface_failure.py",
+        "scripts/native_slo_launcher_input.py",
+        "scripts/native_slo_registered_surfaces_run.py"
+      ],
+      "exit_code": 0,
+      "file": "basedpyright.log",
+      "sha256": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+    },
+    {
+      "bytes": 45,
+      "commands": [
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "scripts/native_slo_surface_failure.py",
+          "scripts/native_slo_launcher_input.py",
+          "scripts/native_slo_registered_surfaces_run.py",
+          "tests/test_native_slo_surface_failure.py",
+          "tests/test_native_slo_launcher_input.py",
+          "tests/test_native_slo_registered_surfaces.py"
+        ],
+        [
+          "python",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "scripts/native_slo_surface_failure.py",
+          "scripts/native_slo_launcher_input.py",
+          "scripts/native_slo_registered_surfaces_run.py",
+          "tests/test_native_slo_surface_failure.py",
+          "tests/test_native_slo_launcher_input.py",
+          "tests/test_native_slo_registered_surfaces.py"
+        ]
+      ],
+      "exit_code": 0,
+      "file": "ruff.log",
+      "sha256": "899431ded41f52f0e596057b046dea82d3c0e3557b51b29f591e62f24ab0c713"
+    }
+  ],
+  "mapped_commit_sha": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+  "schema": "hol-guard.surface-failure-validation.v1",
+  "scope": "finite unit and registration tests; no performance or hosted qualification run",
+  "skip_reason": "real Win32 CommandLineToArgvW qualification on non-Windows host",
+  "tests_passed": 70,
+  "tests_skipped": 1
+}

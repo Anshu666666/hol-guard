@@ -1,0 +1,135 @@
+"""Check that removing the exact additive observations recovers original AST."""
+
+import ast
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+ROOT = Path('/workspace/scratch/c25672eb4c10/policy-readiness-diagnostics')
+OUT = Path('/workspace/scratch/c25672eb4c10/windows-policy-readiness-review')
+SOURCE = subprocess.check_output(['git', 'rev-parse', '69a09bc9'], cwd=ROOT).decode().strip()
+OBSERVED_SOURCE = '590ce01334a7724f3f1349b2ab252110a5a268f5'
+CHANGED = [
+    'scripts/native_slo_faults.py', 'scripts/native_slo_corpus_run.py',
+    'scripts/ci/installed_native_ollama_probe.py', 'scripts/native_slo_publisher_diagnostic.py',
+    'tests/test_native_slo_publisher_diagnostic.py', 'tests/test_native_slo_faults.py',
+    'tests/test_native_slo_corpus_run.py', 'tests/test_installed_native_ollama_probe.py',
+]
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+def original(path, revision=SOURCE):
+    return subprocess.check_output(['git', 'show', f'{revision}:{path}'], cwd=ROOT)
+
+class RemoveDiagnosticAdditions(ast.NodeTransformer):
+    def __init__(self):
+        self.removed = []
+
+    def record(self, kind, node):
+        self.removed.append({'kind':kind, 'line':node.lineno, 'ast':ast.dump(node, include_attributes=False)})
+
+    def visit_ImportFrom(self, node):
+        if node.module == 'scripts.native_slo_publisher_diagnostic' or (
+            node.module == 'codex_plugin_scanner.guard.daemon' and [alias.name for alias in node.names] == ['hook_worker_responses']
+        ):
+            self.record('diagnostic_import', node)
+            return None
+        return node
+
+    def visit_AnnAssign(self, node):
+        if isinstance(node.target, ast.Attribute) and node.target.attr in {
+            'last_policy_refusal_diagnostic', 'policy_refusal_calls', 'policy_refusal_observer_installed'
+        }:
+            self.record('diagnostic_state_declaration', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        assert len(node.targets) >= 1
+        target=node.targets[0]
+        if isinstance(target, ast.Name) and target.id in {'owned_server', 'original_reason'}:
+            self.record('diagnostic_observer_setup', node)
+            return None
+        if isinstance(target, ast.Attribute) and target.attr in {'last_policy_refusal_diagnostic', 'policy_refusal_calls'}:
+            self.record('case_diagnostic_reset', node)
+            return None
+        if isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Constant) and target.slice.value in {
+            'policy_refusal_diagnostic', 'policy_refusal_count'
+        }:
+            self.record('additive_failure_envelope_field', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_If(self, node):
+        if ast.dump(node.test) == ast.dump(ast.parse('callable(original_reason)', mode='eval').body):
+            assert isinstance(node.body[0], ast.FunctionDef) and node.body[0].name == 'capture_policy_refusal'
+            self.record('entire_optional_owned_daemon_observer', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Try(self, node):
+        calls=[part.func.id for part in ast.walk(node) if isinstance(part, ast.Call) and isinstance(part.func, ast.Name)]
+        if 'publisher_error_diagnostic' in calls:
+            assert len(node.body)==1 and len(node.handlers)==1 and not node.orelse and not node.finalbody
+            self.record('additive_ollama_diagnostic_after_existing_timestamps_and_reads', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Dict(self, node):
+        pairs=[]
+        for key,value in zip(node.keys,node.values):
+            if isinstance(key,ast.Constant) and key.value in {'policy_refusal_diagnostic','policy_refusal_count'}:
+                self.record('additive_private_case_result_field',key)
+            else:
+                pairs.append((key,value))
+        node.keys=[key for key,_ in pairs]
+        node.values=[value for _,value in pairs]
+        return self.generic_visit(node)
+
+results=[]
+for path in CHANGED[:3]:
+    before=original(path)
+    assert before == original(path, OBSERVED_SOURCE), path
+    after=(ROOT/path).read_bytes()
+    normalizer=RemoveDiagnosticAdditions()
+    old_ast=ast.dump(ast.parse(before), include_attributes=False)
+    stripped=normalizer.visit(ast.parse(after))
+    new_ast=ast.dump(stripped, include_attributes=False)
+    results.append({'path':path,'before_sha256':sha(before),'after_sha256':sha(after),
+        'base_same_bytes_as_observed_590':True,'original_ast_sha256':sha(old_ast.encode()),
+        'diagnostics_removed_ast_sha256':sha(new_ast.encode()),
+        'equal_after_exact_listed_instrumentation_removed':old_ast==new_ast,'removed':normalizer.removed})
+    if old_ast != new_ast:
+        (OUT/'unexpected-normalized.ast').write_text(ast.unparse(stripped))
+        raise AssertionError(path)
+
+unchanged=[]
+for path in [
+    'scripts/native_slo_contract.py','scripts/native_slo_workloads.py','scripts/native_slo_failure.py',
+    'scripts/native_slo_session.py','scripts/native_slo_native_diagnostic.py',
+    'scripts/ci/native_ollama_contract.py',
+    'src/codex_plugin_scanner/guard/daemon/hook_worker.py',
+    'src/codex_plugin_scanner/guard/daemon/hook_worker_responses.py',
+    'src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py',
+    'src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py',
+    'src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py',
+]:
+    before=original(path)
+    current=(ROOT/path).read_bytes()
+    assert before == current, path
+    unchanged.append({'path':path,'sha256':sha(current),'exactly_unchanged':True,
+        'same_bytes_as_observed_590':current==original(path, OBSERVED_SOURCE)})
+assert not subprocess.check_output(['git','diff','--name-only',SOURCE,'--','src'],cwd=ROOT)
+assert not subprocess.check_output(['git','ls-files','--others','--exclude-standard','src'],cwd=ROOT)
+proof={'schema':'guard.policy-readiness-diagnostics.source-scope.v1','source_sha':SOURCE,
+    'observed_source_sha':OBSERVED_SOURCE,'checked_at':datetime.now(timezone.utc).isoformat(),
+    'normalization_scope':'Only explicitly recorded observer imports, fields, setup and capture block, plus the additive Ollama serializer call after original timestamps/property reads, are removed. Every other AST node must equal the original. No production source changed; original exception/return behavior and new classifier semantics are covered by focused independent tests.',
+    'instrumented_files':results,'unchanged_files':unchanged,'production_diff_empty':True}
+(OUT/'source-scope-proof.json').write_text(json.dumps(proof,indent=2)+'\n')
+
+exec((OUT/'desktop-audit.fragment').read_text())
+print(json.dumps({'original_ast_matches':True,'instrumented_files':len(results),'unchanged_files':len(unchanged),
+    'desktop_bindings':395,'changed_bound_files':overlap,'generator_invoked':False}))

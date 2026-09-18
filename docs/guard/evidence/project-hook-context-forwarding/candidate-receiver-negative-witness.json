@@ -1,0 +1,131 @@
+{
+  "argument_cases": [
+    {
+      "accepted_by_unchanged_exact_argument_validator": true,
+      "case": "trusted_exact_flags"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "relative_home"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "relative_workspace"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "duplicate_home"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "duplicate_workspace"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "unknown_path_flag"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "missing_path_value"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "cross_session_guard_home"
+    },
+    {
+      "accepted_by_unchanged_exact_argument_validator": false,
+      "case": "different_harness"
+    }
+  ],
+  "guard_mode": "existing_native_required_path",
+  "invalid_metadata_behavior": "path rejection and daemon-owned context, before original native policy barrier",
+  "mapped_commit_sha": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+  "native_policy_preparation_executed": false,
+  "performance_run": false,
+  "production_repair_executed": false,
+  "qualification_claimed": false,
+  "receiver_cases": [
+    {
+      "case": "trusted_exact_flags",
+      "cross_session_path_admitted": false,
+      "path_rejections": [],
+      "received_workspace": "configured_workspace"
+    },
+    {
+      "case": "relative_home",
+      "cross_session_path_admitted": false,
+      "path_rejections": [
+        {
+          "parameter": "home",
+          "reason": "relative_path"
+        }
+      ],
+      "received_workspace": null
+    },
+    {
+      "case": "relative_workspace",
+      "cross_session_path_admitted": false,
+      "path_rejections": [
+        {
+          "parameter": "workspace",
+          "reason": "relative_path"
+        }
+      ],
+      "received_workspace": null
+    },
+    {
+      "case": "cross_session_home",
+      "cross_session_path_admitted": false,
+      "path_rejections": [
+        {
+          "parameter": "home",
+          "reason": "unexpected_root"
+        }
+      ],
+      "received_workspace": null
+    },
+    {
+      "case": "cross_session_workspace",
+      "cross_session_path_admitted": false,
+      "path_rejections": [
+        {
+          "parameter": "workspace",
+          "reason": "unexpected_root"
+        }
+      ],
+      "received_workspace": null
+    },
+    {
+      "case": "cross_session_guard_home",
+      "cross_session_path_admitted": false,
+      "path_rejections": [
+        {
+          "parameter": "guard-home",
+          "reason": "unexpected_guard_home"
+        }
+      ],
+      "received_workspace": null
+    }
+  ],
+  "schema": "hol-guard.existing-admission-controls.v1",
+  "scope": "pure existing strict argument and receiver path validation",
+  "source_scope": "unchanged hosted native-CI wheel; identical590 source tree",
+  "sources": [
+    {
+      "bytes": 15256,
+      "relative_path": "codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py",
+      "sha256": "f1678127e825e18ee1fc26190feaaed5338311ec337cfce79e8569c192449855"
+    },
+    {
+      "bytes": 393804,
+      "relative_path": "codex_plugin_scanner/guard/daemon/server.py",
+      "sha256": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243"
+    },
+    {
+      "bytes": 3017,
+      "relative_path": "codex_plugin_scanner/guard/daemon/config_read_scope.py",
+      "sha256": "ece6a6221ea598505806e23bc45d639deb4504a2751f47c3233254eb8c166df3"
+    }
+  ],
+  "transport_executed": false
+}

@@ -1,0 +1,88 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import zipfile
+
+ROOT = Path('/workspace/scratch/c25672eb4c10/policy-readiness-diagnostics')
+REVIEW = Path('/workspace/scratch/c25672eb4c10/windows-policy-readiness-review')
+HOSTED = Path('/workspace/scratch/c25672eb4c10/hosted-main-590')
+OUT = ROOT/'docs/guard/evidence/policy-readiness-diagnostics'
+OUT.mkdir(parents=True, exist_ok=False)
+records = []
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+def save(relative, data, *, compress=False, source=None):
+    path = OUT/relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    saved = gzip.compress(data, mtime=0) if compress else data
+    path.write_bytes(saved)
+    row = {'path':relative,'bytes':len(saved),'sha256':sha(saved)}
+    if compress:
+        row.update(decoded_bytes=len(data),decoded_sha256=sha(data),decoded_path=relative.removesuffix('.gz'))
+    if source:
+        row['source'] = source
+    records.append(row)
+
+save('README.md',(REVIEW/'README.final.md').read_bytes())
+save('PLAN.initial.md',(REVIEW/'PLAN.md').read_bytes())
+for name in ['provenance.json','candidate-source.json','validation-toolchain.json','catalog-source-provenance.json','read-only-witness.json']:
+    save(name,(REVIEW/name).read_bytes())
+for name in ['source-scope-proof.json','desktop-binding-proof.json','closed-code-inventory.json']:
+    save(name+'.gz',(REVIEW/name).read_bytes(),compress=True)
+for name in ['run-check.py','verify-source-scope.py','desktop-audit.fragment','read-only-witness.py','package-evidence.py']:
+    save(name+'.txt',(REVIEW/name).read_bytes())
+for path in sorted((REVIEW/'source').rglob('*')):
+    if path.is_file():
+        relative=str(path.relative_to(REVIEW))
+        save(relative+'.gz',path.read_bytes(),compress=True,source='590ce01334a7724f3f1349b2ab252110a5a268f5:'+str(path.relative_to(REVIEW/'source')))
+for path in sorted((REVIEW/'validation').iterdir()):
+    if path.is_file():
+        relative='validation/'+path.name
+        save(relative+('.gz' if path.suffix=='.log' else ''),path.read_bytes(),compress=path.suffix=='.log')
+for path in sorted((REVIEW/'type-baseline').rglob('*')):
+    if path.is_file():
+        relative=str(path.relative_to(REVIEW))
+        compress=path.suffix=='.py'
+        save(relative+('.gz' if compress else ''),path.read_bytes(),compress=compress)
+
+archive=HOSTED/'artifacts/10541486704.zip'
+provenance=json.loads((REVIEW/'provenance.json').read_text())
+assert sha(archive.read_bytes())==provenance['artifact_sha256']
+with zipfile.ZipFile(archive) as zipped:
+    assert set(zipped.namelist())=={record['name'] for record in provenance['artifact_members']}
+    for record in provenance['artifact_members']:
+        data=zipped.read(record['name'])
+        assert len(data)==record['bytes'] and sha(data)==record['sha256']
+        save('observed/'+record['name']+'.gz',data,compress=True,source='https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10541486704/zip#'+record['name'])
+save('observed/windows-paired-artifact-members.json',(HOSTED/'artifact-member-records/10541486704.json').read_bytes())
+save('observed/windows-paired-job-log-receipt.json',(HOSTED/'capture-receipts/paired-windows-log.log.json').read_bytes())
+save('observed/windows-paired-job.log.gz',(HOSTED/'raw/paired-windows-log.log').read_bytes(),compress=True)
+candidate=json.loads((REVIEW/'candidate-source.json').read_text())
+patch=subprocess.check_output(['git','diff',candidate['parent'],candidate['source_commit'],'--','scripts','tests'],cwd=ROOT)
+save('source-change.patch.gz',patch,compress=True)
+manifest={
+    'schema':'guard.policy-readiness-diagnostics.evidence.v1',
+    'baseline_source':candidate['parent'],
+    'observed_paired_source':'590ce01334a7724f3f1349b2ab252110a5a268f5',
+    'frozen_qualification_baseline':'2e672d2d950c6ec471005ddba46e49bba16dc23b',
+    'local_source_commit':candidate['source_commit'],
+    'local_source_tree':candidate['source_tree'],
+    'scope':'Bounded private-fixture observation of existing policy-refusal and Ollama error values. Historical hosted cause/common cause unresolved. No installed/native transport execution or qualification claim for new fields.',
+    'records':records,
+}
+(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+for row in records:
+    data=(OUT/row['path']).read_bytes()
+    assert len(data)==row['bytes'] and sha(data)==row['sha256']
+    if 'decoded_sha256' in row:
+        decoded=gzip.decompress(data)
+        assert len(decoded)==row['decoded_bytes'] and sha(decoded)==row['decoded_sha256']
+        if row['decoded_path'].endswith('.json'):
+            json.loads(decoded)
+    elif row['path'].endswith('.json'):
+        json.loads(data)
+print(json.dumps({'path':str(OUT),'records':len(records),'manifest_sha256':sha((OUT/'manifest.json').read_bytes()),'bytes':sum(row['bytes'] for row in records)},indent=2))

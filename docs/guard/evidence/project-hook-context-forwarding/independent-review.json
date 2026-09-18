@@ -1,0 +1,48 @@
+{
+  "scope": "Independent read-only source review, no test execution or source edits",
+  "base_commit": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py",
+      "bytes": 15283,
+      "sha256": "a488666fcf088a24b95f651746061dde8973b306a0d49c63ecda3c1f5f68f76b"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+      "bytes": 20124,
+      "sha256": "dc9dbd32b49e50c43ee5f599ad75599e00caf90b79addd115a2f7e93a68ad860"
+    },
+    {
+      "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+      "bytes": 10762,
+      "sha256": "9b00de17244f6fb6a3607914b702cd77c8aa00ceb450356e24414925e0eb9a14"
+    },
+    {
+      "path": "tests/test_bounded_cli_hook_context.py",
+      "bytes": 10030,
+      "sha256": "2eb6f3ab599ced74018c68cbcff06bb084200e2914be3d55465c15e40dd6ea65"
+    }
+  ],
+  "sources_identical_before_after_review": true,
+  "strict_cli_validator_ast_unchanged": true,
+  "receiver_file_byte_identical": true,
+  "receiver_sha256": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243",
+  "bridge_ast_identical_except_forwarding_original_cli_args": true,
+  "daemon_function_ast_identical_except_optional_parameter_and_context_projection": true,
+  "projection_blocks_removed_for_ast_comparison": [
+    "context declaration",
+    "cli_args is not None",
+    "context"
+  ],
+  "observations": [
+    "The same strict parser matches the configured absolute guard-home and exact harness; optional flags remain only absolute home/workspace with duplicate/malformed flags rejected.",
+    "Unknown grammar returns None before daemon state or authentication is read, preserving the original non-frozen CLI fallback.",
+    "Only normalized guard-home and admitted optional paths are URL-encoded; endpoint origin/path, POST body, token header, response limits, verdict conversion and timeout calculation remain unchanged.",
+    "Tests cover actual generated global/project registrations, special-character path encoding, actual receiver scope preparation, eight grammar/identity fallback cases, receiver rejection and loopback/authentication controls."
+  ],
+  "substantiated_findings": [],
+  "limits": [
+    "Owner test execution is separate; this review ran no tests.",
+    "No claim of global-versus-project equivalence, historical experiment repair, daemon network integration, latency improvement or hosted qualification."
+  ]
+}

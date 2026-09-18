@@ -1,0 +1,103 @@
+"""Exercise the pinned readiness/rendering functions with inert local doubles."""
+
+from __future__ import annotations
+
+from contextlib import ExitStack
+import hashlib
+import json
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from ci.native_runtime import probe_native_default_auto
+from codex_plugin_scanner.guard.daemon import hook_worker as worker_module
+from codex_plugin_scanner.guard.daemon.hook_availability_policy import availability_harness_response
+from codex_plugin_scanner.guard.daemon.hook_worker import HookWorker
+from codex_plugin_scanner.guard.daemon.hook_worker_responses import prepare_native_hook_policy
+from scripts.ci import installed_native_ollama_probe as ollama
+from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+
+OUT = Path('/workspace/scratch/c25672eb4c10/windows-policy-readiness-review')
+OUT.mkdir(parents=True,exist_ok=True)
+records=[]
+codes=['native_policy_windows_acl_verify_failed','native_policy_snapshot_generation_lock_timeout']
+
+for code in codes:
+    calls=[]
+
+    class Publisher:
+        last_error=code
+        closed=False
+
+        def register_workspace(self, workspace):
+            calls.append('register_workspace')
+            return False
+
+        def start(self):
+            calls.append('start')
+
+        def wait_until_ready(self, deadline):
+            calls.append('wait_until_ready')
+            return False
+
+        def current_snapshot_binding(self):
+            calls.append('current_snapshot_binding')
+            return None
+
+        def current_snapshot(self):
+            calls.append('current_snapshot')
+            return None
+
+        def is_ready(self):
+            return False
+
+    worker=HookWorker.__new__(HookWorker)
+    worker._publish_native_policy=True
+    worker.policy_snapshot_publisher=Publisher()
+    routes=[]
+    worker.metrics=SimpleNamespace(record_route=routes.append)
+    server=SimpleNamespace(hook_worker=worker)
+    session=SimpleNamespace(workspace=Path('synthetic-workspace'),daemon=SimpleNamespace(_server=server))
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(worker_module,'native_mode',lambda:'auto'))
+        ticks=iter((100.0,100.0))
+        stack.enter_context(patch.object(ollama.time,'monotonic',lambda:next(ticks)))
+        try:
+            ollama.ready_binding(session,1,phase='enabled')
+        except FixtureFailureError as error:
+            report=failure_evidence(error)
+        else:
+            raise AssertionError('expected original readiness rejection')
+    preparation_calls=list(calls)
+    assert 'wait_until_ready' not in preparation_calls
+    assert report['readiness']['publisher_error']=='unclassified'
+    assert report['readiness']['elapsed_ms']==0.0
+    assert not report['readiness']['budget_exhausted']
+
+    class Handler:
+        result=None
+        original_reason=None
+
+        def _runtime_hook_fail_safe_response(self,payload,params,*,default_harness,reason,reason_code,native_authoritative):
+            self.original_reason=reason
+            return availability_harness_response(payload,harness=default_harness,event_name='PostToolUse',reason=reason,reason_code=reason_code)
+
+        def _write_json(self,value):
+            self.result=value
+
+    handler=Handler()
+    payload={'hook_event_name':'PostToolUse','tool_name':'Read','tool_response':[{'type':'text','text':''}],'guard_remaining_ms':3000}
+    with patch.object(worker_module,'native_mode',lambda:'auto'):
+        prepared=prepare_native_hook_policy(handler,server,payload,{},'pi','synthetic-workspace',100.4)
+    assert prepared is False
+    assert routes==['native_fail_safe']
+    assert handler.result['reason_code']=='native_policy_not_ready'
+    assert 'reason' not in handler.result
+    assert handler.original_reason.endswith(code+'.')
+    records.append({'injected_fixed_publisher_code':code,'in_original_ollama_allowlist':code in ollama._PUBLISHER_ERRORS,'original_prepare_calls':preparation_calls,'original_ollama_failure':report,'original_generated_reason_sha256':hashlib.sha256(handler.original_reason.encode()).hexdigest(),'original_posttool_response':handler.result,'generated_reason_omitted_by_posttool_rendering':True,'route':routes[0]})
+
+assert records[0]['original_ollama_failure']==records[1]['original_ollama_failure']
+assert records[0]['original_posttool_response']==records[1]['original_posttool_response']
+result={'schema':'guard.windows-policy-readiness.read-only-witness.v1','source_sha':'590ce01334a7724f3f1349b2ab252110a5a268f5','scope':'Inert local doubles exercise existing preparation, Ollama failure collection, and production PostToolUse rendering. This demonstrates diagnostic information loss and the existing fail-fast branch, not a reproduction of either hosted cause or any native transport.','production_files_changed':False,'native_transport_executed':False,'separate_causes_collapse_to_identical_existing_reports':True,'records':records}
+(OUT/'read-only-witness.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({'records':len(records),'old_reports_identical':True,'wait_until_ready_called':False,'native_transport_executed':False,'output':str(OUT/'read-only-witness.json')},indent=2))

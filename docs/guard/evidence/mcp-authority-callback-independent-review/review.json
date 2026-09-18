@@ -1,0 +1,33 @@
+{
+  "base_commit": "b157e5b33493b17c439b4237d750bb436382d9b9",
+  "fixed_source_commit": "7e735d294fe3e9b753b8a07ede30c2e865da9d5e",
+  "initial_owner_source_manifest_sha256": "f541b50c383226a63c917c5f85e470f15a852c1197a506ca94f84057e680ac57",
+  "fixed_owner_source_manifest_sha256": "b20ec684364545295abef0daaaf0ff436448c132b5d4c6efe57d8ae73c3cbdf5",
+  "fixed_independent_snapshot_sha256": "9f5dcef7b8fe4030e13507a0918bb1fcc81b437ebf052cf2cac6c509ba1e8504",
+  "expanded_test_sha256": "4c54be9e98e34eb987c4182789d2c559f323af0c0d8eb3b7f0bc49ed3e25c221",
+  "finding": {
+    "location": "RuntimeMcpGuardProxy._handle_package_request",
+    "problem": "A selected mutable package artifact could change during the first successful drain or a fresh tool grant callback, then be recaptured as new package authority.",
+    "observed_initial": "Both mutation variants caused a second package evaluator call with changed private metadata and an actual child write; unchanged control forwarded.",
+    "repair": "Check the original selected package authority after successful drain and again after fresh tool preparation, before recapturing the package artifact.",
+    "observed_fixed": "Both mutation variants make exactly one original package evaluation, no child write, and fixed tool_call_authority_changed. Unchanged control forwards.",
+    "status": "fixed in the exact reviewed source"
+  },
+  "reviewed_boundaries": [
+    "Complete plain JSON request ownership and immutable final frame remain selected by explicit tool intent and object identity.",
+    "Authority binds exact complete supported config/context/catalog and actual artifact data, including private metadata, before grant/browser/saved lookup and claim callbacks.",
+    "A private evaluator returned copy is validated against the source artifact and the object actually consumed receives its own binding.",
+    "Nested invocation scopes restore prior checks; final ordinary/package forwarding receives the selected check explicitly.",
+    "Unsupported authority inside a proxy invocation is terminal; legacy unsupported direct Python helper behavior cannot remove final proxy guarding.",
+    "Post-claim refresh explicitly selects fresh tool/package authority; the original 5 ms catalog fence remains before the final frame.",
+    "Verified package rewrites keep original request binding as parent and bind replacement bytes.",
+    "No new authority check occurs after a completed write; existing detached argument receipt projection remains before forwarding."
+  ],
+  "unresolved_substantiated_findings_in_requested_scope": [],
+  "scope_limits": [
+    "Finite local independent correctness evidence only; no universal security clearance.",
+    "The scanner callback is an explicit fixed evaluation fixture. The child records JSON and returns forwarded; it does not run npm.",
+    "No performance measurement, hosted cohort, campaign/profile entrypoint, E/F reactivation, threshold change, security alert disposition, or RSP-100 qualification.",
+    "Root and implementation owner retain responsibility for broader integration, Desktop generation, repository checks, and hosted validation."
+  ]
+}

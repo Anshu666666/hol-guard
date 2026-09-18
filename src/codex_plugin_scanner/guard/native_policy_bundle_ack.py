@@ -20,6 +20,7 @@ from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .native_policy_snapshot_publisher_scoped import _policy_fingerprint, compiled_scoped_policy
 from .policy_bundle_ack_contract import generic_ack_matches_bundle, validated_generic_policy_acknowledgement
 from .policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
+from .policy_canonical_rollout import canonical_policy_enforcement_enabled
 
 if TYPE_CHECKING:
     from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
@@ -91,7 +92,16 @@ def commit_native_policy_bundle_acknowledgement(
     store = publisher.store
     source = acceptance.source
     installation_id = source.get("device_id")
-    if not isinstance(installation_id, str) or not native_mode_requires_rust():
+    workspace_id = source.get("workspace_id")
+    if not isinstance(installation_id, str) or not isinstance(workspace_id, str):
+        return None
+
+    def lane_selected() -> bool:
+        return native_mode_requires_rust() and canonical_policy_enforcement_enabled(
+            device_id=installation_id, workspace_id=workspace_id
+        )
+
+    if not lane_selected():
         return None
     try:
         with (
@@ -131,7 +141,7 @@ def commit_native_policy_bundle_acknowledgement(
                 now_ms = int(publisher._wall_clock() * 1000)
                 if (
                     current != acceptance
-                    or not native_mode_requires_rust()
+                    or not lane_selected()
                     or observer.execute("pragma data_version").fetchone()[0] != version
                     or _non_database_inputs(publisher._current_input_fingerprint()[0], database) != metadata
                     or publisher._confirm_resident_fingerprint(
@@ -185,7 +195,7 @@ def commit_native_policy_bundle_acknowledgement(
                 now_ms = int(publisher._wall_clock() * 1000)
                 if (
                     now_ms >= acceptance.expires_at_ms
-                    or not native_mode_requires_rust()
+                    or not lane_selected()
                     or (inputs.expires_at_ms is not None and inputs.expires_at_ms <= now_ms)
                     or _non_database_inputs(publisher._current_input_fingerprint()[0], database) != metadata
                     or publisher._confirm_resident_fingerprint(

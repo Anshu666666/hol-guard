@@ -202,7 +202,8 @@ def test_signed_unpublished_generic_v2_bundle_is_not_admitted(
     assert "command:live-block" in live_rows
     live_ack = store.get_sync_payload("policy_bundle_ack")
     assert isinstance(live_ack, dict)
-    assert live_ack["status"] == "applied"
+    # This admission fixture has no accepted native publication.
+    assert live_ack["status"] == "received"
     assert live_ack["bundleHash"] == live["bundleHash"]
     assert live_ack["bundleVersion"] == live["bundleVersion"]
     assert live_ack["workspaceId"] == "workspace-alpha"
@@ -216,7 +217,11 @@ def test_signed_unpublished_generic_v2_bundle_is_not_admitted(
     assert isinstance(last_error, dict)
     assert last_error.get("reason") == "inactive_rollout_state"
     acknowledgement = store.get_sync_payload("policy_bundle_ack")
-    assert acknowledgement == live_ack
+    assert isinstance(acknowledgement, dict)
+    assert acknowledgement["status"] == "received"
+    assert acknowledgement["bundleHash"] == live_ack["bundleHash"]
+    assert acknowledgement["bundleVersion"] == live_ack["bundleVersion"]
+    assert acknowledgement["sequence"] > live_ack["sequence"]
     remaining_rows = [row["artifact_id"] for row in store.list_policy_decisions()]
     assert "command:draft-block" not in remaining_rows
     assert "command:live-block" in remaining_rows

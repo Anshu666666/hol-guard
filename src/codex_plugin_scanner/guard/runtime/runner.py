@@ -49,7 +49,7 @@ from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..mdm.network import managed_urlopen
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
 from ..native_policy_authority_command_source import has_canonical_command_expressions
-from ..native_policy_bundle_sync import publish_received_expression_policy
+from ..native_policy_bundle_sync import publish_received_canonical_policy
 from ..oauth_token_claims import decode_oauth_access_token_claims as _decode_oauth_access_token_claims
 from ..oauth_token_claims import oauth_binding_from_credentials, oauth_binding_metadata, oauth_refresh_binding
 from ..package_firewall_defaults import extract_cloud_user_profile
@@ -60,6 +60,7 @@ from ..package_firewall_entitlement import (
 from ..policy_bundle_activation import activate_with_reason, persist_activation_rejection
 from ..policy_bundle_delivery import (
     effective_policy_bundle_acknowledgement,
+    policy_bundle_has_extension_semantics,
 )
 from ..policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from ..policy_bundle_parser import (
@@ -2960,11 +2961,16 @@ def sync_receipts(
                     effective_policy_bundle = None
                     retain_existing_policy_authority = True
     native_expression_required = False
-    native_expression_applied = False
+    native_policy_required = False
+    native_policy_applied = False
     selected_policy_decisions: list[PolicyDecision] = []
     if effective_policy_bundle is not None:
         try:
             native_expression_required = has_canonical_command_expressions(effective_policy_bundle)
+            native_policy_required = native_expression_required or (
+                effective_policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT
+                and not policy_bundle_has_extension_semantics(effective_policy_bundle)
+            )
             # Recheck the final live/current/LKG source and selected lane as well
             # as incoming candidates; no cached expression row subset is authority.
             if native_expression_required:
@@ -3004,7 +3010,7 @@ def sync_receipts(
             _reset_cloud_receipt_redaction_authority(store, synced_at=now)
     else:
         remote_decisions.update(selected_policy_decisions)
-        if native_expression_required:
+        if native_policy_required:
             # Current/LKG recovery may select a different source from the last
             # wire ACK. Bind received state to this exact selected source.
             selected_previous_ack = store.get_sync_payload("policy_bundle_ack")
@@ -3024,7 +3030,7 @@ def sync_receipts(
                 validated_delivery=validated_policy_bundle_delivery,
                 stored_acknowledgement=store.get_sync_payload("policy_bundle_ack"),
                 synced_at=now,
-                applied=canonical_enforcement and not native_expression_required,
+                applied=canonical_enforcement,
             )
         cloud_exception_items = _policy_bundle_cloud_exception_items(
             store,
@@ -3061,6 +3067,7 @@ def sync_receipts(
                 managed_controls_publish=managed_controls_publish,
                 custom_extension_continuity=custom_extension_continuity,
                 remote_write_authorized=True,
+                require_native_source_binding=canonical_enforcement and native_policy_required,
             )
             if activated is None:
                 cloud_exception_items = []
@@ -3139,11 +3146,16 @@ def sync_receipts(
         exceptions=deduped_exceptions,
         now=now,
     )
-    if policy_application_committed and native_expression_required and effective_policy_bundle is not None:
-        native_expression_applied = (
-            publish_received_expression_policy(store, effective_policy_bundle, installation_id=device_id) is not None
+    if (
+        policy_application_committed
+        and native_policy_required
+        and canonical_enforcement
+        and effective_policy_bundle is not None
+    ):
+        native_policy_applied = (
+            publish_received_canonical_policy(store, effective_policy_bundle, installation_id=device_id) is not None
         )
-        if not native_expression_applied and not activation_last_error:
+        if not native_policy_applied and not activation_last_error:
             activation_last_error = {"reason": "native_policy_publication_pending"}
     telemetry = sync_nonessential_telemetry(
         store,
@@ -3161,7 +3173,7 @@ def sync_receipts(
             resident=validated_synced_policy_bundle(store),
             acknowledgement=(
                 store.get_sync_payload("policy_bundle_ack")
-                if not native_expression_required or native_expression_applied
+                if not native_policy_required or native_policy_applied
                 else None
             ),
             committed=policy_application_committed,

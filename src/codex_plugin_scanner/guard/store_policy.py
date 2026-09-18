@@ -856,6 +856,7 @@ class StorePolicyMixin:
         raise_on_rejection: bool = False,
         approval_gate_grant: ApprovalGateGrant | None = None,
         remote_write_authorized: bool = False,
+        require_native_source_binding: bool = False,
     ) -> dict[str, object] | None:
         """Atomically activate one authenticated policy bundle and its rows.
 
@@ -1080,6 +1081,7 @@ class StorePolicyMixin:
                     rows=rows,
                     now=normalized_now,
                     encoded_payloads=encoded_payloads,
+                    require_source_binding=require_native_source_binding,
                 )
             except PolicyCompilationError:
                 return reject("policy_bundle_staging_invalid", connection)

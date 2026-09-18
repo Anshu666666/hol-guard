@@ -21,6 +21,7 @@ from tests.test_native_policy_snapshot_v4_publication import _ack
 @pytest.fixture
 def accepted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("HOL_GUARD_NATIVE", "auto")
+    monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
     store, workspace = prepare_expression_store(tmp_path)
     publish_expression_source(store, workspace, block_lifetime_seconds=300)
     bundle = store.get_sync_payload("policy_bundle")
@@ -267,6 +268,34 @@ def test_non_native_mode_cannot_be_promoted(accepted, monkeypatch, mode, at_comm
         monkeypatch.setenv("HOL_GUARD_NATIVE", mode)
     assert commit_native_policy_bundle_acknowledgement(publisher, token) is None
     assert store.get_sync_payload("policy_bundle_ack") == previous
+
+
+@pytest.mark.parametrize("canonical", [None, "0", "false"])
+@pytest.mark.parametrize("at_commit", [False, True])
+def test_withdrawn_canonical_lane_cannot_be_promoted(accepted, monkeypatch, canonical, at_commit):
+    from codex_plugin_scanner.guard import native_policy_bundle_ack as module
+
+    store, publisher, token, _, previous = accepted
+
+    def withdraw():
+        if canonical is None:
+            monkeypatch.delenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", raising=False)
+        else:
+            monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", canonical)
+
+    if at_commit:
+        original = module._write_payload
+
+        def write_then_withdraw(*args, **kwargs):
+            original(*args, **kwargs)
+            withdraw()
+
+        monkeypatch.setattr(module, "_write_payload", write_then_withdraw)
+    else:
+        withdraw()
+    assert commit_native_policy_bundle_acknowledgement(publisher, token) is None
+    assert store.get_sync_payload("policy_bundle_ack") == previous
+    assert store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
 
 
 def test_same_source_republication_retains_wire_ack_but_requires_fresh_native_token(accepted):

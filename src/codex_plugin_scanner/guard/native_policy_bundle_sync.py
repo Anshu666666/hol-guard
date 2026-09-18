@@ -12,7 +12,7 @@ from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .store import GuardStore
 
 
-def publish_received_expression_policy(
+def publish_received_canonical_policy(
     store: GuardStore, bundle: dict[str, object], *, installation_id: str
 ) -> dict[str, object] | None:
     """A missing/rejected/late publication leaves received or historical ACK intact."""

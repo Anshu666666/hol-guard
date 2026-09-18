@@ -1,4 +1,4 @@
-"""Validate complete expression sources before staging ordinary policy rows.
+"""Validate complete canonical sources before staging ordinary policy rows.
 
 This adapter does not verify signatures or claim native application. Its caller
 must authenticate the full bundle, and the transaction retains its original
@@ -84,13 +84,15 @@ def bind_staged_policy_rows(
     rows: Sequence[tuple[object, ...]],
     now: str,
     encoded_payloads: dict[str, str],
+    require_source_binding: bool = False,
 ) -> list[tuple[object, ...]]:
     """Bind source and cache rows inside the existing atomic write transaction."""
     bundle = json.loads(encoded_payloads["policy_bundle"])
     if not isinstance(bundle, dict):
         raise PolicyBundleMaterializationError
-    require_source_binding = False
-    if has_canonical_command_expressions(dict(bundle)):
+    if type(require_source_binding) is not bool:
+        raise PolicyBundleMaterializationError
+    if require_source_binding or has_canonical_command_expressions(dict(bundle)):
         device = connection.execute(
             "select installation_id, device_label from guard_devices where device_key = 'local-device'"
         ).fetchone()
@@ -103,7 +105,7 @@ def bind_staged_policy_rows(
         )
         if Counter(decisions) != Counter(staged.decisions):
             raise PolicyCompilationError("command_source_generic_rows_mismatch", "policy-bundle")
-        require_source_binding = staged.require_source_binding
+        require_source_binding = require_source_binding or staged.require_source_binding
     rebound, materialization = bind_policy_bundle_materialization(
         store,
         connection,

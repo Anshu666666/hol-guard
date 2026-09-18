@@ -216,7 +216,7 @@ def test_v2_fallback_commit_is_not_reported_as_applied(
     assert "deliveryId" not in ack
 
 
-def test_v2_canonical_lane_reports_applied(
+def test_v2_canonical_flag_alone_never_reports_native_application(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -233,10 +233,11 @@ def test_v2_canonical_lane_reports_applied(
     )
     store = _seed_v2_admission_store(tmp_path, verification_key)
     summary = _sync_signed_v2_bundle(store, monkeypatch, bundle, synced_at="2026-07-15T12:01:00Z")
-    assert summary["policy_application_status"] == "applied"
+    assert summary["policy_application_status"] == "unverified"
+    assert summary["policy_rejection_reason"] == "native_policy_publication_pending"
     ack = store.get_sync_payload("policy_bundle_ack")
     assert isinstance(ack, dict)
-    assert ack["status"] == "applied"
+    assert ack["status"] == "received"
     assert "deliveryId" not in ack
 
 

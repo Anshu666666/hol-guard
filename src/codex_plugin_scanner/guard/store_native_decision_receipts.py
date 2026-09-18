@@ -9,11 +9,13 @@ from datetime import datetime, timezone
 from typing import Final, Protocol, cast
 
 from .native_decision_receipt import validate_native_decision_receipt
+from .native_policy_decision_context import NativePolicyDecisionContext
+from .native_policy_receipt_store import NativePolicyReceiptStore, persist_native_policy_receipt
 
 NATIVE_DECISION_RECEIPT_MIGRATION_VERSION: Final = 26
 
 
-class _ConnectionOwner(Protocol):
+class _ConnectionOwner(NativePolicyReceiptStore, Protocol):
     def _connect(self) -> AbstractContextManager[sqlite3.Connection]: ...
 
 
@@ -72,12 +74,19 @@ def native_decision_receipt_schema_statements(*prefix: str) -> tuple[str, ...]:
 
 
 class StoreNativeDecisionReceiptsMixin:
-    def record_native_decision_receipt(self: _ConnectionOwner, receipt: Mapping[str, object]) -> bool:
+    def record_native_decision_receipt(
+        self: _ConnectionOwner,
+        receipt: Mapping[str, object],
+        *,
+        policy_context: NativePolicyDecisionContext | None = None,
+    ) -> bool:
         """Store one validated receipt; duplicate decision IDs are harmless."""
 
         validated = validate_native_decision_receipt(receipt)
         if validated is None:
             raise ValueError("native decision receipt is invalid")
+        if policy_context is not None and not policy_context.matches_receipt(validated):
+            raise ValueError("native policy context does not match its receipt")
         with self._connect() as connection:
             connection.execute(
                 """
@@ -116,9 +125,13 @@ class StoreNativeDecisionReceiptsMixin:
                     validated["reviewed_output_sha256"],
                     int(cast_bool(validated["observe_mode"])),
                     validated["deadline_budget_ms"],
-                    datetime.now(timezone.utc).isoformat(),
+                    policy_context.recorded_at
+                    if policy_context is not None
+                    else datetime.now(timezone.utc).isoformat(),
                 ),
             )
+        if policy_context is not None:
+            persist_native_policy_receipt(self, receipt=validated, context=policy_context)
         return True
 
     def native_decision_receipt_count(self: _ConnectionOwner) -> int:

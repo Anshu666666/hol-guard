@@ -256,6 +256,7 @@ from .discovery import (
 from .extension_control_api import ExtensionControlApiError, ExtensionControlApiService
 from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_optional_publish
 from .hook_health import hook_worker_health
+from .hook_native_policy_context import submit_native_review_receipt
 from .hook_process_runner import HookProcessRunner
 from .hook_request_auth import CHALLENGE_HOOK_PATHS, challenge_auth, request_auth
 from .hook_worker_responses import prepare_native_hook_policy
@@ -6064,11 +6065,8 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         )
         if review.payload is not None and time.monotonic() < process_deadline:
             receipt_accepted = False
-            if review.receipt is not None:
-                with suppress(Exception):
-                    receipt_accepted = daemon_server.runtime_hook_evidence_writer.submit_native_decision_receipt(
-                        review.receipt
-                    )
+            with suppress(Exception):
+                receipt_accepted = submit_native_review_receipt(daemon_server.runtime_hook_evidence_writer, review)
             with suppress(Exception):
                 activity_action = review.payload.get("policy_action")
                 event = payload.get("hook_event_name", payload.get("hookEventName"))

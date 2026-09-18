@@ -18,6 +18,7 @@ from ..native_mode import native_mode_requires_rust as _native_mode_requires_rus
 from ..native_mode import python_oracle_surface_enabled
 from ..native_route_receipt import native_hook_route, record_native_hook_route, reset_native_hook_route
 from ..sqlite_profile import sqlite_error_is_busy_locked
+from .hook_native_policy_context import native_process_result
 from .hook_process_protocol import (
     applied_hook_environment,
     as_string_object_dict,
@@ -308,15 +309,7 @@ def _run_resident_hook_request(
                 )
             raise
         else:
-            response: dict[str, object] = {
-                "payload": worker_payload,
-                "reason_code": None,
-                "route": _current_decision_route(),
-            }
-            receipt = getattr(worker, "last_native_decision_receipt", None)
-            if isinstance(receipt, dict):
-                response["receipt"] = receipt
-            return response
+            return native_process_result(worker, worker_payload, _current_decision_route())
     with applied_hook_environment(request):
         config = overlay_synced_guard_policy(
             load_guard_config(parsed.guard_home, workspace=parsed.workspace),

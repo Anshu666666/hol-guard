@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
+from .native_policy_decision_context import NativePolicyDecisionContext, capture_native_policy_decision
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .native_policy_snapshot_policy import effective_native_policy_v3
@@ -230,3 +231,18 @@ def scoped_rule_identity(
         (identity for row, identity in publisher._v4_publication.candidate.inputs.rule_identities if row == selected),
         None,
     )
+
+
+def capture_scoped_decision(
+    publisher: NativePolicySnapshotPublisher, binding: Mapping[str, object], receipt: object
+) -> tuple[bool, NativePolicyDecisionContext | None]:
+    """Capture attribution and result currency under one publication barrier."""
+    with publisher._condition:
+        publisher._mark_expired_locked()
+        if not scoped_result_is_current(publisher, binding):
+            return False, None
+        identity = scoped_rule_identity(publisher, binding)
+        if identity is None:
+            return True, None
+        context = capture_native_policy_decision(binding=binding, receipt=receipt, identity=identity)
+        return context is not None, context

@@ -77,6 +77,52 @@ fn exact_signed_allow_satisfies_review_and_binds_selected_snapshot_row() {
 }
 
 #[test]
+fn modeled_destination_only_ssh_uses_exact_signed_review_without_lowering_stronger_floors() {
+    let command = "ssh synthetic@example.invalid";
+    for kind in ["signed-bundle", "signed-memory"] {
+        let mut selected = row(7, "artifact", "allow", kind);
+        selected["exact_command_sha256"] = json!(exact_command_sha256(command));
+        let source = envelope(command);
+        let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+        assert_eq!(intrinsic.reason_code, "native_command_review_required");
+        assert_eq!(intrinsic.minimum_action, "review");
+        let result = apply_scoped_pre_tool_policy(
+            &snapshot("review", vec![selected.clone()]),
+            &source,
+            "codex",
+            intrinsic.clone(),
+            100,
+        )
+        .unwrap();
+        assert_eq!(result.result.minimum_action, "allow");
+        assert_eq!(result.selected_decision_id, Some(7));
+        for floor in ["require-reapproval", "sandbox-required", "block"] {
+            let result = apply_scoped_pre_tool_policy(
+                &snapshot(floor, vec![selected.clone()]),
+                &source,
+                "codex",
+                intrinsic.clone(),
+                100,
+            )
+            .unwrap();
+            assert_eq!(result.result.minimum_action, floor);
+            assert_eq!(result.selected_decision_id, None);
+        }
+        let changed = envelope(&format!("{command} "));
+        let result = apply_scoped_pre_tool_policy(
+            &snapshot("review", vec![selected]),
+            &changed,
+            "codex",
+            intrinsic,
+            100,
+        )
+        .unwrap();
+        assert_eq!(result.result.minimum_action, "review");
+        assert_eq!(result.selected_decision_id, None);
+    }
+}
+
+#[test]
 fn specificity_then_recency_selects_one_winner_without_source_severity_floor() {
     let broad_block = row(9, "global", "block", "signed-bundle");
     let exact_allow = row(7, "artifact", "allow", "signed-memory");
@@ -114,6 +160,61 @@ fn local_or_artifact_only_allow_does_not_become_a_reusable_approval() {
         assert_eq!(result.result.minimum_action, "review");
         assert_eq!(result.selected_decision_id, None);
     }
+}
+
+#[test]
+fn actual_mcp_identity_selects_policy_without_lowering_its_intrinsic_review() {
+    let mut source = envelope(COMMAND);
+    source.raw_payload = json!({"tool_name":"mcp__synthetic__inspect","tool_input":{}});
+    let mut selected = row(7, "artifact", "block", "signed-bundle");
+    selected["artifact_id"] = json!("codex:project:mcp__synthetic__inspect");
+    selected["exact_command_sha256"] = Value::Null;
+    for (saved, expected, winner) in [
+        ("allow", "review", None),
+        ("review", "review", None),
+        ("block", "block", Some(7)),
+    ] {
+        selected["action"] = json!(saved);
+        let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+        assert_eq!(intrinsic.minimum_action, "review");
+        let result = apply_scoped_pre_tool_policy(
+            &snapshot("allow", vec![selected.clone()]),
+            &source,
+            "codex",
+            intrinsic,
+            100,
+        )
+        .unwrap();
+        assert_eq!(result.result.minimum_action, expected);
+        assert_eq!(result.result.decision, "deny");
+        assert_eq!(result.selected_decision_id, winner);
+    }
+    source.raw_payload["tool_name"] = json!("mcp__synthetic__other");
+    let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+    let result = apply_scoped_pre_tool_policy(
+        &snapshot("allow", vec![selected]),
+        &source,
+        "codex",
+        intrinsic,
+        100,
+    )
+    .unwrap();
+    assert_eq!(result.result.minimum_action, "review");
+    assert_eq!(result.selected_decision_id, None);
+}
+
+#[test]
+fn observe_retains_the_winning_scoped_rule_identity_before_projection() {
+    let mut policy = snapshot("allow", vec![row(7, "artifact", "block", "signed-bundle")]);
+    policy.mode = "observe".to_owned();
+    let result = evaluate(&policy, &envelope(COMMAND));
+    assert_eq!(result.result.minimum_action, "warn");
+    assert_eq!(result.result.decision, "allow");
+    assert_eq!(result.observed_policy_action, Some("block"));
+    assert_eq!(result.selected_decision_id, Some(7));
+    policy.effective_policy.default_action = "block".to_owned();
+    let default_wins = evaluate(&policy, &envelope(COMMAND));
+    assert_eq!(default_wins.selected_decision_id, None);
 }
 
 #[test]
@@ -177,14 +278,14 @@ fn current_terminal_and_every_intrinsic_floor_survive_signed_allow() {
 }
 
 #[test]
-fn observe_policy_only_warning_has_no_false_winning_rule_provenance() {
+fn observe_policy_warning_retains_its_rule_but_not_an_equal_default() {
     let mut policy = snapshot("allow", vec![row(7, "artifact", "block", "signed-memory")]);
     policy.mode = "observe".to_owned();
     let result = evaluate(&policy, &envelope(COMMAND));
     assert_eq!(result.result.minimum_action, "warn");
     assert_eq!(result.result.decision, "allow");
     assert_eq!(result.observed_policy_action, Some("block"));
-    assert_eq!(result.selected_decision_id, None);
+    assert_eq!(result.selected_decision_id, Some(7));
     let result = evaluate(
         &snapshot("block", vec![row(7, "artifact", "block", "signed-memory")]),
         &envelope(COMMAND),

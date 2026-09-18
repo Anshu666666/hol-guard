@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
+from .native_policy_decision_context import NativePolicyDecisionContext
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_MAX_SECONDS,
     _PUBLISH_RETRY_SECONDS,
@@ -25,6 +26,7 @@ from .native_policy_snapshot_publisher_context import PublicationContext, public
 from .native_policy_snapshot_publisher_inputs import NativePolicySnapshotPublisherInputs
 from .native_policy_snapshot_publisher_scoped import (
     ScopedSnapshotBinding,
+    capture_scoped_decision,
     publish_scoped,
     scoped_binding,
     scoped_result_is_current,
@@ -305,6 +307,11 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         with self._condition:
             self._mark_expired_locked()
             return scoped_rule_identity(self, binding)
+
+    def capture_policy_decision_context(
+        self, binding: Mapping[str, object], receipt: object
+    ) -> tuple[bool, NativePolicyDecisionContext | None]:
+        return capture_scoped_decision(self, binding, receipt)
 
     @property
     def last_error(self) -> str | None:

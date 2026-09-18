@@ -17,6 +17,7 @@ _COMPONENTS = (
     ("guard-rules", Path("rust/crates/guard-rules/src/lib.rs")),
     ("guard-scanner", Path("rust/crates/guard-scanner/src/lib.rs")),
     ("guard-secure-fs", Path("rust/crates/guard-secure-fs/src/lib.rs")),
+    ("guard-secure-fs-source-path", Path("rust/crates/guard-secure-fs/src/source_path.rs")),
     ("guard-hook-core", Path("rust/crates/guard-hook-core/src/lib.rs")),
     ("guard-contracts", Path("rust/crates/guard-contracts/src/lib.rs")),
     ("guard-command-pretool", Path("rust/crates/guard-command/src/pretool.rs")),
@@ -72,6 +73,10 @@ _COMPONENTS = (
     (
         "guard-runtime-policy-scoped-request",
         Path("rust/crates/guard-runtime/src/policy_scoped_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-tool-request",
+        Path("rust/crates/guard-runtime/src/policy_scoped_tool_request.rs"),
     ),
     ("guard-runtime-edge-v4", Path("rust/crates/guard-runtime/src/edge_v4.rs")),
     (

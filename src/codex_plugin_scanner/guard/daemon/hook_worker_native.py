@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from ..cli.commands_support_command_activity import hook_post_succeeded
 from ..native_mode import python_oracle_surface_enabled
+from ..native_policy_decision_context import NativePolicyDecisionContext
 from ..native_route_receipt import record_python_semantic_hook_route
 from ..native_runtime import NativeRuntimeStatus, native_output_sha256
 from ..native_scoped_result import scoped_result_is_current
@@ -19,6 +20,7 @@ from .hook_availability_policy import (
     hook_review_is_recording_only,
     recording_only_pre_tool_response,
 )
+from .hook_native_policy_context import capture_result_context
 from .hook_native_review_approval import pause_native_pre_tool_for_approval
 from .hook_policy_authority import legacy_source_binding_is_current, policy_authority_required
 from .hook_request_parsing import pre_tool_command
@@ -126,6 +128,7 @@ class _HookWorkerNativeHost(Protocol):
     def activity_writer(self) -> object | None: ...
 
     _last_native_decision_receipt: dict[str, object] | None
+    _last_native_policy_context: NativePolicyDecisionContext | None
     _native_policy_snapshot: Callable[..., dict[str, object] | None]
     _review_pre_tool_native: Callable[..., dict[str, object] | None]
     _native_runtime_status: Callable[[], NativeRuntimeStatus]
@@ -210,6 +213,7 @@ class HookWorkerNativeMixin:
     """Native edge and explicit-oracle paths kept out of the worker facade."""
 
     _last_native_decision_receipt: dict[str, object] | None = None
+    _last_native_policy_context: NativePolicyDecisionContext | None = None
 
     def _mode_surface_response(
         self: _HookWorkerNativeHost,
@@ -374,6 +378,11 @@ class HookWorkerNativeMixin:
             return _scoped_authority_unavailable(self, harness)
         if scoped and (edge is None or not scoped_result_is_current(publisher, edge)):
             return _scoped_authority_unavailable(self, harness)
+        self._last_native_policy_context = None
+        if scoped and edge is not None:
+            accepted, self._last_native_policy_context = capture_result_context(publisher, edge)
+            if not accepted:
+                return _scoped_authority_unavailable(self, harness)
         if edge is None:
             if event_name == "PostToolUse":
                 self._record_post_tool_activity(
@@ -461,11 +470,16 @@ class HookWorkerNativeMixin:
         self._last_native_decision_receipt = None
         accepted = validate_native_decision_receipt(receipt)
         if accepted is None:
+            self._last_native_policy_context = None
             return None
         writer = self.activity_writer
         submit = getattr(writer, "submit_native_decision_receipt", None)
         if callable(submit):
             with suppress(Exception):
-                submit(receipt=accepted)
+                context = getattr(self, "_last_native_policy_context", None)
+                if context is None:
+                    submit(receipt=accepted)
+                else:
+                    submit(receipt=accepted, policy_context=context)
         self._last_native_decision_receipt = accepted
         return accepted

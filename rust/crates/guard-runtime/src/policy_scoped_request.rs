@@ -1,6 +1,6 @@
 //! Derive scoped identities from supported original hook input.
 //!
-//! This first producer covers the ordinary benign shell path whose Python
+//! This producer covers bounded shell, local read and MCP paths whose Python
 //! producer uses a generic tool artifact. Runtime package/file/compound
 //! producers and content-context identities require their own parity proof.
 //! Unsupported requests fail closed; a supplied digest is never evidence.
@@ -14,6 +14,9 @@ use guard_policy_snapshot::scoped_authority::{
 };
 use serde_json::Value;
 use std::path::Path;
+
+#[path = "policy_scoped_tool_request.rs"]
+mod tool_request;
 
 const UNSUPPORTED: &str = "native_scoped_request_identity_unsupported";
 
@@ -64,15 +67,31 @@ fn generic_shell_artifact(envelope: &GuardHookEnvelopeV2, harness: &str) -> Resu
         extraction_provenance: "guard-shell".to_owned(),
     })?;
     let model = native.command_model;
-    if native.reason_code != "native_exact_safe_command"
-        || !native.explicitly_benign
-        || model.segments.len() != 1
+    if model.segments.len() != 1
         || !model.wrapper_chain.is_empty()
-        || !matches!(
+        || model.path_overridden
+        || !model.segments[0].environment_names.is_empty()
+    {
+        return Err(UNSUPPORTED.to_owned());
+    }
+    let benign = native.reason_code == "native_exact_safe_command"
+        && native.explicitly_benign
+        && matches!(
             model.segments[0].executable.as_deref(),
             Some("pwd" | "true" | "echo" | "printf" | "whoami" | "uname")
-        )
-    {
+        );
+    // A destination-only SSH action stays on the actual generic producer.
+    // Flags, a remote command, wrappers and shell syntax require a different
+    // typed runtime identity and cannot be projected into this path.
+    let destination_only = native.reason_code == "native_command_review_required"
+        && model.segments[0].executable.as_deref() == Some("ssh")
+        && model.segments[0].arguments.len() == 1
+        && model.segments[0].arguments[0].len() <= 255
+        && model.segments[0].arguments[0].starts_with(|value: char| value.is_ascii_alphanumeric())
+        && model.segments[0].arguments[0].bytes().all(|value| {
+            value.is_ascii_alphanumeric() || matches!(value, b'@' | b'.' | b'_' | b'-')
+        });
+    if !benign && !destination_only {
         return Err(UNSUPPORTED.to_owned());
     }
     let scope = display_text(payload.get("source_scope")).unwrap_or("project");
@@ -90,16 +109,26 @@ pub(crate) fn derive_scoped_policy_request(
     envelope: &GuardHookEnvelopeV2,
     canonical_harness: &str,
 ) -> Result<ScopedPolicyRequest, String> {
-    let artifact = generic_shell_artifact(envelope, canonical_harness)?;
-    let command = exact_shell_command_from_hook(&envelope.raw_payload).ok_or(UNSUPPORTED)?;
-    let digest = exact_command_sha256(command).ok_or(UNSUPPORTED)?;
+    let (artifact, digest) = if exact_shell_command_from_hook(&envelope.raw_payload).is_some() {
+        let artifact = generic_shell_artifact(envelope, canonical_harness)?;
+        let command = exact_shell_command_from_hook(&envelope.raw_payload).ok_or(UNSUPPORTED)?;
+        (
+            artifact,
+            Some(exact_command_sha256(command).ok_or(UNSUPPORTED)?),
+        )
+    } else {
+        (
+            tool_request::generic_tool_artifact(envelope, canonical_harness).ok_or(UNSUPPORTED)?,
+            None,
+        )
+    };
     ScopedPolicyRequest::from_native_identity(PolicyIdentityInputs {
         harness: canonical_harness,
         artifact_id: Some(&artifact),
         artifact_hash: None,
         workspace: envelope.source.cwd.as_deref(),
         publisher: display_text(envelope.raw_payload.get("publisher")),
-        exact_command_sha256: Some(&digest),
+        exact_command_sha256: digest.as_deref(),
         exact: ExactPolicyContextInputs::default(),
     })
     .map_err(|_| "native_scoped_request_identity_invalid".to_owned())
@@ -153,6 +182,55 @@ mod tests {
     }
 
     #[test]
+    fn matches_shared_actual_non_shell_hook_producer_vectors() {
+        let fixture: Value =
+            serde_json::from_str(include_str!("policy_scoped_tool_fixture.json")).unwrap();
+        let workspace =
+            std::env::temp_dir().join(format!("guard-scoped-tool-vectors-{}", std::process::id()));
+        std::fs::create_dir_all(&workspace).unwrap();
+        std::fs::write(workspace.join("guide.md"), "Synthetic local guide.\n").unwrap();
+        assert_eq!(fixture["cases"].as_array().unwrap().len(), 24);
+        for case in fixture["cases"].as_array().unwrap() {
+            let mut source = envelope(case["payload"].clone());
+            source.harness = case["harness"].as_str().unwrap().to_owned();
+            source.source.cwd = Some(workspace.to_string_lossy().into_owned());
+            let request = derive_scoped_policy_request(&source, &source.harness)
+                .unwrap_or_else(|reason| panic!("{}: {reason}", case["name"]));
+            assert_eq!(request.artifact_id(), case["artifactId"].as_str());
+        }
+        std::fs::remove_dir_all(workspace).unwrap();
+    }
+
+    #[test]
+    fn non_shell_identity_refuses_ambiguous_sensitive_and_unmodeled_sources() {
+        for payload in [
+            json!({"tool_name":"Read","tool_input":{"path":".env"}}),
+            json!({"tool_name":"Read","tool_input":{"path":"../guide.md"}}),
+            json!({"tool_name":"Read","tool_input":{"path":"private_key.txt"}}),
+            json!({"tool_name":"Read","tool_input":{"path":"guide.md","command":"printf synthetic"}}),
+            json!({"tool_name":"Read","tool_input":{"path":"guide.md"},"arguments":{"path":"guide.md"}}),
+            json!({"tool_name":"mcp__synthetic__inspect","toolName":"mcp__synthetic__ping","tool_input":{}}),
+            json!({"tool_name":"mcp__synthetic__inspect","tool_input":{"command":"printf synthetic"}}),
+            json!({"tool_name":"mcp__synthetic__inspect","tool_input":{"nested":{"path":"guide.md"}}}),
+            json!({"tool_name":"mcp__synthetic__inspect","tool_input":{},"source_scope":"user"}),
+            json!({"tool_name":"npm","tool_input":{}}),
+        ] {
+            assert!(derive_scoped_policy_request(&envelope(payload), "codex").is_err());
+        }
+        let mut forged = envelope(json!({"tool_name":"mcp__synthetic__inspect","tool_input":{}}));
+        forged.raw_payload["exact_command_sha256"] = json!("a".repeat(64));
+        let policy = authority(
+            "codex",
+            "codex:project:mcp__synthetic__inspect",
+            &"a".repeat(64),
+        );
+        assert!(policy
+            .select_generic(&derive_scoped_policy_request(&forged, "codex").unwrap(), 1)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
     fn missing_execution_context_cannot_be_labeled_as_a_generic_artifact() {
         let payload = json!({"tool_name":"Shell","tool_input":{"command":"printf synthetic"}});
         for cwd in [
@@ -202,7 +280,8 @@ mod tests {
             json!({"tool_name":"Shell","tool_input":{"command":"printf synthetic","cmd":"printf synthetic"}}),
             json!({"tool_name":"Shell","tool_input":{"command":"printf synthetic","nested":{"command":"ssh synthetic"}}}),
             json!({"tool_name":"Shell","tool_input":{"command":"printf synthetic; printf more"}}),
-            json!({"tool_name":"Shell","tool_input":{"command":"ssh synthetic"}}),
+            json!({"tool_name":"Shell","tool_input":{"command":"ssh synthetic true"}}),
+            json!({"tool_name":"Shell","tool_input":{"command":"ssh -F synthetic.conf synthetic"}}),
             json!({"tool_name":"Shell","tool_input":{"command":"cat ~/.ssh/id_rsa"}}),
             json!({"tool_name":"Shell","tool_input":{"command":"sh -c 'printf synthetic'"}}),
             json!({"tool_name":"Shell","exact_command_sha256":"a".repeat(64)}),

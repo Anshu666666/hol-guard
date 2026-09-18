@@ -24,7 +24,11 @@ def test_worker_rechecks_scoped_publication_before_receipt_or_allow(
     edge, snapshot = _bound_result()
     edge["policy_binding"]["selected_decision_id"] = selected
     expected_binding = deepcopy(edge["policy_binding"])
-    publisher = SimpleNamespace(requires_scoped_authority=True, current=True)
+    publisher = SimpleNamespace(
+        requires_scoped_authority=True,
+        current=True,
+        capture_policy_decision_context=lambda binding, receipt: (True, None),
+    )
     checks: list[object] = []
     receipts: list[object] = []
     routes: list[str] = []
@@ -160,6 +164,7 @@ def test_scoped_native_deny_cannot_be_lowered_by_python_watch(
         policy_snapshot_publisher=SimpleNamespace(
             requires_scoped_authority=True,
             result_binding_is_current=lambda _binding: True,
+            capture_policy_decision_context=lambda binding, receipt: (True, None),
         ),
         _native_policy_snapshot=lambda *_args, **_kwargs: dict(snapshot),
         _review_raw_hook_native=lambda **_kwargs: edge,

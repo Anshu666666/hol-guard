@@ -16,6 +16,7 @@ import pytest
 from codex_plugin_scanner.guard import native_hook_edge
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
 from scripts.native_slo_session import stop_native_resident
+from tests.native_policy_receipt_resident import assert_actual_native_receipt_provenance
 from tests.native_scoped_resident_fixtures import (
     COMMAND,
     HARNESS,
@@ -91,6 +92,10 @@ def test_signed_exact_policy_is_consumed_by_actual_resident(
         else:
             assert identity is None
 
+        durable_context = None
+        if source == "canonical":
+            durable_context = assert_actual_native_receipt_provenance(store, publisher, tmp_path, workspace)
+
         for command in (COMMAND.strip(), COMMAND.replace("  ", " "), COMMAND.replace("Synthetic", "synthetic")):
             assert_review(evaluate(raw_payload(command)))
         assert_review(evaluate({**raw_payload(), "artifact_id": "codex:project:unrelated"}))
@@ -116,6 +121,12 @@ def test_signed_exact_policy_is_consumed_by_actual_resident(
             store.set_sync_payload("policy_bundle_keyring", keyring, datetime.now(timezone.utc).isoformat())
             publisher.request_publish()
         assert not publisher.result_binding_is_current(after["policy_binding"])
+        if durable_context is not None:
+            receipt_id, original_context = durable_context
+            stored = store.get_receipt(receipt_id)
+            assert stored is not None
+            assert stored["action_envelope_json"]["nativePolicyDecision"] == original_context
+            assert stored["timestamp"] == original_context["recordedAt"]
         publisher._publish_once()
         if source == "canonical":
             assert not publisher.is_ready()

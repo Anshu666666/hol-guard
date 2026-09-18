@@ -157,7 +157,19 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     let intrinsic_action = action(&intrinsic.minimum_action)?;
     let current = join(configured, intrinsic_action);
     let composed = selected.map_or(current, |row| compose(current, row));
-    let mut effective = join(composed, intrinsic_action);
+    // The classifier admitted only an explicitly modeled generic producer.
+    // Its ordinary command review can be satisfied by a matched signed exact
+    // allow. Other intrinsic reasons and every stronger action remain floors.
+    let mut effective = if intrinsic_action == PolicyAction::Review
+        && intrinsic.reason_code == "native_command_review_required"
+    {
+        composed
+    } else {
+        join(composed, intrinsic_action)
+    };
+    let selected_decision_id = selected
+        .filter(|row| effective != current && effective == row.action())
+        .map(ScopedPolicyRow::decision_id);
     let observed_policy_action = (snapshot.mode == "observe").then(|| name(effective));
     if snapshot.mode == "observe"
         && rank(effective) > rank(intrinsic_action)
@@ -165,9 +177,6 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     {
         effective = PolicyAction::Warn;
     }
-    let selected_decision_id = selected
-        .filter(|row| effective != current && effective == row.action())
-        .map(ScopedPolicyRow::decision_id);
     let mut result = intrinsic;
     if effective != intrinsic_action {
         result.reason_code = "native_scoped_policy_composed".to_owned();

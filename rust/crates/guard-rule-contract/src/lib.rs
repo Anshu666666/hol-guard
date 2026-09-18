@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 25] = [
+const COMPONENTS: [(&str, &[u8]); 27] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -18,6 +18,10 @@ const COMPONENTS: [(&str, &[u8]); 25] = [
     (
         "guard-secure-fs",
         include_bytes!("../../guard-secure-fs/src/lib.rs"),
+    ),
+    (
+        "guard-secure-fs-source-path",
+        include_bytes!("../../guard-secure-fs/src/source_path.rs"),
     ),
     (
         "guard-hook-core",
@@ -100,6 +104,10 @@ const COMPONENTS: [(&str, &[u8]); 25] = [
         include_bytes!("../../guard-runtime/src/policy_scoped_request.rs"),
     ),
     (
+        "guard-runtime-policy-scoped-tool-request",
+        include_bytes!("../../guard-runtime/src/policy_scoped_tool_request.rs"),
+    ),
+    (
         "guard-runtime-edge-v4",
         include_bytes!("../../guard-runtime/src/edge_v4.rs"),
     ),
@@ -175,6 +183,7 @@ mod tests {
                 "guard-rules",
                 "guard-scanner",
                 "guard-secure-fs",
+                "guard-secure-fs-source-path",
                 "guard-hook-core",
                 "guard-contracts",
                 "guard-command-pretool",
@@ -195,6 +204,7 @@ mod tests {
                 "guard-policy-snapshot-v4",
                 "guard-runtime-policy-store-versioned",
                 "guard-runtime-policy-scoped-request",
+                "guard-runtime-policy-scoped-tool-request",
                 "guard-runtime-edge-v4",
                 "guard-runtime-policy-scoped-enforcement",
             ]

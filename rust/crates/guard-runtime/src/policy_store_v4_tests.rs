@@ -309,7 +309,7 @@ fn scoped_resident_edge_consumes_exact_rule_and_binds_actual_winner() {
         assert!(rejected["policy_binding"]["selected_decision_id"].is_null());
     }
     let mut unsupported = envelope.clone();
-    unsupported.raw_payload["tool_input"]["command"] = "ssh synthetic-host".into();
+    unsupported.raw_payload["tool_input"]["command"] = "ssh synthetic-host true".into();
     assert!(crate::edge::evaluate_envelope_with_store(unsupported, &store).is_err());
     let mut stale = envelope.clone();
     stale.policy_snapshot["source_input_digest"] = "f".repeat(64).into();
@@ -364,9 +364,7 @@ fn scoped_observe_receipt_retains_the_would_enforce_action() {
             result["result"]["decision"],
             if mode == "observe" { "allow" } else { "deny" }
         );
-        if mode == "observe" {
-            assert!(result["policy_binding"]["selected_decision_id"].is_null());
-        }
+        assert_eq!(result["policy_binding"]["selected_decision_id"], 1);
         fs::remove_dir_all(root).unwrap();
     }
 }

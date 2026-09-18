@@ -3,11 +3,11 @@
 use guard_contracts::{
     HookReviewResponseV1, HookSourceFileRefV1, NativeHookRequestV1, NATIVE_PROTOCOL_VERSION,
 };
-use guard_rules::{MAX_SCAN_BYTES, PAYLOAD_OUTPUT_KEYS, REVIEWED_EXCERPT_CHARS};
 #[cfg(test)]
 use guard_rules::{
     MAX_CONTENT_ITEMS, MAX_DEPTH, MAX_OBJECT_KEYS, MAX_OUTPUT_CHARS, OUTPUT_TEXT_KEYS,
 };
+use guard_rules::{MAX_SCAN_BYTES, PAYLOAD_OUTPUT_KEYS, REVIEWED_EXCERPT_CHARS};
 use guard_scanner::scan_text;
 use guard_secure_fs::{classify_source_path, read_bounded, sensitive_path_family};
 use serde_json::{Map, Value};

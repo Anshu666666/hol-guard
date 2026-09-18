@@ -8,7 +8,8 @@ use std::path::{Component, Path};
 use std::ptr::null_mut;
 
 use winapi::shared::ntdef::{
-    HANDLE, LARGE_INTEGER, OBJECT_ATTRIBUTES, OBJ_CASE_INSENSITIVE, OBJ_DONT_REPARSE, UNICODE_STRING,
+    HANDLE, LARGE_INTEGER, OBJECT_ATTRIBUTES, OBJ_CASE_INSENSITIVE, OBJ_DONT_REPARSE,
+    UNICODE_STRING,
 };
 use winapi::um::handleapi::INVALID_HANDLE_VALUE;
 use winapi::um::winnt::{
@@ -53,7 +54,11 @@ pub(super) fn open_source_child(parent: &File, name: &OsStr, directory: bool) ->
         return Err(super::invalid_path());
     }
     let mut wide = name.encode_wide().collect::<Vec<_>>();
-    if wide.is_empty() || wide.iter().any(|value| *value == 0 || *value == u16::from(b':')) {
+    if wide.is_empty()
+        || wide
+            .iter()
+            .any(|value| *value == 0 || *value == u16::from(b':'))
+    {
         return Err(super::invalid_path());
     }
     let byte_length = wide

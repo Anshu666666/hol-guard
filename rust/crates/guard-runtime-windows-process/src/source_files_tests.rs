@@ -50,10 +50,16 @@ fn held_source_blocks_parent_and_leaf_replacement_and_writers() {
     assert!(fs::rename(fixture.0.join("src"), fixture.0.join("moved")).is_err());
     assert!(fs::rename(fixture.source(), fixture.0.join("replacement.rs")).is_err());
     assert!(fs::remove_file(fixture.source()).is_err());
-    assert!(OpenOptions::new().write(true).open(fixture.source()).is_err());
+    assert!(OpenOptions::new()
+        .write(true)
+        .open(fixture.source())
+        .is_err());
     file.validate_path().unwrap();
     drop(file);
-    OpenOptions::new().write(true).open(fixture.source()).unwrap();
+    OpenOptions::new()
+        .write(true)
+        .open(fixture.source())
+        .unwrap();
     fs::rename(fixture.0.join("src"), fixture.0.join("moved")).unwrap();
 }
 
@@ -133,8 +139,8 @@ fn source_read_obeys_denied_read_acl_without_repairing_it() {
         SecurityInformation::Dacl,
     )
     .unwrap();
-    let unchanged = denied.as_sddl().unwrap().to_string_lossy()
-        == after.as_sddl().unwrap().to_string_lossy();
+    let unchanged =
+        denied.as_sddl().unwrap().to_string_lossy() == after.as_sddl().unwrap().to_string_lossy();
     set_dacl(&mut handle, &original);
     assert!(matches!(result, Err(error) if error.kind() == io::ErrorKind::PermissionDenied));
     assert!(unchanged);

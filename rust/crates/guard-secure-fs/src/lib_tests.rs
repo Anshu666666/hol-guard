@@ -79,7 +79,10 @@ fn bounded_windows_read_respects_the_callers_byte_limit() {
     let path = dir.join("source.rs");
     fs::write(&path, b"12345678").unwrap();
     assert_eq!(read_bounded(&path, 8).unwrap().bytes, b"12345678");
-    assert!(matches!(read_bounded(&path, 7), Err(SecureReadError::TooLarge)));
+    assert!(matches!(
+        read_bounded(&path, 7),
+        Err(SecureReadError::TooLarge)
+    ));
     fs::write(&path, b"").unwrap();
     assert!(read_bounded(&path, 0).unwrap().bytes.is_empty());
     let _ = fs::remove_dir_all(dir);

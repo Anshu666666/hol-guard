@@ -104,7 +104,10 @@ fn relative_children_keep_the_original_parent_after_dos_drive_remapping() {
 
     alias.map(&second.0.join("src"));
     // This control proves the full pathname really changed its namespace.
-    assert_eq!(fs::read(&source_path).unwrap(), b"outside fixture content\n");
+    assert_eq!(
+        fs::read(&source_path).unwrap(),
+        b"outside fixture content\n"
+    );
     let mut child = open_source_child(&original_parent, OsStr::new("source.rs"), false).unwrap();
     let mut bytes = Vec::new();
     child.read_to_end(&mut bytes).unwrap();

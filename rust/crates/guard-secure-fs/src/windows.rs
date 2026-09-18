@@ -17,7 +17,8 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
     if before.size > max_bytes as u64 {
         return Err(SecureReadError::TooLarge);
     }
-    file.validate_path().map_err(|_| SecureReadError::PathChanged)?;
+    file.validate_path()
+        .map_err(|_| SecureReadError::PathChanged)?;
     let mut bytes = Vec::with_capacity(before.size as usize);
     file.by_ref()
         .take(max_bytes as u64 + 1)
@@ -30,7 +31,8 @@ pub fn read_bounded(path: &Path, max_bytes: usize) -> Result<SecureRead, SecureR
     if before != after || bytes.len() as u64 != before.size {
         return Err(SecureReadError::Changed);
     }
-    file.validate_path().map_err(|_| SecureReadError::PathChanged)?;
+    file.validate_path()
+        .map_err(|_| SecureReadError::PathChanged)?;
     // FILETIME counts 100 ns intervals from 1601; the public identity uses
     // nanoseconds from 1970, matching the existing Unix representation.
     let mtime_ns = u128::from(after.modified_100ns.saturating_sub(116_444_736_000_000_000)) * 100;

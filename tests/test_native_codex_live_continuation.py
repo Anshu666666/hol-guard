@@ -198,14 +198,17 @@ def test_live_waiters_never_deduplicate_or_reuse_resolved_browser_rows(tmp_path)
         harness="codex",
         payload=hook,
         native_result=edge["result"],
+        native_receipt=None,
         workspace=workspace,
         guard_home=store.guard_home,
         home_dir=tmp_path,
         verified_receipt=edge["receipt"],
     )
-    assert second["approval_request_id"] != first["request_id"]
+    request_id = second["approval_request_id"]
+    assert isinstance(request_id, str)
+    assert request_id != first["request_id"]
     assert "approval_reuse_status" not in second
-    assert store.get_guard_operation_for_approval_request(second["approval_request_id"]) is not None
+    assert store.get_guard_operation_for_approval_request(request_id) is not None
 
 
 def test_explicit_no_saved_policy_still_requires_password_then_grants_exact_once(tmp_path):

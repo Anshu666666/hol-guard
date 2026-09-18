@@ -154,7 +154,8 @@ def test_fixture_watchdog_covers_start_and_retires_before_hooks(
         def __exit__(self, *_args):
             closed.append(True)
 
-    def serve(_session, _fault):
+    def serve(_session, _fault, workspace_fixture):
+        assert workspace_fixture is None
         assert not diagnostics[0]._timer.is_alive()
         before = len(seen)
         diagnostics[0]._snapshot()

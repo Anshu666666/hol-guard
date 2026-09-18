@@ -327,6 +327,7 @@ def test_registered_waiter_cannot_reuse_a_legacy_resolved_row(tmp_path):
         harness="codex",
         payload=hook,
         native_result=edge["result"],
+        native_receipt=None,
         workspace=workspace,
         guard_home=store.guard_home,
         home_dir=tmp_path,

@@ -91,7 +91,7 @@ def test_safe_read_keeps_same_api_changes_with_windows_timestamp_semantics(tmp_p
         return metadata(real_fstat(descriptor), 200 + int(changed))
 
     monkeypatch.setattr(Path, "lstat", lstat)
-    monkeypatch.setattr(path_support.os, "fstat", fstat)
+    monkeypatch.setattr(path_support, "os", SimpleNamespace(**{**vars(path_support.os), "fstat": fstat}))
     if mutation is None:
         assert read_bytes_file_within_root(tmp_path, victim) == payload
     else:
@@ -123,6 +123,12 @@ def test_nonwindows_reader_keeps_cross_api_change_time_with_birthtime(tmp_path, 
         return with_birthtime(original) if path == victim else original
 
     monkeypatch.setattr(Path, "lstat", lstat)
-    monkeypatch.setattr(path_support.os, "fstat", lambda fd: with_birthtime(original_fstat(fd), changed=True))
+    monkeypatch.setattr(
+        path_support,
+        "os",
+        SimpleNamespace(
+            **{**vars(path_support.os), "fstat": lambda fd: with_birthtime(original_fstat(fd), changed=True)}
+        ),
+    )
     with pytest.raises(FileChangedDuringReadError, match="changed while opening"):
         read_bytes_file_within_root(tmp_path, victim)

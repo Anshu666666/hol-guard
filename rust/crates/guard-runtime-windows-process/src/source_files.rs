@@ -121,7 +121,10 @@ impl SourceFile {
     pub fn validate_path(&self) -> io::Result<()> {
         for parent in &self.parents {
             validate_handle(&parent.file, true)?;
-            if !parent.identity.same_directory(&query_identity(&parent.file)?) {
+            if !parent
+                .identity
+                .same_directory(&query_identity(&parent.file)?)
+            {
                 return Err(invalid_path());
             }
         }
@@ -205,12 +208,18 @@ fn checked_absolute_path(path: &Path) -> io::Result<PathBuf> {
 
 fn reserved_device_name(name: &str) -> bool {
     let stem = name.split('.').next().unwrap_or_default().to_uppercase();
-    if matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$") {
+    if matches!(
+        stem.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
+    ) {
         return true;
     }
     ["COM", "LPT"].iter().any(|prefix| {
         stem.strip_prefix(*prefix).is_some_and(|suffix| {
-            matches!(suffix, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³")
+            matches!(
+                suffix,
+                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+            )
         })
     })
 }

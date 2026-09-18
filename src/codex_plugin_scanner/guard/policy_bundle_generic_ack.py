@@ -39,7 +39,7 @@ def generic_policy_bundle_acknowledgement(
         and all(previous.get(key) == identity[key] for key in GENERIC_ACK_IDENTITY)
         else None
     )
-    if matching_previous is not None and matching_previous.get("status") == "applied" and not applied:
+    if matching_previous is not None and matching_previous.get("status") in {"validated", "applied"} and not applied:
         return dict(matching_previous)
     previous_sequence = matching_previous.get("sequence") if matching_previous is not None else None
     was_applied = matching_previous is not None and matching_previous.get("status") == "applied"

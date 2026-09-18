@@ -158,11 +158,20 @@ def offline_policy_lifetime(
             "currentError": current_error,
             "recovery": False,
         }
+    errors = (current_error, last_good_error)
+    if revoked:
+        state = "recovery"
+    elif any(error is not None and error != "bundle_expired" for error in errors):
+        state = "rejected"
+    elif "bundle_expired" in errors:
+        state = "expired"
+    else:
+        state = "absent"
     return {
-        "state": "recovery" if revoked else "expired",
+        "state": state,
         "active": False,
         "retained": False,
-        "expired": not revoked,
+        "expired": state == "expired",
         "recovery": revoked,
         "currentError": current_error,
         "lastGoodError": last_good_error,

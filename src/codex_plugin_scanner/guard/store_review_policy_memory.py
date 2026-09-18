@@ -23,6 +23,7 @@ from .review_memory_authority import (
     registry_entries,
     text,
 )
+from .review_memory_mutation_validation import validate_decision_memory_mutation_ids
 from .review_oauth_binding import GuardReviewContractError
 from .store_base import _canonical_utc_timestamp
 
@@ -73,6 +74,7 @@ class StoreReviewPolicyMemoryMixin:
                 validate_decision_memory_bundle_target(
                     bundle=bundle, oauth=target_oauth, last_policy_version=last_version
                 )
+                validate_decision_memory_mutation_ids(bundle)
             except GuardReviewContractError as error:
                 reason = str(error)
                 ack = build_decision_memory_ack(

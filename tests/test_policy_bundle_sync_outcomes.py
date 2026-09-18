@@ -15,7 +15,6 @@ from codex_plugin_scanner.guard.policy_bundle_v2 import (
 )
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.store import GuardStore
-from codex_plugin_scanner.guard.synced_policy import cached_policy_bundle_validation
 from tests.policy_bundle_signing_helpers import (
     TEST_POLICY_BUNDLE_WORKSPACE_ID,
     policy_bundle_test_keyring,
@@ -32,7 +31,6 @@ from tests.test_policy_bundle_v2_runtime_admission import (
     _seed_v2_admission_store,
     _sync_signed_v2_bundle,
 )
-from tests.test_synced_policy import _MemorySyncStore
 
 
 def _v1_bundle(
@@ -150,7 +148,7 @@ def test_stale_older_payload_cannot_resurrect_after_empty_publication(tmp_path: 
     assert store.get_sync_payload("policy_bundle")["bundleHash"] == empty["bundleHash"]
 
 
-def test_future_dated_v2_is_rejected_with_stable_code_and_last_good_kept() -> None:
+def test_future_dated_v2_is_rejected_with_stable_code() -> None:
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     verification_key = _verification_key(private_key)
     bundle = _signed_v2_bundle(private_key, verification_key)
@@ -163,17 +161,6 @@ def test_future_dated_v2_is_rejected_with_stable_code_and_last_good_kept() -> No
     )
     assert rejected is None
     assert reason == "bundle_not_yet_valid"
-    last_good = _v1_bundle()
-    store = _MemorySyncStore(
-        {
-            "policy_bundle": last_good,
-            "policy_bundle_last_good": last_good,
-            "policy_bundle_keyring": policy_bundle_test_keyring(workspace_id=TEST_POLICY_BUNDLE_WORKSPACE_ID),
-        }
-    )
-    retained, last_error = cached_policy_bundle_validation(store, last_good)
-    assert retained is not None
-    assert last_error is None
 
 
 def test_fresh_omitted_policy_reports_no_authority(

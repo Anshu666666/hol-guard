@@ -17,7 +17,7 @@ from xml.etree import ElementTree
 
 BASE = "9a6e66718892bcbdb6b8bd98ecbdeeb1d79b1e47"
 TREE = "56bb19526d5d716a933c2406d55dae4c6bdbe27f"
-WORKFLOW = ".github/workflows/guard-review-regression-diagnostic.yml"
+WORKFLOW = ".github/workflows/ci.yml"
 SCRIPT = "scripts/guard-review-regression-diagnostic.py"
 BASE_COUNT = 4077
 OVERLAY_COUNT = 4085

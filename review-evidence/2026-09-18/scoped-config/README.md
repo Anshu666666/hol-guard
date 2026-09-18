@@ -1,0 +1,5 @@
+This branch retains review evidence separately from the release PR. The source audit binds the eleven specific Python path alerts to GitHub's uploaded analysis 1800335213 at merge 667e6f385341e4c8db903973e3eb0088104d886d. It distinguishes ten scoped-reader paths, twenty-two inconsistent default-reader paths, and twelve unrelated publisher paths. It does not suppress a rule or establish Windows or performance qualification.
+
+The independent Linux witness reports thirty finite cases on source 9428b660fa6a261307627660ff7b258327ed9bd4. Its four relevant executable source hashes remain unchanged in candidate d104ac325eba464bd82bd3fcae5c736de60fe1fb. The original executable witness remains in the working-session record; these aggregate exports contain no private paths, response bodies, or credentials.
+
+The raw returned SARIF is retained outside the repository. The source audit records its serialization hash and the exact API URL. The source PR preserves user cleanup commits 8dd547e8 and 24c8ee92.

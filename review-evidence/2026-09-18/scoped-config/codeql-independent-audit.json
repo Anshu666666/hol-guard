@@ -1,0 +1,206 @@
+{
+  "base_commit": "9428b660fa6a261307627660ff7b258327ed9bd4",
+  "sources_sha256": {
+    "config_source_io.py": "fcccf07dfb99e689b2f50bfa04e960527830258e1ef43531a5aafc459e31bfa8",
+    "daemon/config_read_scope.py": "ece6a6221ea598505806e23bc45d639deb4504a2751f47c3233254eb8c166df3",
+    "native_policy_snapshot_publisher_inputs.py": "3ec7452c0d0b7201c0fa523ec025c425ea1c29fd4b9c148aff08e1d279e6c086",
+    "daemon/server.py": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243"
+  },
+  "scope": "Linux real filesystem; exact HTTP path admission and scoped capture functions; no Windows claim",
+  "production_source_modified": false,
+  "case_count": 30,
+  "records": [
+    {
+      "case": "intentional_alias_positive_control",
+      "status": "passed"
+    },
+    {
+      "case": "absolute_outside",
+      "status": "rejected_before_config_read"
+    },
+    {
+      "case": "parent_traversal",
+      "status": "rejected_before_config_read"
+    },
+    {
+      "case": "relative_path",
+      "status": "rejected_before_config_read"
+    },
+    {
+      "case": "outside_alias_admission",
+      "status": "rejected_before_config_read"
+    },
+    {
+      "case": "actual_http_fail_safe_callback_dispatch",
+      "status": "passed",
+      "unscoped_default_reached": false,
+      "fixed_basenames": [
+        "config.toml",
+        ".ai-plugin-scanner-guard.toml",
+        ".hol-guard.toml"
+      ]
+    },
+    {
+      "case": "held_root_authorization_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_unexpected_root",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "post_admission_alias_swap_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_scope_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_symlink_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_not_regular",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_hardlink_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_link_count",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "held_parent_swap_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_parent_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_symlink_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_source_unavailable",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_regular_file_.ai-plugin-scanner-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "publisher_fallback_fixed_basename_.ai-plugin-scanner-guard.toml",
+      "status": "passed",
+      "generic_sinks_reached": []
+    },
+    {
+      "case": "held_root_authorization_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_unexpected_root",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "post_admission_alias_swap_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_scope_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_symlink_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_not_regular",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_hardlink_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_link_count",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "held_parent_swap_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_parent_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_symlink_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_source_unavailable",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_regular_file_.hol-guard.toml",
+      "status": "rejected",
+      "reason": "guard_config_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "publisher_fallback_fixed_basename_.hol-guard.toml",
+      "status": "passed",
+      "generic_sinks_reached": []
+    },
+    {
+      "case": "held_root_authorization_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_unexpected_root",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "post_admission_alias_swap_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_scope_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_symlink_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_not_regular",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "leaf_hardlink_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_link_count",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "held_parent_swap_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_parent_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_symlink_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_source_unavailable",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "pre_open_regular_file_config.toml",
+      "status": "rejected",
+      "reason": "guard_config_changed",
+      "outside_bytes_read": false,
+      "config_result_returned": false
+    },
+    {
+      "case": "publisher_fallback_fixed_basename_config.toml",
+      "status": "passed",
+      "generic_sinks_reached": []
+    }
+  ]
+}

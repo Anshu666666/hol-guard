@@ -4568,12 +4568,9 @@ def _cached_oauth_access_token(credentials: dict[str, object], *, now: datetime)
     access_token_expires_at = _optional_string(credentials.get("access_token_expires_at"))
     if access_token is None or access_token_expires_at is None:
         return None
-    try:
-        expires_at = datetime.fromisoformat(access_token_expires_at)
-    except ValueError:
+    expires_at = _parse_iso_timestamp(access_token_expires_at)
+    if expires_at is None:
         return None
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
     expires_at = expires_at.astimezone(timezone.utc)
     if expires_at <= now + timedelta(seconds=_OAUTH_ACCESS_TOKEN_REFRESH_SKEW_SECONDS):
         return None

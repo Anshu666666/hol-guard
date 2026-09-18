@@ -239,8 +239,13 @@ def resolve_member(
         child = _module_file(root, Path(module_path).parent / parts[0])
         return resolve_member(root, child, parts[1:], seen) if child else None
     if len(sites) != 1 or not sites[0][1]:
-        return None
-    node = sites[0][0]
+        from scripts.ci.rust_io_ownership_optionals import optional_external_class
+
+        node = optional_external_class(root, module_path, tree, parts[0])
+        if node is None:
+            return None
+    else:
+        node = sites[0][0]
     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         return ImportedCallable(module_path, node.name) if len(parts) == 1 else None
     if isinstance(node, ast.ClassDef):

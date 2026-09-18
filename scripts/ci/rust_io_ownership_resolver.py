@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
 
+from scripts.ci.rust_io_ownership_optionals import lexical_definitions, optional_external_class
 from scripts.ci.rust_io_ownership_symbols import (
     ImportedCallable,
     _bindings,
@@ -56,7 +57,7 @@ def _function_scopes(tree: ast.Module, qualname: str) -> tuple[ast.FunctionDef |
         prefix: str,
         enclosing: tuple[ast.FunctionDef | ast.AsyncFunctionDef, ...],
     ) -> tuple[ast.FunctionDef | ast.AsyncFunctionDef, ...] | None:
-        for item in body:
+        for item in lexical_definitions(body):
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 current = f"{prefix}.{item.name}" if prefix else item.name
                 if current == qualname:
@@ -124,6 +125,16 @@ def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: s
     scopes = _function_scopes(tree, record.qualname)
     if record.qualname.endswith(".<constructor>") and parts[:-1] == tuple(record.qualname.split(".")[:-1]):
         return resolve_member(root, record.path, parts)
+    if optional_external_class(root, record.path, tree, parts[0]) is not None:
+        for scope in scopes:
+            args = scope.args
+            parameters = (*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg)
+            if _bindings(scope.body, parts[0]) or any(arg is not None and arg.arg == parts[0] for arg in parameters):
+                raise RuntimeError(f"ambiguous optional fallback binding {parts[0]!r}")
+        result = resolve_member(root, record.path, parts)
+        if result is None:
+            raise RuntimeError(f"unresolved optional fallback method {name!r}")
+        return result
     bodies = [tree.body, *(scope.body for scope in scopes)]
     imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
     for visible in reversed(imports):
@@ -169,7 +180,7 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
     scopes = _function_scopes(tree, record.qualname)
 
     def qualified_name(body: list[ast.stmt], target: ast.AST, prefix: str = "") -> str | None:
-        for item in body:
+        for item in lexical_definitions(body):
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 current = f"{prefix}.{item.name}" if prefix else item.name
                 if item is target:
@@ -187,10 +198,14 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
             if any(arg is not None and arg.arg == name for arg in parameters):
                 if sites:
                     raise RuntimeError(f"ambiguous lexical parameter binding {name!r}")
-                return None
+                return _receiver_constructor(root, record, tree, name)
         if not sites:
             continue
         if len(sites) != 1:
+            if scope is tree:
+                fallback = resolve_member(root, record.path, (name,))
+                if fallback is not None:
+                    return fallback
             raise RuntimeError(f"ambiguous lexical helper binding {name!r}")
         node, direct = sites[0]
         if isinstance(node, (ast.Global, ast.Nonlocal)):
@@ -237,26 +252,26 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
     return None
 
 
+def _containing_class(
+    qualname: str, body: list[ast.stmt], prefix: str = "", enclosing: tuple[str, ast.ClassDef] | None = None
+) -> tuple[str, ast.ClassDef] | None:
+    for item in lexical_definitions(body):
+        if not isinstance(item, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        current = f"{prefix}.{item.name}" if prefix else item.name
+        if current == qualname:
+            return enclosing
+        if qualname.startswith(f"{current}."):
+            return _containing_class(
+                qualname, item.body, current, (current, item) if isinstance(item, ast.ClassDef) else enclosing
+            )
+    return None
+
+
 def _receiver_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
     """Keep explicit self/cls edges separate from Python bare-name lookup."""
     tree = ast.parse(_read(root / record.path), filename=record.path)
-
-    def containing_class(
-        body: list[ast.stmt], prefix: str = "", enclosing: tuple[str, ast.ClassDef] | None = None
-    ) -> tuple[str, ast.ClassDef] | None:
-        for item in body:
-            if not isinstance(item, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            current = f"{prefix}.{item.name}" if prefix else item.name
-            if current == record.qualname:
-                return enclosing
-            if record.qualname.startswith(f"{current}."):
-                return containing_class(
-                    item.body, current, (current, item) if isinstance(item, ast.ClassDef) else enclosing
-                )
-        return None
-
-    enclosing = containing_class(tree.body)
+    enclosing = _containing_class(record.qualname, tree.body)
     if enclosing is None:
         return None
     class_name, cls = enclosing
@@ -269,6 +284,28 @@ def _receiver_callable(root: Path, record: FunctionRecordLike, name: str) -> Imp
     if len(sites) != 1 or not sites[0][1] or not isinstance(sites[0][0], (ast.FunctionDef, ast.AsyncFunctionDef)):
         raise RuntimeError(f"ambiguous receiver helper {name!r}")
     return ImportedCallable(record.path, f"{class_name}.{member}")
+
+
+def _receiver_constructor(
+    root: Path, record: FunctionRecordLike, tree: ast.Module, name: str
+) -> ImportedCallable | None:
+    enclosing = _containing_class(record.qualname, tree.body)
+    if enclosing is None:
+        return None
+    class_name, _cls = enclosing
+    method = record.node
+    positional = (*method.args.posonlyargs, *method.args.args)
+    if (
+        not positional
+        or positional[0].arg != name
+        or not any(isinstance(d, ast.Name) and d.id == "classmethod" for d in method.decorator_list)
+    ):
+        return None
+    exact = resolve_member(root, record.path, (class_name, method.name))
+    constructor = resolve_member(root, record.path, (class_name,))
+    if exact is None or exact.qualname != record.qualname or constructor is None:
+        raise RuntimeError(f"unresolved class receiver construction {name!r}")
+    return constructor
 
 
 def _callable_target(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:

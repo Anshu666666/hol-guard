@@ -27,6 +27,7 @@ if __package__ is None:
 
 from scripts.ci.rust_io_ownership_constructors import constructor_node
 from scripts.ci.rust_io_ownership_contract import capability_contract
+from scripts.ci.rust_io_ownership_optionals import optional_external_classes
 from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call
 
 SCHEMA: Final = "hol-guard.decision-critical-io.v1"
@@ -203,6 +204,11 @@ def _functions(tree: ast.AST, path: str, root: Path | None = None) -> Iterable[F
 
     if isinstance(tree, ast.Module):
         yield from visit(tree.body)
+        if root is not None:
+            # External alternatives have no repository body; retain every
+            # source-visible fallback constructor and method in the inventory.
+            for cls in optional_external_classes(root, path, tree):
+                yield from visit([cls])
 
 
 def _function_map(root: Path) -> dict[tuple[str, str], list[FunctionRecord]]:
@@ -384,7 +390,7 @@ def _inventory(root: Path, reachable: tuple[FunctionRecord, ...]) -> list[IoObse
     for path in sorted(source_root.rglob("*.py")):
         relative = _relative(path, root)
         tree = ast.parse(_read(path), filename=relative)
-        module_records = tuple(_functions(tree, relative))
+        module_records = tuple(_functions(tree, relative, root))
         for record in module_records:
             for observation in _observations(record):
                 observations.append(

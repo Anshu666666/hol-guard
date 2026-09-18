@@ -15,6 +15,7 @@ from scripts.ci.rust_io_ownership_symbols import (
     _repository_module_path,
     require_exact_import,
     resolve_import,
+    resolve_member,
 )
 
 
@@ -121,6 +122,8 @@ def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: s
         return None
     tree = ast.parse(_read(root / record.path), filename=record.path)
     scopes = _function_scopes(tree, record.qualname)
+    if record.qualname.endswith(".<constructor>") and parts[:-1] == tuple(record.qualname.split(".")[:-1]):
+        return resolve_member(root, record.path, parts)
     bodies = [tree.body, *(scope.body for scope in scopes)]
     imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
     for visible in reversed(imports):
@@ -211,6 +214,11 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
             if result is None:
                 raise RuntimeError(f"unresolved repository lexical helper {name!r}")
             return result
+        if isinstance(node, ast.ClassDef):
+            target = resolve_member(root, record.path, (name,)) if scope is tree and direct else None
+            if target is None:
+                raise RuntimeError(f"unresolved lexical constructor {name!r}")
+            return target
         # A value binding shadows outer helpers. It is not a static repository callable.
         return None
     return None

@@ -25,6 +25,7 @@ from typing import Final, cast
 if __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from scripts.ci.rust_io_ownership_constructors import constructor_node
 from scripts.ci.rust_io_ownership_contract import capability_contract
 from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call
 
@@ -194,6 +195,10 @@ def _functions(tree: ast.AST, path: str) -> Iterable[FunctionRecord]:
                 yield from visit(item.body, qualname)
             elif isinstance(item, ast.ClassDef):
                 class_prefix = f"{prefix}.{item.name}" if prefix else item.name
+                if not prefix and isinstance(tree, ast.Module):
+                    constructor = constructor_node(item, tree.body)
+                    if constructor is not None:
+                        yield FunctionRecord(path, constructor.name, f"{class_prefix}.{constructor.name}", constructor)
                 yield from visit(item.body, class_prefix)
 
     if isinstance(tree, ast.Module):

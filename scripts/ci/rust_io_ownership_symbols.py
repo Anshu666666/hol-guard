@@ -216,6 +216,12 @@ def resolve_member(
     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         return ImportedCallable(module_path, node.name) if len(parts) == 1 else None
     if isinstance(node, ast.ClassDef):
+        if len(parts) == 1:
+            from scripts.ci.rust_io_ownership_constructors import CONSTRUCTOR, constructor_node
+
+            if constructor_node(node, tree.body) is not None:
+                return ImportedCallable(module_path, f"{node.name}.{CONSTRUCTOR}")
+            return None
         return _class_method(module_path, node, parts[1:], tree.body)
     if isinstance(node, (ast.ImportFrom, ast.Import)):
         alias = next(

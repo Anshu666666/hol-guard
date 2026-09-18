@@ -1,14 +1,13 @@
 # Rust performance execution for release/3.2
 
 Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
-with **93 DONE / 17 OPEN / 26 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
-Implementation `65391c1972248a48aafddfff093f9cfa995f60ce`, tree `0f11fb9e6d44b159a6b2a6c0ea78e30693cf6cca`. Eleventh measured publication
-`23bef02c5edd2fb24dbfec768a9dbd5e80c2b31d` has 42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped; its exact tree and distinct merge identity are
-retained in [ELEVENTH_CI_EVIDENCE](ELEVENTH_CI_EVIDENCE.md).
-Later reviewed source requires its own execution. RSP-008 now closes its literal phase-measurement/aggregate-export criterion, and RSP-025 closes warm/first-hook executable-validation counting on all four candidate targets. RSP-012 and RSP-085 retain their previously completed record/decision and same-request attribution criteria. All original dependencies remain unchanged. RSP-011 remains OPEN for complete process-tree resources; RSP-086 and full installed qualification remain BLOCKED. None of these measurement closures selects a new Rust transport or qualifies a release.
-All 144 original definitions/dependencies and the historical record below are
-unchanged. Installed qualification, complete resources, signed/frozen live
-rollback, final CI, human approval and release remain incomplete.
+with **94 DONE / 16 OPEN / 26 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
+
+The [twelfth CI cohort](TWELFTH_CI_EVIDENCE.md) is terminal: **42 original first-attempt workflows, 37 successful and five failed**, at PR head `7eeb28f3ec3a2fdf320e52ad9f01430546226b42`, tree `e3265c7a4d23284dbae09e99b96442036726f71b`. Its distinct equal-tree PR merge is `4ca765c0c6ff06a5b6afb27545ed4ac8aec8ea79`. Main passes all 96 pytest shards; ordinary Sonar analysis succeeds and the quality gate fails. Full qualification remains false.
+
+The later implementation checkpoint is `3eb670b0ba14928d8ed2b26cf5db97cd88cbead2`, tree `3efd465d518594c202f8ba51b571c08948707bfb`. It adds diagnostic evidence attribution, original-failure observations and future archive-key custody; it changes no production `src/` or `rust/` files. It requires its own platform execution. All twelve measured cohorts, their failed/censored/unoffered work and prior supplemental label events remain separate. Public commitments are not privately authenticated samples; no twelfth private archive was recovered in this workspace.
+
+RSP-134 now completes the literal validation criterion for this source; 008/012/025/085 retain their earlier bounded acceptance. All 144 original definitions and dependencies remain unchanged. Installed qualification, complete resources, signed/frozen live rollback, required CI, final review and release remain incomplete.
 
 ## Historical integration and evidence record
 

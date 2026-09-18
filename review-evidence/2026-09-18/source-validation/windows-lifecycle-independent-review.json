@@ -1,0 +1,132 @@
+{
+  "recorded_at": "2026-09-18T17:34:59.816235+00:00",
+  "base_source": "354d0f0e70d3b3634b4d90b8d04d2eab475b6600",
+  "tree": "6243f23a021744643a0e73b8a8d7d8d02cfb8ad5",
+  "review_mode": "read-only source, test logic, primary API documentation; no local Windows execution or compilation",
+  "disposition": "Source review clear after6db+0fe follow-ups; no further concrete blocker found. Actual Windows execution still required.",
+  "findings": [
+    {
+      "id": "handoff-caller-deadline",
+      "status": "addressed by6db445756b21cf63c8e0c8c196adf36ece7ac5c6; independently rechecked",
+      "detail": "New readiness verification and outer Job disarm occur after response arrival without the original request deadline, permitting late success.",
+      "fixed_by": "6db445756b21cf63c8e0c8c196adf36ece7ac5c6"
+    },
+    {
+      "id": "no-job-late-direct-wait",
+      "status": "addressed by6db445756b21cf63c8e0c8c196adf36ece7ac5c6; independently rechecked",
+      "detail": "Creation-failure cleanup has no Job query, so direct wait also needs explicit before/after budget classification.",
+      "fixed_by": "6db445756b21cf63c8e0c8c196adf36ece7ac5c6"
+    },
+    {
+      "id": "fresh-grace-extends-parent-deadline",
+      "detail": "A new grace clock derived from an earlier parent remaining-time sample could previously accept a late empty Job.",
+      "fixed_by": "0fe51160d29a688aecf78aa8ba77e5ae0349d507",
+      "status": "addressed by6db445756b21cf63c8e0c8c196adf36ece7ac5c6; independently rechecked",
+      "correction": "Every before/after Job query uses min(parent.remaining(), grace.remaining()); deterministic control rejects expired parent before and during empty query."
+    },
+    {
+      "id": "fresh-grace-clock-extends-parent",
+      "detail": "Fresh grace start could previously extend the original cleanup deadline before accepting an empty Job.",
+      "status": "addressed by0fe51160d29a688aecf78aa8ba77e5ae0349d507; independently rechecked"
+    }
+  ],
+  "confirmed_source_properties": [
+    "CreateJobObjectW is anonymous and close-kill is enabled before a successfully assigned suspended child resumes.",
+    "Failure during Job creation, assignment, or resume invokes bounded direct-child cleanup; assignment failures do not permit uncontained execution.",
+    "Only the outer readiness handoff disarms close-kill; the supervisor retains the inner Job and its close-kill flag.",
+    "Readiness compares validated private state generation, random token, runtime digest, retained supervisor PID and creation marker, then revalidates serving identity.",
+    "Complete cleanup observes direct-child termination and Job ActiveProcesses==0; Job accounting checks budget before and after querying.",
+    "Natural descendant grace is at most250ms inside the same two-second retirement budget; forced leftovers cannot become a successful normal exit.",
+    "Original setup/wait/exit failures and additional cleanup failure classification are retained through runtime marker mapping.",
+    "Actual test probes include assignment failure, exit259, normal root with lingering descendant, bypassed-destructor supervisor exit, installed supervisor termination and authenticated resident reuse.",
+    "Handoff checks the original request deadline before readiness, after readiness and after disarm; any expiry retains failure and runs bounded cleanup.",
+    "Forced cleanup rearms close-kill before requesting Job termination and retains rearm/termination/wait failures.",
+    "Direct-child termination observation rejects expiry before or after the wait even when no Job was created.",
+    "Windows outer-startup abort appends cleanup failure when either its existing100ms direct/Job cleanup or50ms generation retirement returns an error; POSIX returned reasons are unchanged.",
+    "Natural grace queries use both parent and grace budgets, preventing a freshly started grace timer from extending the cleanup budget."
+  ],
+  "runtime_evidence_limit": "This review did not execute a Windows binary or compiler. Source owner reports pinned rustfmt and companion cross-check; those are distinct from actual Windows Job, abrupt-exit and persistence controls. Hosted Windows qualification is still required.",
+  "primary_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects",
+    "https://learn.microsoft.com/en-us/windows/win32/procthread/nested-jobs",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information",
+    "https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject"
+  ],
+  "source_files": {
+    "ci/native_runtime/test_guard_native_runtime_windows_resident.py": {
+      "sha256": "1d1f764f78301a11ea24f1cd87973bf0b52124d18de7e5746747a90a128ff282",
+      "lines": 240
+    },
+    "rust/crates/guard-runtime-windows-process/Cargo.toml": {
+      "sha256": "576b28e92cc7cd4d037c9dfab5477d59b21392e256cfcd68f855ddfb1ca2e4e3",
+      "lines": 31
+    },
+    "rust/crates/guard-runtime-windows-process/src/job_retirement.rs": {
+      "sha256": "18dbac7336c66873ea74be9233fdf472b66dde6bc31f934fc34206b51e73d7e2",
+      "lines": 91
+    },
+    "rust/crates/guard-runtime-windows-process/src/job_retirement_tests.rs": {
+      "sha256": "2139291088dec467818f692b731ce81ace445b04956938b017a25a0449659d1d",
+      "lines": 91
+    },
+    "rust/crates/guard-runtime-windows-process/src/lib.rs": {
+      "sha256": "001e4c7d9d59699a5e215c9f2ffbe1cb44fa8374684db28d7db70ec9a0e0245b",
+      "lines": 80
+    },
+    "rust/crates/guard-runtime-windows-process/src/process_cleanup.rs": {
+      "sha256": "48171610d7e48af0676aa72cf363d068d7d1c736e9d01421a61e93b1b9ee51df",
+      "lines": 172
+    },
+    "rust/crates/guard-runtime-windows-process/src/process_cleanup_tests.rs": {
+      "sha256": "20fcf4eefbcc661bb632d3e4f07cec4aecf13566f322056774bfb14f866389bc",
+      "lines": 87
+    },
+    "rust/crates/guard-runtime-windows-process/src/process_lifecycle.rs": {
+      "sha256": "e64735db9b2010dbc07032fe2cd312e7077a2dd83474d5008427bdfbc7334a24",
+      "lines": 273
+    },
+    "rust/crates/guard-runtime-windows-process/src/spawn_setup.rs": {
+      "sha256": "6ae05e715897586e54dd4fd5c5564df1a8f367bcca594604d8e3f9b30dba7ca8",
+      "lines": 55
+    },
+    "rust/crates/guard-runtime-windows-process/src/spawn_setup_tests.rs": {
+      "sha256": "164b6d73f61bd3cfbf88f07911cfd6bc7eae51cac1e5f8159b25480b3cf0a2e4",
+      "lines": 239
+    },
+    "rust/crates/guard-runtime-windows-process/src/windows.rs": {
+      "sha256": "6790db6fd08f1ca87c4232041983edf185ed4a608a0cceaea891eef10288a61e",
+      "lines": 468
+    },
+    "rust/crates/guard-runtime/src/managed_resident.rs": {
+      "sha256": "a27692d786fb494ae389eed64717af1e8dde71d554b2d81ea134a22dbbb2b47f",
+      "lines": 495
+    },
+    "rust/crates/guard-runtime/src/managed_resident_containment.rs": {
+      "sha256": "0dcfef7ab0dc671856662e70556118dbcbc6c33805aa4cd62bfdcc64032b4dd9",
+      "lines": 444
+    },
+    "rust/crates/guard-runtime/src/managed_resident_windows.rs": {
+      "sha256": "95462bb5d0677e8101e2d55093fbde0b1c5c61f53f048ad888f7e8cba3cbb3ee",
+      "lines": 289
+    },
+    "rust/crates/guard-runtime/src/managed_resident_windows_handoff.rs": {
+      "sha256": "9f4776f0c6d506566e84dc4d53a0961f94f315c10510821a4f6c29a780b871f0",
+      "lines": 256
+    },
+    "rust/crates/guard-runtime/src/managed_resident_windows_wait_tests.rs": {
+      "sha256": "a164d4379afe16254710e7c5dca6647e704072f518190f181df91d34b79c7de8",
+      "lines": 248
+    }
+  },
+  "initial_reviewed_source": "0fe51160d29a688aecf78aa8ba77e5ae0349d507",
+  "reviewed_source": "0fe51160d29a688aecf78aa8ba77e5ae0349d507",
+  "completed_at": "2026-09-18T17:19:32.467619+00:00",
+  "execution_evidence": "No reviewer-owned compile/runtime tests were executed during this source review. Source owner separately reports pinnedRust1.88 formatting and Windows companion cross-compilation; neither is presented here as actual Windows runtime execution.",
+  "follow_up_properties": [
+    "Readiness uses the caller overall_deadline before proof, after proof and after outer close-kill disarm; expired handoff always enters bounded cleanup.",
+    "Forced cleanup attempts to rearm close-kill before Job termination, retaining rearm/termination errors and still attempting direct-child cleanup.",
+    "Direct child observation requires positive remaining budget before and after the wait, including the no-Job creation-failure path.",
+    "Natural grace polling uses min(parent remaining, grace remaining) before and after the Job query and when choosing sleep.",
+    "Outer startup abort retains its existing100ms child cleanup and50ms generation cleanup budgets and appends the Windows cleanup-failed marker when either reports failure; POSIX retains its original reason."
+  ]
+}

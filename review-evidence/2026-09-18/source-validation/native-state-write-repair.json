@@ -1,0 +1,52 @@
+{
+  "schema": "guard-native-state-write-repair.v1",
+  "head": "a876c6372e6dab46d51301fecee045ae1cc3e857",
+  "tree": "669a8ac08f36cd307f43727606b374fe859ac13c",
+  "parent": "354d0f0e70d3b3634b4d90b8d04d2eab475b6600",
+  "recorded_at": "2026-09-18T16:41:07.472774+00:00",
+  "worktree_clean": true,
+  "files": {
+    ".github/workflows/rust-runtime-windows-resident.yml": {
+      "sha256": "6715bd9cb9dad6c1789f8db5e18571576d0835b1fd8fb89ae8b34eaaafbb351f",
+      "lines": 181
+    },
+    "src/codex_plugin_scanner/guard/durable_io.py": {
+      "sha256": "ba68c5475a1c15412a8e9492d685fcde92aa7ca4ee6fdd18a47564fef470641f",
+      "lines": 50
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py": {
+      "sha256": "9033fd4431efb99f266c75b77a302404dc699cf4495fce4d0970a5a4ab5e11f7",
+      "lines": 497
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_windows_atomic.py": {
+      "sha256": "f1ba0d342c6efc075471b89ad4ba930ef20455f42d086b77fd7d2e4143e54f0a",
+      "lines": 393
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_windows_io.py": {
+      "sha256": "3013102fc0dc324f3ee40aef87efac218df492d438f23d1746c04cc216e5835d",
+      "lines": 427
+    },
+    "tests/test_native_policy_snapshot_write_safety.py": {
+      "sha256": "57701cb1732d06dedbe5d79b7a75ec249dcc70cd1134bbc8e87f919d1491487f",
+      "lines": 241
+    }
+  },
+  "validation": {
+    "pytest": "60 passed, 3 skipped in 3.20s",
+    "skips": "2 new actual Windows tests and 1 existing Windows-only test on Linux",
+    "ruff": "check and format passed for all four changed production modules and the new test",
+    "basedpyright": "0 errors, 0 warnings, 0 notes in all four production modules; explicit candidate env interpreter",
+    "workflow_policy": "Privileged workflow policy passed",
+    "baseline": "Eight newly added controls failed on original354 source; real partial os.write accepted76/153 bytes and committed unreadable state. Baseline log retained. Later added synchronization and close-error controls also pass."
+  },
+  "logs": {
+    "write-safety-before.log": "319ae26031305c2825059d577b2cb5688eff24d57ffcaa87c1164bbd5d566bb4",
+    "write-safety-final.log": "7bb225137e72ee57bbca9848105de2612a07eba9266abd1a2866c57143d1ddb9",
+    "write-safety-types.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "generation-short-write-before.json": "eeb3a2b4a1942fb94931afc742d630ee44f0212d5f32819aa8879ab9f6c9dfed"
+  },
+  "windows_execution_local": false,
+  "independent_review": "pending security_review",
+  "published": false,
+  "primary_windows_reference": "https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information"
+}

@@ -1,0 +1,54 @@
+{
+  "actual_macos_execution": false,
+  "branch": "codex/rsp-macos-service-identity-diagnostic",
+  "changed_files": {
+    ".github/workflows/native-macos-service-identity.yml": {
+      "git_blob": "7a86a0ce38a006dff5f3e63592d1447785441d4f",
+      "sha256": "94fced8d393b3ec6cb72d5313235a594e434db69f2688076367fe2e90007570f"
+    },
+    "scripts/ci/native_macos_service_identity.py": {
+      "git_blob": "bcf4b168a7e554414d1147d9173ce2603175ef72",
+      "sha256": "a5e0ca0f2c6011e9321ab3a2de358ba12f9786b74eb5389bfe68989556d89514"
+    },
+    "tests/test_native_macos_service_identity.py": {
+      "git_blob": "77ae0230f8dbd3947d0b8805fe5089b2e22bf910",
+      "sha256": "2e95e791b528fdbbf3df63f0a7f1016d994529e7dd84a3274e7c186a1471cf89"
+    }
+  },
+  "checks": {
+    "basedpyright": "0 errors, 0 warnings, 0 notes",
+    "git_diff_check": "passed",
+    "pytest": "28 passed in 0.44s",
+    "ruff": "format and check passed",
+    "workflow": "YAML, two-runner branch/path-only trigger, and both inline provenance Python blocks parsed"
+  },
+  "command_timeout_seconds": 5.0,
+  "commands": [
+    "/usr/bin/codesign --verify --strict -R <anchor apple> /usr/sbin/mDNSResponder",
+    "/usr/bin/sudo -n /bin/launchctl print system/<label actually read from trusted plist>"
+  ],
+  "commit": "187ecb165ef2d726b08b41396e7b090898eb97dd",
+  "executable_byte_limit": 134217728,
+  "existing_files_changed": false,
+  "failed_command_kill_wait_seconds": 1.0,
+  "manifest_byte_limit": 131072,
+  "ownership_verified": false,
+  "parent": "9011f6d566af2aa59120205b2311d42df0646d88",
+  "parent_published_same_tree_commit": "eeed58c2034dd1f380e535b1d5a62cccc9ea279d",
+  "parent_tree": "b8396476ed2e1b569cee73526d39c4dcd997339f",
+  "per_capture_kernel_file_limit_bytes": 131072,
+  "primary_reference": "https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/RequirementLang/RequirementLang.html",
+  "prior_cache_113_failure": "unchanged; SHA-matched missing-service message; no signal delivery or cache effect inferred",
+  "qualification_pass": false,
+  "remote_mutation": false,
+  "runners": [
+    "macos-15-intel",
+    "macos-15"
+  ],
+  "running_process_identity_verified": false,
+  "scope": "read-only service plist, static executable signature/hash, and launchd print; no paired cohort",
+  "service_intervention_attempted": false,
+  "source_clean": true,
+  "tree": "d037517b6b68fa3c741aac669b9f50e3ee54cd29",
+  "worktree": "/workspace/scratch/873d931eb11e/macos-service-identity"
+}

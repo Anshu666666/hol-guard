@@ -1,0 +1,115 @@
+{
+  "actual_corrected_macos_execution": false,
+  "changed_files": {
+    "scripts/ci/native_macos_service_identity.py": {
+      "git_blob": "0c48c16384670d4c35167ad51f0ad5e8481f4bb9",
+      "sha256": "965bfd5f7495986612a01c20e7d61597ac255271b1c4d2640948422ed0dd24a8"
+    },
+    "tests/test_native_macos_service_identity.py": {
+      "git_blob": "87afcd1c377979be4d00e5ebe4d2eea4adc655ed",
+      "sha256": "978ab010a4da40c8c553f969e687de7911ccde3fb8319a85fe28f1fd199e0f53"
+    }
+  },
+  "checks": {
+    "git_diff_check": "passed",
+    "pytest": "29 passed in 0.41s",
+    "ruff_check": "passed",
+    "ruff_format": "passed"
+  },
+  "commit": "67d99f5cc166da5e7ab1f266aed00e0dbc507469",
+  "documentation_example": "codesign -vvvv -R=\"anchor apple\" ./md5",
+  "fixed_argv": [
+    "/usr/bin/codesign",
+    "--verify",
+    "--strict",
+    "-R",
+    "=anchor apple",
+    "/usr/sbin/mDNSResponder"
+  ],
+  "parent": "187ecb165ef2d726b08b41396e7b090898eb97dd",
+  "primary_source": "https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html",
+  "prior_failed_cohort": {
+    "attempt": 1,
+    "outcomes": {
+      "arm": {
+        "archive_sha256": "352b96adbfe1b0f327214c3f56e89c9782cc96d77617f0c95825c8ad6fed402e",
+        "driver_commit": "0d6012e689c6ae8824f5e53a664fd13a192b3a2c",
+        "executable_sha256": "57245399c13c46a40e81f6d923d1f72ce6932abfa46dba4260caf4979571699c",
+        "files_unchanged": true,
+        "label": "com.apple.mDNSResponder.reloaded",
+        "launchctl_print_return_code": 0,
+        "program_arguments": [
+          "/usr/sbin/mDNSResponder"
+        ],
+        "service_identity_verified": false,
+        "service_intervention_attempted": false,
+        "signature": {
+          "argv": [
+            "/usr/bin/codesign",
+            "--verify",
+            "--strict",
+            "-R",
+            "anchor apple",
+            "/usr/sbin/mDNSResponder"
+          ],
+          "completed_without_intervention": true,
+          "elapsed_ms": 20.686,
+          "return_code": 1,
+          "status": "completed",
+          "stderr": "anchor apple: No such file or directory\ninvalid requirement specification\n",
+          "stderr_bytes": 74,
+          "stderr_sha256": "896a1150230b008244382a25dabaa75e6a06d108cc8f061a81e2a0fe50824175",
+          "stdout": "",
+          "stdout_bytes": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "termination_attempted": false
+        }
+      },
+      "intel": {
+        "archive_sha256": "54df6905c6f56068bda420f57df8eb1e338476b30dbfcc50fb2399bce4f436b4",
+        "driver_commit": "0d6012e689c6ae8824f5e53a664fd13a192b3a2c",
+        "executable_sha256": "57245399c13c46a40e81f6d923d1f72ce6932abfa46dba4260caf4979571699c",
+        "files_unchanged": true,
+        "label": "com.apple.mDNSResponder.reloaded",
+        "launchctl_print_return_code": 0,
+        "program_arguments": [
+          "/usr/sbin/mDNSResponder"
+        ],
+        "service_identity_verified": false,
+        "service_intervention_attempted": false,
+        "signature": {
+          "argv": [
+            "/usr/bin/codesign",
+            "--verify",
+            "--strict",
+            "-R",
+            "anchor apple",
+            "/usr/sbin/mDNSResponder"
+          ],
+          "completed_without_intervention": true,
+          "elapsed_ms": 73.102,
+          "return_code": 1,
+          "status": "completed",
+          "stderr": "anchor apple: No such file or directory\ninvalid requirement specification\n",
+          "stderr_bytes": 74,
+          "stderr_sha256": "896a1150230b008244382a25dabaa75e6a06d108cc8f061a81e2a0fe50824175",
+          "stdout": "",
+          "stdout_bytes": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "termination_attempted": false
+        }
+      }
+    },
+    "run": 35377032819
+  },
+  "prior_results_reclassified": false,
+  "published_parent_same_tree": "0d6012e689c6ae8824f5e53a664fd13a192b3a2c",
+  "qualification_pass": false,
+  "repair": "Prefix the existing anchor apple requirement with = so codesign parses inline source instead of reading a filename.",
+  "service_intervention_attempted": false,
+  "signature_requirement_unchanged": true,
+  "signature_waiver": false,
+  "source_clean": true,
+  "tree": "90ddc132d148a7a7333a4b50958708cd2723dfd3",
+  "workflow_unchanged": true
+}

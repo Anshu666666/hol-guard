@@ -1,0 +1,88 @@
+{
+  "recorded_at": "2026-09-18T17:02:10.169440+00:00",
+  "source_head": "540ba79374ddfbe3c7def48bca56fdc6d97e57f4",
+  "source_tree": "31a12b4dc24f24d8af879652c03c4183d60b7444",
+  "source_worktree_clean": true,
+  "publisher_commit": "4d94e3c0359058d9cb276c4a02d1f8339c113ab5",
+  "pi_probe_commit": "540ba79374ddfbe3c7def48bca56fdc6d97e57f4",
+  "files": {
+    "ci/native_runtime/probe_installed_pi_api.py": {
+      "sha256": "80ef82c5b644a2d87621b352a3544887e1f52447f22fbce9ae5116886e4e5a29",
+      "lines": 9
+    },
+    "ci/native_runtime/probe_installed_pi_cleanup.py": {
+      "sha256": "ac71e4d5a31ee52d7010d8c3a7297c5a75d1ca7eee3c2cc106214a6ef48ec630",
+      "lines": 278
+    },
+    "ci/native_runtime/probe_installed_pi_daemon.py": {
+      "sha256": "ae60085b9791488885acbd05c9e6091b97e1c126370b2eeecafcb298cb200afd",
+      "lines": 209
+    },
+    "ci/native_runtime/probe_installed_pi_output.py": {
+      "sha256": "649afc8be47f24aca89aa3e40c87c1ea245d3064cf9d44d5adf00b08a924c5b2",
+      "lines": 295
+    },
+    "ci/native_runtime/probe_installed_pi_payloads.py": {
+      "sha256": "bc47f50426fab4dac773bb403c0a5eae5f587fb42c55da72b5802707a235169e",
+      "lines": 275
+    },
+    "ci/native_runtime/probe_installed_pi_results.py": {
+      "sha256": "af2a185703856102a39ffe6a1b7d7275478955ed060fbbd887d3169ecf0334ee",
+      "lines": 274
+    },
+    "ci/native_runtime/probe_installed_pi_runtime.py": {
+      "sha256": "c164f08558fba5eb9cf4d90b8af574aa19f30dc1ff70a273b8416d908875fc0b",
+      "lines": 184
+    },
+    "scripts/ci/rust_io_ownership_gate.py": {
+      "sha256": "ca94e9bda8c980ca0ef79dc541bfeca7a065b4f568a1260bb93b651833ec988b",
+      "lines": 503
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py": {
+      "sha256": "f4e224b8c5dedf50ea56a58aaac00214a134e2601aebedd64f4fde2cd76b290a",
+      "lines": 483
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py": {
+      "sha256": "cff731b569dfca9996d9f5c9d69743dd85c6f87155424a0b5a9bc08cd1248758",
+      "lines": 95
+    }
+  },
+  "validation": {
+    "publisher_tests": "107 passed, 1 existing platform skip in 53.25s",
+    "publisher_typecheck": "0 errors, 0 warnings, 0 notes; explicit candidate-validation-venv interpreter",
+    "pi_tests": "32 passed in 0.25s",
+    "ruff_check": "passed on all 10 changed/new Python files",
+    "ruff_format": "10 files already formatted",
+    "pi_signatures_and_restored_bodies_ast_equal": 43,
+    "publisher_restored_method_bodies_ast_equal": 2,
+    "pi_embedded_cli_and_javascript_strings": "byte-equal to source base",
+    "direct_isolated_help": "exit 0",
+    "direct_editable_install_refusal": {
+      "before_exit": 1,
+      "after_exit": 1,
+      "same_stderr": "Error: editable hol-guard installation is not accepted"
+    },
+    "supplemental_pi_typecheck": {
+      "errors": 3,
+      "introduced_errors": 0,
+      "baseline_source": "3d62cbfea3181af262f458c726efda6bcf10bd6f:ci/native_runtime/probe_installed_pi_output.py",
+      "baseline_errors": [
+        "metadata _SimplePath cannot satisfy os.lstat path type",
+        "metadata _SimplePath.resolve is unknown",
+        "guard_home possibly unbound under correlated native_started flag"
+      ],
+      "production_typecheck_affected": false
+    },
+    "actual_installed_native_wheel_qualification": "not rerun locally; hosted native wheel workflow retains original invocation and validation semantics"
+  },
+  "logs": [
+    "publisher-split-tests.log",
+    "publisher-split-types.log",
+    "pi-split-tests.log",
+    "pi-split-types.log",
+    "pi-before-split-types.log",
+    "pi-split-direct-negative.log",
+    "pi-before-split-direct-negative.log",
+    "pi-extraction-equivalence.json"
+  ]
+}

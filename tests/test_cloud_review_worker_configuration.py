@@ -12,6 +12,7 @@ from codex_plugin_scanner.guard.runtime import cloud_review_sync_worker as worke
 from tests.test_guard_cloud_review_sync_worker import Store
 
 
+@pytest.mark.daemon_service_workers
 @pytest.mark.parametrize(
     "name,argument,default",
     [
@@ -51,6 +52,7 @@ def test_invalid_environment_uses_safe_default_before_thread_start(
     assert "not-a-number" not in caplog.text
 
 
+@pytest.mark.daemon_service_workers
 @pytest.mark.parametrize("argument", ["poll_interval", "error_backoff"])
 @pytest.mark.parametrize("value", [0.0, -2.0, math.nan, math.inf, True, False])
 def test_invalid_explicit_intervals_do_not_fall_through_to_environment(
@@ -74,6 +76,7 @@ def test_invalid_explicit_intervals_do_not_fall_through_to_environment(
     assert kwargs[argument] == 30.0
 
 
+@pytest.mark.daemon_service_workers
 def test_maximum_wait_stops_promptly_when_woken(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = Store(tmp_path)
     monkeypatch.setattr(store, "get_cloud_sync_profile", lambda: {})

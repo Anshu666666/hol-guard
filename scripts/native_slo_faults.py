@@ -13,6 +13,7 @@ from contextlib import ExitStack
 from typing import Any, cast
 from unittest.mock import patch
 
+from scripts.native_slo_config_observer import PublisherConfigObserver
 from scripts.native_slo_edge_diagnostic import capture_native_edge_stages
 from scripts.native_slo_native_diagnostic import observe_native_call
 from scripts.native_slo_publisher_diagnostic import policy_refusal_diagnostic
@@ -55,11 +56,20 @@ class FaultFixture:
         }
 
     def __enter__(self) -> FaultFixture:
+        try:
+            return self._enter()
+        except BaseException:
+            self.stack.close()
+            raise
+
+    def _enter(self) -> FaultFixture:
         from codex_plugin_scanner.guard import native_hook_edge
         from codex_plugin_scanner.guard.daemon import hook_worker_responses
         from codex_plugin_scanner.guard.runtime import hook_payload_reference
 
         worker = self.session.daemon._server.hook_worker
+        config_observer = self.stack.enter_context(PublisherConfigObserver(worker.policy_snapshot_publisher))
+        self.evidence["publisher_config_observer"] = config_observer.identity
         original = worker._review_raw_hook_native
         self.stack.enter_context(capture_native_edge_stages())
 
@@ -151,11 +161,15 @@ class FaultFixture:
         if callable(original_reason):
 
             def capture_policy_refusal(daemon_server: object) -> object:
+                stamp = config_observer.stamp() if daemon_server is owned_server else None
                 reason = original_reason(daemon_server)
                 if daemon_server is owned_server:
                     diagnostic: dict[str, object]
                     try:
                         diagnostic = policy_refusal_diagnostic(reason)
+                        config_failure = config_observer.evidence(stamp, diagnostic)
+                        if config_failure is not None:
+                            diagnostic["publisher_config_failure"] = config_failure
                     except Exception:
                         diagnostic = {"publisher_error_state": "collection_failed"}
                     try:

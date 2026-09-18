@@ -12,6 +12,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from scripts.native_slo_collector_binding import CollectorBinding, CollectorBindingError
+
 
 def _run(argv: list[str], *, cwd: Path, environment: dict[str, str] | None = None) -> str:
     completed = subprocess.run(argv, cwd=cwd, env=environment, check=True, text=True, stdout=subprocess.PIPE)
@@ -19,13 +21,19 @@ def _run(argv: list[str], *, cwd: Path, environment: dict[str, str] | None = Non
     return completed.stdout.strip()
 
 
-def _run_required_checks(checks: tuple[tuple[str, list[str]], ...], *, cwd: Path) -> None:
+def _run_required_checks(
+    checks: tuple[tuple[str, list[str]], ...], *, cwd: Path, collector: CollectorBinding | None = None
+) -> None:
     """Retain independent installed evidence even when another check fails."""
     failed: list[str] = []
     for name, argv in checks:
         try:
-            _run(argv, cwd=cwd)
-        except subprocess.CalledProcessError:
+            if name == "paired_sampling" and collector is not None:
+                with collector:
+                    _run(argv, cwd=collector.root)
+            else:
+                _run(argv, cwd=cwd)
+        except (subprocess.CalledProcessError, CollectorBindingError):
             failed.append(name)
     if failed:
         raise RuntimeError("installed qualification failed: " + ",".join(failed))
@@ -126,7 +134,13 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--mode", choices=("smoke", "qualification"), default="smoke")
     parser.add_argument("--prior-artifact-root", type=Path)
+    parser.add_argument(
+        "--collector-root", type=Path, help="Use a separate committed collector for paired sampling only"
+    )
+    parser.add_argument("--collector-sha", help="Required exact commit when --collector-root is supplied")
     args = parser.parse_args()
+    if (args.collector_root is None) != (args.collector_sha is None):
+        parser.error("--collector-root and --collector-sha must be supplied together")
     baseline_python, baseline_wheel, baseline = _build(
         args.baseline,
         target=args.target,
@@ -156,9 +170,19 @@ def main() -> int:
     (destination / "build-metadata.json").write_text(
         json.dumps({"baseline": baseline, "candidate": candidate}, indent=2) + "\n"
     )
+    collector_root = args.candidate.resolve()
+    collector = None
+    if args.collector_root is not None:
+        collector_root = args.collector_root.resolve()
+        collector = CollectorBinding(
+            root=collector_root,
+            candidate=args.candidate.resolve(),
+            expected_sha=args.collector_sha,
+            output_dir=destination / "aggregate",
+        )
     paired = [
         str(candidate_python),
-        str(args.candidate.resolve() / "scripts/qualify_guard_native.py"),
+        str(collector_root / "scripts/qualify_guard_native.py"),
         "--baseline-python",
         str(baseline_python),
         "--candidate-python",
@@ -271,7 +295,10 @@ def main() -> int:
                 ],
             ),
         )
-    _run_required_checks(checks, cwd=args.candidate.resolve())
+    if collector is None:
+        _run_required_checks(checks, cwd=args.candidate.resolve())
+    else:
+        _run_required_checks(checks, cwd=args.candidate.resolve(), collector=collector)
     return 0
 
 

@@ -8,6 +8,9 @@ use std::collections::BTreeSet;
 use std::fmt;
 use thiserror::Error;
 
+#[path = "scoped_authority_decode.rs"]
+mod decoding;
+
 #[path = "scoped_authority_match.rs"]
 mod matching;
 pub use matching::{ExactPolicyContextInputs, PolicyIdentityInputs, ScopedPolicyRequest};
@@ -80,16 +83,8 @@ pub enum PolicySourceKind {
     SignedMemory,
 }
 
-fn required_optional<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Deserialize<'de>,
-{
-    Option::<T>::deserialize(deserializer)
-}
-
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
+#[serde(from = "decoding::WireScopedPolicyRow")]
 pub struct ScopedPolicyRow {
     decision_id: u64,
     harness: String,
@@ -97,17 +92,11 @@ pub struct ScopedPolicyRow {
     action: PolicyAction,
     source_kind: PolicySourceKind,
     updated_at_us: u64,
-    #[serde(deserialize_with = "required_optional")]
     artifact_id: Option<String>,
-    #[serde(deserialize_with = "required_optional")]
     artifact_hash: Option<String>,
-    #[serde(deserialize_with = "required_optional")]
     workspace: Option<String>,
-    #[serde(deserialize_with = "required_optional")]
     publisher: Option<String>,
-    #[serde(deserialize_with = "required_optional")]
     expires_at_ms: Option<u64>,
-    #[serde(deserialize_with = "required_optional")]
     exact_command_sha256: Option<String>,
     requires_exact_context: bool,
 }
@@ -283,12 +272,11 @@ impl ManagedAuthority {
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
+#[serde(from = "decoding::WireAuthority")]
 struct RawAuthority {
     schema: String,
     generic_precedence: String,
     rows: Vec<ScopedPolicyRow>,
-    #[serde(deserialize_with = "required_optional")]
     managed: Option<ManagedAuthority>,
 }
 

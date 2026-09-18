@@ -156,7 +156,6 @@ def build_policy_snapshot_v4(
     snapshot.update(schema=SNAPSHOT_SCHEMA, version=4, scoped_authority=scoped, source_input_digest=source_input_digest)
     snapshot["policy_digest"] = policy_digest_v4(snapshot)
     integrity = cast(dict[str, object], snapshot["integrity"])
-    integrity["mac"] = "0" * 64
     integrity["mac"] = hmac.new(
         verifier_key, INTEGRITY_DOMAIN + snapshot_signing_bytes_v4(snapshot), hashlib.sha256
     ).hexdigest()

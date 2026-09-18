@@ -112,3 +112,46 @@ fn rejects_cross_version_mac_replay() {
         Err(SnapshotError::IntegrityMismatch)
     );
 }
+
+#[test]
+fn authenticated_snapshot_keeps_present_null_distinct_from_omission() {
+    let (original, key) = fixture();
+    let mut value = serde_json::to_value(&original).unwrap();
+    value["scoped_authority"]["rows"][0]["scope"] = Value::String("harness".into());
+    let fields = [
+        "artifact_id",
+        "artifact_hash",
+        "workspace",
+        "publisher",
+        "expires_at_ms",
+        "exact_command_sha256",
+    ];
+    for field in fields {
+        value["scoped_authority"]["rows"][0][field] = Value::Null;
+    }
+    value["scoped_authority"]["managed"] = Value::Null;
+    let mut snapshot: PolicySnapshotV4 = serde_json::from_value(value).unwrap();
+    snapshot.policy_digest = policy_digest_v4(&snapshot).unwrap();
+    snapshot.integrity.mac = integrity_mac_v4(&snapshot, &key).unwrap();
+    assert_eq!(check(&snapshot, &key), Ok(()));
+    let encoded = snapshot_bytes_v4(&snapshot).unwrap();
+    let roundtrip: PolicySnapshotV4 = serde_json::from_slice(&encoded).unwrap();
+    assert_eq!(snapshot_bytes_v4(&roundtrip).unwrap(), encoded);
+    for field in fields {
+        let mut missing = serde_json::to_value(&snapshot).unwrap();
+        missing["scoped_authority"]["rows"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove(field);
+        assert!(
+            serde_json::from_value::<PolicySnapshotV4>(missing).is_err(),
+            "missing {field}"
+        );
+    }
+    let mut missing = serde_json::to_value(&snapshot).unwrap();
+    missing["scoped_authority"]
+        .as_object_mut()
+        .unwrap()
+        .remove("managed");
+    assert!(serde_json::from_value::<PolicySnapshotV4>(missing).is_err());
+}

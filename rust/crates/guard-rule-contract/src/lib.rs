@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 27] = [
+const COMPONENTS: [(&str, &[u8]); 28] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -86,6 +86,10 @@ const COMPONENTS: [(&str, &[u8]); 27] = [
     (
         "guard-policy-scoped-authority",
         include_bytes!("../../guard-policy-snapshot/src/scoped_authority.rs"),
+    ),
+    (
+        "guard-policy-scoped-authority-decode",
+        include_bytes!("../../guard-policy-snapshot/src/scoped_authority_decode.rs"),
     ),
     (
         "guard-policy-scoped-matcher",
@@ -200,6 +204,7 @@ mod tests {
                 "guard-command-model",
                 "guard-command-exact-command",
                 "guard-policy-scoped-authority",
+                "guard-policy-scoped-authority-decode",
                 "guard-policy-scoped-matcher",
                 "guard-policy-snapshot-v4",
                 "guard-runtime-policy-store-versioned",

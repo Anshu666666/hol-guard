@@ -16,11 +16,12 @@ def test_ordinary_store_connections_share_admission_within_the_existing_budget(t
     store = GuardStore(tmp_path / "guard", prime_policy_integrity=False)
     entered = threading.Event()
     errors: list[Exception] = []
+    values: list[int] = []
 
     def read() -> None:
         try:
             with sqlite_connect_timeout_override(0.05), store._connect() as connection:
-                assert connection.execute("select 1").fetchone()[0] == 1
+                values.append(connection.execute("select 1").fetchone()[0])
                 entered.set()
         except Exception as error:
             errors.append(error)
@@ -35,6 +36,7 @@ def test_ordinary_store_connections_share_admission_within_the_existing_budget(t
             thread.join(timeout=2)
     assert not thread.is_alive()
     assert errors == []
+    assert values == [1]
 
 
 @pytest.mark.parametrize(

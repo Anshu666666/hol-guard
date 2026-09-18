@@ -265,3 +265,48 @@ fn direct_deserialization_cannot_bypass_semantic_validation() {
     value["rows"][0]["workspace"] = Value::Null;
     assert!(serde_json::from_value::<NativePolicyAuthority>(value).is_err());
 }
+
+#[test]
+fn required_nullable_values_preserve_nulls_and_reject_malformed_inputs() {
+    let mut value = fixture_authority();
+    value["rows"][0]["scope"] = json!("harness");
+    for field in [
+        "artifact_id",
+        "artifact_hash",
+        "workspace",
+        "publisher",
+        "expires_at_ms",
+        "exact_command_sha256",
+    ] {
+        value["rows"][0][field] = Value::Null;
+    }
+    value["managed"] = Value::Null;
+    let authority = decode(&value).unwrap();
+    assert_eq!(serde_json::to_value(&authority).unwrap(), value);
+    for path in [
+        "/rows/0/artifact_id",
+        "/rows/0/artifact_hash",
+        "/rows/0/workspace",
+        "/rows/0/publisher",
+        "/rows/0/expires_at_ms",
+        "/rows/0/exact_command_sha256",
+        "/managed",
+    ] {
+        for invalid in [json!(true), json!([]), json!({})] {
+            let mut malformed = value.clone();
+            *malformed.pointer_mut(path).unwrap() = invalid;
+            assert!(decode(&malformed).is_err(), "malformed {path}");
+        }
+    }
+}
+
+#[test]
+fn required_nullable_managed_value_retains_duplicate_field_rejection() {
+    let encoded = serde_json::to_string(&fixture_authority()).unwrap();
+    let duplicate = encoded.replacen(
+        "\"managed_revision\":",
+        "\"revision\":0,\"managed_revision\":",
+        1,
+    );
+    assert!(NativePolicyAuthority::from_slice(duplicate.as_bytes()).is_err());
+}

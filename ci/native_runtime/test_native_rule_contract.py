@@ -59,6 +59,10 @@ _COMPONENTS = (
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority.rs"),
     ),
     (
+        "guard-policy-scoped-authority-decode",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority_decode.rs"),
+    ),
+    (
         "guard-policy-scoped-matcher",
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority_match.rs"),
     ),

@@ -10,7 +10,7 @@ GENERIC_LANE: Final = "generic-local-sqlite"
 MANAGED_LANE: Final = "managed-extension-controls"
 NATIVE_LANE: Final = "native-intrinsic"
 
-GENERIC_MATCH_KEYS: Final = frozenset({"artifacts", "harnesses", "publishers", "tools", "workspaces"})
+GENERIC_MATCH_KEYS: Final = frozenset({"artifacts", "harnesses", "publishers", "tools", "workspaces", "exactCommand"})
 GENERIC_EFFECTS: Final = frozenset({"allow", "block", "review"})
 GENERIC_LIFETIMES: Final = frozenset({"permanent", "until"})
 GENERIC_INERT_EFFECTS: Final = frozenset({"ignore"})
@@ -62,8 +62,8 @@ def unsupported_matcher_reason(match: Mapping[str, object], *, rule_id: str) -> 
         "field_path": f"spec.rules[{rule_id}].match",
         "unsupported_keys": unsupported,
         "remediation": (
-            "Use only artifacts, harnesses, publishers, tools, or workspaces for generic local "
-            "compilation. Unknown matchers cannot become global rules."
+            "Use supported artifacts, harnesses, publishers, tools, workspaces, and exactCommand intersections. "
+            + "Unknown matchers cannot become global rules."
         ),
         "supported": sorted(GENERIC_MATCH_KEYS),
     }

@@ -18,6 +18,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from codex_plugin_scanner.guard import native_hook_edge
+from codex_plugin_scanner.guard.config import load_guard_config
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import validate_synced_policy_bundle
@@ -58,6 +59,8 @@ def test_generic_sync_source_is_signed_and_target_authority_is_unstaged(tmp_path
         assert store.get_sync_payload("policy_bundle_ack") is None
         assert store.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY) is None
         assert store.list_policy_decisions() == []
+        config = load_guard_config(store.guard_home)
+        assert config.default_action == "allow" and config.subprocess_action == "warn"
         accepted, reason, _ = validate_synced_policy_bundle(
             bundle,
             stored_keyring=store.get_sync_payload("policy_bundle_keyring"),
@@ -135,7 +138,7 @@ def test_ordinary_generic_sync_requires_actual_auto_resident_acceptance(
     try:
         publisher.start()
         assert publisher.wait_until_ready(), publisher.last_error
-        baseline = edge("allow", scoped=False)
+        baseline = edge("warn", scoped=False)
         assert store.get_sync_payload("policy_bundle_ack") is None
         first = sync()
         assert first["policy_validation_status"] == "accepted", first

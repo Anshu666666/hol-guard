@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 import shlex
@@ -15,17 +16,24 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
+from urllib.parse import parse_qs
 
 import pytest
 
 from codex_plugin_scanner.guard.adapters import codex as codex_adapter
+from codex_plugin_scanner.guard.adapters.base import HarnessContext
+from codex_plugin_scanner.guard.adapters.claude_code import ClaudeCodeHarnessAdapter
 from codex_plugin_scanner.guard.codex_config import dump_toml
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
+from codex_plugin_scanner.guard.daemon import server as daemon_server_module
+from codex_plugin_scanner.guard.daemon.config_read_scope import HookConfigReadScope
+from scripts import native_slo_launcher_corpus
 from scripts import native_slo_priority_launchers as module
 from scripts.native_slo_adapter import Observation
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_failure import FixtureFailureError
 from scripts.native_slo_priority_launchers import LauncherSession, RegisteredLauncher
+from scripts.native_slo_workloads import ExpectedResponse, QualificationCase
 
 
 class Metrics:
@@ -140,6 +148,104 @@ def test_install_reads_all_four_real_registrations(registrations: tuple[Register
             configuration = json.loads(item.config_path.read_text())
             handler = configuration["hooks"][item.event][0]["hooks"][0]
             assert item.argv == (handler["command"], *handler["args"])
+
+
+@pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
+def test_codex_registration_binds_the_owned_fixture_workspace(
+    session: LauncherSession, registrations: tuple[RegisteredLauncher, ...], event: str
+) -> None:
+    launcher = _launcher(registrations, "codex", event)
+    config = json.loads(launcher.argv[-1])
+    assert parse_qs(config["query"])["workspace"] == [str(session.workspace)]
+    fallback = config["fallback_command"]
+    assert fallback[fallback.index("--workspace") + 1] == str(session.workspace)
+    manifest = json.loads(Path(config["manifest_path"]).read_text(encoding="utf-8"))
+    assert manifest["context"]["workspace_dir"] == str(session.workspace.resolve())
+
+
+def test_explicit_fixture_workspace_preserves_claude_registrations(
+    session: LauncherSession, registrations: tuple[RegisteredLauncher, ...]
+) -> None:
+    # Claude already binds a supplied workspace independently of the explicit
+    # Codex installation flag. Compare actual registrations in the same home.
+    context = HarnessContext(home_dir=session.root, workspace_dir=session.workspace, guard_home=session.guard_home)
+    ClaudeCodeHarnessAdapter().install(context)
+    for launcher in registrations:
+        if launcher.harness == "claude-code":
+            assert module.registered_launcher(launcher.config_path, launcher.harness, launcher.event) == launcher
+
+
+@pytest.mark.parametrize("empty_input", (True, False))
+def test_registered_codex_query_admits_workspace_without_changing_payload(
+    session: LauncherSession,
+    registrations: tuple[RegisteredLauncher, ...],
+    monkeypatch: pytest.MonkeyPatch,
+    empty_input: bool,
+) -> None:
+    event = "PreToolUse" if empty_input else "PostToolUse"
+    launcher = _launcher(registrations, "codex", event)
+    payload: dict[str, object] = {}
+    if not empty_input:
+        payload = {
+            "hook_event_name": event,
+            "tool_name": "Read",
+            "tool_response": [{"type": "text", "text": ""}],
+            "guard_remaining_ms": 3_000,
+        }
+    original = copy.deepcopy(payload)
+    case = QualificationCase(
+        "codex/" + event + "/empty",
+        "codex",
+        event,
+        event,
+        "empty",
+        payload,
+        ExpectedResponse("unused", "unused", "unused", {}),
+        "native_resident",
+        "normal",
+        "installed_canonical",
+        0,
+        len(json.dumps(payload).encode()),
+        "inline",
+    )
+    expected = {**original, "tool_use_id": "installed-corpus-" + hashlib.sha256(case.case_id.encode()).hexdigest()[:24]}
+    expected_input = json.dumps(expected, ensure_ascii=True, separators=(",", ":"))
+    captured: list[tuple[dict[str, object], str | None]] = []
+    scope = HookConfigReadScope.for_guard_home(session.guard_home)
+    handler = object.__new__(daemon_server_module._GuardDaemonHandler)
+    handler.server = SimpleNamespace(  # type: ignore[assignment]
+        home_dir=session.root,
+        store=SimpleNamespace(guard_home=session.guard_home),
+        hook_config_scope=scope,
+        request_deadline=lambda _request, timeout: time.monotonic() + timeout,
+    )
+    handler.request = object()  # type: ignore[assignment]
+
+    def capture_admission(_handler, _server, received, _params, harness, workspace, _deadline):
+        assert harness == "codex"
+        captured.append((received, workspace))
+        # Stop at the production admission-to-policy boundary. This is not a
+        # native evaluation or authenticated transport qualification.
+        return False
+
+    def run(argv, **kwargs):
+        assert argv == launcher.argv
+        assert kwargs["cwd"] == session.workspace
+        assert kwargs["input_text"] == expected_input
+        query = json.loads(argv[-1])["query"]
+        handler._handle_runtime_hook(json.loads(kwargs["input_text"]), query, default_harness="codex")
+        return BoundedHookProcessResult(0, "{}", False, False)
+
+    monkeypatch.setattr(daemon_server_module, "_native_mode_requires_rust", lambda: True)
+    monkeypatch.setattr(daemon_server_module, "prepare_native_hook_policy", capture_admission)
+    monkeypatch.setattr(native_slo_launcher_corpus, "run_isolated_hook_process", run)
+    native_slo_launcher_corpus._run_registered(session, launcher, case)
+    # The receiver consumes its deadline hint before policy admission. The
+    # registered process input above must still preserve that exact hint.
+    admitted_payload = {key: value for key, value in expected.items() if key != "guard_remaining_ms"}
+    assert captured == [(admitted_payload, str(session.workspace.resolve()))]
+    assert payload == original
+    assert "cwd" not in captured[0][0]
 
 
 def test_readback_preserves_registered_arguments_and_environment(registrations: tuple[RegisteredLauncher, ...]) -> None:

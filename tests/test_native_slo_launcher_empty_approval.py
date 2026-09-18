@@ -58,7 +58,7 @@ def test_missing_command_can_only_be_blocked_through_real_resolution(tmp_path, h
         started = controller.begin(harness, {}, resolution="block", timeout_seconds=2)
         request_id = _queue(session, harness)
         result = _result(controller, started["operation_id"])
-        assert result["state"] == "resolved"
+        assert result["state"] == "resolved", result
         assert result["request_id"] == request_id
         assert result["resolution"] == "block" and result["approval_durable"] is True
         row = session.store.get_approval_request(request_id)

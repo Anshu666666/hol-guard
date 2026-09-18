@@ -188,6 +188,42 @@ def extraction_layout(source_root: Path, results_root: Path | None = None) -> di
     return report
 
 
+def source_materialization(root: Path) -> dict[str, object]:
+    """Reject an absent source tree even when sparse Git state reports it clean."""
+    try:
+        sparse = subprocess.run(
+            ["git", "-C", str(root), "config", "--type=bool", "--get", "core.sparseCheckout"],
+            check=False,
+            capture_output=True,
+            timeout=10,
+        )
+        if sparse.returncode not in (0, 1):
+            raise ValueError("sparse checkout configuration is unavailable")
+        sparse_active = sparse.returncode == 0 and sparse.stdout.strip() == b"true"
+        tracked = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-v", "-z"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        ).stdout
+        entries = [entry for entry in tracked.split(b"\0") if entry]
+        skip_worktree = sum(entry[:1].upper() == b"S" for entry in entries)
+        assume_unchanged = sum(entry[:1].islower() for entry in entries)
+        # lexists counts a tracked symlink itself, including a dangling link.
+        missing = sum(not os.path.lexists(root / os.fsdecode(entry[2:])) for entry in entries)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"available": False, "verified": False}
+    return {
+        "available": True,
+        "sparse_checkout": sparse_active,
+        "tracked_file_count": len(entries),
+        "skip_worktree_count": skip_worktree,
+        "assume_unchanged_count": assume_unchanged,
+        "missing_tracked_file_count": missing,
+        "verified": bool(entries) and not (sparse_active or skip_worktree or assume_unchanged or missing),
+    }
+
+
 def source_identity(root: Path, profile_name: str = "foundation") -> dict[str, object]:
     """Read tracked Git identity without executing repository programs or hooks."""
     profile = PROFILES[profile_name]
@@ -211,12 +247,14 @@ def source_identity(root: Path, profile_name: str = "foundation") -> dict[str, o
         )
     except (OSError, ValueError, subprocess.SubprocessError):
         return {"available": False, "matches_pin": False}
+    materialization = source_materialization(root)
     return {
         "available": True,
         "commit": commit,
         "tree": tree,
         "tracked_clean": clean,
-        "matches_pin": commit == profile.commit and tree == profile.tree and clean,
+        "materialization": materialization,
+        "matches_pin": commit == profile.commit and tree == profile.tree and clean and materialization["verified"],
     }
 
 

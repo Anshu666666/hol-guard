@@ -1,5 +1,49 @@
 # Rust performance execution for release/3.2
 
+This record implements the original [PRD](PRD.md) and [144-task TODO](TODO.md). Their exact acceptance, dependency prose and performance thresholds remain unchanged. The verified source conversation is [Rust Migration PRD Review](https://chatgpt.com/c/6aab4df1-1bec-83ea-9203-010d1c05f2e1), linked to implementation [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954). The user's takeover authorizes continued implementation and permitted publication on `release/3.2`; the original proposal-only wording does not narrow that later instruction. The original Takeaway document was read independently in full on 2026-09-18. No fresh chat reread is claimed by this checkpoint.
+
+The [machine ledger](execution-ledger.json) preserves every protected original field, all statuses, the complete RSP-106 record and the first 89 evidence catalog entries. The [rendered ledger](EXECUTION_LEDGER.md) reports 33 DONE records with unresolved direct prerequisites. RSP-134 still includes **all selected implementation tasks**. Counts record individual acceptance, not a release-completion percentage.
+
+## Current checkpoint — 2026-09-18
+
+The integrated local source/evidence cutoff is `623a6e058b2c4b650021e3c359d8e58b1be6ea05`. Actual published implementation [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954) remains `7a387128e2cf2ec79b890dfebe2697e8a49eb45d` (draft, unmerged); foundation [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951) remains `a001b2691f481b7b5a66dd14d68e48d61c44cb78` (unmerged, protected review blocked). The later integrated repairs have not been qualified by the earlier published artifacts. All **144 original tasks** remain **74 DONE, 31 OPEN, 29 BLOCKED, 10 DEFERRED**; implementation, qualification, activation and release are distinct.
+
+| Exact source and population | Retained result |
+| --- | --- |
+| [Implementation 7a terminal cohort](../evidence/implementation-7a387-hosted-final/TERMINAL.md) | 37 workflows: 33 success/four failure. All-attempt checks: 206, with 171 success/23 skipped/12 failure; latest view: 203, with 168/23/12. CI: 114 jobs, 106 success/six skipped/two failure. Desktop passes; Sonar/Sonar Guard skip; external CodeQL reports 11 new highs despite successful Actions analysis. |
+| 7a installed execution | All four paired targets fail; no comparison qualifies. Windows completes one adverse, unqualified baseline block. All four retained-Python scanner probes pass 28 cases each. Both Mac SLO reports pass smoke with qualification false; Linux fails strict capacity before soak. |
+| [Foundation a001 terminal cohort](../evidence/foundation-a001-hosted-final/README.md) | All 25 workflows succeed; 182 checks retain 160 success/19 skips/three failures. CI 111 success/three skips; Desktop and Sonar pass (zero new issues/hotspots, 81.4% new-code coverage). External CodeQL still reports eight highs; Kilo output-limit and original Gitleaks installer failures remain in the all-attempt population. No active independent approval. |
+| a001 Linux soak | Completes naturally: 100,000 requests/responses, 250,000 receipts, 24,198 health checks, zero request/health failures. Step 34m42s; p95 617.98 ms, maximum 850.31 ms, RSS growth 0.085565, maximum 64 threads/192 file descriptors. Its older foundation contract does not qualify the implementation's stricter capacity or full PRD gates. |
+| [26cd terminal addendum](../evidence/foundation-26cd-hosted-terminal/README.md) | 25 workflows: 23 success/one failure/one cancelled; 178 checks: 149 success/22 skipped/five failure/two cancelled. Linux soak cancelled after 23m09s; no final soak report. The original 21:09:39Z interim and every earlier failure remain unchanged. |
+
+Actual implementation wheels use test merge `95ba3911b8b68227510c034306554c8fb7f8a66d`, with the exact 7a tree `1ccec336c8a3aff22a4500b8f8350ae8fee3a345`. Foundation wheels use `4631c7098bd229cc164d2408a32191331492adcc`, with a001 tree `24e28be411272ad055f47012603d35e0394de67b`. All embedded runtime identities were verified against downloaded wheel bytes. Frozen paired baseline `2e672d2d950c6ec471005ddba46e49bba16dc23b` remains unchanged. These are artifact proofs for their named sources, not the later local repairs.
+
+The actual [7a publication and full-range secrets scan](../security/gitleaks-implementation-7a387/README.md) are retained from the separate evidence branch: zero findings with pinned Gitleaks 8.24.2, unchanged ignore input and 1,262 commits scanned. The original pre-publication receipt and subsequent branch readback remain distinct. A new published implementation commit needs its own full-range scan.
+
+### Three integrated corrections and their limits
+
+The [daemon refresh repair](../evidence/daemon-refresh-reader-lease/README.md) begins unchanged-authority refresh under the existing shared lease. Only `NativeCommandControlMutationRequiredError`, after SH unwinds, permits a fresh exclusive read. A real POSIX held-reader conflict fails before the fix; five new cases pass in 1.20 seconds and 56 existing cases pass in 10.05 seconds. Server-only types have zero errors/319 warnings; Ruff/format pass. The five-second interval, markers, floors, mutation rules and startup remain unchanged. All 395 actual Desktop source bindings are unchanged and `server.py` is not bound, so no report regeneration ran. The original mistaken regeneration claim and its correction remain in the receipt. This source proof does not identify historical lock holders or qualify installed capacity or Windows behavior.
+
+The [workspace/admission correction](../evidence/installed-workspace-admission/README.md) marks the shared priority fixture's owned workspace explicit. Actual unchanged baseline 2e and candidate 7a adapter/receiver methods admit no workspace before and the owned workspace after, for both events; 1,264 baseline source/support files match original Git blobs. All 386 corpus cases, the 1 MiB expected digest and deliberately empty inputs are preserved. Four pre-fix regressions fail; 42 focused tests pass in 3.55 seconds, fixture types have zero errors/28 warnings and Ruff/format pass. The witness stops at receiver policy admission and does not execute authenticated HTTP or native performance qualification. The accompanying empty-approval assertion adds only the existing bounded result to future failures, preserving the two-/three-second budgets and predicates; its historical cause remains unknown.
+
+The [CodeQL materialization repair](../evidence/codeql-source-materialization/README.md) fully materializes the immutable source and rejects sparse checkout, hidden index flags, missing tracked paths and empty inventories. All 65 diagnostic tests and collector types (zero errors/warnings) pass. Actual cdd/d8 replay restores all 3,902/4,793 tracked paths. Original run 35276260889 remains invalid as complete production analysis: four no-source failures and two zero-result SARIF files containing only diagnostic helper/workflow. All raw artifacts and original erroneous completeness flags are preserved. Separate published diagnostic `54c0ce882f83edb341e148d5eae2817bdf0c6451` has a zero-finding full-range scan and one [dispatch of run 35326220494](https://github.com/hashgraph-online/hol-guard/actions/runs/35326220494). The [initial queued readback](../security/gitleaks-diagnostic-54c0/README.md) remains unchanged.
+
+The [repaired hosted diagnostic](../evidence/codeql-materialization-hosted-54c0/README.md) completed all six jobs at 08:59:28 UTC with full cdd/d8 source present, clean pinned trees and zero sparse/index/missing entries. cdd has Actions 2, JavaScript 0 and Python 23 raw findings; d8 has 2, 0 and 27. All six ZIP/SARIF identities and successful invocations are verified, with no warning/error notifications or external result files. All 54 supplied findings were reviewed against their source/sink witnesses and 84 exact immutable source blobs. The source assessments retain constrained config captures and the infeasible modeled dispatch/generic-config-reader branches; their scope is the provided paths, and no alert disposition or security-gate clearance follows. These 25/29 raw findings are distinct from the PR checks' eight/11 new-alert counts. CodeQL 2.27.0, Actions 0.6.35/JavaScript 2.4.5/Python 1.8.10 query packs, original cdd/d8 profiles, selection/exclusion and disabled security/database uploads remain unchanged. Rust source is materialized but is not analyzed by this three-language matrix.
+
+The component test populations overlap earlier work. Separate [integration checks on exact combined source 623a6e](../evidence/resume-623a-integration-validation/README.md) pass native authority (0.779 seconds), Python semantic boundary (0.197 seconds), I/O ownership (32.980 seconds), and all 82 workflow-permission tests (0.39 seconds pytest time; 4.279 seconds including lock/startup). All 3,291 tracked source/Rust/script/test/workflow files remain identical before and after. These fresh integration gates do not establish a new full-production type run or complete installed qualification.
+
+### Remaining acceptance
+
+The 7a candidate failures retain 73-byte native error objects matching the complete digest of `native_command_control_mutation_in_progress`; they do not prove the historical holder or scheduling sequence. Linux capacity retains 22 resident, 12 fail-safe and 30 overload responses, zero transport errors and only eight of 12 detailed failures. Windows default-auto also retains three receipt persistence failures before all 21 receipts are processed. Linux/both Macs pass four actual Pi output cases plus six rejecting and one observe-preserving cases; Windows full secure source review remains unsupported.
+
+Only ARM passes the 7a Ollama report. Linux/Windows readiness failures occur without exhausting 400 ms; Intel updated readiness takes 508.137 ms. Mac baseline construction remains blocked in `getfqdn`. Every original-baseline rollback still fails verified native retirement (exit 2, 33 stderr bytes), with three of seven positives, zero accepted negatives and no candidate restoration. Compatible stopped rollback passes only its independent scope. Claude retains three complete 30/30 cells then 23 native PostToolUse attempts/22 completions, with zero full blocks. No repair above retroactively replaces these failures.
+
+Complete fresh integrated source/artifact checks and installed smoke, then the original full per-route/platform sampling and targets, mixed receipt/control/resource/recovery soak and selected signing/version/live rollback. Keep RSP-050's literal unversioned full-route gap and residual transport/persistence selection work explicit. Current Python MCP B requires its own immutable tool-call frame/final-authority boundary correction before RSP-100 risk-analysis reuse or benefit selection; inactive F's mutation guard does not establish B behavior. That separate correction is outside this source cutoff. Preserve the ten measured deferrals and stopped inactive F experiment. Obtain fresh external security/Sonar gates, Greptile 5/5 and genuine independent last-push CODEOWNER approval through the required process. Prepare tested final canary/rollback evidence before authorized activation. The [ledger](EXECUTION_LEDGER.md) retains all unresolved dependencies; none is waived by a smoke pass or completed investigation.
+
+The dated records below preserve earlier evidence and instructions at their stated source scopes. The current pointers and remaining acceptance above supersede earlier descriptions of the then-current head or pending run; raw observations and original acceptance requirements remain unchanged.
+
+## Historical introduction — 2026-09-17
+
 This record implements the original [PRD](PRD.md) and [144-task TODO](TODO.md).
 Their acceptance conditions, dependency text and performance thresholds are
 unchanged. The exact source conversation is [Rust Migration PRD Review](https://chatgpt.com/c/6aab4df1-1bec-83ea-9203-010d1c05f2e1),
@@ -32,7 +76,7 @@ migration may be deferred when measured current behavior and the PRD decision
 rule justify it; neither an unbuilt port nor a small-input result supplies that
 justification automatically.
 
-## Source and publication identity
+## Historical source and publication observations
 
 | Identity | Recorded value |
 | --- | --- |
@@ -43,12 +87,12 @@ justification automatically.
 | Foundation, retained shared-reader hosted checkpoint | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `a7b675a84b732ead542cdf77e5153c57b4257d9b`; new CodeQL analysis has ten open alerts |
 | Foundation, later published hosted checkpoint | [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951), `cdd14176ef0e0a258d4655c64210524d7047a257`; external CodeQL fails with eight high findings despite successful Actions analysis |
 | Foundation, earlier retained checks | `e449594e86c717e66e14598a4130475de79c536f` |
-| Last retained installed-test checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `9db62e8844c2ba2627f55b6b00e58cb5b175185d` |
+| Earlier retained installed-test checkpoint | [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954), `9db62e8844c2ba2627f55b6b00e58cb5b175185d` |
 | Historical installed-test Git tree | `47ba580366672b3b92cb46e6bb1d19c670444e94` |
 | Actual native-wheel build at that checkpoint | GitHub test-merge `c9859a5b5d04526fa7e663d7c494e442ee4298c4`, same Git tree; paired candidate wheels explicitly build `9db62e884` |
-| Current local source/evidence cutoff | `27a102aac076ca68fcb1fac0323c3089a96daa1f`; historical 591 scoped-source and 73 remote-audit checks retain their scopes, with later probe/test/diagnostic corrections separately pinned |
+| Historical local source/evidence cutoff | `27a102aac076ca68fcb1fac0323c3089a96daa1f`; historical 591 scoped-source and 73 remote-audit checks retain their scopes, with later probe/test/diagnostic corrections separately pinned |
 | Actual prepared GitHub checkpoint | [`d8bde000de992009be3b2ed009347d2b3707ef0d`](https://github.com/hashgraph-online/hol-guard/commit/d8bde000de992009be3b2ed009347d2b3707ef0d), tree `1967a2127a325ae340d313bf73e80c60abb4d1f6`, equal to historical source `73e83ddfac66ef1e04771a2aa51e96cdb1fbee77`; unreferenced when prepared |
-| Authoritative current branch heads and checks | Read [implementation #2954](https://github.com/hashgraph-online/hol-guard/pull/2954) and [foundation #2951](https://github.com/hashgraph-online/hol-guard/pull/2951); no branch movement or new hosted pass is asserted by the prepared checkpoint |
+| Historical prepared-checkpoint publication limit | Read [implementation #2954](https://github.com/hashgraph-online/hol-guard/pull/2954) and [foundation #2951](https://github.com/hashgraph-online/hol-guard/pull/2951); no branch movement or new hosted pass is asserted by the prepared checkpoint |
 | Package / Rust / diagnostic Python | `3.0.1` / `1.88.0` / CPython `3.12.14`, locked dependencies |
 
 The release branch contains a squash of earlier main changes. Reconciliation
@@ -71,7 +115,7 @@ changed files before acting on any of these PRs.
 | [#2911](https://github.com/hashgraph-online/hol-guard/pull/2911), `ea472d8d67a8539dca7de02096634bb770a36b0f` | Open | CodeSage explicitly describes Python-reference-only coverage. Do not add it to native coverage without importing, compiling and qualifying its contribution. |
 | [#2797](https://github.com/hashgraph-online/hol-guard/pull/2797), `4b89e0d2d496a85f04922b2e019a4aea15326bb9` | Open draft | Release-to-main aggregate; this implementation targets its release branch rather than replacing that PR. |
 
-## Implemented behavior and evidence limits
+## Retained implementation evidence through the earlier checkpoint
 
 | Workstream | Current implementation and evidence | Remaining acceptance |
 | --- | --- | --- |
@@ -289,9 +333,9 @@ baseline may use its complete legacy schema. SQLite VFS bytes/fsync remain
 unavailable rather than zero. Mixed offered-to-terminal latency includes scheduler
 lateness and queue wait; timeout outcomes cannot be replaced by later success.
 
-## Exact published CI observation and pending verification
+## Historical 9db CI observation and subsequent source validation
 
-The last retained installed-test checkpoint is historical 9db62e884. Its
+The earlier retained installed-test checkpoint below is 9db62e884. Its
 [complete inventory](evidence/takeover-9db62e/github-check-inventory.json) records
 **37 Actions workflows: 34 successful, three failed**. The separate population
 of **207 completed check attempts has 178 successful, 20 skipped and nine failed**.
@@ -515,7 +559,7 @@ release-base scan of actual GitHub checkpoint
 seconds including lock acquisition. Its tree equals
 `1967a2127a325ae340d313bf73e80c60abb4d1f6`; the reviewed ignore input is unchanged. This
 scan preceded branch movement and the later documentation/evidence child, which requires
-its own full-range scan. Historical 9db remains the last retained installed-test
+its own full-range scan. Historical 9db was the retained installed-test
 checkpoint; read both authoritative PR heads and checks for current state.
 
 The root-checkout correction stages the exact collector outside, preserves the
@@ -740,7 +784,7 @@ eight high findings. Linux soak and Kilo remain incomplete at the frozen
 Foundation [a001b2691f481b7b5a66dd14d68e48d61c44cb78](https://github.com/hashgraph-online/hol-guard/pull/2951)
 is published with [exact full-range secrets-scan and readback
 evidence](../security/gitleaks-foundation-a001b/README.md): zero findings,
-unchanged ignore input and the validated local tree. The current implementation
+unchanged ignore input and the validated local tree. The earlier implementation
 source/evidence cutoff is `e7b8110732b15e8a215358c0ca237d9fd21231f8`. Its production Python/Rust trees equal
 prepared d8; later probe/test/docs changes have separate receipts. All 144
 original tasks, full dependency prose, thresholds and status counts remain

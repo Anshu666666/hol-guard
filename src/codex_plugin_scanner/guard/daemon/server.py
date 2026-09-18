@@ -714,7 +714,16 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             raise
 
     def refresh_extension_control_runtime(self) -> ExtensionControlRuntimeSnapshot:
-        view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+        from ..native_command_control_authority_io import NativeCommandControlMutationRequiredError
+
+        try:
+            view = self.store.read_extension_control_authority_for_registry(
+                BUILT_IN_COMMAND_EXTENSION_REGISTRY, read_only=True
+            )
+        except NativeCommandControlMutationRequiredError:
+            # The shared lease has unwound. Reread under the mutation lease only
+            # when migration or recovery requires a durable authority change.
+            view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
         return self.extension_control_runtime.refresh(view)
 
     def process_request(self, request: Any, client_address: Any) -> None:

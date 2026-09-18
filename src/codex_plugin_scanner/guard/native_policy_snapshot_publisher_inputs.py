@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Condition
 from typing import TYPE_CHECKING, cast
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_codec import _digest_v3
@@ -246,11 +247,15 @@ class NativePolicySnapshotPublisherInputs:
         if self._scoped_publication_enabled:
             from .native_policy_snapshot_publisher_scoped import scoped_policy_input_changed
 
-            return scoped_policy_input_changed(self, force_republish=force_republish)
+            with managed_policy_cache_read_only():
+                return scoped_policy_input_changed(self, force_republish=force_republish)
         from .native_policy_snapshot_publisher_context import compiled_v3_compatible_policy
 
         try:
-            effective_policy, cloud_inputs = compiled_v3_compatible_policy(cast("NativePolicySnapshotPublisher", self))
+            with managed_policy_cache_read_only():
+                effective_policy, cloud_inputs = compiled_v3_compatible_policy(
+                    cast("NativePolicySnapshotPublisher", self)
+                )
             # ``_compiled_effective_policy`` carries the raw mode beside the
             # bounded policy so snapshot generation can derive enforce versus
             # observe. ``config_digest`` deliberately covers only the

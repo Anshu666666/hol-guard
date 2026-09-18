@@ -12,6 +12,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
 from .native_policy_decision_context import NativePolicyDecisionContext
@@ -476,7 +477,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 master_key = None
             resident_fingerprint = self._current_input_fingerprint()[1]
             resident_directory_fingerprint = self._resident_directory_fingerprint()
-            with ExitStack() as capture:
+            with managed_policy_cache_read_only(), ExitStack() as capture:
                 source_observer = None
                 source_version = None
                 source_fingerprint = None

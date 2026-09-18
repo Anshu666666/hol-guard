@@ -12,6 +12,7 @@ import sqlite3
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_mode import native_mode_requires_rust
 from .native_policy_bundle_acceptance import NativeAcceptedPolicyBundle, accepted_policy_bundle_locked
 from .native_policy_publication_lock import hold_policy_publication_mutation
@@ -105,6 +106,7 @@ def commit_native_policy_bundle_acknowledgement(
         return None
     try:
         with (
+            managed_policy_cache_read_only(),
             hold_policy_publication_mutation(publisher.guard_home),
             store._connect() as observer,
             store._connect() as connection,
@@ -137,18 +139,33 @@ def commit_native_policy_bundle_acknowledgement(
                 if bundle is None or previous is None:
                     connection.rollback()
                     return None
-                current = accepted_policy_bundle_locked(publisher, bundle=bundle, installation_id=installation_id)
-                now_ms = int(publisher._wall_clock() * 1000)
-                if (
-                    current != acceptance
-                    or not lane_selected()
-                    or observer.execute("pragma data_version").fetchone()[0] != version
-                    or _non_database_inputs(publisher._current_input_fingerprint()[0], database) != metadata
-                    or publisher._confirm_resident_fingerprint(
-                        after[1], after[1], acceptance.binding.resident_generation, resident_directory
+
+                def current_after_resident_confirmation() -> bool:
+                    # Resident confirmation may race source, lane or expiry
+                    # changes. Recheck those after it, including before the
+                    # retained-ACK early return, while SQL and epoch are held.
+                    if (
+                        publisher._confirm_resident_fingerprint(
+                            after[1], after[1], acceptance.binding.resident_generation, resident_directory
+                        )
+                        is None
+                    ):
+                        return False
+                    now_ms = int(publisher._wall_clock() * 1000)
+                    fingerprint = publisher._current_input_fingerprint()
+                    return (
+                        now_ms < acceptance.expires_at_ms
+                        and (inputs.expires_at_ms is None or inputs.expires_at_ms > now_ms)
+                        and lane_selected()
+                        and accepted_policy_bundle_locked(publisher, bundle=bundle, installation_id=installation_id)
+                        == acceptance
+                        and observer.execute("pragma data_version").fetchone()[0] == version
+                        and _non_database_inputs(fingerprint[0], database) == metadata
+                        and fingerprint[1] == after[1]
                     )
-                    is None
-                    or (inputs.expires_at_ms is not None and inputs.expires_at_ms <= now_ms)
+
+                if (
+                    not current_after_resident_confirmation()
                     or validated_generic_policy_acknowledgement(previous)[0] is None
                     or not generic_ack_matches_bundle(previous, bundle, device_id=installation_id)
                 ):
@@ -191,18 +208,7 @@ def commit_native_policy_bundle_acknowledgement(
                 if not same_historical_ack:
                     _write_payload(connection, "policy_bundle_ack", acknowledged, now)
                 _write_payload(connection, _ACCEPTANCE_KEY, {**record, "ack": acknowledged}, now)
-                # Use the current clock after SQL work, not the sync/capture time.
-                now_ms = int(publisher._wall_clock() * 1000)
-                if (
-                    now_ms >= acceptance.expires_at_ms
-                    or not lane_selected()
-                    or (inputs.expires_at_ms is not None and inputs.expires_at_ms <= now_ms)
-                    or _non_database_inputs(publisher._current_input_fingerprint()[0], database) != metadata
-                    or publisher._confirm_resident_fingerprint(
-                        after[1], after[1], acceptance.binding.resident_generation, resident_directory
-                    )
-                    is None
-                ):
+                if not current_after_resident_confirmation():
                     connection.rollback()
                     return None
                 connection.commit()

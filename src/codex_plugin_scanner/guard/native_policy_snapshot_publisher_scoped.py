@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_managed_capture import bind_configuration_origin
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
@@ -124,7 +125,7 @@ def publish_scoped(
     snapshot = publication.candidate.snapshot
     observed_resident = publisher._current_resident_fingerprint()
     observed_directory = publisher._resident_directory_fingerprint()
-    with publisher.store._connect() as connection:
+    with managed_policy_cache_read_only(), publisher.store._connect() as connection:
         data_version = connection.execute("pragma data_version").fetchone()[0]
         before_inputs = publisher._current_input_fingerprint()[0]
         current_config, current_inputs = compiled_scoped_policy(publisher)

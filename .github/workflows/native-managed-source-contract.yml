@@ -110,6 +110,7 @@ on:
       - "src/codex_plugin_scanner/guard/policy_canonical_rollout.py"
       - "src/codex_plugin_scanner/guard/runtime/policy_runtime_posture.py"
       - "tests/test_current_native_policy_posture.py"
+      - "tests/test_native_managed_cache_publication.py"
       - "tests/test_policy_sync_truth.py"
       - "tests/test_policy_bundle_validity_and_rollout.py"
   workflow_dispatch:
@@ -157,7 +158,7 @@ jobs:
       - name: Verify complete source selection and hook response fences
         run: uv run --no-sync pytest -q tests/test_native_policy_source_selection.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py
       - name: Verify configured selection and current native application
-        run: uv run --no-sync pytest -q tests/test_current_native_policy_posture.py tests/test_policy_sync_truth.py tests/test_policy_bundle_validity_and_rollout.py
+        run: uv run --no-sync pytest -q tests/test_native_managed_cache_publication.py tests/test_current_native_policy_posture.py tests/test_policy_sync_truth.py tests/test_policy_bundle_validity_and_rollout.py
       - name: Preserve authority and I/O ownership
         run: |
           uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .

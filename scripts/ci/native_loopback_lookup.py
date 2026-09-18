@@ -86,7 +86,16 @@ def _bounded_process(
 ) -> tuple[dict[str, Any], bytes]:
     started = time.monotonic()
     deadline = started + timeout
-    report: dict[str, Any] = {"status": "completed", "contained": False}
+    report: dict[str, Any] = {
+        "status": "completed",
+        "contained": False,
+        "terminal_observation": "not_observed",
+        "terminal_observation_pid_matches": None,
+        "terminal_si_code": None,
+        "terminal_si_status": None,
+        "terminal_wait_errno": None,
+        "group_retirement_errno": None,
+    }
     buffers = {"stdout": bytearray(), "stderr": bytearray()}
     process = None
     sample_attempted = False
@@ -135,7 +144,16 @@ def _bounded_process(
                 report["status"] = "terminal_observation_unavailable"
             else:
                 while time.monotonic() < deadline:
-                    if os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT) is not None:
+                    try:
+                        terminal = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                    except OSError as error:
+                        report["terminal_wait_errno"] = error.errno
+                        raise
+                    if terminal is not None:
+                        report["terminal_observation"] = "observed"
+                        report["terminal_observation_pid_matches"] = terminal.si_pid == process.pid
+                        report["terminal_si_code"] = terminal.si_code
+                        report["terminal_si_status"] = terminal.si_status
                         break
                     time.sleep(min(0.01, max(0.0, deadline - time.monotonic())))
                 else:
@@ -153,11 +171,13 @@ def _bounded_process(
                 os.killpg(process.pid, signal.SIGKILL)
                 report["group_retirement"] = "signalled"
                 retired = True
-            except ProcessLookupError:
+            except ProcessLookupError as error:
                 report["group_retirement"] = "absent"
+                report["group_retirement_errno"] = error.errno
                 retired = True
-            except OSError:
+            except OSError as error:
                 report["group_retirement"] = "failed"
+                report["group_retirement_errno"] = error.errno
                 report["status"] = "containment_failed"
             try:
                 process.wait(timeout=1)
@@ -219,6 +239,7 @@ def dns_service_summary(stdout: bytes, stderr: bytes) -> dict[str, Any]:
     text = stdout.decode("utf-8", errors="replace")
     errors = stderr.decode("utf-8", errors="replace")
     counts = dict(callbacks=0, positive=0, negative=0, removed=0, unclassified=0, loopback_label=0)
+    unparsed = dict(rows=0, negative_interface_prefix=0, ptr_in_columns=0, negative_answer_suffix=0)
     callback_flags: set[int] = set()
     # The optional single character is dns-sd's DNSSEC display column. Match
     # only this fixed query/type/class, never arbitrary diagnostic text.
@@ -229,6 +250,16 @@ def dns_service_summary(stdout: bytes, stderr: bytes) -> dict[str, Any]:
     for line in text.splitlines():
         match = row.fullmatch(line)
         if match is None:
+            # Retain only counts for the fixed query. Unknown row layouts do
+            # not become positive/negative callbacks or successful lookups.
+            fixed_name = re.escape(REVERSE_NAME) + r"\.?"
+            if re.match(r"^\s*\d{1,2}:\d{2}:\d{2}\.\d{3}\s", line) and re.search(
+                r"(?<!\S)" + fixed_name + r"(?=\s)", line
+            ):
+                unparsed["rows"] += 1
+                unparsed["negative_interface_prefix"] += bool(re.search(r"\s-\d{1,10}\s+" + fixed_name, line))
+                unparsed["ptr_in_columns"] += bool(re.search(fixed_name + r"\s+PTR\s+IN\s", line))
+                unparsed["negative_answer_suffix"] += line.endswith(("    No Such Record", "    No Authorization"))
             continue
         operation, raw_flags, answer = match.groups()
         flags = int(raw_flags, 16)
@@ -261,6 +292,7 @@ def dns_service_summary(stdout: bytes, stderr: bytes) -> dict[str, Any]:
         "api": "DNSServiceQueryRecord",
         "callback_observation": "rows_captured" if counts["callbacks"] else "none_in_captured_output",
         "counts": counts,
+        "unparsed_fixed_question_rows": unparsed,
         "callback_flags": sorted(callback_flags),
         "api_errors": api_errors,
         "unsupported_syntax_observed": unsupported,

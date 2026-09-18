@@ -1,0 +1,63 @@
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+from datetime import datetime, timezone
+
+ROOT = Path('/workspace/scratch/c25672eb4c10/receipt-failure-diagnostics')
+OUT = Path('/workspace/scratch/c25672eb4c10/receipt-failure-review/validation')
+PYTHON = '/workspace/scratch/c25672eb4c10/validation-venv/bin/python'
+PATHS = [
+    'src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py',
+    'src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py',
+    'ci/native_runtime/probe_native_default_auto.py',
+    'tests/test_guard_evidence_failure_diagnostics.py',
+    'tests/test_native_default_auto_probe.py',
+]
+
+def inventory():
+    return {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in PATHS}
+
+parser = argparse.ArgumentParser()
+parser.add_argument('stage')
+parser.add_argument('command', nargs=argparse.REMAINDER)
+args = parser.parse_args()
+OUT.mkdir(exist_ok=True)
+command = [PYTHON, *args.command]
+before = inventory()
+started = datetime.now(timezone.utc).isoformat()
+tick = time.monotonic()
+env = dict(os.environ)
+env['PYTHONPATH'] = str(ROOT / 'src')
+env['TMPDIR'] = '/tmp'
+completed = subprocess.run(
+    ['flock', '--close', '-w', '180', '/workspace/scratch/c25672eb4c10/validation.lock', *command],
+    cwd=ROOT,
+    env=env,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    check=False,
+)
+log = OUT / f'{args.stage}.log'
+log.write_bytes(completed.stdout)
+after = inventory()
+receipt = {
+    'stage': args.stage,
+    'command': command,
+    'cwd': str(ROOT),
+    'env_overrides': {'PYTHONPATH': env['PYTHONPATH'], 'TMPDIR': '/tmp'},
+    'started_at': started,
+    'elapsed_seconds_including_lock': round(time.monotonic()-tick, 6),
+    'exit_code': completed.returncode,
+    'source_before': before,
+    'source_after': after,
+    'source_unchanged': before == after,
+    'output': {'path': log.name, 'bytes': len(completed.stdout), 'sha256': hashlib.sha256(completed.stdout).hexdigest()},
+}
+(OUT / f'{args.stage}.json').write_text(json.dumps(receipt, indent=2)+'\n')
+print(json.dumps({'stage': args.stage, 'exit_code': completed.returncode, 'elapsed_seconds_including_lock': receipt['elapsed_seconds_including_lock'], 'source_unchanged': before == after}))
+print(completed.stdout.decode(errors='replace')[-14000:])
+raise SystemExit(completed.returncode)

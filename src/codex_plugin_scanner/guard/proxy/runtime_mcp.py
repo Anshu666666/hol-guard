@@ -76,6 +76,7 @@ from ..runtime.supply_chain_package_eval import evaluate_package_request_artifac
 from ..runtime.surface_server import GuardSurfaceRuntime
 from ..store import GuardStore
 from ..tool_decision_evidence import tool_decision_scanner_evidence as _tool_decision_scanner_evidence
+from . import framing
 from ._env import _build_scrubbed_env
 from .framing import (
     IO_FAILURES,
@@ -99,6 +100,15 @@ from .stdio import (
     _readline_with_timeout,
     _redact_json,
     _timeout_response,
+)
+from .tool_call_binding import (
+    bind_tool_call,
+    bind_tool_call_write,
+    changed_tool_call,
+    current_tool_call_binding,
+    require_tool_call_method,
+    tool_call_write_frame,
+    use_tool_call_binding,
 )
 from .tool_catalog import ToolCatalog
 
@@ -1163,12 +1173,14 @@ class RuntimeMcpGuardProxy:
     ) -> tuple[GuardArtifact, str, ToolCallDecision]:
         """Retain the measured Python default; optional pilots override privately."""
 
+        self._check_tool_call_preparation()
         artifact_hash = build_tool_call_hash(
             artifact,
             arguments,
             workspace=self.context.workspace_dir or Path.cwd(),
             config=config,
         )
+        self._check_tool_call_preparation()
         decision = self._disable_saved_allow_without_complete_catalog(
             evaluate_tool_call(
                 store=self.store,
@@ -1179,6 +1191,7 @@ class RuntimeMcpGuardProxy:
                 claim_saved_approval=False,
             )
         )
+        self._check_tool_call_preparation()
         return artifact, artifact_hash, decision
 
     def _handle_message(
@@ -1191,6 +1204,10 @@ class RuntimeMcpGuardProxy:
         server_output: TextIO | None,
         approval_callback: Any | None,
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        incoming_method = message.get("method")
+        event_method = incoming_method if type(incoming_method) is str else "unknown"
+        incoming_id = message.get("id")
+        has_incoming_id = "id" in message
         try:
             self._check_transport()
             result = self._handle_message_checked(
@@ -1209,9 +1226,9 @@ class RuntimeMcpGuardProxy:
             self._buffered_child_responses.clear()
             self._buffered_client_responses.clear()
             self._poison_tools_catalog()
-            response = _io_failure_response(message.get("id"), error) if "id" in message else None
+            response = _io_failure_response(incoming_id, error) if has_incoming_id else None
             return response, {
-                "method": str(message.get("method", "unknown")),
+                "method": event_method,
                 "decision": "transport-failed",
                 "reason_code": error.reason,
                 "session_terminal": True,
@@ -1227,24 +1244,33 @@ class RuntimeMcpGuardProxy:
         server_output: TextIO | None,
         approval_callback: Any | None,
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
-        if str(message.get("method", "")) == "tools/call":
-            with self._tools_call_boundary_lock:
-                return self._handle_message_serialized(
-                    message=message,
-                    child_stdin=child_stdin,
-                    child_stdout=child_stdout,
-                    client_input=client_input,
-                    server_output=server_output,
-                    approval_callback=approval_callback,
-                )
-        return self._handle_message_serialized(
-            message=message,
-            child_stdin=child_stdin,
-            child_stdout=child_stdout,
-            client_input=client_input,
-            server_output=server_output,
-            approval_callback=approval_callback,
-        )
+        # Nested messages have their own binding and restore the caller's
+        # context; no notification or reply inherits another request's intent.
+        with use_tool_call_binding(None):
+            if str(message.get("method", "")) == "tools/call":
+                with self._tools_call_boundary_lock:
+                    binding = (
+                        bind_tool_call(message)
+                        if _is_request(message) and isinstance(message.get("params"), dict)
+                        else None
+                    )
+                    with use_tool_call_binding(binding):
+                        return self._handle_message_serialized(
+                            message=binding.owned_message if binding is not None else message,
+                            child_stdin=child_stdin,
+                            child_stdout=child_stdout,
+                            client_input=client_input,
+                            server_output=server_output,
+                            approval_callback=approval_callback,
+                        )
+            return self._handle_message_serialized(
+                message=message,
+                child_stdin=child_stdin,
+                child_stdout=child_stdout,
+                client_input=client_input,
+                server_output=server_output,
+                approval_callback=approval_callback,
+            )
 
     def _deny_inline_tool_call(
         self,
@@ -2452,6 +2478,18 @@ class RuntimeMcpGuardProxy:
         receipt_signals: tuple[str, ...] = (),
         receipt_risk_categories: tuple[str, ...] = (),
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
+            if message is not binding.owned_message:
+                # Verified archive replacement is the existing authorized
+                # package handoff. Retain the original request as a parent
+                # fence while binding the exact replacement sent to the child.
+                binding = bind_tool_call(message, parent=binding)
+                if binding is None:
+                    raise changed_tool_call()
+                message = binding.owned_message
+                params = message["params"]
         reason_signals = tuple(
             str(item.get("message") or item.get("code") or "") for item in package_evaluation.reasons
         )
@@ -2471,17 +2509,21 @@ class RuntimeMcpGuardProxy:
                 policy_action=policy_action,
                 emit_runtime_evidence=False,
             )
+        if binding is not None:
+            binding.check()
+        completed_params = _safe_mcp_params(params)
         try:
-            response = self._forward_message(
-                message,
-                child_stdin,
-                child_stdout,
-                client_input=client_input,
-                server_output=server_output,
-                expected_catalog_generation=expected_catalog_generation,
-                expected_catalog_state=expected_catalog_state,
-                expected_catalog_fingerprint=expected_catalog_fingerprint,
-            )
+            with use_tool_call_binding(binding):
+                response = self._forward_message(
+                    message,
+                    child_stdin,
+                    child_stdout,
+                    client_input=client_input,
+                    server_output=server_output,
+                    expected_catalog_generation=expected_catalog_generation,
+                    expected_catalog_state=expected_catalog_state,
+                    expected_catalog_fingerprint=expected_catalog_fingerprint,
+                )
         except _ToolCatalogBoundaryChangedError:
             return self._catalog_boundary_failure_response(
                 message_id=message.get("id"),
@@ -2500,7 +2542,7 @@ class RuntimeMcpGuardProxy:
             signals=receipt_signals or reason_signals,
             risk_categories=receipt_risk_categories,
             remember=False,
-            arguments=_safe_mcp_arguments(params.get("arguments")),
+            arguments=completed_params.get("arguments"),
             policy_workspace=policy_workspace,
             additional_scanner_evidence=scanner_evidence,
             policy_action=policy_action,
@@ -2510,7 +2552,7 @@ class RuntimeMcpGuardProxy:
             "tool_name": tool_name,
             "decision": "timeout" if _is_timeout_response(response) else event_decision,
             "policy_action": policy_action,
-            "redacted_params": _safe_mcp_params(params),
+            "redacted_params": completed_params,
             "scanner_evidence": list(scanner_evidence),
         }
 
@@ -2872,7 +2914,11 @@ class RuntimeMcpGuardProxy:
         return False
 
     def _check_tool_call_preparation(self) -> None:
-        """Optional private preparation hook; the default holds no cached facts."""
+        """Verify the bound request; the default still holds no cached facts."""
+
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
 
     def _inline_approval_request(self, tool_name: str, summary: str) -> dict[str, Any]:
         raise NotImplementedError
@@ -3083,6 +3129,12 @@ class RuntimeMcpGuardProxy:
                     scanner_evidence=scanner_evidence,
                     policy_action="require-reapproval",
                 )
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
+        # Detach the existing receipt projection while the request is still
+        # bound. A later alias change cannot revise an already completed write.
+        completed_params = _safe_mcp_params(params)
         try:
             response = self._forward_message(
                 message,
@@ -3112,16 +3164,16 @@ class RuntimeMcpGuardProxy:
             signals=signals,
             risk_categories=risk_categories,
             remember=False,
-            arguments=_safe_mcp_arguments(params.get("arguments")),
+            arguments=completed_params.get("arguments"),
             additional_scanner_evidence=scanner_evidence,
             policy_action=policy_action,
         )
         event: dict[str, Any] = {
             "method": "tools/call",
-            "tool_name": params.get("name"),
+            "tool_name": completed_params.get("name"),
             "decision": "timeout" if _is_timeout_response(response) else decision_source,
             "policy_action": policy_action,
-            "redacted_params": _safe_mcp_params(params),
+            "redacted_params": completed_params,
         }
         if scanner_evidence:
             event["scanner_evidence"] = list(scanner_evidence)
@@ -3151,7 +3203,13 @@ class RuntimeMcpGuardProxy:
     def _write_message(self, stream: IO[str], message: dict[str, Any], *, source: str) -> None:
         self._check_transport()
         try:
-            write_message(stream, message, timeout_seconds=self._child_response_timeout_seconds(), source=source)
+            frame = tool_call_write_frame(message, source=source)
+            if frame is None:
+                write_message(stream, message, timeout_seconds=self._child_response_timeout_seconds(), source=source)
+            else:
+                framing._write_encoded_line(
+                    stream, frame, timeout_seconds=self._child_response_timeout_seconds(), source=source
+                )
         except IO_FAILURES as error:
             self._abort_transport(error)
             raise
@@ -3344,12 +3402,19 @@ class RuntimeMcpGuardProxy:
         expected_catalog_fingerprint: str | None = None,
     ) -> dict[str, Any]:
         request_id = message.get("id")
-        if (
-            str(message.get("method", "")) == "tools/call"
-            and expected_catalog_generation is not None
-            and expected_catalog_state is not None
-            and expected_catalog_fingerprint is not None
-            and not self._drain_and_validate_catalog_authority(
+        tool_bound = any(
+            value is not None
+            for value in (expected_catalog_generation, expected_catalog_state, expected_catalog_fingerprint)
+        )
+        if tool_bound:
+            if (
+                expected_catalog_generation is None
+                or expected_catalog_state is None
+                or expected_catalog_fingerprint is None
+            ):
+                raise changed_tool_call()
+            require_tool_call_method(message)
+            if not self._drain_and_validate_catalog_authority(
                 child_stdin=child_stdin,
                 child_stdout=child_stdout,
                 client_input=client_input,
@@ -3358,10 +3423,14 @@ class RuntimeMcpGuardProxy:
                 state=expected_catalog_state,
                 fingerprint=expected_catalog_fingerprint,
                 quiet_seconds=_TOOLS_CALL_PREWRITE_QUIET_SECONDS,
-            )
-        ):
-            raise _ToolCatalogBoundaryChangedError(_TOOL_CATALOG_EXECUTION_BOUNDARY_CHANGED)
-        self._write_message(child_stdin, message, source="child_write")
+            ):
+                raise _ToolCatalogBoundaryChangedError(_TOOL_CATALOG_EXECUTION_BOUNDARY_CHANGED)
+            require_tool_call_method(message)
+            self._check_tool_call_preparation()
+            with bind_tool_call_write(message):
+                self._write_message(child_stdin, message, source="child_write")
+        else:
+            self._write_message(child_stdin, message, source="child_write")
         timeout_seconds = self._child_response_timeout_seconds()
         while True:
             count_frame(source="child_response")

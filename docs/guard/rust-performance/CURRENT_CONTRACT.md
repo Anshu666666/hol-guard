@@ -1,11 +1,78 @@
 # Current decision and performance contract
 
+## Current checkpoint — source 69a09bc9, 2026-09-18
+
+The integrated source before this documentation is `69a09bc94b22bd5a789f137b9b7ebf3132296f83`. Actual implementation [PR #2954](https://github.com/hashgraph-online/hol-guard/pull/2954) remains `590ce01334a7724f3f1349b2ab252110a5a268f5`, draft and unmerged at the last retained readback. Its entire hosted cohort is terminal. The MCP correctness work is separately published at `1d8467bd2c60a05a45199796027b6b328079eb2e` on `codex/rsp100-security-binding-20260918`; it is not the PR's hosted source. Foundation [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951) remains `a001b2691f481b7b5a66dd14d68e48d61c44cb78` with its own retained review/security blockers. Later source fixes and diagnostics require new hosted artifacts.
+
+All **144 original tasks** retain **74 DONE, 31 OPEN, 29 BLOCKED and 10 DEFERRED**. Original PRD/TODO bytes, every acceptance/dependency/status field, complete RSP-106, original 89 catalog entries and all 100 preceding checkpoint entries are preserved. Thirty-three DONE records still have unresolved direct dependencies; RSP-134 includes all selected implementation tasks. No qualification, approval, activation or release is implied by these counts.
+
+| Exact 590 observation | Result and limit |
+| --- | --- |
+| [Terminal hosted cohort](../evidence/implementation-590ce0-hosted-final/TERMINAL.md) | 37 workflows: 35 success/two failure. All 205 checks: 175 success/23 skipped/seven failure; latest 203: 173/23/seven. Main CI shard 75 has 225 passed/two failed and aggregate fails; Sonar skips. External CodeQL retains 11 highs and no head approval. All six snapshot diagnostic jobs succeed without clearing alerts. |
+| Artifact/runtime identities | All four native wheel jobs pass. Their test merge `6981551052e75dfee9f372513177caed76df53a8` has the exact 590 tree `7284a9c2bf2f301d84a500cafd56a6153785f3cf`; each downloaded artifact and embedded executable identity is verified. Paired builder pins direct 590 against unchanged frozen 2e. |
+| Capacity and soak | Linux 64 wave conserves 32 resident / 32 overload/zero fail-safe/errors; both Macs also conserve 32/32. Linux soak completes 100,000 responses, 250,000 receipts and 21,012 health checks with zero request/health errors; p95 537.47 ms, maximum 626.7 ms, RSS growth 0.033141. The soak passes its unchanged contract; all SLOs remain smoke and full PRD qualification is incomplete. |
+| Paired and installed routes | All four paired jobs fail. Linux completes both smoke arms, each 386 daemon / 62 launcher cases, with only one pair / two ordinary samples and no qualified scope. Linux priority input/nonpriority/posture/mixed/approval faults remain. Both Mac baselines fail in getfqdn and candidates fail interpreter permissions. Windows candidate empty Pi output is native_policy_not_ready; Windows Ollama also fails readiness. Other three Ollama reports and all 112 retained-Python scanner cases pass. |
+| Claude and persistence | Linux Claude completes five blocks / 20 cells / 600 attempts for linux_c1_two_events; point-improvement gates pass, uncertainty is unevaluated and eight scopes remain missing. All hosts have 21 default-auto resident decisions; Windows retains one receipt persistence failure despite eventual drain. No link to its separate readiness failure is established. |
+| Lifecycle | Every original-baseline transition still has three of seven positives, zero accepted negatives and failed native retirement; no candidate restoration. Compatible stopped rollback passes only its own three phases. No full signing/version/live/in-progress qualification. |
+
+The [590 publication](../security/gitleaks-implementation-590ce/README.md) and [separate MCP publication](../security/gitleaks-mcp-security-1d846/README.md) each have an exact full-release-range zero-finding scan and branch readback. The [failed unreferenced 6c5 scan](../evidence/prepublication-evidence-labels-6c5/README.md), all old raw observations and source-specific reports remain intact. Neither earlier scan qualifies a later publication. The completed [54c0 full-source diagnostic](../evidence/codeql-materialization-hosted-54c0/README.md) remains 25/29 raw findings across cdd/d8, distinct from the PR 8/11 new alerts and with no alert disposition.
+
+The integrated [MCP binding](../evidence/mcp-tool-call-binding/README.md), [capture](../evidence/mcp-tool-call-binding-capture/README.md), [completed receipt](../evidence/mcp-completed-write-receipt/README.md), [historical adapter test reconciliation](../evidence/mcp-historical-adapter-test-scope/README.md) and [scalar identity](../evidence/mcp-binding-type-identity/README.md) corrections preserve immutable authorized bytes and the exact 5 ms fence. Their finite actual-stdio/source suites retain all earlier failures. Category derivation remains twice. The newly found saved-state callback authority repair is still separate active work; the per-call optimization is inactive, unqualified and untimed. Historical E/F campaigns are not resumed and the complete 106 record is untouched.
+
+The [Mac private interpreter correction](../evidence/macos-interpreter-provisioning/README.md) extends the existing exact-byte/runtime/installed-validator provisioning to both Macs and the third transition venv; 154 local cases pass, but actual Mac loader execution remains unproven. The frozen validator, shared framework permissions, Python bytes/version and original cold-process budgets are preserved. The [CI75 pending-read correction](../evidence/launcher-approval-ci75-590/README.md) has 73 finite passing cases under coverage and retains safe read-only retry before SELECT completion without invoking storage recovery. It proves a separate local SQLite defect, not the cause of the original hosted failures or a full-shard pass.
+
+The [legacy retirement source review](../evidence/legacy-retirement-source-review/README.md) corrects the earlier unreachable-helper claim. Its [observer](../evidence/legacy-retirement-observer/README.md) remains diagnostic-only with proof/coverage/bootstrap false and material retained local overhead. [Mac lookup diagnostics](../evidence/macos-baseline-lookup-diagnostics/README.md) preserve exact DNS response/parser bytes, original deadlines and containment_failed; fixed counters are not atomic partitions. [Receipt diagnostics](../evidence/receipt-failure-diagnostics/README.md) retain fixed failure phase/code labels without changing durability/retry/count semantics. None replaces an old failure or supplies a missing installed proof.
+
+Fresh [combined integration](../evidence/resume-69a09-integration-validation/README.md) initially passes semantic/I/O ownership, production Ruff and 135 observer/interpreter/transition cases (6.67 seconds) at b8f27. Its missing helper ownership declaration and 52 type-check missing-library import errors remain retained failures. Source 69a09 adds only the exact diagnostics helper to the existing persistence/privacy inventories. Native authority and I/O gates then pass, as do 19 ownership tests (5.73 seconds). Full production basedpyright, with the already installed validation interpreter selected explicitly, reports `0 errors, 0 warnings, 0 notes` under `--level error` in 47.849 seconds including lock; this is not a claim about every warning level or a replacement for historical direct-script results. All 31 changed code paths and 395 Desktop source bindings are independently verified; no tracked input changed during either run. The [fresh 590 snapshot diagnostic](../evidence/codeql-materialization-hosted-590/README.md) also retains six successful jobs and 54 complete raw cdd/d8 findings identical to 54c0 as multisets, with exact result mappings and 84 verified source blobs. It explicitly reuses the prior source assessment and does not analyze current PR runtime or clear alerts.
+
+Full original sample minima, final artifact/route/Watch/approval/posture/resource coverage, original-baseline retirement, signing/update/rollback, external CodeQL/Sonar, fresh Greptile 5/5, resolved threads and independent last-push approval remain outstanding. Source correctness, installed qualification, activation and release stay separate. The following earlier narrative is retained historical context; this checkpoint supersedes its old current-head and pending-run labels.
+
+## Retained earlier narrative
+
 This contract describes the implementation identified in [EXECUTION.md](EXECUTION.md),
 including the 2026-09-17 takeover corrections to Codex continuation, package
 parsing, bounded source experiments and MCP notification delivery. It includes
 native command execution, control authority and live-process attestation. Source support
 is distinct from installed activation and release qualification; exact evidence
 and remaining acceptance are in the [execution ledger](EXECUTION_LEDGER.md).
+
+## Historical checkpoint through 623a — 2026-09-18
+
+The integrated local source/evidence cutoff is `623a6e058b2c4b650021e3c359d8e58b1be6ea05`. Actual published implementation [#2954](https://github.com/hashgraph-online/hol-guard/pull/2954) remains `7a387128e2cf2ec79b890dfebe2697e8a49eb45d` (draft, unmerged); foundation [#2951](https://github.com/hashgraph-online/hol-guard/pull/2951) remains `a001b2691f481b7b5a66dd14d68e48d61c44cb78` (unmerged, protected review blocked). The later integrated repairs have not been qualified by the earlier published artifacts. All **144 original tasks** remain **74 DONE, 31 OPEN, 29 BLOCKED, 10 DEFERRED**; implementation, qualification, activation and release are distinct.
+
+| Exact source and population | Retained result |
+| --- | --- |
+| [Implementation 7a terminal cohort](../evidence/implementation-7a387-hosted-final/TERMINAL.md) | 37 workflows: 33 success/four failure. All-attempt checks: 206, with 171 success/23 skipped/12 failure; latest view: 203, with 168/23/12. CI: 114 jobs, 106 success/six skipped/two failure. Desktop passes; Sonar/Sonar Guard skip; external CodeQL reports 11 new highs despite successful Actions analysis. |
+| 7a installed execution | All four paired targets fail; no comparison qualifies. Windows completes one adverse, unqualified baseline block. All four retained-Python scanner probes pass 28 cases each. Both Mac SLO reports pass smoke with qualification false; Linux fails strict capacity before soak. |
+| [Foundation a001 terminal cohort](../evidence/foundation-a001-hosted-final/README.md) | All 25 workflows succeed; 182 checks retain 160 success/19 skips/three failures. CI 111 success/three skips; Desktop and Sonar pass (zero new issues/hotspots, 81.4% new-code coverage). External CodeQL still reports eight highs; Kilo output-limit and original Gitleaks installer failures remain in the all-attempt population. No active independent approval. |
+| a001 Linux soak | Completes naturally: 100,000 requests/responses, 250,000 receipts, 24,198 health checks, zero request/health failures. Step 34m42s; p95 617.98 ms, maximum 850.31 ms, RSS growth 0.085565, maximum 64 threads/192 file descriptors. Its older foundation contract does not qualify the implementation's stricter capacity or full PRD gates. |
+| [26cd terminal addendum](../evidence/foundation-26cd-hosted-terminal/README.md) | 25 workflows: 23 success/one failure/one cancelled; 178 checks: 149 success/22 skipped/five failure/two cancelled. Linux soak cancelled after 23m09s; no final soak report. The original 21:09:39Z interim and every earlier failure remain unchanged. |
+
+Actual implementation wheels use test merge `95ba3911b8b68227510c034306554c8fb7f8a66d`, with the exact 7a tree `1ccec336c8a3aff22a4500b8f8350ae8fee3a345`. Foundation wheels use `4631c7098bd229cc164d2408a32191331492adcc`, with a001 tree `24e28be411272ad055f47012603d35e0394de67b`. All embedded runtime identities were verified against downloaded wheel bytes. Frozen paired baseline `2e672d2d950c6ec471005ddba46e49bba16dc23b` remains unchanged. These are artifact proofs for their named sources, not the later local repairs.
+
+The actual [7a publication and full-range secrets scan](../security/gitleaks-implementation-7a387/README.md) are retained from the separate evidence branch: zero findings with pinned Gitleaks 8.24.2, unchanged ignore input and 1,262 commits scanned. The original pre-publication receipt and subsequent branch readback remain distinct. A new published implementation commit needs its own full-range scan.
+
+### Three integrated corrections and their limits
+
+The [daemon refresh repair](../evidence/daemon-refresh-reader-lease/README.md) begins unchanged-authority refresh under the existing shared lease. Only `NativeCommandControlMutationRequiredError`, after SH unwinds, permits a fresh exclusive read. A real POSIX held-reader conflict fails before the fix; five new cases pass in 1.20 seconds and 56 existing cases pass in 10.05 seconds. Server-only types have zero errors/319 warnings; Ruff/format pass. The five-second interval, markers, floors, mutation rules and startup remain unchanged. All 395 actual Desktop source bindings are unchanged and `server.py` is not bound, so no report regeneration ran. The original mistaken regeneration claim and its correction remain in the receipt. This source proof does not identify historical lock holders or qualify installed capacity or Windows behavior.
+
+The [workspace/admission correction](../evidence/installed-workspace-admission/README.md) marks the shared priority fixture's owned workspace explicit. Actual unchanged baseline 2e and candidate 7a adapter/receiver methods admit no workspace before and the owned workspace after, for both events; 1,264 baseline source/support files match original Git blobs. All 386 corpus cases, the 1 MiB expected digest and deliberately empty inputs are preserved. Four pre-fix regressions fail; 42 focused tests pass in 3.55 seconds, fixture types have zero errors/28 warnings and Ruff/format pass. The witness stops at receiver policy admission and does not execute authenticated HTTP or native performance qualification. The accompanying empty-approval assertion adds only the existing bounded result to future failures, preserving the two-/three-second budgets and predicates; its historical cause remains unknown.
+
+The [CodeQL materialization repair](../evidence/codeql-source-materialization/README.md) fully materializes the immutable source and rejects sparse checkout, hidden index flags, missing tracked paths and empty inventories. All 65 diagnostic tests and collector types (zero errors/warnings) pass. Actual cdd/d8 replay restores all 3,902/4,793 tracked paths. Original run 35276260889 remains invalid as complete production analysis: four no-source failures and two zero-result SARIF files containing only diagnostic helper/workflow. All raw artifacts and original erroneous completeness flags are preserved. Separate published diagnostic `54c0ce882f83edb341e148d5eae2817bdf0c6451` has a zero-finding full-range scan and one [dispatch of run 35326220494](https://github.com/hashgraph-online/hol-guard/actions/runs/35326220494). The [initial queued readback](../security/gitleaks-diagnostic-54c0/README.md) remains unchanged.
+
+The [repaired hosted diagnostic](../evidence/codeql-materialization-hosted-54c0/README.md) completed all six jobs at 08:59:28 UTC with full cdd/d8 source present, clean pinned trees and zero sparse/index/missing entries. cdd has Actions 2, JavaScript 0 and Python 23 raw findings; d8 has 2, 0 and 27. All six ZIP/SARIF identities and successful invocations are verified, with no warning/error notifications or external result files. All 54 supplied findings were reviewed against their source/sink witnesses and 84 exact immutable source blobs. The source assessments retain constrained config captures and the infeasible modeled dispatch/generic-config-reader branches; their scope is the provided paths, and no alert disposition or security-gate clearance follows. These 25/29 raw findings are distinct from the PR checks' eight/11 new-alert counts. CodeQL 2.27.0, Actions 0.6.35/JavaScript 2.4.5/Python 1.8.10 query packs, original cdd/d8 profiles, selection/exclusion and disabled security/database uploads remain unchanged. Rust source is materialized but is not analyzed by this three-language matrix.
+
+The component test populations overlap earlier work. Separate [integration checks on exact combined source 623a6e](../evidence/resume-623a-integration-validation/README.md) pass native authority (0.779 seconds), Python semantic boundary (0.197 seconds), I/O ownership (32.980 seconds), and all 82 workflow-permission tests (0.39 seconds pytest time; 4.279 seconds including lock/startup). All 3,291 tracked source/Rust/script/test/workflow files remain identical before and after. These fresh integration gates do not establish a new full-production type run or complete installed qualification.
+
+### Remaining acceptance
+
+The 7a candidate failures retain 73-byte native error objects matching the complete digest of `native_command_control_mutation_in_progress`; they do not prove the historical holder or scheduling sequence. Linux capacity retains 22 resident, 12 fail-safe and 30 overload responses, zero transport errors and only eight of 12 detailed failures. Windows default-auto also retains three receipt persistence failures before all 21 receipts are processed. Linux/both Macs pass four actual Pi output cases plus six rejecting and one observe-preserving cases; Windows full secure source review remains unsupported.
+
+Only ARM passes the 7a Ollama report. Linux/Windows readiness failures occur without exhausting 400 ms; Intel updated readiness takes 508.137 ms. Mac baseline construction remains blocked in `getfqdn`. Every original-baseline rollback still fails verified native retirement (exit 2, 33 stderr bytes), with three of seven positives, zero accepted negatives and no candidate restoration. Compatible stopped rollback passes only its independent scope. Claude retains three complete 30/30 cells then 23 native PostToolUse attempts/22 completions, with zero full blocks. No repair above retroactively replaces these failures.
+
+Complete fresh integrated source/artifact checks and installed smoke, then the original full per-route/platform sampling and targets, mixed receipt/control/resource/recovery soak and selected signing/version/live rollback. Keep RSP-050's literal unversioned full-route gap and residual transport/persistence selection work explicit. Current Python MCP B requires its own immutable tool-call frame/final-authority boundary correction before RSP-100 risk-analysis reuse or benefit selection; inactive F's mutation guard does not establish B behavior. That separate correction is outside this source cutoff. Preserve the ten measured deferrals and stopped inactive F experiment. Obtain fresh external security/Sonar gates, Greptile 5/5 and genuine independent last-push CODEOWNER approval through the required process. Prepare tested final canary/rollback evidence before authorized activation. The [ledger](EXECUTION_LEDGER.md) retains all unresolved dependencies; none is waived by a smoke pass or completed investigation.
+
+The dated records below preserve earlier evidence and instructions at their stated source scopes. The current pointers and remaining acceptance above supersede earlier descriptions of the then-current head or pending run; raw observations and original acceptance requirements remain unchanged.
 
 ## Ownership and timing boundaries
 
@@ -189,7 +256,7 @@ committed marker identifies the verified result. Native publication/admission,
 evaluation and final approval authority use the overlapping shared lock. Stable
 Python reconciliation also uses shared access; a semantic-write sentinel releases
 it and re-verifies under a new exclusive lease before effects. There is no
-in-place shared-to-exclusive upgrade. Compilation is outside the critical lease.
+in-place shared-to-exclusive upgrade. Compilation is outside the critical lease. The 2026-09-18 daemon refresh correction now uses this stable shared-read path for its periodic registry refresh as well. It catches only the explicit mutation-required sentinel after SH is released, then reads authority again under EX. A tampered or degraded result never selects that retry; the five-second interval and mutation/floor rules remain unchanged.
 
 Local and managed floors remain independent and monotonic. Explicit recovery
 chooses the new key/epoch before effects and links the exact prior authenticated
@@ -347,7 +414,7 @@ blocks complete; all scope/qualification/activation flags remain false. This is
 partial installed evidence, with complete post/fault/benefit gates still missing.
 No default launcher or signed Desktop registration selects the pilot.
 
-## Source ownership and proof
+## Source ownership and retained historical proof
 
 `scripts/ci/rust_pretool_no_python_gate.py` and `rust_io_ownership_gate.py` protect
 the authority/I/O boundary. The latter follows recording-mode callers and labels
@@ -418,7 +485,7 @@ the unchanged reviewed ignore input; a later documentation/evidence child requir
 separate scan. This does not assert current branch publication or fresh hosted success.
 Read [PR #2954](https://github.com/hashgraph-online/hol-guard/pull/2954) and [PR
 #2951](https://github.com/hashgraph-online/hol-guard/pull/2951) for actual heads and
-checks. Historical 9db remains the last retained installed-test checkpoint.
+checks. Historical 9db was the retained installed-test checkpoint for that earlier receipt.
 
 The later foundation cdd observation and its fixture/probe corrections retain their
 own source and evidence pins below. The earlier prepared d8 tree and its scan do not
@@ -579,7 +646,7 @@ eight high findings. Linux soak and Kilo remain incomplete at the frozen
 Foundation [a001b2691f481b7b5a66dd14d68e48d61c44cb78](https://github.com/hashgraph-online/hol-guard/pull/2951)
 is published with [exact full-range secrets-scan and readback
 evidence](../security/gitleaks-foundation-a001b/README.md): zero findings,
-unchanged ignore input and the validated local tree. The current implementation
+unchanged ignore input and the validated local tree. The earlier implementation
 source/evidence cutoff is `e7b8110732b15e8a215358c0ca237d9fd21231f8`. Its production Python/Rust trees equal
 prepared d8; later probe/test/docs changes have separate receipts. All 144
 original tasks, full dependency prose, thresholds and status counts remain

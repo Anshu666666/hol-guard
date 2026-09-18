@@ -1,0 +1,79 @@
+{
+  "schema": "hol-guard.macos-loopback-primary-source-review.v1",
+  "records": [
+    {
+      "id": "cpython_socket_getfqdn",
+      "retrieved_at_utc": "2026-09-18",
+      "method": "connected GitHub fetch_file, read-only",
+      "provider_blob_sha": "91782b30ae8d094fbda099fde18ce906f6d8247f",
+      "display_url": "https://github.com/python/cpython/blob/v3.12.14/Lib/socket.py",
+      "full_content_fetched": false,
+      "scope_note": "Version-tagged official Python source excerpt; provider blob SHA identifies full file, not the excerpt bytes.",
+      "excerpts": [
+        {
+          "first_line": 775,
+          "last_line": 835,
+          "text": "            return self.fileno()\n        else:\n            return -1\n\n    @property\n    def mode(self):\n        return self._mode\n\n    def close(self):\n        \"\"\"Close the SocketIO object.  This doesn't close the underlying\n        socket, except if all references to it have disappeared.\n        \"\"\"\n        if self.closed:\n            return\n        io.RawIOBase.close(self)\n        self._sock._decref_socketios()\n        self._sock = None\n\n\ndef getfqdn(name=''):\n    \"\"\"Get fully qualified domain name from name.\n\n    An empty argument is interpreted as meaning the local host.\n\n    First the hostname returned by gethostbyaddr() is checked, then\n    possibly existing aliases. In case no FQDN is available and `name`\n    was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',\n    hostname from gethostname() is returned.\n    \"\"\"\n    name = name.strip()\n    if not name or name in ('0.0.0.0', '::'):\n        name = gethostname()\n    try:\n        hostname, aliases, ipaddrs = gethostbyaddr(name)\n    except error:\n        pass\n    else:\n        aliases.insert(0, hostname)\n        for name in aliases:\n            if '.' in name:\n                break\n        else:\n            name = hostname\n    return name\n\n\n_GLOBAL_DEFAULT_TIMEOUT = object()\n\ndef create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,\n                      source_address=None, *, all_errors=False):\n    \"\"\"Connect to *address* and return the socket object.\n\n    Convenience function.  Connect to *address* (a 2-tuple ``(host,\n    port)``) and return the socket object.  Passing the optional\n    *timeout* parameter will set the timeout on the socket instance\n    before attempting to connect.  If no *timeout* is supplied, the\n    global default timeout setting returned by :func:`getdefaulttimeout`\n    is used.  If *source_address* is set it must be a tuple of (host, port)\n    for the socket to bind as a source address before making the connection.\n    A host of '' or port 0 tells the OS to use the default. When a connection\n    cannot be created, raises the last error if *all_errors* is False,"
+        }
+      ]
+    },
+    {
+      "id": "cpython_http_server_bind",
+      "retrieved_at_utc": "2026-09-18",
+      "method": "connected GitHub fetch_file, read-only",
+      "provider_blob_sha": "19fe157d6524287fa341e1ca275d3c7843491390",
+      "display_url": "https://github.com/python/cpython/blob/v3.12.14/Lib/http/server.py",
+      "full_content_fetched": false,
+      "scope_note": "Version-tagged official Python source excerpt; provider blob SHA identifies full file, not the excerpt bytes.",
+      "excerpts": [
+        {
+          "first_line": 125,
+          "last_line": 150,
+          "text": "</html>\n\"\"\"\n\nDEFAULT_ERROR_CONTENT_TYPE = \"text/html;charset=utf-8\"\n\n# Data larger than this will be read in chunks, to prevent extreme\n# overallocation.\n_MIN_READ_BUF_SIZE = 1 << 20\n\nclass HTTPServer(socketserver.TCPServer):\n\n    allow_reuse_address = 1    # Seems to make sense in testing environment\n\n    def server_bind(self):\n        \"\"\"Override server_bind to store the server name.\"\"\"\n        socketserver.TCPServer.server_bind(self)\n        host, port = self.server_address[:2]\n        self.server_name = socket.getfqdn(host)\n        self.server_port = port\n\n\nclass ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):\n    daemon_threads = True\n\n\nclass BaseHTTPRequestHandler(socketserver.StreamRequestHandler):"
+        }
+      ]
+    },
+    {
+      "id": "apple_dns_service_client",
+      "retrieved_at_utc": "2026-09-18",
+      "method": "connected GitHub fetch_file, read-only",
+      "provider_blob_sha": "fce61a796c36ec33ab2f3ee5469df75cefc72e98",
+      "display_url": "https://github.com/apple-oss-distributions/mDNSResponder/blob/main/Clients/dns-sd.c",
+      "full_content_fetched": true,
+      "scope_note": "Official distribution source fetched from main; this is not a mapping to either historical runner's dns-sd binary.",
+      "excerpts": [
+        {
+          "first_line": 1166,
+          "last_line": 1194,
+          "text": "            case kDNSServiceType_DS:\n            case kDNSServiceType_DNSKEY:\n            case kDNSServiceType_NSEC:\n            case kDNSServiceType_RRSIG:\n                ParseDNSSECRecords(rrtype, rdb, sizeof(rdb), rd, rdlen);\n                break;\n\n            default:\n                snprintf(rdb, sizeof(rdb), \"%d bytes%s\", rdlen, rdlen ? \":\" : \"\");\n                unknowntype = 1;\n                break;\n        }\n    }\n\n    const char dnssec_result = DNSSECResultToCharRepresentation(flags);\n\n    printf(\"%-3s  %-9X %c  %3d  %-29s %-6s %-6s %s\",\n        op, flags, dnssec_result, ifIndex, fullname, rr_type, rr_class, rdb);\n\n    if (unknowntype)\n    {\n        while (rd < end)\n            printf(\" %02X\", *rd++);\n    }\n    if (errorCode)\n    {\n        if (errorCode == kDNSServiceErr_NoSuchRecord)\n            printf(\"    No Such Record\");\n        else if (errorCode == kDNSServiceErr_NoAuth)\n"
+        },
+        {
+          "first_line": 2106,
+          "last_line": 2125,
+          "text": "            argv += 2;\n        }\n\n        if (argc > 2 && !strcmp(argv[1], \"-t\"))\n        {\n            exitTimeout = atoi(argv[2]);\n            argc -= 2;\n            argv += 2;\n        }\n\n        if (argc > 2 && !strcmp(argv[1], \"-m\"))\n        {\n            exitWhenNoMoreComing = 1;\n            argc -= 1;\n            argv += 1;\n        }\n\n        // Exit loop if if we didn't match one of the multi character options.\n        if (argc == entryCount)\n            break;\n"
+        },
+        {
+          "first_line": 2200,
+          "last_line": 2228,
+          "text": "        callName = \"DNSServiceRegisterRecord\";\n        err = RegisterProxyAddressRecord(client_pa, argv[opi+4], argv[opi+5], flags);\n        if (err) break;\n        err = RegisterService(&client, argv[opi+0], gettype(buffer, argv[opi+1]), argv[opi+2], argv[opi+4], argv[opi+3], argc-(opi+6), argv+(opi+6), flags, &callName);\n        break;\n\n    case 'q':\n    case 'Q':\n    case 'C':   {\n        uint16_t rrtype, rrclass;\n        // For the exitWhenNoMoreComing test case, we do not want intermediates, since this would result in\n        // a premature exit.\n        if (!exitWhenNoMoreComing) {\n            flags |= kDNSServiceFlagsReturnIntermediates;\n        }\n        if (operation == 'q')\n            flags |= kDNSServiceFlagsSuppressUnusable;\n        if (enable_dnssec)\n            flags |= kDNSServiceFlagsEnableDNSSEC;\n        if (argc < opi+1)\n            goto Fail;\n        rrtype = (argc <= opi+1) ? kDNSServiceType_A  : GetRRType(argv[opi+1]);\n        rrclass = (argc <= opi+2) ? kDNSServiceClass_IN : GetRRClass(argv[opi+2]);\n        if (rrtype == kDNSServiceType_TXT || rrtype == kDNSServiceType_PTR)\n            flags |= kDNSServiceFlagsLongLivedQuery;\n        callName = \"DNSServiceQueryRecord\";\n        err = DNSServiceQueryRecord(&client, flags, opinterface, argv[opi+0], rrtype, rrclass, qr_reply, NULL);\n        break;\n    }\n"
+        }
+      ]
+    },
+    {
+      "id": "cpython_gethostbyaddr_native",
+      "retrieved_at_utc": "2026-09-18",
+      "method": "connected GitHub fetch_file, read-only",
+      "provider_blob_sha": "27afd73d9704db9bb0d1bfb28af1e6013c97f7cc",
+      "display_url": "https://github.com/python/cpython/blob/v3.12.14/Modules/socketmodule.c",
+      "full_content_fetched": true,
+      "scope_note": "Official CPython v3.12.14 implementation; platform build condition selection is not independently attested.",
+      "excerpts": [
+        {
+          "first_line": 6013,
+          "last_line": 6101,
+          "text": "/* Python interface to gethostbyaddr(IP). */\n\n/*ARGSUSED*/\nstatic PyObject *\nsocket_gethostbyaddr(PyObject *self, PyObject *args)\n{\n    sock_addr_t addr;\n    struct sockaddr *sa = SAS2SA(&addr);\n    char *ip_num;\n    struct hostent *h;\n    PyObject *ret = NULL;\n#ifdef HAVE_GETHOSTBYNAME_R\n    struct hostent hp_allocated;\n#ifdef HAVE_GETHOSTBYNAME_R_3_ARG\n    struct hostent_data data;\n#else\n    /* glibcs up to 2.10 assume that the buf argument to\n       gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc\n       does not ensure. The attribute below instructs the compiler\n       to maintain this alignment. */\n    char buf[16384] Py_ALIGNED(8);\n    int buf_len = (sizeof buf) - 1;\n    int errnop;\n#endif\n#ifdef HAVE_GETHOSTBYNAME_R_3_ARG\n    int result;\n#endif\n#endif /* HAVE_GETHOSTBYNAME_R */\n    const char *ap;\n    int al;\n    int af;\n\n    if (!PyArg_ParseTuple(args, \"et:gethostbyaddr\", \"idna\", &ip_num))\n        return NULL;\n    if (PySys_Audit(\"socket.gethostbyaddr\", \"O\", args) < 0) {\n        goto finally;\n    }\n    af = AF_UNSPEC;\n    socket_state *state = get_module_state(self);\n    if (setipaddr(state, ip_num, sa, sizeof(addr), af) < 0) {\n        goto finally;\n    }\n    af = sa->sa_family;\n    ap = NULL;\n    /* al = 0; */\n    switch (af) {\n    case AF_INET:\n        ap = (char *)&((struct sockaddr_in *)sa)->sin_addr;\n        al = sizeof(((struct sockaddr_in *)sa)->sin_addr);\n        break;\n#ifdef ENABLE_IPV6\n    case AF_INET6:\n        ap = (char *)&((struct sockaddr_in6 *)sa)->sin6_addr;\n        al = sizeof(((struct sockaddr_in6 *)sa)->sin6_addr);\n        break;\n#endif\n    default:\n        PyErr_SetString(PyExc_OSError, \"unsupported address family\");\n        goto finally;\n    }\n    Py_BEGIN_ALLOW_THREADS\n#ifdef HAVE_GETHOSTBYNAME_R\n#if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)\n    gethostbyaddr_r(ap, al, af,\n        &hp_allocated, buf, buf_len,\n        &h, &errnop);\n#elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)\n    h = gethostbyaddr_r(ap, al, af,\n                        &hp_allocated, buf, buf_len, &errnop);\n#else /* HAVE_GETHOSTBYNAME_R_3_ARG */\n    memset((void *) &data, '\\0', sizeof(data));\n    result = gethostbyaddr_r(ap, al, af, &hp_allocated, &data);\n    h = (result != 0) ? NULL : &hp_allocated;\n#endif\n#else /* not HAVE_GETHOSTBYNAME_R */\n#ifdef USE_GETHOSTBYNAME_LOCK\n    PyThread_acquire_lock(netdb_lock, 1);\n#endif\n    SUPPRESS_DEPRECATED_CALL\n    h = gethostbyaddr(ap, al, af);\n#endif /* HAVE_GETHOSTBYNAME_R */\n    Py_END_ALLOW_THREADS\n    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);\n#ifdef USE_GETHOSTBYNAME_LOCK\n    PyThread_release_lock(netdb_lock);\n#endif\nfinally:\n    PyMem_Free(ip_num);\n    return ret;\n"
+        }
+      ]
+    }
+  ]
+}

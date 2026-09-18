@@ -1,0 +1,147 @@
+{
+  "schema": "guard.rsp100.baseline-boundary-probe.v1",
+  "checked_at": "2026-09-18T08:56:38.439998+00:00",
+  "root": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+  "commit": "c66841d82b99499ab6730fb577a6114676ec4783",
+  "source_before": {
+    "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "2d41f3db31dff822c6300bf46b336505e439694feea819a830f815db510fab9c",
+    "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "0c825302fecb5dce5fc66b9f9be0f7e81f08ddf41d99526c1706df3fc4b06a88",
+    "src/codex_plugin_scanner/guard/proxy/framing.py": "334022216568d3c78a1a8196ff806a07058d66c47224cd1dd840f6d522c60092",
+    "tests/test_mcp_owned_preparation_pilot.py": "e4a1013dc16224dcc9b468e436ec6af55f6c62d118b29dcbdc5cc148d1cf9cbe"
+  },
+  "source_after": {
+    "src/codex_plugin_scanner/guard/mcp_tool_calls.py": "2d41f3db31dff822c6300bf46b336505e439694feea819a830f815db510fab9c",
+    "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "0c825302fecb5dce5fc66b9f9be0f7e81f08ddf41d99526c1706df3fc4b06a88",
+    "src/codex_plugin_scanner/guard/proxy/framing.py": "334022216568d3c78a1a8196ff806a07058d66c47224cd1dd840f6d522c60092",
+    "tests/test_mcp_owned_preparation_pilot.py": "e4a1013dc16224dcc9b468e436ec6af55f6c62d118b29dcbdc5cc148d1cf9cbe"
+  },
+  "source_unchanged": true,
+  "pilot_imported": false,
+  "production_modified": false,
+  "performance_campaign": false,
+  "scope": "Three synthetic actual-stdio baseline sessions with only local callback instrumentation; no timing qualification.",
+  "unix_stream_socket": {
+    "available": false,
+    "errno": 1,
+    "error": "[Errno 1] Operation not permitted"
+  },
+  "cases": [
+    {
+      "boundary": "unchanged_control",
+      "category_derivations": 2,
+      "quiet_barriers": 1,
+      "mutations": 0,
+      "forwarded": true,
+      "forwarded_method": "tools/call",
+      "forwarded_id": "exact-id",
+      "last_event": {
+        "method": "tools/call",
+        "tool_name": "safe_echo",
+        "decision": "policy-warn",
+        "policy_action": "warn",
+        "redacted_params": {
+          "name": "safe_echo",
+          "arguments": {
+            "nested": [
+              false,
+              7,
+              -0.0,
+              null
+            ],
+            "text": "ordinary"
+          }
+        }
+      },
+      "last_response": {
+        "jsonrpc": "2.0",
+        "id": "exact-id",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "forwarded"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "boundary": "policy_callback",
+      "category_derivations": 2,
+      "quiet_barriers": 0,
+      "mutations": 1,
+      "forwarded": true,
+      "forwarded_method": "ping",
+      "forwarded_id": "exact-id",
+      "last_event": {
+        "method": "tools/call",
+        "tool_name": "safe_echo",
+        "decision": "policy-warn",
+        "policy_action": "warn",
+        "redacted_params": {
+          "name": "safe_echo",
+          "arguments": {
+            "nested": [
+              false,
+              7,
+              -0.0,
+              null
+            ],
+            "text": "ordinary"
+          }
+        }
+      },
+      "last_response": {
+        "jsonrpc": "2.0",
+        "id": "exact-id",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "forwarded"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "boundary": "quiet_barrier",
+      "category_derivations": 2,
+      "quiet_barriers": 1,
+      "mutations": 1,
+      "forwarded": true,
+      "forwarded_method": "ping",
+      "forwarded_id": "exact-id",
+      "last_event": {
+        "method": "tools/call",
+        "tool_name": "safe_echo",
+        "decision": "policy-warn",
+        "policy_action": "warn",
+        "redacted_params": {
+          "name": "safe_echo",
+          "arguments": {
+            "nested": [
+              false,
+              7,
+              -0.0,
+              null
+            ],
+            "text": "ordinary"
+          }
+        }
+      },
+      "last_response": {
+        "jsonrpc": "2.0",
+        "id": "exact-id",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "forwarded"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

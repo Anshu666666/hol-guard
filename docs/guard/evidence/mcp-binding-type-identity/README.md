@@ -1,0 +1,7 @@
+The strict request owner now checks bool, string and integer types by identity. Tuple membership on `type(value)` can invoke a custom metaclass equality method before rejecting an unsupported value. The replacement uses only `is` comparisons and leaves the existing unsupported-input fallback intact.
+
+A focused pre-fix helper regression on a9290fda493b93ce1df0113865d7eb487ebd57d5 observed three custom type-equality callbacks before returning the unsupported fallback; one test failed in 0.28 seconds. The exact original helper, regression and raw failure are retained. This establishes a Python-only callback-dispatch defect, not a new claim about network-decoded JSON exploitability or an observed unauthorized child forward.
+
+After the one-line correction, all 25 request-binding tests passed in 1.23 seconds, including actual-stdio mutation, immutable-writer and completed-receipt cases. Focused Ruff, formatting and one-file type analysis pass with zero errors; the complete type summary and warnings remain in validation.json and the raw JSON log. Runtime routing, final writer, 5 ms quiet fence and previous security evidence are unchanged. No risk-reuse prototype, performance campaign, RSP-106 record or acceptance criterion is included.
+
+The per-call optimization review prompted this independent security correction. That inactive prototype and its separate red integration gate are outside this commit. Source digests, exact commands, stored/decoded artifact lengths and SHA-256 values are retained in validation.json and manifest.json.

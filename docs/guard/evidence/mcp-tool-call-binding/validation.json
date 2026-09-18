@@ -1,0 +1,240 @@
+{
+  "schema": "guard.mcp-tool-call-binding.validation.v1",
+  "parent_commit": "c66841d82b99499ab6730fb577a6114676ec4783",
+  "shared_execution": {
+    "cwd": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+    "python": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+    "environment": {
+      "PYTHONPATH": "src"
+    },
+    "validation_lock": "/workspace/scratch/c25672eb4c10/validation.lock",
+    "pytest_arguments": [
+      "-q",
+      "-p",
+      "no:cacheprovider"
+    ]
+  },
+  "records": [
+    {
+      "id": "baseline-stdio-witness",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-c",
+        "import runpy; runpy.run_path('/workspace/scratch/c25672eb4c10/rsp100-review/baseline_boundary_probe.py')"
+      ],
+      "environment_extra": {
+        "HOL_GUARD_NATIVE": "off"
+      },
+      "result": {
+        "exit_code": 0,
+        "actual_stdio_sessions": 3,
+        "control_category_derivations": 2,
+        "changed_method_forwards": 2
+      },
+      "receipt": "baseline-boundary-probe.json",
+      "raw": "baseline-boundary-probe.log.gz"
+    },
+    {
+      "id": "original-negative-regressions",
+      "test_nodes": [
+        "tests/test_runtime_mcp_tool_call_binding.py::test_changed_tool_call_never_reaches_child[policy]",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_changed_tool_call_never_reaches_child[quiet]"
+      ],
+      "result": {
+        "exit_code": 1,
+        "failed": 2,
+        "elapsed_seconds": 0.55
+      },
+      "raw": "pre-fix-security-regressions.log.gz",
+      "test_source": "pre-fix-security-regressions.py.gz",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_changed_tool_call_never_reaches_child[policy]",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_changed_tool_call_never_reaches_child[quiet]"
+      ]
+    },
+    {
+      "id": "initial-focused-candidate",
+      "test_paths": [
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "result": {
+        "exit_code": 1,
+        "passed": 5,
+        "failed": 1,
+        "elapsed_seconds": 0.86
+      },
+      "raw": "security-binding-focused-first.log.gz",
+      "identity_scope": "Intermediate six-case test source. Complete intermediate production source was not separately frozen; the raw traceback is retained without attributing this observation to the final candidate hash.",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ]
+    },
+    {
+      "id": "corrected-six-case-candidate",
+      "test_paths": [
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "result": {
+        "exit_code": 0,
+        "passed": 6,
+        "elapsed_seconds": 0.7
+      },
+      "raw": "security-binding-focused-second.log.gz",
+      "identity_scope": "Six-case test file before expansion to twenty cases; final source identity is established by the subsequent relevant suite.",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ]
+    },
+    {
+      "id": "final-relevant-source-suites",
+      "test_paths": [
+        "tests/test_runtime_mcp_tool_call_binding.py",
+        "tests/test_mcp_request_risk_facts.py",
+        "tests/test_mcp_catalog_generation_cache.py",
+        "tests/test_mcp_framing_bounds.py",
+        "tests/test_guard_runtime_mcp_saved_blocks.py",
+        "tests/test_guard_mcp_package_proxy_phase14.py",
+        "tests/test_guard_mcp_stdio_profile.py"
+      ],
+      "result": {
+        "exit_code": 0,
+        "passed": 163,
+        "elapsed_seconds": 32.42
+      },
+      "raw": "security-binding-relevant-first.log.gz",
+      "source_receipt": "security-source-frozen.json",
+      "identity_scope": "Candidate hashes were recorded during this run; no source edits occurred during the run, and exact hashes were checked again after all validation.",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py",
+        "tests/test_mcp_request_risk_facts.py",
+        "tests/test_mcp_catalog_generation_cache.py",
+        "tests/test_mcp_framing_bounds.py",
+        "tests/test_guard_runtime_mcp_saved_blocks.py",
+        "tests/test_guard_mcp_package_proxy_phase14.py",
+        "tests/test_guard_mcp_stdio_profile.py"
+      ]
+    },
+    {
+      "id": "historical-current-source-adapters",
+      "test_nodes": [
+        "tests/test_mcp_owned_preparation_pilot.py::test_actual_child_receives_the_owned_generation_once",
+        "tests/test_mcp_streaming_preparation_pilot.py::test_actual_forward"
+      ],
+      "result": {
+        "exit_code": 1,
+        "failed": 2,
+        "elapsed_seconds": 0.5
+      },
+      "raw": "security-binding-historical-adapter-check.log.gz",
+      "scope": "Compatibility failures against current production owner. No production exception, frozen-source mutation, campaign retry, or performance inference.",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_mcp_owned_preparation_pilot.py::test_actual_child_receives_the_owned_generation_once",
+        "tests/test_mcp_streaming_preparation_pilot.py::test_actual_forward"
+      ]
+    },
+    {
+      "id": "focused-production-types",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "basedpyright",
+        "--outputjson",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py"
+      ],
+      "result": {
+        "exit_code": 0,
+        "version": "1.39.8",
+        "files_analyzed": 2,
+        "errors": 0,
+        "warnings": 606,
+        "elapsed_seconds": 1.735
+      },
+      "raw": "security-binding-types.json.gz",
+      "stderr": "security-binding-types.stderr.gz"
+    },
+    {
+      "id": "final-ruff",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "result": {
+        "exit_code": 0
+      },
+      "raw": "security-final-ruff.log.gz"
+    },
+    {
+      "id": "final-format",
+      "argv": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "result": {
+        "exit_code": 0
+      },
+      "raw": "security-final-format.log.gz"
+    },
+    {
+      "id": "whitespace",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "result": {
+        "exit_code": 0
+      }
+    }
+  ],
+  "qualification": {
+    "source_correctness_only": true,
+    "complete_repository_gate": false,
+    "rsp100_complete": false,
+    "performance_measurements_started": false,
+    "historical_ef_campaign_run": false
+  }
+}

@@ -365,7 +365,11 @@ def test_exited_leader_is_unreaped_until_owned_descendants_are_retired(monkeypat
     descendant = int(data)
     path = Path(f"/proc/{descendant}/stat")
     for _attempt in range(100):
-        if not path.exists() or path.read_text().split(")", 1)[1].split()[0] == "Z":
+        try:
+            state = path.read_text().split(")", 1)[1].split()[0]
+        except (FileNotFoundError, ProcessLookupError):
+            break
+        if state == "Z":
             break
         time.sleep(0.01)
     else:

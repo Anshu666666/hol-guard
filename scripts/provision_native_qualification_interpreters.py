@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare identical owned Linux interpreters and always retain both arm results."""
+"""Prepare identical owned Linux/macOS interpreters and retain both arm results."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from scripts.native_qualification_interpreter import (
     InterpreterProvisioningError,
-    provision_linux_venv_interpreter,
+    provision_venv_interpreter,
 )
 
 
@@ -21,7 +21,7 @@ def provision_pair(baseline: Path, candidate: Path) -> dict[str, object]:
     arms = {}
     for label, python in (("baseline", baseline), ("candidate", candidate)):
         try:
-            arms[label] = provision_linux_venv_interpreter(python)
+            arms[label] = provision_venv_interpreter(python)
         except InterpreterProvisioningError as error:
             arms[label] = error.evidence
     both_prepared = all(value.get("passed") is True for value in arms.values())
@@ -32,7 +32,10 @@ def provision_pair(baseline: Path, candidate: Path) -> dict[str, object]:
     )
     return {
         "schema": "hol-guard.qualification-interpreter-pair.v1",
-        "scope": "disposable_linux_venv_interpreters_only",
+        "scope": {
+            "linux": "disposable_linux_venv_interpreters_only",
+            "darwin": "disposable_macos_venv_interpreters_only",
+        }.get(sys.platform, "unsupported_platform"),
         "arms": arms,
         "attempted": len(arms),
         "both_prepared": both_prepared,

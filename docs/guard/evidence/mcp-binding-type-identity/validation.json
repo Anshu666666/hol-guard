@@ -1,0 +1,98 @@
+{
+  "schema": "guard.mcp-binding-type-identity.validation.v1",
+  "parent_commit": "a9290fda493b93ce1df0113865d7eb487ebd57d5",
+  "cwd": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+  "python": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+  "environment": {
+    "PYTHONPATH": "src"
+  },
+  "lock": "/workspace/scratch/c25672eb4c10/validation.lock",
+  "source_files": {
+    "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py": "7ead27528e710ab68ce67f190346f79ba15c15895f0476908bfdc4a41a8e22c3",
+    "tests/test_runtime_mcp_tool_call_binding.py": "142c1843cf393c5982d9de193244061b1534cf908dfb2804cb05fee8496614bf"
+  },
+  "records": [
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_unsupported_type_metadata_cannot_invoke_custom_equality"
+      ],
+      "stage": "before fix",
+      "exit_code": 1,
+      "failed": 1,
+      "seconds": 0.28,
+      "observed_custom_type_equality_callbacks": 3,
+      "raw": "metaclass-before.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "stage": "after fix",
+      "exit_code": 0,
+      "passed": 25,
+      "seconds": 1.23,
+      "raw": "metaclass-after.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "metaclass-ruff.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "metaclass-format.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "basedpyright",
+        "--outputjson",
+        "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 0,
+        "warningCount": 18,
+        "informationCount": 0,
+        "timeInSec": 0.425
+      },
+      "version": "1.39.8",
+      "raw": "metaclass-types.json.gz"
+    }
+  ],
+  "scope": {
+    "identity_dispatch_only": true,
+    "runtime_and_writer_unchanged": true,
+    "unsupported_fallback_retained": true,
+    "risk_reuse_implemented": false,
+    "performance_campaign_started": false,
+    "rsp_requirements_changed": false
+  }
+}

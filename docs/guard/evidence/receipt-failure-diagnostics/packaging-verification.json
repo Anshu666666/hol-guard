@@ -1,0 +1,86 @@
+{
+  "schema": "guard.receipt-diagnostics.crlf-packaging.v1",
+  "packaging_parent": "a21d2b7a3d1ea87b830cd1904b4213bdeebe7365",
+  "reason": "The publication git diff --check reports the final CRLF in each of two exact Windows artifact JSONs as trailing whitespace. Their original bytes contain no other trailing spaces or tabs. Store them with lossless gzip; do not normalize bytes or suppress the whitespace gate.",
+  "initial_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "590ce01334a7724f3f1349b2ab252110a5a268f5",
+      "a21d2b7a3d1ea87b830cd1904b4213bdeebe7365",
+      "--",
+      "docs/guard/evidence/receipt-failure-diagnostics/observed/windows-7a-native-default-auto.json",
+      "docs/guard/evidence/receipt-failure-diagnostics/observed/windows-590-native-default-auto.json"
+    ],
+    "exit_code": 2,
+    "log": "packaging/original-crlf-diff-check.log.gz",
+    "decoded_log_sha256": "fca29aca3d71e91e04f46f5d819c469676392b1ac2c7651f7d01975b9d96134c",
+    "trailing_whitespace_reports": 2
+  },
+  "original_manifest": {
+    "path": "archives/manifest.before-crlf-packaging.json.gz",
+    "decoded_sha256": "8df8390a54a71a6e3079c1716ee2e2fa9afc46f230df358ba40cbebe679f1598",
+    "record_count": 49
+  },
+  "original_derived_readme": {
+    "path": "archives/README.before-crlf-packaging.md.gz",
+    "decoded_sha256": "8ca0029b26e5c4a9e82eb1a1901657999256ab6b9cc194dee0df4edfbc043cf8"
+  },
+  "current_record_count": 53,
+  "reports": [
+    {
+      "original_path": "observed/windows-7a-native-default-auto.json",
+      "saved_path": "observed/windows-7a-native-default-auto.json.gz",
+      "original_bytes": 2512,
+      "original_sha256": "2909b4b256de964aff60abf003edec24f8ae31943e76a1912540da2dd3d08270",
+      "saved_bytes": 624,
+      "saved_sha256": "b779e370ba12303503ecafe412dd678c8eb688300689008dc80c481e4889955e",
+      "decoded_bytes_equal_original_git_blob": true,
+      "crlf_line_endings": 1,
+      "other_trailing_spaces_or_tabs": false,
+      "line_endings_normalized": false
+    },
+    {
+      "original_path": "observed/windows-590-native-default-auto.json",
+      "saved_path": "observed/windows-590-native-default-auto.json.gz",
+      "original_bytes": 2512,
+      "original_sha256": "d0b2d2e45df598f8719ea1168c0c9d7f2948c4d547b09d1fb05d3d0fe6cf5466",
+      "saved_bytes": 624,
+      "saved_sha256": "b90c9384dce9457de9a58d9b6a9d0e88180f37f4dddd12e66d799115b53a5b79",
+      "decoded_bytes_equal_original_git_blob": true,
+      "crlf_line_endings": 1,
+      "other_trailing_spaces_or_tabs": false,
+      "line_endings_normalized": false
+    }
+  ],
+  "unchanged_original_records": 46,
+  "unchanged_record_rule": "All original entries other than README.md and the two report storage entries remain byte-for-byte unchanged, including existing decoded evidence hashes.",
+  "original_manifest_reconstruction": "For original report paths, decode the new .json.gz; for README.md, decode its archived original; for all other original record paths, use the unchanged live file. Validate each original saved and decoded hash against the archived 49-record manifest.",
+  "source_or_tests_changed": false,
+  "raw_report_bytes_normalized": false,
+  "whitespace_gate_suppressed": false,
+  "final_whitespace_checks": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--check",
+        "590ce01334a7724f3f1349b2ab252110a5a268f5"
+      ],
+      "exit_code": 0,
+      "output_bytes": 0
+    }
+  ]
+}

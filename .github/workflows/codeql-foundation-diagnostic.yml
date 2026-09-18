@@ -53,10 +53,8 @@ jobs:
           repository: hashgraph-online/hol-guard
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /.github/workflows/codeql-foundation-diagnostic.yml
-            /scripts/ci/codeql_foundation_diagnostic.py
+          # Both checkouts must be full: sparse configuration can survive the
+          # pinned action's worktree-config cleanup and omit the analyzed source.
       - name: Preserve the exact collector and workflow definition outside the source
         run: |
           python3 -I scripts/ci/codeql_foundation_diagnostic.py stage \
@@ -69,7 +67,7 @@ jobs:
           repository: hashgraph-online/hol-guard
           ref: ${{ matrix.profile.commit }}
           # Python extraction uses GITHUB_WORKSPACE as its working directory.
-          # This checkout replaces the sparse definition with the exact old tree.
+          # This checkout replaces the definition tree with the exact old tree.
           clean: true
           persist-credentials: false
       - name: Verify source identity and preserve the observed workspace alias

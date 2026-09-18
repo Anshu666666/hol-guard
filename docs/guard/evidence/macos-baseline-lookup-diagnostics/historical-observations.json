@@ -1,0 +1,693 @@
+{
+  "cohort_complete_claim": false,
+  "existing_manifest_path": "docs/guard/evidence/implementation-7a387-hosted-final/manifest.json",
+  "existing_manifest_sha256": "4065ff5c216618386182f41afb4087593a6fa0675b0dd6e93702abc7ec64284a",
+  "missing_original_records": [
+    "raw DNSService stdout",
+    "raw scutil stdout",
+    "rejected packets or their shapes",
+    "process wait/signal errno"
+  ],
+  "no_missing_record_reconstructed": true,
+  "observations": [
+    {
+      "architecture": "intel",
+      "artifact_id": "10521491468",
+      "baseline_failure": {
+        "arm": "baseline",
+        "artifact_sha256": "be8e062a4491e6f2b95594ab705f84005fe1707cda134f6545e8b15328c4d37c",
+        "category": "RuntimeError",
+        "containment_failed": false,
+        "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+        "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+        "return_code": 1,
+        "run": 0,
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "startup_stack": [
+          {
+            "line": 808,
+            "origin": "socket.getfqdn"
+          },
+          {
+            "line": 138,
+            "origin": "http.server.HTTPServer.server_bind"
+          },
+          {
+            "line": 199,
+            "origin": "bounded_http.__init__"
+          },
+          {
+            "line": 662,
+            "origin": "server.__init__"
+          },
+          {
+            "line": 7907,
+            "origin": "server.__init__"
+          },
+          {
+            "line": 330,
+            "origin": "native_slo_session.__init__"
+          },
+          {
+            "line": 358,
+            "origin": "native_slo_daemon_fixture._serve"
+          }
+        ],
+        "timed_out": false,
+        "worker_limit_exceeded": false
+      },
+      "build_metadata": {
+        "baseline": {
+          "build_flags": [
+            "--locked",
+            "--release",
+            "--target",
+            "x86_64-apple-darwin"
+          ],
+          "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+          "package_version": "3.0.1",
+          "platform_tag": "macosx_13_0_x86_64",
+          "python": "3.12.10",
+          "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+          "source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+          "target": "x86_64-apple-darwin"
+        },
+        "candidate": {
+          "build_flags": [
+            "--locked",
+            "--release",
+            "--target",
+            "x86_64-apple-darwin"
+          ],
+          "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+          "package_version": "3.0.1",
+          "platform_tag": "macosx_13_0_x86_64",
+          "python": "3.12.10",
+          "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+          "source_sha": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+          "target": "x86_64-apple-darwin"
+        }
+      },
+      "existing_evidence": [
+        {
+          "bytes": 478,
+          "decoded_bytes": 1032,
+          "decoded_sha256": "c7a8c79cf74d42843cb5a41b60a5b0d1e063db4359b283f7b6028100513f285d",
+          "name": "failure",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10521491468/aggregate/00-baseline-failure.json.gz",
+          "sha256": "f87355036d5a8bea593bfbace8d3bb5804ee5a89178739f99238bc162368de10"
+        },
+        {
+          "bytes": 2090,
+          "decoded_bytes": 8710,
+          "decoded_sha256": "d18629661db14b28ea48a707c675f2af2641c36240bcb5aebf1a54f86fc29968",
+          "name": "resolver",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10521491468/aggregate/runner-resolver.json.gz",
+          "sha256": "683ac1fac1be51150565154c30bcb1ab494ef063049b067a7012ea17a33b4368"
+        },
+        {
+          "bytes": 319,
+          "decoded_bytes": 870,
+          "decoded_sha256": "59084d4ec0e35b3ecbfb5b830e8eb905877c4f28df77378fbef3b94a9db053f6",
+          "name": "build",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10521491468/build-metadata.json.gz",
+          "sha256": "56d55bc4c098067375a10405b9cf4e5fd7a65b3ad90c45386d8540189bbe8bb1"
+        },
+        {
+          "bytes": 17583,
+          "decoded_bytes": 85010,
+          "decoded_sha256": "287e9eff0febede6a0f2acb7cb7ef0dae6b0d1afbf73fd6d530caf125df851ad",
+          "name": "log",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/raw/paired-intel-log.log.gz",
+          "sha256": "c5e156435151f62614ba0ad4e552b5623270a57908e02c9a7df1a1a50db6df6f"
+        }
+      ],
+      "job_id": 105387531536,
+      "lookup_witness": {
+        "baseline_modified": false,
+        "dns_service_reverse": {
+          "contained": false,
+          "elapsed_ms": 9.974,
+          "exit_after_available_batch_requested": true,
+          "force_multicast_option_used": false,
+          "group_retirement": "failed",
+          "leader_reaped": true,
+          "libc_equivalence_claimed": false,
+          "observation": {
+            "api": "DNSServiceQueryRecord",
+            "api_errors": [],
+            "callback_flags": [],
+            "callback_observation": "none_in_captured_output",
+            "counts": {
+              "callbacks": 0,
+              "loopback_label": 0,
+              "negative": 0,
+              "positive": 0,
+              "removed": 0,
+              "unclassified": 0
+            },
+            "stdout_format_recognized": true,
+            "unsupported_syntax_observed": false
+          },
+          "operation": "dns_service_reverse_ptr",
+          "responder_packet_delta": 2,
+          "return_code": 0,
+          "status": "containment_failed",
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 236,
+          "stdout_sha256": "90998c423347e34986ec0fcd3f11021d09206809eea713fcb7654c9e46c3f9d7"
+        },
+        "fixed_loopback_only": true,
+        "hosts_mapping": {
+          "content_sha256": "a8396a9eb549be135365193e5fceeb69804929619e872912ca7e78a9ae957b06",
+          "device": 16777220,
+          "expected_directory_trusted": true,
+          "file_trusted": true,
+          "gid": 0,
+          "inode": 12884918647,
+          "links": 1,
+          "mapping": {
+            "duplicate_ipv4_localhost_records": 0,
+            "duplicate_ipv6_localhost_records": 0,
+            "exact_ipv4_localhost_present": true,
+            "exact_ipv6_localhost_present": true,
+            "ipv4_localhost": 1,
+            "ipv4_records": 1,
+            "ipv6_localhost": 1,
+            "ipv6_records": 1,
+            "localhost_conflicts": 0,
+            "malformed": 0
+          },
+          "mode": 420,
+          "mtime_ns": 1789679823379050534,
+          "root_owned": true,
+          "size": 356,
+          "status": "read",
+          "uid": 0
+        },
+        "matched_resolver": {
+          "contained": false,
+          "elapsed_ms": 18.197,
+          "group_retirement": "failed",
+          "leader_reaped": true,
+          "observation": {
+            "actual_query_routing_proven": false,
+            "exact_configuration_match_count": 1,
+            "matched_blocks": [
+              {
+                "flags": [
+                  "Request A records",
+                  "Request AAAA records"
+                ],
+                "reachability_field_count": 1,
+                "reachability_value": 196610,
+                "unknown_flag_count": 0
+              }
+            ],
+            "matched_blocks_truncated": false
+          },
+          "return_code": 0,
+          "status": "containment_failed",
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 1636,
+          "stdout_sha256": "8cc79847733738ad0f31f012c2a2a07191b92346bfe3e0424475e9066e5bea59"
+        },
+        "packet_delta_scope": "responder_window_including_system_activity",
+        "phase": "after_qualification_before_resolver_cleanup",
+        "probe_order": [
+          "numeric_control",
+          "gethostbyaddr",
+          "getnameinfo",
+          "hosts_mapping",
+          "matched_resolver",
+          "dns_service_reverse_ptr"
+        ],
+        "probes": [
+          {
+            "contained": false,
+            "elapsed_ms": 68.525,
+            "group_retirement": "failed",
+            "leader_reaped": true,
+            "operation": "numeric_control",
+            "responder_packet_delta": 0,
+            "return_code": 0,
+            "status": "containment_failed",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 48,
+            "stdout_sha256": "6025d2086f2c628ee9c416c574389966dda1e802101a899373ee976019755906"
+          },
+          {
+            "contained": true,
+            "elapsed_ms": 5002.668,
+            "group_retirement": "signalled",
+            "leader_reaped": true,
+            "native_sample": {
+              "categories": [],
+              "contained": true,
+              "elapsed_ms": 2005.574,
+              "group_retirement": "signalled",
+              "leader_reaped": true,
+              "recognized_frames": 0,
+              "return_code": -9,
+              "stack_bytes": 0,
+              "stack_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "status": "deadline_exceeded",
+              "stderr_bytes": 85,
+              "stderr_sha256": "bb3f245345b14c0963ce88db4f0e7b08002217fb1e0b881c11708ce0b4189fef",
+              "stdout_bytes": 0,
+              "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "operation": "gethostbyaddr",
+            "responder_packet_delta": 0,
+            "return_code": -9,
+            "status": "deadline_exceeded",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "contained": true,
+            "elapsed_ms": 5002.651,
+            "group_retirement": "signalled",
+            "leader_reaped": true,
+            "native_sample": {
+              "categories": [],
+              "contained": true,
+              "elapsed_ms": 2004.967,
+              "group_retirement": "signalled",
+              "leader_reaped": true,
+              "recognized_frames": 0,
+              "return_code": -9,
+              "stack_bytes": 0,
+              "stack_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "status": "deadline_exceeded",
+              "stderr_bytes": 85,
+              "stderr_sha256": "44064f786693a57e93e5281e6807532279bee1a081fb75d414d81de6b8e10d49",
+              "stdout_bytes": 0,
+              "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "operation": "getnameinfo",
+            "responder_packet_delta": 0,
+            "return_code": -9,
+            "status": "deadline_exceeded",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ],
+        "process_deadline_seconds": 5.0,
+        "qualification_outcomes_changed": false,
+        "qualification_sample": false,
+        "schema": "hol-guard.native-loopback-lookup-witness.v2",
+        "system_output_limit_bytes": 131072
+      },
+      "original_baseline_artifact_modified": false,
+      "original_fixture_deadline_changed": false,
+      "original_qualification_pass": false,
+      "original_runtime_patched": false,
+      "python_setup_log_line": "2026-09-17T21:22:30.1536680Z Successfully set up CPython (3.12.10)",
+      "qualification_packets_received": 0,
+      "resolver_after_cleanup": {
+        "elapsed_ms": 5005.805,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "resolver_after_install": {
+        "elapsed_ms": 5006.895,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "resolver_before": {
+        "elapsed_ms": 5006.324,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "responder_before_lookup_witness": {
+        "answered": 1,
+        "errors": 0,
+        "received": 1,
+        "rejected": 0
+      },
+      "responder_final": {
+        "answered": 1,
+        "errors": 0,
+        "received": 3,
+        "rejected": 2
+      },
+      "responder_self_probe": {
+        "passed": true,
+        "requests": 1,
+        "status": "completed"
+      },
+      "run_id": 35276260804
+    },
+    {
+      "architecture": "arm",
+      "artifact_id": "10520737961",
+      "baseline_failure": {
+        "arm": "baseline",
+        "artifact_sha256": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+        "category": "RuntimeError",
+        "containment_failed": false,
+        "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+        "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+        "return_code": 1,
+        "run": 0,
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "startup_stack": [
+          {
+            "line": 808,
+            "origin": "socket.getfqdn"
+          },
+          {
+            "line": 138,
+            "origin": "http.server.HTTPServer.server_bind"
+          },
+          {
+            "line": 199,
+            "origin": "bounded_http.__init__"
+          },
+          {
+            "line": 662,
+            "origin": "server.__init__"
+          },
+          {
+            "line": 7907,
+            "origin": "server.__init__"
+          },
+          {
+            "line": 330,
+            "origin": "native_slo_session.__init__"
+          },
+          {
+            "line": 358,
+            "origin": "native_slo_daemon_fixture._serve"
+          }
+        ],
+        "timed_out": false,
+        "worker_limit_exceeded": false
+      },
+      "build_metadata": {
+        "baseline": {
+          "build_flags": [
+            "--locked",
+            "--release",
+            "--target",
+            "aarch64-apple-darwin"
+          ],
+          "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+          "package_version": "3.0.1",
+          "platform_tag": "macosx_11_0_arm64",
+          "python": "3.12.10",
+          "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+          "source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+          "target": "aarch64-apple-darwin"
+        },
+        "candidate": {
+          "build_flags": [
+            "--locked",
+            "--release",
+            "--target",
+            "aarch64-apple-darwin"
+          ],
+          "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+          "package_version": "3.0.1",
+          "platform_tag": "macosx_11_0_arm64",
+          "python": "3.12.10",
+          "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+          "source_sha": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+          "target": "aarch64-apple-darwin"
+        }
+      },
+      "existing_evidence": [
+        {
+          "bytes": 478,
+          "decoded_bytes": 1032,
+          "decoded_sha256": "04e580d013d37b818d66fe8a0e43c6032097a7181a6c6efc9af7c1dfb1ece28c",
+          "name": "failure",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10520737961/aggregate/00-baseline-failure.json.gz",
+          "sha256": "4b50931143662d5cdf714a9e56f57a7dc1c7f4feef6ac07173a2bacc4eae732a"
+        },
+        {
+          "bytes": 2216,
+          "decoded_bytes": 8833,
+          "decoded_sha256": "1c5aa6f8cd0b6bc0910db671d87bb8b70780b374320bdfdd1ba072c7eabf85ba",
+          "name": "resolver",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10520737961/aggregate/runner-resolver.json.gz",
+          "sha256": "eaf107b63dd7986cfb70e40aebbf3fecff5b77bbb59ab968c33700db81bab7de"
+        },
+        {
+          "bytes": 321,
+          "decoded_bytes": 872,
+          "decoded_sha256": "3914a7e79c0ee9fe3ec0c60830bf5bcc6baf2e333a8d863562a745e73ab7f0e0",
+          "name": "build",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/decoded/10520737961/build-metadata.json.gz",
+          "sha256": "c98bbdca236e11c4c76c993e08169a65af9fbc84161acfdd0ed8fca150fea9ad"
+        },
+        {
+          "bytes": 21906,
+          "decoded_bytes": 113923,
+          "decoded_sha256": "38e41ae151f50059dd33ca2acf0eba923d5858167780e1d8214c947cf30a8bd8",
+          "name": "log",
+          "path": "docs/guard/evidence/implementation-7a387-hosted-final/raw/paired-arm-log.log.gz",
+          "sha256": "2bced4f4aa299cc1ad23a252652260758f97e743882a4b1188b2dcc94b5785b5"
+        }
+      ],
+      "job_id": 105387531735,
+      "lookup_witness": {
+        "baseline_modified": false,
+        "dns_service_reverse": {
+          "contained": false,
+          "elapsed_ms": 4.855,
+          "exit_after_available_batch_requested": true,
+          "force_multicast_option_used": false,
+          "group_retirement": "failed",
+          "leader_reaped": true,
+          "libc_equivalence_claimed": false,
+          "observation": {
+            "api": "DNSServiceQueryRecord",
+            "api_errors": [],
+            "callback_flags": [],
+            "callback_observation": "none_in_captured_output",
+            "counts": {
+              "callbacks": 0,
+              "loopback_label": 0,
+              "negative": 0,
+              "positive": 0,
+              "removed": 0,
+              "unclassified": 0
+            },
+            "stdout_format_recognized": true,
+            "unsupported_syntax_observed": false
+          },
+          "operation": "dns_service_reverse_ptr",
+          "responder_packet_delta": 2,
+          "return_code": 0,
+          "status": "containment_failed",
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 236,
+          "stdout_sha256": "25d093f88111da2180836897989b4737a7423ab17ecf65b44027db96fb08004d"
+        },
+        "fixed_loopback_only": true,
+        "hosts_mapping": {
+          "content_sha256": "96609c753643b06ef8c27882114b432e7cbdaa834bfc541f5117e5871455b93a",
+          "device": 16777229,
+          "expected_directory_trusted": true,
+          "file_trusted": true,
+          "gid": 0,
+          "inode": 132298,
+          "links": 1,
+          "mapping": {
+            "duplicate_ipv4_localhost_records": 0,
+            "duplicate_ipv6_localhost_records": 0,
+            "exact_ipv4_localhost_present": true,
+            "exact_ipv6_localhost_present": true,
+            "ipv4_localhost": 1,
+            "ipv4_records": 1,
+            "ipv6_localhost": 1,
+            "ipv6_records": 1,
+            "localhost_conflicts": 0,
+            "malformed": 0
+          },
+          "mode": 420,
+          "mtime_ns": 1789680054423026672,
+          "root_owned": true,
+          "size": 356,
+          "status": "read",
+          "uid": 0
+        },
+        "matched_resolver": {
+          "contained": false,
+          "elapsed_ms": 10.911,
+          "group_retirement": "failed",
+          "leader_reaped": true,
+          "observation": {
+            "actual_query_routing_proven": false,
+            "exact_configuration_match_count": 1,
+            "matched_blocks": [
+              {
+                "flags": [
+                  "Request A records",
+                  "Request AAAA records"
+                ],
+                "reachability_field_count": 1,
+                "reachability_value": 196610,
+                "unknown_flag_count": 0
+              }
+            ],
+            "matched_blocks_truncated": false
+          },
+          "return_code": 0,
+          "status": "containment_failed",
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 1636,
+          "stdout_sha256": "cf3d180a79139a30f47134b09e082e0525a705f0dc0f1bf6eccfc85be3afcda6"
+        },
+        "packet_delta_scope": "responder_window_including_system_activity",
+        "phase": "after_qualification_before_resolver_cleanup",
+        "probe_order": [
+          "numeric_control",
+          "gethostbyaddr",
+          "getnameinfo",
+          "hosts_mapping",
+          "matched_resolver",
+          "dns_service_reverse_ptr"
+        ],
+        "probes": [
+          {
+            "contained": false,
+            "elapsed_ms": 25.787,
+            "group_retirement": "failed",
+            "leader_reaped": true,
+            "operation": "numeric_control",
+            "responder_packet_delta": 0,
+            "return_code": 0,
+            "status": "containment_failed",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 48,
+            "stdout_sha256": "6025d2086f2c628ee9c416c574389966dda1e802101a899373ee976019755906"
+          },
+          {
+            "contained": true,
+            "elapsed_ms": 5007.494,
+            "group_retirement": "signalled",
+            "leader_reaped": true,
+            "native_sample": {
+              "categories": [],
+              "contained": true,
+              "elapsed_ms": 2004.44,
+              "group_retirement": "signalled",
+              "leader_reaped": true,
+              "recognized_frames": 0,
+              "return_code": -9,
+              "stack_bytes": 0,
+              "stack_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "status": "deadline_exceeded",
+              "stderr_bytes": 85,
+              "stderr_sha256": "6d4d1e734b5c1201ed053dd95d39c40ae618689c08003e6ff2aa28b3aefc604f",
+              "stdout_bytes": 0,
+              "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "operation": "gethostbyaddr",
+            "responder_packet_delta": 0,
+            "return_code": -9,
+            "status": "deadline_exceeded",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "contained": true,
+            "elapsed_ms": 5009.557,
+            "group_retirement": "signalled",
+            "leader_reaped": true,
+            "native_sample": {
+              "categories": [
+                "kevent_wait",
+                "libinfo_search",
+                "mdns_query",
+                "python_lookup"
+              ],
+              "contained": false,
+              "elapsed_ms": 1346.792,
+              "group_retirement": "failed",
+              "leader_reaped": true,
+              "recognized_frames": 6,
+              "return_code": 0,
+              "stack_bytes": 59020,
+              "stack_sha256": "f0308e32a2d72d16582a5fb500029112d3ce11b2c1c2cc5d1b9ff11b430c978d",
+              "status": "containment_failed",
+              "stderr_bytes": 188,
+              "stderr_sha256": "08cd304244cda63d522df75d6d94e211d9c41ed448486df4e40bf8c7b61f8082",
+              "stdout_bytes": 59020,
+              "stdout_sha256": "f0308e32a2d72d16582a5fb500029112d3ce11b2c1c2cc5d1b9ff11b430c978d"
+            },
+            "operation": "getnameinfo",
+            "responder_packet_delta": 0,
+            "return_code": -9,
+            "status": "deadline_exceeded",
+            "stderr_bytes": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ],
+        "process_deadline_seconds": 5.0,
+        "qualification_outcomes_changed": false,
+        "qualification_sample": false,
+        "schema": "hol-guard.native-loopback-lookup-witness.v2",
+        "system_output_limit_bytes": 131072
+      },
+      "original_baseline_artifact_modified": false,
+      "original_fixture_deadline_changed": false,
+      "original_qualification_pass": false,
+      "original_runtime_patched": false,
+      "python_setup_log_line": "2026-09-17T21:22:26.3948930Z Successfully set up CPython (3.12.10)",
+      "qualification_packets_received": 0,
+      "resolver_after_cleanup": {
+        "elapsed_ms": 5004.124,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "resolver_after_install": {
+        "elapsed_ms": 5007.024,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "resolver_before": {
+        "elapsed_ms": 5003.011,
+        "loopback_label": false,
+        "status": "deadline_exceeded"
+      },
+      "responder_before_lookup_witness": {
+        "answered": 1,
+        "errors": 0,
+        "received": 1,
+        "rejected": 0
+      },
+      "responder_final": {
+        "answered": 1,
+        "errors": 0,
+        "received": 3,
+        "rejected": 2
+      },
+      "responder_self_probe": {
+        "passed": true,
+        "requests": 1,
+        "status": "completed"
+      },
+      "run_id": 35276260804
+    }
+  ],
+  "schema": "hol-guard.macos-loopback-historical-observations.v1",
+  "source_commit_sha": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d"
+}

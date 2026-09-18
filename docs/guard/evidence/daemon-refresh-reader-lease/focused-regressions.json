@@ -1,0 +1,44 @@
+{
+  "schema": "guard.daemon-refresh-reader-lease.validation.v1",
+  "stage": "focused-regressions",
+  "command": [
+    "flock",
+    "--close",
+    "-w",
+    "180",
+    "/workspace/scratch/c25672eb4c10/validation.lock",
+    "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_guard_daemon_refresh_reader_lease.py"
+  ],
+  "cwd": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+  "env_overrides": {
+    "PYTHONPATH": "/workspace/scratch/c25672eb4c10/refresh-lease-fix/src",
+    "TMPDIR": "/tmp"
+  },
+  "started_at": "2026-09-18T08:41:43.911591+00:00",
+  "elapsed_seconds_including_lock": 3.512291061999349,
+  "exit_code": 0,
+  "source_before": {
+    "src/codex_plugin_scanner/guard/daemon/server.py": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243",
+    "tests/test_guard_daemon_refresh_reader_lease.py": "1b90ec9cd13e2cb6d1fe16431eadc08f59729012c59cf954531702b59b5b2e13",
+    "tests/test_guard_extension_control_runtime.py": "acce1cb9ccd0212e0873ef66a9bb13a3f13618594441061cfb74908a65d27da6"
+  },
+  "source_after": {
+    "src/codex_plugin_scanner/guard/daemon/server.py": "2d04a331ed2475d9d30d04bf52311aff9257867302307b52222cfc040e8a5243",
+    "tests/test_guard_daemon_refresh_reader_lease.py": "1b90ec9cd13e2cb6d1fe16431eadc08f59729012c59cf954531702b59b5b2e13",
+    "tests/test_guard_extension_control_runtime.py": "acce1cb9ccd0212e0873ef66a9bb13a3f13618594441061cfb74908a65d27da6"
+  },
+  "source_unchanged": true,
+  "output": {
+    "path": "focused-regressions.log.gz",
+    "bytes": 51,
+    "sha256": "400917fa9ee800e353bdee573b462315b99c0d53e6025f741fad1f59ca9d22df",
+    "decoded_bytes": 98,
+    "decoded_sha256": "0074ca143c818ed87022a70c7e4be10b6d6ec2e9d07c08090eef5d7535af6ed7"
+  }
+}

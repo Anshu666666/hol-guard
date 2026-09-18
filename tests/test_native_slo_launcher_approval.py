@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from types import SimpleNamespace
 
 import pytest
@@ -91,7 +93,7 @@ def test_preexisting_deduplicated_request_is_never_selected(tmp_path):
         assert _queue(session) == old
         result = _result(control, begun["operation_id"])
         assert result["state"] == "failed"
-        assert result["failure"]["reason"] == "qualification_launcher_approval_deadline"
+        assert result["failure"]["reason"] == "qualification_launcher_approval_deadline", result
         assert session.store.get_approval_request(old)["status"] == "pending"
     finally:
         control.close()
@@ -144,6 +146,7 @@ def test_other_harness_tool_command_and_workspace_are_not_resolved(tmp_path):
         ]
         exact = _queue(session)
         result = _result(control, begun["operation_id"])
+        assert result["state"] == "resolved", result
         assert result["request_id"] == exact
         assert all(session.store.get_approval_request(request_id)["status"] == "pending" for request_id in others)
     finally:
@@ -276,3 +279,194 @@ def test_input_and_operation_count_are_bounded(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="capacity"):
         control.begin("claude", _payload())
     control.close()
+
+
+@pytest.mark.parametrize("outcome", ["resolve", "deadline", "cancel", "deduplicated"])
+def test_real_pending_read_contention_keeps_original_deadline_and_cancellation(tmp_path, monkeypatch, outcome):
+    session, _ = _session(tmp_path)
+    old = _queue(session) if outcome == "deduplicated" else None
+    control = LauncherApprovalControl(session)
+    entered, release, contended = threading.Event(), threading.Event(), threading.Event()
+    failures = []
+    original = control._new_pending
+
+    def pending(operation):
+        entered.set()
+        assert release.wait(2)
+        try:
+            return original(operation)
+        except sqlite3.OperationalError as error:
+            failures.append(getattr(error, "sqlite_errorcode", None))
+            contended.set()
+            raise
+
+    monkeypatch.setattr(control, "_new_pending", pending)
+    connection = None
+    try:
+        timeout = 0.15 if outcome in {"deadline", "deduplicated"} else 2
+        begun = control.begin("claude", _payload(), timeout_seconds=timeout)
+        assert entered.wait(1)
+        request_id = _queue(session)
+        if old is not None:
+            assert request_id == old
+        connection = sqlite3.connect(session.store.path, isolation_level=None, timeout=0.2)
+        assert connection.execute("pragma locking_mode=exclusive").fetchone()[0] == "exclusive"
+        connection.execute("begin exclusive")
+        connection.execute("select count(*) from approval_requests").fetchone()
+        release.set()
+        assert contended.wait(1)
+        if outcome == "cancel":
+            control.close()
+        result = _result(control, begun["operation_id"]) if outcome == "deadline" else None
+        connection.execute("rollback")
+        connection.close()
+        connection = None
+        if result is None:
+            result = _result(control, begun["operation_id"])
+        if not hasattr(sqlite3, "SQLITE_BUSY"):
+            # Python 3.10 has no engine result code: an unclassified error
+            # remains terminal rather than falling back to message matching.
+            assert failures == [None]
+            assert result["state"] == "failed", result
+            assert result["failure"]["reason"] == "unclassified_failure"
+            assert "read_contention" not in result
+            assert session.store.get_approval_request(request_id)["status"] == "pending"
+            return
+        if outcome == "resolve":
+            assert result["state"] == "resolved", result
+            assert result["request_id"] == request_id
+            assert session.store.get_approval_request(request_id)["status"] == "resolved"
+        else:
+            assert result["state"] == "failed", result
+            reason = "cancelled" if outcome == "cancel" else "deadline"
+            assert result["failure"]["reason"] == f"qualification_launcher_approval_{reason}", result
+            assert session.store.get_approval_request(request_id)["status"] == "pending"
+        assert failures and all(code & 0xFF in {5, 6} for code in failures)
+        assert result["read_contention"]["count"] == len(failures)
+        assert result["read_contention"]["sqlite_errorcode"] == failures[-1]
+        assert result["read_contention"]["last_failure"]["category"] == "OperationalError"
+        assert result["read_contention"]["last_failure"]["reason"] == "unclassified_failure"
+        assert_privacy_safe(result)
+    finally:
+        release.set()
+        if connection is not None:
+            connection.close()
+        control.close()
+
+
+@pytest.mark.parametrize("code", [None, 8, 11], ids=["missing", "SQLITE_READONLY", "SQLITE_CORRUPT"])
+def test_unknown_or_noncontention_pending_read_failure_is_never_retried(tmp_path, monkeypatch, code):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    calls = []
+    original = session.store._connect_once
+
+    @contextmanager
+    def connection():
+        if threading.current_thread().name == "launcher-approval-control":
+            calls.append(True)
+            error = sqlite3.OperationalError("database is locked")
+            if code is not None:
+                error.sqlite_errorcode = code
+            raise error
+        with original() as current:
+            yield current
+
+    monkeypatch.setattr(session.store, "_connect_once", connection)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        result = _result(control, begun["operation_id"])
+        assert calls == [True]
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "unclassified_failure"
+        assert "read_contention" not in result
+    finally:
+        control.close()
+
+
+def test_resolution_contention_is_never_retried(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    calls = []
+
+    def resolve(*_args, **_kwargs):
+        calls.append(True)
+        error = sqlite3.OperationalError("database is locked")
+        error.sqlite_errorcode = 5  # SQLITE_BUSY
+        raise error
+
+    monkeypatch.setattr("scripts.native_slo_launcher_approval.resolve_launcher_review", resolve)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        request_id = _queue(session)
+        result = _result(control, begun["operation_id"])
+        assert calls == [True]
+        assert result["state"] == "failed"
+        assert result["request_id"] == request_id
+        assert result["approval_durable"] is False
+        assert result["failure"]["reason"] == "unclassified_failure"
+        assert "read_contention" not in result
+        assert session.store.get_approval_request(request_id)["status"] == "pending"
+    finally:
+        control.close()
+
+
+def test_contention_after_pending_select_does_not_retry_context_exit(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    exits = []
+    original = session.store._connect_once
+
+    @contextmanager
+    def connection():
+        with original() as current:
+            yield current
+            if threading.current_thread().name == "launcher-approval-control":
+                exits.append(True)
+                error = sqlite3.OperationalError("database is locked")
+                error.sqlite_errorcode = 5  # SQLITE_BUSY
+                raise error
+
+    monkeypatch.setattr(session.store, "_connect_once", connection)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        result = _result(control, begun["operation_id"])
+        assert exits == [True]
+        assert result["state"] == "failed"
+        assert result["failure"]["reason"] == "unclassified_failure"
+        assert "read_contention" not in result
+    finally:
+        control.close()
+
+
+def test_pending_probe_never_enters_store_recovery(tmp_path, monkeypatch):
+    session, _ = _session(tmp_path)
+    control = LauncherApprovalControl(session)
+    calls, recoveries = [], []
+    original = session.store._connect_once
+
+    @contextmanager
+    def connection():
+        if threading.current_thread().name == "launcher-approval-control":
+            calls.append(True)
+            raise sqlite3.DatabaseError("database disk image is malformed")
+        with original() as current:
+            yield current
+
+    def recover(*_args, **_kwargs):
+        recoveries.append(True)
+        return False
+
+    monkeypatch.setattr(session.store, "_connect_once", connection)
+    monkeypatch.setattr(session.store, "_recover_fatal_sqlite_store", recover)
+    try:
+        begun = control.begin("claude", _payload(), timeout_seconds=2)
+        result = _result(control, begun["operation_id"])
+        assert calls == [True]
+        assert recoveries == []
+        assert result["state"] == "failed"
+        assert result["failure"]["category"] == "DatabaseError"
+        assert result["failure"]["reason"] == "unclassified_failure"
+        assert "read_contention" not in result
+    finally:
+        control.close()

@@ -1,0 +1,63 @@
+{
+  "source_commit": "623a6e058b2c4b650021e3c359d8e58b1be6ea05",
+  "source_files": 3291,
+  "source_unchanged": true,
+  "results": [
+    {
+      "name": "native-authority",
+      "command": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "scripts/ci/rust_authority_ownership_gate.py",
+        "--root",
+        "/workspace/scratch/c25672eb4c10/hol-guard"
+      ],
+      "exit_code": 0,
+      "seconds_including_lock": 0.779,
+      "log_bytes": 29780,
+      "log_sha256": "f7ebef380b9a0c3ca2555f53a98fc94802514f4abdb7ebff726b8bfcc6c6ca4c"
+    },
+    {
+      "name": "python-semantic",
+      "command": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "scripts/ci/python_hook_semantic_callgraph_gate.py",
+        "--root",
+        "/workspace/scratch/c25672eb4c10/hol-guard"
+      ],
+      "exit_code": 0,
+      "seconds_including_lock": 0.197,
+      "log_bytes": 99,
+      "log_sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab"
+    },
+    {
+      "name": "io-ownership",
+      "command": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "scripts/ci/rust_io_ownership_gate.py",
+        "--root",
+        "/workspace/scratch/c25672eb4c10/hol-guard"
+      ],
+      "exit_code": 0,
+      "seconds_including_lock": 32.98,
+      "log_bytes": 38156,
+      "log_sha256": "9643bac9346fbbc942951be92006f95b7a77add6b5b72e6a6599f63d3a3f7cc5"
+    },
+    {
+      "name": "workflow-permissions",
+      "command": [
+        "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_workflow_token_permissions.py"
+      ],
+      "exit_code": 0,
+      "seconds_including_lock": 4.279,
+      "log_bytes": 179,
+      "log_sha256": "ae995bbb1aa71487f6fc054df5073d70912239067b6c31062088797695b0121b"
+    }
+  ],
+  "qualification_complete": false
+}

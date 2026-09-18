@@ -1,0 +1,53 @@
+{
+  "schema": "hol-guard.macos-interpreter-proposal-primary-sources.v1",
+  "records": [
+    {
+      "path": "Lib/venv/__init__.py",
+      "repository_ref": "v3.12.10",
+      "provider_blob_sha": "aeb522c3199ca20f25e6b22178ca1939a9ec77a1",
+      "source_url": "https://github.com/python/cpython/blob/v3.12.10/Lib/venv/__init__.py",
+      "scope": "Official source explanation; no actual macOS copy execution claimed",
+      "excerpts": [
+        {
+          "first_line": 154,
+          "last_line": 165,
+          "text": "        context.env_name = os.path.split(env_dir)[1]\n        prompt = self.prompt if self.prompt is not None else context.env_name\n        context.prompt = '(%s) ' % prompt\n        create_if_needed(env_dir)\n        executable = sys._base_executable\n        if not executable:  # see gh-96861\n            raise ValueError('Unable to determine path to the running '\n                             'Python interpreter. Provide an explicit path or '\n                             'check that your PATH environment variable is '\n                             'correctly set.')\n        dirname, exename = os.path.split(os.path.abspath(executable))\n        context.executable = executable"
+        },
+        {
+          "first_line": 248,
+          "last_line": 268,
+          "text": "            \"\"\"\n            Try symlinking a file, and if that fails, fall back to copying.\n            \"\"\"\n            force_copy = not self.symlinks\n            if not force_copy:\n                try:\n                    if not os.path.islink(dst):  # can't link to itself!\n                        if relative_symlinks_ok:\n                            assert os.path.dirname(src) == os.path.dirname(dst)\n                            os.symlink(os.path.basename(src), dst)\n                        else:\n                            os.symlink(src, dst)\n                except Exception:   # may need to use a more specific exception\n                    logger.warning('Unable to symlink %r to %r', src, dst)\n                    force_copy = True\n            if force_copy:\n                shutil.copyfile(src, dst)\n    else:\n        def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):\n            \"\"\"\n            Try symlinking a file, and if that fails, fall back to copying."
+        },
+        {
+          "first_line": 321,
+          "last_line": 348,
+          "text": "            copier(context.executable, path)\n            if not os.path.islink(path):\n                os.chmod(path, 0o755)\n            for suffix in ('python', 'python3', f'python3.{sys.version_info[1]}'):\n                path = os.path.join(binpath, suffix)\n                if not os.path.exists(path):\n                    # Issue 18807: make copies if\n                    # symlinks are not wanted\n                    copier(context.env_exe, path, relative_symlinks_ok=True)\n                    if not os.path.islink(path):\n                        os.chmod(path, 0o755)\n        else:\n            if self.symlinks:\n                # For symlinking, we need a complete copy of the root directory\n                # If symlinks fail, you'll get unnecessary copies of files, but\n                # we assume that if you've opted into symlinks on Windows then\n                # you know what you're doing.\n                suffixes = [\n                    f for f in os.listdir(dirname) if\n                    os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')\n                ]\n                if sysconfig.is_python_build():\n                    suffixes = [\n                        f for f in suffixes if\n                        os.path.normcase(f).startswith(('python', 'vcruntime'))\n                    ]\n            else:\n                suffixes = {'python.exe', 'python_d.exe', 'pythonw.exe', 'pythonw_d.exe'}"
+        }
+      ]
+    },
+    {
+      "path": "Mac/Tools/pythonw.c",
+      "repository_ref": "v3.12.10",
+      "provider_blob_sha": "9dfb77f6ff41c3f5e711c385fa24d44a0784213a",
+      "source_url": "https://github.com/python/cpython/blob/v3.12.10/Mac/Tools/pythonw.c",
+      "scope": "Official source explanation; no actual macOS copy execution claimed",
+      "excerpts": [
+        {
+          "first_line": 156,
+          "last_line": 160,
+          "text": "    static char path[PATH_MAX * 2];\n    static char real_path[PATH_MAX * 2];\n    int status;\n    uint32_t size = PATH_MAX * 2;\n"
+        },
+        {
+          "first_line": 168,
+          "last_line": 229,
+          "text": "         *\n         * It is nice to have the directory name\n         * as a cleaned up absolute path though,\n         * therefore call realpath on dirname(path)\n         */\n        char* slash = strrchr(path, '/');\n        if (slash) {\n            char  replaced;\n            replaced = slash[1];\n            slash[1] = 0;\n            if (realpath(path, real_path) == NULL) {\n                err(1, \"realpath: %s\", path);\n            }\n            slash[1] = replaced;\n            if (strlcat(real_path, slash, sizeof(real_path)) > sizeof(real_path)) {\n                errno = EINVAL;\n                err(1, \"realpath: %s\", path);\n            }\n\n        } else {\n            if (realpath(\".\", real_path) == NULL) {\n                err(1, \"realpath: %s\", path);\n            }\n            if (strlcat(real_path, \"/\", sizeof(real_path)) > sizeof(real_path)) {\n                errno = EINVAL;\n                err(1, \"realpath: %s\", path);\n            }\n            if (strlcat(real_path, path, sizeof(real_path)) > sizeof(real_path)) {\n                errno = EINVAL;\n                err(1, \"realpath: %s\", path);\n            }\n        }\n\n        /*\n         * The environment variable is used to pass the value of real_path\n         * to the actual python interpreter, and is read by code in\n         * Python/coreconfig.c.\n         *\n         * This way the real interpreter knows how the user invoked the\n         * interpreter and can behave as if this launcher is the real\n         * interpreter (looking for pyvenv configuration, ...)\n         */\n        setenv(\"__PYVENV_LAUNCHER__\", real_path, 1);\n    }\n\n    /*\n     * Let argv[0] refer to the new interpreter. This is needed to\n     * get the effect we want on OSX 10.5 or earlier. That is, without\n     * changing argv[0] the real interpreter won't have access to\n     * the Window Server.\n     */\n    argv[0] = exec_path;\n\n#ifdef HAVE_SPAWN_H\n    /* We're weak-linking to posix-spawnv to ensure that\n     * an executable build on 10.5 can work on 10.4.\n     */\n\n    if (&posix_spawn != NULL) {\n        posix_spawnattr_t spawnattr = NULL;\n\n        setup_spawnattr(&spawnattr);"
+        },
+        {
+          "first_line": 244,
+          "last_line": 258,
+          "text": ""
+        }
+      ]
+    }
+  ]
+}

@@ -68,11 +68,7 @@ def test_current_definition_is_staged_before_exact_snapshot_replaces_the_extract
     assert len(checkouts) == 2
     definition, source = checkouts
     assert "github.event.pull_request.head.sha || github.sha" in definition["ref"]
-    assert definition["sparse-checkout-cone-mode"] is False
-    assert set(definition["sparse-checkout"].splitlines()) == {
-        "/.github/workflows/codeql-foundation-diagnostic.yml",
-        "/scripts/ci/codeql_foundation_diagnostic.py",
-    }
+    assert all("sparse-checkout" not in row and "sparse-checkout-cone-mode" not in row for row in checkouts)
     assert source["ref"] == "${{ matrix.profile.commit }}"
     assert "path" not in source and source["clean"] is True
     assert all(row["repository"] == "hashgraph-online/hol-guard" for row in checkouts)
@@ -421,6 +417,7 @@ def test_one_clean_snapshot_cannot_satisfy_the_other_snapshot_pin(
         return subprocess.CompletedProcess(argv, 0)
 
     monkeypatch.setattr(diagnostic.subprocess, "run", git_result)
+    monkeypatch.setattr(diagnostic, "source_materialization", lambda _: {"verified": True})
     assert diagnostic.source_identity(tmp_path, actual_profile)["matches_pin"] is True
     assert diagnostic.source_identity(tmp_path, other_profile)["matches_pin"] is False
     _write_sarif(tmp_path)
@@ -627,3 +624,113 @@ def test_workflow_decompression_is_bounded_and_cannot_claim_layout(
     monkeypatch.setenv("CODE_SCANNING_WORKFLOW_FILE", base64.b64encode(gzip.compress(b"x" * (limit + 1))).decode())
     monkeypatch.setattr(diagnostic, "MAX_DEFINITION_BYTES", limit)
     assert diagnostic.extraction_layout(source)["verified"] is False
+
+
+def _fixture_git(root: Path, *arguments: str) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(["git", "-C", str(root), *arguments], check=True, capture_output=True, timeout=10)
+
+
+@pytest.mark.parametrize("initial_sparse_checkout", [True, False])
+def test_checkout_config_cleanup_cannot_hide_an_unmaterialized_immutable_tree(
+    isolated_layout: tuple[Path, Path, Path],
+    initial_sparse_checkout: bool,
+) -> None:
+    source, _, results = isolated_layout
+    original = diagnostic.PROFILES["foundation"]
+    definition_paths = (diagnostic.WORKFLOW_FILE, "scripts/ci/codeql_foundation_diagnostic.py")
+    for relative in definition_paths:
+        path = source / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _ = path.write_text("# diagnostic fixture\n")
+    _fixture_git(source, "add", ".")
+    _fixture_git(
+        source, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "definition"
+    )
+    if initial_sparse_checkout:
+        # Reproduce the pinned checkout action's local config plus sparse setup.
+        _fixture_git(source, "config", "core.sparseCheckout", "true")
+        _fixture_git(source, "sparse-checkout", "set", "--no-cone", *("/" + path for path in definition_paths))
+        _fixture_git(source, "sparse-checkout", "disable")
+        assert (source / "fixture.py").is_file()
+        _fixture_git(source, "config", "--unset-all", "extensions.worktreeConfig")
+    _fixture_git(source, "checkout", "--force", original.commit)
+    assert _fixture_git(source, "rev-parse", "HEAD", "HEAD^{tree}").stdout.splitlines() == [
+        original.commit.encode(),
+        original.tree.encode(),
+    ]
+    assert _fixture_git(source, "diff", "--quiet", "--no-ext-diff", "HEAD", "--").returncode == 0
+    identity = diagnostic.source_identity(source)
+    assert identity["tracked_clean"] is True
+    assert identity["matches_pin"] is not initial_sparse_checkout
+    assert identity["materialization"] == {
+        "available": True,
+        "sparse_checkout": initial_sparse_checkout,
+        "tracked_file_count": 2,
+        "skip_worktree_count": 2 if initial_sparse_checkout else 0,
+        "assume_unchanged_count": 0,
+        "missing_tracked_file_count": 2 if initial_sparse_checkout else 0,
+        "verified": not initial_sparse_checkout,
+    }
+    raw = _write_sarif(results, {"version": "2.1.0", "runs": [{"results": []}]})
+    report = diagnostic.collect(source, results, "python", "2.27.0", "success", "success", enforce_layout=True)
+    assert report["diagnostic_analysis_complete"] is not initial_sparse_checkout
+    assert report["errors"] == (["foundation_identity_mismatch"] if initial_sparse_checkout else [])
+    assert report["sarif"]["results"] == 0
+    assert report["original_security_alerts_resolved"] is False
+    assert (results / "python.sarif").read_bytes() == raw
+    assert json.loads((results / "diagnostic.json").read_text()) == report
+
+
+@pytest.mark.parametrize("state", ["active_sparse", "skip_worktree", "assume_unchanged", "missing", "hidden_missing"])
+def test_each_incomplete_materialization_condition_prevents_verification(
+    isolated_layout: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    state: str,
+) -> None:
+    source, _, _ = isolated_layout
+    if state == "active_sparse":
+        _fixture_git(source, "config", "core.sparseCheckout", "true")
+    elif state == "skip_worktree":
+        _fixture_git(source, "update-index", "--skip-worktree", "fixture.py")
+    elif state in ("assume_unchanged", "hidden_missing"):
+        _fixture_git(source, "update-index", "--assume-unchanged", "fixture.py")
+    if state in ("missing", "hidden_missing"):
+        (source / "fixture.py").unlink()
+    materialization = diagnostic.source_materialization(source)
+    assert materialization["available"] is True
+    assert materialization["verified"] is False
+    assert materialization["sparse_checkout"] is (state == "active_sparse")
+    assert materialization["skip_worktree_count"] == (1 if state == "skip_worktree" else 0)
+    assert materialization["assume_unchanged_count"] == (1 if state in ("assume_unchanged", "hidden_missing") else 0)
+    assert materialization["missing_tracked_file_count"] == (1 if state in ("missing", "hidden_missing") else 0)
+    monkeypatch.setattr("sys.argv", ["diagnostic", "verify", "--source-root", str(source), "--enforce-layout"])
+    with pytest.raises(SystemExit) as failure:
+        diagnostic.main()
+    assert failure.value.code == 1
+
+
+def test_materialization_handles_tracked_whitespace_paths_and_symlink_itself(
+    isolated_layout: tuple[Path, Path, Path],
+) -> None:
+    source, _, _ = isolated_layout
+    whitespace = source / "a file\nwith tabs\t.py"
+    _ = whitespace.write_text("VALUE = 3\n")
+    dangling = source / "dangling.py"
+    try:
+        dangling.symlink_to("absent-target.py")
+    except OSError:
+        pytest.skip("fixture requires symlink support")
+    _fixture_git(source, "add", ".")
+    materialization = diagnostic.source_materialization(source)
+    assert materialization["verified"] is True
+    assert materialization["tracked_file_count"] == 4
+    whitespace.unlink()
+    materialization = diagnostic.source_materialization(source)
+    assert materialization["verified"] is False
+    assert materialization["missing_tracked_file_count"] == 1
+
+
+def test_invalid_sparse_configuration_cannot_claim_materialization(isolated_layout: tuple[Path, Path, Path]) -> None:
+    source, _, _ = isolated_layout
+    _fixture_git(source, "config", "core.sparseCheckout", "invalid-boolean")
+    assert diagnostic.source_materialization(source) == {"available": False, "verified": False}

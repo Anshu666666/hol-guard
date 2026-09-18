@@ -166,7 +166,14 @@ def registered_launcher(config_path: Path, harness: str, event: str) -> Register
 def install_priority_launchers(session: LauncherSession) -> tuple[RegisteredLauncher, ...]:
     """Install once into the fixture home, then independently read both configs."""
 
-    context = HarnessContext(home_dir=session.root, workspace_dir=session.workspace, guard_home=session.guard_home)
+    # Both installed arms use this owned workspace even when a frozen payload
+    # deliberately omits cwd. Codex only registers it for an explicit override.
+    context = HarnessContext(
+        home_dir=session.root,
+        workspace_dir=session.workspace,
+        guard_home=session.guard_home,
+        workspace_override_explicit=True,
+    )
     claude = ClaudeCodeHarnessAdapter().install(context)
     codex = CodexHarnessAdapter().install(context)
     if claude.get("active") is not True or codex.get("active") is not True:

@@ -12,10 +12,10 @@ from scripts.native_slo_contract import assert_privacy_safe
 from tests.test_installed_artifact_transitions import _report, _result, _wheel
 
 
-def _proof(*, passed=True):
+def _proof(*, passed=True, platform="linux"):
     return {
         "schema": "hol-guard.qualification-interpreter-copy.v1",
-        "scope": "disposable_linux_venv_interpreter_only",
+        "scope": f"disposable_{'macos' if platform == 'darwin' else 'linux'}_venv_interpreter_only",
         "passed": passed,
         "source": {"bytes": 1024, "mode": 0o777, "world_writable": True},
         "owned": {"bytes": 1024, "mode": 0o755, "world_writable": False},
@@ -55,12 +55,10 @@ def test_original_and_owned_identity_survive_the_complete_nested_sanitizer():
     assert receipt["runtime_labels_sanitized"] is True
 
 
-@pytest.mark.parametrize("platform", ["darwin", "win32"])
-def test_other_hosts_do_not_copy_or_claim_linux_interpreter_provisioning(platform, monkeypatch, tmp_path):
+@pytest.mark.parametrize("platform", ["freebsd14", "win32"])
+def test_unsupported_hosts_do_not_copy_or_claim_interpreter_provisioning(platform, monkeypatch, tmp_path):
     monkeypatch.setattr(driver.sys, "platform", platform)
-    monkeypatch.setattr(
-        driver, "provision_linux_venv_interpreter", lambda *_: pytest.fail("non-Linux copy must not run")
-    )
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda *_: pytest.fail("unsupported copy must not run"))
     report = {}
     driver._prepare_interpreter(tmp_path / "python", report)
     assert report["interpreter_provisioning"] == {
@@ -71,12 +69,13 @@ def test_other_hosts_do_not_copy_or_claim_linux_interpreter_provisioning(platfor
 
 
 @pytest.mark.parametrize("failed", [False, True])
-def test_each_disposable_prefix_is_prepared_after_install_before_registration(failed, monkeypatch, tmp_path):
+@pytest.mark.parametrize("platform", ["linux", "darwin"])
+def test_each_disposable_prefix_is_prepared_after_install_before_registration(failed, platform, monkeypatch, tmp_path):
     baseline = _wheel(tmp_path / "baseline.whl", "baseline")
     candidate = _wheel(tmp_path / "candidate.whl", "candidate")
     prior = _wheel(tmp_path / "prior.whl", "prior")
     (tmp_path / "uv.lock").write_text("pinned")
-    monkeypatch.setattr(driver.sys, "platform", "linux")
+    monkeypatch.setattr(driver.sys, "platform", platform)
     monkeypatch.setattr(driver.shutil, "which", lambda _: "/usr/bin/uv")
     events, prepared = {}, set()
 
@@ -89,7 +88,7 @@ def test_each_disposable_prefix_is_prepared_after_install_before_registration(fa
         assert root not in prepared
         prepared.add(root)
         events[root].append("provision")
-        proof = _proof(passed=not failed)
+        proof = _proof(passed=not failed, platform=platform)
         if failed:
             proof["failure"] = {"category": "RuntimeError", "code": "qualification_interpreter_runtime_changed"}
             raise driver.InterpreterProvisioningError(proof)
@@ -102,7 +101,7 @@ def test_each_disposable_prefix_is_prepared_after_install_before_registration(fa
         return _result(_report(expected, argv[-1]))
 
     monkeypatch.setattr(driver, "_required_command", required)
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", provision)
+    monkeypatch.setattr(driver, "provision_venv_interpreter", provision)
     monkeypatch.setattr(driver, "_run", run)
     result = driver.verify(
         tmp_path / "paired-python",
@@ -134,9 +133,10 @@ def test_each_disposable_prefix_is_prepared_after_install_before_registration(fa
         assert all(sequence.count("provision") == 1 for sequence in events.values())
 
 
-def test_nonthrowing_failed_helper_receipt_cannot_start_a_phase(monkeypatch, tmp_path):
-    monkeypatch.setattr(driver.sys, "platform", "linux")
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _: _proof(passed=False))
+@pytest.mark.parametrize("platform", ["linux", "darwin"])
+def test_nonthrowing_failed_helper_receipt_cannot_start_a_phase(monkeypatch, tmp_path, platform):
+    monkeypatch.setattr(driver.sys, "platform", platform)
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda _: _proof(passed=False, platform=platform))
     report = {}
     with pytest.raises(driver.InterpreterProvisioningError):
         driver._prepare_interpreter(tmp_path / "python", report)

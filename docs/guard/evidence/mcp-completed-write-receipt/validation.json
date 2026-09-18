@@ -1,0 +1,115 @@
+{
+  "schema": "guard.mcp-completed-write-receipt.validation.v1",
+  "parent_commit": "163d6518bec29a81bca569d56fedb4998ace2ca3",
+  "cwd": "/workspace/scratch/c25672eb4c10/refresh-lease-fix",
+  "python": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+  "environment": {
+    "PYTHONPATH": "src"
+  },
+  "lock": "/workspace/scratch/c25672eb4c10/validation.lock",
+  "source_files": {
+    "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py": "462f5bb16a8e7800ef6ca9bc1b58ee3e741aca31b6d5950392e5dd6fcfc5fb7e",
+    "tests/test_runtime_mcp_tool_call_binding.py": "9d7252e06f72233476f37223d0b832615f0329265ad08d32f88973f6e6c215b1"
+  },
+  "records": [
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py::test_completed_write_receipt_uses_the_sent_request"
+      ],
+      "stage": "before repair",
+      "exit_code": 1,
+      "failed": 2,
+      "seconds": 0.64,
+      "raw": "completed-receipt-before.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "stage": "repair before package handoff control was added",
+      "exit_code": 0,
+      "passed": 23,
+      "seconds": 1.02,
+      "raw": "completed-receipt-focused-first.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_runtime_mcp_tool_call_binding.py",
+        "tests/test_guard_runtime_mcp_saved_blocks.py",
+        "tests/test_guard_mcp_package_proxy_phase14.py",
+        "tests/test_guard_external_archive_launch_binding.py"
+      ],
+      "stage": "final source",
+      "exit_code": 0,
+      "passed": 96,
+      "seconds": 11.93,
+      "raw": "completed-receipt-relevant-first.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "basedpyright",
+        "--outputjson",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+      ],
+      "exit_code": 0,
+      "files_analyzed": 1,
+      "errors": 0,
+      "warnings": 588,
+      "seconds": 2.498,
+      "raw": "completed-receipt-types.json.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "completed-receipt-ruff.log.gz"
+    },
+    {
+      "command_suffix": [
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "--no-cache",
+        "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "tests/test_runtime_mcp_tool_call_binding.py"
+      ],
+      "exit_code": 0,
+      "raw": "completed-receipt-format.log.gz"
+    }
+  ],
+  "scope": {
+    "tool_binding_helper_unchanged": true,
+    "framing_and_evaluator_unchanged": true,
+    "prewrite_quiet_seconds": 0.005,
+    "postwrite_authority_veto_added": false,
+    "full_frame_decode_added": false,
+    "historical_adapters_not_rerun": true,
+    "performance_runs_started": false,
+    "risk_reuse_implemented": false,
+    "rsp100_complete": false
+  },
+  "source_recording": "Final hashes recorded immediately after validation; no production/test source edits occurred during these commands."
+}

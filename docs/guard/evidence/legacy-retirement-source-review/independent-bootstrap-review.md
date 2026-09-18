@@ -1,0 +1,40 @@
+# Independent review of a passive legacy no-producer witness
+
+Reviewed immutable baseline `2e672d2d950c6ec471005ddba46e49bba16dc23b` and candidate `7a387128e2cf2ec79b890dfebe2697e8a49eb45d` using local `git show`/`git grep`. This is a source review, not a runtime qualification. No repository source or GitHub mutation was made.
+
+The proposed outer-interpreter counters plus original cleanup booleans are **insufficient by themselves**. A narrowly scoped no-new-native-producer witness remains plausible for the exact protected-cache rejection, but its proof must account for multiprocessing bootstrap before process isolation and for every created slot, including ones removed during startup. No actual unconditional native launch was found in the directly inspected bootstrap functions; this is a coverage gap, not evidence that a resident was launched.
+
+## Concrete source findings
+
+- `daemon/hook_process_entrypoint.py::hook_worker_main` first assigns its own Windows job (breakaway disabled) or calls `setsid`, then spawns `_hook_evaluator_main`. The evaluator imports six modules before sending ready. It creates `GuardStore` and `HookWorker` only after a `review` message. Native-client closure messages do not constitute review messages. This is a useful structural boundary, provided the complete import/startup closure is trusted and pinned.
+- `daemon/hook_process_slot_review.py::_send_review_to_slot` is the sole literal `("review", request)` sender found under `src/codex_plugin_scanner`; retries call that same function. It sets `request_exposed=True` **after** `Connection.send`. A zero entry count is stronger than inspecting the final `request_exposed` field because send can succeed before a later error or interrupted flag assignment.
+- `daemon/hook_process_worker.py::retire_worker_slot` accepts a dead, unexposed guardian via `slot.windows_job_contained or not slot.request_exposed`. Its result can therefore be true without observing the evaluator's identity or exit. Example: guardian spawns evaluator, dies before the readiness handshake, evaluator is still importing; guardian is dead and has never received a review, so retirement can return true. A proof may classify that evaluator as permanently unable to produce native work only after establishing its exact bootstrap/import behavior and exclusive request-channel ownership. It cannot claim the evaluator was observed dead.
+- Successful POSIX retirement of an isolated live guardian signals its process group and waits for the guardian. That is stronger than the dead-bootstrap shortcut, but the returned boolean does not independently enumerate or wait for all children. The installed source is part of the argument that descendants cannot escape before any request.
+- `daemon/hook_process_creation.py` serializes slot creation and registers the slot under the runner lock, including stale-generation cleanup failures. However `spawn_hook_worker` calls `process.start()` before constructing/returning the slot. An observer must reject unaccounted start exceptions or partially created processes; observing only successful `spawn_hook_worker` returns misses that boundary.
+- Retired slots are removed by several paths, including `_retire_slot` and asynchronous retirement callbacks. Final `_all_slots={}` is not historical completeness. Record every process-creation attempt, every returned slot, each retirement invocation/result, and the evidence branch used; reconcile this ledger only after original spawn/retirement/supervisor threads are joined and the runner reports contained closure.
+- Actual launch is `python -I installed_transition_entry.py`. Spawn reimports this lightweight entry as `__mp_main__`; its main guard prevents importing the full probe from that route. Before the guardian target starts, the child still executes the entry's diagnostic import, multiprocessing bootstrap, package initialization, and target-module imports. Parent-only audit/profile hooks are absent in a fresh spawn interpreter. The six evaluator imports are therefore not the whole child import closure.
+- `-I` already excludes user site and `PYTHONPATH`; do not claim otherwise. The installed environment's site initialization, `.pth`/`sitecustomize`, standard library, native extensions, locked dependencies, candidate entry/diagnostic code, and all transitive baseline imports still need an explicit trust/identity boundary. `installed_package_digest` alone does not hash all those inputs, and the parent import-origin check does not itself attest child imports.
+- Other outer-interpreter native entry routes include approval, command-model, hook-edge, pretool, runtime, and the publisher. Observing the underlying `native_resident_client_request` code object covers its aliases, but a process audit must still reject direct native/helper spawns and unexpected FFI paths. Avoid replacing `run_isolated_hook_process`: the baseline client selects behavior by callable identity.
+
+## Minimum admissible direction
+
+Use a separate receipt type meaning **no new legacy native producers**, never a fabricated successful `resident-stop`. Preserve the real start failure and stop rc/stderr, the retained protected policy bytes, all old failure reports, and the preceding positive generation's actual retirement receipt. The first narrow implementation should fail closed on any native-client entry, review-send entry, unknown spawn, partial process-start exception, incomplete hook registration, profiler replacement, accounting loss, uncertain source identity, noncontained original cleanup, or late producer-capable activity.
+
+Before implementation, decide how child bootstrap is covered. There are two plausible designs: (1) complete source-pinned bootstrap/nonproducer closure with strict process-attempt accounting and the original containment results, or (2) passive observers installed in every spawn interpreter before application imports, producing identity-bound child evidence, plus the unchanged original containment. A parent-only audit hook combined with six file hashes does not satisfy either design. Per-child observation still starts after CPython site initialization, whose trust boundary must be recorded explicitly. Neither design is a general adversarial Python sandbox.
+
+Do not weaken the gate to `already-stopped`, empty generation files, a dead outer worker, or a free lock. Do not accept a bootstrap retirement boolean as proof that an arbitrary descendant was killed. Do not broaden the negative case beyond the exact audited wheel/retained protected-cache rejection without a separate proof.
+
+## Required counterexample tests
+
+1. Review `send` occurs but `request_exposed` remains false: reject because function entry is nonzero.
+2. Guardian dies after evaluator spawn and before ready: distinguish the legacy true return from observed full-tree exit; reject unless complete nonproducer bootstrap proof exists.
+3. Child bootstrap/import starts a native process before guardian isolation: reject; parent zero counters must not admit it.
+4. `process.start` creates a process then raises before slot return: reject unaccounted creation even if final slot map is empty.
+5. Slot is successfully retired and removed before final close: retain its evidence and reconcile total starts/retirements.
+6. Native-client alias/direct Popen/unknown helper bypasses a publisher-only counter: reject.
+7. Profiling/audit misses an existing thread, a child interpreter, or is disabled/replaced: reject incomplete coverage.
+8. Cleanup returns true through the unexposed-dead shortcut while child evidence is absent: reject a full-tree-containment claim.
+9. A late spawn occurs after a receipt snapshot: keep observation active through the final producer shutdown/report boundary and reject.
+10. Installed package hash matches but child imports altered candidate helper, dependency, site hook, or foreign module: reject the identity mismatch.
+
+This review does not authorize changing baseline files, producer behavior, deadlines, floors, or acceptance requirements.

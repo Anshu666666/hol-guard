@@ -1,0 +1,571 @@
+{
+  "baseline_commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+  "candidate_commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+  "compiled_stop_is_byte_identical": true,
+  "corrected_finding": "That stronger file is not wired into the binary. The actual compiled stop body is byte-identical in baseline and candidate; it fails on empty discovery or unsuccessful send and only selects the first discovered state.",
+  "current_local_commit": "623a6e058b2c4b650021e3c359d8e58b1be6ea05",
+  "historical_retirement_verified": false,
+  "historical_stderr_does_not_distinguish_no_state_from_unsuccessful_send": true,
+  "known_unsupported_prior_claim": "The current candidate already exposes authenticated idempotent resident-stop verification through managed_resident_stop.rs.",
+  "module_reachability": [
+    {
+      "compiled_file": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "compiled_stop_bytes": 1585,
+      "compiled_stop_sha256": "0780bb7fe24a9fb23ee278e8f347b7bccfe73987dc604615a1cfdb3d0a1bc320",
+      "dispatch": "managed_resident::stop_managed",
+      "entry": "rust/crates/guard-runtime/src/main.rs",
+      "label": "baseline",
+      "module_declaration": "mod managed_resident;",
+      "stronger_stop_file_wired": false
+    },
+    {
+      "compiled_file": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "compiled_stop_bytes": 1585,
+      "compiled_stop_sha256": "0780bb7fe24a9fb23ee278e8f347b7bccfe73987dc604615a1cfdb3d0a1bc320",
+      "dispatch": "managed_resident::stop_managed",
+      "entry": "rust/crates/guard-runtime/src/main.rs",
+      "label": "candidate",
+      "module_declaration": "mod managed_resident;",
+      "stronger_stop_file_wired": false
+    }
+  ],
+  "repository_mutations": [],
+  "runtime_tests_executed": false,
+  "schema": "hol-guard.retirement-source-review.v1",
+  "source_records": [
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/Cargo.toml.gz",
+      "archive_sha256": "79e933a0d192e51253b30580716e0fe9f4cdb5f5ec7ace011da590f253563c03",
+      "bytes": 1105,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/Cargo.toml",
+      "present": true,
+      "sha256": "15232b8598dacc821e8c3a41dd2b077a444ff283207b4e6fe410dfce42957572"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/main.rs.gz",
+      "archive_sha256": "afbff83ad2001a0cd2422f6f25cb02cb6673f39c2ef15182720d57bcd18a9deb",
+      "bytes": 13924,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "present": true,
+      "sha256": "38f457db760d53219b631e8226ba3c3898e26b77ef2579e373dc718f3ffd3991"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident.rs.gz",
+      "archive_sha256": "a534097acc4380aa886e13bcf390d30c4e7020c8f290930e67b171e14f0c0c01",
+      "bytes": 17597,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "present": true,
+      "sha256": "779099846c06bea92296b45b67444cacd727f82039aa2b2a871326d017326ee4"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_stop.rs.gz",
+      "archive_sha256": "a3b88f3dbed1c895b859de6b1c90d54aef43869340de190ca324b8c9b0ca7004",
+      "bytes": 9740,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_stop.rs",
+      "present": true,
+      "sha256": "6168039a552162c00bada00211ff4ac0ae2cc27965cf4eeaf1a81a8d4e1e830f"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_supervisor.rs.gz",
+      "archive_sha256": "5fb64d0db54d3f5b7e35a99cb517ef47a28a88a5b0528e5808904b48aa0d7b85",
+      "bytes": 14267,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_supervisor.rs",
+      "present": true,
+      "sha256": "f53e759fe201a641011a9882be6327543f6ebdf04af5cddf819a4ef9b02669e9"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_containment.rs.gz",
+      "archive_sha256": "d51e979e46953f3eeddda3b33813bb0acec4cbc0b75fba60d9fcf05c5e17f826",
+      "bytes": 14459,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "present": true,
+      "sha256": "ed5eb6f640fc1ac581b9ec8c697bda6d3d7727af9d184c2825cbf752014c90b4"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_transport.rs.gz",
+      "archive_sha256": "b7d569d7185389c19e23c198000f048fe579210be511e3d86d7d0b14edc1da29",
+      "bytes": 6660,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_transport.rs",
+      "present": true,
+      "sha256": "e8e44d78fdcc2e8d608703eb88e0705de24dea29f6e591aa68c9bfc9c1cd1c7c"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_owner_lock.rs.gz",
+      "archive_sha256": "0118dcb1c33687000459bc2db4bca0eeb5260e370fb238b2831c9afb92e15498",
+      "bytes": 9097,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_owner_lock.rs",
+      "present": true,
+      "sha256": "07039724801c554a89104b02ecf26abd790fcb084c13aafeeff9002887caf03d"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_windows.rs.gz",
+      "archive_sha256": "7a9e8eecac83bb728cfb8c28faf9e38523d2277156febfb043d48f1698bf109c",
+      "bytes": 8026,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_windows.rs",
+      "present": true,
+      "sha256": "1137267388e7202c88f3ebd627e850f266cf33f1488c4306f699c43289b96812"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/resident_state.rs.gz",
+      "archive_sha256": "fd272056f502daf28b31f29e5925aee971bad6478d8deb86aec8591359b2ee6c",
+      "bytes": 15685,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/resident_state.rs",
+      "present": true,
+      "sha256": "e979fd1cf9a75e8045822a594ec79f41eb37556152d7ea4de08c2605d1f05875"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/resident_state_discovery.rs.gz",
+      "archive_sha256": "93b7185df9eccef66cbd6f2d47822feef4c47bbdd09f98e2a9b10d8e1fd508c4",
+      "bytes": 5079,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+      "present": true,
+      "sha256": "116b1246563d7a662c96f501fffe3e7d72e9f3b56c702f62f904dd74e34d1c53"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/resident_state_retirement.rs.gz",
+      "archive_sha256": "9758eae1772efd3ae6becfb613b301a1b5689c584c9d075713ceebc819bfc226",
+      "bytes": 1094,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/resident_state_retirement.rs",
+      "present": true,
+      "sha256": "9d06d467ae3212a5580912ad78850175f2ea71e101a0681c40c184f6c80acdb2"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/resident_process_identity.rs.gz",
+      "archive_sha256": "53f6510a9e81cb48c71bbec84025cb598d94b8cbae45144a5ecebb5a035629d1",
+      "bytes": 6379,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/resident_process_identity.rs",
+      "present": true,
+      "sha256": "30a7d8e88872f40945c0a2a4c7f90c85181c9c184f93097323eae02a4af24841"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/resident_startup_lock.rs.gz",
+      "archive_sha256": "f72ebd87d531af58b2c2dd86537fb9380c519f6956e635a71987be76b6da6c40",
+      "bytes": 6697,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/resident_startup_lock.rs",
+      "present": true,
+      "sha256": "57f9141532cd02589cdaba55b6b31ad843bbeba61adefc774c45fa2d65da65f1"
+    },
+    {
+      "archive_path": "sources/baseline/rust/crates/guard-runtime/src/managed_resident_lease.rs.gz",
+      "archive_sha256": "917007c10277b87533d0ac01ca273cb298602f178708cdd844486af4ce382ace",
+      "bytes": 15685,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "rust/crates/guard-runtime/src/managed_resident_lease.rs",
+      "present": true,
+      "sha256": "ed4cd2a50e1d4737930708ab77aa2a9365768fba823adee9ddb15f47fb91f974"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_policy_snapshot_contract.py.gz",
+      "archive_sha256": "e1cb4fae188ab664587818599d087bd37dc38511f0ee1fda3d73acc90e9fbaf1",
+      "bytes": 15626,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_contract.py",
+      "present": true,
+      "sha256": "4f2c3cf3797244157a6398a7509a3aca654ab191d8359ec61ece77d2ee6673d5"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py.gz",
+      "archive_sha256": "10279abee75534b2a7bd8b3f9cd1179f8c59e8b7b8034f1174300444b8b3b3a4",
+      "bytes": 14002,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py",
+      "present": true,
+      "sha256": "3094fd5dc11f3d8c71ece32d192191a3e643e97662897e5f6bed94b2ad395c58"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py.gz",
+      "archive_sha256": "27c252191db6882d334e8c51bf461889c2bd463f1dabd1f79c13f4d3186eb09e",
+      "bytes": 20677,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
+      "present": true,
+      "sha256": "624fce93ef71ecef5d7444d9ca87cc068780e196c5ea5e6d852487458686d420"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py.gz",
+      "archive_sha256": "a80698195921e9913377e27d16ff9f1f17089e607146c18a1836429d7f023e32",
+      "bytes": 22904,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+      "present": true,
+      "sha256": "65c953d69466a817b3f046772c446f666b47437c86f67d892bdec78ef5d581b8"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py.gz",
+      "archive_sha256": "8e7f004ca1186b4f81a1466dcbdc6b941add8e66d2369c88d7ffd3ae4794df6d",
+      "bytes": 5371,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py",
+      "present": true,
+      "sha256": "b3d511bf86cca26ad9a894c5cd6f867e89de84149d9e7a4840dfec0b83da3ab7"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_resident_client.py.gz",
+      "archive_sha256": "a6d5278de2fe079aecb859ffccd2b0b1b79678c8ee4476c18a74755c5015e110",
+      "bytes": 14335,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+      "present": true,
+      "sha256": "8a7dd7560bd30cdea9f10118caf31712face71c25d8e8bb71787e4972f0e51db"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/native_resident_stream.py.gz",
+      "archive_sha256": "72fd924e12f175821d65c27141b2631eb68b2bc269327c88ab1907a37f997118",
+      "bytes": 9560,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/native_resident_stream.py",
+      "present": true,
+      "sha256": "3a38d8b83c1c5e23ffba2bc520b29e3509d3b14397db391db8e5eae2faf12211"
+    },
+    {
+      "archive_path": "sources/baseline/src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py.gz",
+      "archive_sha256": "35ff9d2675ba1f5de8c7c360414ed3163130e48d1e73aedf6238129b13ff318b",
+      "bytes": 15199,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py",
+      "present": true,
+      "sha256": "aaf93c593704f40f159f0ccb05fb52d064b501e1643f024a833ef8ea4c63505f"
+    },
+    {
+      "archive_path": "sources/baseline/scripts/native_slo_session.py.gz",
+      "archive_sha256": "e92da5a9fab4548c3fa11e3429f9398716260a45d2b9edabfd67d7224b88842f",
+      "bytes": 17666,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "scripts/native_slo_session.py",
+      "present": true,
+      "sha256": "c839023e9cad641d666ce6b1bf0ea0d29d6b8465fa30326880cae598aaf345cd"
+    },
+    {
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "scripts/ci/installed_artifact_transition_probe.py",
+      "present": false
+    },
+    {
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "scripts/ci/verify_installed_artifact_transitions.py",
+      "present": false
+    },
+    {
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "label": "baseline",
+      "path": "scripts/ci/installed_transition_diagnostics.py",
+      "present": false
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/Cargo.toml.gz",
+      "archive_sha256": "30937dac43c4f28bdafb10312f5f923e46ec2ea6ca3f3af3e807a465771e2296",
+      "bytes": 1324,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/Cargo.toml",
+      "present": true,
+      "sha256": "76ac620b6ee9d7101518611fa3e97506c037dc31a8427fd298e2f5737b282c11"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/main.rs.gz",
+      "archive_sha256": "f52b07913c0434ad188f31dd98c21a45ffce5540907795fbc8a1cac7af1b53de",
+      "bytes": 14410,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "present": true,
+      "sha256": "a4cdadc0cb23bb3ef0b6c6ceb026be4edb7a02523c7011f3a34cede36ef2d22d"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident.rs.gz",
+      "archive_sha256": "b215cfe96fc9ba8a0b416d7568a08d583821678641419fe69201d458538a1857",
+      "bytes": 17462,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "present": true,
+      "sha256": "9c3bf4ac4858091ba31367e1439e38630207963fc505d15eaf71f576aef293e2"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_stop.rs.gz",
+      "archive_sha256": "a3b88f3dbed1c895b859de6b1c90d54aef43869340de190ca324b8c9b0ca7004",
+      "bytes": 9740,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_stop.rs",
+      "present": true,
+      "sha256": "6168039a552162c00bada00211ff4ac0ae2cc27965cf4eeaf1a81a8d4e1e830f"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_supervisor.rs.gz",
+      "archive_sha256": "5fb64d0db54d3f5b7e35a99cb517ef47a28a88a5b0528e5808904b48aa0d7b85",
+      "bytes": 14267,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_supervisor.rs",
+      "present": true,
+      "sha256": "f53e759fe201a641011a9882be6327543f6ebdf04af5cddf819a4ef9b02669e9"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_containment.rs.gz",
+      "archive_sha256": "d51e979e46953f3eeddda3b33813bb0acec4cbc0b75fba60d9fcf05c5e17f826",
+      "bytes": 14459,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "present": true,
+      "sha256": "ed5eb6f640fc1ac581b9ec8c697bda6d3d7727af9d184c2825cbf752014c90b4"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_transport.rs.gz",
+      "archive_sha256": "b7d569d7185389c19e23c198000f048fe579210be511e3d86d7d0b14edc1da29",
+      "bytes": 6660,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_transport.rs",
+      "present": true,
+      "sha256": "e8e44d78fdcc2e8d608703eb88e0705de24dea29f6e591aa68c9bfc9c1cd1c7c"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_owner_lock.rs.gz",
+      "archive_sha256": "0118dcb1c33687000459bc2db4bca0eeb5260e370fb238b2831c9afb92e15498",
+      "bytes": 9097,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_owner_lock.rs",
+      "present": true,
+      "sha256": "07039724801c554a89104b02ecf26abd790fcb084c13aafeeff9002887caf03d"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_windows.rs.gz",
+      "archive_sha256": "7a9e8eecac83bb728cfb8c28faf9e38523d2277156febfb043d48f1698bf109c",
+      "bytes": 8026,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_windows.rs",
+      "present": true,
+      "sha256": "1137267388e7202c88f3ebd627e850f266cf33f1488c4306f699c43289b96812"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/resident_state.rs.gz",
+      "archive_sha256": "fd272056f502daf28b31f29e5925aee971bad6478d8deb86aec8591359b2ee6c",
+      "bytes": 15685,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/resident_state.rs",
+      "present": true,
+      "sha256": "e979fd1cf9a75e8045822a594ec79f41eb37556152d7ea4de08c2605d1f05875"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/resident_state_discovery.rs.gz",
+      "archive_sha256": "93b7185df9eccef66cbd6f2d47822feef4c47bbdd09f98e2a9b10d8e1fd508c4",
+      "bytes": 5079,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+      "present": true,
+      "sha256": "116b1246563d7a662c96f501fffe3e7d72e9f3b56c702f62f904dd74e34d1c53"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/resident_state_retirement.rs.gz",
+      "archive_sha256": "9758eae1772efd3ae6becfb613b301a1b5689c584c9d075713ceebc819bfc226",
+      "bytes": 1094,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/resident_state_retirement.rs",
+      "present": true,
+      "sha256": "9d06d467ae3212a5580912ad78850175f2ea71e101a0681c40c184f6c80acdb2"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/resident_process_identity.rs.gz",
+      "archive_sha256": "53f6510a9e81cb48c71bbec84025cb598d94b8cbae45144a5ecebb5a035629d1",
+      "bytes": 6379,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/resident_process_identity.rs",
+      "present": true,
+      "sha256": "30a7d8e88872f40945c0a2a4c7f90c85181c9c184f93097323eae02a4af24841"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/resident_startup_lock.rs.gz",
+      "archive_sha256": "f72ebd87d531af58b2c2dd86537fb9380c519f6956e635a71987be76b6da6c40",
+      "bytes": 6697,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/resident_startup_lock.rs",
+      "present": true,
+      "sha256": "57f9141532cd02589cdaba55b6b31ad843bbeba61adefc774c45fa2d65da65f1"
+    },
+    {
+      "archive_path": "sources/candidate/rust/crates/guard-runtime/src/managed_resident_lease.rs.gz",
+      "archive_sha256": "917007c10277b87533d0ac01ca273cb298602f178708cdd844486af4ce382ace",
+      "bytes": 15685,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "rust/crates/guard-runtime/src/managed_resident_lease.rs",
+      "present": true,
+      "sha256": "ed4cd2a50e1d4737930708ab77aa2a9365768fba823adee9ddb15f47fb91f974"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_policy_snapshot_contract.py.gz",
+      "archive_sha256": "45ecd3e56945ac108bd3141f22862de4bf572e9156beed1e15a13680d032aff8",
+      "bytes": 16587,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_contract.py",
+      "present": true,
+      "sha256": "a190b80cd2770e43d11ff015f735028ba79beae5550f9114e38cf9e0abba024e"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py.gz",
+      "archive_sha256": "065866fa1b16e4ac9defd98018b01a88342abdd6eb8e67984a217d3095300f68",
+      "bytes": 14538,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py",
+      "present": true,
+      "sha256": "9564460d97eb25a348968ef61185c6f8b6eb37a0a526256ff6b6627827c2b16f"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py.gz",
+      "archive_sha256": "c9c5681ed6161d804b4a027583206f23c2d2b49e219978d3bfe80048d8f78a3e",
+      "bytes": 21038,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
+      "present": true,
+      "sha256": "35699327b73dceb844fd177dc75a42d07600020182bfa72d582b8cfc9993ebb6"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py.gz",
+      "archive_sha256": "aa49c50dbf251a7f6e35d5276af18bca365e0fd9231e24126281d3a12538f985",
+      "bytes": 26275,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+      "present": true,
+      "sha256": "445d2b7c0de25736f2918f19de2068acf5c18ac4ba7d5325888357d2a1c9ed36"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py.gz",
+      "archive_sha256": "ccab940baebc3f54ed80b240e9df5b7c885b07492e2488134fa58d1b2dbcc799",
+      "bytes": 5468,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py",
+      "present": true,
+      "sha256": "870b9424d9922d7308a66203ce71b5f10ebd818de0f884e3d7267f1651065502"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_resident_client.py.gz",
+      "archive_sha256": "21281b9bc0844f13e9392d311ea927853b8b553e15e453b7bd952b04d3c7c135",
+      "bytes": 14863,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+      "present": true,
+      "sha256": "293d8776a121fbce97d96079c5c122f2c7a19f41d0d4d1b0d7d539a130f21a7e"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/native_resident_stream.py.gz",
+      "archive_sha256": "394eec64a240fa8f7d6bcdc965a6d14a0a0adedba8138babddb39d92b4991d37",
+      "bytes": 10880,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/native_resident_stream.py",
+      "present": true,
+      "sha256": "f50831b77592ca81bdc3c2ac3dbcde8e10cde08f9d9c9a4b4f3527480db90d13"
+    },
+    {
+      "archive_path": "sources/candidate/src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py.gz",
+      "archive_sha256": "35ff9d2675ba1f5de8c7c360414ed3163130e48d1e73aedf6238129b13ff318b",
+      "bytes": 15199,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py",
+      "present": true,
+      "sha256": "aaf93c593704f40f159f0ccb05fb52d064b501e1643f024a833ef8ea4c63505f"
+    },
+    {
+      "archive_path": "sources/candidate/scripts/native_slo_session.py.gz",
+      "archive_sha256": "529bd660befd50410abe209ce2318eb69e10179b4d172893fc7c6389e92b7aef",
+      "bytes": 21955,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "scripts/native_slo_session.py",
+      "present": true,
+      "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72"
+    },
+    {
+      "archive_path": "sources/candidate/scripts/ci/installed_artifact_transition_probe.py.gz",
+      "archive_sha256": "098ff70c08b1f7f2f49adfd8cfd7968e0413018ab4cc66d13ea922d712f3ea4f",
+      "bytes": 22738,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "scripts/ci/installed_artifact_transition_probe.py",
+      "present": true,
+      "sha256": "6aa3dad1fe517d67b7286accdad59c4405a02357f97d423fcb0ba48c8fc5cb8b"
+    },
+    {
+      "archive_path": "sources/candidate/scripts/ci/verify_installed_artifact_transitions.py.gz",
+      "archive_sha256": "2577b4675c4f96255db80a544b39f0f089759dc446359448b758adb3868a643f",
+      "bytes": 32490,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "scripts/ci/verify_installed_artifact_transitions.py",
+      "present": true,
+      "sha256": "6079994bc1c3ce144f42063828a42cfd8425b189973524e3b3bfd0644e900bb3"
+    },
+    {
+      "archive_path": "sources/candidate/scripts/ci/installed_transition_diagnostics.py.gz",
+      "archive_sha256": "459a4bb6f62c6b0e309b9c471c5635de3cd2bba50d47549a5f994e30a8a19513",
+      "bytes": 7132,
+      "commit": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "label": "candidate",
+      "path": "scripts/ci/installed_transition_diagnostics.py",
+      "present": true,
+      "sha256": "ed7495dd570c8161c5fcd15309c7db84f001ed95cd7212edf5c79e9b467ef2aa"
+    }
+  ],
+  "unchanged_current_compiled_files": [
+    "rust/crates/guard-runtime/src/main.rs",
+    "rust/crates/guard-runtime/src/managed_resident.rs",
+    "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+    "rust/crates/guard-runtime/src/managed_resident_owner_lock.rs"
+  ]
+}

@@ -1,0 +1,140 @@
+"""Retain an explicit AST audit of the additive diagnostics instrumentation."""
+
+import ast
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+ROOT = Path('/workspace/scratch/c25672eb4c10/receipt-failure-diagnostics')
+OUT = Path('/workspace/scratch/c25672eb4c10/receipt-failure-review')
+SOURCE = '590ce01334a7724f3f1349b2ab252110a5a268f5'
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+def original(path):
+    return subprocess.check_output(['git', 'show', f'{SOURCE}:{path}'], cwd=ROOT)
+
+class RemoveDiagnosticAdditions(ast.NodeTransformer):
+    def __init__(self):
+        self.removed = []
+
+    def record(self, kind, node):
+        self.removed.append({'kind': kind, 'line': node.lineno, 'ast': ast.dump(node, include_attributes=False)})
+
+    def visit_ImportFrom(self, node):
+        if node.module and node.module.endswith('runtime_hook_evidence_diagnostics'):
+            self.record('new_diagnostics_import', node)
+            return None
+        return node
+
+    def visit_FunctionDef(self, node):
+        if node.name == '_record_failure_diagnostics':
+            self.record('new_diagnostic_counter_method', node)
+            return None
+        if node.name == '_record_persistence_failure':
+            assert [x.arg for x in node.args.kwonlyargs] == ['phase', 'code']
+            self.record('diagnostic_keyword_parameters', node)
+            node.args.kwonlyargs = []
+            node.args.kw_defaults = []
+        return self.generic_visit(node)
+
+    def visit_AnnAssign(self, node):
+        target = node.target
+        name = target.id if isinstance(target, ast.Name) else target.attr if isinstance(target, ast.Attribute) else None
+        if name in {'failure_code', 'failure_diagnostics', 'receipt_failure_diagnostics', '_failure_diagnostics', '_receipt_failure_diagnostics'}:
+            self.record('diagnostic_local_or_counter_declaration', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'failure_code':
+            assert isinstance(node.value, ast.Constant) and node.value.value == 'unacknowledged'
+            self.record('fixed_ack_diagnostic_marker', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Expr(self, node):
+        value = node.value
+        if isinstance(value, ast.Call) and isinstance(value.func, ast.Attribute) and value.func.attr == '_record_failure_diagnostics':
+            self.record('additive_counter_at_original_failure_site', node)
+            return None
+        return self.generic_visit(node)
+
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Attribute) and node.func.attr == '_record_persistence_failure':
+            assert {x.arg for x in node.keywords} == {'phase', 'code'}
+            self.record('diagnostic_call_arguments', node)
+            node.keywords = []
+        return self.generic_visit(node)
+
+    def visit_ExceptHandler(self, node):
+        if node.name == 'error':
+            self.record('capture_previously_discarded_exception', node)
+            node.name = None
+        return self.generic_visit(node)
+
+    def visit_Dict(self, node):
+        pairs = []
+        for key, value in zip(node.keys, node.values):
+            if isinstance(key, ast.Constant) and key.value in {'failure_diagnostics', 'receipt_failure_diagnostics', 'evidence_failure_diagnostics'}:
+                self.record('additive_stats_or_report_field', key)
+            else:
+                pairs.append((key, value))
+        node.keys = [key for key, _ in pairs]
+        node.values = [value for _, value in pairs]
+        return self.generic_visit(node)
+
+results = []
+for path in ['src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py', 'ci/native_runtime/probe_native_default_auto.py']:
+    before = original(path)
+    after = (ROOT/path).read_bytes()
+    old_tree = ast.parse(before)
+    normalizer = RemoveDiagnosticAdditions()
+    stripped = normalizer.visit(ast.parse(after))
+    old_ast = ast.dump(old_tree, include_attributes=False)
+    new_ast = ast.dump(stripped, include_attributes=False)
+    result = {'path':path,'before_sha256':sha(before),'after_sha256':sha(after),'original_ast_sha256':sha(old_ast.encode()),'diagnostics_removed_ast_sha256':sha(new_ast.encode()),'equal_after_exact_listed_instrumentation_removed':old_ast==new_ast,'removed':normalizer.removed}
+    results.append(result)
+    if old_ast != new_ast:
+        (OUT/'unexpected-original.ast').write_text(ast.unparse(old_tree))
+        (OUT/'unexpected-normalized.ast').write_text(ast.unparse(stripped))
+        raise AssertionError(path)
+
+unchanged = []
+for path in ['scripts/native_probe_receipts.py','src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py','src/codex_plugin_scanner/guard/store_native_decision_receipts.py','src/codex_plugin_scanner/guard/store_connection_schema.py','src/codex_plugin_scanner/guard/sqlite_tuning.py']:
+    before = original(path)
+    after = (ROOT/path).read_bytes()
+    assert before == after,path
+    unchanged.append({'path':path,'sha256':sha(after),'exactly_unchanged':True})
+proof={'schema':'guard.receipt-failure-diagnostics.source-scope.v1','source_sha':SOURCE,'checked_at':datetime.now(timezone.utc).isoformat(),'normalization_scope':'Only the explicitly listed diagnostic imports, fields, captures, markers and calls are removed. All remaining AST, including counter increments, branch and callback order, timeouts, retry/backoff, durability and probe stop timing, must match the pinned original. New classifier semantics require their independent tests and code review.','instrumented_files':results,'unchanged_files':unchanged}
+(OUT/'source-scope-proof.json').write_text(json.dumps(proof,indent=2)+'\n')
+
+generator_path = 'tests/guard_command_decision_diff.py'
+generator = (ROOT/generator_path).read_bytes()
+assert generator == original(generator_path)
+tree = ast.parse(generator)
+assignment = next(node for node in tree.body if isinstance(node,ast.AnnAssign) and isinstance(node.target,ast.Name) and node.target.id == '_EVIDENCE_SOURCE_PATHS')
+paths = eval(compile(ast.Expression(assignment.value),generator_path,'eval'),{'REPO_ROOT':ROOT})
+fixture_path = 'tests/fixtures/guard-command-corpus/decision-diff-report.json'
+fixture_bytes = (ROOT/fixture_path).read_bytes()
+fixture = json.loads(fixture_bytes)
+fixture_bindings = fixture['bindings']['sources_sha256']
+inventory = []
+for path in sorted(set(path.resolve() for path in paths)):
+    relative = str(path.relative_to(ROOT))
+    binding_id = 'source-'+sha(relative.encode())[:24]
+    digest = sha(path.read_bytes())
+    inventory.append({'path':relative,'binding_id':binding_id,'sha256':digest,'fixture_sha256':fixture_bindings[binding_id],'matches':digest==fixture_bindings[binding_id]})
+assert len(inventory)==395
+assert all(row['matches'] for row in inventory)
+assert {row['binding_id'] for row in inventory} == set(fixture_bindings)
+changed_paths = [row['path'] for row in results] + ['src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py','tests/test_guard_evidence_failure_diagnostics.py','tests/test_native_default_auto_probe.py']
+overlap = sorted(set(changed_paths)&{row['path'] for row in inventory})
+assert not overlap
+assert sha(fixture_bytes)=='2b60b7fa1eb771a3f8d0cff456a26997f31b914836c06d7857044ba2a1cce754'
+binding_proof={'source_sha':SOURCE,'checked_at':datetime.now(timezone.utc).isoformat(),'binding_count':395,'fixture_path':fixture_path,'fixture_sha256':sha(fixture_bytes),'generator_path':generator_path,'generator_sha256':sha(generator),'actual_inventory_expression_evaluated_read_only':True,'report_generation_invoked':False,'all_bindings_match':True,'changed_paths':changed_paths,'changed_paths_in_inventory':overlap,'regeneration_required':False,'inventory':inventory}
+(OUT/'desktop-binding-proof.json').write_text(json.dumps(binding_proof,indent=2)+'\n')
+print(json.dumps({'source_ast_matches':True,'instrumented_files':len(results),'unchanged_files':len(unchanged),'desktop_bindings':395,'changed_bound_files':overlap,'generator_invoked':False}))

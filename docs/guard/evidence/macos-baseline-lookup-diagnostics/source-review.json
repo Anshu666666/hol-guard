@@ -1,0 +1,90 @@
+{
+  "schema": "hol-guard.macos-loopback-source-review.v1",
+  "source_records": [
+    {
+      "excerpts": [
+        {
+          "ast_sha256": "687ee573c0fe6ede8cfc02f282e1ddd13a2fa2fd4791da39a7562d9f7c26d0b8",
+          "first_line": 193,
+          "function": "BoundedThreadingHTTPServer.__init__",
+          "last_line": 224,
+          "source_sha256": "141ce7d2332c267ef2f72d39c52fd347dd3fcd32168419e79070d6735c8fb442",
+          "text": "def __init__(self, *args: Any, **kwargs: Any) -> None:\n        # ``TCPServer.__init__`` can call ``server_close`` when binding fails.\n        # Initialize the owned wakeup endpoints first so that rollback is safe\n        # even when construction stops before the socketpair is created.\n        self._guard_wakeup_reader: socket.socket | None = None\n        self._guard_wakeup_writer: socket.socket | None = None\n        super().__init__(*args, **kwargs)\n        try:\n            self._guard_stop_requested = threading.Event()\n            self._guard_serve_stopped = threading.Event()\n            self._guard_serve_stopped.set()\n            self._guard_wakeup_reader, self._guard_wakeup_writer = socket.socketpair()\n            self._guard_wakeup_reader.setblocking(False)\n            self._guard_wakeup_writer.setblocking(False)\n            capacity = _bounded_int(\n                \"HOL_GUARD_DAEMON_MAX_ACTIVE_REQUESTS\",\n                _DEFAULT_ACTIVE_REQUESTS,\n                _MAX_ACTIVE_REQUESTS,\n            )\n            self._guard_slots = threading.BoundedSemaphore(capacity)\n            self._guard_socket_timeout = _bounded_float(\n                \"HOL_GUARD_DAEMON_SOCKET_TIMEOUT_SECONDS\",\n                _DEFAULT_SOCKET_TIMEOUT_SECONDS,\n                _MAX_SOCKET_TIMEOUT_SECONDS,\n            )\n        except BaseException:\n            # Keep post-bind initialization transactional.  The listener and\n            # either wakeup endpoint may already exist when setup fails.\n            with suppress(Exception):\n                super().server_close()\n            self._guard_close_wakeup_sockets()\n            raise"
+        }
+      ],
+      "git_blob_sha": "96561ddfaa5b0edb50b3a21ecf3ee1a9eeca68b8",
+      "path": "src/codex_plugin_scanner/guard/daemon/bounded_http.py",
+      "ref": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "server_bind_override_present": false,
+      "sha256": "d2076e6e49c5e12725d746c35611b0d0e22a13c87965342752380ce6dfd44ce0"
+    },
+    {
+      "excerpts": [
+        {
+          "ast_sha256": "a454102f719c4893231c16e706a955b4602af4962cf23ed01adb8bf43bc51933",
+          "first_line": 194,
+          "function": "BoundedThreadingHTTPServer.server_bind",
+          "last_line": 201,
+          "source_sha256": "c53ff85db1e67c1099bc58a0ecc3688334ec81789d3177d98de79d9d298797e0",
+          "text": "def server_bind(self) -> None:\n        # HTTPServer adds socket.getfqdn() solely for server_name metadata.\n        # A local daemon needs the actual bound address, not reverse DNS:\n        # resolver stalls must not hold its constructor indefinitely.\n        TCPServer.server_bind(self)  # NOSONAR(S5332) Authenticated local IPC; verify_request rejects remote peers.\n        host, port = self.server_address[:2]\n        self.server_name = str(host)\n        self.server_port = int(port)"
+        }
+      ],
+      "git_blob_sha": "f8ae8666692e42c9bc1dec009a1a3941200d4c5e",
+      "path": "src/codex_plugin_scanner/guard/daemon/bounded_http.py",
+      "ref": "c3438011fa6938d3a4f65eca9c73daa16fd7d3b4",
+      "server_bind_override_present": true,
+      "sha256": "d22bd0e7601429d3883e3ef2d244e98e2e754907d259bc35f1b4f4db04c52abd"
+    },
+    {
+      "excerpts": [
+        {
+          "ast_sha256": "da4ebbe9a57573dfb4ef2c66910cb2364bb2264c21cf8b7eebdb486e361fbe18",
+          "first_line": 303,
+          "function": "AdapterSession.__init__",
+          "last_line": 341,
+          "source_sha256": "6c40cf7e66384e73b8a3556838b65d71b6351d3ee4c8b34699d942931e1f8c32",
+          "text": "def __init__(\n        self,\n        runtime: Path,\n        *,\n        configuration: str | None = None,\n        progress: Callable[[str], None] | None = None,\n    ) -> None:\n        report = progress or (lambda _stage: None)\n        report(\"construct_workspace\")\n        self.temporary = tempfile.TemporaryDirectory(prefix=\"hol-guard-slo-\")\n        # Keep the synthetic paths canonical. macOS may expose ``/tmp`` as\n        # ``/private/tmp`` after the daemon validates a hook workspace; using\n        # one spelling avoids registering the same workspace twice and\n        # invalidating the ACKed native policy snapshot on the first request.\n        self.root = Path(self.temporary.name).resolve()\n        # Use the production home shape inside the disposable synthetic HOME.\n        # File-hook registrations such as Cline resolve this exact default.\n        self.guard_home = self.root / \".hol-guard\"\n        self.workspace = self.root / \"workspace\"\n        self.guard_home.mkdir(mode=0o700)\n        self.workspace.mkdir(mode=0o700)\n        if configuration is not None:\n            (self.guard_home / \"config.toml\").write_text(configuration, encoding=\"utf-8\")\n        report(\"construct_store\")\n        self.store = GuardStore(self.guard_home)\n        self.command_authority_fixture = prepare_empty_command_authority(self.store)\n        report(\"construct_daemon\")\n        self.daemon = GuardDaemonServer(self.store, host=\"127.0.0.1\", port=0)\n        # Match the installed ownership probe: register the canonical workspace\n        # as fixture setup before timing the adapter readiness barrier. The\n        # isolated qualification fixture separately measures the full startup.\n        report(\"register_workspace\")\n        self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)\n        self.runtime = runtime\n        self.readiness_ms = 0.0\n        self._connection: HTTPConnection | None = None\n        self._owner_thread_id = 0\n        self.last_stop_diagnostic = _build_stop_diagnostic(\"not-run\")\n        self._stop_diagnostic_written = False"
+        }
+      ],
+      "git_blob_sha": "a0361155e660c790dca693772639247cca173ea9",
+      "path": "scripts/native_slo_session.py",
+      "ref": "7a387128e2cf2ec79b890dfebe2697e8a49eb45d",
+      "server_bind_override_present": null,
+      "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72"
+    },
+    {
+      "excerpts": [
+        {
+          "ast_sha256": "3847a1f701679634fafdb5790684dc8dbdd7d8870dd9a76507614b56ee20b186",
+          "first_line": 106,
+          "function": "DaemonFixture._receive",
+          "last_line": 150,
+          "source_sha256": "01959baf7276be8e8bda8af1c1dc6ebb6e71e35583c63f9e1d2fa7bc2bec3c52",
+          "text": "def _receive(self, timeout: float) -> Mapping[str, object]:\n        deadline = time.monotonic() + timeout\n        while True:\n            try:\n                line = self._responses.get(timeout=max(0, deadline - time.monotonic()))\n            except queue.Empty as error:\n                if self._startup_stack:\n                    detail = failure_evidence(RuntimeError(\"daemon fixture deadline at \" + self._stage))\n                    detail[\"startup_stack\"] = self._startup_stack\n                    raise FixtureFailureError(detail) from error\n                raise RuntimeError(\"daemon fixture deadline at \" + self._stage) from error\n            if line is None:\n                raise RuntimeError(\"daemon fixture stream unavailable at \" + self._stage)\n            result = json.loads(line)\n            if not isinstance(result, Mapping):\n                raise RuntimeError(\"daemon fixture operation failed\")\n            if result.get(\"state\") in {\"progress\", \"startup_diagnostic\"}:\n                stage = result.get(\"stage\")\n                if stage not in PROGRESS_STAGES:\n                    raise RuntimeError(\"daemon fixture invalid progress stage\")\n                self._stage = str(stage)\n                if result.get(\"state\") == \"startup_diagnostic\":\n                    stack = result.get(\"stack\")\n                    if (\n                        not isinstance(stack, list)\n                        or len(stack) > 8\n                        or any(\n                            not isinstance(item, dict)\n                            or set(item) != {\"origin\", \"line\"}\n                            or not isinstance(item[\"origin\"], str)\n                            or not isinstance(item[\"line\"], int)\n                            or isinstance(item[\"line\"], bool)\n                            for item in stack\n                        )\n                    ):\n                        raise RuntimeError(\"daemon fixture invalid startup evidence\")\n                    assert_privacy_safe({\"stack\": stack})\n                    self._startup_stack = list(stack)\n                continue  # Progress cannot extend the fixed operation deadline.\n            if result.get(\"error\"):\n                detail = result.get(\"detail\")\n                if not isinstance(detail, Mapping):\n                    raise RuntimeError(\"daemon fixture invalid failure evidence\")\n                raise FixtureFailureError(detail)\n            return result"
+        }
+      ],
+      "git_blob_sha": "631d3f6a888764660273f8f85c16f5bb945100b0",
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "ref": "c3438011fa6938d3a4f65eca9c73daa16fd7d3b4",
+      "server_bind_override_present": null,
+      "sha256": "2efdc16f54465a62ee7ed720a5d44c78ee52acbfe2ea351786976054d186e548"
+    },
+    {
+      "excerpts": [
+        {
+          "ast_sha256": "e7a707d116942326dba250d6dbd627dfd8878b8040c0afe5977f1bb49d43200b",
+          "first_line": 69,
+          "function": "StartupDiagnostic.__init__",
+          "last_line": 76,
+          "source_sha256": "69cdc33929730a980a4de3fd4e76aedf1844793cf7cd6b894664f94f9e4f816b",
+          "text": "def __init__(self, emit: Callable[[Mapping[str, object]], None], *, after_seconds: float = 20.0) -> None:\n        self._emit = emit\n        self._owner = threading.get_ident()\n        self._stage = \"construct\"\n        self._lock = threading.Lock()\n        self._active = False\n        self._timer = threading.Timer(after_seconds, self._snapshot)\n        self._timer.daemon = True"
+        }
+      ],
+      "git_blob_sha": "ec7b11d41a9115ef8abaf62f524bb91ab7515474",
+      "path": "scripts/native_slo_startup.py",
+      "ref": "c3438011fa6938d3a4f65eca9c73daa16fd7d3b4",
+      "server_bind_override_present": null,
+      "sha256": "a950f6ce4848e2843ecdd6f9b61b080e71c7a9aab7979bd41471e2b71da126b0"
+    }
+  ]
+}

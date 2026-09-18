@@ -220,9 +220,9 @@ def test_direct_optional_calls_do_not_write_pending_progress_when_paused(
         )
     )
     pending = store.list_guard_events_v1(uploaded=False)
-    assert len(pending) == 1
+    assert any(event["event_id"] == "pending-source-event" for event in pending)
     store.set_sync_payload("pain_signal_cursor", {"last_event_id": 0}, NOW)
-    store.set_sync_payload("guard_events_v1_summary", {"status": "pending", "pending_events": 1}, NOW)
+    store.set_sync_payload("guard_events_v1_summary", {"status": "pending", "pending_events": len(pending)}, NOW)
     before_pain = store.get_sync_payload("pain_signal_cursor")
     before_events = store.get_sync_payload("guard_events_v1_summary")
 

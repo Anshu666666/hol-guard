@@ -72,10 +72,11 @@ def _fixture(
     }
     if changes:
         for path, value in changes.items():
-            parent = command
+            parent: dict[str, Any] | list[Any] = command
             parts = path.split(".")
             for part in parts[:-1]:
                 parent = parent[int(part)] if isinstance(parent, list) else parent[part]
+            assert isinstance(parent, dict)
             parent[parts[-1]] = value
     generic_rules = [plain] if generic else []
     if second_generic:

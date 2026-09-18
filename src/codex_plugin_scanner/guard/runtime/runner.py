@@ -3007,12 +3007,13 @@ def sync_receipts(
         if native_expression_required:
             # Current/LKG recovery may select a different source from the last
             # wire ACK. Bind received state to this exact selected source.
+            selected_previous_ack = store.get_sync_payload("policy_bundle_ack")
             policy_bundle_ack = generic_policy_bundle_acknowledgement(
                 device_id=device_id,
                 policy_bundle=effective_policy_bundle,
                 synced_at=now,
                 applied=False,
-                previous=store.get_sync_payload("policy_bundle_ack"),
+                previous=selected_previous_ack if isinstance(selected_previous_ack, dict) else None,
             )
         else:
             policy_bundle_ack = effective_policy_bundle_acknowledgement(

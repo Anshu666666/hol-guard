@@ -1,0 +1,46 @@
+name: Native extension oracle inputs
+
+on:
+  push:
+    branches: [fix/main-native-extension-enforcement]
+    paths: [.github/workflows/native-extension-oracle-inputs.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 05fa4760df8401b9710bf098adb4fbb2dc4ff389
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Prepare portable CPython 3.12 and locked dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv python install 3.12
+          python_path=$(uv python find 3.12)
+          "$python_path" -c 'import sys,unicodedata; assert sys.version_info[:2] == (3,12); assert unicodedata.unidata_version == "15.0.0"'
+          uv pip install --python "$python_path" pip
+          mkdir -p /tmp/native-extension-oracle/wheels
+          uv export --frozen --no-dev --extra dev --no-emit-project --format requirements-txt --output-file /tmp/native-extension-oracle/requirements.txt
+          "$python_path" -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels --requirement /tmp/native-extension-oracle/requirements.txt
+          "$python_path" -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels 'hatchling<1.31'
+          python_root=$(dirname "$(dirname "$python_path")")
+          tar -C "$python_root" -czf /tmp/native-extension-oracle/python312.tar.gz .
+          "$python_path" -c 'import sys,unicodedata; print(sys.version); print(unicodedata.unidata_version)' > /tmp/native-extension-oracle/VERSION.txt
+          cd /tmp/native-extension-oracle
+          sha256sum python312.tar.gz wheels/* > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-extension-python312-oracle
+          path: /tmp/native-extension-oracle/
+          if-no-files-found: error
+          retention-days: 2

@@ -122,6 +122,7 @@ def test_atomic_activation_rejects_stale_delivery_after_concurrent_local_commit(
             )
         ),
         name="stale-local-authority-delivery",
+        daemon=True,
     )
     stale_thread.start()
     assert stale_waiting.wait(timeout=5)
@@ -209,13 +210,14 @@ def test_two_bundle_replacements_commit_one_consistent_authority_set(tmp_path: P
             errors.append(error)
 
     threads = [
-        threading.Thread(target=write, args=(first, "2026-08-25T12:00:01Z")),
-        threading.Thread(target=write, args=(second, "2026-08-25T12:00:02Z")),
+        threading.Thread(target=write, args=(first, "2026-08-25T12:00:01Z"), daemon=True),
+        threading.Thread(target=write, args=(second, "2026-08-25T12:00:02Z"), daemon=True),
     ]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join(timeout=5)
+    assert all(not thread.is_alive() for thread in threads)
     assert errors == []
     remaining = store.list_policy_decisions()
     ids = {row["artifact_id"] for row in remaining if row["source"] == "policy-bundle"}
@@ -259,11 +261,15 @@ def test_concurrent_memory_and_bundle_writes_keep_one_family_each(tmp_path: Path
         except BaseException as error:
             errors.append(error)
 
-    threads = [threading.Thread(target=write_bundle), threading.Thread(target=write_memory)]
+    threads = [
+        threading.Thread(target=write_bundle, daemon=True),
+        threading.Thread(target=write_memory, daemon=True),
+    ]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join(timeout=5)
+    assert all(not thread.is_alive() for thread in threads)
     assert errors == []
     remaining = store.list_policy_decisions()
     bundle_ids = {row["artifact_id"] for row in remaining if row["source"] == "policy-bundle"}

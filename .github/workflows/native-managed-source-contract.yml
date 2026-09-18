@@ -37,7 +37,7 @@ on:
       - "tests/test_policy_bundle_source_materialization.py"
       - "tests/native_expression_resident_fixtures.py"
       - "tests/test_native_expression_policy_resident.py"
-      - "tests/test_policy_bundle_materialization.py"
+      - "tests/test_policy_bundle_materialization_publication.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -75,7 +75,7 @@ jobs:
           uv run --no-sync python -c "from codex_plugin_scanner.guard import native_policy_authority_managed, native_policy_authority_read, native_policy_authority_sources"
       - name: Verify signed and local source reconstruction
         run: |
-          uv run --no-sync pytest -q tests/test_native_policy_authority_managed_read.py tests/test_native_policy_authority_compile.py tests/test_native_policy_authority_exact_sources.py tests/test_native_policy_authority_orphan_sources.py tests/test_native_policy_authority_read.py tests/test_native_policy_snapshot_v4_barrier.py tests/test_native_managed_catalog_capability.py tests/test_runtime_lane_session_observation.py tests/test_native_approval_envelope_identity.py tests/test_native_approval_session_detachment.py tests/test_native_approval_v4_transport.py tests/test_native_typed_artifact_sources.py tests/test_native_scoped_alias_sources.py tests/test_guard_native_runtime.py tests/test_native_policy_authority_expressions.py tests/test_native_policy_authority_command_source.py tests/test_native_command_row_association.py tests/test_policy_command_projection.py tests/test_native_command_expression.py tests/test_native_policy_snapshot_v4_contract.py tests/test_native_policy_snapshot_v4_publication.py tests/test_policy_bundle_materialization.py tests/test_policy_bundle_source_materialization.py tests/test_native_expression_policy_resident.py::test_expression_resident_source_preflight_is_signed_complete_and_expiry_bound
+          uv run --no-sync pytest -q tests/test_native_policy_authority_managed_read.py tests/test_native_policy_authority_compile.py tests/test_native_policy_authority_exact_sources.py tests/test_native_policy_authority_orphan_sources.py tests/test_native_policy_authority_read.py tests/test_native_policy_snapshot_v4_barrier.py tests/test_native_managed_catalog_capability.py tests/test_runtime_lane_session_observation.py tests/test_native_approval_envelope_identity.py tests/test_native_approval_session_detachment.py tests/test_native_approval_v4_transport.py tests/test_native_typed_artifact_sources.py tests/test_native_scoped_alias_sources.py tests/test_guard_native_runtime.py tests/test_native_policy_authority_expressions.py tests/test_native_policy_authority_command_source.py tests/test_native_command_row_association.py tests/test_policy_command_projection.py tests/test_native_command_expression.py tests/test_native_policy_snapshot_v4_contract.py tests/test_native_policy_snapshot_v4_publication.py tests/test_policy_bundle_materialization_publication.py tests/test_policy_bundle_source_materialization.py tests/test_native_expression_policy_resident.py::test_expression_resident_source_preflight_is_signed_complete_and_expiry_bound
       - name: Preserve authority and I/O ownership
         run: |
           uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .

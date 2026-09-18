@@ -13,7 +13,7 @@ def test_session_carries_source_catalog_without_claiming_an_active_lane(tmp_path
     monkeypatch.setattr(runner, "_safe_hostname", lambda: "fixture-host")
     monkeypatch.setattr(runner, "_safe_private_ip", lambda: None)
     monkeypatch.setattr(runner, "_safe_private_ipv6", lambda: None)
-    session = {
+    session: dict[str, object] = {
         "session_id": "fixture-session",
         "workspace": str(tmp_path),
         "created_at": "2026-09-18T00:00:00Z",

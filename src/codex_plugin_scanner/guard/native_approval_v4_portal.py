@@ -11,10 +11,12 @@ from collections.abc import Mapping
 from typing import cast
 
 from . import native_approval_protocol as _base
+from .native_approval_protocol import (
+    _lower_hex,
+)
 
 _NATIVE_APPROVAL_MAX_STRING_BYTES = _base._NATIVE_APPROVAL_MAX_STRING_BYTES
 _MAX_APPROVAL_TTL_MS = _base._MAX_APPROVAL_TTL_MS
-_lower_hex = _base._lower_hex
 
 _CHALLENGE_V4_SCHEMA = "guard-native-approval-challenge.v4"
 _PROOF_V4_SCHEMA = "guard-native-approval-proof.v4"

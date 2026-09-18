@@ -13,6 +13,13 @@ from collections.abc import Mapping
 from typing import cast
 
 from . import native_approval_protocol as _base
+from .native_approval_protocol import (
+    _bounded_text,
+    _common_fields_valid,
+    _lower_hex,
+    _receipt_fields_are_valid,
+    _within_approval_bound,
+)
 from .native_approval_v4_portal import _proof_v4_is_valid
 
 NativeApprovalPhase = _base.NativeApprovalPhase
@@ -168,11 +175,6 @@ _MAX_WEBAUTHN_SIGNATURE_BYTES = 256
 _MAX_WEBAUTHN_USER_HANDLE_BYTES = 256
 
 _RESULT_KEYS = _base._RESULT_KEYS
-_bounded_text = _base._bounded_text
-_lower_hex = _base._lower_hex
-_common_fields_valid = _base._common_fields_valid
-_receipt_fields_are_valid = _base._receipt_fields_are_valid
-_within_approval_bound = _base._within_approval_bound
 
 
 def _base64url_transport(value: object, *, maximum: int) -> bool:

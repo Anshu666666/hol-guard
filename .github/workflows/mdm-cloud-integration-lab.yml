@@ -255,3 +255,65 @@ jobs:
             --project-name "$HOL_MDM_LAB_PROJECT" \
             --file scripts/mdm/cloud-lab/docker-compose.yml \
             down --volumes --remove-orphans || true
+
+  native-approval-caller:
+    name: Native continuation through the actual caller
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+          save-cache: false
+      - name: Install locked test dependencies
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Generate the ephemeral fixture enrollment root
+        run: |
+          uv run --no-sync python scripts/native_approval_fixture_root.py \
+            --private-key "$RUNNER_TEMP/native-approval-root.key" --github-env "$GITHUB_ENV"
+      - name: Build the exact fixture-root native candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          export HOL_GUARD_BUILD_SHA="$GITHUB_SHA"
+          export HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          cd rust
+          cargo build --locked --release -p hol-guard-runtime
+      - name: Require actual caller continuation and one-time admission
+        env:
+          HOL_GUARD_NATIVE: force
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+          HGP_NATIVE_APPROVAL_INTEROP_OUTPUT: artifacts/native-approval-caller/interoperability.json
+        run: |
+          test -x "$HOL_GUARD_NATIVE_BINARY"
+          mkdir -p artifacts/native-approval-caller
+          uv run --no-sync pytest -q -m slow \
+            tests/test_native_approval_caller_resident.py::test_actual_native_review_proof_continues_only_original_hook \
+            --junitxml=artifacts/native-approval-caller/results.xml
+      - name: Validate exact bounded continuation evidence
+        if: always()
+        run: |
+          uv run --no-sync python scripts/native_approval_caller_evidence.py \
+            --directory artifacts/native-approval-caller \
+            --binary rust/target/release/hol-guard-runtime
+      - name: Retain bounded continuation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-approval-caller-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/native-approval-caller/proof.json
+            artifacts/native-approval-caller/interoperability.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove the disposable fixture private key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/native-approval-root.key"

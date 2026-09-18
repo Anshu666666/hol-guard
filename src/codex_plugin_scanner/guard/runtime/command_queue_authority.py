@@ -12,6 +12,11 @@ from .exact_cloud_review import (
     authorize_exact_cloud_review_job,
 )
 from .exact_cloud_review_transport import uses_exact_transport
+from .native_review_delivery import (
+    authorize_native_review_delivery,
+    require_legacy_review_transport,
+    uses_native_review_delivery,
+)
 from .runner import GuardSyncNotConfiguredError
 
 
@@ -32,6 +37,12 @@ def authorize_command_queue_job(
     authorize_generic: Callable[..., AuthorizedCommandJob] = authorize_command_job,
 ) -> AuthorizedCommandJob:
     if job.get("operation") == EXACT_CLOUD_REVIEW_OPERATION:
+        if uses_native_review_delivery(job):
+            return authorize_native_review_delivery(store, job, now=now)
+        try:
+            require_legacy_review_transport(store, job)
+        except ValueError as error:
+            raise CommandCapabilityError(str(error)) from error
         return authorize_exact_cloud_review_job(store, job, now=now)
     return authorize_generic(store, job, schema_versions=schema_versions, now=now)
 

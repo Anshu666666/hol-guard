@@ -41,7 +41,7 @@ from .command_payload import mapping as _mapping
 from .command_payload import optional_text as _text
 from .command_payload import result as _command_result
 from .exact_cloud_review import EXACT_CLOUD_REVIEW_OPERATION
-from .exact_cloud_review_executor import execute_exact_cloud_review_operation
+from .native_review_executor import execute_exact_review_job
 from .review_policy_memory_executor import (
     REVIEW_POLICY_MEMORY_OPERATION,
     execute_review_policy_memory,
@@ -103,8 +103,8 @@ def execute_guard_command_job(
                 generated_at=generated_at,
             )
         if operation in EXACT_CLOUD_REVIEW_OPERATIONS:
-            return execute_exact_cloud_review_operation(
-                payload=payload,
+            return execute_exact_review_job(
+                job,
                 store=store,
                 generated_at=generated_at,
                 resume_after_approval=_resume_after_remote_approval,

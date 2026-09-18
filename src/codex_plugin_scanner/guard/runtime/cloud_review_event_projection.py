@@ -11,6 +11,7 @@ from ..continuation_snapshot import (
     non_resumable_continuation_snapshot,
     validated_continuation_snapshot,
 )
+from ..native_approval_application import native_application_event_is_retained
 from ..review_contracts import (
     GuardReviewContractError,
     GuardReviewOAuthMetadata,
@@ -142,6 +143,15 @@ def project_cloud_review_event(
             )
         stored_event = decode_stored_review_event(outbox_row)
         terminal_projection = _terminal_projection(stored_event.continuation_result)
+        if stored_event.wire_event_type == "native_application_applied" and not native_application_event_is_retained(
+            store,
+            request_id=str(stored_event.snapshot["request_id"]),
+            result=stored_event.payload.get("nativeApplicationResult"),
+            claim=stored_event.payload.get("nativeSourceClaim"),
+        ):
+            raise StoredReviewEventError(
+                "native_application_binding_invalid", "Native application state no longer matches."
+            )
         raw_continuation = stored_event.snapshot.get("continuation_snapshot_json")
         if raw_continuation is None:
             continuation = non_resumable_continuation_snapshot(stored_event.snapshot)
@@ -187,6 +197,10 @@ def project_cloud_review_event(
             ),
         }
     )
+    if stored_event.wire_event_type == "native_application_applied":
+        event["nativeApplicationResult"] = stored_event.payload["nativeApplicationResult"]
+        event["reviewClaim"] = stored_event.payload["nativeSourceClaim"]
+        event["localUpdatedAt"] = stored_event.payload["occurredAt"]
     if terminal_projection is not None:
         terminal_result, terminal_capability, terminal_completed_at = terminal_projection
         event["continuationResult"] = _bounded_cloud_value(terminal_result)
@@ -227,6 +241,10 @@ def _cloud_safe_event_payload_json(payload_json: object, *, redaction_level: str
         )
         if key in payload
     }
+    if payload.get("eventType") == "review.native.application_applied":
+        # This exact bounded contract contains no command or free-form content.
+        # Generic key/string scrubbing would corrupt its cryptographic bindings.
+        safe_payload["nativeApplicationResult"] = payload.get("nativeApplicationResult")
     # The request projection already applies its own field and size bounds.
     # Reapplying generic mapping limits would drop required identity fields.
     safe_payload["requestSnapshot"] = payload.get("requestSnapshot")

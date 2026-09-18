@@ -22,6 +22,7 @@ from .hook_availability_policy import (
 )
 from .hook_native_policy_context import capture_result_context
 from .hook_native_review_approval import pause_native_pre_tool_for_approval
+from .hook_native_scoped_approval import coordinate_scoped_native_approval
 from .hook_policy_authority import legacy_source_binding_is_current, policy_authority_required
 from .hook_request_parsing import pre_tool_command
 from .hook_worker_responses import (
@@ -436,15 +437,30 @@ class HookWorkerNativeMixin:
                     return _record_native_pre_activity(self, native_harness, payload, response, accepted_receipt)
             action = str(native_result.get("minimum_action") or "")
             if action in _NATIVE_PRE_TOOL_APPROVAL_ACTIONS:
-                response = pause_native_pre_tool_for_approval(
-                    self.store,
-                    harness=native_harness,
-                    payload=payload,
-                    native_result=native_result,
-                    native_receipt=accepted_receipt,
-                    workspace=workspace,
-                    guard_home=guard_home,
-                )
+                if scoped and policy_snapshot is not None:
+                    response = coordinate_scoped_native_approval(
+                        self.store,
+                        publisher=publisher,
+                        policy_snapshot=policy_snapshot,
+                        harness=native_harness,
+                        payload=payload,
+                        native_result=native_result,
+                        native_receipt=accepted_receipt,
+                        workspace=workspace,
+                        guard_home=guard_home,
+                        home_dir=home_dir,
+                        deadline=deadline,
+                    )
+                else:
+                    response = pause_native_pre_tool_for_approval(
+                        self.store,
+                        harness=native_harness,
+                        payload=payload,
+                        native_result=native_result,
+                        native_receipt=accepted_receipt,
+                        workspace=workspace,
+                        guard_home=guard_home,
+                    )
                 return _record_native_pre_activity(self, native_harness, payload, response, accepted_receipt)
             return _record_native_pre_activity(
                 self,

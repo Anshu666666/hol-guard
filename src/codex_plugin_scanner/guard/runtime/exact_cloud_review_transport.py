@@ -9,6 +9,7 @@ from urllib.error import HTTPError
 
 from ..contracts.guard_cloud_review import COMMAND_RESULT_CONTRACT_VERSION, validate_exact_command_result
 from .exact_cloud_review import EXACT_CLOUD_REVIEW_OPERATION, EXACT_CLOUD_REVIEW_PROTOCOL_VERSION
+from .exact_review_result_binding import exact_review_result_identifiers
 
 EXACT_CLOUD_REVIEW_COMMAND_API_BASE = "/api/guard/review/v2/commands"
 EXACT_CLOUD_REVIEW_TRANSPORT = "cloud_review"
@@ -34,18 +35,7 @@ def exact_result(job: dict[str, object], execution: dict[str, object]) -> dict[s
     """Convert a successful exact executor response to the versioned result contract."""
 
     correlation_id = _required_text(job.get("id"), "exact_result_correlation_missing")
-    signed_decision = _mapping(_mapping(job.get("payload")).get("remoteApproval"))
-    bound_request_id = _required_text(
-        _mapping(job.get("serverResolvedBinding")).get("localRequestId"),
-        "exact_result_local_request_binding_missing",
-    )
-    decision_request_id = _required_text(
-        signed_decision.get("localRequestId"),
-        "exact_result_local_request_missing",
-    )
-    receipt_id = _required_text(signed_decision.get("receiptId"), "exact_result_receipt_missing")
-    if bound_request_id != decision_request_id:
-        raise ValueError("exact_result_local_request_binding_mismatch")
+    bound_request_id, receipt_id = exact_review_result_identifiers(job)
     data = _mapping(execution.get("data"))
     generated_at = _text(execution.get("generatedAt")) or datetime.now(timezone.utc).isoformat()
     if not data:

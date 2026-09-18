@@ -52,6 +52,7 @@ def create_v4_challenge(
     cwd: Path | None,
     policy_snapshot: Mapping[str, object],
     deadline: float | None = None,
+    request_id: str | None = None,
 ) -> NativeApprovalSession | None:
     """Create one resident-issued V4 challenge without local authority."""
 
@@ -68,6 +69,7 @@ def create_v4_challenge(
         cwd=cwd,
         policy_snapshot=policy_snapshot,
         deadline_budget_ms=budget_ms,
+        request_id=request_id,
     )
     if envelope_data is None:
         bridge._fail("native_approval_request_invalid")
@@ -86,6 +88,21 @@ def create_v4_challenge(
     if challenge is None:
         if bridge.last_error_code is None:
             bridge._fail("native_approval_decoder_rejected")
+        return None
+    snapshot = envelope["policy_snapshot"]
+    assert isinstance(snapshot, dict)
+    expected = {
+        "harness": envelope["harness"],
+        "policy_generation": envelope["policy_generation"],
+        "policy_digest": snapshot["policy_digest"],
+        "runtime_identity": snapshot["runtime_identity"],
+    }
+    if envelope.get("request_id") is not None:
+        expected["request_id"] = envelope["request_id"]
+    if any(
+        type(challenge.get(key)) is not type(value) or challenge.get(key) != value for key, value in expected.items()
+    ):
+        bridge._fail("native_approval_binding_mismatch")
         return None
     return _new_session(challenge, encoded_envelope)
 

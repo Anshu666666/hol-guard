@@ -1,0 +1,74 @@
+name: Native approval caller contract
+on:
+  push:
+    branches: [fix/native-approval-caller-validation]
+  pull_request:
+    paths:
+      - "src/codex_plugin_scanner/guard/native_approval*.py"
+      - "src/codex_plugin_scanner/guard/native_application*.py"
+      - "src/codex_plugin_scanner/guard/review*.py"
+      - "src/codex_plugin_scanner/guard/store_review_event*.py"
+      - "src/codex_plugin_scanner/guard/daemon/hook*approval.py"
+      - "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py"
+      - "src/codex_plugin_scanner/guard/runtime/*review*.py"
+      - "src/codex_plugin_scanner/guard/runtime/command_executors.py"
+      - "src/codex_plugin_scanner/guard/runtime/command_queue_authority.py"
+      - "src/codex_plugin_scanner/guard/adapters/grok_approval_resume.py"
+      - "src/codex_plugin_scanner/guard/approval_resolution.py"
+      - "tests/test_native_approval*.py"
+      - "tests/native_approval*.py"
+      - "tests/test_native_review_delivery.py"
+      - "tests/test_native_scoped_approval_caller.py"
+      - "tests/test_guard_exact_cloud_review*.py"
+      - "tests/test_guard_review_event_outbox*.py"
+      - "scripts/native_approval*.py"
+      - "docs/guard/contracts/*ownership*.json"
+      - "basedpyright.native-approval-caller.json"
+      - ".github/workflows/native-approval-caller-contract.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-approval-caller-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Check complete caller source and actual imports
+        run: |
+          uv run --no-sync python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+          paths = json.loads(Path('basedpyright.native-approval-caller.json').read_text())['include']
+          for command in (['ruff', 'check'], ['ruff', 'format', '--check']):
+              subprocess.run(['uv', 'run', '--no-sync', *command, *paths], check=True)
+          PY
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --project basedpyright.native-approval-caller.json
+      - name: Verify opaque proof and durable application boundaries
+        run: |
+          uv run --no-sync pytest -q tests/test_native_approval_queue_state.py tests/test_native_approval_challenge_binding.py tests/test_native_approval_request_claim.py tests/test_native_approval_delivery.py tests/test_native_approval_application.py tests/test_native_review_delivery.py tests/test_native_scoped_approval_caller.py tests/test_native_approval_v4_transport.py tests/test_native_approval_caller_evidence.py tests/test_guard_review_event_outbox.py tests/test_guard_review_event_outbox_delivery.py tests/test_guard_exact_cloud_review*.py
+      - name: Preserve strict authority and capability ownership
+        run: |
+          uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .
+          uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .
+          uv run --no-sync python scripts/ci/python_capability_cleanup_gate.py --root .
+          uv run --no-sync pytest -q tests/test_python_capability_cleanup_gate.py

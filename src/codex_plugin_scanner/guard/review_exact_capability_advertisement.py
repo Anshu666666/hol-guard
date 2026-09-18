@@ -36,6 +36,7 @@ def exact_review_capability_advertisement(
 ) -> dict[str, object] | None:
     """Describe queue eligibility without exporting local execution authority."""
 
+    from .review_request_extensions import exact_review_action_digest
     from .runtime.exact_cloud_review import (
         EXACT_CLOUD_REVIEW_OPERATION,
         ExactCloudReviewError,
@@ -48,7 +49,7 @@ def exact_review_capability_advertisement(
     except (AttributeError, ExactCloudReviewError):
         return None
     return {
-        "actionDigest": claim["actionEnvelopeHash"],
+        "actionDigest": exact_review_action_digest(claim),
         "capabilityId": _capability_digest(capability),
         "deviceId": oauth.device_id,
         "expiresAt": capability["expiresAt"],

@@ -14,6 +14,9 @@ _TERMINAL_POLICY_ACTIONS = frozenset({"block", "sandbox-required"})
 def approval_resolution_block_reason(request: Mapping[str, object]) -> str | None:
     """Return why a canonical approval row cannot accept a user resolution."""
 
+    artifact_id = request.get("artifact_id")
+    if isinstance(artifact_id, str) and artifact_id.startswith("native-approval-v4:"):
+        return "native_approval_transport_required"
     if request.get("decision_contract_error") is not None:
         return AUTHORITATIVE_DECISION_INCONSISTENT
     normalization = normalize_guard_action_result(

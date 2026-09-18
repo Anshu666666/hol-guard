@@ -65,6 +65,8 @@ def append_request_snapshot_event(
     event_type: str,
     occurred_at: str,
     continuation_result: Mapping[str, object] | None = None,
+    native_application_result: Mapping[str, object] | None = None,
+    native_source_claim: Mapping[str, object] | None = None,
 ) -> int:
     """Append a request snapshot without replacing any unacknowledged event."""
 
@@ -84,6 +86,8 @@ def append_request_snapshot_event(
         event_type=event_type,
         occurred_at=occurred_at,
         continuation_result=continuation_result,
+        native_application_result=native_application_result,
+        native_source_claim=native_source_claim,
     )
     connection.execute(
         """

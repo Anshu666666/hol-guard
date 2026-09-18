@@ -149,6 +149,8 @@ def review_event_payload_json(
     event_type: str,
     occurred_at: str,
     continuation_result: Mapping[str, object] | None = None,
+    native_application_result: Mapping[str, object] | None = None,
+    native_source_claim: Mapping[str, object] | None = None,
 ) -> str:
     """Build the canonical immutable event payload from a complete request row."""
 
@@ -170,6 +172,9 @@ def review_event_payload_json(
     }
     if continuation_result is not None:
         payload["continuationResult"] = dict(continuation_result)
+    if native_application_result is not None or native_source_claim is not None:
+        payload["nativeApplicationResult"] = dict(native_application_result or {})
+        payload["nativeSourceClaim"] = dict(native_source_claim or {})
     return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 

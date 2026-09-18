@@ -59,6 +59,9 @@ def wait_for_grok_live_approval(
     """
 
     del json_mode
+    if response_payload.get("native_approval_required") is True:
+        # A live native consume must decide the original request on retry.
+        return None
     canonical_event = event_name.replace("_", "").replace("-", "").lower()
     if canonical_event != "pretooluse":
         return None

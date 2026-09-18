@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from typing import cast
 
+from ..native_application_contract import validated_native_application
 from ..review_event_integrity import review_event_payload_digest
 from ..store_review_event_outbox_schema import (
     REVIEW_EVENT_SCHEMA_NAME,
@@ -15,6 +16,7 @@ from ..store_review_event_outbox_schema import (
 )
 
 _WIRE_EVENT_TYPES = {
+    "review.native.application_applied": "native_application_applied",
     "review.request.created": "request_created",
     "review.request.refreshed": "request_created",
     "review.request.resolved": "request_resolved",
@@ -248,6 +250,14 @@ def decode_stored_review_event(row: dict[str, object]) -> StoredReviewEvent:
         )
     snapshot = _decode_snapshot(payload)
     continuation_result = _decode_continuation_result(payload, event_type=event_type)
+    native_result = payload.get("nativeApplicationResult")
+    native_claim = payload.get("nativeSourceClaim")
+    if event_type == "review.native.application_applied":
+        validated = validated_native_application(native_result, native_claim)
+        if validated is None or validated[1].get("localRequestId") != local_request_id:
+            raise StoredReviewEventError("native_application_invalid", "Stored native application proof is invalid.")
+    elif native_result is not None or native_claim is not None:
+        raise StoredReviewEventError("native_application_unexpected", "Unexpected native application proof.")
     if snapshot["request_id"] != local_request_id:
         raise StoredReviewEventError(
             "payload_snapshot_request_mismatch",

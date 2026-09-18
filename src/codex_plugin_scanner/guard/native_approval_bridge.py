@@ -36,6 +36,7 @@ class NativeApprovalBridge(_v3.NativeApprovalBridge):
         cwd: Path | None,
         policy_snapshot: Mapping[str, object],
         deadline: float | None = None,
+        request_id: str | None = None,
     ) -> NativeApprovalSession | None:
         """Create one resident-issued V4 challenge."""
 
@@ -50,6 +51,7 @@ class NativeApprovalBridge(_v3.NativeApprovalBridge):
             cwd=cwd,
             policy_snapshot=policy_snapshot,
             deadline=deadline,
+            request_id=request_id,
         )
 
     def validate_and_consume_v4(
@@ -164,6 +166,7 @@ def create_native_approval_v4_challenge(
     cwd: Path | None,
     policy_snapshot: Mapping[str, object],
     deadline: float | None = None,
+    request_id: str | None = None,
 ) -> NativeApprovalSession | None:
     """Create one V4 WebAuthn challenge through the default bridge."""
 
@@ -175,6 +178,7 @@ def create_native_approval_v4_challenge(
         cwd=cwd,
         policy_snapshot=policy_snapshot,
         deadline=deadline,
+        request_id=request_id,
     )
 
 

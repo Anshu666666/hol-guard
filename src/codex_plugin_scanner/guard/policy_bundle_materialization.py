@@ -84,15 +84,20 @@ def bind_policy_bundle_materialization(
     bundle: Mapping[str, object],
     rows: Sequence[tuple[object, ...]],
     now: str,
+    require_source_binding: bool = False,
 ) -> tuple[list[tuple[object, ...]], dict[str, object] | None]:
     """Prepare a binding in the same transaction as the persisted rule set.
 
     A repeated identical source retains its authenticated recency. An invalid
     existing binding is never silently re-signed from mutable stored values.
-    Empty rule sets require no materialization authority.
+    Empty rule sets retain legacy behavior unless the caller explicitly needs
+    an authenticated source binding. This does not validate signed admission
+    or establish native application; those remain separate caller boundaries.
     """
 
-    if not rows:
+    if type(require_source_binding) is not bool:
+        raise PolicyBundleMaterializationError
+    if not rows and not require_source_binding:
         return list(rows), None
     key, key_id = store._policy_integrity_secret_material(create=True)
     device = connection.execute(

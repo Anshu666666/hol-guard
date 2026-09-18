@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Final, cast
 
+from .native_policy_authority_expressions import NATIVE_COMMAND_EXPRESSIONS_FEATURE, NativeScopedCommandExpression
 from .native_policy_snapshot_codec import (
     _canonical_json_bytes_v3,  # pyright: ignore[reportPrivateUsage]
     _digest_v3,  # pyright: ignore[reportPrivateUsage]
@@ -88,10 +89,12 @@ class NativePolicyAuthorityCapabilities:
             _ = bounded_authority_text(feature)
         _ = bounded_authority_text(self.catalog_digest, optional=True)
 
-    def require(self, *, managed: bool) -> None:
+    def require(self, *, managed: bool, command_expressions: bool = False) -> None:
         required = {NATIVE_SCOPED_AUTHORITY_FEATURE}
         if managed:
             required.add(NATIVE_MANAGED_AUTHORITY_FEATURE)
+        if command_expressions:
+            required.add(NATIVE_COMMAND_EXPRESSIONS_FEATURE)
         if self.snapshot_version != 4 or not required.issubset(self.features):
             raise NativePolicySnapshotError("native_policy_authority_capability_unsupported")
 
@@ -252,6 +255,7 @@ class NativeManagedPolicyAuthority:
 class NativePolicyAuthorityDraft:
     rows: tuple[NativeScopedPolicyRow, ...]
     managed: NativeManagedPolicyAuthority | None = None
+    command_expressions: tuple[NativeScopedCommandExpression, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.rows) is not tuple or len(self.rows) > NATIVE_AUTHORITY_MAX_ROWS:
@@ -262,23 +266,41 @@ class NativePolicyAuthorityDraft:
             raise NativePolicySnapshotError("native_policy_authority_row_duplicate")
         if self.managed is not None and type(self.managed) is not NativeManagedPolicyAuthority:
             raise NativePolicySnapshotError("native_policy_authority_control_invalid")
+        if type(self.command_expressions) is not tuple or len(self.command_expressions) > len(self.rows):
+            raise NativePolicySnapshotError("native_policy_authority_command_expression_invalid")
+        by_id = {row.decision_id: row for row in self.rows}
+        seen: set[int] = set()
+        for binding in self.command_expressions:
+            if type(binding) is not NativeScopedCommandExpression:
+                raise NativePolicySnapshotError("native_policy_authority_command_expression_invalid")
+            row = by_id.get(binding.decision_id)
+            if (
+                row is None
+                or row.source_kind is not NativePolicySourceKind.SIGNED_BUNDLE
+                or binding.decision_id in seen
+            ):
+                raise NativePolicySnapshotError("native_policy_authority_command_expression_invalid")
+            seen.add(binding.decision_id)
         if len(_canonical_json_bytes_v3(self._payload())) > NATIVE_AUTHORITY_MAX_BYTES:
             raise NativePolicySnapshotError("native_policy_authority_byte_limit")
 
     def _payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "schema": NATIVE_POLICY_AUTHORITY_SCHEMA,
             "generic_precedence": "specificity-recency.v1",
             "rows": [row.to_mapping() for row in sorted(self.rows, key=lambda item: item.decision_id)],
             "managed": self.managed.to_mapping() if self.managed is not None else None,
         }
+        if self.command_expressions:
+            payload["command_expressions"] = [binding.to_mapping() for binding in self.command_expressions]
+        return payload
 
     @property
     def content_digest(self) -> str:
         return _digest_v3(self._payload())
 
     def for_snapshot(self, capabilities: NativePolicyAuthorityCapabilities) -> dict[str, object]:
-        capabilities.require(managed=self.managed is not None)
+        capabilities.require(managed=self.managed is not None, command_expressions=bool(self.command_expressions))
         if self.managed is not None and capabilities.catalog_digest != self.managed.catalog_digest:
             raise NativePolicySnapshotError("native_policy_authority_catalog_mismatch")
         # Return fresh nested containers so the immutable draft cannot be

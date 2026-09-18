@@ -25,6 +25,7 @@ from .native_policy_authority_contract import (
     authority_integer,
     bounded_authority_text,
 )
+from .native_policy_authority_expressions import NativeScopedCommandExpression
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .policy_integrity import is_remote_policy_source
 from .runtime.command_extensions import CommandSafetyExtensionRegistry
@@ -120,7 +121,13 @@ def compile_native_policy_authority(
     rows = tuple(islice(verified_rows, NATIVE_AUTHORITY_MAX_ROWS + 1))
     if len(rows) > NATIVE_AUTHORITY_MAX_ROWS:
         raise NativePolicySnapshotError("native_policy_authority_row_limit")
-    return NativePolicyAuthorityDraft(tuple(compile_native_policy_row(row) for row in rows), managed)
+    compiled = tuple(compile_native_policy_row(row) for row in rows)
+    expressions = tuple(
+        NativeScopedCommandExpression(candidate.decision_id, cast(str, source["_command_expression_json"]))
+        for source, candidate in zip(rows, compiled, strict=True)
+        if "_command_expression_json" in source
+    )
+    return NativePolicyAuthorityDraft(compiled, managed, expressions)
 
 
 __all__ = ["compile_native_managed_authority", "compile_native_policy_authority", "compile_native_policy_row"]

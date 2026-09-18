@@ -14,6 +14,7 @@ from typing import cast
 from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY
 from .models import PolicyDecision
 from .native_cloud_policy_capabilities import NativeCloudPolicyRequirement, native_cloud_policy_requirements
+from .native_policy_authority_command_source import has_canonical_command_expressions, signed_command_native_rows
 from .native_policy_authority_managed import FrozenNativeManagedAuthority
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .policy_bundle_decisions import build_policy_bundle_decisions
@@ -113,17 +114,21 @@ def signed_bundle_native_rows(
         if bundle.get("contractVersion") == "guard-policy-bundle.v2"
         else build_policy_bundle_decisions
     )
-    decisions = builder(
-        bundle,
-        device_id=state.device["installation_id"],
-        device_name=state.device["device_label"],
-    )
     materialized_at = verified_policy_materialization_time(
         state.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY),
         bundle=bundle,
         device_id=state.device["installation_id"],
         key=state.key_material[0],
         key_id=state.key_material[1],
+    )
+    decisions = (
+        []
+        if has_canonical_command_expressions(bundle)
+        else builder(
+            bundle,
+            device_id=state.device["installation_id"],
+            device_name=state.device["device_label"],
+        )
     )
     if decisions and materialized_at is None:
         raise NativePolicySnapshotError("native_policy_authority_materialization_unavailable")
@@ -151,6 +156,8 @@ def signed_bundle_native_rows(
         if identity is not None:
             row["_policy_rule_identity"] = identity.to_selected_row_dict()
         rows.append(row)
+    if has_canonical_command_expressions(bundle):
+        rows = signed_command_native_rows(state, bundle, materialized_at=materialized_at)
     return (
         rows,
         policy_defaults_from_validated_bundle(bundle),

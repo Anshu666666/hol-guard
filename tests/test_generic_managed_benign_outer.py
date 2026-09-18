@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 from collections.abc import Mapping
 from pathlib import Path
@@ -53,6 +54,8 @@ def _invoke(
     command: str,
     *,
     runtime_expected: bool,
+    payload_hints: dict[str, object] | None = None,
+    native_output: io.StringIO | None = None,
 ) -> int:
     raw: dict[str, object] = {
         "hook_event_name": "PreToolUse",
@@ -60,6 +63,7 @@ def _invoke(
         "tool_input": {"command": command},
         "source_scope": "project",
         "approval_requests": [],
+        **(payload_hints or {}),
     }
     payload = _normalize_hook_payload(raw, harness="codex")
     action = _hook_action_envelope(harness="codex", payload=payload, home_dir=workspace.parent, workspace=workspace)
@@ -81,6 +85,7 @@ def _invoke(
         store=store,
         config=config,
         input_text=json.dumps(raw),
+        output_stream=native_output,
     )
 
 
@@ -247,3 +252,76 @@ def test_actual_generic_post_claim_refresh_reads_current_control_authority(
     assert claim_count == 1
     assert output["policy_action"] == ("block" if authority_lost else "allow")
     assert code == (1 if authority_lost else 0)
+
+
+@pytest.mark.parametrize("mode", ("enforce", "observe"))
+@pytest.mark.parametrize("state", ("lockdown", "unavailable", "tampered"))
+@pytest.mark.parametrize("render", ("generic-json", "native"))
+def test_terminal_control_reason_reaches_actual_response_and_receipt_without_payload_override(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    mode: Mode,
+    state: str,
+    render: str,
+) -> None:
+    store = managed_store(tmp_path, monkeypatch, lockdown=True)
+    if state == "unavailable":
+        secrets = store._extension_control_authority_secret_store
+        assert isinstance(secrets, MemorySecretStore)
+        secrets.available = False
+    elif state == "tampered":
+        with store._connect() as connection:
+            _ = connection.execute(
+                "update extension_control_authority_snapshot set snapshot_mac=? where singleton=1",
+                ("synthetic-invalid",),
+            )
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    config = _config(store, workspace, mode, {"default_action": "allow"})
+    stream = io.StringIO() if render == "native" else None
+    code = _invoke(
+        store,
+        workspace,
+        config,
+        "Shell",
+        "printf Synthetic",
+        runtime_expected=False,
+        payload_hints={
+            "permission_decision_reason": "Synthetic untrusted override",
+            "decision_v2_json": {"harness_message": "Synthetic untrusted override"},
+        },
+        native_output=stream,
+    )
+    serialized = stream.getvalue() if stream is not None else capsys.readouterr().out
+    output = cast(dict[str, object], json.loads(serialized))
+    receipt = store.list_receipts(limit=1)[0]
+    assert receipt["policy_decision"] == "block"
+    evidence = receipt["scanner_evidence"]
+    assert isinstance(evidence, list)
+    controls = [item for item in evidence if isinstance(item, dict) and item.get("source") == "extension_control"]
+    assert len(controls) == 1
+    control = controls[0]
+    assert control["status"] == "blocked"
+    assert control["reason_code"] == ("control.global-lockdown" if state == "lockdown" else "control.resolver-failure")
+    if state == "lockdown":
+        assert control["failure_codes"] == []
+    elif state == "tampered":
+        assert control["failure_codes"] == ["authority-tampered"]
+    else:
+        # The authenticated reader may escalate loss of protected state to
+        # tamper. Preserve its bounded diagnosis instead of relabeling it.
+        assert control["failure_codes"] in (["authority-unavailable"], ["authority-tampered"])
+    assert set(control) == {"source", "status", "reason_code", "failure_codes", "reason"}
+    assert isinstance(control["reason"], str)
+    assert control["reason"] in serialized
+    assert "Synthetic untrusted override" not in serialized
+    if stream is None:
+        assert code == 1 and output["policy_action"] == "block"
+        assert output["permission_decision_reason"] == control["reason"]
+    else:
+        assert code == 0
+        native = output["hookSpecificOutput"]
+        assert isinstance(native, dict)
+        assert native["permissionDecision"] == "deny"
+        assert control["reason"] in str(native["permissionDecisionReason"])

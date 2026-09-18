@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
-from ..models import GuardApprovalRequest
+from ..models import GUARD_ACTION_VALUES, GuardAction, GuardApprovalRequest
 from ..native_approval_application import retain_native_consumption
 from ..native_approval_bridge import NativeApprovalBridge, native_approval_continuation_allowed
 from ..native_approval_delivery import load_native_approval_decision
@@ -101,13 +101,16 @@ def _presentation(
 ) -> GuardApprovalRequest:
     tool = _native_review_tool_name(payload)
     target = _native_review_launch_target(payload)
+    policy_action = native_result.get("minimum_action")
+    if not isinstance(policy_action, str) or policy_action not in GUARD_ACTION_VALUES:
+        raise ValueError("native_approval_policy_action_invalid")
     return GuardApprovalRequest(
         request_id=request_id,
         harness=harness,
         artifact_id="native-approval-pending",
         artifact_name=tool,
         artifact_hash=request_id,
-        policy_action=str(native_result["minimum_action"]),
+        policy_action=cast(GuardAction, policy_action),
         recommended_scope="artifact",
         changed_fields=("native_pre_tool",),
         source_scope="project" if workspace is not None else "harness",

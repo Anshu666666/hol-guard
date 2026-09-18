@@ -130,17 +130,21 @@ def test_actual_native_review_proof_continues_only_original_hook(tmp_path: Path,
         publisher._publish_once()
         assert publisher.is_ready(), publisher.last_error
         first = review(payload)
-        assert first["hookSpecificOutput"]["permissionDecision"] == "deny", first.get("reason_code")
+        first_output = first["hookSpecificOutput"]
+        assert isinstance(first_output, dict)
+        assert first_output["permissionDecision"] == "deny", first.get("reason_code")
         assert first.get("native_approval_required") is True, (
             first.get("reason_code"),
             native_approval_last_failure_code(),
             publisher.last_error,
         )
         request_id = first["approval_request_id"]
+        assert isinstance(request_id, str)
         row = store.get_approval_request(request_id)
         assert row is not None and row["status"] == "pending"
         claim = build_local_review_request_claim(request_row=row, oauth=guard_review_oauth_metadata(store), store=store)
         challenge = claim["nativeApprovalChallenge"]
+        assert isinstance(challenge, dict)
         proof = sign_fixture_assertion(challenge, passkey, credential)
         job = _job(store, row, proof)
         now = datetime.now(timezone.utc).isoformat()
@@ -148,14 +152,20 @@ def test_actual_native_review_proof_continues_only_original_hook(tmp_path: Path,
         execution = execute_exact_review_job(job, store=store, generated_at=now, resume_after_approval=_never_resume)
         waiting = exact_result(job, execution)
         assert waiting["applicationStatus"] == "failed_retryable" and waiting["continuationStatus"] == "waiting"
-        assert store.get_approval_request(request_id)["status"] == "pending"
+        pending_row = store.get_approval_request(request_id)
+        assert pending_row is not None and pending_row["status"] == "pending"
 
         changed = {**payload, "tool_input": {"command": "printf Different"}}
         rejected = review(changed)
-        assert rejected["hookSpecificOutput"]["permissionDecision"] != "allow"
-        assert store.get_approval_request(request_id)["status"] == "pending"
+        rejected_output = rejected["hookSpecificOutput"]
+        assert isinstance(rejected_output, dict)
+        assert rejected_output["permissionDecision"] != "allow"
+        pending_row = store.get_approval_request(request_id)
+        assert pending_row is not None and pending_row["status"] == "pending"
         accepted = review(payload)
-        assert accepted["hookSpecificOutput"]["permissionDecision"] == "allow", (
+        accepted_output = accepted["hookSpecificOutput"]
+        assert isinstance(accepted_output, dict)
+        assert accepted_output["permissionDecision"] == "allow", (
             accepted.get("reason_code"),
             native_approval_last_failure_code(),
             publisher.last_error,

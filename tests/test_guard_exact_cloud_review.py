@@ -43,7 +43,6 @@ from codex_plugin_scanner.guard.runtime.exact_cloud_review import (
     disable_exact_cloud_review,
     enable_exact_cloud_review,
     exact_cloud_review_operations,
-    exact_cloud_review_status,
 )
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.guard_exact_cloud_review_support import (

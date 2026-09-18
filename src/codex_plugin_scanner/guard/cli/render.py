@@ -215,7 +215,7 @@ _SEVERITY_COLORS: dict[str, str]
 _SENSITIVE_STRING_PATTERNS: tuple[tuple[re.Pattern[str], str], ...]
 _TRUST_SENSITIVE_STRING_PATTERNS: tuple[tuple[re.Pattern[str], str], ...]
 _coerce_int = _value_coercion.coerce_int
-_RENDER_CONTEXT = _cast(_RenderContext, sys.modules[__name__])
+_RENDER_CONTEXT = _cast(_RenderContext, _cast(object, sys.modules[__name__]))
 
 
 def emit_guard_payload(command: str, payload: PayloadDict, as_json: bool) -> None:

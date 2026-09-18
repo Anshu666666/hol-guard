@@ -21,6 +21,7 @@ from codex_plugin_scanner.guard.native_hook_edge import _MAX_REQUEST_BYTES
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_daemon_fixture import witnessed_route
 from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_phase_evidence import validate_evidence_phase_counts
 from scripts.native_slo_registered_surfaces_evidence import SurfaceEvidence
 from scripts.native_slo_workloads import (
     QualificationCase,
@@ -396,6 +397,7 @@ def _validate_phase_counts(report: Mapping[str, object], wire_bytes: int, attemp
         for key in ("discarded_samples", "discarded_series_updates")
     ):
         raise RuntimeError("qualification phase attribution was discarded")
+    validate_evidence_phase_counts(report, attempts)
 
 
 def measure_installed_phases(session: Any, count: int, evidence_file: Path) -> dict[str, object]:

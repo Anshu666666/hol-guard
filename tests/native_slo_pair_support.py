@@ -20,7 +20,7 @@ from scripts.native_slo_qualification_bundle import BASELINE_SHA, BUNDLE_SCHEMA
 SHA = "b" * 40
 TARGET = "x86_64-unknown-linux-musl"
 ROOT = Path(__file__).resolve().parents[1]
-RECIPIENT = "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+RECIPIENT = "db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e"
 
 
 def bundle_fixture(root: Path):

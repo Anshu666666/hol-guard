@@ -15,7 +15,7 @@ if str(_ROOT) not in sys.path:
 from scripts.native_slo_evidence_files import read_file  # noqa: E402
 from scripts.native_slo_evidence_format import MAX_ARCHIVE_BYTES, MAX_FILES  # noqa: E402
 
-RECIPIENT_ID = "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+RECIPIENT_ID = "db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e"
 
 
 def verify_retention(receipt: Path, archive: Path) -> None:

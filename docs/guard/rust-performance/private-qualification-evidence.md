@@ -19,10 +19,12 @@ Every rerun has a distinct attempt artifact name. Retention is 30 days; keep a c
 The committed `qualification-recipient.pem` contains **only** an RSA-3072 public key. Its SHA-256 identity is calculated over DER SubjectPublicKeyInfo, not the PEM formatting:
 
 ```
-d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb
+db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e
 ```
 
 The private recovery key is retained separately from Git and CI. CI does not receive it through an environment variable, secret, service, or remote encryption endpoint. Tests generate independent ephemeral test keys.
+
+The recipient was rotated on 2026-09-18 after the earlier local workspace was lost and a targeted recovery search found no retained private key. The new RSA-3072 key was saved separately and verified by an authenticated archive round trip before its public key was adopted. This is a future-cohort custody repair, not recovery of old evidence. Archives addressed to the former recipient `d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb` still require that former private key. Previously published authenticated results keep their original provenance; the current workspace cannot repeat that recovery, and the new key cannot decrypt the twelfth or earlier cohorts. Select a recovery key by the exact recipient ID in each original receipt. Do not rewrite historical receipts or claim that public aggregates were privately authenticated.
 
 On a trusted machine with the locked project dependencies and the separately retained private key, first compare the downloaded ciphertext SHA-256 with the public receipt from the intended CI run. Then run:
 

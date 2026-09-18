@@ -17,11 +17,14 @@ from scripts.ci.native_claude_pilot_evidence import OutcomeJournal
 from scripts.ci.native_claude_pilot_registration import ARMS, EVENTS, PilotRegistration
 from scripts.native_probe_receipts import wait_for_route_corpus
 from scripts.native_slo_adapter import route_counts
-from scripts.native_slo_contract import clear_proof_environment, percentile, summarize
+from scripts.native_slo_contract import SAFE_ROUTE_NAMES, clear_proof_environment, percentile, summarize
 from scripts.native_slo_daemon_fixture import DaemonFixture, witnessed_route
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_numeric_journal import NumericJournal
 from scripts.native_slo_priority_launchers import RegisteredLauncher, launcher_payload, validate_launcher_stdout
+
+_ROUTE_COUNTER_NAMES = SAFE_ROUTE_NAMES | {"native_degraded"}
+_MAX_ROUTE_COUNTER = 1_000_000
 
 
 @dataclass
@@ -43,6 +46,37 @@ class Attempt:
     captured_stderr_bytes: int | None = None
     route_before: dict[str, int] = field(default_factory=dict)
     route_after: dict[str, int] = field(default_factory=dict)
+    route_after_state: str = "not_observed"
+    route_after_scope: str = "not_observed"
+
+
+def _snapshot_after_rejection(metrics: Any, attempt: Attempt) -> None:
+    """Retain one diagnostic snapshot without changing the original rejection."""
+    attempt.route_after = {}
+    attempt.route_after_state = "unavailable"
+    attempt.route_after_scope = "semantic_rejection_snapshot"
+    try:
+        # This is one existing fixture control read, with its existing 30-second
+        # receive bound. Do not poll for a counter increment or retry the hook.
+        # The process interval has already ended; this cannot prove the route
+        # of the rejected response and never changes attempt.route.
+        snapshot = metrics.snapshot()
+        routes = snapshot.get("routes") if isinstance(snapshot, Mapping) else None
+        if not isinstance(routes, Mapping) or len(routes) > len(_ROUTE_COUNTER_NAMES):
+            attempt.route_after_state = "invalid"
+            return
+        projected: dict[str, int] = {}
+        for name, count in routes.items():
+            if name not in _ROUTE_COUNTER_NAMES or type(count) is not int or not 0 <= count <= _MAX_ROUTE_COUNTER:
+                attempt.route_after_state = "invalid"
+                return
+            projected[name] = count
+        attempt.route_after = projected
+        attempt.route_after_state = "captured"
+    except Exception:
+        # An unavailable/invalid observer must not replace the validator error
+        # or expose its exception text through the public aggregate.
+        pass
 
 
 def _delivery(response: Mapping[str, object]) -> str:
@@ -128,10 +162,16 @@ def observe(
     canonical = json.dumps(response, sort_keys=True, ensure_ascii=True, allow_nan=False, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode()).hexdigest()
     attempt.response_sha256 = digest
-    validate_launcher_stdout(launcher, response, case=case)
+    try:
+        validate_launcher_stdout(launcher, response, case=case)
+    except RuntimeError:
+        _snapshot_after_rejection(metrics, attempt)
+        raise
     attempt.stage = "route"
     after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
     attempt.route_after = dict(after)
+    attempt.route_after_state = "captured"
+    attempt.route_after_scope = "validated_delivery_route_check"
     attempt.route = witnessed_route(before, after)
     if attempt.route != "native_resident":
         raise RuntimeError("claude_pilot_route_not_native")

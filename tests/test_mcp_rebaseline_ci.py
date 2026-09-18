@@ -63,7 +63,7 @@ def test_archive_reuses_existing_public_recipient_and_retains_partial_attempt(tm
         source=private,
         output=archive,
         public_key=ROOT / "docs/guard/rust-performance/qualification-recipient.pem",
-        recipient_id="d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb",
+        recipient_id="db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e",
         context={"source_sha": CANDIDATE, "run_id": 1, "run_attempt": 1},
     )
     assert receipt["status"] == "encrypted" and receipt["files"] == 2

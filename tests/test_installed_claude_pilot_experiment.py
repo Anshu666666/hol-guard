@@ -216,6 +216,136 @@ def test_native_availability_allow_is_not_counted_as_authoritative_allow(
 
 
 @pytest.mark.parametrize(
+    "after,state,counts",
+    [
+        ({"routes": {"native_resident": 67}}, "captured", {"native_resident": 67}),
+        ({"routes": {"native_resident": 0}}, "captured", {"native_resident": 0}),
+        ({"routes": {"native_degraded": 1}}, "captured", {"native_degraded": 1}),
+        ({"routes": {}}, "captured", {}),
+        (None, "invalid", {}),
+        ({}, "invalid", {}),
+        ({"routes": []}, "invalid", {}),
+        ({"routes": {"PRIVATE /home/person": 1}}, "invalid", {}),
+        ({"routes": {"native_resident": True}}, "invalid", {}),
+        ({"routes": {"native_resident": -1}}, "invalid", {}),
+        ({"routes": {"native_resident": 1_000_001}}, "invalid", {}),
+        ({"routes": {str(index): 1 for index in range(6)}}, "invalid", {}),
+        (RuntimeError("PRIVATE snapshot transport detail"), "unavailable", {}),
+    ],
+)
+def test_empty_post_reply_keeps_one_after_snapshot_without_changing_rejection_or_timing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    after: object,
+    state: str,
+    counts: dict[str, int],
+) -> None:
+    calls = []
+    snapshots = iter(({"routes": {"native_resident": 66}}, after))
+
+    def snapshot():
+        calls.append("snapshot")
+        value = next(snapshots)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    metrics = SimpleNamespace(snapshot=snapshot)
+    session = SimpleNamespace(
+        root=tmp_path,
+        workspace=tmp_path,
+        daemon=SimpleNamespace(_server=SimpleNamespace(hook_worker=SimpleNamespace(metrics=metrics))),
+    )
+
+    def launch(*_args, **_kwargs):
+        calls.append("process")
+        return BoundedHookProcessResult(0, "{}", False, False)
+
+    rejected = []
+    validator = measurement.validate_launcher_stdout
+
+    def validate(*args, **kwargs):
+        calls.append("validate")
+        try:
+            validator(*args, **kwargs)
+        except RuntimeError as error:
+            rejected.append(error)
+            raise
+
+    def do_not_wait(*_args, **_kwargs):
+        pytest.fail("A rejected reply must not poll for a route counter or infer a route")
+
+    values = []
+
+    def record(samples):
+        calls.append("record")
+        values.extend(samples)
+
+    ticks = iter((1.0, 1.25))
+    monkeypatch.setattr(measurement.time, "perf_counter", lambda: next(ticks))
+    monkeypatch.setattr(measurement, "run_isolated_hook_process", launch)
+    monkeypatch.setattr(measurement, "validate_launcher_stdout", validate)
+    monkeypatch.setattr(measurement, "wait_for_route_corpus", do_not_wait)
+    monkeypatch.setattr(measurement, "witnessed_route", do_not_wait)
+    selected = RegisteredLauncher("claude-code", "PostToolUse", ("/fixture/runtime",), (), "a" * 64, tmp_path)
+    attempt = measurement.Attempt()
+    with pytest.raises(RuntimeError, match="priority_launcher_event_mismatch") as raised:
+        measurement.observe(session, selected, sample=14, case="benign", attempt=attempt, record=record)
+    assert raised.value is rejected[0]
+    assert calls == ["snapshot", "process", "record", "validate", "snapshot"]
+    assert values == [250.0]
+    assert attempt.route_before == {"native_resident": 66}
+    assert attempt.route_after == counts
+    assert attempt.route_after_state == state
+    assert attempt.route_after_scope == "semantic_rejection_snapshot"
+    assert attempt.route == "unknown" and attempt.stage == "delivery"
+    assert attempt.delivery == "empty_response"
+    assert attempt.captured_stdout_sha256 == hashlib.sha256(b"{}").hexdigest()
+    assert assert_privacy_safe(vars(attempt)) == vars(attempt)
+    assert "PRIVATE" not in json.dumps(vars(attempt))
+
+
+def test_valid_post_reply_keeps_original_route_check_without_diagnostic_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = []
+
+    def snapshot():
+        calls.append("snapshot")
+        return {"routes": {"native_resident": 66}}
+
+    metrics = SimpleNamespace(snapshot=snapshot)
+    session = SimpleNamespace(
+        root=tmp_path,
+        workspace=tmp_path,
+        daemon=SimpleNamespace(_server=SimpleNamespace(hook_worker=SimpleNamespace(metrics=metrics))),
+    )
+    response = {"hookSpecificOutput": {"hookEventName": "PostToolUse"}, "policy_action": "allow"}
+
+    def launch(*_args, **_kwargs):
+        calls.append("process")
+        return BoundedHookProcessResult(0, json.dumps(response), False, False)
+
+    def original_route_check(given_metrics, *, expected):
+        assert given_metrics is metrics and expected == 67
+        calls.append("route_check")
+        return {"routes": {"native_resident": 67}}
+
+    monkeypatch.setattr(measurement, "run_isolated_hook_process", launch)
+    monkeypatch.setattr(measurement, "wait_for_route_corpus", original_route_check)
+    selected = RegisteredLauncher("claude-code", "PostToolUse", ("/fixture/runtime",), (), "a" * 64, tmp_path)
+    attempt = measurement.Attempt()
+    values = []
+    measurement.observe(session, selected, sample=14, case="benign", attempt=attempt, record=values.extend)
+    assert calls == ["snapshot", "process", "route_check"]
+    assert len(values) == 1
+    assert attempt.route_after == {"native_resident": 67}
+    assert attempt.route_after_state == "captured"
+    assert attempt.route_after_scope == "validated_delivery_route_check"
+    assert attempt.route == "native_resident" and attempt.stage == "complete"
+
+
+@pytest.mark.parametrize(
     "sample,run,first", [(0, 0, "optimized_python"), (1, 0, "native_pilot"), (0, 1, "native_pilot")]
 )
 def test_pair_order_is_counterbalanced(sample: int, run: int, first: str) -> None:

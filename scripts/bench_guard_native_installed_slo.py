@@ -56,6 +56,7 @@ from scripts.native_slo_contract import SIZE_CLASSES  # noqa: E402
 from scripts.native_slo_launcher import measure_registered_launcher  # noqa: E402
 from scripts.native_slo_numeric_journal import NumericJournal  # noqa: E402
 from scripts.native_slo_recovery_failure import RecoveryFailureError  # noqa: E402
+from scripts.native_slo_recovery_witness import recovery_request_witness  # noqa: E402
 from scripts.native_slo_reporting import (  # noqa: E402
     SloMeasurements,
     safe_failure_rate,
@@ -235,14 +236,16 @@ def _run_recovery(session: _LifecycleSession, iterations: int, *, journal: Numer
                 session.stop_resident(),
                 f"resident stop failed during recovery sample {index}",
             )
-            started = time.perf_counter()
-            observation = session.observe("claude-code", "PostToolUse", "1k")
-            elapsed_ms = (time.perf_counter() - started) * 1_000.0
-            values.append(elapsed_ms)
-            if batch is not None:
-                batch.record([elapsed_ms])
-            if not (observation.allowed and observation.route == "native_resident"):
-                raise RecoveryFailureError(index, preparation, observation)
+            with recovery_request_witness(session) as witness:
+                started = time.perf_counter()
+                observation = session.observe("claude-code", "PostToolUse", "1k")
+                elapsed_ms = (time.perf_counter() - started) * 1_000.0
+                _ = witness.report(elapsed_ms)
+                values.append(elapsed_ms)
+                if batch is not None:
+                    batch.record([elapsed_ms])
+                if not (observation.allowed and observation.route == "native_resident"):
+                    raise RecoveryFailureError(index, preparation, observation, witness=witness, elapsed_ms=elapsed_ms)
     return values
 
 

@@ -175,7 +175,8 @@ def test_registration_probes_and_selftest_share_one_phase_deadline(monkeypatch):
     barrier = threading.Barrier(3)
     deadlines = []
 
-    def probes(*, deadline):
+    def probes(*, deadline, native_capture=None):
+        assert native_capture is None
         deadlines.append(deadline)
         barrier.wait(timeout=1)
         return {kind: {"status": "failed"} for kind in resolver._QUERIES}

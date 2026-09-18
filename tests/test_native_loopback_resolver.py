@@ -242,7 +242,7 @@ def test_workflow_retains_encryption_recipient_and_excludes_plaintext_uploads() 
     assert encryption["if"] == "always()"
     assert (
         encryption["env"]["QUALIFICATION_RECIPIENT"]
-        == "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+        == "db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e"
     )
     assert "native_slo_pair_archive.py" in encryption["run"]
     assert "--pair-root qualification-evidence" in encryption["run"]

@@ -12,7 +12,7 @@ from scripts.native_slo_pair_io import MANIFEST_LIMIT, REPORT_LIMIT, digest_file
 from scripts.native_slo_pair_record import PAIR_SCHEMA, expected_counts, validate_context, validate_runtime
 from scripts.native_slo_qualification import paired_order, sampling_plan
 
-RECIPIENT_ID = "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+RECIPIENT_ID = "db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e"
 _MANIFEST_FIELDS = {
     "schema",
     "context",

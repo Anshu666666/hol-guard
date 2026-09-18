@@ -237,7 +237,7 @@ def test_production_public_recipient_identity():
     public = serialization.load_pem_public_key(pem)
     assert isinstance(public, rsa.RSAPublicKey) and public.key_size == 3072
     der = public.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
-    assert fmt.digest(der) == "d06561fc3cfc12925ed72bbe6967ff681c3a14b869f35debf540b43a26ff21eb"
+    assert fmt.digest(der) == "db2d2f3b5002f740768855101840eb4a02ee146d0838d92f8611256f93a7379e"
 
 
 def test_authenticated_manifest_duplicate_keys_noncanonical_and_trailing_data(keypair):

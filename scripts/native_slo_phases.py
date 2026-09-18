@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 from scripts.native_slo_adapter import route_matrix
 from scripts.native_slo_contract import summarize
+from scripts.native_slo_phase_evidence import EvidencePhaseObserver
 from scripts.native_slo_phase_io import install_io_probes
 from scripts.native_slo_phase_waits import install_wait_probes
 
@@ -64,6 +65,9 @@ class PhaseProfiler:
         self._config_foreground_seen: bool | None = None
         self._allowed = frozenset(route_matrix())
         self._harnesses = frozenset(pair[0] for pair in self._allowed)
+        self._evidence = EvidencePhaseObserver(
+            self, foreground=lambda: _ROUTE.get() not in (None, ("unattributed", "native_stream_reader"))
+        )
 
     def _admit_key(self, key: tuple[str, str, str]) -> bool:
         if key in self._samples:
@@ -264,7 +268,9 @@ class PhaseProfiler:
             self._install_config_probes()
             install_wait_probes(self._stack, self)
             install_io_probes(self._stack, self)
+            self._evidence.install(self._stack)
         except BaseException:
+            self._evidence.failed("setup_failed")
             for binding, _owner, _measured in self._config_wrappers:
                 self._config_state[binding] = "setup_failed"
             self.__exit__()
@@ -289,8 +295,14 @@ class PhaseProfiler:
                         if self._config_overlap_at_start
                         else "complete"
                     )
+            self._evidence.finish(
+                foreground_in_flight=in_flight,
+                foreground_at_installation=self._config_overlap_at_start,
+                foreground_context_observed=self._config_foreground_seen is True,
+            )
             self._stack.close()
         except BaseException:
+            self._evidence.failed("restoration_failed")
             for binding, _owner, _measured in self._config_wrappers:
                 self._config_state[binding] = "restoration_failed"
             raise
@@ -306,6 +318,7 @@ class PhaseProfiler:
                 "scope": "diagnostic_instrumented_run",
                 "span_semantics": "inclusive_do_not_sum",
                 "headline_timing_eligible": False,
+                "evidence_submission_coverage": self._evidence.report(),
                 "config_lookup_coverage": {
                     "schema": "hol-guard.config-lookup-observation.v1",
                     "scope": "declared_bindings_in_foreground_route_context_only",
@@ -345,7 +358,7 @@ class PhaseProfiler:
                 "discarded_series_updates": self._discarded_series_updates,
                 "all_span_outcomes_including_discarded_series": dict(self._all_outcomes),
                 "bounds": {"series": _MAX_SERIES, "total_timing_samples": _MAX_TOTAL_SAMPLES},
-                "separate_hash_only": "sha256_callable_only_in_runtime_and_runtime_manifest_modules",
+                "separate_hash_only": "sha256_callable_only_in_runtime_runtime_manifest_and_receipt_modules",
                 "separate_queue_only": "scheduler_admitted_timestamps_and_scoped_condition_waits",
                 "native_connection_only": "not_measured_rust_owned",
                 "native_evaluation_only": "not_measured_rust_owned",
@@ -357,7 +370,8 @@ class PhaseProfiler:
                     "rust_timeout_protocol_shutdown_parse_and_edge_allocations",
                     "python_utf8_encoding_and_frame_body_copy_time_in_isolation",
                     "background_receipt_persistence_and_native_receipt_construction",
-                    "hashing_outside_the_two_instrumented_runtime_modules",
+                    "hashing_outside_the_instrumented_runtime_runtime_manifest_and_receipt_modules",
+                    "evidence_queue_admission_and_receipt_mapping_copy_time_in_isolation",
                 ],
                 "attribution_notes": [
                     "missing_phase_means_not_observed_not_zero_cost",

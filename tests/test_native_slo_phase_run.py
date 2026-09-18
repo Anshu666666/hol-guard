@@ -50,6 +50,24 @@ class Session:
                 "schema": "hol-guard-python-phase-diagnostics.v2",
                 "scope": "diagnostic_instrumented_run",
                 "headline_timing_eligible": False,
+                "evidence_submission_coverage": {
+                    "schema": "hol-guard.foreground-evidence-observation.v1",
+                    "foreground_context_observed": True,
+                    "bindings": {
+                        name: {"status": "complete", "entries": self.group_attempts}
+                        for name in (
+                            "receipt_validation_module",
+                            "receipt_validation_submission",
+                            "receipt_validation_journal",
+                            "receipt_identity_serialization",
+                            "activity_record_serialization",
+                            "activity_record_validation",
+                            "writer_json",
+                            "receipt_json",
+                            "receipt_hash",
+                        )
+                    },
+                },
                 "discarded_samples": 0,
                 "discarded_series_updates": 0,
                 "by_route": {
@@ -68,6 +86,32 @@ class Session:
                     },
                 },
             }
+            report["by_route"]["claude-code.PostToolUse"].update(
+                {
+                    phase: {
+                        "count": multiplier * self.group_attempts,
+                        "outcomes": {
+                            "returned_true"
+                            if phase in {"activity_submission", "receipt_submission"}
+                            else "returned_value": multiplier * self.group_attempts
+                        },
+                    }
+                    for phase, multiplier in (
+                        ("activity_submission", 1),
+                        ("receipt_submission", 1),
+                        ("receipt_validation_module", 1),
+                        ("receipt_validation_submission", 1),
+                        ("receipt_identity_serialization", 2),
+                        ("activity_record_serialization", 2),
+                        ("activity_record_validation", 1),
+                        ("writer_evidence_json_loads", 1),
+                        ("receipt_validation_json_dumps", 4),
+                        ("receipt_identity_sha256_init", 2),
+                        ("receipt_identity_sha256_finalize", 2),
+                        ("receipt_record_serialization", 1),
+                    )
+                }
+            )
             if self.mode == "empty_spans":
                 report["by_route"] = {}
             if self.mode == "missing_wire":

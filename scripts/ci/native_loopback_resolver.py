@@ -21,6 +21,7 @@ from pathlib import Path
 if __package__:
     from .native_loopback_dns import LoopbackPTRResponder
     from .native_loopback_observability import libc_query, retain_private_captures, scutil_diagnostics
+    from .native_loopback_stack import observed_libc_probe
 else:
     # Direct script execution puts this helper's directory on sys.path.
     from native_loopback_dns import LoopbackPTRResponder  # pyright: ignore[reportImplicitRelativeImport]
@@ -29,6 +30,7 @@ else:
         retain_private_captures,
         scutil_diagnostics,
     )
+    from native_loopback_stack import observed_libc_probe  # pyright: ignore[reportImplicitRelativeImport]
 
 _QUERIES = {
     "legacy_getfqdn": "socket.getfqdn('127.0.0.1')",
@@ -55,7 +57,12 @@ def _call_started(output: str | bytes | None) -> bool:
     return isinstance(output, str) and output.startswith(_STARTED + "\n")
 
 
-def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = None) -> dict[str, object]:
+def resolver_probe(
+    kind: str = "legacy_getfqdn",
+    *,
+    deadline: float | None = None,
+    native_capture: dict[str, object] | None = None,
+) -> dict[str, object]:
     query = _query(kind)
     started = time.monotonic()
     result_field = "result_present" if kind == "libc_gethostbyaddr" else "loopback_label"
@@ -64,9 +71,28 @@ def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = Non
         timeout = 5.0 if deadline is None else min(5.0, max(0.0, deadline - started))
         if timeout == 0:
             raise subprocess.TimeoutExpired("fixed_resolver_probe", timeout)
-        completed = subprocess.run(
-            [sys.executable, "-I", "-c", query], capture_output=True, text=True, timeout=timeout, check=False
-        )
+        if kind == "libc_gethostbyaddr" and native_capture is not None:
+            status, stdout, code, observation, private = observed_libc_probe(
+                query,
+                _STARTED,
+                deadline=started + timeout,
+            )
+            result["native_stack"] = observation
+            native_capture.update(private)
+            if status != "completed":
+                result.update(status=status, call_started=_call_started(stdout))
+                result["elapsed_ms"] = round((time.monotonic() - started) * 1000, 3)
+                return result
+            completed = subprocess.CompletedProcess(
+                [],
+                code if code is not None else -1,
+                stdout.decode("utf-8", errors="strict"),
+                "",
+            )
+        else:
+            completed = subprocess.run(
+                [sys.executable, "-I", "-c", query], capture_output=True, text=True, timeout=timeout, check=False
+            )
         result["call_started"] = _call_started(completed.stdout)
         lines = completed.stdout.splitlines() if len(completed.stdout) <= 128 else []
         if completed.returncode == 0 and len(lines) == 2 and lines[0] == _STARTED:
@@ -82,7 +108,11 @@ def resolver_probe(kind: str = "legacy_getfqdn", *, deadline: float | None = Non
     return result
 
 
-def resolver_diagnostics(*, deadline: float | None = None) -> dict[str, dict[str, object]]:
+def resolver_diagnostics(
+    *,
+    deadline: float | None = None,
+    native_capture: dict[str, object] | None = None,
+) -> dict[str, dict[str, object]]:
     """Run distinct fixed probes concurrently within one existing 5s wait.
 
     The numeric control requests no name lookup. These independent subprocesses
@@ -91,6 +121,8 @@ def resolver_diagnostics(*, deadline: float | None = None) -> dict[str, dict[str
     deadline = time.monotonic() + 5.0 if deadline is None else deadline
 
     def probe(kind: str) -> dict[str, object]:
+        if kind == "libc_gethostbyaddr" and native_capture is not None:
+            return resolver_probe(kind, deadline=deadline, native_capture=native_capture)
         return resolver_probe(kind, deadline=deadline)
 
     with ThreadPoolExecutor(max_workers=len(_QUERIES)) as executor:
@@ -123,7 +155,7 @@ def _run_helper(operation: str, port: int, owner: str) -> str:
 
 def _base_report() -> dict[str, object]:
     return {
-        "schema": "hol-guard.native-loopback-resolver.v3",
+        "schema": "hol-guard.native-loopback-resolver.v4",
         "environment_scope": "disposable_ci_runner_both_arms",
         "baseline_artifact_modified": False,
         "runtime_patched": False,
@@ -133,6 +165,9 @@ def _base_report() -> dict[str, object]:
         "experiment_attempted": False,
         "probe_timeout_seconds": 5,
         "probe_execution": "independent_concurrent_subprocesses",
+        "native_stack_scope": "before_phase_owned_libc_probe_only",
+        "native_stack_max_attempts": 1,
+        "native_stack_changes_measurement_deadline": False,
     }
 
 
@@ -145,8 +180,13 @@ def _diagnose_phase(
     responder: LoopbackPTRResponder | None = None,
 ) -> dict[str, object]:
     deadline = time.monotonic() + 5.0
+    native_capture: dict[str, object] = {}
     with ThreadPoolExecutor(max_workers=3) as executor:
-        probes_future = executor.submit(resolver_diagnostics, deadline=deadline)
+        probes_future = executor.submit(
+            resolver_diagnostics,
+            deadline=deadline,
+            native_capture=native_capture if phase == "before" else None,
+        )
         config_future = executor.submit(scutil_diagnostics, expected_port=port, deadline=deadline)
         selftest_future = executor.submit(responder.self_test, deadline=deadline) if responder is not None else None
         probes = probes_future.result()
@@ -155,8 +195,18 @@ def _diagnose_phase(
             report["ptr_selftest"] = selftest_future.result()
     report[f"registration_{phase}"] = configuration
     captures[phase] = private
+    if native_capture:
+        captures["before_native_stack"] = native_capture
     report[f"probes_{phase}"] = probes
     report[phase] = probes["legacy_getfqdn"]
+    native_stack = probes["libc_gethostbyaddr"].get("native_stack")
+    if isinstance(native_stack, dict) and (
+        native_stack.get("collector_cleanup_complete") is False or native_stack.get("probe_cleanup_complete") is False
+    ):
+        # Do not start either measured arm beside a collector that could remain
+        # alive. This is a failed diagnostic, never a qualified observation.
+        report["status"] = "diagnostic_cleanup_incomplete"
+        raise RuntimeError("native_stack_cleanup_incomplete")
     return probes["legacy_getfqdn"]
 
 

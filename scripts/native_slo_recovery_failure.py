@@ -8,6 +8,7 @@ import math
 from scripts.native_slo_adapter import Observation, observation_reason_code
 from scripts.native_slo_contract import SAFE_ROUTE_NAMES
 from scripts.native_slo_failure import FixtureFailureError
+from scripts.native_slo_recovery_witness import RecoveryWitness
 
 
 def _observation(value: Observation) -> dict[str, object]:
@@ -26,7 +27,15 @@ def _observation(value: Observation) -> dict[str, object]:
 class RecoveryFailureError(FixtureFailureError):
     """Retain the same finite projection in a paired report and legacy CI logs."""
 
-    def __init__(self, index: int, preparation: Observation, recovery: Observation) -> None:
+    def __init__(
+        self,
+        index: int,
+        preparation: Observation,
+        recovery: Observation,
+        *,
+        witness: RecoveryWitness | None = None,
+        elapsed_ms: float | None = None,
+    ) -> None:
         super().__init__(
             {
                 "schema": "hol-guard.native-qualification-failure.v1",
@@ -36,6 +45,9 @@ class RecoveryFailureError(FixtureFailureError):
                 "sample_index": index if type(index) is int and 0 <= index <= 1_000_000 else None,
                 "preparation": _observation(preparation),
                 "recovery": _observation(recovery),
+                "original_request": witness.report(elapsed_ms)
+                if witness is not None
+                else {"observer_state": "not_installed"},
                 "qualification_complete": False,
             }
         )

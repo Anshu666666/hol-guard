@@ -19,7 +19,10 @@ else:
     from native_loopback_dns import REVERSE_NAME  # pyright: ignore[reportImplicitRelativeImport]
 
 _CAPTURE_BYTES = 65536
-_PHASES = frozenset({"before", "after", "after_cleanup"})
+_CAPTURE_FILES = {
+    **{phase: f"resolver-{phase}-scutil.json" for phase in ("before", "after", "after_cleanup")},
+    "before_native_stack": "resolver-before-native-stack.json",
+}
 
 
 def libc_query(started_marker: str) -> str:
@@ -168,7 +171,7 @@ def retain_private_captures(directory: Path, captures: dict[str, dict[str, objec
     Fixed flat JSON names are compatible with the existing encrypted archive.
     No plaintext path or captured output is returned into public diagnostics.
     """
-    if set(captures) - _PHASES:
+    if set(captures) - _CAPTURE_FILES.keys():
         return False
     try:
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -182,7 +185,7 @@ def retain_private_captures(directory: Path, captures: dict[str, dict[str, objec
                 if len(content) > 192 * 1024:
                     return False
                 descriptor = os.open(
-                    f"resolver-{phase}-scutil.json",
+                    _CAPTURE_FILES[phase],
                     os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                     0o600,
                     dir_fd=parent,

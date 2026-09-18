@@ -1,0 +1,116 @@
+{
+  "schema": "hol-guard.retained-hosted-diagnostics.v1",
+  "recorded_at": "2026-09-18T17:07:39.257569+00:00",
+  "baseline_source": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+  "candidate_source": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+  "artifacts": [
+    {
+      "run_id": 35369239101,
+      "job_id": 105679008173,
+      "artifact_id": 10557604193,
+      "workflow_head": "ef8757e34b20ac0adbe94b5c2673c2be175c19c1",
+      "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35369239101",
+      "archive": "10557604193.zip",
+      "original_archive_sha256": "5822927d7f6eda7d9cc10c5c9131cd950cb861cdbe1855e4039e29397e272412",
+      "original_archive_bytes": 1946,
+      "result": "source_binding_failed_before_build",
+      "details": {
+        "cause": "four committed LF collector files checked out as CRLF; Git blob and commit identities matched",
+        "build_started": false
+      },
+      "performance_qualification": false,
+      "program_completion": false
+    },
+    {
+      "run_id": 35369606364,
+      "job_id": 105680182632,
+      "artifact_id": 10557662538,
+      "workflow_head": "a9a00061ec36dceb536047a271ec30ba148e9db2",
+      "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35369606364",
+      "archive": "10557662538.zip",
+      "original_archive_sha256": "b2713a7961fba8632e5d61b6d82b60b196ec4b3c2972dfa2220dc472286b6b52",
+      "original_archive_bytes": 15948,
+      "result": "installed_smoke_failed",
+      "details": {
+        "source_binding_before_after": true,
+        "baseline_case": "claude-code.PreToolUse.unavailable.small",
+        "baseline_field": "native_request_unavailable",
+        "baseline_native_calls": 0,
+        "candidate_category": "NativePolicySnapshotError",
+        "candidate_origin": "native_policy_snapshot_windows_io._windows_raise_open_error",
+        "candidate_line": 171,
+        "candidate_underlying_windows_error_code": "not_retained",
+        "ollama_completed_initial_cases": 2,
+        "ollama_failed_phase": "enabled",
+        "ollama_publisher_error": "guardconfigsourceerror",
+        "baseline_rollback_cleanup_confirmed": false
+      },
+      "performance_qualification": false,
+      "program_completion": false
+    },
+    {
+      "run_id": 35370190733,
+      "job_id": 105682069626,
+      "artifact_id": 10557851573,
+      "workflow_head": "eeed58c2034dd1f380e535b1d5a62cccc9ea279d",
+      "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35370190733",
+      "archive": "10557851573.zip",
+      "original_archive_sha256": "8c286a6a868abf60d1df72eb3d1a70b363236dd0caeb8a9649af636b521c8094",
+      "original_archive_bytes": 3848,
+      "result": "dtrace_listing_deadline_before_cache_and_build",
+      "details": {
+        "source_binding_before_after": true,
+        "elapsed_ms": 5044,
+        "cache_cohort_started": false,
+        "tracing_enabled": false,
+        "safe_to_run_cohort": false
+      },
+      "performance_qualification": false,
+      "program_completion": false
+    },
+    {
+      "run_id": 35370190733,
+      "job_id": 105682069934,
+      "artifact_id": 10558067911,
+      "workflow_head": "eeed58c2034dd1f380e535b1d5a62cccc9ea279d",
+      "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35370190733",
+      "archive": "10558067911.zip",
+      "original_archive_sha256": "02299c9320a347fee66e12ba9b22237ec47307de423b3d2a39078592ddefd5dd",
+      "original_archive_bytes": 40201,
+      "result": "installed_smoke_failed",
+      "details": {
+        "source_binding_before_after": true,
+        "baseline_failure": "daemon_fixture_deadline_at_construct_daemon",
+        "baseline_origin": "socket.getfqdn through HTTPServer.server_bind",
+        "candidate_completed_blocks": 1,
+        "signal_returncode": 113,
+        "signal_stderr_sha256": "e25354a4c90845bc7ce076e94802d3243b1d354879b447930ec64141bb6ab237",
+        "signal_interpretation": "selected system service not found; signal not delivered",
+        "signal_interpretation_basis": "exact 70-byte documented message reconstruction SHA256 match; raw stderr retained only as length and digest",
+        "libc_before_after_all_six": "5-second deadline exceeded",
+        "hosts_and_dns_configuration_unchanged": true,
+        "required_dtrace_probes_listed": [
+          "create",
+          "exit",
+          "exited"
+        ],
+        "tracing_enabled": false,
+        "descendant_coverage_verified": false,
+        "ownership_verified": false
+      },
+      "performance_qualification": false,
+      "program_completion": false
+    }
+  ],
+  "later_cohort": {
+    "workflow_head": "8139e8a39e5bcffcbc65f8b7c606e4e0b9aab5a9",
+    "run_id": 35371285417,
+    "state_at_recording": "in_progress",
+    "purpose": "fresh Intel cache-only experiment after prior unrelated DTrace listing timeout; no prior observations reused"
+  },
+  "limitations": [
+    "All runs are diagnostics or smoke; original production acceptance gates remain unchanged.",
+    "Underlying Windows error code and full configuration exception cause are not retained in this cohort.",
+    "A listed DTrace provider does not establish enabled tracing, descendant coverage, or process ownership."
+  ]
+}

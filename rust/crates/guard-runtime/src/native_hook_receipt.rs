@@ -142,6 +142,36 @@ pub(crate) fn receipt_from_pre_tool(
     )
 }
 
+/// V4 caller supplies a full authenticated snapshot in the envelope.
+pub(crate) fn receipt_from_scoped_pre_tool(
+    envelope: &GuardHookEnvelopeV2,
+    request_id: &str,
+    request_digest: &str,
+    harness: &str,
+    payload_kind: &GuardHookPayloadKindV2,
+    result: &PreToolResultV1,
+    observed_policy_action: Option<&str>,
+) -> Result<NativeHookDecisionReceiptV1, String> {
+    build_decision_receipt(
+        envelope,
+        None,
+        DecisionReceiptInputs {
+            request_id,
+            request_digest,
+            harness,
+            event_name: "PreToolUse",
+            payload_kind,
+            decision: &result.decision,
+            model_output_action: "not_applicable",
+            policy_action: Some(&result.policy_action),
+            observed_policy_action,
+            reason_code: &result.reason_code,
+            reviewed_output_sha256: None,
+            observe_mode: observed_policy_action.is_some(),
+        },
+    )
+}
+
 pub(crate) fn receipt_from_post_tool(
     envelope: &GuardHookEnvelopeV2,
     snapshot: Option<&PolicySnapshotV3>,

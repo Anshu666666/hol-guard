@@ -127,3 +127,21 @@ pub(super) fn canonical_harness_risk_actions<'a>(
     }
     Ok(selected)
 }
+
+/// Compute configured policy independently of the intrinsic action and scoped winner.
+pub(crate) fn configured_pre_tool_policy_action(
+    policy: &EffectiveNativePolicyV3,
+    payload: &serde_json::Value,
+    result: &guard_contracts::PreToolResultV1,
+) -> Result<String, String> {
+    let harness = normalized_harness(&result.action.harness);
+    let mut facts = super::payload_facts(payload, result.action.action_type, &result.reason_code)?;
+    facts.sensitive_target |= result.action.sensitive_target;
+    super::policy_floor(
+        policy,
+        &harness,
+        result.action.action_type,
+        &facts,
+        &result.reason_code,
+    )
+}

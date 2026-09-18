@@ -31,6 +31,20 @@ def prepare_native_hook_policy(
     )
     if prepared_policy is not None:
         return True
+    publisher = getattr(daemon_server.hook_worker, "policy_snapshot_publisher", None)
+    if (
+        getattr(publisher, "requires_policy_authority", False) is True
+        or getattr(publisher, "requires_scoped_authority", False) is True
+    ):
+        daemon_server.hook_worker.metrics.record_route("native_fail_safe")
+        handler._write_json(
+            integrity_fail_closed_pre_tool_response(
+                harness,
+                reason="HOL Guard could not verify the current scoped policy authority.",
+                reason_code="native_scoped_authority_unavailable",
+            )
+        )
+        return False
     if hook_action_is_emergency_safe(payload, workspace=workspace_path):
         return True
     daemon_server.hook_worker.metrics.record_route("native_fail_safe")

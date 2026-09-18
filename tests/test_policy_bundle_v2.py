@@ -61,9 +61,16 @@ def _signed_bundle(
     rollback: dict[str, object] | None = None,
     payload_base: dict[str, object] | None = None,
     payload_extensions: dict[str, object] | None = None,
+    rollout_state: str | None = None,
 ) -> dict[str, object]:
     document = load_policy_document(_FIXTURE)
     payload = dict(payload_base) if payload_base is not None else document.to_mapping()
+    if rollout_state is not None:
+        spec = payload.get("spec")
+        if isinstance(spec, dict):
+            spec = dict(spec)
+            spec["rolloutState"] = rollout_state
+            payload["spec"] = spec
     if payload_extensions is not None:
         payload.update(payload_extensions)
     bundle: dict[str, object] = {
@@ -475,20 +482,15 @@ def test_runtime_canonical_enforcement_compiles_signed_v2_payload() -> None:
     )
 
     assert legacy == []
-    assert [decision.to_dict() for decision in canonical] == [
-        {
-            "harness": "codex",
-            "scope": "artifact",
-            "action": "block",
-            "artifact_id": "command:npm-test",
-            "artifact_hash": None,
-            "workspace": None,
-            "publisher": None,
-            "reason": None,
-            "owner": "rule.block-command",
-            "source": "policy-bundle-canonical",
-            "expires_at": None,
-        }
+    assert canonical == [
+        PolicyDecision(
+            harness="codex",
+            scope="artifact",
+            action="block",
+            artifact_id="command:npm-test",
+            owner="rule.block-command",
+            source="policy-bundle-canonical",
+        )
     ]
 
 

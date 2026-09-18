@@ -138,7 +138,7 @@ fn bounded_nonempty(value: &str, maximum: usize, code: &str) -> Result<(), Strin
     Ok(())
 }
 
-fn canonical_harness(value: &str) -> Result<String, String> {
+pub(crate) fn canonical_harness(value: &str) -> Result<String, String> {
     bounded_nonempty(value, MAX_HARNESS_BYTES, "native_hook_harness_invalid")?;
     let normalized = value.trim().to_ascii_lowercase().replace('_', "-");
     let canonical = match normalized.as_str() {
@@ -225,7 +225,7 @@ fn payload_event(payload: &Value) -> Result<Option<String>, String> {
     Ok(extracted)
 }
 
-fn authoritative_event(envelope: &GuardHookEnvelopeV2) -> Result<String, String> {
+pub(crate) fn authoritative_event(envelope: &GuardHookEnvelopeV2) -> Result<String, String> {
     let declared = canonical_event(&envelope.event)?;
     if let Some(extracted) = payload_event(&envelope.raw_payload)? {
         if extracted != declared {
@@ -236,7 +236,7 @@ fn authoritative_event(envelope: &GuardHookEnvelopeV2) -> Result<String, String>
     Ok(declared)
 }
 
-fn payload_kind(payload: &Value) -> Result<GuardHookPayloadKindV2, String> {
+pub(crate) fn payload_kind(payload: &Value) -> Result<GuardHookPayloadKindV2, String> {
     let Some(record) = payload.as_object() else {
         return Err("native_hook_payload_invalid".to_owned());
     };
@@ -408,12 +408,26 @@ pub(crate) fn evaluate_envelope_with_store(
     policy_store: &crate::policy_store::PolicySnapshotStore,
 ) -> Result<Vec<u8>, String> {
     validate_envelope_shape(&envelope)?;
-    let snapshot = policy_store.validate_request_snapshot(
+    let snapshot = policy_store.validate_versioned_request_snapshot(
         &envelope.policy_snapshot,
         &envelope.source.guard_home,
         envelope.policy_generation,
     )?;
-    evaluate_validated_envelope(envelope, Some(snapshot.as_ref()))
+    let result = match snapshot.as_ref() {
+        crate::policy_store::AuthenticatedPolicySnapshot::V3(value) => {
+            return evaluate_validated_envelope(envelope, Some(value));
+        }
+        crate::policy_store::AuthenticatedPolicySnapshot::V4(value) => {
+            crate::edge_v4::evaluate(envelope.clone(), value, policy_store.resident_generation())?
+        }
+    };
+    // Refuse a result if durable authority changed during scoped evaluation.
+    policy_store.validate_versioned_request_snapshot(
+        &envelope.policy_snapshot,
+        &envelope.source.guard_home,
+        envelope.policy_generation,
+    )?;
+    Ok(result)
 }
 
 /// Evaluate against a snapshot while the policy store's request fence is

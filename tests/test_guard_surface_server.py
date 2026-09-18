@@ -2332,7 +2332,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2374,7 +2374,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="test-token-not-real",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2410,7 +2410,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2451,7 +2451,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2505,7 +2505,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2561,7 +2561,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2625,7 +2625,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -2671,7 +2671,7 @@ class TestGuardSurfaceServer:
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",

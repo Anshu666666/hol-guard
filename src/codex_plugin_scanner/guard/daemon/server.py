@@ -153,7 +153,6 @@ from ..policy_bundle_trusted_keys import (
     validate_synced_policy_bundle,
 )
 from ..policy_bundle_v2 import POLICY_BUNDLE_V2_CONTRACT
-from ..protection_posture import protection_is_off
 from ..receipts.manager import build_receipt
 from ..runtime.approval_attention import ApprovalAttentionCoordinator
 from ..runtime.cloud_review_sync import CloudReviewSyncWorker, start_cloud_sync_sync_worker, stop_cloud_sync_sync_worker
@@ -222,6 +221,7 @@ from ..store_evidence import (
 from ..store_storage_maintenance import DEFAULT_GUARD_EVENT_LIMIT, DEFAULT_RECEIPT_DETAIL_LIMIT
 from ..supply_chain_repair import coordinate_supply_chain_repair, repair_sync_intelligence
 from .bounded_http import BoundedThreadingHTTPServer
+from .cloud_sync_summary import headless_cloud_sync_summary
 from .command_activity_api import (
     handle_command_activity_analytics,
     handle_command_activity_diagnostics,
@@ -255,6 +255,8 @@ from .discovery import (
 )
 from .extension_control_api import ExtensionControlApiError, ExtensionControlApiService
 from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_optional_publish
+from .hook_health import hook_worker_health
+from .hook_native_policy_context import submit_native_review_receipt
 from .hook_process_runner import HookProcessRunner
 from .hook_request_auth import CHALLENGE_HOOK_PATHS, challenge_auth, request_auth
 from .hook_worker_responses import prepare_native_hook_policy
@@ -1241,15 +1243,7 @@ def _run_headless_cloud_sync(
             now=recorded_at,
             request_id=request_id if isinstance(request_id, str) and request_id else None,
         )
-        return {
-            "status": "synced",
-            "synced_at": sync_payload.get("synced_at"),
-            "receipts_stored": sync_payload.get("receipts_stored", 0),
-            "runtime_session_id": sync_payload.get("runtime_session_id"),
-            "runtime_session_synced_at": sync_payload.get("runtime_session_synced_at"),
-            "runtime_sessions_visible": sync_payload.get("runtime_sessions_visible"),
-            "supply_chain": supply_chain_payload,
-        }
+        return headless_cloud_sync_summary(sync_payload, supply_chain_payload)
 
     def _safe_storage_repair() -> dict[str, object]:
         try:
@@ -2323,9 +2317,9 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             self._write_json(_settings_response_payload(store.guard_home, editable_guard_settings(config)))
             return
         if parsed.path == "/v1/cloud-review":
-            from .cloud_review_settings import cloud_review_settings_status
+            from .cloud_review_settings_route import handle_cloud_review_status
 
-            self._write_json(cloud_review_settings_status(store), extra_headers={"Cache-Control": "no-store"})
+            handle_cloud_review_status(self._daemon_server(), self._write_json)
             return
         if parsed.path == "/v1/update/status":
             self._write_json(
@@ -5835,44 +5829,16 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         reason_code: str,
         native_authoritative: bool = False,
     ) -> dict[str, object]:
-        runtime_harness = self._optional_string(params.get("runtime-harness", [None])[-1])
-        harness = (runtime_harness or default_harness).strip().lower().replace("_", "-")
-        event = self._optional_string(payload.get("hook_event_name", payload.get("event"))) or "PreToolUse"
-        daemon_server = getattr(self, "server", None)
-        workspace_path, home_path = self._validated_fail_safe_hook_paths(params)
-        guard_home = None if daemon_server is None else cast(_GuardDaemonHttpServer, daemon_server).store.guard_home
-        try:
-            loaded = None if guard_home is None else load_guard_config(guard_home, workspace=workspace_path)
-            observe_mode = loaded is not None and protection_is_off(posture=loaded.protection_posture, mode=loaded.mode)
-        except (OSError, RuntimeError, TypeError, ValueError):
-            observe_mode = False
-        if observe_mode and not native_authoritative:
-            if harness in {"pi", "omp"}:
-                return {"decision": "allow", "reason_code": reason_code, "observed_review_failure": True}
-            if event == "PermissionRequest":
-                return {
-                    "reason_code": reason_code,
-                    "hookSpecificOutput": {"hookEventName": event, "decision": {"behavior": "allow"}},
-                }
-            if event == "PreToolUse":
-                return {
-                    "reason_code": reason_code,
-                    "hookSpecificOutput": {"hookEventName": event, "permissionDecision": "allow"},
-                }
-            return {"continue": True, "reason_code": reason_code, "observed_review_failure": True}
-        from .hook_availability_policy import availability_harness_response
+        from .hook_failure_response import runtime_hook_failure_response
 
-        payload_dict = dict(payload) if isinstance(payload, Mapping) else {}
-        return availability_harness_response(
-            payload_dict,
-            harness=harness,
-            event_name=event,
-            reason_code=reason_code,
+        return runtime_hook_failure_response(
+            self,
+            payload,
+            params,
+            default_harness=default_harness,
             reason=reason,
-            workspace=workspace_path,
-            home_dir=home_path,
-            guard_home=guard_home,
-            recording_only=observe_mode,
+            reason_code=reason_code,
+            native_authoritative=native_authoritative,
         )
 
     def _validated_fail_safe_hook_paths(
@@ -6099,11 +6065,8 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
         )
         if review.payload is not None and time.monotonic() < process_deadline:
             receipt_accepted = False
-            if review.receipt is not None:
-                with suppress(Exception):
-                    receipt_accepted = daemon_server.runtime_hook_evidence_writer.submit_native_decision_receipt(
-                        review.receipt
-                    )
+            with suppress(Exception):
+                receipt_accepted = submit_native_review_receipt(daemon_server.runtime_hook_evidence_writer, review)
             with suppress(Exception):
                 activity_action = review.payload.get("policy_action")
                 event = payload.get("hook_event_name", payload.get("hookEventName"))
@@ -7199,9 +7162,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 "state": load_state,
                 "detail": load_detail,
             },
-            "hook_process_capacity": process_scheduler_stats,
-            "hook_workers": daemon_server.hook_process_runner.stats(),
-            "request_capacity": request_capacity,
+            **hook_worker_health(daemon_server, process_scheduler_stats, request_capacity),
         }
 
     def _operator_health_payload(self) -> dict[str, object]:

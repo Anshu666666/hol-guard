@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ..policy_memory_source import CapturedPolicyMemorySource, capture_policy_memory_source_input
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
 
 bootstrap_compatibility_module(globals())
@@ -174,6 +175,7 @@ def _review_runtime_artifact_hook(
     payload: Mapping[str, object],
     store: GuardStore,
     workspace: Path | None,
+    _policy_memory_source: CapturedPolicyMemorySource | None = None,
 ) -> int | None:
     payload_map = dict(payload)
     action_envelope = state.action_envelope
@@ -330,6 +332,14 @@ def _review_runtime_artifact_hook(
                 "artifacts": [
                     {
                         "artifact_id": artifact_id,
+                        "_policyMemorySourceInput": capture_policy_memory_source_input(
+                            store,
+                            payload=payload,
+                            artifact_id=artifact_id,
+                            harness=args.harness,
+                            redaction_level=config.receipt_redaction_level,
+                            captured=_policy_memory_source,
+                        ),
                         "artifact_name": artifact_name,
                         "artifact_hash": runtime_artifact_hash,
                         "policy_action": policy_action,

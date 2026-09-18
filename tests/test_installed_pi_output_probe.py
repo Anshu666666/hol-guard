@@ -34,6 +34,7 @@ from ci.native_runtime.probe_installed_pi_output import (
     _run_probe,
     _start_installed_daemon,
     _text_digest,
+    _write_cli_wrapper,
 )
 from codex_plugin_scanner.guard import store as store_module
 from codex_plugin_scanner.guard.daemon import server as daemon_server
@@ -70,6 +71,17 @@ def _preserved_result(case: dict[str, object]) -> dict[str, object]:
         "input_content_after_sha256": digest,
         "input_content_unchanged": True,
     }
+
+
+def test_negative_cli_wrapper_binds_probe_python_shebang(tmp_path: Path) -> None:
+    python_path = tmp_path / "probe-python"
+    python_path.write_text("", encoding="utf-8")
+    wrapper = tmp_path / "hol-guard"
+    _write_cli_wrapper(wrapper, python_path=python_path, log_path=tmp_path / "negative-cli.jsonl", negative=True)
+    text = wrapper.read_text(encoding="utf-8")
+    assert text.startswith(f"#!{python_path}\n")
+    assert "#!/usr/bin/env python3" not in text
+    assert "negative-mismatch-proof" in text
 
 
 def test_installed_origin_guard_rejects_checkout_package_only(tmp_path: Path) -> None:

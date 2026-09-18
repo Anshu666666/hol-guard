@@ -11,20 +11,34 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
+from .native_policy_authority_read import NativeVerifiedPolicyInputs
+from .native_policy_decision_context import NativePolicyDecisionContext
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_MAX_SECONDS,
     _PUBLISH_RETRY_SECONDS,
     _PUBLISH_TIMEOUT_SECONDS,
     _RENEWAL_JITTER_MAX_SECONDS,
     _RENEWAL_LEAD_SECONDS,
-    _REQUIRED_PUBLISH_FEATURES,
     NativePolicySnapshotError,
 )
+from .native_policy_snapshot_publisher_context import PublicationContext, publication_context
 from .native_policy_snapshot_publisher_inputs import NativePolicySnapshotPublisherInputs
+from .native_policy_snapshot_publisher_scoped import (
+    ScopedSnapshotBinding,
+    capture_scoped_decision,
+    publish_scoped,
+    scoped_binding,
+    scoped_result_is_current,
+    scoped_rule_identity,
+)
 from .native_policy_snapshot_publisher_transport import _decode_ack_v3, _publish_snapshot_v3
+from .native_policy_snapshot_source_requirement import refresh_source_requirement
+from .native_policy_snapshot_v4_transport import NativeV4Publication
 from .native_policy_snapshot_windows_key import provision_native_policy_verifier_key
 
 if TYPE_CHECKING:
+    from .policy_rule_identity import PolicyRuleIdentity
     from .store import GuardStore
 
 
@@ -63,11 +77,20 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._thread: threading.Thread | None = None
         self._snapshot: dict[str, object] | None = None
         self._acked = False
+        self._scoped_publication_enabled = False
+        self._source_authority_required = True
+        self._source_memory_required = True
+        self._v4_publication: NativeV4Publication | None = None
+        self._v4_epoch: int | None = None
+        self._v4_binding: ScopedSnapshotBinding | None = None
+        self._observed_scoped_digest: str | None = None
         self._epoch = 0
         self._last_error: str | None = None
         self._published_config_digest: str | None = None
         self._published_policy_fingerprint: tuple[str, str] | None = None
         self._observed_policy_fingerprint: tuple[str, str] | None = None
+        self._published_cloud_inputs = NativeCloudPolicyInputs()
+        self._observed_cloud_inputs = NativeCloudPolicyInputs()
         self._renewal_due_monotonic: float | None = None
         self._renewal_after_generation: int | None = None
         self._retry_not_before_monotonic: float | None = None
@@ -79,6 +102,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         api = _snapshot_api()
         with api._PUBLISHER_LOCK:
             api._PUBLISHERS.setdefault(api._publisher_key(self.guard_home), set()).add(self)
+        refresh_source_requirement(self)
 
     def start(self) -> None:
         with self._condition:
@@ -126,10 +150,11 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 if not publishers:
                     api._PUBLISHERS.pop(api._publisher_key(self.guard_home), None)
 
-    def request_publish(self) -> None:
+    def request_publish(self, *, require_source_authority: bool = False) -> None:
         with self._condition:
             if self._closed:
                 return
+            self._source_authority_required |= require_source_authority
             self._epoch += 1
             self._acked = False
             self._last_error = None
@@ -232,6 +257,17 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         with self._condition:
             return self._closed
 
+    @property
+    def requires_scoped_authority(self) -> bool:
+        """A scoped negotiation failure must not become availability fallback."""
+        with self._condition:
+            return self._scoped_publication_enabled
+
+    @property
+    def requires_policy_authority(self) -> bool:
+        with self._condition:
+            return self._source_authority_required or self._scoped_publication_enabled
+
     def current_snapshot(self) -> dict[str, object] | None:
         with self._condition:
             self._mark_expired_locked()
@@ -251,12 +287,31 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             if not self._acked or self._snapshot is None or self._closed:
                 return None
             snapshot = self._snapshot
+            if self._v4_publication is not None:
+                return scoped_binding(self)
             return {
                 "generation": snapshot.get("generation"),
                 "policy_digest": snapshot.get("policy_digest"),
                 "runtime_identity": snapshot.get("runtime_identity"),
                 "mode": snapshot.get("mode"),
             }
+
+    def result_binding_is_current(self, binding: Mapping[str, object]) -> bool:
+        """Fence a V4 response before exposing its decision or receipt."""
+        with self._condition:
+            self._mark_expired_locked()
+            return scoped_result_is_current(self, binding)
+
+    def policy_rule_identity_for_result(self, binding: Mapping[str, object]) -> PolicyRuleIdentity | None:
+        """Resolve only the accepted snapshot's captured canonical identity."""
+        with self._condition:
+            self._mark_expired_locked()
+            return scoped_rule_identity(self, binding)
+
+    def capture_policy_decision_context(
+        self, binding: Mapping[str, object], receipt: object
+    ) -> tuple[bool, NativePolicyDecisionContext | None]:
+        return capture_scoped_decision(self, binding, receipt)
 
     @property
     def last_error(self) -> str | None:
@@ -385,7 +440,14 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             context = self._publication_context()
             if context is None:
                 return
-            identity, capabilities, master_key, config, client = context
+            identity, capabilities, master_key, config, client, cloud_inputs = context
+            if isinstance(cloud_inputs, NativeVerifiedPolicyInputs):
+                try:
+                    publish_scoped(self, context, publish_epoch, renew_after_generation)
+                finally:
+                    master_key = None
+                    context = None
+                return
             resident_fingerprint_before = self._current_input_fingerprint()[1]
             try:
                 snapshot, resident_generation = _publish_snapshot_v3(
@@ -396,6 +458,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                     master_key=master_key,
                     client=client,
                     renew_after_generation=renew_after_generation,
+                    authority_expires_at_ms=cloud_inputs.expires_at_ms,
                 )
             finally:
                 # The master is only an ephemeral input to derivation/signing;
@@ -403,6 +466,9 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 master_key = None
             resident_fingerprint = self._current_input_fingerprint()[1]
             resident_directory_fingerprint = self._resident_directory_fingerprint()
+            current_cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
+            if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
+                raise NativePolicySnapshotError("native_cloud_policy_changed_during_publish")
             with self._condition:
                 # A mutation may have invalidated the barrier while this
                 # request was in flight. Do not let an older ACK make that
@@ -429,6 +495,9 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 # request still forces a republish on the next poll.
                 if self._input_fingerprint is not None:
                     self._input_fingerprint = (self._input_fingerprint[0], resident_fingerprint_confirmed)
+                self._v4_publication = None
+                self._v4_epoch = None
+                self._v4_binding = None
                 self._snapshot = snapshot
                 self._published_config_digest = cast(str, snapshot["config_digest"])
                 self._published_policy_fingerprint = (
@@ -436,6 +505,8 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                     cast(str, snapshot["mode"]),
                 )
                 self._observed_policy_fingerprint = self._published_policy_fingerprint
+                self._published_cloud_inputs = cloud_inputs
+                self._observed_cloud_inputs = cloud_inputs
                 self._acked = True
                 self._last_error = None
                 self._renewal_after_generation = None
@@ -444,59 +515,18 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 self._schedule_renewal_locked(snapshot)
                 self._condition.notify_all()
         except NativePolicySnapshotError as error:
+            if self._scoped_publication_enabled or str(error).startswith("native_cloud_policy_"):
+                with self._condition:
+                    self._acked = False
             self._record_error(str(error))
         except (OSError, RuntimeError, TypeError, ValueError, AttributeError, sqlite3.Error) as error:
+            if self._scoped_publication_enabled:
+                with self._condition:
+                    self._acked = False
             self._record_error(type(error).__name__)
 
-    def _publication_context(
-        self,
-    ) -> tuple[Any, Any, bytes, Mapping[str, object], Callable[..., bytes | None]] | None:
-        status_provider = self._status_provider
-        if status_provider is None:
-            from .native_runtime import native_runtime_status
-
-            status_provider = native_runtime_status
-        status = status_provider()
-        if getattr(status, "mode", None) not in {"auto", "force", "shadow"}:
-            self._record_error("native_policy_snapshot_native_disabled")
-            return None
-        identity = getattr(status, "identity", None)
-        capabilities = getattr(status, "capabilities", None)
-        if (
-            not getattr(status, "available", False)
-            or not getattr(status, "compatible", False)
-            or identity is None
-            or capabilities is None
-        ):
-            self._record_error("native_policy_snapshot_runtime_unavailable")
-            return None
-        if set(getattr(capabilities, "features", ())) < _REQUIRED_PUBLISH_FEATURES:
-            self._record_error("native_policy_snapshot_protocol_unsupported")
-            return None
-        material_getter = getattr(self.store, "_policy_integrity_secret_material", None)
-        if not callable(material_getter):
-            self._record_error("native_policy_snapshot_integrity_key_unavailable")
-            return None
-        material: object = None
-        try:
-            material = material_getter(create=True)
-            if (
-                not isinstance(material, tuple)
-                or len(material) != 2
-                or not isinstance(material[0], bytes)
-                or not isinstance(material[1], str)
-            ):
-                self._record_error("native_policy_snapshot_integrity_key_unavailable")
-                return None
-            config = self._compiled_effective_policy()
-            client = self._client_request
-            if client is None:
-                from .native_resident_client import native_resident_client_request
-
-                client = native_resident_client_request
-            return identity, capabilities, material[0], config, client
-        finally:
-            material = None
+    def _publication_context(self) -> PublicationContext | None:
+        return publication_context(self)
 
     @staticmethod
     def _decode_ack(output: bytes | None) -> dict[str, object] | None:

@@ -17,6 +17,7 @@ _COMPONENTS = (
     ("guard-rules", Path("rust/crates/guard-rules/src/lib.rs")),
     ("guard-scanner", Path("rust/crates/guard-scanner/src/lib.rs")),
     ("guard-secure-fs", Path("rust/crates/guard-secure-fs/src/lib.rs")),
+    ("guard-secure-fs-source-path", Path("rust/crates/guard-secure-fs/src/source_path.rs")),
     ("guard-hook-core", Path("rust/crates/guard-hook-core/src/lib.rs")),
     ("guard-contracts", Path("rust/crates/guard-contracts/src/lib.rs")),
     ("guard-command-pretool", Path("rust/crates/guard-command/src/pretool.rs")),
@@ -44,6 +45,47 @@ _COMPONENTS = (
     (
         "guard-policy-snapshot-crypto",
         Path("rust/crates/guard-policy-snapshot/src/policy_snapshot_crypto.rs"),
+    ),
+    (
+        "guard-command-model",
+        Path("rust/crates/guard-command/src/lib.rs"),
+    ),
+    (
+        "guard-command-exact-command",
+        Path("rust/crates/guard-command/src/exact_command.rs"),
+    ),
+    (
+        "guard-policy-scoped-authority",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority.rs"),
+    ),
+    (
+        "guard-policy-scoped-authority-decode",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority_decode.rs"),
+    ),
+    (
+        "guard-policy-scoped-matcher",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_authority_match.rs"),
+    ),
+    (
+        "guard-policy-snapshot-v4",
+        Path("rust/crates/guard-policy-snapshot/src/policy_snapshot_v4.rs"),
+    ),
+    (
+        "guard-runtime-policy-store-versioned",
+        Path("rust/crates/guard-runtime/src/policy_store_versioned.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-request",
+        Path("rust/crates/guard-runtime/src/policy_scoped_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-tool-request",
+        Path("rust/crates/guard-runtime/src/policy_scoped_tool_request.rs"),
+    ),
+    ("guard-runtime-edge-v4", Path("rust/crates/guard-runtime/src/edge_v4.rs")),
+    (
+        "guard-runtime-policy-scoped-enforcement",
+        Path("rust/crates/guard-runtime/src/policy_scoped_enforcement.rs"),
     ),
 )
 

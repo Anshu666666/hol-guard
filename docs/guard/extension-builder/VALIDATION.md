@@ -34,11 +34,6 @@ silently truncated. No destructive target command or MCP tool is executed.
 
 ## Installed-wheel matrix
 
-The [Extension Builder workflow](../../../.github/workflows/extension-builder-ci.yml)
-builds a wheel and verifies it on Linux with Python 3.10 and 3.13, macOS ARM64 with
-Python 3.13, and Windows with Python 3.13. Exact current results are attached to the
-corresponding GitHub Actions run, rather than inferred from a previous revision.
-
 The [installed verifier](../../../scripts/ci/verify_extension_builder_install.py)
 invokes the isolated environment's executable outside the checkout. It checks
 CLI and MCP generation, rebuild-based validation, identical snapshot replay,

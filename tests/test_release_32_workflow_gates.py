@@ -160,8 +160,6 @@ def test_packaging_helpers_select_native_identity_and_release_contract(workflow:
     (
         "desktop-contract-ci.yml",
         "extension-control-center-installed-ci.yml",
-        "extension-builder-installed.yml",
-        "extension-builder-ci.yml",
     ),
 )
 @pytest.mark.parametrize(
@@ -179,7 +177,7 @@ def test_native_and_package_changes_select_desktop_and_extension_contracts(workf
 
 @pytest.mark.parametrize(
     "workflow",
-    ("desktop-contract-ci.yml", "extension-control-center-installed-ci.yml", "extension-builder-installed.yml"),
+    ("desktop-contract-ci.yml", "extension-control-center-installed-ci.yml"),
 )
 def test_release_32_pushes_receive_desktop_and_installed_extension_validation(workflow: str) -> None:
     assert _selects(workflow, "push", f".github/workflows/{workflow}")

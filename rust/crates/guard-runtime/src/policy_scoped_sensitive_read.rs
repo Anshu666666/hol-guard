@@ -199,7 +199,7 @@ fn supported_family(path: &str) -> Option<&'static str> {
         .iter()
         .filter(|part| matches!(**part, ".aws" | ".ssh" | ".gnupg" | ".docker" | ".kube"))
         .count();
-    if !direct && !(suffix && sensitive_directories == 1) {
+    if !(direct || suffix && sensitive_directories == 1) {
         return None;
     }
     sensitive_path_family(Path::new(path)).map(|(family, _)| family)

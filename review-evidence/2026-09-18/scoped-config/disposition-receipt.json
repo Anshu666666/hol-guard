@@ -1,0 +1,117 @@
+{
+  "source_binding": {
+    "analyzed_merge": "5131695bf2591b09eff081d220a341b012622d88",
+    "published_candidate": "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+    "all_reviewed_sources_and_analysis_workflow_identical": true,
+    "files": [
+      {
+        "path": "src/codex_plugin_scanner/guard/config_source_io.py",
+        "blob": "ad02d372c9a47791556e82ab2ac8fcad3eeb9a42"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/config_read_scope.py",
+        "blob": "365cc591acf630e15fadaec583b77a1c6394da1d"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/config.py",
+        "blob": "792be3d454f0b74a756c3770f503ada4cec34df4"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+        "blob": "c5a9047538403a7718c1fd306172380bf5b9bb88"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/server.py",
+        "blob": "77287aca876d7650dd29101b0cb72d067122318d"
+      },
+      {
+        "path": ".github/workflows/codeql.yml",
+        "blob": "181575215e10d8564671234312d0db3c26c5cf09"
+      }
+    ]
+  },
+  "dispositions": [
+    {
+      "number": 357,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:26:58Z",
+      "dismissed_comment": "The resolved parent anchor is '/'; held-chain, fixed-name and scope checks precede config access. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 358,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:01Z",
+      "dismissed_comment": "Fixed config basename opens relative to the admitted held parent; no-follow and identity checks reject replacement. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 359,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:06Z",
+      "dismissed_comment": "This is metadata sampling; canonical scope and held-parent authorization precede fixed-name config access. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 361,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:09Z",
+      "dismissed_comment": "This metadata consistency check rejects a changed parent before config contents can be read. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 362,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:12Z",
+      "dismissed_comment": "Explicit scoped reader selected. This final path-binding check rejects changed captures; it does not reopen config. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 363,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:15Z",
+      "dismissed_comment": "Explicit scoped reader selected. Windows parent metadata is checked under retained no-reparse directory handles. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 364,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:19Z",
+      "dismissed_comment": "Explicit scoped reader selected. Final parent metadata rejects changed bindings; bytes use the held leaf handle. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 367,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:22Z",
+      "dismissed_comment": "Resolved parent must equal the admitted canonical parent before opening a fixed-name config leaf. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 368,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:26Z",
+      "dismissed_comment": "The three fixed config basenames return through scoped bounded capture before this generic publisher lstat. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 369,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:29Z",
+      "dismissed_comment": "The three fixed config basenames return through scoped bounded capture before this generic publisher stat. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    },
+    {
+      "number": 370,
+      "state": "dismissed",
+      "dismissed_reason": "false positive",
+      "dismissed_at": "2026-09-18T15:27:31Z",
+      "dismissed_comment": "The three fixed config basenames return through scoped bounded capture before this generic publisher open. Audit: https://github.com/hashgraph-online/hol-guard/blob/07cfd60b/review-evidence/2026-09-18/scoped-config/codeql-config-path-source-audit.md"
+    }
+  ],
+  "untouched_alerts": [
+    288,
+    289
+  ],
+  "scope": "Specific source-reviewed Python path findings; no query, rule, workflow, or runtime suppression."
+}

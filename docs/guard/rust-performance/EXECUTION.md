@@ -1,11 +1,11 @@
 # Rust performance execution for release/3.2
 
 Current source and validation appear in [RELEASE_REVIEW](RELEASE_REVIEW.md),
-with **91 DONE / 19 OPEN / 26 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
-Implementation `224cca37a57ea4e068c0c586d2354c15abd887f0`, tree `7c4322a4c243c900bedf1365aa2194d888023f7b`. Tenth measured publication
-`095074cda6a751ffaf12b070ecc46a3091f12471` has 42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped; its exact tree and distinct merge identity are
-retained in [TENTH_CI_EVIDENCE](TENTH_CI_EVIDENCE.md).
-Later reviewed source requires its own execution. RSP-012 closes its literal record/threshold/selection-decision criterion, and RSP-085 closes actual four-target same-request attribution. RSP-011 remains OPEN for complete process-tree resources, RSP-025 remains OPEN for the missing Windows candidate cold and prepared measurements, and RSP-008 remains OPEN for corrected installed config coverage and its other residual phases. All original dependencies are unchanged; these two closures do not promote dependent installed qualification or release criteria.
+with **93 DONE / 17 OPEN / 26 BLOCKED / 8 DEFERRED** in [EXECUTION_LEDGER](EXECUTION_LEDGER.md).
+Implementation `65391c1972248a48aafddfff093f9cfa995f60ce`, tree `0f11fb9e6d44b159a6b2a6c0ea78e30693cf6cca`. Eleventh measured publication
+`23bef02c5edd2fb24dbfec768a9dbd5e80c2b31d` has 42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped; its exact tree and distinct merge identity are
+retained in [ELEVENTH_CI_EVIDENCE](ELEVENTH_CI_EVIDENCE.md).
+Later reviewed source requires its own execution. RSP-008 now closes its literal phase-measurement/aggregate-export criterion, and RSP-025 closes warm/first-hook executable-validation counting on all four candidate targets. RSP-012 and RSP-085 retain their previously completed record/decision and same-request attribution criteria. All original dependencies remain unchanged. RSP-011 remains OPEN for complete process-tree resources; RSP-086 and full installed qualification remain BLOCKED. None of these measurement closures selects a new Rust transport or qualifies a release.
 All 144 original definitions/dependencies and the historical record below are
 unchanged. Installed qualification, complete resources, signed/frozen live
 rollback, final CI, human approval and release remain incomplete.

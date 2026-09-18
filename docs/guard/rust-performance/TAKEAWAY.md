@@ -1,153 +1,125 @@
-# Takeaway prompt: complete HOL Guard release/3.2
+# Continue HOL Guard release/3.2
 
-Continue the user's authorized implementation through GitHub. Reduce actual
-tool-call latency and CPU while preserving decision, posture, approval, artifact
-and evidence contracts. Complete the original [PRD](PRD.md),
-[release PRD](RELEASE_3_2_PRD.md) and remaining criteria in the [144-task TODO](TODO.md).
-Use [execution-ledger.json](execution-ledger.json) as the status/evidence index.
-Original IDs, titles, acceptance and dependencies are immutable.
+Continue the authorized implementation through the owned GitHub PR. Reduce real
+tool-call overhead while preserving decisions, approvals, posture, artifact trust
+and evidence. The original [PRD](PRD.md), [144-task TODO](TODO.md) and immutable
+task definitions remain authoritative. Read [CURRENT_CONTRACT](CURRENT_CONTRACT.md),
+[RELEASE_REVIEW](RELEASE_REVIEW.md) and the [ledger](execution-ledger.json) before editing.
 
-## Recover exact state
+Current ledger: **93 DONE / 17 OPEN / 26 BLOCKED / 8 DEFERRED**.
 
-Read repository instructions, [RELEASE_REVIEW](RELEASE_REVIEW.md),
-[CURRENT_CONTRACT](CURRENT_CONTRACT.md), [TENTH_CI_EVIDENCE](TENTH_CI_EVIDENCE.md)
-and the workstream decision note before editing. Historical references to current
-belong to their recorded source. Preserve all ten historical reports and the
-historical EXECUTION suffix.
+RSP-008 now closes its literal phase-measurement/aggregate-export criterion, and RSP-025 closes warm/first-hook executable-validation counting on all four candidate targets. RSP-012 and RSP-085 retain their previously completed record/decision and same-request attribution criteria. All original dependencies remain unchanged. RSP-011 remains OPEN for complete process-tree resources; RSP-086 and full installed qualification remain BLOCKED. None of these measurement closures selects a new Rust transport or qualifies a release.
 
-The [tenth CI evidence](TENTH_CI_EVIDENCE.md) records **42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped**
-at PR head `095074cda6a751ffaf12b070ecc46a3091f12471`, tree `04d79da9c1cf212cce263c202bfdd5b4350007e3`. The equal-tree PR merge
-`9e85de6f42910785e7ba4b53198ddcc05672607c` is a distinct build identity. Each report retains whether its workflow
+Full qualification, activation, merge and release remain incomplete.
+
+The [eleventh CI evidence](ELEVENTH_CI_EVIDENCE.md) records **42 terminal first-attempt workflows: 37 successful, 5 failed and 0 skipped**
+at PR head `23bef02c5edd2fb24dbfec768a9dbd5e80c2b31d`, tree `e3fa69336ff37d8e91add1ecd0a5a89b5cca35d9`. The equal-tree PR merge
+`fb6112dd964df5b88e90e43e04229a4d6914f7e6` is a distinct build identity. Each report retains whether its workflow
 checked out the PR head or that merge. The later implementation checkpoint
-`224cca37a57ea4e068c0c586d2354c15abd887f0`, tree `7c4322a4c243c900bedf1365aa2194d888023f7b`, preserves these measurements as historical evidence;
-its changed tests, observers and collector ordering require execution at the new publication. All ten
+`65391c1972248a48aafddfff093f9cfa995f60ce`, tree `0f11fb9e6d44b159a6b2a6c0ea78e30693cf6cca`, preserves these measurements as historical evidence;
+its later path-admission test fixture requires execution at the new publication. Shipping code and benchmark instrumentation remain unchanged from the measured source. All eleven
 cohorts and prior supplemental label events remain separate. The native-client
-profiler belongs to the original tenth 42; no tenth supplemental event is pooled
+profiler belongs to the original eleventh 42; no eleventh supplemental event is pooled
 into that census. Failed, censored and unoffered work keeps its original denominator.
 
-Owned [PR #2970](https://github.com/hashgraph-online/hol-guard/pull/2970): head `codex/release-3.2-rust-finalization`, base
-`release/3.2`, draft at this checkpoint. Local integration branch
-`work/rsp-performance-finalization-32`. Refresh live head, base, checks and
-review threads before acting; the last measured head is not the later source.
-Frozen baseline `2e672d2d950c6ec471005ddba46e49bba16dc23b`, package 3.0.1. Last verified release base `4b89e0d2d496a85f04922b2e019a4aea15326bb9`
-and main `05fa4760df8401b9710bf098adb4fbb2dc4ff389`. Use Rust 1.88 and locked
-dependencies. Check dirty files, sparse-checkout state and worktree ownership.
-PR #2954 belongs to another writer. Do not repeat integrated cherry-picks,
-overwrite their work, create issues or send comments.
+The live [PR #2970](https://github.com/hashgraph-online/hol-guard/pull/2970) may
+advance after this checkpoint. Recheck its head, base, checks and review threads;
+never relabel older measurements as evidence for a later publication. The later
+path-admission change is confined to a test fixture; it and subsequent evidence/docs
+do not repair the failed full qualification or establish new production behavior.
+Frozen baseline `2e672d2d950c6ec471005ddba46e49bba16dc23b` (package 3.0.1)
+remains immutable.
 
-Current status: **91 DONE / 19 OPEN / 26 BLOCKED / 8 DEFERRED**. RSP-012 closes its literal record/threshold/selection-decision criterion, and RSP-085 closes actual four-target same-request attribution. RSP-011 remains OPEN for complete process-tree resources, RSP-025 remains OPEN for the missing Windows candidate cold and prepared measurements, and RSP-008 remains OPEN for corrected installed config coverage and its other residual phases. All original dependencies are unchanged; these two closures do not promote dependent installed qualification or release criteria.
+## Next work, in order
 
-## Execute remaining work in dependency order
+1. **Restore comparable Mac baselines.** Capture and inspect a bounded native-stack observation
+   of the existing five-second libSystem probe to localize constructor `getfqdn`
+   blocking. Preserve its timeout and frozen source. No underlying OS fix is
+   established; do not repeat ineffective PTR maintenance or infer a cause from
+   elapsed time alone. Then collect missing comparable arms for RSP-011/048/137.
 
-1. **Verify the exact new publication.** Run the changed Darwin privacy and Windows exact-byte preservation tests on their actual target jobs. Verify four-binding config coverage and independently recovered early cold/prepared/phase observations, especially Windows candidate. Preserve later corpus/c16 failures and all failed first attempts. The changed collector order forms a new cohort; retain original source, execution boundary and denominator for every comparison.
+2. **Choose the next optimization from measured costs.** RSP-086 requires comparing
+   connection reuse or ingress alternatives with full process-tree cost.
+   Finish RSP-011's full-tree resources and offered-rate accounting before
+   asserting that comparison.
+   Authentication and executable validation justify investigation; inclusive wall
+   spans are neither CPU nor removable overhead. RSP-087 remains conditional on
+   that decision: specify peer/generation binding, framing, inflight limits,
+   correlation, idle timeout, cancellation and freshness before implementation.
+   Keep existing Linux live-proof reuse and unsupported-platform validation intact.
+   A capability-cache hit does not prove executable-digest reuse.
 
-2. **Use the completed attribution to select the next change.** RSP-085 has actual four-target same-request client/resident spans and one socket per hook. Evaluate platform-specific executable identity and bounded session reuse only after comparable baseline and full process-tree prerequisites. Preserve Linux live-proof reuse and deliberate full validation on unsupported platforms; never substitute capability-cache hits for digest reuse.
+3. **Finish installed semantics and lifecycle.** RSP-077–080/091/136 require actual
+   no-environment registered executables, alias/source forms, approvals and
+   transport guarantees. RSP-129 requires mutation→publish→ACK→first-decision
+   freshness; RSP-121/131 require foreground evidence cost and real receipt ingest
+   under mixed load. Preserve unavailable outcomes separately from evaluated allows.
+   RSP-029/135/139 still require signing/freeze binding and live update/downgrade/
+   rollback, including generations and in-flight requests. Source tests or stopped
+   replacement do not complete these criteria.
 
-3. **Resolve observed installed failures.** Use exact retained source, stage, error-code domain and offered counts. The Windows tail failure reports raw Win32 code 32 at a shared error wrapper, not a proven pipe disconnect or resident cause. Preserve unchanged readiness/recovery/c16 targets; no sampled stack or elapsed span alone identifies a lock or CPU cause.
+Keep [package](package-native-selection-decision.md), [MCP](mcp-native-selection-decision.md)
+and [scanner](scanner-current-decision.md) production defaults at their measured
+decisions. Native launcher, ingress, spool and compiler selection remains
+conditional. Reopen a port only against optimized Python on the same complete
+route; do not rewrite the administrative server to optimize hooks.
 
-4. **Restore baseline and finish qualification.** Both frozen Mac baselines fail getfqdn in constructor work. The prior PTR experiment did not fix libc lookup; do not repeat it unchanged or patch the frozen baseline. Establish a comparable environment, then deliberately select full pair/tail/sample/resource coverage. Retain approval/source/alias/availability, mixed offered load and durable receipt gaps.
+## Preserve the original gates
 
-5. **Apply measured conversion decisions.** Keep package/MCP on optimized Python and the scanner default unchanged. Reopen only representative complete comparisons with original parity/benefit gates. Native ingress/spool/compiler remain conditional on evidence, not language preference.
+Ordinary priority launchers retain warm-c1 p95 ≤50 ms/p99 ≤100 ms and c16
+p99 ≤200 ms with correct decisions and zero errors. Native-client p95 remains
+≤20 ms, cold-native p95 ≤150 ms, readiness ≤400 ms. Require five independent
+alternating pairs, 10,000 warm priority observations per required route/platform,
+1,000 for other routes, 100 cold starts, 100 recoveries and at least 30 valid
+resource samples, with original confidence intervals and sampling rules.
 
-6. **Complete artifact and release acceptance.** Verify post-sign/frozen manifests, real installed live update, mixed generations, changed-program downgrade/rollback and final-source checks. Require independent latest-push human/code-owner approval and a concrete qualified canary with tested rollback. Preserve all 144 original definitions and dependencies. The unanswered Sonar request authorizes no external lookup or disposition through any route.
+Selected hot changes require ≥30% p95 or process-tree CPU improvement with ≤5%
+regression in the other primary metric. Optional ingress requires ≥25% private
+memory or ≥30% c16 p99 improvement; optional kernels must beat optimized Python
+by ≥30% including boundary/startup costs. Keep the separate 12% short-load and
+50% long-soak RSS limits. Bounded c64 overload remains visible; missing Darwin
+CPU remains unavailable. Smoke success never replaces these qualification gates.
 
-## Preserve measurements and boundaries
+## Evidence, validation and publication
 
-| Workstream | Tenth observation and practical limit |
-| --- | --- |
-| Main CI and security | Main has 114 terminal jobs: 110 successful, one failed and three skipped. All 96 pytest shards, the CI aggregate and duration aggregate pass. The Windows packaged bootstrap passes its original regression in 53.60 seconds; the earlier ninth failure remains historical, without a new cause. Ordinary Sonar analysis succeeds and the unchanged quality gate fails; no numeric gate condition is inferred. Security passes all four jobs, and both authority and I/O ownership workflows pass. All 195 unexpired Main artifacts are verified by paginated metadata, including 96 coverage and 96 duration artifacts; this does not claim artifact-byte recovery. |
-| Installed native launcher | Fifteen POSIX jobs complete 1,320 of 1,760 total planned attempts, including 1,200 timed observations; the five Windows jobs leave 440 unoffered. Linux native PreToolUse p95 ranges 41.048–51.696 ms with one of five at or below 50 ms; PostToolUse ranges 41.475–53.556 ms with two of five at or below 50 ms. ARM Pre/Post ranges are 119.325–188.568/136.322–179.435 ms; Intel ranges are 202.568–420.056/208.314–439.638 ms. All 15 POSIX runs restore registration and retain production activation and qualification as false. Fifteen encrypted six-file producer receipts are retained; no ciphertext recovery or new native selection is inferred. |
-| Windows preservation witness | Five Windows launcher jobs each retain 107 passing tests, six skips and one failed original child-preservation assertion, before any of their 440 planned requests. Their complete identical staged witnesses show every 148-byte native descriptor unchanged across all four stages and around every GetSecurityInfo read. Only the Get projection of the two direct children changes after manager provisioning; owner/group, file identity and payload remain unchanged. This does not establish a stored descriptor mutation or undocumented Windows internals. Five zero-file no_observations receipts remain separate from completed POSIX work. The later test correction compares complete native owner/group/DACL bytes plus original identity and payload, retains strict legacy-key rejection and separate Get diagnostics, and still requires actual Windows execution. Production setters and deadlines are unchanged. |
-| Existing native-client transport | All four installed diagnostic targets pass 125 Python and nine runtime profile tests each, with two additional Windows companion pipe/handle tests. Each completes 40 of 40 hooks with zero failures or unoffered cases, one helper, 42 client frames, 43 resident frames and 40 successful matched socket opens. Eight ZIPs match GitHub hashes/sizes and four five-file archives authenticate and recover. Independent review rehashes all 20 private files and recomputes all 160 unique request/client/resident joins, final helper and relay EOF/count coverage, and every client/evaluator/dispatch aggregate. RSP-085 is DONE at its literal attribution criterion. Benign authentication/evaluator p95 milliseconds are Linux 4.672/0.829, ARM 38.214/0.461, Intel 33.951/1.044 and Windows 2.556/2.068. The evaluator elapsed span includes validation, snapshot, fence and receipt encoding; authentication includes waiting. Inclusive spans are not added/subtracted, and this is neither pure CPU nor a measured connection-reuse benefit. Normal-release, process-tree resource and full qualification flags remain false. |
-| Cold and warm executable identity | Five reached arms retain fifteen validated cold-lifecycle hooks and fifteen separate prepared-resident hooks: Linux baseline/candidate, both Mac candidates and Windows baseline. Every reached scenario has three planned/offered/started/validated hooks and no unknown or unoffered work. Fresh-child cold scenarios have complete/drained observers and verified child exit status 0. The cold interval starts after imports/private-journal admission, before observer installation and the real daemon constructor; normal preparation can ready the resident before the first hook. It is not OS-cache or import cold time. Each 1 KiB benign Claude PostToolUse hook has one status lookup and capability hit. Linux candidate reuses verified live proof and hashes zero executable bytes per hook; its preparation still performs four full validations plus one reuse. Linux baseline hashes 6,305,152 bytes per hook, ARM candidate 10,772,768, Intel candidate 11,277,348 and Windows baseline 5,439,488. Capability reuse is distinct from digest reuse. Windows baseline preparation and cleanup each have two publication calls hashing 10,878,976 bytes, separately timed at 64.1543 and 24.3286 ms. Their distinct phases are not combined. Both Mac baselines fail construction and Windows candidate stops at an earlier c16 route assertion, before either identity scenario. RSP-025 remains OPEN specifically for that missing candidate coverage; the later ordering change requires its own execution. Only Linux has a completed paired comparison. |
-| Indexed qualification and settings | The 27-job qualification workflow finishes with twelve successes, thirteen failures and two skips. Four immutable wheels build. Five complete indexed arms retain 680 numeric values; Windows candidate separately retains 66 partial values, fifty validated and sixteen returned but unvalidated. Its first registered Claude PreToolUse c16 wave fails route-count validation; the exact mismatch and cause are unobserved, with no inferred timeout. Six reached corpora complete 2,316 normalized cases and 372 registered validations; 55 Windows baseline source-reference denials remain unsupported review, not content parity. Both frozen Mac baselines fail getfqdn. Only Linux completes a paired aggregate. Every completed arm fails mixed, approval, input, raw-UTF8 and registered-surface side scopes. UTF8 registration interruption is additional to its deliberately unqualified design. Windows baseline retains 39 valid steady and 112 capacity samples; Linux candidate has ten and 55 with unavailable counters. Darwin process-tree CPU remains unavailable where ambiguous. Settings/Builder retain 22 native cases on Linux, ARM and Windows; Intel stops after two at 400.736 ms against the unchanged 400 ms enable deadline, and all four Builder subchecks pass. No sampled stack identifies the cause. Full Python phase groups are authenticated and retained despite public depth truncation; absent config observations are not zero and motivate the later binding-coverage correction. Twenty ZIPs (9,587,454 bytes, 81 members), four authenticated indexed archives (142 files), and three authenticated tail archives (21 files) retain their individual custody levels. Complete sampling, resources and qualification remain false. |
-| Nonpriority tails | Eight tail jobs finish with two successes and six failures. Five of eight arms complete; ten of sixteen planned timed values and ten separate preflights are retained, with six timed values unoffered. Only Linux has a complete paired comparison. Both frozen Mac baselines fail constructor getfqdn before offers. Windows candidate fails before any case or numeric journal, while its baseline completes two timed samples. Its finite error origin is safe_output_windows._raise_windows_error: raw GetLastError code 32 means Windows sharing violation, even though the existing OSError wrapper labels it BrokenPipeError. The failed operation, conflicting handle and underlying cause remain unknown. Eight ZIPs (71,929 bytes, 37 members), four ciphertext hashes and three narrowly authenticated recoveries of 21 files are verified; sampling and qualification remain false. |
-| Installed native wheel and soak | Native-wheel CI finishes two successful and two failed targets. Linux and Intel pass fourteen smoke gates each. Windows passes thirteen but fails c16 p99 at 1,282.125 ms against its unchanged 1,000 ms smoke bound; sixteen responses return with zero errors. ARM stops before build at the decimal-PID privacy assertion: 111 tests pass, one fails and one skips; its wheel/SLO observations remain unoffered. The three completed targets each retain 146 SLO numeric values, 21 default-auto resident decisions and 21 accepted/processed receipts with no drops or pending. Separate writer-failure counters are Linux zero, Intel zero and Windows three. c64 conserves 64 responses each, with 1/25/22 explicit overloads respectively and zero errors; no c64 latency ceiling is emitted. Linux soak completes 100,000 logical calls/responses with zero final errors and 17,367 successful health checks, stable PID and start_requested/ready/stopped lifecycle. Its p95/max are 503.43/581.21 ms against 4,500 ms; RSS rises 615,759,872 to 638,566,400 bytes (3.7038%), below 50%, with 71 threads and 199 descriptors at peak. Up to three transport tries per logical call and 250,000 preseeded receipt rows do not prove 100,000 new native decisions or durable receipts. Runtime bytes bind equal-tree merge 9e85de6f separately from head 095074cd. Thirteen public JSON records are reconstructed from exact decoded-log spans; artifact metadata does not claim ZIP, wheel or private-ciphertext recovery. These smoke gates do not replace the 50/100/200 ms ordinary priority release gates. |
-| Package | All three component jobs pass 132 correctness tests. Formats retain twenty candidate and eighteen baseline completions plus two failed frozen Composer cases. Cardinality retains 36 candidate and 24 baseline completions plus twelve censored baseline workers, under unchanged 15/20/30-second budgets. All ten phase workers complete. Five complete protect pairs retain wall medians 8,760.358205 to 319.871925 ms and CPU medians 7,730.081 to 311.412 ms; median paired reductions are 96.3541685537% and 95.9764129901%, distinct from ratios of medians. Separately instrumented Guard-Python exclusive calling-thread origin shares are 41.6229614% protect and 53.0125243% evaluator, not attainable native savings. The measured change is optimized Python against frozen Python. Composer v1/v3 cardinality mismatch remains noncomparable. Four component public ZIPs including MCP total 116,807 verified bytes; the repository retains twenty public files including derived receipts/metadata, separately from fourteen ZIP members. The 331 package encrypted-file commitments remain producer evidence without recovery. The original package keep-Python decision is unchanged. |
-| MCP | MCP passes 126 correctness tests and completes thirty workers with 10,080 outcomes and zero failures, 48 groups, 240 run traces and 364 phase rows across eight five-block comparisons. All eighty warm resource windows have 145–357 samples with no missing readings. Ten lifecycle rows remain incomplete, with fourteen missing samples and 35 descriptor denials across nine rows. The catalog-1000 wall ratio is 0.556841 (95% CI 0.555858–0.563984), CPU 0.463798 (0.459105–0.469547); the 16 KiB payload wall ratio is 0.686183 (0.677683–0.692586), CPU 0.619391 (0.617353–0.625873). These are complete same-route optimized-Python observations at their declared scopes. The verified public ZIP is 92,714 bytes; 181 raw commitments and a 182-file encrypted producer receipt do not establish private recovery. The original native no-selection decision and lifecycle/resource limits remain unchanged. |
-| Scanner | The tenth smoke completes 24 of 24 same-source observations, with four Rust and 192 Python tests passing. Twelve native observations each scan four native files with zero fallback; result/stdout commitments match. Two public ZIPs totaling 3,520 bytes and four members are verified. Encrypted evidence remains metadata/producer commitments for 113 files. This one independent run does not replace the historical eighth 840-attempt comparison, whose only passing case/cache cohorts were the large dense provider fixture in both states. Production Secrets CLI remains Python; no universal size cutoff or installed/platform activation is selected. |
-| Dormant source pilot | All four source-pilot platform jobs pass 32 Python and 17 Rust tests each, the bound fixture and explicit feature-off/on source smoke. Production registration remains unchanged and installed qualification remains false. |
-| Packaging and release | PyPI authorization and Build + Verify pass, while all fourteen downstream release jobs skip. Both Desktop feeds validate and skip publication. No release, canary, signing, live update or rollback is inferred from these workflow names. Latest-push human/code-owner approval remains absent. |
+Use [ELEVENTH_CI_EVIDENCE](ELEVENTH_CI_EVIDENCE.md) and linked workstream notes for
+results, rather than copying their tables here. Preserve all prior cohorts,
+first-attempt failures and offered/unoffered denominators. Artifact metadata,
+verified ZIP bytes, producer receipts and authenticated recovery are distinct
+custody levels. Eleventh profile public corroboration does not repeat the
+[tenth authenticated RSP-085 recovery](native-client-profile-tenth-ci.md).
 
-| Later source change | Resulting behavior | Required next evidence |
-| --- | --- | --- |
-| Darwin privacy assertion | Replace a decimal PID-substring check with exact report keys, finite reason/string fields and numeric scalar shapes. A deterministic duration of 338.413213 exercises the real collision while preserving every CPU-unavailable and incomplete assertion. The production collector is unchanged. | The revised test must pass on the actual ARM wheel job that previously stopped before a build; its missing measurements remain unoffered. |
-| Windows preservation oracle | Compare every queried native self-relative descriptor byte, exact object identity and payload. Preserve strict existing-key rejection before/after the same product calls, parent identity, key value and separate GetSecurityInfo diagnostics. Tests reject changes in protection/inheritance bits, access mask, owner/group, reserved/padding bytes, identity, payload and key admission. | Execute the revised assertions on Windows. The prior failure and 440 unoffered requests remain historical; no flag masking, child repair, setter, retry or deadline change is introduced. |
-| Config lookup coverage | Observe the four actual foreground module bindings: canonical configuration, HookWorker, daemon server and native continuation. Preserve original results/errors; count each binding entry and time only the outermost nested lookup. Fixed-schema coverage records setup, wrapper changes, restoration and overlapping work. Only complete restored coverage with a completed eligible foreground operation can certify zero calls. | Execute the corrected observer in installed attribution scopes. Missing/unsupported bindings, setup overlap, in-flight teardown, replaced wrappers and unscoped callbacks remain incomplete or excluded; absent counts are never inferred as zero. Existing authenticated full phase groups remain retained. |
-| Attribution before qualification gates | Run the existing Python-phase, prepared-identity and cold-identity collectors once immediately after runtime/profile admission, before contract-corpus and headline gates. Reuse and validate those exact reports later. Existing collector bodies, independent fixtures, payloads, file names, deadlines, archive bounds, and original exception/traceback behavior are preserved. | Obtain actual Windows candidate cold/prepared observations and corrected config coverage even when a later unrelated corpus/c16 gate fails. Execution order changes warming conditions, so this is a new source cohort and cannot be pooled with earlier timings. It does not fix the existing route failures or establish an OS-cache-cold measurement. |
+The revised symlink-path fixture passes all **13 selected existing endpoint tests** (102 deselected), Ruff, formatting and independent source review. The validated test bytes match this immutable implementation. Shipping source and benchmark instrumentation are unchanged from the eleventh measured source; the earlier 378-test/22-module validation remains at its original checkpoint. No local performance or soak workload ran. Gitleaks 8.24.2 scans the exact release-base-to-source range `4b89e0d2d496a85f04922b2e019a4aea15326bb9..65391c1972248a48aafddfff093f9cfa995f60ce`: **1,275 commits, 65,184,983 bytes, zero findings**. The later fixture still requires actual CI; all previous failed invocations and qualification limits remain.
 
-| Scope | Unchanged acceptance |
-| --- | --- |
-| Ordinary installed priority hooks, 1–16 KiB, warm c1 | p95 ≤50 ms and p99 ≤100 ms |
-| Ordinary installed priority hooks, c16 | p99 ≤200 ms, zero errors and correct decisions |
-| Native client / cold native / daemon readiness | p95 ≤20 ms / p95 ≤150 ms / 400 ms barrier |
-| Independent comparisons | At least five alternating independent pairs and required confidence intervals |
-| Per required qualification scope | 10,000 warm priority, 1,000 other, 100 cold/recovery observations and at least 30 valid resource samples |
-| Selected hot tranche | At least 30% p95 or complete process-tree CPU reduction; at most 5% regression in the other primary metric |
-| Optional native ingress | At least 25% private-memory or 30% c16 p99 reduction with equivalent decisions and containment |
-| Optional package/offline conversion | At least 30% benefit over optimized Python on the same real route including startup/boundary costs |
-| Resource growth | Existing 12% short-load and 50% long-soak RSS limits at their original scopes |
+RSP-134/142 require the final candidate's appropriate suites, required checks and
+independent latest-push human/code-owner approval. Agent reviews do not supply
+that approval. RSP-143 requires a concrete qualified canary, stop conditions and
+tested rollback before final release approval.
 
-Do not weaken deadlines, byte limits, freshness, replay checks or response
-semantics to pass a benchmark. Native verdict, acknowledged posture, availability
-and delivered response remain distinct. Normalize neither missing resource data
-nor failed work to zero. Keep KERNEL/NATIVE_CLIENT/DAEMON_INGRESS/INSTALLED_LAUNCHER
-separate, including real registered process startup in the last boundary.
-
-Keep `native-claude-launcher-experiment`, `rust-nonpriority-tail-smoke` and
-`scanner-regex-pilot-smoke` for bounded observation. The full `scanner-regex-pilot`
-label was removed after the completed, retained 840-attempt experiment; do not
-repeat that cohort without a new source change or unresolved concern. Full
-`rust-performance-qualification` and `rust-nonpriority-tails` remain absent.
-Full tails require deliberate 320-job selection and comparable arms. The
-`rust-native-client-profile` label is selected. Its four-target experiment belongs
-to the original tenth 42 and completed with verified source, artifact, request and encrypted-retention
-identity. Later source execution is a distinct cohort. These instrumented
-diagnostics do not establish native activation or performance qualification. Preserve failed first attempts;
-retries and label-triggered runs are separate cohorts.
+Work only on owned files/branches after checking dirty and sparse worktrees.
+Publish to `codex/release-3.2-rust-finalization` targeting `release/3.2`; PR #2954
+belongs to another writer. Bind the intended committed tree to the freshly read
+owned remote head, verify Git Data API blobs/tree, recheck drift and advance
+without force. Never push unrelated local ancestry. Keep source pins, ledger,
+PR description and handoff coherent; retain locked dependencies and Rust 1.88.
+Do not change original criteria or declare all 144 tasks, merge or release complete.
 
 Respect the active performance-measurement lock; do not run local performance
-workloads or delete the lock. Run only required correctness/static checks locally.
-Private evidence remains owner-private, sealed and identity-bound; public reports
-contain bounded aggregate/closed-form fields. Verify artifact ZIP digest and
-member bounds before extraction; distinguish producer commitments from verified
-downloads and authenticated recovery. Never expose private paths, payloads or keys.
-
-## Publication and release
-
-The combined 22-module correctness suite at local integration `37e1f8611a315d54ca8fef1f42c8a71a20467e33`, whose exact tree is the immutable implementation checkpoint, passes **378 tests with nine explicit Windows/Darwin platform skips**. All twelve changed Python files pass Ruff and formatting. The three changed benchmark scripts pass BasedPyright with zero errors and 118 warnings; this does not claim a warning-free result. Fixture freshness, diff hygiene and the full collection inventory pass: **22,922 cases, 24 protected invariants and 51,840 retained corpus records**. This is inventory collection, not re-execution of every case or corpus record. Shipping `src/` and `rust/` files are unchanged from the tenth measured source; benchmark observers, collector ordering and platform tests change. Independent source/evidence reviews are clear. No local performance or soak workload ran. Actual Windows/Darwin assertions and installed config/cold attribution require the new publication's own execution. Gitleaks 8.24.2 scans the exact release-base-to-immutable-source range `4b89e0d2d496a85f04922b2e019a4aea15326bb9..224cca37a57ea4e068c0c586d2354c15abd887f0`: **1,273 commits and 61,665,044 bytes, zero findings**.
-
-For Git Data API publication, bind the exact intended committed tree to the
-actual owned remote head, verify every blob and returned tree, recheck the branch
-and advance without force. Pin current docs to an immutable implementation
-checkpoint. Keep code, evidence, all 144 ledger rows, PR description and prompt
-coherent; never push the unrelated local historical ancestry. Require the newly
-published source's own CI and installed evidence.
-
-Finish comparable warm/cold/recovery/resource minima, actual approval/source/alias
-and availability coverage, mixed offered load and mutation/recovery, durable
-receipts, signed/frozen installation, live update and changed-program rollback.
-Independent agent reviews do not supply latest-push human/code-owner approval.
-Prepare a concrete qualified canary, stop conditions and tested rollback before
-any final release approval request. Continue useful authorized source work while
-external gates are pending; report incomplete criteria honestly.
+workloads or delete the lock. Keep private evidence sealed, bounded and bound to
+its source and run. Verify ZIP digests and member limits before extraction; never
+publish private payloads, paths or keys. The four selected diagnostic labels and
+absent full-qualification labels are recorded in the release review; changes or
+retries create separate cohorts.
 
 The 42 [individually reviewed Sonar findings](../security/sonar-release-32-review.md)
-remain unapplied. Tenth ordinary analysis succeeds and its unchanged quality gate
-fails; ninth analysis and gate skipped after failed Main dependencies. Eighth
+remain unapplied. Eleventh ordinary analysis and quality gate skip after a failed Main
+dependency. Tenth ordinary analysis succeeds and its unchanged quality gate fails;
+ninth analysis and gate also skipped. Eighth
 analysis/gate and seventh service HTTP 500 remain distinct historical outcomes.
-The actual tenth log supplies no numeric gate conditions; none are inferred.
+The eleventh workflow provides no Sonar analysis or gate result; no new numeric conditions are inferred.
 Automatic approval review rejected the project-specific external lookup because
 it would disclose private project, PR and issue identifiers without explicit
 authorization. The specific permission request for fresh checks and verified
 individual false-positive dispositions remains pending. Do not retry that action
 through CI or another route without approval. No comments, exclusions, severity
 changes or quality-threshold changes are authorized by that pending request.
-
-If specific Sonar authorization arrives, first recheck the exact 42-item manifest,
-current analyzed revision, rule/component/line and complete source hashes. Only
-individually verified false-positive transitions are in the pending request.
-The API has no atomic expected-analysis precondition: serialize writes, check
-drift before/after and stop on ambiguous outcomes or permission failure. Never
-retry ambiguous writes. Analysis-token success does not prove issue-admin
-permission. The unchanged quality gate must still determine its own result.

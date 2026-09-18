@@ -95,3 +95,25 @@ def test_preserves_real_commands_without_claiming_installed_execution(
     assert report.configured_wheel_jobs == tuple(name for name, _ in WHEEL_CHECKS)
     assert report.evidence_kind == "collection-and-configuration"
     assert report.installed_runtime_verified is False
+
+
+@pytest.mark.parametrize("redirection", ["<", ">"])
+def test_rejects_wheel_command_after_redirection_comment_marker(
+    workflow_root: Path, redirection: str
+) -> None:
+    job_name, command = WHEEL_CHECKS[0]
+    write_jobs(workflow_root, job_name, f"printf '%s\\n' omitted {redirection}# {command}\n")
+
+    with pytest.raises(RuntimeError, match=f"^{job_name} has no configured wheel install check$"):
+        required.build_report(workflow_root)
+
+
+def test_preserves_escaped_hash_before_real_wheel_command(workflow_root: Path) -> None:
+    job_name, command = WHEEL_CHECKS[0]
+    write_jobs(workflow_root, job_name, f"printf '%s\\n' \\#data; {command}\n")
+
+    report = required.build_report(workflow_root)
+
+    assert report.configured_wheel_jobs == tuple(name for name, _ in WHEEL_CHECKS)
+    assert report.evidence_kind == "collection-and-configuration"
+    assert report.installed_runtime_verified is False

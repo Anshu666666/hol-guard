@@ -1,8 +1,9 @@
-"""Closed receipts for three fixed fixture phases; not installed-runtime proof."""
+"""Closed receipts for four fixed fixture phases; not installed-runtime proof."""
 from __future__ import annotations
 
 import hashlib
 import os
+import socket
 import sys
 import sysconfig
 from pathlib import Path
@@ -106,6 +107,7 @@ class SourceObservations:
         self.sites = {Path(sysconfig.get_path(name)).resolve() for name in ("purelib", "platlib")}
         self.executed, self.source_denials, self.network_denials = {}, 0, 0
         self.network_events = []
+        self.ipv6_probes = 0
 
     def binding(self, filename):
         if filename.startswith("<") and filename.endswith(">"):
@@ -123,6 +125,36 @@ class SourceObservations:
         if digest != self.expected[relative]:
             raise ValueError("executed_source_changed")
         return source_id(relative), digest
+
+    def known_ipv6_probe(self, event, arguments):
+        if self.ipv6_probes or event != "socket.bind" or type(arguments) is not tuple or len(arguments) != 2:
+            return False
+        sock, address = arguments
+        if (type(sock) is not socket.socket or sock.family != socket.AF_INET6
+                or sock.type != socket.SOCK_STREAM or sock.proto != 0
+                or type(address) is not tuple or len(address) != 2
+                or type(address[0]) is not str or type(address[1]) is not int
+                or address != ("::1", 0)):
+            return False
+        current = sys._getframe(2)
+        caller = current.f_back
+        try:
+            module = sys.modules.get("urllib3.util.connection")
+            probe = getattr(module, "_has_ipv6", None)
+            if (getattr(probe, "__code__", None) is not current.f_code
+                    or current.f_code.co_name != "_has_ipv6" or current.f_lineno != 127
+                    or caller is None or caller.f_code.co_name != "<module>" or caller.f_lineno != 137
+                    or caller.f_globals is not getattr(module, "__dict__", None)):
+                return False
+            path = Path(current.f_code.co_filename).resolve()
+            if (Path(caller.f_code.co_filename).resolve() != path
+                    or not any(path == site / "urllib3" / "util" / "connection.py" for site in self.sites)):
+                return False
+            return git_blob(path.read_bytes()) == "f92519ee9124e91e5da7d60ccc3f274312ed3514"
+        except Exception:
+            return False
+        finally:
+            del current, caller
 
     def network_stack(self):
         frames = []
@@ -153,6 +185,9 @@ class SourceObservations:
         return frames
 
     def audit(self, event, arguments):
+        if self.known_ipv6_probe(event, arguments):
+            self.ipv6_probes += 1
+            return
         if event in {"socket.connect", "socket.bind", "socket.getaddrinfo",
                      "socket.gethostbyname", "socket.gethostbyaddr", "socket.sendto"}:
             self.network_denials += 1
@@ -190,6 +225,7 @@ class SourceObservations:
             "retainedSourceCount": len(retained), "loadedSourceCount": len(loaded),
             "requiredSourcesComplete": complete, "sourceDenials": self.source_denials,
             "networkDenials": self.network_denials, "networkEvents": self.network_events,
+            "recognizedIpv6LoopbackProbes": self.ipv6_probes,
             "networkEventLimit": 4, "networkStackLimit": 24,
             "dependencyFrameScope": "Observed installed dependency file hashes; not repository-pinned source.",
             "scope": "Current pytest process executed filenames and retained imports; not bytecode or child-process attestation.",
@@ -201,7 +237,7 @@ def expected_selection(phase):
         return list(TIMESTAMP_IDS)
     if phase == "ownership":
         return list(OWNERSHIP_IDS)
-    if phase == "wheel-red":
+    if phase in {"wheel-red", "wheel-green"}:
         return [WHEEL_FILE]
     raise ValueError("invalid_phase")
 
@@ -215,17 +251,26 @@ class PytestReceipt:
     def pytest_collection_finish(self, session):
         items = session.items
         self.collected = sorted(sha256(item.nodeid.encode()) for item in items)
-        if self.phase != "wheel-red":
+        if self.phase not in {"wheel-red", "wheel-green"}:
             self.selection_valid = {item.nodeid for item in items} == set(expected_selection(self.phase))
             self.selection_valid &= len(items) == len(expected_selection(self.phase))
         else:
-            matrix = []
+            matrix, extra = [], []
             for item in items:
                 parameters = getattr(getattr(item, "callspec", None), "params", {})
                 name = getattr(item, "originalname", "")
+                if str(item.path.resolve()) != str((Path.cwd() / WHEEL_FILE).resolve()):
+                    continue
+                if (name == "test_rejects_wheel_command_after_redirection_comment_marker"
+                        and set(parameters) == {"redirection"} and parameters["redirection"] in {"<", ">"}):
+                    extra.append(("redirection", parameters["redirection"]))
+                    self.negative.add(sha256(item.nodeid.encode()))
+                    continue
+                if name == "test_preserves_escaped_hash_before_real_wheel_command" and not parameters:
+                    extra.append(("escaped-hash", ""))
+                    continue
                 job, command, form = (parameters.get(key) for key in ("job_name", "command", "form"))
-                if (str(item.path.resolve()) != str((Path.cwd() / WHEEL_FILE).resolve())
-                        or job not in WHEEL_COMMANDS or command != WHEEL_COMMANDS[job]):
+                if job not in WHEEL_COMMANDS or command != WHEEL_COMMANDS[job]:
                     continue
                 if name == WHEEL_NEGATIVE and set(parameters) == {"job_name", "command"}:
                     matrix.append((job, "negative"))
@@ -233,7 +278,12 @@ class PytestReceipt:
                 elif name == WHEEL_POSITIVE and set(parameters) == {"job_name", "command", "form"} and form in WHEEL_FORMS:
                     matrix.append((job, form))
             wanted = {(job, form) for job in WHEEL_COMMANDS for form in (*WHEEL_FORMS, "negative")}
-            self.selection_valid = len(items) == len(matrix) == 15 and set(matrix) == wanted
+            self.selection_valid = (
+                len(items) == 18 and len(matrix) == 15 and set(matrix) == wanted
+                and len(extra) == 3 and set(extra) == {
+                    ("redirection", "<"), ("redirection", ">"), ("escaped-hash", ""),
+                }
+            )
         for item in items:
             item.user_properties.append(("diagnostic_case_id", sha256(item.nodeid.encode())))
 
@@ -251,7 +301,7 @@ class PytestReceipt:
             self.passed.append(identity)
         if report.failed:
             crash = getattr(getattr(report, "longrepr", None), "reprcrash", None)
-            expected = (report.when == "call" and identity in self.negative
+            expected = (self.phase == "wheel-red" and report.when == "call" and identity in self.negative
                         and getattr(crash, "message", None) == "Failed: DID NOT RAISE <class 'RuntimeError'>")
             self.failed.append({"caseId": identity, "when": report.when,
                                 "category": "expected_no_raise" if expected else "unexpected_failure"})
@@ -271,8 +321,8 @@ class PytestReceipt:
         junit_valid = (property_errors == 0 and sorted(identifiers) == self.collected and len(cases) == len(self.collected)
                        and counts["failures"] + counts["errors"] == len(self.failed)
                        and counts["skipped"] == len(self.skipped))
-        expected_red = (self.phase == "wheel-red" and code == 1 and len(self.failed) == 3
-                        and len(self.passed) == 12 and all(row["category"] == "expected_no_raise" for row in self.failed)
+        expected_red = (self.phase == "wheel-red" and code == 1 and len(self.failed) == 5
+                        and len(self.passed) == 13 and all(row["category"] == "expected_no_raise" for row in self.failed)
                         and {row["caseId"] for row in self.failed} == self.negative)
         complete = (self.selection_valid and junit_valid and not self.errors
                     and not self.skipped and not self.deselected

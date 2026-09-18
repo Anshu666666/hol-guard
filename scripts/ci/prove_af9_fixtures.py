@@ -19,7 +19,7 @@ from af9_fixture_receipts import (
 BASE_COMMIT = "af9b738c4e10f832e955a34db17c7abe6d150e29"
 BASE_TREE = "265ef225bd53885386d7478b3b144afb3eaf7dad"
 GATE_BASE = "05fa4760df8401b9710bf098adb4fbb2dc4ff389"
-BRANCH = "refs/heads/hgp/diagnostic-af9-network-event-20260918"
+BRANCH = "refs/heads/hgp/diagnostic-af9-fixture-repair-20260918"
 GATE = "scripts/ci/rust_authority_ownership_gate.py"
 PINS = {
     "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",
@@ -43,9 +43,9 @@ OVERLAYS = {
     "docs/guard/contracts/hook-data-plane-ownership.v2.json": ("5625dac05e68dfe7f048e2421db822d41b715a6d", "83541343401b4d4293465d814a227cca33714fa0"),
     "src/codex_plugin_scanner/guard/policy_bundle_parser.py": ("df5026997b6523b3ee2b56859537c018782425cb", "d95527d4c0cd1aaa3e613d3c3a1c2f330822f659"),
     "src/codex_plugin_scanner/guard/policy_bundle_validity.py": ("795cd52a84dc6a35f392dbe93e90a51f72ea9d86", "1d42905ca2bd2aa28b99f70a6ca632cbe5aa8cf3"),
-    "tests/test_release_wheel_command_comments.py": (None, "84c46c179ad0032bf70e6d470fb79c9a0aeb10a8"),
+    "tests/test_release_wheel_command_comments.py": (None, "16f8ca105cf1ac7520e482f68d532b8a5f859457"),
 }
-PHASES = ("wheel-red", "timestamps", "ownership")
+PHASES = ("wheel-red", "wheel-green", "timestamps", "ownership")
 SUPERVISOR_SECONDS = 300
 
 
@@ -90,7 +90,17 @@ def atomic_write(path, payload):
             os.unlink(temporary)
 
 
-def prepare_source(root):
+def phase_overlays(phase):
+    overlays = dict(OVERLAYS)
+    if phase == "wheel-green":
+        overlays["scripts/ci/release_required_evidence.py"] = (
+            "a71b251912f7c68e1eab7316bac64d127817d221",
+            "0ec4e4fe2ddee409161cb56acff2ba9d81c92425",
+        )
+    return overlays
+
+
+def prepare_source(root, phase):
     if git_read(root, "rev-parse", "HEAD").decode().strip() != BASE_COMMIT:
         raise ValueError("source_commit_mismatch")
     if git_read(root, "rev-parse", "HEAD^{tree}").decode().strip() != BASE_TREE:
@@ -110,7 +120,7 @@ def prepare_source(root):
         raise ValueError("critical_source_mismatch")
     check_sources(root, expected)
     diagnostic_root = Path(__file__).resolve().parents[2]
-    for relative, (before, after) in OVERLAYS.items():
+    for relative, (before, after) in phase_overlays(phase).items():
         if expected.get(relative) != before or (before is None and (root / relative).exists()):
             raise ValueError("overlay_predecessor_mismatch")
         payload = (diagnostic_root / relative).read_bytes()
@@ -138,7 +148,7 @@ def required_sources(phase):
                 "src/codex_plugin_scanner/guard/policy_bundle_validity.py",
                 "tests/test_policy_bundle_parser.py", "tests/test_policy_bundle_trust_regressions.py",
                 "tests/test_policy_bundle_validity_and_rollout.py"]
-    if phase == "wheel-red":
+    if phase in {"wheel-red", "wheel-green"}:
         return [*common, "scripts/ci/release_required_evidence.py", "tests/test_release_wheel_command_comments.py"]
     return [*common, GATE, "tests/test_hook_data_plane_ownership_gate.py"]
 
@@ -226,7 +236,7 @@ def supervise(phase):
     if output == root or root in output.parents:
         raise ValueError("invalid_output_directory")
     output.mkdir(parents=True, exist_ok=False)
-    expected = prepare_source(root)
+    expected = prepare_source(root, phase)
     encoded = json.dumps(expected, sort_keys=True).encode()
     (output / "source-map.json").write_bytes(encoded)
     environment = os.environ.copy()
@@ -241,9 +251,9 @@ def supervise(phase):
     summary = {
         "schema": "guard.fixture-diagnostic.v1", "baseCommit": BASE_COMMIT, "baseTree": BASE_TREE,
         "diagnosticCommit": os.environ.get("GITHUB_SHA"), "phase": phase,
-        "sourceVariant": "Frozen checkout plus four exact reviewed overlays; checkout HEAD remains the base.",
+        "sourceVariant": "Frozen checkout plus exact phase overlays; checkout HEAD remains the base.",
         "overlays": {source_id(path): {"before": before, "after": after}
-                     for path, (before, after) in OVERLAYS.items()},
+                     for path, (before, after) in phase_overlays(phase).items()},
         "trackedSourceCount": len(expected), "fullSourcePrePostPassed": True,
         "pytestProcessExit": code, "supervisorTimeout": timed_out,
         "childOutputSha256": sha256(raw), "supervisorSeconds": SUPERVISOR_SECONDS,
@@ -273,6 +283,36 @@ def supervise(phase):
     return final_code
 
 
+def red_status():
+    if os.environ.get("GITHUB_REF") != BRANCH:
+        raise ValueError("invalid_phase")
+    complete = False
+    target = Path(os.environ["HGP_FIXTURE_OUTPUT"]) / "summary.json"
+    if target.is_file():
+        summary = json.loads(target.read_bytes())
+        result = summary.get("pytest", {})
+        counts = result.get("counts", {})
+        complete = (
+            summary.get("phase") == "wheel-red"
+            and summary.get("diagnosticCommit") == os.environ.get("GITHUB_SHA")
+            and summary.get("baseCommit") == BASE_COMMIT and summary.get("baseTree") == BASE_TREE
+            and summary.get("diagnosticEvidenceComplete") is True
+            and summary.get("diagnosticExit") == summary.get("pytestProcessExit") == 1
+            and summary.get("fullSourcePrePostPassed") is True
+            and result.get("expectedRedObserved") is True
+            and result.get("diagnosticValid") is True and result.get("evidenceComplete") is True
+            and counts == {"collected": 18, "passed": 13, "failed": 5, "skipped": 0,
+                           "collectionErrors": 0, "deselected": 0}
+            and summary.get("helperBlobs") == {
+                Path(__file__).name: git_blob(Path(__file__).read_bytes()),
+                "af9_fixture_receipts.py": git_blob(Path(__file__).with_name("af9_fixture_receipts.py").read_bytes()),
+            }
+        )
+    with Path(os.environ["GITHUB_OUTPUT"]).open("a") as handle:
+        handle.write("red_proven=" + ("true" if complete else "false") + "\n")
+    return 0
+
+
 def self_test():
     class Unprintable:
         def __str__(self):
@@ -296,6 +336,18 @@ def self_test():
         captured.seek(0)
         value = captured.read()
         assert "python-stream-control" in value and "descriptor-control" in value
+    # The import-time dependency exception must not allow a direct loopback bind.
+    import socket
+    observation = SourceObservations(Path.cwd().resolve(), {})
+    with socket.socket(socket.AF_INET6) as sock:
+        sys.addaudithook(observation.audit)
+        try:
+            sock.bind(("::1", 0))
+        except OSError:
+            pass
+        else:
+            raise AssertionError("unexpected_loopback_bind_allowed")
+    assert observation.network_denials == 1 and observation.ipv6_probes == 0
     return 0
 
 
@@ -305,6 +357,8 @@ def entry():
             os.umask(0o077)
             if sys.argv[1:] == ["--self-test"]:
                 code = self_test()
+            elif sys.argv[1:] == ["--red-status"]:
+                code = red_status()
             elif len(sys.argv) == 3 and sys.argv[1] == "--pytest" and sys.argv[2] in PHASES:
                 code = pytest_child(sys.argv[2])
             elif len(sys.argv) == 2 and sys.argv[1] in PHASES:

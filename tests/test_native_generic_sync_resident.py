@@ -152,9 +152,14 @@ def test_ordinary_generic_sync_requires_actual_auto_resident_acceptance(
             assert identity.publication.bundle_hash == bundle["bundleHash"]
         response.clear()
         second = sync()
-        assert second["policy_application_status"] == "applied", second
+        assert second["policy_validation_status"] == "omitted", second
+        assert second["policy_application_status"] == "retained", second
         assert len(requests) == 2 and requests[1]["syncContext"]["policyBundleAcknowledgementV2"] == ack
         assert store.get_sync_payload("policy_bundle_ack") == ack
+        retained_evidence = store.get_sync_payload("native_policy_bundle_ack_acceptance")
+        assert isinstance(retained_evidence, dict) and retained_evidence["ack"] == ack
+        assert retained_evidence["binding"] == publisher.current_snapshot_binding()
+        edge("block")
         tampered = copy.deepcopy(bundle)
         payload = tampered["payload"]
         assert isinstance(payload, dict)

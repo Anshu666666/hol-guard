@@ -227,3 +227,68 @@ diff checks passing; independent source/security review was clear. **The revised
 preservation oracle still requires execution on Windows.** Historical eighth,
 ninth and tenth failures remain recorded; this source correction establishes no
 new launcher or performance qualification.
+
+## Eleventh attempt: native preservation passes; launcher ambiguity retained
+
+The eleventh published head was `23bef02c5edd2fb24dbfec768a9dbd5e80c2b31d`,
+with tree `e3fa69336ff37d8e91add1ecd0a5a89b5cca35d9`. Installed Claude
+[run 35287995010, attempt 1](https://github.com/hashgraph-online/hol-guard/actions/runs/35287995010/attempts/1)
+executed the revised preservation oracle on all five Windows jobs:
+
+| Run | Windows job | Contract-suite result |
+| --- | --- | --- |
+| 0 | `105424489043` | 108 passed, 6 skipped in 8.14s |
+| 1 | `105424488769` | 108 passed, 6 skipped in 9.29s |
+| 2 | `105424488978` | 108 passed, 6 skipped in 8.19s |
+| 3 | `105424489027` | 108 passed, 6 skipped in 7.57s |
+| 4 | `105424489054` | 108 passed, 6 skipped in 7.28s |
+
+These are actual Windows source-contract executions before wheel construction.
+Both child-preservation comparisons passed with complete native descriptor bytes,
+file identity and payload equality. Parent identity, discovery-key value and
+strict legacy-key rejection before and after provisioning remained asserted and
+passed. Get-derived snapshots remain diagnostic. This closes the execution gap
+for the test correction described above; it introduces no production setter
+change. The original eighth, ninth and tenth failed attempts and their unoffered
+requests remain historical evidence.
+
+The later installed-wheel launcher comparison is a separate result: **19 jobs
+succeeded and one failed**. All 15 POSIX jobs and Windows runs 0–3 completed
+88 planned requests each, including 80 timed requests. Windows run 4 reached
+78 of 88 planned attempts: 77 completed, one failed and 10 were unattempted.
+Across all 20 jobs, that is **1,760 planned, 1,750 attempted, 1,749 completed,
+one failed and 10 unattempted**. The Windows subtotal is 440 planned, 430
+attempted and 429 completed.
+
+The failed job retained eight completed preflight requests and 70 timed
+observations: 69 completed timed requests and one failed timed attempt. Its four
+timing batches were offered with 20 samples each before measurement; the retained
+observed counts are 18 native Pre, 17 native Post, 18 optimized Python Pre and
+17 optimized Python Post. All four batches remain failed/incomplete. Numeric
+batch offers therefore do not imply the remaining launcher attempts occurred.
+The 19 complete reports contain 1,520 timed observations; the additional 70
+partial observations are retained separately, giving 1,590 observed durations,
+of which 1,589 accompany completed requests. The failed run supplies no accepted
+latency aggregate.
+
+Its original failure is `qualification_route_accounting_was_ambiguous` at
+`native_slo_daemon_fixture.witnessed_route:60`, during optimized Python
+`PreToolUse`, sample 17. The launcher returned allow with exit code zero after
+5,249.2177 ms, while `native_resident` increased from 77 to 79. The unique route
+remains unknown because the existing one-increment gate rejected that delta.
+Neither successful delivery nor the counter delta proves the cause of the
+additional evaluation; this evidence does not establish a retry or authorize
+relaxing the route gate. Fixture registration was restored.
+
+The failed-run public summary exactly matched the authenticated private summary.
+API ZIPs `10525735054` and `10524769559`, the six-member ciphertext receipt,
+source/run/attempt binding and finite outcome/timing projection were verified;
+the peer review checked retained ZIP/member hashes and accounting without a
+second decryption. The retained projection is
+`review/eleventh-ci/claude/windows-run4-authenticated-projection.json` (9,221
+bytes; SHA-256 `37728126138a714246f01ef96885554a2bd4945a1de83030811852fdf761443a`).
+All 20 decoded logs, exact public reports and final census are covered by
+`review/eleventh-ci/claude/manifest.json`. Every report keeps
+`qualification_complete=false`, `production_selected=false` and
+`default_registration_changed=false`. Passing child preservation does not confer
+latency qualification or production activation.

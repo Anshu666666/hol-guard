@@ -2125,7 +2125,9 @@ class TestGuardSurfaceServer:
         assert events[-1]["payload"]["parameter"] == "workspace"
         assert events[-1]["payload"]["reason"] == "unexpected_root"
 
-    def test_guard_daemon_claude_hook_endpoint_accepts_guard_home_symlink_alias(self, tmp_path) -> None:
+    def test_guard_daemon_claude_hook_endpoint_accepts_guard_home_symlink_alias(self, tmp_path, monkeypatch) -> None:
+        from codex_plugin_scanner.guard.daemon.hook_process_runner import HookProcessReview
+
         store = GuardStore(tmp_path / "guard-home")
         guard_home_alias = tmp_path / "guard-home-alias"
         try:
@@ -2133,8 +2135,20 @@ class TestGuardSurfaceServer:
         except (NotImplementedError, OSError):
             pytest.skip("symlinks are not supported in this environment")
 
+        captured: list[dict[str, object]] = []
+        expected = {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit"}}
+
+        def fake_review(**kwargs):
+            captured.append({key: kwargs[key] for key in ("guard_home", "workspace", "harness", "payload")})
+            return HookProcessReview(expected, None)
+
         daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+        # Exercise authenticated path admission independently of child startup.
+        monkeypatch.setattr(daemon._server.hook_process_runner, "start", lambda **_: None)
+        monkeypatch.setattr(daemon._server.hook_process_runner, "require_initial_capacity", lambda: None)
+        monkeypatch.setattr(daemon._server.hook_process_runner, "review", fake_review)
         daemon.start()
+        daemon._server.runtime_hook_process_scheduler.set_active_limit(1)
 
         try:
             request = urllib.request.Request(
@@ -2155,7 +2169,15 @@ class TestGuardSurfaceServer:
             daemon.stop()
 
         assert response.status == 200
-        assert payload == {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit"}}
+        assert payload == expected
+        assert captured == [
+            {
+                "guard_home": store.guard_home.resolve(),
+                "workspace": None,
+                "harness": "claude-code",
+                "payload": {"hook_event_name": "UserPromptSubmit", "prompt": "hi"},
+            }
+        ]
 
     def test_guard_daemon_claude_hook_endpoint_rejects_unexpected_guard_home_and_records_audit(self, tmp_path) -> None:
         store = GuardStore(tmp_path / "guard-home")

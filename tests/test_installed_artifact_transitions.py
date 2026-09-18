@@ -178,7 +178,7 @@ def test_replacement_uses_only_third_prefix_and_stops_after_failed_worker(fail_p
         return _result(report)
 
     monkeypatch.setattr(driver, "_required_command", required)
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda _python: {"passed": True})
     monkeypatch.setattr(driver, "_run", run)
     result = driver.verify(source_python, baseline, candidate, "a" * 40, "b" * 40, dependency_root=tmp_path)
     assert result["passed"] is (fail_phase is None)
@@ -215,7 +215,7 @@ def test_dependency_change_retains_completed_phases_but_cannot_qualify(monkeypat
     lock.write_text("original-lock")
     monkeypatch.setattr(driver.shutil, "which", lambda _name: "/usr/bin/uv")
     monkeypatch.setattr(driver, "_required_command", lambda *_args: None)
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda _python: {"passed": True})
 
     def run(argv, root):
         if argv[-1] == "candidate_restore":

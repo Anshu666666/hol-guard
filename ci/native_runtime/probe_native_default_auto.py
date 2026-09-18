@@ -24,6 +24,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 import codex_plugin_scanner
 from codex_plugin_scanner.guard.config import hook_fast_path_enabled
+from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
 from codex_plugin_scanner.guard.native_resident_client import (
@@ -433,6 +434,10 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
             "failures": evidence_stats["receipt_failures"],
             "durable_pending": evidence_stats["receipt_durable_pending"],
         },
+        "evidence_failure_diagnostics": {
+            "all_evidence": evidence_failure_snapshot(evidence_stats.get("failure_diagnostics")),
+            "native_receipts": evidence_failure_snapshot(evidence_stats.get("receipt_failure_diagnostics")),
+        },
         "mode_invariants": mode_invariants,
     }
 
@@ -574,6 +579,7 @@ def _build_probe_receipt(
         "route_receipts": installed_corpus["routes"],
         "reason_code_counts": installed_corpus["reason_code_counts"],
         "receipt_metrics": installed_corpus["receipt_metrics"],
+        "evidence_failure_diagnostics": installed_corpus.get("evidence_failure_diagnostics"),
         "mode_invariants": installed_corpus["mode_invariants"],
         "command_authority_fixture": installed_corpus["command_authority_fixture"],
     }

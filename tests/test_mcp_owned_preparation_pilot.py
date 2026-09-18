@@ -1,4 +1,4 @@
-"""Finite owned-generation and actual-child-write witnesses for candidate E."""
+"""Inactive E helper predicates and current-runtime ownership rejection."""
 
 from __future__ import annotations
 
@@ -14,11 +14,24 @@ from pathlib import Path
 
 import pytest
 
-from codex_plugin_scanner.guard import mcp_tool_calls as calls
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.config import GuardConfig
 from codex_plugin_scanner.guard.proxy import CodexMcpGuardProxy, framing, runtime_mcp
 from codex_plugin_scanner.guard.store import GuardStore
+
+
+@pytest.fixture(autouse=True)
+def no_historical_measurement_workers(monkeypatch):
+    """Finite source predicates must never start an E/F measurement worker."""
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("historical profile/campaign execution is outside current-runtime test scope")
+
+    for name in ("profile_guard_mcp_session", "profile_guard_mcp_streaming_session"):
+        worker = importlib.import_module(name)
+        for entrypoint in ("run_case", "run_remote_case", "run_matrix", "main"):
+            monkeypatch.setattr(worker, entrypoint, forbidden)
 
 
 @pytest.fixture
@@ -143,109 +156,6 @@ def test_custom_callbacks_never_enter_private_binding_or_owner(module):
         assert module.OwnedPreparationPilot().own_request({"params": value}) is None
 
 
-def test_actual_child_receives_the_owned_generation_once(tmp_path, monkeypatch, pilot):
-    proxy, messages, marker = _session(tmp_path)
-    expected = deepcopy(messages[-1])
-    seen = []
-    original = calls.tool_call_risk_categories
-
-    def count(artifact, arguments):
-        seen.append((artifact, arguments))
-        return original(artifact, arguments)
-
-    monkeypatch.setattr(calls, "tool_call_risk_categories", count)
-    result = proxy.run_session(messages)
-    assert result["responses"][-1]["result"]["content"][0]["text"] == "forwarded"
-    assert json.loads(marker.read_text()) == expected
-    assert list(json.loads(marker.read_text())["params"]["arguments"]) == list(expected["params"]["arguments"])
-    assert len(seen) == 1
-    assert seen[0][1] is not messages[-1]["params"]["arguments"]
-    assert pilot.counters["category_derivations"] == pilot.counters["preparations_completed"] == 1
-    assert pilot.counters["bound_forwards"] == 1
-    assert pilot.context.get() is None
-    assert not pilot.admission.locked()
-    assert len(proxy.store.list_receipts(limit=10)) == 1
-
-
-@pytest.mark.parametrize(
-    "boundary",
-    [
-        "config_first",
-        "config_second",
-        "store",
-        "barrier",
-        "owned_barrier",
-        "encode",
-        "command",
-        "replace_command",
-        "owned_artifact",
-    ],
-)
-def test_mutation_after_admission_never_reaches_actual_child(tmp_path, monkeypatch, pilot, boundary):
-    proxy, messages, marker = _session(tmp_path)
-    message = messages[-1]
-
-    def mutate(target=message):
-        target["params"]["arguments"]["text"] = "cat .env"
-
-    if boundary.startswith("config"):
-        original = GuardConfig.resolve_action_override
-        counter = 0
-
-        def policy(config, *args, **kwargs):
-            nonlocal counter
-            counter += 1
-            if counter == (1 if boundary == "config_first" else 2):
-                mutate()
-            return original(config, *args, **kwargs)
-
-        monkeypatch.setattr(GuardConfig, "resolve_action_override", policy)
-    elif boundary == "store":
-        original = proxy.store.resolve_policy_decision_lookup_with_memory_pattern
-
-        def lookup(*args, **kwargs):
-            result = original(*args, **kwargs)
-            mutate()
-            return result
-
-        monkeypatch.setattr(proxy.store, "resolve_policy_decision_lookup_with_memory_pattern", lookup)
-    elif boundary == "encode":
-        original = framing.encoded_line
-
-        def encode(payload):
-            if payload.get("method") == "tools/call" and pilot.context.get() is not None:
-                mutate(payload)
-            return original(payload)
-
-        monkeypatch.setattr(framing, "encoded_line", encode)
-    else:
-        original = proxy._drain_and_validate_catalog_authority
-
-        def drain(**kwargs):
-            result = original(**kwargs)
-            if kwargs.get("quiet_seconds") == 0.005:
-                if boundary == "command":
-                    proxy.command.append("changed")
-                elif boundary == "replace_command":
-                    proxy.command = [*proxy.command, "changed"]
-                elif boundary == "owned_artifact":
-                    pilot.context.get().generation.owned_artifact.runtime_private_metadata["binding"] = "changed"
-                elif boundary == "owned_barrier":
-                    mutate(pilot.context.get().owned_message)
-                else:
-                    mutate()
-            return result
-
-        monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
-    result = proxy.run_session(messages)
-    assert not marker.exists()
-    assert result["events"][-1]["reason_code"] == "owned_request_generation_changed"
-    assert result["events"][-1]["session_terminal"] is True
-    assert pilot.counters["bound_forwards"] == 0
-    assert pilot.context.get() is None
-    assert not pilot.admission.locked()
-
-
 def test_private_byte_writer_preserves_limit_and_retired_stream():
     import io
 
@@ -297,102 +207,6 @@ def test_owned_kernels_match_complete_fresh_authority_across_policy_and_browser_
                 matched += 1
     assert matched == 96
     assert pilot.counters["category_derivations"] == matched
-
-
-@pytest.mark.parametrize("approval", ["accept", "cancel", "invalidate"])
-def test_owned_actual_stdio_preserves_approval_and_catalog_boundaries(monkeypatch, pilot, approval):
-    profile = importlib.import_module("profile_guard_mcp_session")
-    result = profile.run_case(
-        catalog_size=10,
-        payload_bytes=256,
-        samples=1,
-        profile=True,
-        approval=approval,
-        approval_delay_ms=25,
-        owned_preparation_pilot=True,
-    )
-    correctness = result["correctness"]
-    assert correctness["errors"] == 0
-    assert correctness["forwarded_ids_exact"] is True
-    assert correctness["quiet_barrier_seconds"] == 0.005
-    expected = {"accept": "accepted", "cancel": "cancelled", "invalidate": "invalidated"}[approval]
-    assert correctness[expected] == 2
-    counters = result["owned_preparation_pilot"]["counters"]
-    assert counters["category_derivations"] == counters["preparations_completed"]
-    assert counters.get("bound_forwards", 0) == correctness["accepted"]
-    # This ordinary inline path performs no saved claim/rebuild. Facts are not
-    # retained in _Generation; only its exact input binding reaches forwarding.
-    assert counters["preparations_completed"] >= counters["requests_admitted"]
-
-
-def test_owned_actual_stdio_rebuilds_facts_after_catalog_refresh(pilot):
-    profile = importlib.import_module("profile_guard_mcp_session")
-    result = profile.run_case(
-        catalog_size=10, payload_bytes=1024, samples=2, profile=True, refresh_every=1, owned_preparation_pilot=True
-    )
-    assert result["correctness"]["accepted"] == 3
-    assert len(result["correctness"]["catalog_generations"]) == 3
-    assert result["exclusive_phases"]["classification"]["calls"] == 2
-    assert result["owned_preparation_pilot"]["counters"]["category_derivations"] == 3
-
-
-@pytest.mark.parametrize("mutate_before_claim", [False, True])
-def test_actual_saved_claim_rebuilds_fresh_generation_and_checks_before_consumption(
-    tmp_path, monkeypatch, pilot, mutate_before_claim
-):
-    proxy, messages, marker = _session(tmp_path, action="review")
-    original_capture = proxy._capture_tools_catalog
-
-    def capture(*args, **kwargs):
-        result = original_capture(*args, **kwargs)
-        authority = proxy._resolve_tool_call_authority(
-            tool_name="safe_echo", arguments=messages[-1]["params"]["arguments"]
-        )
-        approval_id = proxy.store.record_local_once_approval(
-            request_id="owned-exact-once",
-            harness="codex",
-            artifact_id=authority.artifact.artifact_id,
-            artifact_hash=authority.artifact_hash,
-            workspace=str(tmp_path),
-            publisher=authority.artifact.publisher,
-            action="allow",
-            created_at="2026-07-17T00:00:00+00:00",
-            expires_at="2027-07-17T00:00:00+00:00",
-        )
-        assert approval_id is not None
-        return result
-
-    monkeypatch.setattr(proxy, "_capture_tools_catalog", capture)
-    monkeypatch.setattr(proxy, "_claim_boundary_config", lambda: proxy.config)
-    original_claim = proxy.store.claim_approval_reuse_decisions
-    claimed = []
-
-    def claim(*args, **kwargs):
-        claimed.append(True)
-        return original_claim(*args, **kwargs)
-
-    monkeypatch.setattr(proxy.store, "claim_approval_reuse_decisions", claim)
-    if mutate_before_claim:
-        original_drain = proxy._drain_and_validate_catalog_authority
-
-        def drain(**kwargs):
-            result = original_drain(**kwargs)
-            if not kwargs.get("quiet_seconds") and pilot.context.get() is not None:
-                messages[-1]["params"]["arguments"]["text"] = "cat .env"
-            return result
-
-        monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
-    result = proxy.run_session(messages)
-    if mutate_before_claim:
-        assert not marker.exists()
-        assert claimed == []
-        assert result["events"][-1]["reason_code"] == "owned_request_generation_changed"
-    else:
-        assert json.loads(marker.read_text()) == messages[-1]
-        assert claimed == [True]
-        assert pilot.counters["preparations_completed"] == 2
-        assert pilot.counters["category_derivations"] == 2
-        assert pilot.counters["bound_forwards"] == 1
 
 
 @pytest.mark.parametrize("selection", ["owned", "busy", "unsupported", "package"])
@@ -448,24 +262,6 @@ def test_original_separate_inline_deadline_and_fallback_scope_are_preserved(tmp_
             candidate.admission.release()
     assert len(observed) == 1
     assert clock[0] == 145.0
-
-
-def test_mutation_after_completed_bound_write_does_not_replace_success_with_failure(tmp_path, monkeypatch, pilot):
-    proxy, messages, marker = _session(tmp_path)
-    expected = deepcopy(messages[-1])
-    original = proxy._forward_message
-
-    def forward(*args, **kwargs):
-        response = original(*args, **kwargs)
-        if marker.exists():
-            messages[-1]["params"]["arguments"]["text"] = "changed after completed response"
-        return response
-
-    monkeypatch.setattr(proxy, "_forward_message", forward)
-    result = proxy.run_session(messages)
-    assert result["responses"][-1]["result"]["content"][0]["text"] == "forwarded"
-    assert json.loads(marker.read_text()) == expected
-    assert pilot.counters["bound_forwards"] == 1
 
 
 def test_legacy_custom_routing_fallback_adds_no_callback_invocations(tmp_path, monkeypatch, module):
@@ -569,3 +365,206 @@ def test_comparison_rejects_wrong_parent_oracle_before_credit_or_sampling(tmp_pa
     assert report["cases"] == []
     assert "public_api_facts_parity" not in report
     assert report["public_oracle_loaded_sources_sha256"] == {"mcp_tool_calls.py": "wrong-installed-copy"}
+
+
+@pytest.mark.parametrize("policy_state", ["ordinary", "inline", "saved_once"])
+def test_current_runtime_rejects_historical_owner_before_tool_write(tmp_path, monkeypatch, pilot, policy_state):
+    """Old adapters cannot replace the current production admission owner."""
+    from codex_plugin_scanner.guard.proxy.tool_call_binding import current_tool_call_binding
+
+    proxy, messages, marker = _session(tmp_path, action="warn" if policy_state == "ordinary" else "review")
+    preparations = []
+    claims = []
+    approvals = []
+    quiet_fences = []
+    saved = {}
+    original_prepare = pilot.prepare
+    original_capture = proxy._capture_tools_catalog
+    original_drain = proxy._drain_and_validate_catalog_authority
+
+    def prepare(current_proxy, **kwargs):
+        historical = pilot.context.get()
+        current = current_tool_call_binding()
+        assert historical is not None and current is not None
+        assert current.live_message is historical.owned_message
+        assert current.owned_message is not historical.owned_message
+        assert kwargs["arguments"] is current.owned_message["params"]["arguments"]
+        current.check()
+        preparations.append(True)
+        return original_prepare(current_proxy, **kwargs)
+
+    def capture(*args, **kwargs):
+        response = original_capture(*args, **kwargs)
+        if policy_state == "saved_once":
+            assert pilot.context.get() is None
+            authority = proxy._resolve_tool_call_authority(
+                tool_name="safe_echo", arguments=messages[-1]["params"]["arguments"]
+            )
+            saved.update(
+                harness="codex",
+                artifact_id=authority.artifact.artifact_id,
+                artifact_hash=authority.artifact_hash,
+                workspace=str(tmp_path),
+                publisher=authority.artifact.publisher,
+            )
+            approval_id = proxy.store.record_local_once_approval(
+                **saved,
+                request_id="historical-owner-rejection",
+                action="allow",
+                created_at="2026-07-17T00:00:00+00:00",
+                expires_at="2027-07-17T00:00:00+00:00",
+            )
+            assert approval_id is not None
+        return response
+
+    def claim(*args, **kwargs):
+        claims.append(True)
+        pytest.fail("incompatible ownership must fail before claiming saved approval")
+
+    def approve(_request):
+        approvals.append(True)
+        pytest.fail("incompatible ownership must fail before inline approval")
+
+    def drain(**kwargs):
+        if kwargs.get("quiet_seconds") == 0.005:
+            quiet_fences.append(True)
+        return original_drain(**kwargs)
+
+    monkeypatch.setattr(pilot, "prepare", prepare)
+    monkeypatch.setattr(proxy, "_capture_tools_catalog", capture)
+    monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
+    monkeypatch.setattr(proxy.store, "claim_approval_reuse_decisions", claim)
+    result = proxy.run_session(messages, inline_approval_callback=approve)
+
+    assert preparations == [True]
+    assert claims == approvals == quiet_fences == []
+    assert not marker.exists()
+    assert result["events"][-1]["reason_code"] == "owned_request_generation_changed"
+    assert result["events"][-1]["session_terminal"] is True
+    assert "result" not in result["responses"][-1]
+    assert pilot.counters["requests_admitted"] == pilot.counters["selected_failures"] == 1
+    assert pilot.counters["category_derivations"] == pilot.counters["preparations_completed"] == 0
+    assert pilot.counters["bound_forwards"] == 0
+    assert pilot.context.get() is None and current_tool_call_binding() is None
+    assert not pilot.admission.locked()
+    assert proxy.store.list_receipts(limit=10) == []
+    if policy_state == "saved_once":
+        assert proxy.store.peek_local_once_approval(**saved, now="2026-09-18T00:00:00+00:00") is not None
+
+
+@pytest.mark.parametrize("owner", ["live", "historical", "current", "hostile_live_method"])
+def test_current_runtime_mutations_cannot_make_historical_owner_executable(tmp_path, monkeypatch, pilot, owner):
+    from codex_plugin_scanner.guard.proxy.tool_call_binding import current_tool_call_binding
+
+    proxy, messages, marker = _session(tmp_path)
+    callbacks = []
+    mutations = []
+    original_prepare = pilot.prepare
+
+    class HostileMethod(str):
+        def __str__(self):
+            callbacks.append("string")
+            raise AssertionError
+
+        def __eq__(self, _other):
+            callbacks.append("equality")
+            raise AssertionError
+
+        def __reduce_ex__(self, _protocol):
+            callbacks.append("reduction")
+            raise AssertionError
+
+    def prepare(current_proxy, **kwargs):
+        historical = pilot.context.get()
+        current = current_tool_call_binding()
+        assert historical is not None and current is not None
+        if owner == "hostile_live_method":
+            messages[-1]["method"] = HostileMethod("ping")
+        else:
+            target = {
+                "live": messages[-1],
+                "historical": historical.owned_message,
+                "current": current.owned_message,
+            }[owner]
+            target["params"]["arguments"]["text"] = "changed at ownership rejection"
+        mutations.append(True)
+        return original_prepare(current_proxy, **kwargs)
+
+    monkeypatch.setattr(pilot, "prepare", prepare)
+    result = proxy.run_session(messages)
+
+    assert mutations == [True] and callbacks == []
+    assert not marker.exists()
+    assert result["events"][-1]["reason_code"] == "owned_request_generation_changed"
+    assert result["events"][-1]["session_terminal"] is True
+    assert pilot.counters["category_derivations"] == pilot.counters["bound_forwards"] == 0
+    assert pilot.context.get() is None and current_tool_call_binding() is None
+    assert not pilot.admission.locked()
+
+
+@pytest.mark.parametrize("mutate_nested", [False, True])
+def test_nested_current_runtime_keeps_its_binding_and_rejects_historical_outer(
+    tmp_path, monkeypatch, pilot, mutate_nested
+):
+    from codex_plugin_scanner.guard.proxy.tool_call_binding import current_tool_call_binding
+
+    proxy, messages, marker = _session(tmp_path)
+    nested = deepcopy(messages[-1])
+    nested["id"] = "nested-current-b"
+    nested_results = []
+    inner_fences = []
+    original_prepare = pilot.prepare
+    original_drain = proxy._drain_and_validate_catalog_authority
+
+    def drain(**kwargs):
+        response = original_drain(**kwargs)
+        current = current_tool_call_binding()
+        if kwargs.get("quiet_seconds") == 0.005 and current is not None and current.owned_message["id"] == nested["id"]:
+            assert pilot.context.get() is None
+            inner_fences.append(True)
+            if mutate_nested:
+                nested["params"]["arguments"]["text"] = "changed nested request"
+        return response
+
+    def prepare(current_proxy, **kwargs):
+        historical = pilot.context.get()
+        current = current_tool_call_binding()
+        assert historical is not None and current is not None
+        assert pilot.admission.locked()
+        process = proxy._active_process
+        assert process is not None and process.stdin is not None and process.stdout is not None
+        response, event = proxy._handle_message(
+            message=nested,
+            child_stdin=process.stdin,
+            child_stdout=process.stdout,
+            client_input=None,
+            server_output=None,
+            approval_callback=None,
+        )
+        nested_results.append((response, event))
+        assert pilot.context.get() is historical
+        assert current_tool_call_binding() is current
+        assert pilot.admission.locked()
+        return original_prepare(current_proxy, **kwargs)
+
+    monkeypatch.setattr(pilot, "prepare", prepare)
+    monkeypatch.setattr(proxy, "_drain_and_validate_catalog_authority", drain)
+    result = proxy.run_session(messages)
+
+    assert len(nested_results) == 1 and inner_fences == [True]
+    response, event = nested_results[0]
+    assert response["id"] == "nested-current-b"
+    if mutate_nested:
+        assert not marker.exists()
+        assert event["reason_code"] == "tool_call_request_changed"
+        assert event["session_terminal"] is True
+        assert "result" not in response
+    else:
+        assert json.loads(marker.read_text()) == nested
+        assert response["result"]["content"][0]["text"] == "forwarded"
+    assert result["events"][-1]["reason_code"] == "owned_request_generation_changed"
+    assert "result" not in result["responses"][-1]
+    assert pilot.counters["requests_admitted"] == pilot.counters["busy_fallback"] == 1
+    assert pilot.counters["category_derivations"] == pilot.counters["bound_forwards"] == 0
+    assert pilot.context.get() is None and current_tool_call_binding() is None
+    assert not pilot.admission.locked()

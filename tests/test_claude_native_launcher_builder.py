@@ -12,17 +12,17 @@ from scripts import build_native_qualification_artifacts as builder
 
 
 @pytest.mark.parametrize(
-    "target, expected_count",
+    "target, expected_count, expected_provision_count",
     [
-        ("x86_64-unknown-linux-musl", 1),
-        ("x86_64-apple-darwin", 0),
-        ("aarch64-apple-darwin", 0),
-        ("x86_64-pc-windows-msvc", 0),
+        ("x86_64-unknown-linux-musl", 1, 1),
+        ("x86_64-apple-darwin", 0, 1),
+        ("aarch64-apple-darwin", 0, 1),
+        ("x86_64-pc-windows-msvc", 0, 0),
     ],
 )
 @pytest.mark.parametrize("failure_stage", ["paired_sampling", "qualification_interpreters"])
 def test_supported_installed_pilot_remains_independent_of_earlier_failures(
-    tmp_path, monkeypatch, target, expected_count, failure_stage
+    tmp_path, monkeypatch, target, expected_count, expected_provision_count, failure_stage
 ):
     baseline = tmp_path / "baseline"
     candidate = tmp_path / "candidate"
@@ -68,7 +68,7 @@ def test_supported_installed_pilot_remains_independent_of_earlier_failures(
             str(tmp_path / "evidence"),
         ],
     )
-    if failure_stage == "paired_sampling" or expected_count:
+    if failure_stage == "paired_sampling" or expected_provision_count:
         with pytest.raises(RuntimeError) as failed:
             builder.main()
         assert str(failed.value) == "installed qualification failed: " + failure_stage
@@ -79,7 +79,7 @@ def test_supported_installed_pilot_remains_independent_of_earlier_failures(
     provision_calls = [
         argv for argv in seen if any("provision_native_qualification_interpreters.py" in arg for arg in argv)
     ]
-    assert len(provision_calls) == expected_count
+    assert len(provision_calls) == expected_provision_count
     if provision_calls:
         assert provision_calls[0] == [
             str(installed_python),

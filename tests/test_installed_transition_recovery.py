@@ -116,7 +116,7 @@ def test_restore_after_rejection_retains_failure_and_six_prior_receipts(verified
     (tmp_path / "uv.lock").write_text("pinned")
     monkeypatch.setattr(driver.shutil, "which", lambda _: "/usr/bin/uv")
     monkeypatch.setattr(driver, "_required_command", lambda *_: None)
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda _python: {"passed": True})
     phases = []
 
     def run(argv, root):
@@ -152,7 +152,7 @@ def test_compatible_rollback_uses_distinct_prior_bytes_and_fresh_history(monkeyp
     monkeypatch.setattr(driver.shutil, "which", lambda _: "/usr/bin/uv")
     installs, roots, identities = [], [], []
     monkeypatch.setattr(driver, "_required_command", lambda argv, _: installs.append(argv))
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", lambda _python: {"passed": True})
+    monkeypatch.setattr(driver, "provision_venv_interpreter", lambda _python: {"passed": True})
 
     def run(argv, root):
         roots.append(root)

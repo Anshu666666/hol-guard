@@ -271,6 +271,52 @@ def test_all_sixteen_cases_execute_exact_registered_processes(tmp_path, monkeypa
     assert len(raw.splitlines()) == 32
     assert str(tmp_path) not in raw and "not exported" not in raw and "guard-token" not in raw
     assert sum(op == "launcher_approval_begin" for op, _ in session.calls) == 8
+    assert sum(op == "case_result" for op, _ in session.calls) == 16
+
+
+def test_input_route_failure_retains_actual_case_counters_without_observer_retry(tmp_path, monkeypatch):
+    import hashlib
+
+    from scripts.native_slo_failure import FixtureFailureError, failure_evidence
+
+    session = _install_fakes(tmp_path, monkeypatch)
+    original_run = corpus.run_isolated_hook_process
+    original_control = session.control
+
+    def wrong_route(*args, **kwargs):
+        result = original_run(*args, **kwargs)
+        if session.case.kind == "nonobject_json":
+            session.routes["native_resident"] -= 1
+            session.routes["native_fail_safe"] = 1
+        return result
+
+    def observed_control(operation, **arguments):
+        result = original_control(operation, **arguments)
+        if operation == "case_result":
+            result.update(native_call_count=0, native_completed_call_count=0, policy_refusal_count=1)
+        return result
+
+    monkeypatch.setattr(corpus, "run_isolated_hook_process", wrong_route)
+    session.control = observed_control
+    evidence = tmp_path / "route-failure.jsonl"
+    with pytest.raises(FixtureFailureError, match="route_mismatch") as caught:
+        corpus.run_registered_input_corpus(session, evidence_file=evidence)
+    detail = failure_evidence(caught.value)
+    assert detail["case"] == "input.claude-code.PreToolUse.nonobject_json"
+    assert detail["category"] == "RuntimeError"
+    assert detail["diagnostic_digest"] == hashlib.sha256(b"priority_launcher_input_route_mismatch").hexdigest()
+    assert detail["origin"] == "native_slo_launcher_input._validate_witness"
+    assert detail["expected_route"] == "native_resident"
+    assert detail["observed_route"] == "native_fail_safe"
+    assert detail["routes_before"] == {"native_resident": 0}
+    assert detail["routes_after"] == {"native_resident": 0, "native_fail_safe": 1}
+    assert detail["native_call_count"] == 0 and detail["policy_refusal_count"] == 1
+    assert detail["witness_capture"] == "existing_case_result"
+    assert sum(op == "case_result" for op, _ in session.calls) == 2
+    assert sum(op == "launcher_approval_result" for op, _ in session.calls) == 0
+    records = [json.loads(line) for line in evidence.read_text().splitlines()]
+    assert [row["status"] for row in records] == ["offered", "completed", "offered", "failed"]
+    assert records[-1]["route"] == "native_fail_safe"
 
 
 def test_failure_preserves_prior_success_and_failed_exit(tmp_path, monkeypatch):

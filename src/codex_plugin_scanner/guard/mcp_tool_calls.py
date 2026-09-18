@@ -18,6 +18,7 @@ from .approval_gate import ApprovalGateGrant
 from .collections_support import dedupe_preserving_order
 from .config import DEFAULT_SECURITY_LEVEL, GuardConfig, resolve_risk_action
 from .local_cli_trust import apply_local_mcp_extension_decision
+from .mcp_authority_binding import AuthorityCheck, check_current_mcp_authority, use_mcp_authority_check
 from .models import GuardAction, GuardArtifact, GuardReceipt, PolicyDecision
 from .receipts import build_receipt
 from .runtime.approval_context import (
@@ -520,12 +521,14 @@ def _build_tool_call_hash_for_categories(
 
 def _tool_call_policy_context(config: GuardConfig, artifact: GuardArtifact) -> dict[str, object]:
     explicit_risk_action = _configured_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness)
+    artifact_override = config.resolve_action_override(
+        artifact.harness,
+        artifact.artifact_id,
+        artifact.publisher,
+    )
+    check_current_mcp_authority()
     return {
-        "artifact_override": config.resolve_action_override(
-            artifact.harness,
-            artifact.artifact_id,
-            artifact.publisher,
-        ),
+        "artifact_override": artifact_override,
         "default_action": config.default_action,
         "effective_risk_action": explicit_risk_action
         or resolve_risk_action(config, "mcp_dangerous_tool", harness=artifact.harness),
@@ -582,12 +585,14 @@ def evaluate_tool_call(
     fresh_authority_provider: (Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None) = None,
     risk_facts: ToolCallRiskFacts | None = None,
 ) -> ToolCallDecision:
+    check_current_mcp_authority()
     current = _evaluate_current_tool_call(
         config=config,
         artifact=artifact,
         arguments=arguments,
         risk_facts=risk_facts,
     )
+    check_current_mcp_authority()
     return _evaluate_tool_call_with_current(
         store=store,
         config=config,
@@ -610,9 +615,24 @@ def _evaluate_tool_call_with_current(
     current: ToolCallDecision,
     claim_saved_approval: bool,
     fresh_authority_provider: Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None = None,
+    authority_check: AuthorityCheck | None = None,
 ) -> ToolCallDecision:
     """Compose a freshly evaluated current result with current saved state."""
 
+    if authority_check is not None:
+        with use_mcp_authority_check(authority_check, retain_current=True):
+            return _evaluate_tool_call_with_current(
+                store=store,
+                config=config,
+                artifact=artifact,
+                artifact_hash=artifact_hash,
+                arguments=arguments,
+                current=current,
+                claim_saved_approval=claim_saved_approval,
+                fresh_authority_provider=fresh_authority_provider,
+            )
+
+    check_current_mcp_authority()
     current = _apply_temporary_mcp_grant(
         store=store,
         artifact=artifact,
@@ -620,7 +640,9 @@ def _evaluate_tool_call_with_current(
         arguments=arguments,
         current=current,
     )
+    check_current_mcp_authority()
     runtime_exact_match_context = _browser_runtime_exact_match_context(artifact, arguments)
+    check_current_mcp_authority()
     policy_lookup = store.resolve_policy_decision_lookup_with_memory_pattern(
         artifact.harness,
         artifact.artifact_id,
@@ -633,8 +655,10 @@ def _evaluate_tool_call_with_current(
         memory_artifact_name=artifact.name,
         consume_one_shot=False,
     )
+    check_current_mcp_authority()
     saved_decision = policy_lookup["decision"]
     ignored_integrity = policy_lookup["ignored_local_integrity"]
+    check_current_mcp_authority()
     if saved_decision is None and ignored_integrity is None:
         diagnosed_reason = store.approval_reuse_validation_reason(
             artifact.harness,
@@ -643,6 +667,7 @@ def _evaluate_tool_call_with_current(
             str(config.workspace) if config.workspace is not None else None,
             artifact.publisher,
         )
+        check_current_mcp_authority()
         if diagnosed_reason is None:
             return current
         saved_action: object | None = "allow"
@@ -672,6 +697,7 @@ def _evaluate_tool_call_with_current(
             )
         )
 
+    check_current_mcp_authority()
     reuse = evaluate_approval_reuse(
         current.action,
         saved_action,
@@ -681,11 +707,16 @@ def _evaluate_tool_call_with_current(
     pending_decision: Mapping[str, object] | None = None
     claim_disposition: ApprovalReuseClaimDisposition | None = None
     if reuse.should_claim and saved_decision is not None:
+        check_current_mcp_authority()
         raw_claim_disposition = store.approval_reuse_claim_disposition(saved_decision)
+        check_current_mcp_authority()
         if raw_claim_disposition in {"consumed", "retained"}:
             claim_disposition = raw_claim_disposition
         if claim_saved_approval:
-            if not store.claim_approval_reuse_decision(saved_decision):
+            check_current_mcp_authority()
+            claimed = store.claim_approval_reuse_decision(saved_decision)
+            check_current_mcp_authority()
+            if not claimed:
                 reuse = evaluate_approval_reuse(
                     current.action,
                     saved_action,
@@ -705,6 +736,7 @@ def _evaluate_tool_call_with_current(
                 )
         else:
             pending_decision = saved_decision
+    check_current_mcp_authority()
     return _tool_call_decision_with_reuse(
         current,
         reuse,
@@ -721,22 +753,32 @@ def _apply_temporary_mcp_grant(
     arguments: object,
     current: ToolCallDecision,
 ) -> ToolCallDecision:
+    check_current_mcp_authority()
     original_action = current.action
     if original_action == "review":
+        browser_intent = normalize_browser_mcp_intent(artifact, arguments)
+        check_current_mcp_authority()
         selectors = runtime_grant_selectors(
-            normalize_browser_mcp_intent(artifact, arguments),
+            browser_intent,
             current.risk_categories,
             artifact_id=artifact.artifact_id,
             artifact_hash=artifact_hash,
         )
+        check_current_mcp_authority()
         for selector in selectors:
+            check_current_mcp_authority()
             lookup = store.resolve_policy_decision_lookup(
                 artifact.harness,
                 selector,
                 consume_one_shot=False,
             )
+            check_current_mcp_authority()
             decision = lookup["decision"]
-            if decision is not None and decision.get("action") == "allow" and decision.get("source") == "approval-gate":
+            allowed = (
+                decision is not None and decision.get("action") == "allow" and decision.get("source") == "approval-gate"
+            )
+            check_current_mcp_authority()
+            if allowed:
                 current = replace(
                     current,
                     action="allow",
@@ -745,6 +787,7 @@ def _apply_temporary_mcp_grant(
                 )
                 break
     granted = apply_local_mcp_extension_decision(store, artifact, original_action)
+    check_current_mcp_authority()
     if granted is not None and (granted[0] == "block" or current.action != "allow"):
         return replace(current, action=granted[0], source=granted[1], summary=granted[2])
     return current
@@ -929,6 +972,7 @@ def _evaluate_current_tool_call(
         artifact.artifact_id,
         artifact.publisher,
     )
+    check_current_mcp_authority()
     current_config_action = configured_override if configured_override is not None else config.default_action
 
     # Resolve current policy before the public matching/owned-copy boundary.

@@ -149,6 +149,7 @@ def run_wrapped(command: list[str], output: Path) -> int:
             counts = responder.snapshot()
             report["resolver_packets_received"] = max(0, counts["received"] - self_probe_received)
             report["responder_before_lookup_witness"] = counts
+            report["rejected_packets_before_lookup_witness"] = responder.rejection_snapshot()
             report["configuration_before_lookup_witness"] = owned_configuration(responder.port, owner)
             try:
                 report["lookup_witness"] = lookup_witness(responder)
@@ -165,6 +166,7 @@ def run_wrapped(command: list[str], output: Path) -> int:
             report["configuration_cleanup"] = cleanup
             counts = responder.snapshot()
             report["responder"] = counts
+            report["rejected_packets"] = responder.rejection_snapshot()
             report.setdefault("resolver_packets_received", max(0, counts["received"] - self_probe_received))
             report["status"] = "experiment_finished"
             _write_report(output, report)

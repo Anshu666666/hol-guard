@@ -334,17 +334,45 @@ def test_expected_build_identity_requires_an_exact_canonical_commit(value, tmp_p
     [
         (None, 0.4, "native_policy_snapshot_ack_invalid", "native_policy_snapshot_ack_invalid"),
         (None, 0.01, "private-fixture-diagnostic", "unclassified"),
+        (None, 0.0, "native_policy_windows_acl_verify_failed", "unclassified"),
+        (None, 0.0, "native_policy_snapshot_generation_lock_timeout", "unclassified"),
+        (None, 0.0, "native_policy_windows_acl_not_private:protected=0,count=3", "unclassified"),
         ({"generation": 2}, 0.425, None, "none"),
     ],
 )
 def test_readiness_failure_keeps_phase_and_fixed_budget_without_publisher_private_context(
     monkeypatch: pytest.MonkeyPatch, snapshot, elapsed: float, last_error, expected_error: str
 ) -> None:
+    from scripts.native_slo_publisher_diagnostic import publisher_error_diagnostic
+
     clock = iter((100.0, 100.0 + elapsed))
-    monkeypatch.setattr(probe.time, "monotonic", lambda: next(clock))
-    publisher = SimpleNamespace(last_error=last_error, closed=False, is_ready=lambda: snapshot is not None)
+    calls = []
+
+    def monotonic():
+        calls.append("clock")
+        return next(clock)
+
+    monkeypatch.setattr(probe.time, "monotonic", monotonic)
+
+    class Publisher:
+        @property
+        def last_error(self):
+            calls.append("last_error")
+            return last_error
+
+        @property
+        def closed(self):
+            calls.append("closed")
+            return False
+
+        def is_ready(self):
+            calls.append("is_ready")
+            return snapshot is not None
+
+    publisher = Publisher()
 
     def prepare(workspace, *, deadline):
+        calls.append("prepare")
         assert workspace == Path("synthetic-workspace")
         assert deadline == 100.0 + probe.MAX_READINESS_P95_MS / 1000
         return snapshot
@@ -358,9 +386,47 @@ def test_readiness_failure_keeps_phase_and_fixed_budget_without_publisher_privat
     evidence = failure_evidence(error.value)
     assert evidence["phase"] == "enabled"
     readiness = evidence["readiness"]
-    assert readiness["budget_ms"] == 400.0
-    assert readiness["elapsed_ms"] == round(elapsed * 1000, 3)
-    assert readiness["snapshot_returned"] is (snapshot is not None)
-    assert readiness["publisher_error"] == expected_error
+    assert readiness == {
+        "expected_revision": 1,
+        "budget_ms": 400.0,
+        "elapsed_ms": round(elapsed * 1000, 3),
+        "snapshot_returned": snapshot is not None,
+        "budget_exhausted": elapsed > 0.4,
+        "publisher_ready_after_failure": snapshot is not None,
+        "publisher_closed_after_failure": False,
+        "publisher_error": expected_error,
+        **publisher_error_diagnostic(last_error),
+    }
+    assert calls == ["clock", "prepare", "clock", "last_error", "is_ready", "closed"]
+    assert_privacy_safe({"native": {"failure": evidence}})
     assert "private-fixture-diagnostic" not in json.dumps(evidence)
+    assert "protected=" not in json.dumps(evidence)
     assert evidence["reason"] == "qualification_fixture.installed_ollama_native_readiness_failed"
+
+
+def test_optional_publisher_diagnostic_failure_keeps_original_readiness_rejection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def diagnostic_failed(_error):
+        raise RuntimeError("private diagnostic failure")
+
+    clock = iter((100.0, 100.0))
+    monkeypatch.setattr(probe.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(probe, "publisher_error_diagnostic", diagnostic_failed)
+    publisher = SimpleNamespace(
+        last_error="native_policy_windows_acl_verify_failed", closed=False, is_ready=lambda: False
+    )
+    worker = SimpleNamespace(
+        prepare_workspace_policy=lambda *_args, **_kwargs: None, policy_snapshot_publisher=publisher
+    )
+    session = SimpleNamespace(
+        workspace=Path("synthetic"), daemon=SimpleNamespace(_server=SimpleNamespace(hook_worker=worker))
+    )
+    with pytest.raises(FixtureFailureError) as caught:
+        probe.ready_binding(session, 1, phase="enabled")
+    evidence = failure_evidence(caught.value)
+    assert evidence["reason"] == "qualification_fixture.installed_ollama_native_readiness_failed"
+    assert evidence["readiness"]["elapsed_ms"] == 0.0
+    assert evidence["readiness"]["publisher_error"] == "unclassified"
+    assert evidence["readiness"]["publisher_error_state"] == "collection_failed"
+    assert evidence["readiness"]["budget_exhausted"] is False

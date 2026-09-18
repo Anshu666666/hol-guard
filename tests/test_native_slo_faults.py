@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import Context
 from pathlib import Path
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 import pytest
 
@@ -180,3 +180,225 @@ def test_native_capture_preserves_exact_success_and_exception(tmp_path: Path) ->
         assert fault.result()["native_call_count"] == 1
         assert fault.result()["native_completed_call_count"] == 0
         assert fault.result()["native_call_diagnostic"] is None
+
+
+def test_policy_refusal_captures_original_reason_once_for_only_the_owned_daemon(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+
+    session = _session(tmp_path)
+    server = session.daemon._server
+    first = "native_policy_windows_acl_verify_failed"
+    later = "native_policy_snapshot_generation_lock_timeout"
+    publisher = server.hook_worker.policy_snapshot_publisher
+    publisher.last_error = first
+    original = responses._native_policy_not_ready_reason
+    returned = []
+    received = []
+
+    def original_with_later_state(daemon_server):
+        received.append(daemon_server)
+        reason = original(daemon_server)
+        returned.append(reason)
+        publisher.last_error = later
+        return reason
+
+    monkeypatch.setattr(responses, "_native_policy_not_ready_reason", original_with_later_state)
+    fault = FaultFixture(session, "normal")
+    assert fault.result()["policy_refusal_count"] is None
+    with fault, ThreadPoolExecutor(max_workers=1) as pool:
+        fault.before_case()
+        assert fault.result()["policy_refusal_count"] == 0
+        result = pool.submit(responses._native_policy_not_ready_reason, server).result(timeout=1)
+        assert result is returned[0] and received == [server]
+        evidence = fault.result()
+        assert evidence["policy_refusal_count"] == 1
+        assert evidence["policy_refusal_diagnostic"]["publisher_error_value"] == first
+        assert publisher.last_error == later
+        assert evidence["native_call_count"] == evidence["native_completed_call_count"] == 0
+        assert evidence["native_call_diagnostic"] is None
+        other = SimpleNamespace(hook_worker=server.hook_worker)
+        assert responses._native_policy_not_ready_reason(other) is returned[1]
+        assert received == [server, other]
+        assert fault.result()["policy_refusal_count"] == 1
+        assert fault.result()["policy_refusal_diagnostic"] == evidence["policy_refusal_diagnostic"]
+        fault.before_case()
+        assert fault.result()["policy_refusal_count"] == 0
+        assert fault.result()["policy_refusal_diagnostic"] is None
+    assert responses._native_policy_not_ready_reason is original_with_later_state
+
+
+def test_policy_refusal_preserves_original_exception_identity_and_restores_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+
+    session = _session(tmp_path)
+    failure = RuntimeError("original private failure")
+    calls = []
+
+    def original(daemon_server):
+        calls.append(daemon_server)
+        raise failure
+
+    monkeypatch.setattr(responses, "_native_policy_not_ready_reason", original)
+    with FaultFixture(session, "normal") as fault:
+        with pytest.raises(RuntimeError) as caught:
+            responses._native_policy_not_ready_reason(session.daemon._server)
+        assert caught.value is failure and calls == [session.daemon._server]
+        assert fault.result()["policy_refusal_count"] == 0
+        assert fault.result()["policy_refusal_diagnostic"] is None
+    assert responses._native_policy_not_ready_reason is original
+
+
+def test_missing_reason_observer_stays_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+
+    monkeypatch.delattr(responses, "_native_policy_not_ready_reason")
+    with FaultFixture(_session(tmp_path), "normal") as fault:
+        fault.before_case()
+        assert fault.result()["policy_refusal_count"] is None
+        assert fault.result()["policy_refusal_diagnostic"] is None
+
+
+def test_optional_refusal_serializer_failure_does_not_replace_the_original_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+    from scripts import native_slo_faults
+
+    session = _session(tmp_path)
+    returned = object()
+    monkeypatch.setattr(responses, "_native_policy_not_ready_reason", lambda _server: returned)
+
+    def unavailable(_reason):
+        raise RuntimeError("private diagnostic failure")
+
+    monkeypatch.setattr(native_slo_faults, "policy_refusal_diagnostic", unavailable)
+    with FaultFixture(session, "normal") as fault:
+        assert responses._native_policy_not_ready_reason(session.daemon._server) is returned
+        assert fault.result()["policy_refusal_count"] == 1
+        assert fault.result()["policy_refusal_diagnostic"] == {"publisher_error_state": "collection_failed"}
+
+
+def test_optional_refusal_recording_failure_marks_count_unavailable_until_next_case(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+
+    session = _session(tmp_path)
+    returned = "HOL Guard could not prepare the native policy safely. native_policy_windows_acl_verify_failed."
+    monkeypatch.setattr(responses, "_native_policy_not_ready_reason", lambda _server: returned)
+
+    class UnavailableLock:
+        def __enter__(self):
+            raise RuntimeError("private capture failure")
+
+        def __exit__(self, *_args):
+            raise AssertionError("unavailable lock was never acquired")
+
+    with FaultFixture(session, "normal") as fault:
+        original_lock = fault.capture_lock
+        fault.capture_lock = UnavailableLock()
+        try:
+            assert responses._native_policy_not_ready_reason(session.daemon._server) is returned
+        finally:
+            fault.capture_lock = original_lock
+        assert fault.result()["policy_refusal_count"] is None
+        assert fault.result()["policy_refusal_diagnostic"] is None
+        assert responses._native_policy_not_ready_reason(session.daemon._server) is returned
+        assert fault.result()["policy_refusal_count"] is None
+        fault.before_case()
+        assert fault.result()["policy_refusal_count"] == 0
+
+
+def test_production_posttool_refusal_response_and_route_are_unchanged_with_private_capture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import hook_worker as worker_module
+    from codex_plugin_scanner.guard.daemon import hook_worker_responses as responses
+    from codex_plugin_scanner.guard.daemon.hook_availability_policy import availability_harness_response
+    from scripts.native_slo_workloads import build_cases, validate_case
+
+    session = _session(tmp_path)
+    worker = session.daemon._server.hook_worker
+    calls = []
+    routes = []
+    code = "native_policy_windows_acl_verify_failed"
+
+    class Publisher:
+        @property
+        def last_error(self):
+            calls.append("last_error")
+            return code
+
+        def start(self):
+            calls.append("start")
+
+        def register_workspace(self, workspace):
+            assert workspace == session.workspace
+            calls.append("register_workspace")
+
+        def wait_until_ready(self, _deadline):
+            raise AssertionError("the existing nonempty-error branch must not wait")
+
+        def current_snapshot_binding(self):
+            calls.append("current_snapshot_binding")
+            return None
+
+        def current_snapshot(self):
+            calls.append("current_snapshot")
+            return None
+
+    worker.policy_snapshot_publisher = Publisher()
+    worker._publish_native_policy = True
+    worker.prepare_workspace_policy = MethodType(worker_module.HookWorker.prepare_workspace_policy, worker)
+    worker.metrics = SimpleNamespace(record_route=routes.append)
+    monkeypatch.setattr(worker_module, "native_mode", lambda: "auto")
+
+    class Handler:
+        result = None
+
+        def _runtime_hook_fail_safe_response(
+            self, payload, _params, *, default_harness, reason, reason_code, native_authoritative
+        ):
+            assert native_authoritative is True
+            return availability_harness_response(
+                payload, harness=default_harness, event_name="PostToolUse", reason=reason, reason_code=reason_code
+            )
+
+        def _write_json(self, value):
+            self.result = value
+
+    handler = Handler()
+    case = next(case for case in build_cases(session.workspace) if case.case_id == "pi/PostToolUse/empty-output/empty")
+    with FaultFixture(session, "normal") as fault:
+        calls.clear()
+        assert (
+            responses.prepare_native_hook_policy(
+                handler, session.daemon._server, case.payload, {}, "pi", session.workspace, 100.4
+            )
+            is False
+        )
+        assert calls == [
+            "register_workspace",
+            "start",
+            "last_error",
+            "current_snapshot_binding",
+            "current_snapshot",
+            "last_error",
+        ]
+        assert handler.result == {
+            "decision": "allow",
+            "policy_action": "allow",
+            "reason_code": "native_policy_not_ready",
+        }
+        assert routes == ["native_fail_safe"]
+        with pytest.raises(AssertionError, match=r"native_qualification_mismatch:.*:route"):
+            validate_case(case, handler.result, routes[0])
+        evidence = fault.result()
+        assert evidence["policy_refusal_count"] == 1
+        assert evidence["policy_refusal_diagnostic"]["publisher_error_value"] == code
+        assert evidence["native_call_count"] == evidence["native_completed_call_count"] == 0
+        assert evidence["native_call_diagnostic"] is None

@@ -269,12 +269,35 @@ def _run_registered_surface_corpus(
                     after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))
                     route = witnessed_route(before, after)
                     attempt.route = route
-                    if route != case.expected_route:
-                        raise AssertionError("registered_surface_native_route_mismatch")
-                    attempt.stage = "witness"
-                    evidence = session.control("case_result")
-                    validate_setup(case, cast(Mapping[str, object], evidence["setup"]))
-                    validate_native_result(case, cast(Mapping[str, object] | None, evidence["native_result"]))
+                    evidence: Mapping[str, object] | None = None
+                    try:
+                        if route != case.expected_route:
+                            raise AssertionError("registered_surface_native_route_mismatch")
+                        attempt.stage = "witness"
+                        evidence = session.control("case_result")
+                        validate_setup(case, cast(Mapping[str, object], evidence["setup"]))
+                        validate_native_result(case, cast(Mapping[str, object] | None, evidence["native_result"]))
+                    except Exception as error:
+                        from scripts.native_slo_surface_failure import enrich_surface_failure
+
+                        enriched = enrich_surface_failure(
+                            error,
+                            case_id=case.case_id,
+                            registration_digest=surface.registration_sha256,
+                            stage=attempt.stage,
+                            expected_route=case.expected_route,
+                            observed_route=route,
+                            routes_before=before,
+                            routes_after=after,
+                            surface_scope=surface.scope,
+                            evidence=evidence,
+                            read_evidence=(lambda: session.control("case_result"))
+                            if attempt.stage == "route"
+                            else None,
+                        )
+                        if enriched is error:
+                            raise
+                        raise enriched from error
                     attempt.stage = "complete"
                 except BaseException:
                     journal.finish("failed", attempt)

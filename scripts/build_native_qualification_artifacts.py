@@ -229,7 +229,7 @@ def main() -> int:
         ("installed_artifact_transitions", transitions),
         ("installed_offline_secrets", offline_secrets),
     )
-    if args.target == "x86_64-unknown-linux-musl":
+    if args.target in {"x86_64-unknown-linux-musl", "x86_64-apple-darwin", "aarch64-apple-darwin"}:
         # Own exact same-byte copies only in these disposable environments.
         # A failed provisioning check remains mandatory while other installed
         # probes still run and retain their independent outcomes.
@@ -250,6 +250,7 @@ def main() -> int:
             ),
             *checks,
         )
+    if args.target == "x86_64-unknown-linux-musl":
         # This private pilot must prove native transport through the actual
         # installed wheel. Its report never enables a production registration.
         checks += (

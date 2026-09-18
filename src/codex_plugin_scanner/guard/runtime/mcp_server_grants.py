@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from ..mcp_authority_binding import check_current_mcp_authority
 from ..models import GuardAction, GuardArtifact
 from .extension_control_contract import ExtensionControlLayer
 from .extension_trust import extension_is_active
@@ -24,6 +25,7 @@ def apply_contributed_mcp_decision(
     if current_action not in _REVIEW_ACTIONS:
         return None
     payload = matching_mcp_contribution(artifact)
+    check_current_mcp_authority()
     if payload is None:
         return None
     mcp_id = payload.get("id")
@@ -31,6 +33,7 @@ def apply_contributed_mcp_decision(
         return None
     catalog_id = catalog_id_for_mcp_id(mcp_id)
     layers = _authority_layers(store)
+    check_current_mcp_authority()
     if not extension_is_active(catalog_id, layers):
         return None
     tool_name = _mcp_identity_tool_name(artifact)
@@ -73,7 +76,9 @@ def _authority_layers(store: object) -> tuple[ExtensionControlLayer, ...] | None
         return None
     from .command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
 
+    check_current_mcp_authority()
     view = lookup(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+    check_current_mcp_authority()
     layers = getattr(view, "layers", None)
     if layers is None:
         return None

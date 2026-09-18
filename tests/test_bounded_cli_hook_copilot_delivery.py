@@ -182,7 +182,15 @@ def test_actual_registered_cli_entrypoint_delivers_native_json_on_both_routes(
 
     class Opener:
         def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
-            assert request.full_url == "http://127.0.0.1:7777/v1/hooks/copilot"
+            from urllib.parse import parse_qs, urlparse
+
+            parsed = urlparse(request.full_url)
+            assert (parsed.scheme, parsed.netloc, parsed.path) == ("http", "127.0.0.1:7777", "/v1/hooks/copilot")
+            assert parse_qs(parsed.query) == {
+                "guard-home": [str(guard_home)],
+                "home": [str(home)],
+                "workspace": [str(workspace)],
+            }
             assert timeout <= 5
             assert isinstance(request.data, bytes) and json.loads(request.data)["hook_event_name"] == event
             return Response()

@@ -15,11 +15,24 @@ import struct
 import sys
 import threading
 from pathlib import Path
+from typing import cast
 
 REVERSE_NAME = "1.0.0.127.in-addr.arpa"
 LOOPBACK_NAME = "hol-guard-qualification.localhost"
 RESOLVER_DIRECTORY = Path("/etc/resolver")
 MAX_QUERY_BYTES = 512
+_REJECTION_REASONS = (
+    "peer",
+    "packet_size",
+    "header_flags",
+    "header_counts",
+    "question_encoding",
+    "question_name",
+    "question_type",
+    "question_class",
+    "additional_or_trailing",
+)
+_QUESTION_TYPES = ("a", "aaaa", "soa", "ptr", "other", "unparsed")
 
 
 def _wire_name(name: str) -> bytes:
@@ -73,6 +86,47 @@ def ptr_response(packet: bytes) -> bytes | None:
     return header + packet[12:cursor] + answer
 
 
+def rejected_query_shape(packet: bytes) -> tuple[str, str]:
+    """Classify an already rejected packet without retaining names or bytes.
+
+    This projection never selects or constructs a response. The first reason
+    and independently decoded question type each increment one fixed counter.
+    """
+    if not 12 <= len(packet) <= MAX_QUERY_BYTES:
+        return "packet_size", "unparsed"
+    _identifier, flags, questions, answers, authorities, additional = cast(
+        tuple[int, int, int, int, int, int], struct.unpack("!6H", packet[:12])
+    )
+    if flags & ~0x0130:
+        return "header_flags", "unparsed"
+    if (questions, answers, authorities) != (1, 0, 0) or additional not in (0, 1):
+        return "header_counts", "unparsed"
+    cursor = 12
+    labels: list[bytes] = []
+    while cursor < len(packet):
+        length = packet[cursor]
+        cursor += 1
+        if length == 0:
+            break
+        if length > 63 or cursor + length > len(packet) or cursor + length - 12 > 254:
+            return "question_encoding", "unparsed"
+        labels.append(packet[cursor : cursor + length])
+        cursor += length
+    else:
+        return "question_encoding", "unparsed"
+    if cursor + 4 > len(packet):
+        return "question_encoding", "unparsed"
+    kind, query_class = cast(tuple[int, int], struct.unpack("!HH", packet[cursor : cursor + 4]))
+    question_type = {1: "a", 28: "aaaa", 6: "soa", 12: "ptr"}.get(kind, "other")
+    if b".".join(labels).lower() != REVERSE_NAME.encode("ascii"):
+        return "question_name", question_type
+    if kind != 12:
+        return "question_type", question_type
+    if query_class != 1:
+        return "question_class", question_type
+    return "additional_or_trailing", question_type
+
+
 class LoopbackPTRResponder:
     """One UDP socket on an OS-selected loopback port, with bounded shutdown."""
 
@@ -88,6 +142,8 @@ class LoopbackPTRResponder:
         self._stop = threading.Event()
         self._lock = threading.Lock()
         self._counts = {"received": 0, "answered": 0, "rejected": 0, "errors": 0}
+        self._rejection_reasons: dict[str, int] = dict.fromkeys(_REJECTION_REASONS, 0)
+        self._rejection_question_types: dict[str, int] = dict.fromkeys(_QUESTION_TYPES, 0)
         self._thread = threading.Thread(target=self._serve, name="qualification-loopback-ptr", daemon=True)
 
     def __enter__(self) -> LoopbackPTRResponder:
@@ -112,6 +168,10 @@ class LoopbackPTRResponder:
             response = ptr_response(packet) if peer[0] == "127.0.0.1" else None
             if response is None:
                 self._increment("rejected")
+                reason, question_type = rejected_query_shape(packet) if peer[0] == "127.0.0.1" else ("peer", "unparsed")
+                with self._lock:
+                    self._rejection_reasons[reason] += 1
+                    self._rejection_question_types[question_type] += 1
                 continue
             try:
                 self._socket.sendto(response, peer)
@@ -122,6 +182,10 @@ class LoopbackPTRResponder:
     def snapshot(self) -> dict[str, int]:
         with self._lock:
             return dict(self._counts)
+
+    def rejection_snapshot(self) -> dict[str, dict[str, int]]:
+        with self._lock:
+            return {"reasons": dict(self._rejection_reasons), "question_types": dict(self._rejection_question_types)}
 
     def __exit__(self, *_args: object) -> None:
         self._stop.set()

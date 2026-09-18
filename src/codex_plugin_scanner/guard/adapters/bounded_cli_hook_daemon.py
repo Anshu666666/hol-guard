@@ -6,9 +6,9 @@ import json
 import sqlite3
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse, urlsplit, urlunsplit
 
 from ..action_lattice import is_guard_action
 from ..daemon.hook_availability_policy import hook_reason_continues_session
@@ -397,11 +397,24 @@ def try_daemon_hook(
     harness: str,
     input_text: str,
     timeout_seconds: float,
+    cli_args: Sequence[str] | None = None,
     _endpoint_loader: Callable[[Path, str], str | None] | None = None,
     _token_loader: Callable[[Path], str | None] | None = None,
     _opener_builder: Callable[[], urllib.request.OpenerDirector] | None = None,
 ) -> tuple[str, str, int] | None:
     """POST the hook payload to the running daemon; return native stdout or None."""
+    context: dict[str, str] = {}
+    if cli_args is not None:
+        from .bounded_cli_hook_bridge import _validated_frozen_cli_args
+
+        # The fast path must carry the same admitted context as its configured
+        # CLI command. Unknown grammar retains the existing CLI fallback.
+        validated = _validated_frozen_cli_args(cli_args, guard_home=guard_home, harness=harness)
+        if validated is None:
+            return None
+        context["guard-home"] = validated[2]
+        for index in range(5, len(validated) - 1, 2):
+            context[validated[index].removeprefix("--")] = validated[index + 1]
     endpoint = (_endpoint_loader or _daemon_hook_endpoint)(guard_home, harness)
     if endpoint is None:
         return None
@@ -409,6 +422,9 @@ def try_daemon_hook(
         _assert_loopback_http_url(endpoint)
     except ValueError:
         return None
+    if context:
+        parsed_endpoint = urlsplit(endpoint)
+        endpoint = urlunsplit(parsed_endpoint._replace(query=urlencode(context)))
     token = (_token_loader or _read_daemon_auth_token)(guard_home)
     if token is None:
         return None

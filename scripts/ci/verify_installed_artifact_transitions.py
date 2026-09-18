@@ -35,7 +35,7 @@ from scripts.ci.installed_transition_prior import PRIOR_ARTIFACTS, PRIOR_BUILD_S
 from scripts.ci.installed_transition_receipts import AUDITED_BASELINE_SHA  # noqa: E402
 from scripts.native_qualification_interpreter import (  # noqa: E402
     InterpreterProvisioningError,
-    provision_linux_venv_interpreter,
+    provision_venv_interpreter,
 )
 from scripts.native_slo_artifact import wheel_package_digest  # noqa: E402
 from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
@@ -161,15 +161,15 @@ def _interpreter_receipt(proof: dict) -> dict:
 
 
 def _prepare_interpreter(python: Path, report: dict) -> None:
-    """Provision only the disposable Linux interpreter after its wheel exists."""
-    record: dict = {"required": sys.platform == "linux", "attempted": False}
+    """Provision only the disposable Linux/macOS interpreter after wheel install."""
+    record: dict = {"required": sys.platform in {"linux", "darwin"}, "attempted": False}
     report["interpreter_provisioning"] = record
     if not record["required"]:
         record["status"] = "platform_not_selected"
         return
     record["attempted"] = True
     try:
-        proof = provision_linux_venv_interpreter(python)
+        proof = provision_venv_interpreter(python)
     except InterpreterProvisioningError as error:
         record["evidence"] = _interpreter_receipt(error.evidence)
         raise
@@ -443,6 +443,27 @@ def suite_acceptance(report: dict) -> dict:
     return acceptance
 
 
+def public_transition_report(report: Mapping[str, object]) -> dict[str, object]:
+    """Omit optional observations when they alone exceed the original bound."""
+    try:
+        return assert_privacy_safe(report)
+    except ValueError:
+        phases = report.get("phases")
+        if not isinstance(phases, list) or not any(
+            isinstance(phase, dict) and "producer_observation" in phase for phase in phases
+        ):
+            raise
+        original = dict(report)
+        original["phases"] = [
+            {key: value for key, value in phase.items() if key != "producer_observation"}
+            if isinstance(phase, dict)
+            else phase
+            for phase in phases
+        ]
+        # Reapply the unchanged validation; an oversized original still fails.
+        return assert_privacy_safe(original)
+
+
 def verify(
     python: Path,
     baseline_wheel: Path,
@@ -594,6 +615,17 @@ def verify(
                     root,
                 )
                 observed = worker_evidence(result, contracts[arm], phase, prior_receipts=prior_receipts)
+                if phase == "baseline_rollback":
+                    try:
+                        from scripts.ci.installed_transition_observer_receipt import collect
+
+                        observed["producer_observation"] = collect(fixture)
+                    except Exception:
+                        observed["producer_observation"] = {
+                            "diagnostic_only": True,
+                            "proof_verified": False,
+                            "incomplete": ["observation_collector_unavailable"],
+                        }
                 report["phases"].append(observed)
                 # Never overwrite the installation after an unverified native
                 # shutdown, even if a malformed worker claims successful work.
@@ -625,7 +657,7 @@ def verify(
     if compatible_only:
         report["compatible_artifact_rollback_qualified"] = report["passed"]
     report["suite_acceptance"] = suite_acceptance(report)
-    return assert_privacy_safe(report)
+    return public_transition_report(report)
 
 
 def main() -> int:

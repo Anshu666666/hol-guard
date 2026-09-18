@@ -343,6 +343,7 @@ def run_bounded_cli_hook(config: Mapping[str, object], *, input_text: str) -> in
         harness=harness,
         input_text=input_text,
         timeout_seconds=float(timeout_seconds),
+        cli_args=cli_args,
     )
     if daemon_result is not None:
         remaining = max(0.0, deadline - time.monotonic())

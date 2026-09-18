@@ -60,6 +60,7 @@ from scripts.native_slo_adapter import route_counts  # noqa: E402
 from scripts.native_slo_artifact import assert_installed_import_origin, installed_package_digest  # noqa: E402
 from scripts.native_slo_contract import MAX_READINESS_P95_MS, assert_privacy_safe  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
+from scripts.native_slo_publisher_diagnostic import publisher_error_diagnostic  # noqa: E402
 from scripts.native_slo_session import AdapterSession, _request  # noqa: E402
 from scripts.native_slo_workloads import configuration_text  # noqa: E402
 
@@ -243,6 +244,10 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
             "publisher_closed_after_failure": publisher.closed,
             "publisher_error": error if error in _PUBLISHER_ERRORS else "unclassified" if error else "none",
         }
+        try:
+            cast(dict[str, object], detail["readiness"]).update(publisher_error_diagnostic(error))
+        except Exception:
+            detail["readiness"]["publisher_error_state"] = "collection_failed"
         raise FixtureFailureError(detail)
     current = worker.policy_snapshot_publisher.current_snapshot()
     require(current is not None and worker.policy_snapshot_publisher.is_ready(), "policy_ack_missing")

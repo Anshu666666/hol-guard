@@ -286,11 +286,30 @@ def _run_case(
         if case.requires_review
         else metrics.snapshot()
     )
-    route = witnessed_route(before, route_counts(snapshot))
+    after = route_counts(snapshot)
+    route = witnessed_route(before, after)
     attempt.route = route
     attempt.stage = "witness"
     evidence = session.control("case_result")
-    _validate_witness(case, evidence, route)
+    try:
+        _validate_witness(case, evidence, route)
+    except Exception as error:
+        from scripts.native_slo_surface_failure import enrich_surface_failure
+
+        enriched = enrich_surface_failure(
+            error,
+            case_id=case.case_id,
+            registration_digest=launcher.registration_sha256,
+            stage=attempt.stage,
+            expected_route=case.expected_route,
+            observed_route=route,
+            routes_before=before,
+            routes_after=after,
+            evidence=evidence,
+        )
+        if enriched is error:
+            raise
+        raise enriched from error
     approval = _block_resolution(session, operation_id) if operation_id is not None else None
     attempt.stage = "delivery"
     try:

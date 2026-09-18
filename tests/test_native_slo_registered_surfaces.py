@@ -409,8 +409,20 @@ def test_runner_requires_native_witness_and_reports_observation_only(
     monkeypatch.setattr(execution, "observe_registered_surface", observe)
     evidence_path = context.home_dir / "evidence.jsonl"
     if route != "native_resident":
-        with pytest.raises(AssertionError, match="native_route_mismatch"):
+        from scripts.native_slo_failure import FixtureFailureError
+
+        with pytest.raises(FixtureFailureError, match="native_route_mismatch") as failure:
             execution.run_registered_surface_corpus(session, harnesses=("cursor",), evidence_file=evidence_path)
+        detail = failure.value.detail
+        assert detail["category"] == "AssertionError"
+        assert detail["case"] == "cursor.afterShellExecution.benign.1k"
+        assert detail["surface_scope"] == "global"
+        assert detail["expected_route"] == "native_resident"
+        assert detail["observed_route"] == "legacy"
+        assert detail["routes_before"] == {"legacy": 0}
+        assert detail["routes_after"] == {"legacy": 1}
+        assert detail["witness_capture"] == "after_failure"
+        assert detail["witness_available"] is True
         records = [json.loads(line) for line in evidence_path.read_text().splitlines()]
         assert [record["status"] for record in records] == ["offered", "failed"]
         assert records[-1]["route"] == "legacy"

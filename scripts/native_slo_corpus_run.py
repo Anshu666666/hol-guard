@@ -119,6 +119,8 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
                     detail["native_call_diagnostic"] = evidence.get("native_call_diagnostic")
                     detail["native_call_count"] = evidence.get("native_call_count")
                     detail["native_completed_call_count"] = evidence.get("native_completed_call_count")
+                    detail["policy_refusal_diagnostic"] = evidence.get("policy_refusal_diagnostic")
+                    detail["policy_refusal_count"] = evidence.get("policy_refusal_count")
                     raise FixtureFailureError(detail) from error
                 validated.append(case.case_id)
                 semantic += int(case.semantic_sample)

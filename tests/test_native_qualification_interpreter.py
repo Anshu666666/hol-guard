@@ -236,7 +236,7 @@ def test_real_cpython_copy_retains_venv_stdlib_and_exact_baseline_or_candidate_i
             == "ba1375f80db3a8121091e330a8cd1c3c0b36250789267209f8972e23c141ba42"
         )
     (guard / "codex_hook_file_integrity.py").write_bytes(validator_bytes)
-    proof = provision.provision_linux_venv_interpreter(python)
+    proof = provision.provision_venv_interpreter(python)
     assert proof["passed"] is proof["runtime_compatible"] is proof["managed_integrity_validated"] is True
     assert proof["managed_validator_inside_venv"] is True
     assert proof["managed_validator_sha256"] == hashlib.sha256(validator_bytes).hexdigest()
@@ -262,7 +262,7 @@ def test_failed_runtime_probe_retains_original_mode_digest_and_cannot_claim_succ
 
     monkeypatch.setattr(provision, "_probe", probe)
     with pytest.raises(provision.InterpreterProvisioningError) as caught:
-        provision.provision_linux_venv_interpreter(invocation)
+        provision.provision_venv_interpreter(invocation)
     proof = caught.value.evidence
     assert proof["passed"] is False
     assert proof["source"]["mode"] == 0o777
@@ -286,7 +286,7 @@ def test_pair_driver_retains_both_attempts_and_fails_incompatible_or_incomplete_
         return {"passed": True, "source_sha256": (python.name if failure == "different_bytes" else "a") * 64}
 
     destination = tmp_path / "aggregate/provision.json"
-    monkeypatch.setattr(driver, "provision_linux_venv_interpreter", prepare)
+    monkeypatch.setattr(driver, "provision_venv_interpreter", prepare)
     monkeypatch.setattr(
         driver.sys,
         "argv",

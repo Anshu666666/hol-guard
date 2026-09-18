@@ -13,7 +13,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from functools import partial
 from hashlib import sha256
@@ -43,9 +43,21 @@ from ..local_supply_chain import (
     compose_current_package_policy_action,
     package_request_policy_hash,
 )
+from ..mcp_authority_binding import (
+    AuthorityCheck,
+    UnsupportedAuthorityValueError,
+    capture_authority_binding,
+    check_current_mcp_authority,
+    current_mcp_authority_check,
+    exact_authority_digest,
+    inside_proxy_authority_scope,
+    proxy_authority_scope,
+    use_mcp_authority_check,
+)
 from ..mcp_tool_calls import (
     ApprovalReuseClaimDisposition,
     ToolCallDecision,
+    _normalized_tool_call_workspace,
     allow_tool_call,
     block_tool_call,
     build_tool_call_artifact,
@@ -76,6 +88,7 @@ from ..runtime.supply_chain_package_eval import evaluate_package_request_artifac
 from ..runtime.surface_server import GuardSurfaceRuntime
 from ..store import GuardStore
 from ..tool_decision_evidence import tool_decision_scanner_evidence as _tool_decision_scanner_evidence
+from . import framing
 from ._env import _build_scrubbed_env
 from .framing import (
     IO_FAILURES,
@@ -99,6 +112,15 @@ from .stdio import (
     _readline_with_timeout,
     _redact_json,
     _timeout_response,
+)
+from .tool_call_binding import (
+    bind_tool_call,
+    bind_tool_call_write,
+    changed_tool_call,
+    current_tool_call_binding,
+    require_tool_call_method,
+    tool_call_write_frame,
+    use_tool_call_binding,
 )
 from .tool_catalog import ToolCatalog
 
@@ -562,6 +584,7 @@ class _PackagePolicyResolution:
     saved_policy_blocks: bool
     pending_approval_reuse_decision: Mapping[str, object] | None
     approval_reuse_claim_disposition: ApprovalReuseClaimDisposition | None = None
+    authority_check: AuthorityCheck | None = field(default=None, repr=False, compare=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -572,6 +595,7 @@ class _ToolCallAuthority:
     catalog_generation: int
     catalog_state: _ToolCatalogState
     catalog_fingerprint: str
+    authority_check: AuthorityCheck | None = field(default=None, repr=False, compare=False)
 
 
 class RuntimeMcpGuardProxy:
@@ -1107,6 +1131,120 @@ class RuntimeMcpGuardProxy:
             approval_reuse_claim_disposition=None,
         )
 
+    def _capture_tool_call_authority(self, *, arguments: object, config: GuardConfig) -> AuthorityCheck | None:
+        """Capture security inputs before any artifact-construction callback."""
+        request_binding = current_tool_call_binding()
+
+        def changed() -> ProxyIoLimitError:
+            return ProxyIoLimitError(source="tool_call_authority", reason="tool_call_authority_changed")
+
+        def check_request() -> None:
+            if request_binding is not None:
+                request_binding.check()
+                if arguments is not request_binding.owned_message["params"].get("arguments"):
+                    raise changed_tool_call()
+
+        def attributes() -> dict[str, Any]:
+            return object.__getattribute__(self, "__dict__")
+
+        def owners() -> tuple[object, ...]:
+            current = attributes()
+            return tuple(
+                current[name] for name in ("config", "context", "store", "_tool_catalog", "_current_config_provider")
+            )
+
+        def values() -> object:
+            current = attributes()
+            catalog = current["_tool_catalog"]
+            if type(catalog) is dict:
+                raw_catalog = catalog
+            elif type(catalog) is ToolCatalog:
+                raw_catalog = object.__getattribute__(catalog, "_definitions")
+            else:
+                raise UnsupportedAuthorityValueError
+            context = current["context"]
+            if type(context) is not HarnessContext:
+                raise UnsupportedAuthorityValueError
+            workspace = context.workspace_dir
+            # Validate before normalization can call a custom path conversion.
+            exact_authority_digest(workspace)
+            effective_workspace = _normalized_tool_call_workspace(workspace if workspace is not None else Path.cwd())
+            return (
+                (config,) if current["config"] is config else (config, current["config"]),
+                None if request_binding is not None else arguments,
+                tuple(
+                    current[name]
+                    for name in (
+                        "command",
+                        "context",
+                        "harness",
+                        "server_name",
+                        "source_scope",
+                        "config_path",
+                        "transport",
+                        "server_id",
+                        "server_env_keys",
+                        "server_identity",
+                        "_active_executable_identity",
+                        "_active_runtime_launch_identity",
+                        "_active_server_env_values_hash",
+                        "_active_server_identity",
+                        "_tool_catalog_generation",
+                        "_tool_catalog_state",
+                    )
+                ),
+                raw_catalog,
+                effective_workspace,
+            )
+
+        try:
+            return capture_authority_binding(
+                values=values,
+                owners=owners,
+                changed=changed,
+                input_check=check_request,
+            ).check
+        except UnsupportedAuthorityValueError as error:
+            if inside_proxy_authority_scope():
+                raise changed() from error
+            # Unsupported direct Python helper calls retain their public API.
+            return None
+        except (TypeError, ValueError, RecursionError, RuntimeError, OSError) as error:
+            if isinstance(error, ProxyIoLimitError):
+                raise
+            raise changed() from error
+
+    @staticmethod
+    def _bind_tool_call_artifact(
+        artifact: GuardArtifact,
+        authority_check: AuthorityCheck | None,
+        *,
+        expected_digest: bytes | None = None,
+    ) -> tuple[AuthorityCheck | None, bytes | None]:
+        if authority_check is None:
+            return None, None
+
+        def changed() -> ProxyIoLimitError:
+            return ProxyIoLimitError(source="tool_call_authority", reason="tool_call_authority_changed")
+
+        try:
+            captured = exact_authority_digest(artifact)
+            if expected_digest is not None and captured != expected_digest:
+                raise changed()
+        except (TypeError, ValueError, RecursionError, RuntimeError) as error:
+            raise changed() from error
+
+        def check() -> None:
+            authority_check()
+            try:
+                if exact_authority_digest(artifact) != captured:
+                    raise changed()
+            except (TypeError, ValueError, RecursionError, RuntimeError) as error:
+                raise changed() from error
+
+        check()
+        return check, captured
+
     def _resolve_tool_call_authority(
         self,
         *,
@@ -1117,6 +1255,7 @@ class RuntimeMcpGuardProxy:
         """Rebuild the complete current tool-call identity and policy result."""
 
         authority_config = config or self.config
+        authority_check = self._capture_tool_call_authority(arguments=arguments, config=authority_config)
         tool_definition = self._tool_catalog.get(tool_name, {})
         tool_description_value = tool_definition.get("description")
         tool_schema = tool_definition.get("inputSchema", tool_definition.get("input_schema"))
@@ -1146,9 +1285,21 @@ class RuntimeMcpGuardProxy:
             tool_schema=tool_schema,
             tool_description=tool_description_value if isinstance(tool_description_value, str) else None,
         )
-        artifact, artifact_hash, decision = self._evaluate_tool_call_authority(
-            artifact=artifact, arguments=arguments, config=authority_config
-        )
+        authority_check, artifact_digest = self._bind_tool_call_artifact(artifact, authority_check)
+        original_artifact = artifact
+        with use_mcp_authority_check(authority_check):
+            artifact, artifact_hash, decision = self._evaluate_tool_call_authority(
+                artifact=artifact, arguments=arguments, config=authority_config
+            )
+            check_current_mcp_authority()
+        if artifact is not original_artifact:
+            # A private evaluator may return an owned copy. Bind the object
+            # actually consumed, while retaining the original source binding.
+            authority_check, _ = self._bind_tool_call_artifact(
+                artifact,
+                authority_check,
+                expected_digest=artifact_digest,
+            )
         return _ToolCallAuthority(
             artifact=artifact,
             artifact_hash=artifact_hash,
@@ -1156,6 +1307,7 @@ class RuntimeMcpGuardProxy:
             catalog_generation=catalog_generation,
             catalog_state=catalog_state,
             catalog_fingerprint=catalog_fingerprint,
+            authority_check=authority_check,
         )
 
     def _evaluate_tool_call_authority(
@@ -1163,12 +1315,16 @@ class RuntimeMcpGuardProxy:
     ) -> tuple[GuardArtifact, str, ToolCallDecision]:
         """Retain the measured Python default; optional pilots override privately."""
 
+        self._check_tool_call_preparation()
+        check_current_mcp_authority()
         artifact_hash = build_tool_call_hash(
             artifact,
             arguments,
             workspace=self.context.workspace_dir or Path.cwd(),
             config=config,
         )
+        self._check_tool_call_preparation()
+        check_current_mcp_authority()
         decision = self._disable_saved_allow_without_complete_catalog(
             evaluate_tool_call(
                 store=self.store,
@@ -1179,6 +1335,8 @@ class RuntimeMcpGuardProxy:
                 claim_saved_approval=False,
             )
         )
+        self._check_tool_call_preparation()
+        check_current_mcp_authority()
         return artifact, artifact_hash, decision
 
     def _handle_message(
@@ -1191,6 +1349,10 @@ class RuntimeMcpGuardProxy:
         server_output: TextIO | None,
         approval_callback: Any | None,
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        incoming_method = message.get("method")
+        event_method = incoming_method if type(incoming_method) is str else "unknown"
+        incoming_id = message.get("id")
+        has_incoming_id = "id" in message
         try:
             self._check_transport()
             result = self._handle_message_checked(
@@ -1209,9 +1371,9 @@ class RuntimeMcpGuardProxy:
             self._buffered_child_responses.clear()
             self._buffered_client_responses.clear()
             self._poison_tools_catalog()
-            response = _io_failure_response(message.get("id"), error) if "id" in message else None
+            response = _io_failure_response(incoming_id, error) if has_incoming_id else None
             return response, {
-                "method": str(message.get("method", "unknown")),
+                "method": event_method,
                 "decision": "transport-failed",
                 "reason_code": error.reason,
                 "session_terminal": True,
@@ -1227,24 +1389,33 @@ class RuntimeMcpGuardProxy:
         server_output: TextIO | None,
         approval_callback: Any | None,
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
-        if str(message.get("method", "")) == "tools/call":
-            with self._tools_call_boundary_lock:
-                return self._handle_message_serialized(
-                    message=message,
-                    child_stdin=child_stdin,
-                    child_stdout=child_stdout,
-                    client_input=client_input,
-                    server_output=server_output,
-                    approval_callback=approval_callback,
-                )
-        return self._handle_message_serialized(
-            message=message,
-            child_stdin=child_stdin,
-            child_stdout=child_stdout,
-            client_input=client_input,
-            server_output=server_output,
-            approval_callback=approval_callback,
-        )
+        # Nested messages have their own binding and restore the caller's
+        # context; no notification or reply inherits another request's intent.
+        with use_tool_call_binding(None), proxy_authority_scope():
+            if str(message.get("method", "")) == "tools/call":
+                with self._tools_call_boundary_lock:
+                    binding = (
+                        bind_tool_call(message)
+                        if _is_request(message) and isinstance(message.get("params"), dict)
+                        else None
+                    )
+                    with use_tool_call_binding(binding):
+                        return self._handle_message_serialized(
+                            message=binding.owned_message if binding is not None else message,
+                            child_stdin=child_stdin,
+                            child_stdout=child_stdout,
+                            client_input=client_input,
+                            server_output=server_output,
+                            approval_callback=approval_callback,
+                        )
+            return self._handle_message_serialized(
+                message=message,
+                child_stdin=child_stdin,
+                child_stdout=child_stdout,
+                client_input=client_input,
+                server_output=server_output,
+                approval_callback=approval_callback,
+            )
 
     def _deny_inline_tool_call(
         self,
@@ -1394,6 +1565,8 @@ class RuntimeMcpGuardProxy:
         artifact = authority.artifact
         tool_artifact_hash = authority.artifact_hash
         package_artifact = self._package_request_artifact(tool_name=tool_name, arguments=arguments)
+        if authority.authority_check is not None:
+            authority.authority_check()
         decision = authority.decision
         if (
             package_artifact is None
@@ -1449,7 +1622,8 @@ class RuntimeMcpGuardProxy:
                 scanner_evidence=decision_scanner_evidence,
             )
         if package_artifact is not None:
-            package_resolution = self._resolve_package_policy(artifact=package_artifact)
+            with use_mcp_authority_check(authority.authority_check):
+                package_resolution = self._resolve_package_policy(artifact=package_artifact)
             if package_resolution.saved_policy_blocks:
                 return self._handle_package_request(
                     message=message,
@@ -1468,6 +1642,7 @@ class RuntimeMcpGuardProxy:
                     expected_catalog_generation=authority.catalog_generation,
                     expected_catalog_state=authority.catalog_state,
                     expected_catalog_fingerprint=authority.catalog_fingerprint,
+                    authority_check=authority.authority_check,
                 )
             if decision.action in {"allow", "warn"}:
                 response, package_event = self._handle_package_request(
@@ -1487,6 +1662,7 @@ class RuntimeMcpGuardProxy:
                     expected_catalog_generation=authority.catalog_generation,
                     expected_catalog_state=authority.catalog_state,
                     expected_catalog_fingerprint=authority.catalog_fingerprint,
+                    authority_check=authority.authority_check,
                 )
                 return response, package_event
             if self._allow_after_native_prompt(decision):
@@ -1507,6 +1683,7 @@ class RuntimeMcpGuardProxy:
                     expected_catalog_generation=authority.catalog_generation,
                     expected_catalog_state=authority.catalog_state,
                     expected_catalog_fingerprint=authority.catalog_fingerprint,
+                    authority_check=authority.authority_check,
                 )
                 return response, package_event
             if self._inline_prompt_available and approval_callback is not None:
@@ -1554,6 +1731,7 @@ class RuntimeMcpGuardProxy:
                         expected_catalog_generation=authority.catalog_generation,
                         expected_catalog_state=authority.catalog_state,
                         expected_catalog_fingerprint=authority.catalog_fingerprint,
+                        authority_check=authority.authority_check,
                         remember_allow=True,
                         remember_decision_source="inline-approved",
                         remember_signals=decision.signals,
@@ -1585,6 +1763,7 @@ class RuntimeMcpGuardProxy:
                     expected_catalog_generation=authority.catalog_generation,
                     expected_catalog_state=authority.catalog_state,
                     expected_catalog_fingerprint=authority.catalog_fingerprint,
+                    authority_check=authority.authority_check,
                 )
                 return response, package_event
             response, queued_event = self._queue_approval_center_response(
@@ -1620,6 +1799,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=authority.catalog_generation,
                 expected_catalog_state=authority.catalog_state,
                 expected_catalog_fingerprint=authority.catalog_fingerprint,
+                authority_check=authority.authority_check,
             )
         if self._allow_after_native_prompt(decision):
             return self._allow_and_forward(
@@ -1639,6 +1819,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=authority.catalog_generation,
                 expected_catalog_state=authority.catalog_state,
                 expected_catalog_fingerprint=authority.catalog_fingerprint,
+                authority_check=authority.authority_check,
             )
         if self._inline_prompt_available and approval_callback is not None:
             approval_result = approval_callback(self._inline_approval_request(tool_name, decision.summary))
@@ -1661,6 +1842,7 @@ class RuntimeMcpGuardProxy:
                     expected_catalog_generation=authority.catalog_generation,
                     expected_catalog_state=authority.catalog_state,
                     expected_catalog_fingerprint=authority.catalog_fingerprint,
+                    authority_check=authority.authority_check,
                 )
             denied = self._inline_approval_deny_result(
                 approval_result,
@@ -1732,6 +1914,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=authority.catalog_generation,
                 expected_catalog_state=authority.catalog_state,
                 expected_catalog_fingerprint=authority.catalog_fingerprint,
+                authority_check=authority.authority_check,
             )
             final_observe_event = {
                 **observe_event,
@@ -1775,6 +1958,20 @@ class RuntimeMcpGuardProxy:
         artifact: Any,
         external_archive_network_authorized: bool = False,
     ) -> _PackagePolicyResolution:
+        authority_check, _ = self._bind_tool_call_artifact(artifact, current_mcp_authority_check())
+        with use_mcp_authority_check(authority_check):
+            return self._resolve_package_policy_checked(
+                artifact=artifact,
+                external_archive_network_authorized=external_archive_network_authorized,
+            )
+
+    def _resolve_package_policy_checked(
+        self,
+        *,
+        artifact: Any,
+        external_archive_network_authorized: bool = False,
+    ) -> _PackagePolicyResolution:
+        check_current_mcp_authority()
         package_evaluation = evaluate_package_request_artifact(
             artifact=artifact,
             store=self.store,
@@ -1783,16 +1980,19 @@ class RuntimeMcpGuardProxy:
             retain_external_archive_blob=external_archive_network_authorized,
         )
         try:
+            check_current_mcp_authority()
             package_current_action = compose_current_package_policy_action(
                 artifact=artifact,
                 evaluation=package_evaluation,
                 config=self.config,
             )
+            check_current_mcp_authority()
             package_workspace = self.context.workspace_dir or Path.cwd()
             package_context = build_package_execution_context(
                 workspace_dir=package_workspace,
                 artifact=artifact,
             )
+            check_current_mcp_authority()
             artifact_digest = package_request_policy_hash(
                 artifact=artifact,
                 store=self.store,
@@ -1801,12 +2001,14 @@ class RuntimeMcpGuardProxy:
                 execution_context=package_context,
                 config=self.config,
             )
+            check_current_mcp_authority()
             policy_workspace = package_request_runtime_workspace_scope(
                 artifact_id=artifact.artifact_id,
                 artifact_hash=artifact_digest,
                 artifact_type=artifact.artifact_type,
                 execution_context=package_context,
             )
+            check_current_mcp_authority()
             stored_package_resolution = _resolve_stored_package_policy_override(
                 package_evaluation,
                 store=self.store,
@@ -1818,6 +2020,7 @@ class RuntimeMcpGuardProxy:
                 current_action=package_current_action,
                 claim_saved_approval=False,
             )
+            check_current_mcp_authority()
             resolved_package_evaluation = stored_package_resolution.evaluation
             return _PackagePolicyResolution(
                 base_evaluation=package_evaluation,
@@ -1830,6 +2033,7 @@ class RuntimeMcpGuardProxy:
                 saved_policy_blocks=_has_saved_package_block(resolved_package_evaluation.reasons),
                 pending_approval_reuse_decision=stored_package_resolution.approval_reuse_decision,
                 approval_reuse_claim_disposition=stored_package_resolution.claim_disposition,
+                authority_check=current_mcp_authority_check(),
             )
         except BaseException:
             _cleanup_external_archive_downloads(package_evaluation)
@@ -1854,11 +2058,17 @@ class RuntimeMcpGuardProxy:
         expected_catalog_generation: int,
         expected_catalog_state: _ToolCatalogState,
         expected_catalog_fingerprint: str,
+        authority_check: AuthorityCheck | None = None,
         remember_allow: bool = False,
         remember_decision_source: str | None = None,
         remember_signals: tuple[str, ...] = (),
         remember_risk_categories: tuple[str, ...] = (),
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        if authority_check is not None:
+            authority_check()
+        if package_resolution.authority_check is not None:
+            package_resolution.authority_check()
+            authority_check = package_resolution.authority_check
         package_evaluation = package_resolution.evaluation
         scanner_evidence = self._package_scanner_evidence(
             resolution=package_resolution,
@@ -1886,6 +2096,8 @@ class RuntimeMcpGuardProxy:
                 phase="before_package_revalidation",
                 package_request=True,
             )
+        if authority_check is not None:
+            authority_check()
         if package_resolution.saved_policy_blocks:
             return self._stored_package_block_response(
                 message_id=message.get("id"),
@@ -1925,13 +2137,17 @@ class RuntimeMcpGuardProxy:
             tool_name=tool_name,
             arguments=params.get("arguments"),
         )
+        if authority_check is not None:
+            authority_check()
         tool_artifact = fresh_tool_authority.artifact
         tool_artifact_hash = fresh_tool_authority.artifact_hash
         fresh_tool_decision = fresh_tool_authority.decision
         expected_catalog_generation = fresh_tool_authority.catalog_generation
         expected_catalog_state = fresh_tool_authority.catalog_state
         expected_catalog_fingerprint = fresh_tool_authority.catalog_fingerprint
-        fresh_package_resolution = self._resolve_package_policy(artifact=artifact)
+        with use_mcp_authority_check(fresh_tool_authority.authority_check):
+            fresh_package_resolution = self._resolve_package_policy(artifact=artifact)
+        authority_check = fresh_package_resolution.authority_check
         fresh_tool_evidence = _tool_decision_scanner_evidence(fresh_tool_decision)
         fresh_scanner_evidence = self._package_scanner_evidence(
             resolution=fresh_package_resolution,
@@ -2057,6 +2273,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=expected_catalog_generation,
                 expected_catalog_state=expected_catalog_state,
                 expected_catalog_fingerprint=expected_catalog_fingerprint,
+                authority_check=authority_check,
             )
             final_observe_event = {
                 **observe_event,
@@ -2144,6 +2361,8 @@ class RuntimeMcpGuardProxy:
                     phase="before_saved_approval_claim",
                     package_request=True,
                 )
+        if authority_check is not None:
+            authority_check()
         if pending_claims and not self.store.claim_approval_reuse_decisions(pending_claims, now=_now()):
             claim_failure_item: dict[str, object] = {
                 "source": "approval_reuse",
@@ -2195,6 +2414,8 @@ class RuntimeMcpGuardProxy:
                 tool_name=tool_name,
                 arguments=params.get("arguments"),
             )
+            if postclaim_tool_authority.authority_check is not None:
+                postclaim_tool_authority.authority_check()
             postclaim_tool_decision = postclaim_tool_authority.decision
             postclaim_tool_action = _postclaim_tool_action(postclaim_tool_decision)
             tool_context_matches = (
@@ -2242,10 +2463,11 @@ class RuntimeMcpGuardProxy:
                     policy_action="require-reapproval",
                 )
 
-            postclaim_package_resolution = self._resolve_package_policy(
-                artifact=postclaim_package_artifact,
-                external_archive_network_authorized=True,
-            )
+            with use_mcp_authority_check(postclaim_tool_authority.authority_check):
+                postclaim_package_resolution = self._resolve_package_policy(
+                    artifact=postclaim_package_artifact,
+                    external_archive_network_authorized=True,
+                )
             postclaim_package_action = most_restrictive_guard_action(
                 postclaim_package_resolution.current_action,
                 postclaim_package_resolution.evaluation.policy_action,
@@ -2353,6 +2575,7 @@ class RuntimeMcpGuardProxy:
             )
             artifact = postclaim_package_artifact
             fresh_package_resolution = postclaim_package_resolution
+            authority_check = postclaim_package_resolution.authority_check
             fresh_scanner_evidence = postclaim_package_evidence
         bound_request = _bound_external_archive_mcp_request(
             message,
@@ -2404,6 +2627,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=expected_catalog_generation,
                 expected_catalog_state=expected_catalog_state,
                 expected_catalog_fingerprint=expected_catalog_fingerprint,
+                authority_check=authority_check,
                 receipt_signals=remember_signals,
                 receipt_risk_categories=remember_risk_categories,
             )
@@ -2449,9 +2673,24 @@ class RuntimeMcpGuardProxy:
         expected_catalog_generation: int,
         expected_catalog_state: _ToolCatalogState,
         expected_catalog_fingerprint: str,
+        authority_check: AuthorityCheck | None = None,
         receipt_signals: tuple[str, ...] = (),
         receipt_risk_categories: tuple[str, ...] = (),
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        if authority_check is not None:
+            authority_check()
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
+            if message is not binding.owned_message:
+                # Verified archive replacement is the existing authorized
+                # package handoff. Retain the original request as a parent
+                # fence while binding the exact replacement sent to the child.
+                binding = bind_tool_call(message, parent=binding)
+                if binding is None:
+                    raise changed_tool_call()
+                message = binding.owned_message
+                params = message["params"]
         reason_signals = tuple(
             str(item.get("message") or item.get("code") or "") for item in package_evaluation.reasons
         )
@@ -2471,17 +2710,22 @@ class RuntimeMcpGuardProxy:
                 policy_action=policy_action,
                 emit_runtime_evidence=False,
             )
+        if binding is not None:
+            binding.check()
+        completed_params = _safe_mcp_params(params)
         try:
-            response = self._forward_message(
-                message,
-                child_stdin,
-                child_stdout,
-                client_input=client_input,
-                server_output=server_output,
-                expected_catalog_generation=expected_catalog_generation,
-                expected_catalog_state=expected_catalog_state,
-                expected_catalog_fingerprint=expected_catalog_fingerprint,
-            )
+            with use_tool_call_binding(binding):
+                response = self._forward_message(
+                    message,
+                    child_stdin,
+                    child_stdout,
+                    client_input=client_input,
+                    server_output=server_output,
+                    expected_catalog_generation=expected_catalog_generation,
+                    expected_catalog_state=expected_catalog_state,
+                    expected_catalog_fingerprint=expected_catalog_fingerprint,
+                    authority_check=authority_check,
+                )
         except _ToolCatalogBoundaryChangedError:
             return self._catalog_boundary_failure_response(
                 message_id=message.get("id"),
@@ -2500,7 +2744,7 @@ class RuntimeMcpGuardProxy:
             signals=receipt_signals or reason_signals,
             risk_categories=receipt_risk_categories,
             remember=False,
-            arguments=_safe_mcp_arguments(params.get("arguments")),
+            arguments=completed_params.get("arguments"),
             policy_workspace=policy_workspace,
             additional_scanner_evidence=scanner_evidence,
             policy_action=policy_action,
@@ -2510,7 +2754,7 @@ class RuntimeMcpGuardProxy:
             "tool_name": tool_name,
             "decision": "timeout" if _is_timeout_response(response) else event_decision,
             "policy_action": policy_action,
-            "redacted_params": _safe_mcp_params(params),
+            "redacted_params": completed_params,
             "scanner_evidence": list(scanner_evidence),
         }
 
@@ -2872,7 +3116,11 @@ class RuntimeMcpGuardProxy:
         return False
 
     def _check_tool_call_preparation(self) -> None:
-        """Optional private preparation hook; the default holds no cached facts."""
+        """Verify the bound request; the default still holds no cached facts."""
+
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
 
     def _inline_approval_request(self, tool_name: str, summary: str) -> dict[str, Any]:
         raise NotImplementedError
@@ -2894,11 +3142,14 @@ class RuntimeMcpGuardProxy:
         expected_catalog_generation: int | None = None,
         expected_catalog_state: _ToolCatalogState | None = None,
         expected_catalog_fingerprint: str | None = None,
+        authority_check: AuthorityCheck | None = None,
         remember: bool = False,
         scanner_evidence: tuple[dict[str, object], ...] = (),
         policy_action: GuardAction = "allow",
         approval_decision: ToolCallDecision | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
+        if authority_check is not None:
+            authority_check()
         pending = approval_decision.pending_approval_reuse_decision if approval_decision is not None else None
         claim_disposition = (
             approval_decision.approval_reuse_claim_disposition if approval_decision is not None else None
@@ -2940,6 +3191,8 @@ class RuntimeMcpGuardProxy:
                     package_request=False,
                 )
             self._check_tool_call_preparation()
+            if authority_check is not None:
+                authority_check()
             if not self.store.claim_approval_reuse_decisions((pending,), now=_now()):
                 claim_failure_item: dict[str, object] = {
                     "source": "approval_reuse",
@@ -3052,6 +3305,7 @@ class RuntimeMcpGuardProxy:
             # current allow/warn is independently executable. Carry the fresh
             # identity and risk material into the final receipt and forward.
             artifact = fresh_authority.artifact
+            authority_check = fresh_authority.authority_check
             artifact_hash = fresh_authority.artifact_hash
             signals = fresh_decision.signals
             risk_categories = fresh_decision.risk_categories
@@ -3083,6 +3337,12 @@ class RuntimeMcpGuardProxy:
                     scanner_evidence=scanner_evidence,
                     policy_action="require-reapproval",
                 )
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
+        # Detach the existing receipt projection while the request is still
+        # bound. A later alias change cannot revise an already completed write.
+        completed_params = _safe_mcp_params(params)
         try:
             response = self._forward_message(
                 message,
@@ -3093,6 +3353,7 @@ class RuntimeMcpGuardProxy:
                 expected_catalog_generation=expected_catalog_generation,
                 expected_catalog_state=expected_catalog_state,
                 expected_catalog_fingerprint=expected_catalog_fingerprint,
+                authority_check=authority_check,
             )
         except _ToolCatalogBoundaryChangedError:
             return self._catalog_boundary_failure_response(
@@ -3112,16 +3373,16 @@ class RuntimeMcpGuardProxy:
             signals=signals,
             risk_categories=risk_categories,
             remember=False,
-            arguments=_safe_mcp_arguments(params.get("arguments")),
+            arguments=completed_params.get("arguments"),
             additional_scanner_evidence=scanner_evidence,
             policy_action=policy_action,
         )
         event: dict[str, Any] = {
             "method": "tools/call",
-            "tool_name": params.get("name"),
+            "tool_name": completed_params.get("name"),
             "decision": "timeout" if _is_timeout_response(response) else decision_source,
             "policy_action": policy_action,
-            "redacted_params": _safe_mcp_params(params),
+            "redacted_params": completed_params,
         }
         if scanner_evidence:
             event["scanner_evidence"] = list(scanner_evidence)
@@ -3151,7 +3412,13 @@ class RuntimeMcpGuardProxy:
     def _write_message(self, stream: IO[str], message: dict[str, Any], *, source: str) -> None:
         self._check_transport()
         try:
-            write_message(stream, message, timeout_seconds=self._child_response_timeout_seconds(), source=source)
+            frame = tool_call_write_frame(message, source=source)
+            if frame is None:
+                write_message(stream, message, timeout_seconds=self._child_response_timeout_seconds(), source=source)
+            else:
+                framing._write_encoded_line(
+                    stream, frame, timeout_seconds=self._child_response_timeout_seconds(), source=source
+                )
         except IO_FAILURES as error:
             self._abort_transport(error)
             raise
@@ -3342,14 +3609,24 @@ class RuntimeMcpGuardProxy:
         expected_catalog_generation: int | None = None,
         expected_catalog_state: _ToolCatalogState | None = None,
         expected_catalog_fingerprint: str | None = None,
+        authority_check: AuthorityCheck | None = None,
     ) -> dict[str, Any]:
         request_id = message.get("id")
-        if (
-            str(message.get("method", "")) == "tools/call"
-            and expected_catalog_generation is not None
-            and expected_catalog_state is not None
-            and expected_catalog_fingerprint is not None
-            and not self._drain_and_validate_catalog_authority(
+        tool_bound = any(
+            value is not None
+            for value in (expected_catalog_generation, expected_catalog_state, expected_catalog_fingerprint)
+        )
+        if tool_bound:
+            if authority_check is None and inside_proxy_authority_scope():
+                raise ProxyIoLimitError(source="tool_call_authority", reason="tool_call_authority_changed")
+            if (
+                expected_catalog_generation is None
+                or expected_catalog_state is None
+                or expected_catalog_fingerprint is None
+            ):
+                raise changed_tool_call()
+            require_tool_call_method(message)
+            if not self._drain_and_validate_catalog_authority(
                 child_stdin=child_stdin,
                 child_stdout=child_stdout,
                 client_input=client_input,
@@ -3358,10 +3635,16 @@ class RuntimeMcpGuardProxy:
                 state=expected_catalog_state,
                 fingerprint=expected_catalog_fingerprint,
                 quiet_seconds=_TOOLS_CALL_PREWRITE_QUIET_SECONDS,
-            )
-        ):
-            raise _ToolCatalogBoundaryChangedError(_TOOL_CATALOG_EXECUTION_BOUNDARY_CHANGED)
-        self._write_message(child_stdin, message, source="child_write")
+            ):
+                raise _ToolCatalogBoundaryChangedError(_TOOL_CATALOG_EXECUTION_BOUNDARY_CHANGED)
+            require_tool_call_method(message)
+            self._check_tool_call_preparation()
+            if authority_check is not None:
+                authority_check()
+            with bind_tool_call_write(message, authority_check=authority_check):
+                self._write_message(child_stdin, message, source="child_write")
+        else:
+            self._write_message(child_stdin, message, source="child_write")
         timeout_seconds = self._child_response_timeout_seconds()
         while True:
             count_frame(source="child_response")

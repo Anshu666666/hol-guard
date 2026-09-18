@@ -4,10 +4,25 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+# Spawn interpreters replay this entry before unpickling the application target.
+# Diagnostics must never replace functions or change the probe's original outcome.
+try:
+    if (__name__ == "__mp_main__" and "HOL_GUARD_TRANSITION_OBSERVER_CONTEXT" in os.environ) or (
+        __name__ == "__main__"
+        and "--phase" in sys.argv
+        and sys.argv[sys.argv.index("--phase") + 1] == "baseline_rollback"
+    ):
+        from scripts.ci.installed_transition_observer import bootstrap
+
+        bootstrap(__name__)
+except Exception:
+    pass
 
 from scripts.ci.installed_transition_diagnostics import exception_metadata
 

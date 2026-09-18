@@ -2180,6 +2180,9 @@ def _resolve_stored_package_policy_override(
     current_action: object | None = None,
     claim_saved_approval: bool = True,
 ) -> _StoredPackagePolicyResolution:
+    from .mcp_authority_binding import check_current_mcp_authority
+
+    check_current_mcp_authority()
     effective_current_action = (
         evaluation.policy_action
         if current_action is None
@@ -2202,7 +2205,9 @@ def _resolve_stored_package_policy_override(
         workspace_dir=workspace_dir,
         execution_context=resolved_execution_context,
     )
+    check_current_mcp_authority()
     for policy_workspace in policy_workspaces:
+        check_current_mcp_authority()
         lookup = store.resolve_policy_decision_lookup(
             artifact.harness,
             artifact.artifact_id,
@@ -2212,8 +2217,10 @@ def _resolve_stored_package_policy_override(
             now,
             consume_one_shot=False,
         )
+        check_current_mcp_authority()
         decision = lookup["decision"]
         ignored_integrity = lookup["ignored_local_integrity"]
+        check_current_mcp_authority()
         if isinstance(decision, dict):
             break
         if ignored_integrity is not None:
@@ -2221,6 +2228,7 @@ def _resolve_stored_package_policy_override(
     if not isinstance(decision, dict) and ignored_integrity is not None:
         from .daemon.policy_authority_client import resolve_package_policy
 
+        check_current_mcp_authority()
         daemon_resolution = resolve_package_policy(
             guard_home=store.guard_home,
             harness=artifact.harness,
@@ -2229,13 +2237,16 @@ def _resolve_stored_package_policy_override(
             workspaces=policy_workspaces,
             publisher=artifact.publisher,
         )
+        check_current_mcp_authority()
         daemon_authority = daemon_resolution.authority
         if daemon_resolution.decision is not None:
             decision = daemon_resolution.decision
             ignored_integrity = None
+        check_current_mcp_authority()
     diagnosed_reason: ApprovalReuseValidationFailure | None = None
     if not isinstance(decision, dict) and ignored_integrity is None:
         for policy_workspace in policy_workspaces:
+            check_current_mcp_authority()
             raw_diagnosed_reason = store.approval_reuse_validation_reason(
                 artifact.harness,
                 artifact.artifact_id,
@@ -2244,13 +2255,16 @@ def _resolve_stored_package_policy_override(
                 artifact.publisher,
                 now,
             )
+            check_current_mcp_authority()
             if raw_diagnosed_reason is not None:
                 diagnosed_reason = cast(ApprovalReuseValidationFailure, raw_diagnosed_reason)
                 break
         if diagnosed_reason is None:
             return _StoredPackagePolicyResolution(current_evaluation)
     if isinstance(decision, dict) and _stored_package_policy_is_stale_policy_bundle_family(decision, store=store):
+        check_current_mcp_authority()
         return _StoredPackagePolicyResolution(current_evaluation)
+    check_current_mcp_authority()
     action = (
         decision.get("action")
         if isinstance(decision, dict)
@@ -2272,9 +2286,11 @@ def _resolve_stored_package_policy_override(
         decision,
         store=store,
     )
+    check_current_mcp_authority()
     fresh_local_approval = isinstance(decision, dict) and (
         _is_fresh_artifact_approval(decision, store=store) or legacy_local_approval
     )
+    check_current_mcp_authority()
     durable_exact_approval = isinstance(decision, dict) and _is_durable_exact_artifact_approval(decision)
     reuse = evaluate_approval_reuse(
         effective_current_action,
@@ -2286,13 +2302,16 @@ def _resolve_stored_package_policy_override(
     )
     claim_disposition: _PackageApprovalClaimDisposition | None = None
     disposition_resolver = getattr(store, "approval_reuse_claim_disposition", None)
+    check_current_mcp_authority()
     if fresh_local_approval:
         claim_disposition = "consumed"
     elif isinstance(decision, dict) and callable(disposition_resolver):
         raw_disposition = disposition_resolver(decision)
+        check_current_mcp_authority()
         if raw_disposition in {"consumed", "retained"}:
             claim_disposition = cast(_PackageApprovalClaimDisposition, raw_disposition)
     claim_succeeded = True
+    check_current_mcp_authority()
     if claim_saved_approval and reuse.should_claim and isinstance(decision, dict):
         if daemon_authority is not None:
             from .daemon.policy_authority_client import claim_package_policy
@@ -2308,6 +2327,7 @@ def _resolve_stored_package_policy_override(
             )
         else:
             claim_succeeded = store.claim_approval_reuse_decision(decision, now=now)
+        check_current_mcp_authority()
     if claim_saved_approval and reuse.should_claim and not claim_succeeded:
         reuse = evaluate_approval_reuse(
             effective_current_action,

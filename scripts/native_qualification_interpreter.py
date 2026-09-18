@@ -1,4 +1,4 @@
-"""Own an exact interpreter copy inside a disposable Linux qualification venv.
+"""Own an exact interpreter copy inside a disposable Linux or macOS venv.
 
 The shared uv/toolcache interpreter and installed wheel bytes are never chmodded
 or rewritten. The ordinary installed managed-file validator remains the gate.
@@ -258,11 +258,14 @@ def _copy(source: Path, invocation: Path, *, evidence: dict[str, Any]) -> None:
         raise RuntimeError("qualification_interpreter_owned_copy_unsafe")
 
 
-def provision_linux_venv_interpreter(python: Path) -> dict[str, Any]:
+def provision_venv_interpreter(python: Path) -> dict[str, Any]:
     """Preserve the uv-selected runtime and validate the private installed copy."""
     proof: dict[str, Any] = {
         "schema": "hol-guard.qualification-interpreter-copy.v1",
-        "scope": "disposable_linux_venv_interpreter_only",
+        "scope": {
+            "linux": "disposable_linux_venv_interpreter_only",
+            "darwin": "disposable_macos_venv_interpreter_only",
+        }.get(sys.platform, "unsupported_platform"),
         "passed": False,
         "maximum_copy_bytes": _MAX_INTERPRETER_BYTES,
         "shared_interpreter_chmodded": False,
@@ -270,7 +273,7 @@ def provision_linux_venv_interpreter(python: Path) -> dict[str, Any]:
         "production_integrity_checks_relaxed": False,
     }
     try:
-        if sys.platform != "linux":
+        if sys.platform not in {"linux", "darwin"}:
             raise RuntimeError("qualification_interpreter_platform_unsupported")
         python = python.absolute()
         if python.name != "python" or python.parent.name != "bin":

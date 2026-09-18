@@ -62,7 +62,22 @@ def test_wait_for_receipt_corpus_polls_until_processed() -> None:
     assert time.monotonic() - started < 1.0
 
 
-def test_installed_corpus_waits_before_mode_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ("diagnostics", "failures", "expected_diagnostics"),
+    [
+        ({}, 0, {}),
+        ({"receipt_persistence/sqlite_busy": 3}, 3, {"receipt_persistence/sqlite_busy": 3}),
+        (None, 3, None),
+        ({"private-path-must-not-be-exported": 3}, 3, None),
+    ],
+)
+def test_installed_corpus_waits_before_mode_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    diagnostics: dict[str, int] | None,
+    failures: int,
+    expected_diagnostics: dict[str, int] | None,
+) -> None:
     from ci.native_runtime import probe_native_default_auto as probe
 
     events: list[str] = []
@@ -76,14 +91,19 @@ def test_installed_corpus_waits_before_mode_changes(tmp_path: Path, monkeypatch:
 
     class CompleteWriter:
         def stats(self) -> Mapping[str, object]:
-            return {
+            events.append("receipts")
+            result: dict[str, object] = {
                 "receipt_accepted": 21,
                 "receipt_processed": 21,
                 "receipt_dropped": 0,
                 "receipt_durable_pending": 0,
                 "receipt_deduped": 0,
-                "receipt_failures": 0,
+                "receipt_failures": failures,
             }
+            if diagnostics is not None:
+                result["failure_diagnostics"] = diagnostics
+                result["receipt_failure_diagnostics"] = diagnostics
+            return result
 
     metrics = DelayedMetrics()
     worker = SimpleNamespace(
@@ -120,7 +140,25 @@ def test_installed_corpus_waits_before_mode_changes(tmp_path: Path, monkeypatch:
     result = probe._installed_hook_corpus(tmp_path)
     assert result["native_resident_decisions"] == 21
     assert result["route_count"] == 21
-    assert events == ["started", "modes", "stopped"]
+    assert result["receipt_metrics"] == {
+        "accepted": 21,
+        "processed": 21,
+        "deduped": 0,
+        "dropped": 0,
+        "failures": failures,
+        "durable_pending": 0,
+    }
+    assert result["evidence_failure_diagnostics"] == {
+        "all_evidence": expected_diagnostics,
+        "native_receipts": expected_diagnostics,
+    }
+    report = probe._build_probe_receipt(
+        SimpleNamespace(reason="native_ready"), SimpleNamespace(target="x86_64-windows"), result
+    )
+    assert report["receipt_metrics"] == result["receipt_metrics"]
+    assert report["evidence_failure_diagnostics"] == result["evidence_failure_diagnostics"]
+    assert report["schema"] == "hol-guard.native-default-installed-receipt.v1"
+    assert events == ["started", "modes", "receipts", "stopped"]
 
 
 def test_wait_for_route_corpus_observes_completion_before_snapshot() -> None:

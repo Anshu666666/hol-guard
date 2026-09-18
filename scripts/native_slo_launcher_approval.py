@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import re
+import sqlite3
 import threading
 import time
 import uuid
@@ -35,6 +36,17 @@ from scripts.native_slo_failure import failure_evidence
 _MAX_OPERATIONS = 32
 _MAX_WAIT_SECONDS = 8.0
 _IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,64}\Z")
+# SQLite primary result codes; sqlite3 exposes named constants only on 3.11+.
+_SQLITE_READ_CONTENTION_CODES = frozenset({5, 6})  # SQLITE_BUSY, SQLITE_LOCKED
+
+
+class _PendingReadContentionError(sqlite3.OperationalError):
+    """Retain an actual contention error that preceded SELECT completion."""
+
+    def __init__(self, error: sqlite3.OperationalError, code: int) -> None:
+        super().__init__("qualification_launcher_approval_pending_read_contention")
+        self.original = error
+        self.sqlite_errorcode = code
 
 
 class _Session(Protocol):
@@ -206,22 +218,38 @@ class LauncherApprovalControl:
         # Production local review currently does not retain tool_use_id. Match
         # its exact command/tool/harness/workspace and require a new SQL row.
         # A pre-existing deduplicated row is never silently selected.
-        with sqlite_connect_timeout_override(0.05), self.session.store._connect() as connection:
-            rows = connection.execute(
-                """select request_id from approval_requests
-                   where rowid > ? and status = 'pending' and policy_action = 'review'
-                     and harness = ? and artifact_name = ? and launch_target = ? and workspace = ?
-                     and artifact_id = ? and artifact_type = 'tool_call'
-                   order by rowid limit 2""",
-                (
-                    operation.watermark,
-                    operation.harness,
-                    operation.tool,
-                    operation.launch_target,
-                    operation.workspace,
-                    f"{operation.harness}:native-pretool:{operation.tool}",
-                ),
-            ).fetchall()
+        read_finished = False
+        try:
+            # Keep the ordinary storage gate and connection settings, but do
+            # not enter _connect's pre-yield database recovery/write path.
+            with (
+                sqlite_connect_timeout_override(0.05),
+                self.session.store._hold_storage_gate(exclusive=False),
+                self.session.store._connect_once() as connection,
+            ):
+                rows = connection.execute(
+                    """select request_id from approval_requests
+                       where rowid > ? and status = 'pending' and policy_action = 'review'
+                         and harness = ? and artifact_name = ? and launch_target = ? and workspace = ?
+                         and artifact_id = ? and artifact_type = 'tool_call'
+                       order by rowid limit 2""",
+                    (
+                        operation.watermark,
+                        operation.harness,
+                        operation.tool,
+                        operation.launch_target,
+                        operation.workspace,
+                        f"{operation.harness}:native-pretool:{operation.tool}",
+                    ),
+                ).fetchall()
+                # Store context exit may perform commit housekeeping. An
+                # exception after this point is ambiguous and never retried.
+                read_finished = True
+        except sqlite3.OperationalError as error:
+            code = getattr(error, "sqlite_errorcode", None)
+            if not read_finished and type(code) is int and code & 0xFF in _SQLITE_READ_CONTENTION_CODES:
+                raise _PendingReadContentionError(error, code) from error
+            raise
         if len(rows) > 1:
             raise RuntimeError("qualification_launcher_approval_ambiguous")
         return str(rows[0][0]) if rows else None
@@ -293,13 +321,29 @@ class LauncherApprovalControl:
 
     def _run(self, operation: _Operation) -> None:
         durable: dict[str, object] | None = None
+        read_contention: dict[str, object] = {}
+        read_contention_count = 0
         try:
             while True:
                 if operation.cancel.is_set():
                     raise RuntimeError("qualification_launcher_approval_cancelled")
                 if time.monotonic() >= operation.deadline:
                     raise TimeoutError("qualification_launcher_approval_deadline")
-                request_id = self._new_pending(operation)
+                try:
+                    request_id = self._new_pending(operation)
+                except _PendingReadContentionError as error:
+                    # Only the pre-selection read may be retried. Retain the
+                    # observed contention and use the original deadline and
+                    # polling delay; approval resolution is never repeated.
+                    read_contention_count += 1
+                    read_contention = {
+                        "read_contention": {
+                            "count": read_contention_count,
+                            "sqlite_errorcode": error.sqlite_errorcode,
+                            "last_failure": failure_evidence(error.original),
+                        }
+                    }
+                    request_id = None
                 if request_id is not None:
                     identity = self._verify_identity(operation, request_id, status="pending")
                     durable = {"request_id": request_id, "approval_durable": False}
@@ -327,6 +371,7 @@ class LauncherApprovalControl:
                     operation.evidence = assert_privacy_safe(
                         {
                             **evidence,
+                            **read_contention,
                             "operation_id": operation.operation_id,
                             "state": "resolved",
                             "input_digest": operation.input_digest,
@@ -340,6 +385,7 @@ class LauncherApprovalControl:
             operation.evidence = assert_privacy_safe(
                 {
                     **(durable or {}),
+                    **read_contention,
                     "operation_id": operation.operation_id,
                     "state": "failed",
                     "failure": failure_evidence(error),

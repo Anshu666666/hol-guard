@@ -54,6 +54,9 @@ def _experiment(monkeypatch: pytest.MonkeyPatch, *, install: str = "completed", 
         def snapshot(self):
             return {"received": self.received, "answered": self.received, "rejected": 0, "errors": 0}
 
+        def rejection_snapshot(self):
+            return {"reasons": {"packet_size": 0}, "question_types": {"unparsed": 0}}
+
     def helper(operation, port, owner):
         assert port == 54321 and owner == "a" * 32
         events.append(operation)
@@ -107,6 +110,7 @@ def test_one_environment_encloses_paired_command_and_restores_it(
     assert report["configuration_after_lookup_witness"]["owned_bytes_match"] is True
     assert report["system_configuration_after_install"]["exact_resolver_selected"] is False
     assert report["responder"]["received"] == 1 and report["resolver_packets_received"] == 0
+    assert report["rejected_packets"] == report["rejected_packets_before_lookup_witness"]
     assert report["environment_scope"] == "disposable_ci_runner_both_arms"
     assert all(
         report[key] is False

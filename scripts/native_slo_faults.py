@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 from scripts.native_slo_edge_diagnostic import capture_native_edge_stages
 from scripts.native_slo_native_diagnostic import observe_native_call
+from scripts.native_slo_publisher_diagnostic import policy_refusal_diagnostic
 
 
 class FaultFixture:
@@ -26,6 +27,9 @@ class FaultFixture:
         self.last_native_diagnostic: dict[str, object] | None = None
         self.native_calls = 0
         self.native_completed_calls = 0
+        self.last_policy_refusal_diagnostic: dict[str, object] | None = None
+        self.policy_refusal_calls: int | None = None
+        self.policy_refusal_observer_installed: bool = False
         self.capture_lock = threading.Lock()
         self.observed: dict[str, object] = {}
         worker = session.daemon._server.hook_worker
@@ -52,6 +56,7 @@ class FaultFixture:
 
     def __enter__(self) -> FaultFixture:
         from codex_plugin_scanner.guard import native_hook_edge
+        from codex_plugin_scanner.guard.daemon import hook_worker_responses
         from codex_plugin_scanner.guard.runtime import hook_payload_reference
 
         worker = self.session.daemon._server.hook_worker
@@ -141,6 +146,36 @@ class FaultFixture:
             self.evidence["fault_scope"] = "withdrawn_accepted_authority_file"
         elif self.setup not in {"normal", "watch"}:
             raise RuntimeError("qualification fault setup has no witnessed implementation")
+        owned_server = self.session.daemon._server
+        original_reason = getattr(hook_worker_responses, "_native_policy_not_ready_reason", None)
+        if callable(original_reason):
+
+            def capture_policy_refusal(daemon_server: object) -> object:
+                reason = original_reason(daemon_server)
+                if daemon_server is owned_server:
+                    diagnostic: dict[str, object]
+                    try:
+                        diagnostic = policy_refusal_diagnostic(reason)
+                    except Exception:
+                        diagnostic = {"publisher_error_state": "collection_failed"}
+                    try:
+                        with self.capture_lock:
+                            self.last_policy_refusal_diagnostic = diagnostic
+                            if self.policy_refusal_calls is not None:
+                                self.policy_refusal_calls += 1
+                    except Exception:
+                        # Optional recording must not replace the original
+                        # helper's result; an incomplete count is unavailable.
+                        self.last_policy_refusal_diagnostic = None
+                        self.policy_refusal_calls = None
+                return reason
+
+            self.stack.enter_context(
+                patch.object(hook_worker_responses, "_native_policy_not_ready_reason", capture_policy_refusal)
+            )
+            self.policy_refusal_observer_installed = True
+            self.policy_refusal_calls = 0
+
         return self
 
     def before_case(self) -> None:
@@ -148,6 +183,8 @@ class FaultFixture:
             self.last_native = self.last_native_diagnostic = None
             self.native_calls = 0
             self.native_completed_calls = 0
+            self.last_policy_refusal_diagnostic = None
+            self.policy_refusal_calls = 0 if self.policy_refusal_observer_installed else None
         self.observed.clear()
 
     def result(self) -> dict[str, object]:
@@ -158,6 +195,8 @@ class FaultFixture:
                 "native_call_diagnostic": self.last_native_diagnostic,
                 "native_call_count": self.native_calls,
                 "native_completed_call_count": self.native_completed_calls,
+                "policy_refusal_diagnostic": self.last_policy_refusal_diagnostic,
+                "policy_refusal_count": self.policy_refusal_calls,
             }
 
     def __exit__(self, *_args: object) -> None:

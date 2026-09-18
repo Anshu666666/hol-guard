@@ -64,10 +64,12 @@ def test_transport_rejection_distinguishes_declared_length_from_delivered_malfor
     assert connection.closed is True
 
 
+@pytest.mark.parametrize("refused", (False, True))
 def test_failed_corpus_case_retains_worker_diagnostic_through_outer_export(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, refused: bool
 ) -> None:
     from scripts import native_slo_workloads as workloads
+    from scripts.native_slo_publisher_diagnostic import policy_refusal_diagnostic
 
     case = next(
         case
@@ -87,10 +89,14 @@ def test_failed_corpus_case_retains_worker_diagnostic_through_outer_export(
         "publisher_cache": "captured",
         "publisher_acked": True,
     }
+    refusal = policy_refusal_diagnostic(
+        "HOL Guard could not prepare the native policy safely. native_policy_windows_acl_verify_failed."
+    )
+    reason = "native_policy_not_ready" if refused else "native_post_tool_unavailable"
 
     def request(*_args: object) -> tuple[dict[str, str], float]:
         routes["native_fail_safe"] = 1
-        return {"decision": "allow", "policy_action": "allow", "reason_code": "native_post_tool_unavailable"}, 1.0
+        return {"decision": "allow", "policy_action": "allow", "reason_code": reason}, 1.0
 
     session = SimpleNamespace(
         workspace=tmp_path,
@@ -99,9 +105,10 @@ def test_failed_corpus_case_retains_worker_diagnostic_through_outer_export(
         control=lambda _operation: {
             "setup": {},
             "native_result": None,
-            "native_call_diagnostic": diagnostic,
-            "native_call_count": 1,
-            "native_completed_call_count": 1,
+            "native_call_diagnostic": None if refused else diagnostic,
+            "native_call_count": 0 if refused else 1,
+            "native_completed_call_count": 0 if refused else 1,
+            **({"policy_refusal_diagnostic": refusal, "policy_refusal_count": 1} if refused else {}),
         },
     )
     monkeypatch.setattr(corpus, "DaemonFixture", lambda *_args, **_kwargs: nullcontext(session))
@@ -114,11 +121,13 @@ def test_failed_corpus_case_retains_worker_diagnostic_through_outer_export(
     report = json.loads(json.dumps(assert_privacy_safe({"failure": failure_evidence(caught.value)})))
     detail = report["failure"]
     assert detail["case"] == case.case_id.replace("/", ".") and detail["field"] == "route"
-    assert detail["native_call_count"] == 1
-    assert detail["native_completed_call_count"] == 1
-    assert detail["native_call_diagnostic"] == diagnostic
+    assert detail["native_call_count"] == (0 if refused else 1)
+    assert detail["native_completed_call_count"] == (0 if refused else 1)
+    assert detail["native_call_diagnostic"] == (None if refused else diagnostic)
+    assert detail["policy_refusal_diagnostic"] == (refusal if refused else None)
+    assert detail["policy_refusal_count"] == (1 if refused else None)
     assert detail["observed_semantics"]["native"]["available"] is False
     assert (
         detail["observed_semantics"]["delivered"]["reason_code_digest"]
-        == hashlib.sha256(b'"native_post_tool_unavailable"').hexdigest()
+        == hashlib.sha256(json.dumps(reason).encode()).hexdigest()
     )

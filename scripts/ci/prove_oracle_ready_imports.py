@@ -20,7 +20,7 @@ import pytest
 
 BASE = "3424bea17968884b4b913be389d0c7e9fb297c15"
 BASE_TREE = "65170e6d3a0a83a6db74931d07896d1f74031a0a"
-PARENT = "c89a68692c98f1cbe89a667be722b25387a57a16"
+PARENT = "4d52bab94b81ed151d644e40232c4cf6146c4e0a"
 MODE = os.environ.get("ORACLE_READY_MODE", "")
 if MODE not in {"readiness", "prewarm"}:
     raise ValueError("mode")
@@ -48,6 +48,11 @@ PINS = {
     "src/codex_plugin_scanner/guard/adapters/base.py": "8026fd888a4f3235e9a0ac2aee59089a035e062b",
     "src/codex_plugin_scanner/guard/store.py": "4edf1f65655e01fea4f634252d4242819ef92f52",
     "tests/test_guard_hook_process_runner.py": "7b99972cdf5d6018eadcba60fefbe790bc4efda0",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_runner.py": "7f036980410215bee326e27f433ab71720c0581c",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_slot_review.py": "1d6cab3445585c23111d9854bb95c7036af15590",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_worker.py": "ac956a67b04463857afe1aaec48adafdb85609d3",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_capacity.py": "0e0ca3503b9b8252cebbf893dc9c6b2f938a44fc",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py": "8f11a06586e5f704bd8632d1c7cbec6c52f395c5",
     "docs/guard/contracts/hook-data-plane-ownership.v2.json": "a24594b668f7add8aba32fe27924b2349371b8d7",
     "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",
     "tests/conftest.py": "61e6d98609309fac99c9baae50fab5f47229fcde",
@@ -78,6 +83,41 @@ def pytest_collectreport(report):
 def pytest_internalerror(excrepr, excinfo):
     global _INTERNAL_ERRORS
     _INTERNAL_ERRORS += 1
+
+
+def _prewarm_failure_boundary(frame):
+    """Read only fixed categories and counters already computed by the test."""
+    result = {"complete": False}
+    try:
+        rows = frame.f_locals.get("results")
+        stats = frame.f_locals.get("runner_stats")
+        module = sys.modules.get("codex_plugin_scanner.guard.daemon.hook_process_worker")
+        review_type = getattr(module, "HookProcessReview", None)
+        if type(rows) is not list or len(rows) != 24 or review_type is None or type(stats) is not dict:
+            return result
+        allowed = {
+            "daemon_hook_process_closed", "daemon_hook_process_deadline_exhausted",
+            "daemon_hook_process_failed", "daemon_hook_process_guard_home_mismatch",
+            "daemon_hook_process_invalid_json", "daemon_hook_process_invalid_request",
+            "daemon_hook_process_not_ready", "daemon_hook_process_timeout",
+        }
+        counts = {key: 0 for key in sorted(allowed | {"no_reason", "other"})}
+        for row in rows:
+            if type(row) is not review_type:
+                return result
+            reason = row.reason_code
+            key = "no_reason" if reason is None else reason if type(reason) is str and reason in allowed else "other"
+            counts[key] += 1
+        counters = {}
+        for key in ("configured", "workers", "ready", "busy", "target", "timeouts", "failures", "restarts"):
+            value = stats.get(key)
+            if type(value) is not int or not 0 <= value <= 1000000:
+                return result
+            counters[key] = value
+        result = {"complete": True, "results": 24, "reasonCounts": counts, "runnerStats": counters}
+    except BaseException:
+        result = {"complete": False}
+    return result
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -115,6 +155,7 @@ def pytest_runtest_makereport(item, call):
                     and item.nodeid == PREWARM_NODE):
                 record["sourceBlob"], record["line"] = PINS[PREWARM_TEST], terminal.tb_lineno
                 if code.co_firstlineno == 411:
+                    record["failureBoundary"] = _prewarm_failure_boundary(terminal.tb_frame)
                     for name in ("elapsed", "timing_scale"):
                         value = terminal.tb_frame.f_locals.get(name)
                         if type(value) in (float, int) and math.isfinite(value) and 0 <= value < 10000:
@@ -354,6 +395,10 @@ def main():
             raise ValueError("process_result")
         summary["complete"], summary["passed"], code = True, not failed, failed
         summary["performanceAcceptance"] = MODE == "prewarm" and not failed
+        if MODE == "prewarm" and failed:
+            summary["failureBoundaryComplete"] = calls[0].get("failureBoundary", {}).get("complete") is True
+            if not summary["failureBoundaryComplete"]:
+                raise ValueError("failure_boundary_incomplete")
     except BaseException as error:
         summary["complete"], code = False, 2
         summary["errorClass"] = type(error).__name__ if type(error).__name__ in {
@@ -361,7 +406,7 @@ def main():
         } else "OtherException"
         codes = {"source_entry", "source_identity", "source_parent", "source_base", "source_delta",
                  "source_pin", "source_contents", "interpreter", "selection", "collection_process",
-                 "cleanup_platform", "cleanup_setup", "collection_cleanup", "phase_count", "fixture_failure", "result", "process_result"}
+                 "cleanup_platform", "cleanup_setup", "collection_cleanup", "phase_count", "fixture_failure", "result", "process_result", "failure_boundary_incomplete"}
         if type(error) is ValueError and len(error.args) == 1 and isinstance(error.args[0], str) and error.args[0] in codes:
             summary["errorCode"] = error.args[0]
     finally:

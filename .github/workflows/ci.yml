@@ -1,4 +1,4 @@
-name: Oracle readiness baseline
+name: Oracle readiness candidate
 
 on:
   workflow_dispatch:
@@ -21,6 +21,10 @@ concurrency:
 
 jobs:
   observe:
+    strategy:
+      fail-fast: false
+      matrix:
+        proof: [readiness, prewarm]
     if: github.repository == 'hashgraph-online/hol-guard' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-oracle-ready-imports-3424'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -28,12 +32,13 @@ jobs:
       EXPECTED_DIAGNOSTIC_SHA: ${{ inputs.diagnostic_commit }}
       EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
       PYTHONDONTWRITEBYTECODE: '1'
+      ORACLE_READY_MODE: ${{ matrix.proof }}
     steps:
       - name: Checkout exact diagnostic
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 2
+          fetch-depth: 3
           persist-credentials: false
       - name: Verify diagnostic identity and driver before setup
         run: |
@@ -48,10 +53,10 @@ jobs:
               raise SystemExit("Diagnostic commit mismatch.")
           if git("rev-parse", "HEAD^{tree}") != os.environ["EXPECTED_DIAGNOSTIC_TREE"]:
               raise SystemExit("Diagnostic tree mismatch.")
-          if git("show", "-s", "--format=%P", "HEAD") != "3424bea17968884b4b913be389d0c7e9fb297c15":
+          if git("show", "-s", "--format=%P", "HEAD") != "c89a68692c98f1cbe89a667be722b25387a57a16":
               raise SystemExit("Diagnostic parent mismatch.")
           expected = {
-              "scripts/ci/prove_oracle_ready_imports.py": "7747b78e6b58bc2851a67a885b5245ac87ac51bc",
+              "scripts/ci/prove_oracle_ready_imports.py": "b2ae97b0b5b7f4e556f5f23f9940931ff5e6d769",
               "pyproject.toml": "44250c39b253343dd95a24441850940d48581f8b",
               "uv.lock": "87a7e665302f34c6ae1100387425572bab6e7c51",
               "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",
@@ -73,6 +78,7 @@ jobs:
           version: '0.9.26'
           enable-cache: false
       - name: Install locked dependencies
+        id: dependencies
         run: uv sync --frozen --extra dev --python 3.10
       - name: Secure managed interpreter permissions
         shell: bash
@@ -89,13 +95,108 @@ jobs:
           fi
           secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
           (( (8#$secured_mode & 2) == 0 ))
-      - name: Observe seven fresh-process readiness cases
+      - name: Validate selected candidate proof
         run: uv run --no-sync python -m scripts.ci.prove_oracle_ready_imports
-      - name: Retain closed observations only
+      - name: Check ownership and retain actual locked formatter output
+        if: always() && steps.dependencies.outcome == 'success' && matrix.proof == 'readiness'
+        run: |
+          uv run --no-sync python <<'PY'
+          import ast
+          import base64
+          import json
+          import os
+          import shutil
+          import sys
+          from pathlib import Path
+          
+          from scripts.ci import prove_oracle_ready_imports as proof
+          
+          output = Path(os.environ["RUNNER_TEMP"]) / "guard-oracle-ready-quality"
+          output.mkdir(parents=True, exist_ok=False)
+          paths = [
+              "tests/test_guard_hook_oracle_ready_imports.py",
+              "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py",
+          ]
+          summary = {"schema": "guard.oracle-ready-quality.v1", "complete": False,
+                     "passed": False, "formattedSourceReviewRequired": True}
+          exports = []
+          code = 2
+          try:
+              summary["sourceBefore"] = proof.verify()
+              proof.enable_owned_child_cleanup()
+              config = str(Path("pyproject.toml").resolve())
+              def run(name, args):
+                  receipt = proof.execute(args, output / (name + ".log"), 120, dict(os.environ))
+                  summary[name] = receipt
+                  if receipt["timedOut"] or receipt["reapTimedOut"] or receipt["exit"] not in (0, 1):
+                      raise ValueError("quality_command")
+                  return receipt["exit"]
+              ruff = [sys.executable, "-m", "ruff"]
+              run("originalCheck", ruff + ["check", "--config", config, *paths])
+              run("originalFormat", ruff + ["format", "--check", "--config", config, *paths])
+              copied = []
+              for path in paths:
+                  destination = output / "formatted" / path
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copy2(path, destination)
+                  copied.append(str(destination))
+              run("copyImportOrder", ruff + ["check", "--select", "I", "--fix", "--config", config, *copied])
+              run("copyFormat", ruff + ["format", "--config", config, *copied])
+              run("copyCheck", ruff + ["check", "--config", config, *copied])
+              run("copyFormatCheck", ruff + ["format", "--check", "--config", config, *copied])
+              run("ownership", [sys.executable, "scripts/ci/rust_authority_ownership_gate.py",
+                                "--base-ref", proof.BASE, "--json", str(output / "ownership.json")])
+              summary["formatted"] = []
+              for path, copy in zip(paths, copied, strict=True):
+                  original, formatted = Path(path).read_bytes(), Path(copy).read_bytes()
+                  old_tree, new_tree = ast.parse(original), ast.parse(formatted)
+                  ast_equal = ast.dump(old_tree, include_attributes=False) == ast.dump(new_tree, include_attributes=False)
+                  row = {"path": path, "before": proof.blob(original), "after": proof.blob(formatted),
+                         "bytes": len(formatted), "astEqual": ast_equal,
+                         "nonblank": sum(bool(line.strip()) for line in formatted.splitlines()),
+                         "modePreserved": Path(path).stat().st_mode == Path(copy).stat().st_mode}
+                  summary["formatted"].append(row)
+                  exports.append({"path": path, "sha": row["after"], "base64": base64.b64encode(formatted).decode("ascii")})
+              summary["complete"] = True
+              summary["passed"] = all(summary[key]["exit"] == 0 for key in (
+                  "originalCheck", "originalFormat", "copyImportOrder", "copyFormat",
+                  "copyCheck", "copyFormatCheck", "ownership"
+              ))
+              summary["copySemanticReviewPending"] = any(not row["astEqual"] for row in summary["formatted"])
+              summary["passed"] = summary["passed"] and not summary["copySemanticReviewPending"]
+              code = 0 if summary["passed"] else 1
+          except BaseException:
+              summary["complete"], summary["passed"], code = False, False, 2
+              summary["error"] = "closed_quality_failure"
+          finally:
+              try:
+                  summary["sourceAfter"] = proof.verify()
+                  summary["cleanup"] = proof.cleanup_owned_children()
+                  if not summary["cleanup"]["complete"] or summary["cleanup"]["signals"]:
+                      raise ValueError("cleanup")
+                  if not summary["complete"] or any(not row["modePreserved"] for row in summary.get("formatted", [])):
+                      raise ValueError("quality_incomplete")
+                  summary["sourceExportsVerified"] = True
+              except BaseException:
+                  summary["complete"], summary["passed"], code = False, False, 2
+                  summary["sourceExportsVerified"] = False
+                  exports = []
+                  shutil.rmtree(output / "formatted", ignore_errors=True)
+              summary["exit"] = code
+              proof.write(output / "summary.json", summary)
+              print("ORACLE_READY_QUALITY " + json.dumps(summary, sort_keys=True))
+              for row in exports:
+                  print("ORACLE_READY_FORMATTED_SOURCE " + json.dumps(row, sort_keys=True))
+          raise SystemExit(code)
+          PY
+      - name: Retain proof and reviewed-source formatting artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: oracle-ready-imports-${{ github.run_id }}
-          path: ${{ runner.temp }}/guard-oracle-ready-imports/summary.json
+          name: oracle-ready-${{ matrix.proof }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/guard-oracle-ready-${{ matrix.proof }}/summary.json
+            ${{ runner.temp }}/guard-oracle-ready-quality/summary.json
+            ${{ runner.temp }}/guard-oracle-ready-quality/formatted/**
           if-no-files-found: error
           retention-days: 7

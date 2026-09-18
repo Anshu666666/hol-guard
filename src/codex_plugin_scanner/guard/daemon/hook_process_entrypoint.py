@@ -135,6 +135,20 @@ def _terminate_guardian_group() -> None:
             os.killpg(os.getpid(), getattr(signal, "SIGKILL", 9))
 
 
+def _prepare_hook_oracle_imports() -> None:
+    """Finish explicit oracle dependency imports without evaluating a request."""
+    if not python_oracle_surface_enabled():
+        return
+    from ..cli.commands_hook_compat_loader import load_hook_compatibility_surface
+
+    if load_hook_compatibility_surface() is None:
+        return
+    from ..adapters import list_adapters
+
+    list_adapters()
+    _ = importlib.import_module("codex_plugin_scanner.guard.cli.render")
+
+
 def _hook_evaluator_main(connection: Connection, configured_guard_home: str | None) -> None:
     os.environ[_HOOK_SQLITE_TIMEOUT_ENV] = "250"
     for module_name in (
@@ -146,6 +160,8 @@ def _hook_evaluator_main(connection: Connection, configured_guard_home: str | No
         "codex_plugin_scanner.guard.store",
     ):
         _ = importlib.import_module(module_name)
+    if python_oracle_surface_enabled():
+        _prepare_hook_oracle_imports()
     stores: dict[str, GuardStore] = {}
     hook_workers: dict[str, HookWorker] = {}
     # Store construction stays on the first request. Readiness must only prove

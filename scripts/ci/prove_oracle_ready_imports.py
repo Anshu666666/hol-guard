@@ -1,10 +1,11 @@
-"""Observe seven fresh-process oracle-readiness cases on unchanged product."""
+"""Validate gated import readiness and unchanged current prewarm behavior."""
 from __future__ import annotations
 
 import argparse
 import ctypes
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -19,16 +20,25 @@ import pytest
 
 BASE = "3424bea17968884b4b913be389d0c7e9fb297c15"
 BASE_TREE = "65170e6d3a0a83a6db74931d07896d1f74031a0a"
+PARENT = "c89a68692c98f1cbe89a667be722b25387a57a16"
+MODE = os.environ.get("ORACLE_READY_MODE", "")
+if MODE not in {"readiness", "prewarm"}:
+    raise ValueError("mode")
 TEST = "tests/test_guard_hook_oracle_ready_imports.py"
 NODE_PREFIX = TEST + "::test_evaluator_ready_prepares_only_explicit_oracle_imports"
 CASE_IDS = ("off-oracle", "shadow-oracle", "auto", "force", "oracle-disabled", "not-test-mode", "shadow-disabled")
-NODES = tuple(NODE_PREFIX + "[" + case + "]" for case in CASE_IDS)
-EXPECTED_FAILURES = set(NODES[:2])
+READY_NODES = tuple(NODE_PREFIX + "[" + case + "]" for case in CASE_IDS)
+PREWARM_TEST = "tests/test_guard_hook_process_runner.py"
+PREWARM_NODE = PREWARM_TEST + "::test_prewarmed_runner_does_not_hide_a_second_worker_queue"
+NODES = READY_NODES if MODE == "readiness" else (PREWARM_NODE,)
+TARGET = TEST if MODE == "readiness" else PREWARM_NODE
+EXPECTED_CASES = len(NODES)
 SCRIPT = "scripts/ci/prove_oracle_ready_imports.py"
-CHANGED = {TEST, SCRIPT, ".github/workflows/ci.yml"}
+CHANGED = {TEST, SCRIPT, ".github/workflows/ci.yml",
+           "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py"}
 PINS = {
     "tests/test_guard_hook_oracle_ready_imports.py": "7691531356b4031e25a7f9a0642aeaa161d110cb",
-    "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py": "f93fd883481f65baed1fa80ac3d9cbb1a3bd6c6f",
+    "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py": "295caf98da549990aaad22ca8ff657e514468869",
     "src/codex_plugin_scanner/guard/native_mode.py": "545e059638123363a104b98c43633172bcdc796a",
     "src/codex_plugin_scanner/guard/native_runtime.py": "f5c44884658477eb6ac5da554700ea9fd7688da9",
     "src/codex_plugin_scanner/guard/cli/commands_hook.py": "45b8d6dfa3403a25deda44d4ab38f47f6f91cba4",
@@ -101,6 +111,14 @@ def pytest_runtest_makereport(item, call):
                             and child["exceptionClass"] in {"AssertionError", "OtherException"}
                         ):
                             record["childFailure"] = child
+            if (MODE == "prewarm" and Path(code.co_filename).resolve() == Path(PREWARM_TEST).resolve()
+                    and item.nodeid == PREWARM_NODE):
+                record["sourceBlob"], record["line"] = PINS[PREWARM_TEST], terminal.tb_lineno
+                if code.co_firstlineno == 411:
+                    for name in ("elapsed", "timing_scale"):
+                        value = terminal.tb_frame.f_locals.get(name)
+                        if type(value) in (float, int) and math.isfinite(value) and 0 <= value < 10000:
+                            record[name] = value
             break
         terminal = terminal.tb_next
     _ERRORS[(item.nodeid, call.when)] = record
@@ -154,7 +172,7 @@ def verify():
         raise ValueError("source_identity")
     if git("rev-parse", "HEAD^{tree}").decode().strip() != tree:
         raise ValueError("source_identity")
-    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != BASE:
+    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != PARENT:
         raise ValueError("source_parent")
     if git("rev-parse", BASE + "^{tree}").decode().strip() != BASE_TREE:
         raise ValueError("source_base")
@@ -269,12 +287,13 @@ def selection(value):
 
 def main():
     os.umask(0o077)
-    output = Path(os.environ["RUNNER_TEMP"]) / "guard-oracle-ready-imports"
+    output = Path(os.environ["RUNNER_TEMP"]) / ("guard-oracle-ready-" + MODE)
     output.mkdir(parents=True, exist_ok=False)
-    summary = {"schema": "guard.oracle-ready-import-baseline.v1", "base": BASE, "baseTree": BASE_TREE,
-               "complete": False, "passed": False, "expectedRedObserved": False,
-               "productChanged": False, "performanceAcceptance": False,
-               "originalTimingTestChanged": False, "python": list(sys.version_info[:3])}
+    summary = {"schema": "guard.oracle-ready-candidate-validation.v1", "base": BASE, "baseTree": BASE_TREE,
+               "complete": False, "passed": False, "mode": MODE,
+               "productChanged": True, "originalTimingTestChanged": False,
+               "performanceAcceptance": False, "originalBudgetsSeconds": [1.0, 1.8, 2, 15],
+               "python": list(sys.version_info[:3])}
     code = 2
     try:
         if sys.version_info[:2] != (3, 10):
@@ -286,7 +305,7 @@ def main():
         environment = dict(os.environ, ORACLE_READY_PROOF_OUTPUT=str(output), ORACLE_READY_PROOF_STAGE="collect",
                            PYTHONDONTWRITEBYTECODE="1")
         summary["collectionProcess"] = execute(
-            command + ["--collect-only", TEST], output / "collect.log", 120, environment)
+            command + ["--collect-only", TARGET], output / "collect.log", 120, environment)
         collected = json.loads((output / "collect-plugin.json").read_bytes())
         summary["collection"] = collected
         summary["sourceAfterCollection"] = verify()
@@ -298,7 +317,7 @@ def main():
             raise ValueError("collection_process")
         environment["ORACLE_READY_PROOF_STAGE"] = "run"
         summary["testProcess"] = execute(command + [
-            "--junitxml=" + str(output / "junit.xml"), TEST], output / "run.log", 180, environment)
+            "--junitxml=" + str(output / "junit.xml"), TARGET], output / "run.log", 180, environment)
         observed = json.loads((output / "run-plugin.json").read_bytes())
         summary["observed"] = observed
         cases = list(ET.fromstring((output / "junit.xml").read_bytes()).iter("testcase"))
@@ -306,14 +325,14 @@ def main():
                   "errors": sum(bool(row.findall("error")) for row in cases),
                   "skipped": sum(bool(row.findall("skipped")) for row in cases)}
         summary["junit"] = counts
-        summary["junitIdentityValid"] = len(cases) == 7 and {
+        summary["junitIdentityValid"] = len(cases) == EXPECTED_CASES and {
             (row.get("classname"), row.get("name")) for row in cases
-        } == {("tests.test_guard_hook_oracle_ready_imports", node.split("::")[1]) for node in NODES}
+        } == {(node.split("::")[0][:-3].replace("/", "."), node.split("::")[1]) for node in NODES}
         summary["sourceAfter"] = verify()
         selection(observed)
         reports = observed["reports"]
         keyed = {(row["node"], row["when"]): row for row in reports}
-        if len(reports) != 21 or len(keyed) != 21 or set(keyed) != {
+        if len(reports) != EXPECTED_CASES * 3 or len(keyed) != EXPECTED_CASES * 3 or set(keyed) != {
             (node, phase) for node in NODES for phase in ("setup", "call", "teardown")
         }:
             raise ValueError("phase_count")
@@ -323,9 +342,9 @@ def main():
         calls = [keyed[node, "call"] for node in NODES]
         failures = {row["node"] for row in calls if row["outcome"] == "failed"}
         summary["actualFailedNodes"] = sorted(failures)
-        summary["actualCounts"] = {"tests": 7, "failed": len(failures), "passed": 7 - len(failures)}
+        summary["actualCounts"] = {"tests": EXPECTED_CASES, "failed": len(failures), "passed": EXPECTED_CASES - len(failures)}
         if any(row["outcome"] not in {"passed", "failed"} for row in calls) or counts != {
-            "tests": 7, "failed": len(failures), "errors": 0, "skipped": 0
+            "tests": EXPECTED_CASES, "failed": len(failures), "errors": 0, "skipped": 0
         } or not summary["junitIdentityValid"]:
             raise ValueError("result")
         failed = int(bool(failures))
@@ -334,16 +353,7 @@ def main():
                 or process["reapTimedOut"]):
             raise ValueError("process_result")
         summary["complete"], summary["passed"], code = True, not failed, failed
-        summary["expectedRedObserved"] = failures == EXPECTED_FAILURES and all(
-            row.get("exceptionClass") == "AssertionError"
-            and row.get("sourceBlob") == PINS[TEST] and row.get("line") == 151
-            and row.get("childFailure") == {
-                "stage": "optional_imports_not_ready", "exceptionClass": "AssertionError"
-            }
-            for row in calls if row["outcome"] == "failed"
-        )
-        if not summary["expectedRedObserved"]:
-            raise ValueError("unexpected_baseline_result")
+        summary["performanceAcceptance"] = MODE == "prewarm" and not failed
     except BaseException as error:
         summary["complete"], code = False, 2
         summary["errorClass"] = type(error).__name__ if type(error).__name__ in {
@@ -351,7 +361,7 @@ def main():
         } else "OtherException"
         codes = {"source_entry", "source_identity", "source_parent", "source_base", "source_delta",
                  "source_pin", "source_contents", "interpreter", "selection", "collection_process",
-                 "cleanup_platform", "cleanup_setup", "collection_cleanup", "phase_count", "fixture_failure", "result", "process_result", "unexpected_baseline_result"}
+                 "cleanup_platform", "cleanup_setup", "collection_cleanup", "phase_count", "fixture_failure", "result", "process_result"}
         if type(error) is ValueError and len(error.args) == 1 and isinstance(error.args[0], str) and error.args[0] in codes:
             summary["errorCode"] = error.args[0]
     finally:
@@ -366,9 +376,11 @@ def main():
             summary["sourceFinal"] = verify()
         except BaseException:
             summary["complete"], summary["passed"], summary["finalSourceValid"], code = False, False, False, 2
+        if not summary["complete"]:
+            summary["performanceAcceptance"] = False
         summary["exit"] = code
         write(output / "summary.json", summary)
-        print("ORACLE_READY_BASELINE " + json.dumps(summary, sort_keys=True))
+        print("ORACLE_READY_CANDIDATE " + json.dumps(summary, sort_keys=True))
     return code
 
 

@@ -20,9 +20,14 @@ from scripts.ci.rust_io_ownership_symbols import (
 class FunctionRecordLike(Protocol):
     """Minimum function-record shape needed by the resolver."""
 
-    path: str
-    qualname: str
-    node: ast.FunctionDef | ast.AsyncFunctionDef
+    @property
+    def path(self) -> str: ...
+
+    @property
+    def qualname(self) -> str: ...
+
+    @property
+    def node(self) -> ast.FunctionDef | ast.AsyncFunctionDef: ...
 
 
 RecordT = TypeVar("RecordT", bound=FunctionRecordLike)
@@ -161,16 +166,16 @@ def _scope_imports(body: list[ast.stmt]) -> tuple[ast.Import | ast.ImportFrom, .
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
             imports.append(node)
 
-        def visit_FunctionDef(self, _node: ast.FunctionDef) -> None:
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
             return
 
-        def visit_AsyncFunctionDef(self, _node: ast.AsyncFunctionDef) -> None:
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
             return
 
-        def visit_ClassDef(self, _node: ast.ClassDef) -> None:
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
             return
 
-        def visit_Lambda(self, _node: ast.Lambda) -> None:
+        def visit_Lambda(self, node: ast.Lambda) -> None:
             return
 
     collector = Collector()

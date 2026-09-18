@@ -19,6 +19,8 @@ CASE = "test_sensitive_read_origins_reach_actual_auto_resident"
 SECOND = "test_sensitive_read_signed_lockdown_and_withdrawal_reach_actual_auto_resident"
 GENERIC = "test_generic_origins_reach_actual_auto_resident"
 GENERIC_CONTROL = "test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident"
+GENERIC_DEFAULT_SYNC = "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[defaults]"
+GENERIC_SCOPED_SYNC = "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[scoped]"
 SOURCE = "a" * 40
 
 
@@ -72,6 +74,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         return (
             f'<testcase name="{name}">{children}</testcase><testcase name="{SECOND}"/>'
             f'<testcase name="{GENERIC}"/><testcase name="{GENERIC_CONTROL}"/>'
+            f'<testcase name="{GENERIC_DEFAULT_SYNC}"/><testcase name="{GENERIC_SCOPED_SYNC}"/>'
         )
 
     def test_only_exact_completed_case_emits_passing_source_scoped_report(self):
@@ -80,7 +83,8 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         assert report is not None
         self.assertEqual(report["status"], "pass")
         self.assertEqual(report["schema"], "native-origin-resident-proof.v1")
-        self.assertEqual(report["assertionCount"], 4)
+        self.assertEqual(report["assertionCount"], 6)
+        self.assertEqual(report["genericSignedSyncShapes"], ["defaults", "scoped"])
         self.assertEqual(report["genericOriginVectorCount"], 260)
         self.assertEqual(report["sourceSha"], SOURCE)
         self.assertEqual(
@@ -89,7 +93,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         )
         self.assertTrue(report["stagedFeatureNegotiation"])
         self.assertEqual(report["canonicalEnforcement"], "explicit-test-only")
-        self.assertEqual(report["sourceAdmission"], "loaded-mdm-test-file-and-signed-store")
+        self.assertEqual(report["sourceAdmission"], "loaded-mdm-test-file-and-ordinary-signed-sync")
         self.assertTrue(report["nativeAutoRequired"])
         for field in (
             "productionAdvertisement",
@@ -104,7 +108,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         self.assertIn("HOL_GUARD_NATIVE_BINARY:", source)
         self.assertIn("test_sensitive_resident_fixture_uses_actual_loaded_origins", source)
         self.assertIn("pytest -q -m slow tests/test_native_sensitive_policy_resident.py", source)
-        self.assertIn("tests/test_native_generic_policy_resident.py --junitxml=", source)
+        self.assertIn("tests/test_native_generic_sync_resident.py --junitxml=", source)
 
     def test_absent_wrong_and_duplicate_case_identities_fail(self):
         for xml in (
@@ -140,6 +144,22 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
                 + "</testsuite>",
             ):
                 with self.subTest(marker=marker, xml=xml):
+                    failure, report = self.execute(xml)
+                    self.assertEqual(failure, "AssertionError")
+                    assert report is not None
+                    self.assertFalse(report["allAssertionsPassed"])
+
+    def test_each_generic_sync_shape_must_complete_and_pass(self):
+        for name in (GENERIC_DEFAULT_SYNC, GENERIC_SCOPED_SYNC):
+            for replacement in (
+                "",
+                f'<testcase name="{name}"><skipped/></testcase>',
+                f'<testcase name="{name}"><failure/></testcase>',
+            ):
+                with self.subTest(name=name, replacement=replacement):
+                    xml = (
+                        "<testsuite>" + self.case().replace(f'<testcase name="{name}"/>', replacement) + "</testsuite>"
+                    )
                     failure, report = self.execute(xml)
                     self.assertEqual(failure, "AssertionError")
                     assert report is not None

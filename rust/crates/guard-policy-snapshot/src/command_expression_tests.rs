@@ -73,7 +73,12 @@ fn every_shared_unsupported_clause_refuses_the_complete_expression() {
     let cases = vectors["unsupported"].as_array().unwrap();
     assert_eq!(cases.len(), 4);
     for case in cases {
-        assert!(parse(case["expression"].clone()).is_err(), "{}", case["id"]);
+        assert_eq!(
+            parse(case["expression"].clone()).unwrap_err().to_string(),
+            case["error"].as_str().unwrap(),
+            "{}",
+            case["id"]
+        );
     }
 }
 
@@ -178,4 +183,16 @@ fn information_separators_are_whitespace_but_zero_width_and_bom_are_not() {
         NormalizedCommand::new("\u{feff}one").unwrap().as_str(),
         "\u{feff}one"
     );
+}
+
+#[test]
+fn unsupported_operator_diagnostic_is_bounded_and_does_not_echo_input() {
+    for operator in ["regex", "glob", "EXACT", "PRIVATE_CANARY@example.test"] {
+        let mut value = expression();
+        value["conditions"][0]["operator"] = json!(operator);
+        assert_eq!(
+            parse(value).unwrap_err().to_string(),
+            "native_command_operator_unsupported"
+        );
+    }
 }

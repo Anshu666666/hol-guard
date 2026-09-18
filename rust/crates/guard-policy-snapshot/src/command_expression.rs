@@ -16,6 +16,8 @@ pub enum CommandExpressionError {
     InvalidConditions,
     #[error("native_command_casefold_unsupported")]
     CasefoldUnsupported,
+    #[error("native_command_operator_unsupported")]
+    OperatorUnsupported,
     #[error("native_command_value_unsupported")]
     ValueUnsupported,
     #[error("command_value_required")]
@@ -92,12 +94,26 @@ enum CommandField {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", try_from = "String")]
 enum LiteralOperator {
     Exact,
     StartsWith,
     Contains,
     EndsWith,
+}
+
+impl TryFrom<String> for LiteralOperator {
+    type Error = CommandExpressionError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "exact" => Ok(Self::Exact),
+            "startsWith" => Ok(Self::StartsWith),
+            "contains" => Ok(Self::Contains),
+            "endsWith" => Ok(Self::EndsWith),
+            _ => Err(CommandExpressionError::OperatorUnsupported),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

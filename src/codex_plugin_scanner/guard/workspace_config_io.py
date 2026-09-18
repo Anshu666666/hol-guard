@@ -26,7 +26,7 @@ def read_workspace_toml(workspace: Path, filename: str) -> dict[str, object]:
     if filename not in WORKSPACE_CONFIG_FILENAMES:
         return {}
     try:
-        supplied_root = workspace.expanduser().absolute()
+        supplied_root = workspace.absolute()
         supplied_before = supplied_root.lstat()
         if not _is_directory(supplied_before):
             return {}

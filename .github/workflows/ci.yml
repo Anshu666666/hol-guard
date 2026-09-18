@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 2
+          fetch-depth: 3
           persist-credentials: false
       - name: Verify diagnostic identity and driver before setup
         run: |
@@ -48,11 +48,11 @@ jobs:
               raise SystemExit("Diagnostic commit mismatch.")
           if git("rev-parse", "HEAD^{tree}") != os.environ["EXPECTED_DIAGNOSTIC_TREE"]:
               raise SystemExit("Diagnostic tree mismatch.")
-          if git("show", "-s", "--format=%P", "HEAD") != "1b51463217211c0f619e82eaf085990372f5e835":
+          if git("show", "-s", "--format=%P", "HEAD") != "1d0fe060b11d64a7e641d017fdd99cc5fdcdae18":
               raise SystemExit("Diagnostic parent mismatch.")
           expected = {
-              "scripts/ci/prove_prewarm_spans.py": "3f6cf1120bb9101be909a1305aeb5172798e9d20",
-              "scripts/ci/prewarm_span_observer.py": "871d7da16f026b458a17fdb29713be5999a61703",
+              "scripts/ci/prove_prewarm_spans.py": "976e6d29b40cf775c3e996de570527b48cc82db1",
+              "scripts/ci/prewarm_span_observer.py": "5eb0d375d7b8e2440d091516457fee74331dce83",
               "pyproject.toml": "44250c39b253343dd95a24441850940d48581f8b",
               "uv.lock": "87a7e665302f34c6ae1100387425572bab6e7c51",
               "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",

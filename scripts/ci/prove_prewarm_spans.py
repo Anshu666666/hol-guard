@@ -29,7 +29,7 @@ CHANGED = {SCRIPT, OBSERVER, ".github/workflows/ci.yml"}
 PINS = {
     **observer.PINS,
     TEST: "7b99972cdf5d6018eadcba60fefbe790bc4efda0",
-    OBSERVER: "871d7da16f026b458a17fdb29713be5999a61703",
+    OBSERVER: "5eb0d375d7b8e2440d091516457fee74331dce83",
     "src/codex_plugin_scanner/guard/daemon/hook_process_spawner.py": "2a317b333cffb7b1794e4f999f1a8b54b0af623b",
     "conftest.py": "9e1408c12fe951ad2f1541b1c2c0508f3c35b41a",
     "tests/conftest.py": "61e6d98609309fac99c9baae50fab5f47229fcde",
@@ -137,7 +137,7 @@ def verify():
         raise ValueError("source_identity")
     if git("rev-parse", "HEAD^{tree}").decode().strip() != tree:
         raise ValueError("source_identity")
-    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != BASE:
+    if git("show", "-s", "--format=%P", "HEAD").decode().strip() != "1d0fe060b11d64a7e641d017fdd99cc5fdcdae18":
         raise ValueError("source_parent")
     if git("rev-parse", BASE + "^{tree}").decode().strip() != BASE_TREE:
         raise ValueError("source_base")

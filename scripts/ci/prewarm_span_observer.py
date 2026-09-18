@@ -21,12 +21,13 @@ PINS = {
     "src/codex_plugin_scanner/guard/daemon/hook_process_slot_review.py": "1d6cab3445585c23111d9854bb95c7036af15590",
     "src/codex_plugin_scanner/guard/daemon/hook_worker.py": "ed969bba5cacff2bb80491a871bf82d645e4c042",
     "src/codex_plugin_scanner/guard/cli/commands_hook.py": "45b8d6dfa3403a25deda44d4ab38f47f6f91cba4",
+    "src/codex_plugin_scanner/guard/cli/commands_hook_compat_loader.py": "f2228533cb829f5242260350412b6395d7f0953f",
 }
 PHASES = frozenset({
     "parent-observer", "parent-finished", "evaluator-observer", "observer-cap",
     "parent-review", "slot-roundtrip", "resident-request", "store-context",
     "worker-construction", "worker-review", "policy-readiness",
-    "native-edge", "native-pretool", "compatibility-hook",
+    "native-edge", "native-pretool", "compatibility-hook", "compatibility-imports",
 })
 _LOCK = threading.Lock()
 _COUNT = 0
@@ -103,6 +104,7 @@ def _evaluator_spans():
         (HookWorker, "_review_raw_hook_native", "native-edge", "daemon/hook_worker.py", 166),
         (HookWorker, "_review_pre_tool_native", "native-pretool", "daemon/hook_worker.py", 193),
         (commands_hook, "_run_guard_hook_command", "compatibility-hook", "cli/commands_hook.py", 88),
+        (commands_hook, "load_hook_compatibility_surface", "compatibility-imports", "cli/commands_hook_compat_loader.py", 37),
     ]
     with pytest.MonkeyPatch.context() as patch:
         for owner, name, phase, suffix, line in bindings:

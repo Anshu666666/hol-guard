@@ -43,6 +43,36 @@ SAFE_EXCEPTIONS = frozenset({
     "OSError", "PermissionError", "FileNotFoundError", "TimeoutExpired",
     "CalledProcessError", "BrokenProcessPool", "ImportError", "ModuleNotFoundError",
 })
+
+SAFE_VALUE_ERROR_CODES = frozenset({
+    "canonical_report_changed",
+    "corpus_contract_mismatch",
+    "critical_source_mismatch",
+    "dependency_probe_not_nested",
+    "dependency_probe_not_site_packages",
+    "foreign_repository_import",
+    "invalid_profile_directory",
+    "invalid_profile_measurement",
+    "invalid_shard",
+    "loaded_source_mismatch",
+    "output_inside_source",
+    "profile_metrics_failed",
+    "profile_source_changed",
+    "profile_workers_failed",
+    "recursive_profile_binding",
+    "report_binding_mismatch",
+    "source_binding_failed",
+    "source_commit_mismatch",
+    "source_map_identity_mismatch",
+    "source_map_mismatch",
+    "source_tree_mismatch",
+    "unexpected_interpreter",
+    "unsupported_diagnostic_command",
+    "unsupported_source_entry",
+    "untracked_profile_source",
+    "worker_contract_failed",
+    "worker_profile_incomplete",
+})
 _NETWORK_DENIALS = 0
 
 
@@ -60,7 +90,13 @@ def source_id(relative):
 
 def exception_metadata(error):
     name = type(error).__name__
-    return {"class": name if name in SAFE_EXCEPTIONS else "OtherException"}
+    detail = {"class": name if name in SAFE_EXCEPTIONS else "OtherException"}
+    if (
+        type(error) is ValueError and len(error.args) == 1
+        and type(error.args[0]) is str and error.args[0] in SAFE_VALUE_ERROR_CODES
+    ):
+        detail["diagnosticCode"] = error.args[0]
+    return detail
 
 
 @contextmanager
@@ -414,7 +450,8 @@ def self_test():
         captured.seek(0)
         value = captured.read()
         assert all(marker in value for marker in ("private-python-stdout", "private-python-stderr", "private-fd-stdout", "private-fd-stderr"))
-    return 0
+    from profile_command_corpus_controls import verify_profile_boundaries
+    return verify_profile_boundaries(sys.modules[__name__])
 
 
 def entry():

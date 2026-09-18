@@ -10,6 +10,7 @@ import os
 import signal
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import time
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
@@ -201,6 +202,9 @@ def phase_configuration():
 
 
 def profile_rows(entries, root, expected):
+    dependency_roots = {
+        Path(sysconfig.get_path(name)).resolve() for name in ("purelib", "platlib")
+    }
     rows, bindings, seen = [], {}, set()
     for entry in entries:
         code = entry.code
@@ -213,6 +217,8 @@ def profile_rows(entries, root, expected):
         except (ValueError, OSError):
             continue
         if relative not in expected:
+            if any((root / relative).is_relative_to(site) for site in dependency_roots):
+                continue
             raise ValueError("untracked_profile_source")
         digest = git_blob(source_bytes(root, relative))
         if digest != expected[relative]:

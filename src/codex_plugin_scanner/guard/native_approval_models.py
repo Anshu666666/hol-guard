@@ -111,6 +111,7 @@ def _build_envelope(
     cwd: Path | None,
     policy_snapshot: Mapping[str, object],
     deadline_budget_ms: int,
+    request_id: str | None = None,
 ) -> tuple[dict[str, object], bytes] | None:
     """Build a bounded hook envelope without exposing raw payload in a challenge."""
 
@@ -131,13 +132,30 @@ def _build_envelope(
         or deadline_budget_ms > _protocol._MAX_DEADLINE_BUDGET_MS
     ):
         return None
-    request_id = _safe_request_id_from_payload(payload)
-    if payload.get("request_id") is not None and request_id is None:
+    payload_request_id = _safe_request_id_from_payload(payload)
+    if payload.get("request_id") is not None and payload_request_id is None:
         return None
+    if request_id is not None:
+        if not _protocol._request_id(request_id) or (
+            payload_request_id is not None and request_id != payload_request_id
+        ):
+            return None
+    else:
+        request_id = payload_request_id
     policy_digest = policy_snapshot.get("policy_digest")
     runtime_identity = policy_snapshot.get("runtime_identity")
     if not _protocol._lower_hex(policy_digest, 64) or not _protocol._lower_hex(runtime_identity, 64):
         return None
+    reference: dict[str, object] = {
+        "generation": generation,
+        "policy_digest": policy_digest,
+        "runtime_identity": runtime_identity,
+    }
+    if "source_input_digest" in policy_snapshot:
+        source_input_digest = policy_snapshot["source_input_digest"]
+        if not _protocol._lower_hex(source_input_digest, 64):
+            return None
+        reference["source_input_digest"] = source_input_digest
     envelope: dict[str, object] = {
         "schema": _protocol._ENVELOPE_SCHEMA,
         "request_id": request_id,
@@ -146,11 +164,7 @@ def _build_envelope(
         "raw_payload": dict(payload),
         "deadline_budget_ms": deadline_budget_ms,
         "policy_generation": generation,
-        "policy_snapshot": {
-            "generation": generation,
-            "policy_digest": policy_digest,
-            "runtime_identity": runtime_identity,
-        },
+        "policy_snapshot": reference,
         "source": {
             "cwd": safe_cwd,
             "home_dir": safe_home_dir,

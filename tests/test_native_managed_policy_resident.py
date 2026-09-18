@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from codex_plugin_scanner.guard import native_hook_edge
+from codex_plugin_scanner.guard.config import load_guard_config
 from codex_plugin_scanner.guard.native_policy_authority_contract import NATIVE_MANAGED_AUTHORITY_FEATURE
 from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
@@ -61,8 +62,11 @@ def test_signed_managed_lockdown_is_consumed_by_actual_resident(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     (store.guard_home / "config.toml").write_text(
-        f'mode = "{mode}"\ndefault_action = "warn"\n[harnesses]\ncodex = "warn"\n', encoding="utf-8"
+        f'mode = "{mode}"\ndefault_action = "warn"\nunknown_publisher_action = "warn"\n[harnesses]\ncodex = "warn"\n',
+        encoding="utf-8",
     )
+    # The generic artifact has no publisher; keep that ordinary floor explicit.
+    assert load_guard_config(store.guard_home).unknown_publisher_action == "warn"
     publisher = NativePolicySnapshotPublisher(store=store, status_provider=lambda: status)
 
     def evaluate(payload: dict[str, object] | None = None) -> dict[str, Any] | None:

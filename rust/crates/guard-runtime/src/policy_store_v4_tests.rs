@@ -415,3 +415,6 @@ fn managed_catalog_and_target_semantics_are_checked_before_durable_ack() {
     );
     fs::remove_dir_all(root).unwrap();
 }
+
+#[path = "policy_store_expression_tests.rs"]
+mod expression_tests;

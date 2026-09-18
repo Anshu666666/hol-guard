@@ -13,6 +13,10 @@ mod decoding;
 
 #[path = "scoped_authority_match.rs"]
 mod matching;
+
+#[path = "scoped_command_expression.rs"]
+mod command_bindings;
+pub use command_bindings::ScopedCommandExpression;
 pub use matching::{ExactPolicyContextInputs, PolicyIdentityInputs, ScopedPolicyRequest};
 
 pub const AUTHORITY_SCHEMA: &str = "guard-native-policy-authority.v1";
@@ -50,6 +54,8 @@ pub enum AuthorityError {
     ControlDuplicate,
     #[error("native_policy_authority_catalog_invalid")]
     Catalog,
+    #[error("native_policy_authority_command_expression_invalid")]
+    CommandExpression,
     #[error("native_policy_authority_byte_limit")]
     ByteLimit,
 }
@@ -293,6 +299,8 @@ struct RawAuthority {
     generic_precedence: String,
     rows: Vec<ScopedPolicyRow>,
     managed: Option<ManagedAuthority>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    command_expressions: Vec<ScopedCommandExpression>,
 }
 
 /// Only validated authority can be deserialized into this wrapper. A snapshot
@@ -365,6 +373,7 @@ impl NativePolicyAuthority {
                 return Err(AuthorityError::RowDuplicate);
             }
         }
+        command_bindings::validate_bindings(self)?;
         if let Some(managed) = &self.0.managed {
             managed.validate()?;
         }

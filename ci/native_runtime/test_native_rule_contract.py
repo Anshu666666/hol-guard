@@ -63,6 +63,14 @@ _COMPONENTS = (
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority_decode.rs"),
     ),
     (
+        "guard-policy-command-expression",
+        Path("rust/crates/guard-policy-snapshot/src/command_expression.rs"),
+    ),
+    (
+        "guard-policy-scoped-command-expression",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_command_expression.rs"),
+    ),
+    (
         "guard-policy-scoped-matcher",
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority_match.rs"),
     ),

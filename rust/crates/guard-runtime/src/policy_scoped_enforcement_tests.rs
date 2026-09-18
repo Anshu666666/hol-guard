@@ -442,3 +442,6 @@ fn managed_unknown_delegated_and_unmodeled_requests_refuse_as_a_whole() {
         Some("native_scoped_managed_policy_unsupported")
     );
 }
+
+#[path = "policy_scoped_expression_tests.rs"]
+mod expression_tests;

@@ -202,7 +202,11 @@ fn hash_matches(
                 .is_some_and(|prefix| prefix.eq_ignore_ascii_case(CONTEXT_PREFIX)))
 }
 
-fn matches_row(row: &ScopedPolicyRow, request: &ScopedPolicyRequest, now_ms: u64) -> bool {
+pub(super) fn matches_row(
+    row: &ScopedPolicyRow,
+    request: &ScopedPolicyRequest,
+    now_ms: u64,
+) -> bool {
     if (row.harness != "*" && row.harness != request.harness)
         || row.expires_at_ms.is_some_and(|expiry| expiry <= now_ms)
         || row
@@ -312,6 +316,7 @@ impl NativePolicyAuthority {
         Ok(self
             .rows()
             .iter()
+            .filter(|row| !self.has_command_expression(row.decision_id))
             .filter(|row| matches_row(row, request, now_ms))
             .max_by(|left, right| compare_precedence(left, right)))
     }

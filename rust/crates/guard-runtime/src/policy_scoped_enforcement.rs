@@ -8,7 +8,9 @@ use crate::policy_enforcement::{
     configured_pre_tool_policy_action, validate_pre_tool_result_matrix,
 };
 use crate::policy_scoped_request::derive_scoped_policy_request;
+use guard_command::exact_command::exact_shell_command_from_hook;
 use guard_contracts::{GuardHookEnvelopeV2, PreToolResultV1};
+use guard_policy_snapshot::command_expression::NormalizedCommand;
 use guard_policy_snapshot::scoped_authority::{
     PolicyAction, PolicyScope, PolicySourceKind, ScopedPolicyRow,
 };
@@ -177,9 +179,32 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     } else {
         join(composed, authority_floor)
     };
-    let selected_decision_id = selected
-        .filter(|row| effective != current && effective == row.action())
+    let generic_effective = effective;
+    let expression_winner = if snapshot.scoped_authority.command_expressions().is_empty() {
+        None
+    } else if let Some(command) = exact_shell_command_from_hook(&envelope.raw_payload) {
+        let normalized = NormalizedCommand::new(command)
+            .map_err(|_| "native_scoped_request_identity_unsupported".to_owned())?;
+        snapshot
+            .scoped_authority
+            .matching_command_rows(&request, &normalized, now_ms)
+            .map_err(|_| "native_scoped_policy_match_invalid".to_owned())?
+            .into_iter()
+            .max_by_key(|row| (rank(row.action()), u64::MAX - row.decision_id()))
+    } else {
+        None
+    };
+    if let Some(row) = expression_winner {
+        effective = join(effective, row.action());
+    }
+    let expression_decision_id = expression_winner
+        .filter(|row| rank(effective) > rank(generic_effective) && effective == row.action())
         .map(ScopedPolicyRow::decision_id);
+    let selected_decision_id = expression_decision_id.or_else(|| {
+        selected
+            .filter(|row| effective != current && effective == row.action())
+            .map(ScopedPolicyRow::decision_id)
+    });
     let observed_policy_action = (snapshot.mode == "observe").then(|| name(effective));
     if snapshot.mode == "observe"
         && rank(effective) > rank(authority_floor)

@@ -1,7 +1,8 @@
 //! Explicit presence on the wire: null is valid, an omitted constraint is not.
 
 use super::{
-    ManagedAuthority, PolicyAction, PolicyScope, PolicySourceKind, RawAuthority, ScopedPolicyRow,
+    ManagedAuthority, PolicyAction, PolicyScope, PolicySourceKind, RawAuthority,
+    ScopedCommandExpression, ScopedPolicyRow,
 };
 use serde::Deserialize;
 
@@ -68,6 +69,8 @@ pub(super) struct WireAuthority {
     generic_precedence: String,
     rows: Vec<ScopedPolicyRow>,
     managed: RequiredNullable<ManagedAuthority>,
+    #[serde(default)]
+    command_expressions: Vec<ScopedCommandExpression>,
 }
 
 impl From<WireAuthority> for RawAuthority {
@@ -77,6 +80,7 @@ impl From<WireAuthority> for RawAuthority {
             generic_precedence: authority.generic_precedence,
             rows: authority.rows,
             managed: authority.managed.into_option(),
+            command_expressions: authority.command_expressions,
         }
     }
 }

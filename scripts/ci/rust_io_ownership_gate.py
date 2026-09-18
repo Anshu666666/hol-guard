@@ -186,7 +186,7 @@ def _attribute_chain(value: ast.AST) -> tuple[str, ...]:
     return ()
 
 
-def _functions(tree: ast.AST, path: str) -> Iterable[FunctionRecord]:
+def _functions(tree: ast.AST, path: str, root: Path | None = None) -> Iterable[FunctionRecord]:
     def visit(body: list[ast.stmt], prefix: str = "") -> Iterable[FunctionRecord]:
         for item in body:
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -196,7 +196,7 @@ def _functions(tree: ast.AST, path: str) -> Iterable[FunctionRecord]:
             elif isinstance(item, ast.ClassDef):
                 class_prefix = f"{prefix}.{item.name}" if prefix else item.name
                 if not prefix and isinstance(tree, ast.Module):
-                    constructor = constructor_node(item, tree.body)
+                    constructor = constructor_node(item, tree.body, root=root, module_path=path)
                     if constructor is not None:
                         yield FunctionRecord(path, constructor.name, f"{class_prefix}.{constructor.name}", constructor)
                 yield from visit(item.body, class_prefix)
@@ -211,7 +211,7 @@ def _function_map(root: Path) -> dict[tuple[str, str], list[FunctionRecord]]:
     for path in sorted(source_root.rglob("*.py")):
         relative = _relative(path, root)
         tree = ast.parse(_read(path), filename=relative)
-        for record in _functions(tree, relative):
+        for record in _functions(tree, relative, root):
             result.setdefault((relative, record.name), []).append(record)
     return result
 

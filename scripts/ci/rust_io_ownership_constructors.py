@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import ast
 import copy
+from collections.abc import Callable
+from pathlib import Path
 
+from scripts.ci.rust_io_ownership_defaults import static_default
 from scripts.ci.rust_io_ownership_symbols import _bindings, _known_dataclass
 
 CONSTRUCTOR = "<constructor>"
@@ -69,7 +72,9 @@ def _factory_reference(value: ast.expr, body: list[ast.stmt], class_body: list[a
     )
 
 
-def _field_factory(value: ast.expr, body: list[ast.stmt], class_body: list[ast.stmt]) -> tuple[bool, ast.expr | None]:
+def _field_factory(
+    value: ast.expr, body: list[ast.stmt], class_body: list[ast.stmt], literal: Callable[[ast.expr], bool]
+) -> tuple[bool, ast.expr | None]:
     if not isinstance(value, ast.Call) or not _known_field(value.func, body, class_body) or value.args:
         return False, None
     seen: set[str] = set()
@@ -89,7 +94,7 @@ def _field_factory(value: ast.expr, body: list[ast.stmt], class_body: list[ast.s
             if not isinstance(keyword.value, ast.Constant) or keyword.value.value not in (True, False, None):
                 return False, None
         elif keyword.arg in {"default", "metadata"}:
-            if not _literal(keyword.value):
+            if not literal(keyword.value):
                 return False, None
         else:
             return False, None
@@ -169,8 +174,14 @@ def _new_returns_known_type(method: ast.FunctionDef, body: list[ast.stmt]) -> bo
     return True
 
 
-def constructor_node(cls: ast.ClassDef, module_body: list[ast.stmt]) -> ast.FunctionDef | None:
+def constructor_node(
+    cls: ast.ClassDef, module_body: list[ast.stmt], *, root: Path | None = None, module_path: str | None = None
+) -> ast.FunctionDef | None:
     """Return a strict aggregate of actual construction calls, never an I/O waiver."""
+
+    def literal(value: ast.expr) -> bool:
+        return _literal(value) or static_default(value, module_body, cls.body, root=root, module_path=module_path)
+
     if cls.bases or cls.keywords:
         return None
     dataclass_init = _dataclass_init(cls, module_body) if cls.decorator_list else False
@@ -191,16 +202,16 @@ def constructor_node(cls: ast.ClassDef, module_body: list[ast.stmt]) -> ast.Func
             if name in fields or name in methods or len(_bindings(cls.body, name)) != 1:
                 return None
             fields.add(name)
-            if item.value is not None and not _literal(item.value):
+            if item.value is not None and not literal(item.value):
                 if not cls.decorator_list:
                     return None
-                valid, factory = _field_factory(item.value, module_body, cls.body)
+                valid, factory = _field_factory(item.value, module_body, cls.body, literal)
                 if not valid:
                     return None
                 if factory is not None:
                     factories.append(factory)
         elif isinstance(item, ast.Assign):
-            if not _literal(item.value) or any(not isinstance(t, ast.Name) for t in item.targets):
+            if not literal(item.value) or any(not isinstance(t, ast.Name) for t in item.targets):
                 return None
             for target in item.targets:
                 assert isinstance(target, ast.Name)

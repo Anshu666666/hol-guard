@@ -26,10 +26,10 @@ jobs:
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Validate ordinary signed sync source fixture
         run: |
-          uv run --no-sync ruff check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py
-          uv run --no-sync ruff format --check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py
-          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py
-          uv run --no-sync pytest -q tests/test_native_expression_sync_resident_evidence.py
+          uv run --no-sync ruff check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py
+          uv run --no-sync ruff format --check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/native_source_bundle.py tests/test_native_source_bundle.py
+          uv run --no-sync pytest -q tests/test_native_expression_sync_resident_evidence.py tests/test_native_source_bundle.py
           uv run --no-sync pytest -q tests/test_native_expression_sync_resident.py::test_signed_sync_fixture_leaves_target_policy_unstaged
       - name: Build runtime from exact source
         env:
@@ -40,6 +40,28 @@ jobs:
           rustup toolchain install 1.88.0 --profile minimal
           export HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
           cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+      - name: Stage the verified source build for native auto discovery
+        run: |
+          proof_pure_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-pure.XXXXXX")"
+          proof_native_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-bundle.XXXXXX")"
+          proof_runtime="$GITHUB_WORKSPACE/rust/target/release/hol-guard-runtime"
+          proof_version="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          proof_rule_digest="$("$proof_runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')"
+          proof_target="$(rustc +1.88.0 -vV | sed -n 's/^host: //p')"
+          test "$proof_target" = "x86_64-unknown-linux-gnu"
+          uv build --wheel --out-dir "$proof_pure_dir"
+          proof_wheels=("$proof_pure_dir"/*.whl)
+          test "${#proof_wheels[@]}" -eq 1
+          test -f "${proof_wheels[0]}"
+          uv run --no-sync python -m tests.native_source_bundle \
+            --wheel "${proof_wheels[0]}" \
+            --runtime "$proof_runtime" \
+            --output-dir "$proof_native_dir" \
+            --version "$proof_version" \
+            --source-sha "$GITHUB_SHA" \
+            --rule-digest "$proof_rule_digest" \
+            --platform-tag linux_x86_64 \
+            --target "$proof_target"
       - name: Require ordinary signed sync and actual resident authority fences
         env:
           HOL_GUARD_NATIVE: auto

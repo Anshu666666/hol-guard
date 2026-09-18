@@ -17,6 +17,7 @@ from typing import Any
 
 import pytest
 
+from codex_plugin_scanner.guard import native_runtime
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher_scoped import SCOPED_PUBLISH_FEATURES
 from codex_plugin_scanner.guard.native_runtime import NativeRuntimeStatus, native_runtime_status
 from codex_plugin_scanner.guard.runtime import runner
@@ -97,7 +98,11 @@ def ordinary_sync_test_status() -> NativeRuntimeStatus:
     status = native_runtime_status()
     assert status.mode == "auto" and status.available and status.compatible, status.reason
     assert status.identity is not None and status.capabilities is not None
-    assert status.identity.path.resolve() == Path(binary).resolve()
+    package_root = Path(native_runtime.__file__).resolve().parents[1]
+    expected_bundle = package_root / "_native" / Path(binary).name
+    assert status.identity.path.resolve() == expected_bundle.resolve()
+    assert status.identity.path.resolve() != Path(binary).resolve()
+    assert status.identity.path.read_bytes() == Path(binary).read_bytes()
     assert hashlib.sha256(Path(binary).read_bytes()).hexdigest() == status.identity.sha256
     source_root = Path(__file__).resolve().parents[1]
     source_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source_root, text=True).strip()

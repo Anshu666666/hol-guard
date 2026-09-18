@@ -8,6 +8,7 @@ decisions; Rust remains the authority for both operations.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
@@ -36,7 +37,7 @@ class NativeApprovalSession:
     def challenge(self) -> dict[str, object]:
         """Return only detached, privacy-safe challenge fields."""
 
-        return dict(self._challenge)
+        return deepcopy(dict(self._challenge))
 
     @property
     def request_id(self) -> str:
@@ -250,7 +251,7 @@ def _artifact_matches_session(artifact: Mapping[str, object], session: NativeApp
 
 def _new_session(challenge: Mapping[str, object], envelope: bytes) -> NativeApprovalSession:
     return NativeApprovalSession(
-        _challenge=MappingProxyType(dict(challenge)),
+        _challenge=MappingProxyType(deepcopy(dict(challenge))),
         _envelope=bytes(envelope),
         _provenance=object(),
         _factory_token=_SESSION_FACTORY_TOKEN,

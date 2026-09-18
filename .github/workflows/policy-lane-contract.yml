@@ -5,6 +5,7 @@ on:
     paths:
       - "src/codex_plugin_scanner/guard/policy_*.py"
       - "src/codex_plugin_scanner/guard/cli/commands_*policy*.py"
+      - "tests/test_policy_command_projection.py"
       - "tests/test_policy_capability_inventory.py"
       - "tests/test_policy_lane_capabilities.py"
       - "tests/test_policy_lane_profiles.py"
@@ -37,12 +38,12 @@ jobs:
           enable-cache: false
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Verify published combinations against the actual compiler
-        run: uv run --no-sync pytest --noconftest tests/test_policy_capability_inventory.py tests/test_policy_lane_capabilities.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_matcher_capability.py tests/test_policy_document_cli.py -q
+        run: uv run --no-sync pytest --noconftest tests/test_policy_capability_inventory.py tests/test_policy_lane_capabilities.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_matcher_capability.py tests/test_policy_document_cli.py tests/test_policy_command_projection.py -q
       - name: Check changed Python style
         if: always()
         run: |
-          uv run --no-sync ruff check src/codex_plugin_scanner/guard/policy_capability_inventory.py src/codex_plugin_scanner/guard/policy_matcher_capability.py src/codex_plugin_scanner/guard/policy_lane_capabilities.py src/codex_plugin_scanner/guard/cli/commands_dispatch_policy_document.py src/codex_plugin_scanner/guard/cli/commands_parser_policy.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_lane_capabilities.py
-          uv run --no-sync ruff format --check src/codex_plugin_scanner/guard/policy_capability_inventory.py src/codex_plugin_scanner/guard/policy_matcher_capability.py src/codex_plugin_scanner/guard/policy_lane_capabilities.py src/codex_plugin_scanner/guard/cli/commands_dispatch_policy_document.py src/codex_plugin_scanner/guard/cli/commands_parser_policy.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_lane_capabilities.py
+          uv run --no-sync ruff check src/codex_plugin_scanner/guard/policy_capability_inventory.py src/codex_plugin_scanner/guard/policy_matcher_capability.py src/codex_plugin_scanner/guard/policy_lane_capabilities.py src/codex_plugin_scanner/guard/cli/commands_dispatch_policy_document.py src/codex_plugin_scanner/guard/cli/commands_parser_policy.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_lane_capabilities.py src/codex_plugin_scanner/guard/policy_command_projection.py tests/test_policy_command_projection.py
+          uv run --no-sync ruff format --check src/codex_plugin_scanner/guard/policy_capability_inventory.py src/codex_plugin_scanner/guard/policy_matcher_capability.py src/codex_plugin_scanner/guard/policy_lane_capabilities.py src/codex_plugin_scanner/guard/cli/commands_dispatch_policy_document.py src/codex_plugin_scanner/guard/cli/commands_parser_policy.py tests/test_policy_lane_profiles.py tests/test_policy_lane_cli.py tests/test_policy_lane_capabilities.py src/codex_plugin_scanner/guard/policy_command_projection.py tests/test_policy_command_projection.py
       - name: Check selected roots and actual imports
         if: always()
         run: uv run --no-sync basedpyright --project basedpyright.policy-lanes.json

@@ -93,7 +93,7 @@ jobs:
           mapfile -t source_roots <<< "$source_paths"
           uv run --no-sync ruff check "${source_roots[@]}"
           uv run --no-sync ruff format --check "${source_roots[@]}"
-          uv run --no-sync basedpyright --pythonpath .venv/bin/python --project basedpyright.native-managed-source.json
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --pythonversion ${{ matrix.python }} --project basedpyright.native-managed-source.json
           uv run --no-sync python -c "from codex_plugin_scanner.guard import native_policy_authority_managed, native_policy_authority_read, native_policy_authority_sources"
       - name: Verify signed and local source reconstruction
         run: |

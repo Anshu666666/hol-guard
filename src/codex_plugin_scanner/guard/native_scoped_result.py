@@ -89,14 +89,20 @@ def decode_scoped_edge(payload: object, expected: Mapping[str, object] | None) -
     receipt = validate_native_decision_receipt(value.get("receipt"))
     observed_action = value.get("observed_policy_action")
     if expected["mode"] == "observe":
-        if not isinstance(observed_action, str) or observed_action not in {
-            "allow",
-            "warn",
-            "review",
-            "require-reapproval",
-            "sandbox-required",
-            "block",
-        }:
+        # An unchanged action has no projected policy decision. Its receipt
+        # still carries the authenticated snapshot mode below.
+        if observed_action is not None and (
+            not isinstance(observed_action, str)
+            or observed_action
+            not in {
+                "allow",
+                "warn",
+                "review",
+                "require-reapproval",
+                "sandbox-required",
+                "block",
+            }
+        ):
             return None
     elif observed_action is not None:
         return None

@@ -92,6 +92,52 @@ fn actual_generic_origin_and_tool_vectors_reach_native_composition() {
     }
 }
 
+#[test]
+fn actual_generic_edge_vectors_preserve_receipt_mode_without_inventing_projection() {
+    let fixture = vectors();
+    let cases = fixture["cases"].as_array().unwrap();
+    let mut mismatches = Vec::new();
+    for (index, case) in cases.iter().enumerate() {
+        let mut source = envelope(case);
+        source.request_id = Some(format!("generic-source-{index}"));
+        let policy = snapshot(case);
+        source.policy_generation = policy.generation;
+        let encoded = crate::edge_v4::evaluate(source, &policy, 3).unwrap();
+        let edge: Value = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(
+            edge["result"]["policy_action"],
+            case["expected"]["finalPolicyAction"]
+        );
+        assert_eq!(
+            edge["observed_policy_action"],
+            case["expected"]["observedPolicyAction"]
+        );
+        assert_eq!(
+            edge["receipt"]["observed_policy_action"],
+            edge["observed_policy_action"]
+        );
+        if edge["receipt"]["observe_mode"] != (policy.mode == "observe") {
+            mismatches.push(case["name"].clone());
+        }
+        println!(
+            "GENERIC_EDGE_VECTOR={}",
+            json!({
+                "name": case["name"], "edge": edge,
+                "expectedBinding": {
+                    "generation":policy.generation,"policy_digest":policy.policy_digest,
+                    "source_input_digest":policy.source_input_digest,"runtime_identity":policy.runtime_identity,
+                    "resident_generation":3,"mode":policy.mode
+                }
+            })
+        );
+    }
+    assert_eq!(cases.len(), 260);
+    assert!(
+        mismatches.is_empty(),
+        "receipt mode mismatches: {mismatches:?}"
+    );
+}
+
 fn permissive_case(fixture: &Value) -> &Value {
     fixture["cases"]
         .as_array()

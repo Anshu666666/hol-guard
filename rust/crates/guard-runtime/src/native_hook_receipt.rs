@@ -152,6 +152,11 @@ pub(crate) fn receipt_from_scoped_pre_tool(
     result: &PreToolResultV1,
     observed_policy_action: Option<&str>,
 ) -> Result<NativeHookDecisionReceiptV1, String> {
+    let observe_mode = match envelope.policy_snapshot.get("mode").and_then(Value::as_str) {
+        Some("observe") => true,
+        Some("enforce") => false,
+        _ => return Err("native_policy_mode_invalid".to_owned()),
+    };
     build_decision_receipt(
         envelope,
         None,
@@ -167,7 +172,7 @@ pub(crate) fn receipt_from_scoped_pre_tool(
             observed_policy_action,
             reason_code: &result.reason_code,
             reviewed_output_sha256: None,
-            observe_mode: observed_policy_action.is_some(),
+            observe_mode,
         },
     )
 }

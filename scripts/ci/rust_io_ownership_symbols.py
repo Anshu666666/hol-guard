@@ -91,6 +91,8 @@ def _bindings(body: list[ast.stmt], name: str) -> list[tuple[ast.AST, bool]]:
                 if isinstance(target, ast.Name) and target.id == name:
                     found.append((node, False))
                 return
+            if isinstance(node, (ast.Global, ast.Nonlocal)) and name in node.names:
+                found.append((node, False))
             if isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)) and node.name == name:
                 found.append((node, False))
             if isinstance(node, ast.MatchMapping) and node.rest == name:

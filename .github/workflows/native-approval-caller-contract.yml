@@ -24,6 +24,7 @@ on:
       - "scripts/native_approval*.py"
       - "scripts/ci/rust_io_ownership*.py"
       - "tests/test_rust_io_class_resolution.py"
+      - "tests/test_rust_io_lexical_resolution.py"
       - "tests/test_rust_io_ownership_gate.py"
       - "docs/guard/contracts/*ownership*.json"
       - "basedpyright.native-approval-caller.json"
@@ -74,4 +75,4 @@ jobs:
           uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .
           uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .
           uv run --no-sync python scripts/ci/python_capability_cleanup_gate.py --root .
-          uv run --no-sync pytest -q tests/test_python_capability_cleanup_gate.py tests/test_rust_io_class_resolution.py tests/test_rust_io_ownership_gate.py
+          uv run --no-sync pytest -q tests/test_python_capability_cleanup_gate.py tests/test_rust_io_class_resolution.py tests/test_rust_io_lexical_resolution.py tests/test_rust_io_ownership_gate.py

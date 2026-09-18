@@ -10,6 +10,7 @@ from typing import Protocol, TypeVar
 
 from scripts.ci.rust_io_ownership_symbols import (
     ImportedCallable,
+    _bindings,
     _import_target_path,
     _repository_module_path,
     require_exact_import,
@@ -38,86 +39,6 @@ def _read(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         raise RuntimeError(f"could not inspect {path}") from exc
-
-
-def _local_binding_names(record: FunctionRecordLike) -> frozenset[str]:
-    """Return names bound as local values in a function body.
-
-    A direct call such as ``close()`` may invoke a callable stored in a local
-    variable rather than a repository helper. Treating every such name as a
-    global helper creates false ambiguities and does not improve reachability.
-    """
-
-    names: set[str] = set()
-    arguments = record.node.args
-    for argument in (*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs):
-        names.add(argument.arg)
-    if arguments.vararg is not None:
-        names.add(arguments.vararg.arg)
-    if arguments.kwarg is not None:
-        names.add(arguments.kwarg.arg)
-
-    def collect_target(target: ast.AST) -> None:
-        if isinstance(target, ast.Name):
-            names.add(target.id)
-        elif isinstance(target, (ast.Tuple, ast.List)):
-            for item in target.elts:
-                collect_target(item)
-
-    for node in ast.walk(record.node):
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                collect_target(target)
-        elif isinstance(node, (ast.AnnAssign, ast.NamedExpr, ast.For, ast.AsyncFor)):
-            collect_target(node.target)
-        elif isinstance(node, (ast.With, ast.AsyncWith)):
-            for item in node.items:
-                if item.optional_vars is not None:
-                    collect_target(item.optional_vars)
-        elif isinstance(node, ast.comprehension):
-            collect_target(node.target)
-        elif isinstance(node, ast.ExceptHandler) and node.name:
-            names.add(node.name)
-    return frozenset(names)
-
-
-def _resolve_exported_symbol(
-    root: Path,
-    module_path: str,
-    name: str,
-    seen: set[tuple[str, str]],
-) -> str | None:
-    """Find the source file defining an exported symbol, following re-exports."""
-
-    identity = (module_path, name)
-    if identity in seen:
-        return None
-    seen.add(identity)
-    tree = ast.parse(_read(root / module_path), filename=module_path)
-    for item in tree.body:
-        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == name:
-            return module_path
-    for item in tree.body:
-        if not isinstance(item, ast.ImportFrom):
-            continue
-        for alias in item.names:
-            if alias.name == "*":
-                target = _import_target_path(root, module_path, item)
-                if target is not None:
-                    resolved = _resolve_exported_symbol(root, target, name, seen)
-                    if resolved is not None:
-                        return resolved
-                continue
-            local_name = alias.asname or alias.name
-            if local_name != name:
-                continue
-            target = _import_target_path(root, module_path, item, alias.name)
-            if target is None:
-                continue
-            resolved = _resolve_exported_symbol(root, target, alias.name, seen)
-            if resolved is not None:
-                return resolved
-    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,37 +153,116 @@ def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: s
     return None
 
 
-def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> str | None:
-    """Return the repository path imported for a callable at a call site."""
+def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+    """Resolve one bare name using function closures then the module, never classes."""
+    tree = ast.parse(_read(root / record.path), filename=record.path)
+    scopes = _function_scopes(tree, record.qualname)
 
-    if "." in name:
-        target = _qualified_imported_callable(root, record, name)
-        return target.path if target is not None else None
-    imports = sorted(_visible_imports(root, record), key=lambda item: (item.scope, item.node.lineno))
-    for visible in reversed(imports):
-        node = visible.node
-        if isinstance(node, ast.ImportFrom):
-            for alias in node.names:
-                local_name = alias.asname or alias.name
-                if alias.name != "*" and local_name != name:
-                    continue
-                target = _import_target_path(root, record.path, node, alias.name if alias.name != "*" else None)
-                if target is None:
-                    continue
-                if alias.name == "*":
-                    resolved = _resolve_exported_symbol(root, target, name, set())
-                    if resolved is not None:
-                        return resolved
-                else:
-                    return _resolve_exported_symbol(root, target, alias.name, set()) or target
-        else:
-            for alias in node.names:
-                local_name = alias.asname or alias.name.split(".", maxsplit=1)[0]
-                if local_name == name:
-                    target = _repository_module_path(root, alias.name if alias.asname else local_name)
-                    if target is not None:
-                        return target
+    def qualified_name(body: list[ast.stmt], target: ast.AST, prefix: str = "") -> str | None:
+        for item in body:
+            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                current = f"{prefix}.{item.name}" if prefix else item.name
+                if item is target:
+                    return current
+                nested = qualified_name(item.body, target, current)
+                if nested is not None:
+                    return nested
+        return None
+
+    for scope in (*reversed(scopes), tree):
+        sites = _bindings(scope.body, name)
+        if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            args = scope.args
+            parameters = (*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg)
+            if any(arg is not None and arg.arg == name for arg in parameters):
+                if sites:
+                    raise RuntimeError(f"ambiguous lexical parameter binding {name!r}")
+                return None
+        if not sites:
+            continue
+        if len(sites) != 1:
+            raise RuntimeError(f"ambiguous lexical helper binding {name!r}")
+        node, direct = sites[0]
+        if isinstance(node, (ast.Global, ast.Nonlocal)):
+            raise RuntimeError(f"unresolved explicit lexical declaration {name!r}")
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if not direct:
+                raise RuntimeError(f"ambiguous conditional lexical helper {name!r}")
+            qualname = qualified_name(tree.body, node)
+            if qualname is None:
+                raise RuntimeError(f"unresolved lexical helper {name!r}")
+            return ImportedCallable(record.path, qualname)
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            if not direct:
+                raise RuntimeError(f"ambiguous lexical import binding {name!r}")
+            alias = next(
+                a
+                for a in node.names
+                if (a.asname or (a.name.split(".")[0] if isinstance(node, ast.Import) else a.name)) == name
+            )
+            path = (
+                _import_target_path(root, record.path, node, alias.name)
+                if isinstance(node, ast.ImportFrom)
+                else _repository_module_path(root, alias.name)
+            )
+            if path is None:
+                return None
+            result = resolve_import(root, record.path, node, alias, ())
+            if result is None:
+                raise RuntimeError(f"unresolved repository lexical helper {name!r}")
+            return result
+        # A value binding shadows outer helpers. It is not a static repository callable.
+        return None
     return None
+
+
+def _receiver_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+    """Keep explicit self/cls edges separate from Python bare-name lookup."""
+    tree = ast.parse(_read(root / record.path), filename=record.path)
+
+    def containing_class(
+        body: list[ast.stmt], prefix: str = "", enclosing: tuple[str, ast.ClassDef] | None = None
+    ) -> tuple[str, ast.ClassDef] | None:
+        for item in body:
+            if not isinstance(item, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            current = f"{prefix}.{item.name}" if prefix else item.name
+            if current == record.qualname:
+                return enclosing
+            if record.qualname.startswith(f"{current}."):
+                return containing_class(
+                    item.body, current, (current, item) if isinstance(item, ast.ClassDef) else enclosing
+                )
+        return None
+
+    enclosing = containing_class(tree.body)
+    if enclosing is None:
+        return None
+    class_name, cls = enclosing
+    member = name.split(".")[1]
+    sites = _bindings(cls.body, member)
+    if not sites:
+        if cls.bases:
+            raise RuntimeError(f"unresolved inherited receiver helper {name!r}")
+        return None
+    if len(sites) != 1 or not sites[0][1] or not isinstance(sites[0][0], (ast.FunctionDef, ast.AsyncFunctionDef)):
+        raise RuntimeError(f"ambiguous receiver helper {name!r}")
+    return ImportedCallable(record.path, f"{class_name}.{member}")
+
+
+def _callable_target(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+    parts = name.split(".")
+    if len(parts) == 2 and parts[0] in {"self", "cls"}:
+        return _receiver_callable(root, record, name)
+    if len(parts) > 1:
+        return _qualified_imported_callable(root, record, name)
+    return _bare_imported_callable(root, record, name)
+
+
+def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> str | None:
+    """Return the exact lexical or repository-qualified callable source path."""
+    target = _callable_target(root, record, name)
+    return target.path if target is not None else None
 
 
 def resolve_call(
@@ -271,50 +271,16 @@ def resolve_call(
     name: str,
     records: Mapping[tuple[str, str], list[RecordT]],
 ) -> RecordT | None:
-    """Resolve a call or fail closed when duplicate helpers remain ambiguous."""
-
-    if "." not in name and name in _local_binding_names(record):
+    """Resolve an exact visible callable, never an unrelated same-named helper."""
+    target = _callable_target(root, record, name)
+    if target is None:
         return None
-    if "." in name:
-        target = _qualified_imported_callable(root, record, name)
-        if target is None:
-            return None
-        exact = [
-            candidate
-            for values in records.values()
-            for candidate in values
-            if candidate.path == target.path and candidate.qualname == target.qualname
-        ]
-        if len(exact) != 1:
-            raise RuntimeError(f"ambiguous repository-qualified helper {name!r}: {target}")
-        return exact[0]
-    imported_path = imported_symbol_path(root, record, name)
-    matches = [
+    exact = [
         candidate
-        for (_path, candidate_name), values in records.items()
-        if candidate_name == name
+        for values in records.values()
         for candidate in values
+        if candidate.path == target.path and candidate.qualname == target.qualname
     ]
-    if not matches:
-        return None
-    if imported_path is not None:
-        imported_matches = [candidate for candidate in matches if candidate.path == imported_path]
-        if len(imported_matches) == 1:
-            return imported_matches[0]
-        if len(imported_matches) > 1:
-            matches = imported_matches
-    caller_scope = record.qualname.rsplit(".", 1)[0] if "." in record.qualname else ""
-    local_scope = [
-        candidate
-        for candidate in matches
-        if candidate.path == record.path
-        and (candidate.qualname.rsplit(".", 1)[0] if "." in candidate.qualname else "") == caller_scope
-    ]
-    if len(local_scope) == 1:
-        return local_scope[0]
-    if len(local_scope) > 1:
-        matches = local_scope
-    if len(matches) == 1:
-        return matches[0]
-    candidates = ", ".join(f"{item.path}:{item.qualname}" for item in matches)
-    raise RuntimeError(f"ambiguous helper call {name!r} from {record.path}:{record.qualname}: {candidates}")
+    if len(exact) != 1:
+        raise RuntimeError(f"ambiguous repository helper {name!r}: {target}")
+    return exact[0]

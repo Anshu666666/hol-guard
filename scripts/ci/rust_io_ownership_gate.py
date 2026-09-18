@@ -231,9 +231,7 @@ def _calls(record: FunctionRecord) -> tuple[str, ...]:
         if not isinstance(node.func, ast.Attribute):
             continue
         chain = _attribute_chain(node.func)
-        if len(chain) == 2 and chain[0] in {"self", "cls"}:
-            names.append(node.func.attr)
-        elif len(chain) >= 2:
+        if len(chain) >= 2:
             # Keep qualified calls so the resolver can follow repository-module
             # aliases instead of silently dropping decision-critical helpers.
             names.append(".".join(chain))

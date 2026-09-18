@@ -1,78 +1,144 @@
-name: Current decision report regeneration
-run-name: Current decision report regeneration on ${{ github.sha }}
+name: Verified generated report extraction
+run-name: Verified generated report extraction on ${{ github.sha }}
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  group: current-report-regeneration-${{ github.ref }}
+  group: current-report-extraction-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  regenerate:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-report-regeneration-cc42'
+  extract:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'hashgraph-online/hol-guard' && github.ref == 'refs/heads/hgp/diagnostic-report-regeneration-cc42'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Checkout diagnostic
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          path: diagnostic
-          persist-credentials: false
-      - name: Checkout immutable current source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          repository: hashgraph-online/hol-guard
-          ref: cc42b9c70f45471869bb53c7f211ed26a063e0a1
-          path: source
-          persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: '3.12'
-      - name: Set up uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: '0.9.26'
-          enable-cache: false
-      - name: Install locked dependencies
-        working-directory: source
-        run: uv sync --frozen --extra dev --python 3.12
-      - name: Secure the CI virtualenv interpreter
-        working-directory: source
+      - name: Extract only the verified generated public report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Run normal generator and verify exact report delta
-        working-directory: source
-        env:
-          PYTHONDONTWRITEBYTECODE: '1'
-          PYTHONHASHSEED: '1'
-          TZ: UTC
-          LC_ALL: C
-          HGP_REPORT_OUTPUT: ${{ runner.temp }}/guard-current-report
-        run: uv run --no-sync python ../diagnostic/scripts/ci/regenerate_current_decision_report.py
-      - name: Retain actual generated report and closed summary
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: guard-current-generated-report
-          path: |
-            ${{ runner.temp }}/guard-current-report/summary.json
-            ${{ runner.temp }}/guard-current-report/generated-report.json
-          if-no-files-found: error
-          retention-days: 1
+          python - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+
+          stage = "artifact-download"
+          try:
+              class NoRedirect(urllib.request.HTTPRedirectHandler):
+                  def redirect_request(self, request, response, code, message, headers, url):
+                      return None
+
+              request = urllib.request.Request(
+                  "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10538626127/zip",
+                  headers={
+                      "Authorization": "Bearer " + os.environ["GITHUB_TOKEN"],
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              try:
+                  response = urllib.request.build_opener(NoRedirect()).open(request, timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code != 302:
+                      raise
+                  location = error.headers["Location"]
+                  error.close()
+                  if urllib.parse.urlsplit(location).scheme != "https":
+                      raise ValueError("unexpected_redirect")
+                  # The redirected request receives no GitHub authorization header.
+                  response = urllib.request.urlopen(location, timeout=30)
+              with response:
+                  archive = response.read(24539)
+              stage = "archive-binding"
+              archive_digest = hashlib.sha256(archive).hexdigest()
+              if (len(archive) != 24538 or archive_digest !=
+                      "865043e6e1e84fe23d3b8ae9bcadcbbff3f21912d54d048a965d5f2e5df234bd"):
+                  raise ValueError("archive_binding_mismatch")
+              with zipfile.ZipFile(io.BytesIO(archive)) as package:
+                  if sorted(package.namelist()) != ["generated-report.json", "summary.json"]:
+                      raise ValueError("archive_members_mismatch")
+                  if (package.getinfo("generated-report.json").file_size != 51617
+                          or package.getinfo("summary.json").file_size > 8192):
+                      raise ValueError("member_size_mismatch")
+                  report = package.read("generated-report.json")
+                  summary_bytes = package.read("summary.json")
+              stage = "report-binding"
+              report_blob = hashlib.sha1(b"blob " + str(len(report)).encode() + b"\0" + report).hexdigest()
+              raw_digest = hashlib.sha256(report).hexdigest()
+              framed_digest = hashlib.sha256(len(report).to_bytes(8, "big") + report).hexdigest()
+              report_metadata = {
+                  "bytes": len(report), "gitBlob": report_blob,
+                  "sha256": raw_digest, "framedSha256": framed_digest,
+              }
+              expected_report = {
+                  "bytes": 51617,
+                  "gitBlob": "0c83c7132c748bdf36163a212c728e89b6f3d8ab",
+                  "sha256": "98d9420bb284f79dd5bc980d5cb42fdae7fd18973ec8955f475a21a3ea5f8d44",
+                  "framedSha256": "b496a84bc1c429447e2f2a5922a228b5b6bd7c305d2ba2437e761a8e855af3f1",
+              }
+              if report_metadata != expected_report:
+                  raise ValueError("report_binding_mismatch")
+              summary = json.loads(summary_bytes)
+              if (summary["sourceCommit"] != "cc42b9c70f45471869bb53c7f211ed26a063e0a1"
+                      or summary["sourceTree"] != "2aa102c4fbd7bed851c605602a174333fea03957"
+                      or summary["report"] != expected_report
+                      or summary["reportAccepted"] is not True
+                      or summary["exitCode"] != 0 or summary["generator"]["exitCode"] != 0
+                      or summary["sourceBindingCount"] != 405
+                      or summary["changedSourceIds"] != ["source-d2192cd7887d1b4093d1d62a"]
+                      or summary["sourceParity"] != {"otherTrackedFilesChanged": 0, "trackedFiles": 4087}):
+                  raise ValueError("summary_binding_mismatch")
+              stage = "privacy-check"
+              value = json.loads(report)
+              if value["privacy"] != {
+                  "case_material": "opaque-case-identifiers-only",
+                  "commands_included": False, "local_paths_included": False,
+                  "resource_measurements_included": False,
+              }:
+                  raise ValueError("privacy_contract_mismatch")
+              if re.search(rb"(/Users/|/home/|/tmp/|C:\\\\Users\\\\|elapsed|rss_mib|command_text|c-[0-9a-f]{24})", report):
+                  raise ValueError("privacy_pattern_mismatch")
+              if (value["corpus"]["total_count"] != 51000
+                      or len(value["bindings"]["sources_sha256"]) != 405
+                      or value["oracle_reconciliation"]["unreconciled_count"] != 0):
+                  raise ValueError("report_contract_mismatch")
+              encoded = base64.b64encode(report).decode("ascii")
+              chunks = [encoded[index:index + 4096] for index in range(0, len(encoded), 4096)]
+              print("HGP_REPORT_BEGIN " + json.dumps({
+                  "schema": "guard.generated-report-extraction.v1",
+                  "runId": 35323999679, "artifactId": 10538626127,
+                  "archiveBytes": len(archive), "archiveSha256": archive_digest,
+                  "report": report_metadata, "chunks": len(chunks), "chunkChars": 4096,
+                  "generatorRerun": False, "signatureVerified": False,
+              }, sort_keys=True))
+              for index, chunk in enumerate(chunks, 1):
+                  print("HGP_REPORT_BASE64 " + str(index) + "/" + str(len(chunks)) + " " + chunk)
+              print("HGP_REPORT_END " + raw_digest)
+          except BaseException as error:
+              allowed = {"ValueError", "HTTPError", "URLError", "TimeoutError", "OSError",
+                         "KeyError", "JSONDecodeError", "BadZipFile"}
+              name = type(error).__name__
+              print(json.dumps({
+                  "status": "error", "stage": stage,
+                  "class": name if name in allowed else "OtherException",
+                  "reportPublished": False,
+              }, sort_keys=True))
+              raise SystemExit(2) from None
+          PY

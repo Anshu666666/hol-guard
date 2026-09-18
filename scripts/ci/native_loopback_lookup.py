@@ -245,11 +245,11 @@ def dns_service_summary(stdout: bytes, stderr: bytes) -> dict[str, Any]:
     # only this fixed query/type/class, never arbitrary diagnostic text.
     row = re.compile(
         r"^\s*\d{1,2}:\d{2}:\d{2}\.\d{3}\s+(Add|Rmv)\s+([0-9A-Fa-f]{1,8})\s+"
-        r"(?:\S\s+)?\d{1,10}\s+" + re.escape(REVERSE_NAME) + r"\.?\s+PTR\s+IN\s+(.+?)\s*$"
+        r"(?:\S\s+)?(-?\d{1,10})\s+" + re.escape(REVERSE_NAME) + r"\.?\s+PTR\s+IN\s+(.+?)\s*$"
     )
     for line in text.splitlines():
         match = row.fullmatch(line)
-        if match is None:
+        if match is None or not -(2**31) <= int(match.group(3)) < 2**31:
             # Retain only counts for the fixed query. Unknown row layouts do
             # not become positive/negative callbacks or successful lookups.
             fixed_name = re.escape(REVERSE_NAME) + r"\.?"
@@ -261,7 +261,9 @@ def dns_service_summary(stdout: bytes, stderr: bytes) -> dict[str, Any]:
                 unparsed["ptr_in_columns"] += bool(re.search(fixed_name + r"\s+PTR\s+IN\s", line))
                 unparsed["negative_answer_suffix"] += line.endswith(("    No Such Record", "    No Authorization"))
             continue
-        operation, raw_flags, answer = match.groups()
+        operation, raw_flags, _interface_index, answer = match.groups()
+        # dns-sd prints interfaceIndex using %d. LocalOnly appears as -1;
+        # the interface's sign says nothing about the DNS answer's success.
         flags = int(raw_flags, 16)
         counts["callbacks"] += 1
         if len(callback_flags) < 16:

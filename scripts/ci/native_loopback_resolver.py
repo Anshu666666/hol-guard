@@ -1,9 +1,9 @@
 """Run both qualification arms inside an optional exact-zone macOS DNS fixture.
 
-Only the fixed loopback PTR resolver may be created. Both immutable wheels use
-the same environment. Failed setup still runs the actual measurements and keeps
-their outcome; no runtime patch, hosts rewrite, cache flush, or deadline change
-is applied. Cleanup refuses to remove bytes that this run does not own.
+Both immutable wheels use the same environment. An explicit disposable-CI
+option tries one native cache refresh before the cohort. Failed setup still
+runs the measurements and retains their outcome. Cleanup refuses to remove
+resolver bytes that this run does not own.
 """
 
 from __future__ import annotations
@@ -16,15 +16,19 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
-if __package__:
-    from .native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
-    from .native_loopback_dns import LoopbackPTRResponder
-    from .native_loopback_lookup import lookup_witness
-else:
-    from native_loopback_diagnostics import owned_configuration, responder_probe, system_configuration
-    from native_loopback_dns import LoopbackPTRResponder
-    from native_loopback_lookup import lookup_witness
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.ci.native_loopback_cache import refresh_native_cache
+from scripts.ci.native_loopback_diagnostics import (
+    owned_configuration,
+    responder_probe,
+    system_configuration,
+)
+from scripts.ci.native_loopback_dns import LoopbackPTRResponder
+from scripts.ci.native_loopback_lookup import lookup_witness
 
 _QUERY = (
     "import json,socket; name=socket.getfqdn('127.0.0.1'); "
@@ -101,7 +105,7 @@ def _terminate(signum: int, _frame: object) -> None:
     raise SystemExit(128 + signum)
 
 
-def run_wrapped(command: list[str], output: Path) -> int:
+def run_wrapped(command: list[str], output: Path, *, refresh_cache: bool = False) -> int:
     """Hold the exact DNS fixture around the entire paired build/measure command."""
     report = _base_report()
     if sys.platform != "darwin":
@@ -110,6 +114,29 @@ def run_wrapped(command: list[str], output: Path) -> int:
         return _run_command(command)
     before = resolver_probe()
     report["before"] = before
+    if refresh_cache:
+        report["native_cache_experiment_requested"] = True
+        _write_report(output, report)
+
+        def retain_cache_progress(value: dict[str, Any]) -> None:
+            report["native_cache_experiment"] = value
+            _write_report(output, report)
+
+        cache_report = refresh_native_cache(before, progress=retain_cache_progress)
+        report["native_cache_experiment"] = cache_report
+        _write_report(output, report)
+        # A recovered libc probe is environment evidence, never a qualification
+        # result. The original pre-refresh failure remains in the same report.
+        if cache_report.get("libc_recovered") is True or cache_report["status"] == "completed_before_intervention":
+            report["status"] = "native_cache_experiment_recorded"
+            _write_report(output, report)
+            try:
+                returncode = _run_command(command)
+                report["command_returncode"] = returncode
+                return returncode
+            finally:
+                report["after"] = resolver_probe()
+                _write_report(output, report)
     if before["status"] == "completed":
         report["status"] = "resolver_already_completed"
         _write_report(output, report)
@@ -178,13 +205,14 @@ def run_wrapped(command: list[str], output: Path) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--refresh-native-cache", action="store_true")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if command:
         previous = signal.signal(signal.SIGTERM, _terminate)
         try:
-            return run_wrapped(command, args.output)
+            return run_wrapped(command, args.output, refresh_cache=args.refresh_native_cache)
         finally:
             signal.signal(signal.SIGTERM, previous)
     report = _base_report()

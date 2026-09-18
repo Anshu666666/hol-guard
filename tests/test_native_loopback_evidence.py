@@ -71,11 +71,11 @@ def test_unknown_dns_service_rows_are_counted_without_reclassifying_callbacks() 
 12:01:01.004 Add 2 0 1.0.0.127.in-addr.arpa. PTR IN localhost.
 """
     report = lookup.dns_service_summary(output, b"private-stderr")
-    assert report["counts"]["callbacks"] == report["counts"]["positive"] == 1
+    assert report["counts"]["callbacks"] == report["counts"]["positive"] == 2
     assert report["unparsed_fixed_question_rows"] == {
-        "rows": 2,
-        "negative_interface_prefix": 1,
-        "ptr_in_columns": 1,
+        "rows": 1,
+        "negative_interface_prefix": 0,
+        "ptr_in_columns": 0,
         "negative_answer_suffix": 0,
     }
     assert "private" not in json.dumps(report)

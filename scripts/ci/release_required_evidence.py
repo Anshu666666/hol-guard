@@ -107,6 +107,47 @@ def _installed_canary_oses(jobs: dict[str, object]) -> tuple[str, ...]:
     return tuple(os_list)
 
 
+def _without_shell_comments(run: str) -> str:
+    """Remove unquoted comments while retaining the original command text."""
+    result: list[str] = []
+    quote = ""
+    escaped = False
+    comment = False
+    word_start = True
+    for character in run:
+        if comment:
+            if character == "\n":
+                result.append(character)
+                comment = False
+                word_start = True
+            continue
+        if escaped:
+            result.append(character)
+            escaped = False
+            if character != "\n":
+                word_start = False
+            continue
+        if quote:
+            result.append(character)
+            if character == quote:
+                quote = ""
+            elif character == "\\" and quote == '"':
+                escaped = True
+            continue
+        if character == "#" and word_start:
+            comment = True
+            continue
+        result.append(character)
+        if character in {"'", '"'}:
+            quote = character
+            word_start = False
+        elif character == "\\":
+            escaped = True
+        else:
+            word_start = character in " \t\n;|&()<>"
+    return "".join(result)
+
+
 def _installed_wheel_jobs(jobs: dict[str, object]) -> tuple[str, ...]:
     configured: list[str] = []
     for name, snippet in (
@@ -121,7 +162,7 @@ def _installed_wheel_jobs(jobs: dict[str, object]) -> tuple[str, ...]:
         if not isinstance(steps, list) or not any(
             isinstance(step, dict)
             and isinstance(step.get("run"), str)
-            and snippet in step["run"]
+            and snippet in _without_shell_comments(step["run"])
             and step.get("if") is not False
             and step.get("if") not in {"false", "${{ false }}"}
             for step in steps

@@ -17,6 +17,8 @@ from unittest.mock import patch
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/native-sensitive-resident-contract.yml"
 CASE = "test_sensitive_read_origins_reach_actual_auto_resident"
 SECOND = "test_sensitive_read_signed_lockdown_and_withdrawal_reach_actual_auto_resident"
+GENERIC = "test_generic_origins_reach_actual_auto_resident"
+GENERIC_CONTROL = "test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident"
 SOURCE = "a" * 40
 
 
@@ -67,19 +69,26 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
             return failure, json.loads(report.read_text()) if report.exists() else None
 
     def case(self, children: str = "", name: str = CASE):
-        return f'<testcase name="{name}">{children}</testcase><testcase name="{SECOND}"/>'
+        return (
+            f'<testcase name="{name}">{children}</testcase><testcase name="{SECOND}"/>'
+            f'<testcase name="{GENERIC}"/><testcase name="{GENERIC_CONTROL}"/>'
+        )
 
     def test_only_exact_completed_case_emits_passing_source_scoped_report(self):
         failure, report = self.execute("<testsuite>" + self.case() + "</testsuite>")
         self.assertIsNone(failure)
+        assert report is not None
         self.assertEqual(report["status"], "pass")
-        self.assertEqual(report["assertionCount"], 2)
+        self.assertEqual(report["schema"], "native-origin-resident-proof.v1")
+        self.assertEqual(report["assertionCount"], 4)
+        self.assertEqual(report["genericOriginVectorCount"], 260)
         self.assertEqual(report["sourceSha"], SOURCE)
         self.assertEqual(
             report["runtimeBinarySha256"],
             hashlib.sha256(b"synthetic-validator-test-binary").hexdigest(),
         )
         self.assertTrue(report["stagedFeatureNegotiation"])
+        self.assertEqual(report["canonicalEnforcement"], "explicit-test-only")
         self.assertEqual(report["sourceAdmission"], "loaded-mdm-test-file-and-signed-store")
         self.assertTrue(report["nativeAutoRequired"])
         for field in (
@@ -95,6 +104,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         self.assertIn("HOL_GUARD_NATIVE_BINARY:", source)
         self.assertIn("test_sensitive_resident_fixture_uses_actual_loaded_origins", source)
         self.assertIn("pytest -q -m slow tests/test_native_sensitive_policy_resident.py", source)
+        self.assertIn("tests/test_native_generic_policy_resident.py --junitxml=", source)
 
     def test_absent_wrong_and_duplicate_case_identities_fail(self):
         for xml in (
@@ -102,12 +112,14 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
             "<testsuite/>",
             f'<testsuite><testcase name="{CASE}"/></testsuite>',
             f'<testsuite><testcase name="{SECOND}"/></testsuite>',
+            f'<testsuite><testcase name="{CASE}"/><testcase name="{SECOND}"/></testsuite>',
             "<testsuite>" + self.case(name="wrong") + "</testsuite>",
             "<testsuite>" + self.case() * 2 + "</testsuite>",
         ):
             with self.subTest(xml=xml):
                 failure, report = self.execute(xml)
                 self.assertEqual(failure, "AssertionError")
+                assert report is not None
                 self.assertEqual(report["status"], "fail")
 
     def test_every_nonpass_marker_fails_including_suite_level_markers(self):
@@ -115,10 +127,22 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
             for xml in (
                 "<testsuite>" + self.case(f"<{marker}/>") + "</testsuite>",
                 "<testsuite>" + self.case() + f"<{marker}/></testsuite>",
+                "<testsuite>"
+                + self.case().replace(
+                    f'<testcase name="{GENERIC}"/>', f'<testcase name="{GENERIC}"><{marker}/></testcase>'
+                )
+                + "</testsuite>",
+                "<testsuite>"
+                + self.case().replace(
+                    f'<testcase name="{GENERIC_CONTROL}"/>',
+                    f'<testcase name="{GENERIC_CONTROL}"><{marker}/></testcase>',
+                )
+                + "</testsuite>",
             ):
                 with self.subTest(marker=marker, xml=xml):
                     failure, report = self.execute(xml)
                     self.assertEqual(failure, "AssertionError")
+                    assert report is not None
                     self.assertFalse(report["allAssertionsPassed"])
 
     def test_declared_nonpass_suite_counts_cannot_be_ignored(self):
@@ -127,12 +151,16 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
                 f'<testsuites {field}="1"><testsuite>' + self.case() + "</testsuite></testsuites>"
             )
             self.assertEqual(failure, "AssertionError")
+            assert report is not None
             self.assertEqual(report["status"], "fail")
 
     def test_wrong_or_dirty_source_and_absent_binary_fail(self):
-        for change in ({"source": "b" * 40}, {"dirty": True}, {"binary": False}):
-            failure, report = self.execute("<testsuite>" + self.case() + "</testsuite>", **change)
+        for source, dirty, binary in (("b" * 40, False, True), (SOURCE, True, True), (SOURCE, False, False)):
+            failure, report = self.execute(
+                "<testsuite>" + self.case() + "</testsuite>", source=source, dirty=dirty, binary=binary
+            )
             self.assertEqual(failure, "AssertionError")
+            assert report is not None
             self.assertEqual(report["status"], "fail")
 
     def test_malformed_xml_never_creates_a_passing_report(self):

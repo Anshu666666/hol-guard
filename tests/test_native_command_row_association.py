@@ -198,8 +198,11 @@ def test_inconsistent_frozen_association_cannot_be_replaced_independently():
 
 def test_all_selector_fanout_rows_retain_the_same_complete_expression():
     raw = rule("fanout")
-    raw["match"]["harnesses"] = ["codex", "claude-code"]
-    raw["match"]["artifacts"] = ["tool-action:shell:a", "tool-action:shell:b"]
+    raw_match = raw["match"]
+    assert isinstance(raw_match, dict)
+    match = cast(dict[str, object], raw_match)
+    match["harnesses"] = ["codex", "claude-code"]
+    match["artifacts"] = ["tool-action:shell:a", "tool-action:shell:b"]
     result = materialize(projection(raw))
     assert len(result.rows) == 4
     assert result.projection.rule_dispositions[0].row_count == 4

@@ -45,6 +45,7 @@ from .protection_posture import (
     dual_write_from_posture,
     resolve_posture_defaults,
 )
+from .workspace_config_io import WORKSPACE_CONFIG_FILENAMES, read_workspace_toml
 
 DEFAULT_GUARD_DIRNAME = ".hol-guard"
 VALID_UPDATE_CHANNELS = frozenset({"stable", "alpha"})
@@ -112,7 +113,6 @@ GUARD_HOME_METADATA_FILES = frozenset(
 )
 GUARD_DB_BACKUP_TIMEOUT_SECONDS = 5.0
 GUARD_DB_BACKUP_SLEEP_SECONDS = 0.05
-WORKSPACE_CONFIG_FILENAMES = (".ai-plugin-scanner-guard.toml", ".hol-guard.toml")
 MAX_APPROVAL_WAIT_TIMEOUT_SECONDS = 600
 
 # Hook review controls. The resident worker is the safe production default;
@@ -1439,7 +1439,9 @@ def _load_workspace_guard_config(workspace: Path | None) -> dict[str, object]:
         return {}
     merged: dict[str, object] = {}
     for filename in WORKSPACE_CONFIG_FILENAMES:
-        merged = _merge_config_payload(merged, _sanitize_workspace_guard_config(_read_toml(workspace / filename)))
+        merged = _merge_config_payload(
+            merged, _sanitize_workspace_guard_config(read_workspace_toml(workspace, filename))
+        )
     return merged
 
 

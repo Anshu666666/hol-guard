@@ -47,7 +47,10 @@ fn selector_text<'a>(
     }
 }
 
-fn generic_shell_artifact(envelope: &GuardHookEnvelopeV2, harness: &str) -> Result<String, String> {
+pub(crate) fn generic_shell_artifact(
+    envelope: &GuardHookEnvelopeV2,
+    harness: &str,
+) -> Result<String, String> {
     if envelope.harness != harness || envelope.event != "PreToolUse" {
         return Err(UNSUPPORTED.to_owned());
     }

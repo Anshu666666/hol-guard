@@ -316,7 +316,7 @@ fn unsupported_authority_and_request_posture_are_never_partially_applied() {
         apply_scoped_pre_tool_policy(&policy, &source, "codex", baseline.clone(), 100)
             .err()
             .as_deref(),
-        Some("native_scoped_managed_policy_unsupported")
+        Some("native_scoped_managed_catalog_mismatch")
     );
     let policy = snapshot("allow", vec![]);
     for key in [
@@ -335,4 +335,110 @@ fn unsupported_authority_and_request_posture_are_never_partially_applied() {
             Some("native_scoped_request_posture_unsupported")
         );
     }
+}
+
+fn with_managed(
+    mut policy: PolicySnapshotV4,
+    lockdown: bool,
+    controls: Vec<Value>,
+) -> PolicySnapshotV4 {
+    let mut value = serde_json::to_value(&policy.scoped_authority).unwrap();
+    value["managed"] = json!({"revision":2,"managed_revision":7,
+        "catalog_digest":crate::policy_scoped_managed::catalog_digest(),
+        "global_lockdown":lockdown,"controls":controls});
+    policy.scoped_authority = serde_json::from_value(value).unwrap();
+    policy
+}
+
+#[test]
+fn managed_lockdown_cannot_be_lowered_by_exact_allow_or_observe() {
+    for mode in ["enforce", "observe"] {
+        for kind in ["signed-bundle", "signed-memory"] {
+            let mut policy = with_managed(
+                snapshot("review", vec![row(7, "artifact", "allow", kind)]),
+                true,
+                vec![],
+            );
+            policy.mode = mode.to_owned();
+            let result = evaluate(&policy, &envelope(COMMAND));
+            assert_eq!(result.result.minimum_action, "block");
+            assert_eq!(result.result.decision, "deny");
+            assert_eq!(result.selected_decision_id, None);
+            assert_eq!(
+                result.observed_policy_action,
+                (mode == "observe").then_some("block")
+            );
+        }
+    }
+}
+
+#[test]
+fn unrelated_managed_controls_neither_grant_permission_nor_lose_generic_precedence() {
+    for state in ["enabled", "disabled"] {
+        let controls =
+            vec![json!({"target_kind":"extension","target_id":"command.filesystem","state":state})];
+        let policy = with_managed(snapshot("review", vec![]), false, controls.clone());
+        assert_eq!(
+            evaluate(&policy, &envelope(COMMAND)).result.minimum_action,
+            "review"
+        );
+        let policy = with_managed(
+            snapshot("review", vec![row(7, "artifact", "allow", "signed-bundle")]),
+            false,
+            controls.clone(),
+        );
+        assert_eq!(
+            evaluate(&policy, &envelope(COMMAND)).result.minimum_action,
+            "allow"
+        );
+        for floor in ["require-reapproval", "sandbox-required", "block"] {
+            let policy = with_managed(
+                snapshot(floor, vec![row(7, "artifact", "allow", "signed-bundle")]),
+                false,
+                controls.clone(),
+            );
+            assert_eq!(
+                evaluate(&policy, &envelope(COMMAND)).result.minimum_action,
+                floor
+            );
+        }
+    }
+}
+
+#[test]
+fn managed_unknown_delegated_and_unmodeled_requests_refuse_as_a_whole() {
+    for target in [
+        "command.synthetic",
+        "command.package.node",
+        "command.package.node.permission.install",
+    ] {
+        let kind = if target.contains(".permission.") {
+            "permission"
+        } else {
+            "extension"
+        };
+        let policy = with_managed(
+            snapshot("allow", vec![]),
+            false,
+            vec![json!({"target_kind":kind,"target_id":target,"state":"enabled"})],
+        );
+        let source = envelope(COMMAND);
+        let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+        assert_eq!(
+            apply_scoped_pre_tool_policy(&policy, &source, "codex", intrinsic, 100)
+                .err()
+                .as_deref(),
+            Some("native_scoped_managed_policy_unsupported")
+        );
+    }
+    let policy = with_managed(snapshot("allow", vec![]), false, vec![]);
+    let mut source = envelope(COMMAND);
+    source.raw_payload = json!({"tool_name":"mcp__synthetic__inspect","tool_input":{}});
+    let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+    assert_eq!(
+        apply_scoped_pre_tool_policy(&policy, &source, "codex", intrinsic, 100)
+            .err()
+            .as_deref(),
+        Some("native_scoped_managed_policy_unsupported")
+    );
 }

@@ -82,6 +82,11 @@ _COMPONENTS = (
         "guard-runtime-policy-scoped-tool-request",
         Path("rust/crates/guard-runtime/src/policy_scoped_tool_request.rs"),
     ),
+    ("guard-runtime-policy-scoped-managed", Path("rust/crates/guard-runtime/src/policy_scoped_managed.rs")),
+    (
+        "guard-runtime-policy-scoped-managed-catalog",
+        Path("rust/crates/guard-runtime/src/policy_scoped_managed_catalog.json"),
+    ),
     ("guard-runtime-edge-v4", Path("rust/crates/guard-runtime/src/edge_v4.rs")),
     (
         "guard-runtime-policy-scoped-enforcement",

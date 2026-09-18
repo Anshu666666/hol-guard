@@ -80,7 +80,11 @@ impl AuthenticatedPolicySnapshot {
             Self::V3(value) => validate_v3(value, minimum_generation, runtime, rules, key, now),
             Self::V4(value) => validate_v4(value, minimum_generation, runtime, rules, key, now),
         }
-        .map_err(snapshot_error)
+        .map_err(snapshot_error)?;
+        if let Self::V4(value) = self {
+            crate::policy_scoped_managed::validate_authority(value.scoped_authority.managed())?;
+        }
+        Ok(())
     }
 
     pub(super) fn encode_ack(

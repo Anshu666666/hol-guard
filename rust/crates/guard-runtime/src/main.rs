@@ -9,6 +9,7 @@ mod native_hook_receipt;
 mod oneshot;
 mod policy_enforcement;
 mod policy_scoped_enforcement;
+mod policy_scoped_managed;
 mod policy_scoped_request;
 mod policy_store;
 mod resident_client;

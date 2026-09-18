@@ -233,7 +233,22 @@ impl fmt::Debug for ManagedAuthority {
     }
 }
 
+impl ManagedControl {
+    pub fn target_kind(&self) -> ControlTargetKind {
+        self.target_kind
+    }
+    pub fn target_id(&self) -> &str {
+        &self.target_id
+    }
+}
+
 impl ManagedAuthority {
+    pub fn global_lockdown(&self) -> bool {
+        self.global_lockdown
+    }
+    pub fn controls(&self) -> &[ManagedControl] {
+        &self.controls
+    }
     pub fn catalog_digest(&self) -> &str {
         &self.catalog_digest
     }

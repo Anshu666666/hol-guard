@@ -115,9 +115,6 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     if !matches!(snapshot.mode.as_str(), "enforce" | "observe") {
         return Err("native_policy_mode_invalid".to_owned());
     }
-    if snapshot.scoped_authority.managed().is_some() {
-        return Err("native_scoped_managed_policy_unsupported".to_owned());
-    }
     if snapshot
         .scoped_authority
         .rows()
@@ -139,6 +136,11 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         return Err("native_scoped_request_posture_unsupported".to_owned());
     }
     let request = derive_scoped_policy_request(envelope, canonical_harness)?;
+    let managed_block = crate::policy_scoped_managed::request_is_blocked(
+        snapshot.scoped_authority.managed(),
+        envelope,
+        canonical_harness,
+    )?;
     let selected = snapshot
         .scoped_authority
         .select_generic(&request, now_ms)
@@ -155,7 +157,15 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         &intrinsic,
     )?)?;
     let intrinsic_action = action(&intrinsic.minimum_action)?;
-    let current = join(configured, intrinsic_action);
+    // Managed controls are authority floors. Neither a generic allow nor Watch
+    // can release lockdown. Current supported shell facts have no extension
+    // observations; unsupported control/request semantics refuse above.
+    let authority_floor = if managed_block {
+        PolicyAction::Block
+    } else {
+        intrinsic_action
+    };
+    let current = join(configured, authority_floor);
     let composed = selected.map_or(current, |row| compose(current, row));
     // The classifier admitted only an explicitly modeled generic producer.
     // Its ordinary command review can be satisfied by a matched signed exact
@@ -165,15 +175,15 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     {
         composed
     } else {
-        join(composed, intrinsic_action)
+        join(composed, authority_floor)
     };
     let selected_decision_id = selected
         .filter(|row| effective != current && effective == row.action())
         .map(ScopedPolicyRow::decision_id);
     let observed_policy_action = (snapshot.mode == "observe").then(|| name(effective));
     if snapshot.mode == "observe"
-        && rank(effective) > rank(intrinsic_action)
-        && rank(intrinsic_action) <= 1
+        && rank(effective) > rank(authority_floor)
+        && rank(authority_floor) <= 1
     {
         effective = PolicyAction::Warn;
     }

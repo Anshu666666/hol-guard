@@ -81,6 +81,8 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         build_sha: crate::BUILD_SHA.to_owned(),
         target: format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS),
         features,
+        // Describes the source catalog only; scoped/managed activation is not advertised.
+        extension_catalog_digest: Some(crate::policy_scoped_managed::catalog_digest().to_owned()),
     }
 }
 

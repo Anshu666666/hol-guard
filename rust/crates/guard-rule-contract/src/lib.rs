@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 34] = [
+const COMPONENTS: [(&str, &[u8]); 36] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -110,6 +110,14 @@ const COMPONENTS: [(&str, &[u8]); 34] = [
     (
         "guard-runtime-policy-scoped-tool-request",
         include_bytes!("../../guard-runtime/src/policy_scoped_tool_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-managed",
+        include_bytes!("../../guard-runtime/src/policy_scoped_managed.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-managed-catalog",
+        include_bytes!("../../guard-runtime/src/policy_scoped_managed_catalog.json"),
     ),
     (
         "guard-runtime-edge-v4",
@@ -234,6 +242,8 @@ mod tests {
                 "guard-runtime-policy-store-versioned",
                 "guard-runtime-policy-scoped-request",
                 "guard-runtime-policy-scoped-tool-request",
+                "guard-runtime-policy-scoped-managed",
+                "guard-runtime-policy-scoped-managed-catalog",
                 "guard-runtime-edge-v4",
                 "guard-runtime-policy-scoped-enforcement",
                 "guard-runtime-approval",

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import cast
 
+from codex_plugin_scanner.guard.policy_capability_inventory import local_row_projection_capabilities
 from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
-
-from codex_plugin_scanner.guard.policy_capability_inventory import local_row_projection_capabilities
 from codex_plugin_scanner.guard.policy_matcher_capability import GENERIC_MATCH_KEYS, unsupported_matcher_reason
 
 EXACT_SELECTOR: dict[str, str] = {

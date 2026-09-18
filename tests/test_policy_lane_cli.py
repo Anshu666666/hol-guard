@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from codex_plugin_scanner.cli import main
 from codex_plugin_scanner.guard.policy_document_io import write_private_policy_text
 

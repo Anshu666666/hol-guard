@@ -7,11 +7,11 @@ from itertools import combinations, product
 from typing import cast
 
 import pytest
+
+from codex_plugin_scanner.guard.policy_capability_inventory import local_row_projection_capabilities
 from codex_plugin_scanner.guard.policy_document import GuardPolicyDocument
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
 from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
-
-from codex_plugin_scanner.guard.policy_capability_inventory import local_row_projection_capabilities
 from codex_plugin_scanner.guard.policy_lane_capabilities import (
     GENERIC_LANE,
     NATIVE_DEFAULTS_LANE,

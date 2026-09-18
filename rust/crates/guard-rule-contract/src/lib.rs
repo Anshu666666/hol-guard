@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 28] = [
+const COMPONENTS: [(&str, &[u8]); 41] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -84,12 +84,24 @@ const COMPONENTS: [(&str, &[u8]); 28] = [
         include_bytes!("../../guard-command/src/exact_command.rs"),
     ),
     (
+        "guard-policy-managed-configuration",
+        include_bytes!("../../guard-policy-snapshot/src/managed_configuration.rs"),
+    ),
+    (
         "guard-policy-scoped-authority",
         include_bytes!("../../guard-policy-snapshot/src/scoped_authority.rs"),
     ),
     (
         "guard-policy-scoped-authority-decode",
         include_bytes!("../../guard-policy-snapshot/src/scoped_authority_decode.rs"),
+    ),
+    (
+        "guard-policy-command-expression",
+        include_bytes!("../../guard-policy-snapshot/src/command_expression.rs"),
+    ),
+    (
+        "guard-policy-scoped-command-expression",
+        include_bytes!("../../guard-policy-snapshot/src/scoped_command_expression.rs"),
     ),
     (
         "guard-policy-scoped-matcher",
@@ -108,8 +120,24 @@ const COMPONENTS: [(&str, &[u8]); 28] = [
         include_bytes!("../../guard-runtime/src/policy_scoped_request.rs"),
     ),
     (
+        "guard-runtime-policy-scoped-sensitive-read",
+        include_bytes!("../../guard-runtime/src/policy_scoped_sensitive_read.rs"),
+    ),
+    (
+        "guard-runtime-policy-sensitive-configuration",
+        include_bytes!("../../guard-runtime/src/policy_sensitive_configuration.rs"),
+    ),
+    (
         "guard-runtime-policy-scoped-tool-request",
         include_bytes!("../../guard-runtime/src/policy_scoped_tool_request.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-managed",
+        include_bytes!("../../guard-runtime/src/policy_scoped_managed.rs"),
+    ),
+    (
+        "guard-runtime-policy-scoped-managed-catalog",
+        include_bytes!("../../guard-runtime/src/policy_scoped_managed_catalog.json"),
     ),
     (
         "guard-runtime-edge-v4",
@@ -118,6 +146,30 @@ const COMPONENTS: [(&str, &[u8]); 28] = [
     (
         "guard-runtime-policy-scoped-enforcement",
         include_bytes!("../../guard-runtime/src/policy_scoped_enforcement.rs"),
+    ),
+    (
+        "guard-runtime-approval",
+        include_bytes!("../../guard-runtime/src/approval.rs"),
+    ),
+    (
+        "guard-runtime-approval-context",
+        include_bytes!("../../guard-runtime/src/approval_context.rs"),
+    ),
+    (
+        "guard-runtime-approval-context-scoped",
+        include_bytes!("../../guard-runtime/src/approval_context_scoped.rs"),
+    ),
+    (
+        "guard-runtime-approval-v4",
+        include_bytes!("../../guard-runtime/src/approval_v4.rs"),
+    ),
+    (
+        "guard-runtime-policy-store-approval",
+        include_bytes!("../../guard-runtime/src/policy_store_approval.rs"),
+    ),
+    (
+        "guard-runtime-edge",
+        include_bytes!("../../guard-runtime/src/edge.rs"),
     ),
 ];
 
@@ -203,15 +255,28 @@ mod tests {
                 "guard-policy-snapshot-crypto",
                 "guard-command-model",
                 "guard-command-exact-command",
+                "guard-policy-managed-configuration",
                 "guard-policy-scoped-authority",
                 "guard-policy-scoped-authority-decode",
+                "guard-policy-command-expression",
+                "guard-policy-scoped-command-expression",
                 "guard-policy-scoped-matcher",
                 "guard-policy-snapshot-v4",
                 "guard-runtime-policy-store-versioned",
                 "guard-runtime-policy-scoped-request",
+                "guard-runtime-policy-scoped-sensitive-read",
+                "guard-runtime-policy-sensitive-configuration",
                 "guard-runtime-policy-scoped-tool-request",
+                "guard-runtime-policy-scoped-managed",
+                "guard-runtime-policy-scoped-managed-catalog",
                 "guard-runtime-edge-v4",
                 "guard-runtime-policy-scoped-enforcement",
+                "guard-runtime-approval",
+                "guard-runtime-approval-context",
+                "guard-runtime-approval-context-scoped",
+                "guard-runtime-approval-v4",
+                "guard-runtime-policy-store-approval",
+                "guard-runtime-edge",
             ]
         );
         assert!(first

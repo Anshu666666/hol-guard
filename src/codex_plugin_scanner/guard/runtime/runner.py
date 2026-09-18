@@ -48,6 +48,8 @@ from ..edge_events import build_runtime_session_event
 from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..mdm.network import managed_urlopen
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
+from ..native_policy_authority_command_source import has_canonical_command_expressions
+from ..native_policy_bundle_sync import publish_received_canonical_policy
 from ..oauth_token_claims import decode_oauth_access_token_claims as _decode_oauth_access_token_claims
 from ..oauth_token_claims import oauth_binding_from_credentials, oauth_binding_metadata, oauth_refresh_binding
 from ..package_firewall_defaults import extract_cloud_user_profile
@@ -56,10 +58,11 @@ from ..package_firewall_entitlement import (
     reconcile_connect_state_with_oauth_entitlement,
 )
 from ..policy_bundle_activation import activate_with_reason, persist_activation_rejection
-from ..policy_bundle_decisions import build_policy_bundle_decisions as _materialize_policy_bundle_decisions
 from ..policy_bundle_delivery import (
     effective_policy_bundle_acknowledgement,
+    policy_bundle_has_extension_semantics,
 )
+from ..policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from ..policy_bundle_parser import (
     POLICY_BUNDLE_RULE_MATCHER_FAMILIES,
     computed_policy_bundle_hash,
@@ -89,6 +92,7 @@ from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
 from ..policy_document_io import PolicyCompilationError
+from ..policy_lane_capabilities import source_runtime_lane_observation
 from ..policy_memory_source import attach_disclosed_policy_source
 from ..policy_sync_outcomes import policy_sync_outcomes
 from ..redaction import redact_sensitive_text
@@ -107,9 +111,6 @@ from .approval_context import (
 from .approval_reuse import (
     APPROVAL_REUSE_CLAIM_FAILED,
     APPROVAL_REUSE_LAUNCH_IDENTITY_UNVERIFIED,
-)
-from .canonical_policy_decisions import (
-    build_canonical_policy_bundle_decisions as _build_canonical_policy_bundle_decisions,
 )
 from .composition_rules import compose_action_from_signals
 from .decisions import (
@@ -145,10 +146,20 @@ from .managed_controls_sync import (
     managed_controls_runtime_sync_posture as _managed_controls_runtime_sync_posture,
 )
 from .optional_telemetry_sync import PainSignalSyncError, sync_nonessential_telemetry
+from .policy_bundle_selection import (
+    build_policy_bundle_decisions as _build_policy_bundle_decisions,
+)
+from .policy_bundle_selection import (
+    canonical_decisions_for_sync,
+    compilation_rejection_details,
+    policy_shadow_mismatch_reason_codes,
+    select_canonical_policy_candidate,
+)
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
 from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
 from .receipt_sync_cursor import _receipt_sync_cursor_rowid, _receipt_sync_rows_for_upload
+from .session_observation import cloud_local_identity_source_payload as _cloud_local_identity_source_payload
 from .signals import RiskSignalV2
 from .supply_chain_bundle import (
     SupplyChainBundleError,
@@ -2439,63 +2450,10 @@ def _policy_bundle_rejection_payload(reason: str | None) -> dict[str, object]:
     return payload
 
 
-def _build_policy_bundle_decisions(
-    policy_bundle: dict[str, object],
-    *,
-    device_id: str,
-    device_name: str,
-    canonical_enforcement: bool = False,
-) -> list[PolicyDecision]:
-    if policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT:
-        if not canonical_enforcement:
-            return []
-        return _build_canonical_policy_bundle_decisions(
-            policy_bundle,
-            device_id=device_id,
-            device_name=device_name,
-        )
-    return _materialize_policy_bundle_decisions(
-        policy_bundle,
-        device_id=device_id,
-        device_name=device_name,
-    )
-
-
 def _policy_shadow_mismatch_reason_codes(
-    legacy: list[PolicyDecision],
-    canonical: list[PolicyDecision],
+    legacy: list[PolicyDecision], canonical: list[PolicyDecision]
 ) -> tuple[str, ...]:
-    if not legacy:
-        return ("legacy_unavailable",)
-
-    def keyed(
-        decisions: list[PolicyDecision],
-    ) -> dict[tuple[str, str, str | None, str | None, str | None, str | None], PolicyDecision]:
-        return {
-            (
-                decision.harness,
-                decision.scope,
-                decision.artifact_id,
-                decision.artifact_hash,
-                decision.workspace,
-                decision.publisher,
-            ): decision
-            for decision in decisions
-        }
-
-    reasons: list[str] = []
-    legacy_by_key = keyed(legacy)
-    canonical_by_key = keyed(canonical)
-    if len(legacy) != len(canonical):
-        reasons.append("row_count")
-    if legacy_by_key.keys() != canonical_by_key.keys():
-        reasons.append("selector_set")
-    shared_keys = legacy_by_key.keys() & canonical_by_key.keys()
-    if any(legacy_by_key[key].action != canonical_by_key[key].action for key in shared_keys):
-        reasons.append("action")
-    if any(legacy_by_key[key].expires_at != canonical_by_key[key].expires_at for key in shared_keys):
-        reasons.append("expiration")
-    return tuple(reasons[:4])
+    return policy_shadow_mismatch_reason_codes(legacy, canonical)
 
 
 def _parse_policy_simulation_timestamp(value: object) -> datetime | None:
@@ -2811,6 +2769,7 @@ def sync_receipts(
     effective_policy_bundle: dict[str, object] | None = None
     retain_existing_policy_authority = False
     activation_last_error: dict[str, object] = {}
+    compilation_details: dict[str, object] = {}
     trusted_policy_bundle_keys: tuple[PolicyBundleVerificationKey, ...] = ()
     update_last_good = False
     existing_policy_bundle_payload = store.get_sync_payload("policy_bundle")
@@ -2870,54 +2829,18 @@ def sync_receipts(
         if validated_policy_bundle is not None:
             try:
                 if validated_bundle_is_v2:
-                    canonical_decisions = _build_canonical_policy_bundle_decisions(
+                    candidate_policy_decisions, selection_error = select_canonical_policy_candidate(
+                        store,
                         validated_policy_bundle,
+                        existing_bundle=existing_policy_bundle,
                         device_id=device_id,
                         device_name=device_name,
+                        canonical_enforcement=canonical_enforcement,
+                        now=now,
                     )
-                    legacy_payload = store.get_sync_payload("policy_bundle_legacy_last_good")
-                    if not isinstance(legacy_payload, dict):
-                        legacy_payload = (
-                            existing_policy_bundle
-                            if isinstance(existing_policy_bundle, dict)
-                            and existing_policy_bundle.get("contractVersion") != POLICY_BUNDLE_V2_CONTRACT
-                            else None
-                        )
-                    legacy_decisions = (
-                        _build_policy_bundle_decisions(
-                            legacy_payload,
-                            device_id=device_id,
-                            device_name=device_name,
-                        )
-                        if isinstance(legacy_payload, dict)
-                        else []
-                    )
-                    mismatch_reasons = _policy_shadow_mismatch_reason_codes(
-                        legacy_decisions,
-                        canonical_decisions,
-                    )
-                    blocking_mismatch_reasons = tuple(
-                        reason for reason in mismatch_reasons if reason != "legacy_unavailable"
-                    )
-                    candidate_policy_decisions = (
-                        canonical_decisions
-                        if canonical_enforcement and not blocking_mismatch_reasons
-                        else legacy_decisions
-                    )
-                    if mismatch_reasons:
-                        store.add_event(
-                            "policy_bundle/shadow_mismatch",
-                            {
-                                "canonicalRows": len(canonical_decisions),
-                                "legacyRows": len(legacy_decisions),
-                                "reasonCodes": list(mismatch_reasons),
-                                "status": "mismatch",
-                            },
-                            now,
-                        )
-                    if canonical_enforcement and blocking_mismatch_reasons:
+                    if selection_error is not None:
                         validated_policy_bundle = None
-                        policy_bundle_rejection_reason = "canonical_shadow_mismatch"
+                        policy_bundle_rejection_reason = selection_error
                 else:
                     candidate_policy_decisions = _build_policy_bundle_decisions(
                         validated_policy_bundle,
@@ -2927,6 +2850,7 @@ def sync_receipts(
             except PolicyCompilationError as error:
                 validated_policy_bundle = None
                 policy_bundle_rejection_reason = f"canonical_compile_{error.code}"
+                compilation_details = compilation_rejection_details(error)
         if validated_policy_bundle is not None:
             effective_policy_bundle = validated_policy_bundle
             update_last_good = True
@@ -2945,7 +2869,10 @@ def sync_receipts(
             # checkpoint. Prefer current so a rejected refresh cannot roll
             # policy authority back to an older signed bundle.
             effective_policy_bundle = existing_policy_bundle or last_good_bundle
-            activation_last_error = _policy_bundle_rejection_payload(policy_bundle_rejection_reason)
+            activation_last_error = {
+                **_policy_bundle_rejection_payload(policy_bundle_rejection_reason),
+                **compilation_details,
+            }
             store.add_event(
                 "policy_bundle/rejected",
                 activation_last_error,
@@ -3033,6 +2960,46 @@ def sync_receipts(
                     store.add_event("policy_bundle/rejected", activation_last_error, now)
                     effective_policy_bundle = None
                     retain_existing_policy_authority = True
+    native_expression_required = False
+    native_policy_required = False
+    native_policy_applied = False
+    selected_policy_decisions: list[PolicyDecision] = []
+    if effective_policy_bundle is not None:
+        try:
+            native_expression_required = has_canonical_command_expressions(effective_policy_bundle)
+            native_policy_required = native_expression_required or (
+                effective_policy_bundle.get("contractVersion") == POLICY_BUNDLE_V2_CONTRACT
+                and not policy_bundle_has_extension_semantics(effective_policy_bundle)
+            )
+            # Recheck the final live/current/LKG source and selected lane as well
+            # as incoming candidates; no cached expression row subset is authority.
+            if native_expression_required:
+                selected_policy_decisions, _ = canonical_decisions_for_sync(
+                    effective_policy_bundle,
+                    device_id=device_id,
+                    device_name=device_name,
+                    canonical_enforcement=canonical_enforcement,
+                )
+            else:
+                selected_policy_decisions = (
+                    candidate_policy_decisions
+                    if validated_policy_bundle is not None
+                    and effective_policy_bundle.get("bundleHash") == validated_policy_bundle.get("bundleHash")
+                    else _build_policy_bundle_decisions(
+                        effective_policy_bundle,
+                        device_id=device_id,
+                        device_name=device_name,
+                        canonical_enforcement=canonical_enforcement,
+                    )
+                )
+        except PolicyCompilationError as error:
+            activation_last_error = {
+                **_policy_bundle_rejection_payload(f"canonical_compile_{error.code}"),
+                **compilation_rejection_details(error),
+            }
+            store.add_event("policy_bundle/rejected", activation_last_error, now)
+            effective_policy_bundle = None
+            retain_existing_policy_authority = True
     if effective_policy_bundle is None:
         if not retain_existing_policy_authority:
             store.clear_policy_bundle_authority(
@@ -3042,28 +3009,29 @@ def sync_receipts(
             )
             _reset_cloud_receipt_redaction_authority(store, synced_at=now)
     else:
-        selected_policy_decisions = (
-            candidate_policy_decisions
-            if validated_policy_bundle is not None
-            and effective_policy_bundle.get("bundleHash") == validated_policy_bundle.get("bundleHash")
-            else _build_policy_bundle_decisions(
-                effective_policy_bundle,
+        remote_decisions.update(selected_policy_decisions)
+        if native_policy_required:
+            # Current/LKG recovery may select a different source from the last
+            # wire ACK. Bind received state to this exact selected source.
+            selected_previous_ack = store.get_sync_payload("policy_bundle_ack")
+            policy_bundle_ack = generic_policy_bundle_acknowledgement(
+                device_id=device_id,
+                policy_bundle=effective_policy_bundle,
+                synced_at=now,
+                applied=False,
+                previous=selected_previous_ack if isinstance(selected_previous_ack, dict) else None,
+            )
+        else:
+            policy_bundle_ack = effective_policy_bundle_acknowledgement(
                 device_id=device_id,
                 device_name=device_name,
-                canonical_enforcement=canonical_enforcement,
+                effective_policy_bundle=effective_policy_bundle,
+                validated_policy_bundle=validated_policy_bundle,
+                validated_delivery=validated_policy_bundle_delivery,
+                stored_acknowledgement=store.get_sync_payload("policy_bundle_ack"),
+                synced_at=now,
+                applied=canonical_enforcement,
             )
-        )
-        remote_decisions.update(selected_policy_decisions)
-        policy_bundle_ack = effective_policy_bundle_acknowledgement(
-            device_id=device_id,
-            device_name=device_name,
-            effective_policy_bundle=effective_policy_bundle,
-            validated_policy_bundle=validated_policy_bundle,
-            validated_delivery=validated_policy_bundle_delivery,
-            stored_acknowledgement=store.get_sync_payload("policy_bundle_ack"),
-            synced_at=now,
-            applied=canonical_enforcement,
-        )
         cloud_exception_items = _policy_bundle_cloud_exception_items(
             store,
             device_id=device_id,
@@ -3099,6 +3067,7 @@ def sync_receipts(
                 managed_controls_publish=managed_controls_publish,
                 custom_extension_continuity=custom_extension_continuity,
                 remote_write_authorized=True,
+                require_native_source_binding=canonical_enforcement and native_policy_required,
             )
             if activated is None:
                 cloud_exception_items = []
@@ -3177,6 +3146,17 @@ def sync_receipts(
         exceptions=deduped_exceptions,
         now=now,
     )
+    if (
+        policy_application_committed
+        and native_policy_required
+        and canonical_enforcement
+        and effective_policy_bundle is not None
+    ):
+        native_policy_applied = (
+            publish_received_canonical_policy(store, effective_policy_bundle, installation_id=device_id) is not None
+        )
+        if not native_policy_applied and not activation_last_error:
+            activation_last_error = {"reason": "native_policy_publication_pending"}
     telemetry = sync_nonessential_telemetry(
         store,
         pain_signals=lambda: sync_pain_signals(store, auth_context=resolved_auth_context),
@@ -3191,7 +3171,11 @@ def sync_receipts(
         **policy_sync_outcomes(
             candidate=validated_policy_bundle,
             resident=validated_synced_policy_bundle(store),
-            acknowledgement=store.get_sync_payload("policy_bundle_ack"),
+            acknowledgement=(
+                store.get_sync_payload("policy_bundle_ack")
+                if not native_policy_required or native_policy_applied
+                else None
+            ),
             committed=policy_application_committed,
             provided=policy_bundle_field_provided,
             canonical_enforcement=canonical_enforcement,
@@ -6109,6 +6093,7 @@ def _cloud_runtime_session_payload(store: GuardStore, session: dict[str, object]
         "localIdentity": local_identity,
         "localIdentitySource": _cloud_local_identity_source_payload(local_identity),
         "packageManagerCoverage": package_manager_coverage,
+        "runtimeLaneProfile": source_runtime_lane_observation(),
         "workspace": workspace,
         "capabilities": capabilities,
         "operations": [],
@@ -6185,24 +6170,6 @@ def _cloud_local_identity_payload(*, observed_at: str) -> dict[str, object]:
         payload["ipAddress"] = private_ip
         payload["privateIpAddress"] = private_ip
     return payload
-
-
-def _cloud_local_identity_source_payload(local_identity: dict[str, object]) -> dict[str, str]:
-    source: dict[str, str] = {
-        "daemonId": "local-guard",
-        "daemonVersion": "local-guard",
-        "daemonStatus": "local-guard",
-        "relayState": "local-guard",
-    }
-    if "hostname" in local_identity:
-        source["hostname"] = "local-guard"
-    if "ipAddress" in local_identity:
-        source["ipAddress"] = "local-guard"
-    if "privateIpAddress" in local_identity:
-        source["privateIpAddress"] = "local-guard"
-    if "publicIpAddress" in local_identity:
-        source["publicIpAddress"] = "local-guard"
-    return source
 
 
 def _safe_hostname() -> str | None:

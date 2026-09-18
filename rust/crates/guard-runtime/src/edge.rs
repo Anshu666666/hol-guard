@@ -258,7 +258,7 @@ pub(crate) fn payload_kind(payload: &Value) -> Result<GuardHookPayloadKindV2, St
     Ok(GuardHookPayloadKindV2::Inline)
 }
 
-fn validate_envelope_shape(envelope: &GuardHookEnvelopeV2) -> Result<(), String> {
+pub(crate) fn validate_envelope_shape(envelope: &GuardHookEnvelopeV2) -> Result<(), String> {
     if envelope.schema != GUARD_HOOK_ENVELOPE_V2_SCHEMA {
         return Err("native_hook_envelope_schema_mismatch".to_owned());
     }

@@ -16,6 +16,7 @@ from .models import PolicyDecision
 from .native_command_expression import materialize_native_command_projection
 from .native_policy_authority_compile import compile_native_policy_row
 from .native_policy_authority_contract import NativeScopedPolicyRow
+from .native_policy_row_sort import native_policy_row_sort_key
 from .policy_command_projection import CanonicalCommandProjection, CanonicalCommandSource
 from .policy_document_types import PolicyCompilationError
 from .policy_rule_identity import PolicyRuleIdentity
@@ -78,13 +79,7 @@ class NativeCommandSourceRow:
 
     @property
     def sort_key(self) -> str:
-        return _canonical(
-            {
-                key: value
-                for key, value in self.source_mapping().items()
-                if key not in {"decision_id", "reason", "owner"}
-            }
-        )
+        return native_policy_row_sort_key(self.source_mapping())
 
     def bind_snapshot_row_id(self, decision_id: int) -> NativeBoundCommandRow:
         value = self.source_mapping()

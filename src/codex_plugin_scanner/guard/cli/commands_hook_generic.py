@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from ..policy_memory_source import CapturedPolicyMemorySource, capture_policy_memory_source_input
+from ..runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
+from .commands_hook_generic_controls import generic_command_control
 from .hook_embedded_script_evidence import _embedded_script_evidence, _embedded_script_remediation
 from .hook_exact_policy import (
     HookExactCommandSource,
@@ -160,7 +162,7 @@ from .commands_support_observe_queue import queue_observe_mode_request
 from .commands_support_runtime_policy import _runtime_hook_effective_policy_config
 
 # Bump when generic-hook classification or action-composition semantics change.
-_GENERIC_HOOK_EVALUATOR_POLICY_VERSION = "generic-hook-evaluation-v3"
+_GENERIC_HOOK_EVALUATOR_POLICY_VERSION = "generic-hook-evaluation-v4"
 
 _GENERIC_HOOK_EXPLICIT_POSIX_SHELL_TOOLS = frozenset({"ash", "bash", "dash", "sh", "zsh"})
 
@@ -538,6 +540,7 @@ def _run_hook_generic_payload(
     _post_claim_refresh_failed: bool = False,
     _policy_memory_source: CapturedPolicyMemorySource | None = None,
     _exact_command_source: HookExactCommandSource | None = None,
+    _control_snapshot: ExtensionControlRuntimeSnapshot | None = None,
 ) -> int:
     payload_map = dict(payload)
     _exact_command_source = _exact_command_source or capture_hook_exact_command_source(payload)
@@ -569,6 +572,7 @@ def _run_hook_generic_payload(
     )
     hook_event_name = _hook_event_name(payload_map)
     command_text = _hook_command_text(payload_map)
+    terminal_control = generic_command_control(store, _control_snapshot, event=hook_event_name, command=command_text)
     local_tool_eligibility: LocalToolApprovalEligibility | None = None
     if hook_event_name == "PreToolUse" and isinstance(command_text, str) and command_text.strip():
         local_tool_eligibility = local_tool_approval_eligibility(
@@ -632,6 +636,8 @@ def _run_hook_generic_payload(
         # but can never lower the current configured action.
         current_action_inputs.append(payload_action_normalization.action)
     policy_action = most_restrictive_guard_action(*current_action_inputs)
+    if terminal_control:
+        policy_action = "block"
     daemon_status = _optional_string(payload_map.get("daemon_status"))
     fail_mode = _optional_string(payload_map.get("fail_mode"))
     daemon_failure_reason: str | None = None
@@ -658,6 +664,8 @@ def _run_hook_generic_payload(
                 daemon_failure_reason = _UNTRUSTED_DAEMON_PERMISSIVE_REASON
                 payload_map["permission_decision_reason"] = daemon_failure_reason
     current_policy_action = policy_action
+    if terminal_control is not None:
+        payload_map["permission_decision_reason"] = terminal_control.message
     local_tool_grant = (
         matching_local_tool_grant(
             store=store,
@@ -665,7 +673,8 @@ def _run_hook_generic_payload(
             eligibility=local_tool_eligibility,
             current_action=current_policy_action,
         )
-        if configured_override is None
+        if not terminal_control
+        and configured_override is None
         and configured_narrow_override is None
         and cli_action_normalization is None
         and (payload_action_normalization is None or ignored_payload_action_reason is not None)
@@ -683,7 +692,8 @@ def _run_hook_generic_payload(
             home_dir=home_dir,
         )
         if (
-            configured_override is None
+            not terminal_control
+            and configured_override is None
             and configured_narrow_override is None
             and cli_action_normalization is None
             and (payload_action_normalization is None or ignored_payload_action_reason is not None)
@@ -848,7 +858,9 @@ def _run_hook_generic_payload(
         policy_action = approval_reuse.action
         approval_reuse_source = "claimed_saved_policy_decision"
     observed_policy_action: GuardAction | None = None
-    if config.mode == "observe" and policy_action not in {"allow", "warn"}:
+    if terminal_control:
+        policy_action = "block"
+    if config.mode == "observe" and policy_action not in {"allow", "warn"} and not terminal_control:
         observed_policy_action = policy_action
         policy_action = "allow"
     policy_composition = {
@@ -888,6 +900,8 @@ def _run_hook_generic_payload(
         },
     ]
     scanner_evidence.extend(_embedded_script_evidence(command_text))
+    if terminal_control is not None:
+        scanner_evidence.append(terminal_control.to_evidence())
     if local_tool_eligibility is not None:
         scanner_evidence.append(local_tool_eligibility.to_evidence())
     if local_tool_grant is not None and local_tool_eligibility is not None:
@@ -1144,7 +1158,8 @@ def _run_hook_generic_payload(
         payload_map["approval_center_url"] = approval_center_url
     _localize_pending_approval_copy(payload_map, harness=args.harness)
     incoming_reason = (
-        daemon_failure_reason
+        (terminal_control.message if terminal_control is not None else None)
+        or daemon_failure_reason
         or _decision_v2_harness_message(payload_map)
         or payload_map.get("permission_decision_reason")
     )
@@ -1288,6 +1303,7 @@ def _run_hook_generic_payload(
             "approval_reuse": approval_reuse.to_evidence(),
             "policy_composition": policy_composition,
             "scanner_evidence": scanner_evidence,
+            **({"permission_decision_reason": terminal_control.message} if terminal_control is not None else {}),
         },
         getattr(args, "json", False),
     )

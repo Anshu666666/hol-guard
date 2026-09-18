@@ -26,6 +26,7 @@ from .policy_bundle_activation import (
     managed_delivery_matches_base,
     published_managed_authority,
 )
+from .policy_document_types import PolicyCompilationError
 from .policy_precedence import generic_policy_row_precedence
 from .runtime.extension_control_authority import (
     AuthorityHealth,

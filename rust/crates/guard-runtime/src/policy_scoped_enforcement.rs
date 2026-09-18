@@ -5,10 +5,13 @@
 //! allows may satisfy ordinary review; they do not become one-shot approvals.
 
 use crate::policy_enforcement::{
-    configured_pre_tool_policy_action, validate_pre_tool_result_matrix,
+    configured_pre_tool_policy_action, generic_command_configuration,
+    sensitive_read_configuration_with_origin, validate_pre_tool_result_matrix,
 };
 use crate::policy_scoped_request::derive_scoped_policy_request;
+use guard_command::exact_command::exact_shell_command_from_hook;
 use guard_contracts::{GuardHookEnvelopeV2, PreToolResultV1};
+use guard_policy_snapshot::command_expression::NormalizedCommand;
 use guard_policy_snapshot::scoped_authority::{
     PolicyAction, PolicyScope, PolicySourceKind, ScopedPolicyRow,
 };
@@ -18,6 +21,14 @@ use serde_json::Value;
 #[cfg(test)]
 #[path = "policy_scoped_enforcement_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_sensitive_tests.rs"]
+mod sensitive_tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_generic_tests.rs"]
+mod generic_tests;
 
 pub(crate) struct ScopedPolicyEvaluation {
     pub(crate) result: PreToolResultV1,
@@ -115,9 +126,6 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     if !matches!(snapshot.mode.as_str(), "enforce" | "observe") {
         return Err("native_policy_mode_invalid".to_owned());
     }
-    if snapshot.scoped_authority.managed().is_some() {
-        return Err("native_scoped_managed_policy_unsupported".to_owned());
-    }
     if snapshot
         .scoped_authority
         .rows()
@@ -139,6 +147,48 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         return Err("native_scoped_request_posture_unsupported".to_owned());
     }
     let request = derive_scoped_policy_request(envelope, canonical_harness)?;
+    let sensitive = crate::policy_scoped_sensitive_read::derive_sensitive_read_artifact(
+        envelope,
+        canonical_harness,
+    )
+    .ok();
+    let generic_configuration =
+        if sensitive.is_none() && snapshot.scoped_authority.command_expressions().is_empty() {
+            generic_command_configuration(
+                &snapshot.effective_policy,
+                snapshot.scoped_authority.managed_config(),
+                envelope,
+                canonical_harness,
+                request
+                    .artifact_id()
+                    .ok_or("native_scoped_request_identity_unsupported")?,
+            )?
+        } else {
+            None
+        };
+    // Retain explicit refusal for managed origins on every unproved producer.
+    if sensitive.is_none()
+        && generic_configuration.is_none()
+        && snapshot.scoped_authority.managed_config().is_some()
+    {
+        return Err("native_managed_configuration_request_unsupported".to_owned());
+    }
+    let sensitive_configuration = sensitive
+        .as_ref()
+        .map(|artifact| {
+            sensitive_read_configuration_with_origin(
+                &snapshot.effective_policy,
+                snapshot.scoped_authority.managed_config(),
+                canonical_harness,
+                &artifact.artifact_id,
+            )
+        })
+        .transpose()?;
+    let managed_block = crate::policy_scoped_managed::request_is_blocked(
+        snapshot.scoped_authority.managed(),
+        envelope,
+        canonical_harness,
+    )?;
     let selected = snapshot
         .scoped_authority
         .select_generic(&request, now_ms)
@@ -149,13 +199,41 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     configured_payload["artifact_id"] = request
         .artifact_id()
         .map_or(Value::Null, |value| value.into());
-    let configured = action(&configured_pre_tool_policy_action(
-        &snapshot.effective_policy,
-        &configured_payload,
-        &intrinsic,
-    )?)?;
+    let configured = if let Some(policy) = &sensitive_configuration {
+        action(&policy.evaluated_action)?
+    } else if let Some(policy) = &generic_configuration {
+        action(policy.evaluated_action())?
+    } else {
+        action(&configured_pre_tool_policy_action(
+            &snapshot.effective_policy,
+            &configured_payload,
+            &intrinsic,
+        )?)?
+    };
     let intrinsic_action = action(&intrinsic.minimum_action)?;
-    let current = join(configured, intrinsic_action);
+    // Proven source producers replace only their specific fallback reviews.
+    // Independent scanner/native restrictions retain their original floors.
+    let intrinsic_floor = if intrinsic_action == PolicyAction::Review
+        && ((sensitive.is_some()
+            && intrinsic.reason_code == "native_file_read_review"
+            && intrinsic.action.action_type == guard_contracts::PreToolActionTypeV1::FileRead)
+            || generic_configuration
+                .as_ref()
+                .is_some_and(|policy| policy.replaces_fallback_review(&intrinsic)))
+    {
+        PolicyAction::Allow
+    } else {
+        intrinsic_action
+    };
+    // Managed controls are authority floors. Neither a generic allow nor Watch
+    // can release lockdown. Current supported shell facts have no extension
+    // observations; unsupported control/request semantics refuse above.
+    let authority_floor = if managed_block {
+        PolicyAction::Block
+    } else {
+        intrinsic_floor
+    };
+    let current = join(configured, authority_floor);
     let composed = selected.map_or(current, |row| compose(current, row));
     // The classifier admitted only an explicitly modeled generic producer.
     // Its ordinary command review can be satisfied by a matched signed exact
@@ -165,17 +243,56 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     {
         composed
     } else {
-        join(composed, intrinsic_action)
+        join(composed, authority_floor)
     };
-    let selected_decision_id = selected
-        .filter(|row| effective != current && effective == row.action())
+    let generic_effective = effective;
+    let expression_winner = if snapshot.scoped_authority.command_expressions().is_empty() {
+        None
+    } else if let Some(command) = exact_shell_command_from_hook(&envelope.raw_payload) {
+        let normalized = NormalizedCommand::new(command)
+            .map_err(|_| "native_scoped_request_identity_unsupported".to_owned())?;
+        snapshot
+            .scoped_authority
+            .matching_command_rows(&request, &normalized, now_ms)
+            .map_err(|_| "native_scoped_policy_match_invalid".to_owned())?
+            .into_iter()
+            .max_by_key(|row| (rank(row.action()), u64::MAX - row.decision_id()))
+    } else {
+        None
+    };
+    if let Some(row) = expression_winner {
+        effective = join(effective, row.action());
+    }
+    let expression_decision_id = expression_winner
+        .filter(|row| rank(effective) > rank(generic_effective) && effective == row.action())
         .map(ScopedPolicyRow::decision_id);
-    let observed_policy_action = (snapshot.mode == "observe").then(|| name(effective));
-    if snapshot.mode == "observe"
-        && rank(effective) > rank(intrinsic_action)
-        && rank(intrinsic_action) <= 1
+    let selected_decision_id = expression_decision_id.or_else(|| {
+        selected
+            .filter(|row| effective != current && effective == row.action())
+            .map(ScopedPolicyRow::decision_id)
+    });
+    let observed_policy_action = if generic_configuration.is_some() {
+        if snapshot.mode == "observe" && rank(effective) > 1 && rank(authority_floor) <= 1 {
+            let observed = Some(name(effective));
+            effective = authority_floor;
+            observed
+        } else {
+            None
+        }
+    } else {
+        (snapshot.mode == "observe").then(|| name(effective))
+    };
+    if generic_configuration.is_none()
+        && snapshot.mode == "observe"
+        && rank(effective) > rank(authority_floor)
+        && rank(authority_floor) <= 1
+        && (sensitive_configuration.is_none() || rank(effective) > 1)
     {
-        effective = PolicyAction::Warn;
+        effective = if let Some(policy) = &sensitive_configuration {
+            join(action(&policy.observe_action)?, authority_floor)
+        } else {
+            PolicyAction::Warn
+        };
     }
     let mut result = intrinsic;
     if effective != intrinsic_action {

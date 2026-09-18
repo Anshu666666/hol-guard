@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from codex_plugin_scanner.guard.adapters import claude_daemon_hook_bridge as bridge
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
-from tests.claude_hook_diagnostics import claude_hook_diagnostics
+from codex_plugin_scanner.guard.daemon.hook_worker_responses import observe_lifecycle_fail_safe_response
+from tests import test_guard_surface_server as surface_tests
+from tests.claude_hook_diagnostics import claude_hook_diagnostics, claude_prompt_diagnostics
 from tests.test_guard_claude_adapter import (
     test_claude_daemon_hook_command_falls_back_to_native_ask_on_daemon_miss as run_original_ask_test,
 )
@@ -157,3 +161,118 @@ def test_original_ask_invalid_json_is_not_echoed(monkeypatch: pytest.MonkeyPatch
     with pytest.raises(pytest.fail.Exception) as failure:
         run_original_ask_test(tmp_path)
     assert str(failure.value) == "Claude hook returned invalid JSON"
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "daemon_hook_queue_capacity",
+        "daemon_hook_deadline_exhausted",
+        "daemon_hook_process_deadline_exhausted",
+        "daemon_hook_process_not_ready",
+        "daemon_hook_process_timeout",
+        "daemon_hook_process_failed",
+        "daemon_worker_exception",
+        "native_hook_worker_unsupported",
+        "python_oracle_exception",
+    ],
+)
+def test_actual_lifecycle_failure_producer_retains_only_finite_reason(reason: str) -> None:
+    payload = observe_lifecycle_fail_safe_response("claude-code", event_name="UserPromptSubmit", reason_code=reason)
+    assert claude_prompt_diagnostics(payload) == {
+        "reason_code": reason,
+        "event": "UserPromptSubmit",
+        "policy_action": "allow",
+        "system_message": "missing",
+        "additional_context": "missing",
+    }
+
+
+@pytest.mark.parametrize(
+    "field", ["reason_code", "policy_action", "systemMessage", "hookEventName", "additionalContext"]
+)
+@pytest.mark.parametrize("value", [_PRIVATE, _PRIVATE * 400, [], {}, True, None])
+def test_prompt_diagnostics_exclude_invalid_or_sensitive_values(field: str, value: object) -> None:
+    output: dict[str, object] = {"hookEventName": "UserPromptSubmit"}
+    payload: dict[str, object] = {"hookSpecificOutput": output}
+    if field in {"hookEventName", "additionalContext"}:
+        output[field] = value
+    else:
+        payload[field] = value
+    result = claude_prompt_diagnostics(payload)
+    assert set(result.values()) <= {"absent", "unrecognized", "invalid", "missing", "text", "UserPromptSubmit"}
+    assert _PRIVATE not in json.dumps(result)
+
+
+@pytest.mark.parametrize("payload", [None, [], _PRIVATE, {"hookSpecificOutput": _PRIVATE}])
+def test_invalid_prompt_response_is_not_echoed(payload: object) -> None:
+    assert claude_prompt_diagnostics(payload) == {
+        "reason_code": "absent",
+        "event": "invalid",
+        "policy_action": "invalid",
+        "system_message": "missing",
+        "additional_context": "missing",
+    }
+
+
+def _invoke_original_prompt_assertions(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, payload: object) -> None:
+    class Daemon:
+        port: int = 321
+        _server: SimpleNamespace = SimpleNamespace(auth_token="synthetic-token")
+
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def stop(self) -> None:
+            pass
+
+    def response(_daemon: object, _request: object, *, timeout: int) -> io.BytesIO:
+        assert timeout == 5
+        return io.BytesIO(json.dumps(payload).encode())
+
+    monkeypatch.setattr(surface_tests, "GuardDaemonServer", Daemon)
+    monkeypatch.setattr(surface_tests, "open_authenticated_claude_request", response)
+    surface_tests.TestGuardSurfaceServer().test_guard_daemon_claude_hook_endpoint_brands_overridable_user_prompt_submit_without_blocking(
+        tmp_path
+    )
+
+
+@pytest.mark.parametrize("field", ["missing", "message", "event", "context"])
+def test_original_prompt_assertions_emit_only_safe_diagnostics(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, field: str
+) -> None:
+    payload: dict[str, object] = {
+        "reason_code": "daemon_hook_process_failed",
+        "private_detail": _PRIVATE,
+        "systemMessage": _PRIVATE if field == "message" else "HOL Guard intercepted this prompt",
+        "hookSpecificOutput": {
+            "hookEventName": _PRIVATE if field == "event" else "UserPromptSubmit",
+            "additionalContext": _PRIVATE
+            if field == "context"
+            else "HOL Guard will intercept Claude's next attempt to access local secrets",
+        },
+    }
+    if field == "missing":
+        del payload["systemMessage"]
+    with pytest.raises(AssertionError) as failure:
+        _invoke_original_prompt_assertions(monkeypatch, tmp_path, payload)
+    message = str(failure.value)
+    assert "daemon_hook_process_failed" in message
+    assert _PRIVATE not in message
+
+
+def test_original_prompt_positive_predicates_remain_accepted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    _invoke_original_prompt_assertions(
+        monkeypatch,
+        tmp_path,
+        {
+            "systemMessage": "HOL Guard intercepted this prompt because it asks for synthetic content.",
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": "HOL Guard will intercept Claude's next attempt to access local secrets",
+            },
+        },
+    )

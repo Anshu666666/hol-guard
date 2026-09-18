@@ -9,16 +9,18 @@ from pathlib import Path
 from threading import Condition
 from typing import TYPE_CHECKING, cast
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
+from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     NATIVE_POLICY_VERIFIER_KEY_NAME,
     NATIVE_RUNTIME_STATE_DIRECTORY,
     NativePolicySnapshotError,
 )
-from .native_policy_snapshot_policy import _merge_effective_native_policies, effective_native_policy_v3
 
 if TYPE_CHECKING:
+    from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
     from .store import GuardStore
 
 
@@ -190,15 +192,17 @@ class NativePolicySnapshotPublisherInputs:
         """Build the native snapshot input off the synchronous hook path."""
 
         from .config import load_guard_config, overlay_synced_guard_policy
+        from .native_managed_capture import compile_configuration_origins
 
         with self._condition:
             workspaces = tuple(sorted(self._workspace_paths, key=str))
-        configs = [load_guard_config(self.guard_home)]
-        configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
+        # Never compile an empty/partial supported write. The condition above
+        # is released before this off-path file lock; ACK capture can reenter it.
+        with hold_policy_publication_mutation(self.guard_home):
+            configs = [load_guard_config(self.guard_home)]
+            configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
         configs = [overlay_synced_guard_policy(config, cloud_defaults) for config in configs]
-        return _merge_effective_native_policies(
-            tuple(effective_native_policy_v3(config) | {"mode": config.mode} for config in configs)
-        )
+        return compile_configuration_origins(tuple(configs))
 
     def _compiled_native_policy(self) -> tuple[dict[str, object], NativeCloudPolicyInputs]:
         cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
@@ -243,9 +247,15 @@ class NativePolicySnapshotPublisherInputs:
         if self._scoped_publication_enabled:
             from .native_policy_snapshot_publisher_scoped import scoped_policy_input_changed
 
-            return scoped_policy_input_changed(self, force_republish=force_republish)
+            with managed_policy_cache_read_only():
+                return scoped_policy_input_changed(self, force_republish=force_republish)
+        from .native_policy_snapshot_publisher_context import compiled_v3_compatible_policy
+
         try:
-            effective_policy, cloud_inputs = self._compiled_native_policy()
+            with managed_policy_cache_read_only():
+                effective_policy, cloud_inputs = compiled_v3_compatible_policy(
+                    cast("NativePolicySnapshotPublisher", self)
+                )
             # ``_compiled_effective_policy`` carries the raw mode beside the
             # bounded policy so snapshot generation can derive enforce versus
             # observe. ``config_digest`` deliberately covers only the
@@ -259,8 +269,17 @@ class NativePolicySnapshotPublisherInputs:
                 cast(str, effective_policy["mode"]),
             )
         except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError, sqlite3.Error):
-            current_fingerprint = ("unavailable", "")
-            cloud_inputs = NativeCloudPolicyInputs()
+            # Even a malformed new row or managed source changes the required
+            # contract. It cannot retain a source-free resident's ready state.
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            changed = (
+                self._observed_policy_fingerprint != ("unavailable", "") or self._observed_scoped_digest is not None
+            )
+            self._observed_policy_fingerprint = ("unavailable", "")
+            self._observed_scoped_digest = None
+            return force_republish or changed
         # Observation is independent of acknowledgment: unchanged inputs must
         # not reset a failed publication's retry backoff on every database write.
         previous_fingerprint = (
@@ -269,7 +288,8 @@ class NativePolicySnapshotPublisherInputs:
             else self._published_policy_fingerprint
         )
         self._observed_policy_fingerprint = current_fingerprint
-        source_changed = self._observed_cloud_inputs.source_identity != cloud_inputs.source_identity
+        source_changed = self._observed_scoped_digest != cloud_inputs.input_digest
+        self._observed_scoped_digest = cloud_inputs.input_digest
         self._observed_cloud_inputs = cloud_inputs
         return force_republish or source_changed or previous_fingerprint != current_fingerprint
 

@@ -63,6 +63,30 @@ def test_scoped_result_requires_exact_published_identity(observe: bool) -> None:
         assert _decode_edge(result, snapshot_binding=changed) is None
 
 
+@pytest.mark.parametrize("action", ["allow", "warn", "review", "require-reapproval", "sandbox-required", "block"])
+def test_observe_without_projection_retains_authenticated_receipt_mode(action: str) -> None:
+    result, binding = _bound_result(observe=True)
+    result["observed_policy_action"] = None
+    decision = "allow" if action in {"allow", "warn"} else "deny"
+    result["result"].update(
+        policy_action=action, minimum_action=action, decision=decision, explicitly_benign=action == "allow"
+    )
+    receipt = result["receipt"]
+    receipt.update(policy_action=action, decision=decision, observed_policy_action=None)
+    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+    assert _decode_edge(result, snapshot_binding=binding) == result
+    receipt["observe_mode"] = False
+    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+    assert _decode_edge(result, snapshot_binding=binding) is None
+
+
+@pytest.mark.parametrize("observed", [True, False, 0, 1, 1.0, "", "unknown", [], {}])
+def test_optional_observe_projection_still_requires_finite_action(observed: object) -> None:
+    result, binding = _bound_result(observe=True)
+    result["observed_policy_action"] = observed
+    assert _decode_edge(result, snapshot_binding=binding) is None
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

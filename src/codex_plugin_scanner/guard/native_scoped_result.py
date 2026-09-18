@@ -32,10 +32,65 @@ _RESULT_FIELDS = frozenset(
         "policy_binding",
     }
 )
+_ACTIONS = frozenset({"allow", "warn", "review", "require-reapproval", "sandbox-required", "block"})
+_POST_REQUIRED = frozenset({"decision", "model_output_action", "notice", "reason_code", "policy_action"})
+_POST_OPTIONAL = frozenset(
+    {"reason", "reviewed_output_sha256", "reviewed_excerpt", "observed_policy_action", "observe_mode"}
+)
 
 
 def _positive(value: object) -> bool:
     return type(value) is int and 0 < cast(int, value) <= (1 << 53) - 1
+
+
+def _post_result_valid(result: Mapping[str, object], *, observe: bool, observed: object) -> bool:
+    if not set(result) >= _POST_REQUIRED or set(result) - (_POST_REQUIRED | _POST_OPTIONAL):
+        return False
+    if not isinstance(result.get("decision"), str) or result["decision"] not in {"allow", "deny"}:
+        return False
+    if not isinstance(result.get("notice"), str) or result["notice"] not in {"none", "excerpt", "warning"}:
+        return False
+    if not isinstance(result.get("model_output_action"), str) or result["model_output_action"] not in {
+        "allow_original",
+        "replace_with_reviewed_excerpt",
+        "block",
+    }:
+        return False
+    if (result["decision"] == "deny") != (result["model_output_action"] == "block"):
+        return False
+    if not isinstance(result.get("policy_action"), str) or result["policy_action"] not in _ACTIONS:
+        return False
+    if not isinstance(result.get("reason_code"), str) or not 0 < len(cast(str, result["reason_code"])) <= 512:
+        return False
+    for key in ("reason", "reviewed_excerpt"):
+        if key in result and (not isinstance(result[key], str) or len(cast(str, result[key])) > 6 * 1024 * 1024):
+            return False
+    if "reviewed_output_sha256" in result and not _valid_digest_v3(result["reviewed_output_sha256"]):
+        return False
+    output = result["model_output_action"]
+    action = result["policy_action"]
+    if output == "replace_with_reviewed_excerpt":
+        if not isinstance(result.get("reviewed_excerpt"), str):
+            return False
+    elif "reviewed_excerpt" in result:
+        return False
+    # Validate the finite native result contract, including policy floors that
+    # cannot produce an original output in Enforce. Observe preserves the
+    # intrinsic output decision while reporting the composed policy action.
+    if action in {"allow", "warn"} and output != "allow_original":
+        return False
+    if observe and output == "block" and action != "block":
+        return False
+    if (
+        not observe
+        and action not in {"allow", "warn"}
+        and output != "block"
+        and not (action == "review" and output == "replace_with_reviewed_excerpt")
+    ):
+        return False
+    if type(result.get("observe_mode", False)) is not bool or result.get("observe_mode", False) is not observe:
+        return False
+    return result.get("observed_policy_action") == observed == (action if observe else None)
 
 
 def decode_scoped_edge(payload: object, expected: Mapping[str, object] | None) -> dict[str, object] | None:
@@ -48,23 +103,35 @@ def decode_scoped_edge(payload: object, expected: Mapping[str, object] | None) -
     binding = value.get("policy_binding")
     result = value.get("result")
     harness = value.get("harness")
+    event = value.get("event_name")
     if (
         value.get("schema") != "guard-hook-edge-result.v3"
         or value.get("authority") != "rust"
-        or value.get("event_name") != "PreToolUse"
-        or value.get("payload_kind") != "inline"
+        or not isinstance(event, str)
+        or event not in {"PreToolUse", "PostToolUse"}
+        or not isinstance(value.get("payload_kind"), str)
+        or value["payload_kind"] not in {"inline", "source_file_ref"}
         or not isinstance(harness, str)
         or not 0 < len(harness) <= 64
         or not isinstance(value.get("request_id"), str)
         or not 0 < len(cast(str, value["request_id"])) <= 256
         or not isinstance(result, dict)
-        or type(result.get("version")) is not int
-        or not isinstance(result.get("action"), dict)
-        or type(result["action"].get("version")) is not int
-        or not _decode_pre_tool_result(result, harness=harness)
         or not isinstance(binding, dict)
         or set(binding) != _BINDING_FIELDS
+        or not isinstance(expected.get("mode"), str)
         or expected.get("mode") not in {"enforce", "observe"}
+    ):
+        return None
+    if event == "PreToolUse":
+        if (
+            type(result.get("version")) is not int
+            or not isinstance(result.get("action"), dict)
+            or type(result["action"].get("version")) is not int
+            or not _decode_pre_tool_result(result, harness=harness)
+        ):
+            return None
+    elif binding.get("selected_decision_id") is not None or not _post_result_valid(
+        result, observe=expected["mode"] == "observe", observed=value.get("observed_policy_action")
     ):
         return None
     if not all(_positive(expected.get(key)) for key in ("generation", "resident_generation")):
@@ -89,14 +156,9 @@ def decode_scoped_edge(payload: object, expected: Mapping[str, object] | None) -
     receipt = validate_native_decision_receipt(value.get("receipt"))
     observed_action = value.get("observed_policy_action")
     if expected["mode"] == "observe":
-        if not isinstance(observed_action, str) or observed_action not in {
-            "allow",
-            "warn",
-            "review",
-            "require-reapproval",
-            "sandbox-required",
-            "block",
-        }:
+        # An unchanged action has no projected policy decision. Its receipt
+        # still carries the authenticated snapshot mode below.
+        if observed_action is not None and (not isinstance(observed_action, str) or observed_action not in _ACTIONS):
             return None
     elif observed_action is not None:
         return None
@@ -141,7 +203,7 @@ def scoped_result_is_current(publisher: object, edge: Mapping[str, object]) -> b
 
 
 def scoped_invocation_matches(
-    edge: Mapping[str, object], *, request_id: str | None, harness: str, rule_digest: str
+    edge: Mapping[str, object], *, request_id: str | None, harness: str, rule_digest: str, event: str = "PreToolUse"
 ) -> bool:
     """Bind the reply to this transport invocation, without interpreting payload."""
     canonical = harness.strip().lower().replace("_", "-") if harness.isascii() else ""
@@ -162,13 +224,34 @@ def scoped_invocation_matches(
         "zai-zcode": "zcode",
     }
     receipt = edge.get("receipt")
+    event_key = event.strip().lower().replace("_", "").replace("-", "")
+    expected_event = None
+    if event_key in {
+        "pretool",
+        "pretooluse",
+        "beforeshellexecution",
+        "beforereadfile",
+        "beforewritefile",
+        "beforemcpexecution",
+    }:
+        expected_event = "PreToolUse"
+    elif event_key in {
+        "posttool",
+        "posttooluse",
+        "aftershellexecution",
+        "afterreadfile",
+        "afterwritefile",
+        "aftermcpexecution",
+    }:
+        expected_event = "PostToolUse"
     return (
         edge.get("schema") == "guard-hook-edge-result.v3"
         and isinstance(request_id, str)
         and bool(request_id)
         and edge.get("request_id") == request_id
         and edge.get("harness") == aliases.get(canonical, canonical)
-        and edge.get("event_name") == "PreToolUse"
+        and expected_event is not None
+        and edge.get("event_name") == expected_event
         and isinstance(receipt, Mapping)
         and receipt.get("request_id") == request_id
         and receipt.get("rule_digest") == rule_digest

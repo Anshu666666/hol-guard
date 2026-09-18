@@ -3,6 +3,7 @@
 //! A consumer must authenticate the containing versioned snapshot and derive
 //! its own trusted request facts. V3 snapshots cannot contain this value.
 
+use crate::managed_configuration::ManagedConfiguration;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeSet;
 use std::fmt;
@@ -13,6 +14,10 @@ mod decoding;
 
 #[path = "scoped_authority_match.rs"]
 mod matching;
+
+#[path = "scoped_command_expression.rs"]
+mod command_bindings;
+pub use command_bindings::ScopedCommandExpression;
 pub use matching::{ExactPolicyContextInputs, PolicyIdentityInputs, ScopedPolicyRequest};
 
 pub const AUTHORITY_SCHEMA: &str = "guard-native-policy-authority.v1";
@@ -50,6 +55,8 @@ pub enum AuthorityError {
     ControlDuplicate,
     #[error("native_policy_authority_catalog_invalid")]
     Catalog,
+    #[error("native_policy_authority_command_expression_invalid")]
+    CommandExpression,
     #[error("native_policy_authority_byte_limit")]
     ByteLimit,
 }
@@ -233,7 +240,22 @@ impl fmt::Debug for ManagedAuthority {
     }
 }
 
+impl ManagedControl {
+    pub fn target_kind(&self) -> ControlTargetKind {
+        self.target_kind
+    }
+    pub fn target_id(&self) -> &str {
+        &self.target_id
+    }
+}
+
 impl ManagedAuthority {
+    pub fn global_lockdown(&self) -> bool {
+        self.global_lockdown
+    }
+    pub fn controls(&self) -> &[ManagedControl] {
+        &self.controls
+    }
     pub fn catalog_digest(&self) -> &str {
         &self.catalog_digest
     }
@@ -278,6 +300,10 @@ struct RawAuthority {
     generic_precedence: String,
     rows: Vec<ScopedPolicyRow>,
     managed: Option<ManagedAuthority>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    command_expressions: Vec<ScopedCommandExpression>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    managed_config: Option<Box<ManagedConfiguration>>,
 }
 
 /// Only validated authority can be deserialized into this wrapper. A snapshot
@@ -320,6 +346,27 @@ impl NativePolicyAuthority {
         self.0.managed.as_ref()
     }
 
+    pub fn managed_config(&self) -> Option<&ManagedConfiguration> {
+        self.0.managed_config.as_deref()
+    }
+
+    /// True only when no scoped condition or independently composed origin
+    /// remains. The containing snapshot still requires full authentication.
+    pub fn is_defaults_only(&self) -> bool {
+        let RawAuthority {
+            schema: _,
+            generic_precedence: _,
+            rows,
+            managed,
+            command_expressions,
+            managed_config,
+        } = &self.0;
+        rows.is_empty()
+            && managed.is_none()
+            && command_expressions.is_empty()
+            && managed_config.is_none()
+    }
+
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, AuthorityError> {
         let value = serde_json::to_value(self).map_err(|_| AuthorityError::Encoding)?;
         let bytes = super::canonical_json_bytes(&value).map_err(|_| AuthorityError::Encoding)?;
@@ -350,6 +397,7 @@ impl NativePolicyAuthority {
                 return Err(AuthorityError::RowDuplicate);
             }
         }
+        command_bindings::validate_bindings(self)?;
         if let Some(managed) = &self.0.managed {
             managed.validate()?;
         }

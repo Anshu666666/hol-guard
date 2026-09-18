@@ -26,6 +26,11 @@ pub mod scoped_authority;
 /// Strict literal-expression semantics; no snapshot admission or activation.
 pub mod command_expression;
 
+/// Separately resolved MDM origin; only authenticated V4 may carry it.
+pub mod managed_configuration;
+#[cfg(test)]
+mod managed_configuration_tests;
+
 pub use canonical::{canonical_json_bytes, snapshot_bytes, snapshot_signing_bytes};
 pub use crypto::{
     config_digest, derive_verifier_key, digest_bytes, generation_floor_mac, integrity_mac,

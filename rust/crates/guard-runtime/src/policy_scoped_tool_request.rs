@@ -89,20 +89,15 @@ pub(super) fn generic_tool_artifact(
     if !mcp && !generic_file_read(tool, arguments, workspace) {
         return None;
     }
-    let scope = payload
-        .get("source_scope")
-        .and_then(Value::as_str)
-        .map(str::trim)
+    let scope = super::selector_text(payload, "source_scope", "sourceScope")
+        .ok()?
         .unwrap_or("project");
     if scope != "project" {
         return None;
     }
     Some(
-        payload
-            .get("artifact_id")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
+        super::selector_text(payload, "artifact_id", "artifactId")
+            .ok()?
             .map(str::to_owned)
             .unwrap_or_else(|| {
                 if harness == "claude-code" && mcp {

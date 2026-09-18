@@ -16,6 +16,7 @@ from codex_plugin_scanner.guard.models import GuardArtifact
 from codex_plugin_scanner.guard.runtime import runner as guard_runner_module
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.guard_cloud_local_sync_helpers import _artifact, _detection, _seed_guard_cloud
+from tests.support.network import stub_authenticated_urlopen
 
 
 def test_sync_credentials_preserve_installation_id_when_cloud_workspace_changes(tmp_path: Path) -> None:
@@ -192,7 +193,7 @@ def test_sync_guard_events_records_failed_backoff_without_dropping_pending_event
     def _raise_url_error(request, timeout):
         raise urllib.error.URLError("sk-live-secret-token timed out")
 
-    monkeypatch.setattr(guard_runner_module.urllib.request, "urlopen", _raise_url_error)
+    stub_authenticated_urlopen(monkeypatch, _raise_url_error)
 
     with pytest.raises(RuntimeError):
         guard_runner_module.sync_guard_events(store)

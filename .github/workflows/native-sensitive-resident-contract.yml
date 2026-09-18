@@ -1,0 +1,147 @@
+name: Native origin source resident contract
+on:
+  push:
+    branches: [fix/native-sensitive-origin-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-sensitive-resident-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  sensitive-resident:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Validate loaded sources and evidence contract
+        run: |
+          uv run --no-sync ruff check tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/test_native_sensitive_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
+          uv run --no-sync ruff format --check tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/test_native_sensitive_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
+          uv run --no-sync pytest -q tests/test_native_sensitive_resident_evidence.py tests/test_native_source_bundle.py tests/test_native_scoped_result.py tests/test_native_hook_edge.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py tests/test_native_policy_source_selection.py
+          uv run --no-sync pytest -q tests/test_native_sensitive_policy_resident.py::test_sensitive_resident_fixture_uses_actual_loaded_origins tests/test_native_generic_policy_resident.py::test_generic_resident_fixture_preserves_all_actual_origin_projections tests/test_native_generic_sync_resident.py::test_generic_sync_source_is_signed_and_target_authority_is_unstaged
+          uv run --no-sync pytest -q tests/test_generic_managed_origin_outer.py tests/test_generic_managed_benign_outer.py tests/test_generic_rule_observe_outer.py tests/test_native_generic_policy_vectors.py
+      - name: Build runtime from exact source
+        env:
+          HOL_GUARD_BUILD_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          rustup toolchain install 1.88.0 --profile minimal
+          export HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --workspace
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+      - name: Stage the verified source build for native auto discovery
+        run: |
+          proof_pure_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-pure.XXXXXX")"
+          proof_native_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-bundle.XXXXXX")"
+          proof_runtime="$GITHUB_WORKSPACE/rust/target/release/hol-guard-runtime"
+          proof_version="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          proof_rule_digest="$("$proof_runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')"
+          proof_target="$(rustc +1.88.0 -vV | sed -n 's/^host: //p')"
+          test "$proof_target" = "x86_64-unknown-linux-gnu"
+          uv build --wheel --out-dir "$proof_pure_dir"
+          proof_wheels=("$proof_pure_dir"/*.whl)
+          test "${#proof_wheels[@]}" -eq 1
+          test -f "${proof_wheels[0]}"
+          uv run --no-sync python -m tests.native_source_bundle \
+            --wheel "${proof_wheels[0]}" \
+            --runtime "$proof_runtime" \
+            --output-dir "$proof_native_dir" \
+            --version "$proof_version" \
+            --source-sha "$GITHUB_SHA" \
+            --rule-digest "$proof_rule_digest" \
+            --platform-tag linux_x86_64 \
+            --target "$proof_target"
+      - name: Require loaded origins and actual resident authority fences
+        env:
+          HOL_GUARD_NATIVE: auto
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+        run: |
+          mkdir -p artifacts/native-sensitive-resident
+          uv run --no-sync pytest -q -m slow tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py --junitxml=artifacts/native-sensitive-resident/results.xml
+      - name: Verify exact completed resident cases
+        if: always()
+        run: |
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          directory = Path("artifacts/native-sensitive-resident")
+          directory.mkdir(parents=True, exist_ok=True)
+          result = directory / "results.xml"
+          root = ET.parse(result).getroot() if result.is_file() else None
+          cases = list(root.iter("testcase")) if root is not None else []
+          expected = {
+              "test_sensitive_read_origins_reach_actual_auto_resident",
+              "test_sensitive_read_signed_lockdown_and_withdrawal_reach_actual_auto_resident",
+              "test_generic_origins_reach_actual_auto_resident",
+              "test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident",
+              "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[defaults]",
+              "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[scoped]",
+              "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[enforce]",
+              "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[observe]",
+          }
+          passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
+              all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
+          )
+          if root is not None:
+              passed = passed and not any(node.tag in {"skipped", "failure", "error"} for node in root.iter())
+              passed = passed and all(
+                  suite.get(field, "0") == "0"
+                  for suite in root.iter() if suite.tag in {"testsuite", "testsuites"}
+                  for field in ("errors", "failures", "skipped")
+              )
+          clean = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip() == ""
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          binary = Path("rust/target/release/hol-guard-runtime")
+          passed = passed and clean and source == os.environ["GITHUB_SHA"] and binary.is_file()
+          report = {
+              "schema": "native-origin-resident-proof.v1",
+              "sourceSha": source,
+              "exactCleanSourceVerified": clean and source == os.environ["GITHUB_SHA"],
+              "runtimeBinarySha256": hashlib.sha256(binary.read_bytes()).hexdigest() if binary.is_file() else None,
+              "assertionCount": len(cases),
+              "allAssertionsPassed": passed,
+              "stagedFeatureNegotiation": True,
+              "canonicalEnforcement": "explicit-test-only",
+              "sourceAdmission": "loaded-mdm-test-file-and-ordinary-signed-sync",
+              "genericOriginVectorCount": 260,
+              "genericSignedSyncShapes": ["defaults", "scoped"],
+              "defaultsHookModes": ["enforce", "observe"],
+              "defaultsHookEvents": ["PreToolUse", "PostToolUse"],
+              "nativeAutoRequired": True,
+              "productionAdvertisement": "not-evaluated",
+              "installedWheel": "not-evaluated",
+              "status": "pass" if passed else "fail",
+          }
+          (directory / "proof.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report))
+          assert passed, "All eight origin and signed-sync resident cases must execute and pass against exact clean source."
+          PY
+      - name: Retain origin resident assertions
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-sensitive-resident-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/native-sensitive-resident/proof.json
+            artifacts/native-sensitive-resident/results.xml
+          if-no-files-found: error
+          retention-days: 30

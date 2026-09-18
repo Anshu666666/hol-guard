@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
+from .mdm.policy import managed_policy_cache_read_only
+from .native_managed_capture import bind_configuration_origin
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_decision_context import NativePolicyDecisionContext, capture_native_policy_decision
@@ -55,7 +57,7 @@ def compiled_scoped_policy(
 ) -> tuple[dict[str, object], NativeVerifiedPolicyInputs]:
     inputs = read_native_policy_authority_inputs(publisher.store, now=publisher._wall_clock())
     config = publisher._compiled_effective_policy(cloud_defaults=inputs.defaults)
-    return config, inputs
+    return config, bind_configuration_origin(config, inputs)
 
 
 def scoped_policy_input_changed(publisher: NativePolicySnapshotPublisherInputs, *, force_republish: bool) -> bool:
@@ -110,7 +112,9 @@ def publish_scoped(
             rule_digest=capabilities.rule_digest,
             master_key=master_key,
             inputs=inputs,
-            capabilities=NativePolicyAuthorityCapabilities(4, frozenset(capabilities.features)),
+            capabilities=NativePolicyAuthorityCapabilities(
+                4, frozenset(capabilities.features), capabilities.extension_catalog_digest
+            ),
             client=client,
             wall_clock=publisher._wall_clock,
             monotonic_clock=publisher._monotonic_clock,
@@ -121,7 +125,7 @@ def publish_scoped(
     snapshot = publication.candidate.snapshot
     observed_resident = publisher._current_resident_fingerprint()
     observed_directory = publisher._resident_directory_fingerprint()
-    with publisher.store._connect() as connection:
+    with managed_policy_cache_read_only(), publisher.store._connect() as connection:
         data_version = connection.execute("pragma data_version").fetchone()[0]
         before_inputs = publisher._current_input_fingerprint()[0]
         current_config, current_inputs = compiled_scoped_policy(publisher)
@@ -139,14 +143,6 @@ def publish_scoped(
         with publisher._condition:
             if publisher._closed or publisher._epoch != publish_epoch:
                 return
-            # Metadata checks run in the publisher worker, never a synchronous hook.
-            # A mutation during the authenticated re-read cannot be committed under
-            # an unchanged epoch merely because its earlier source digest matched.
-            if (
-                publisher._current_input_fingerprint()[0] != after_inputs
-                or connection.execute("pragma data_version").fetchone()[0] != data_version
-            ):
-                raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
             confirmed = publisher._confirm_resident_fingerprint(
                 before_resident,
                 observed_resident,
@@ -156,6 +152,15 @@ def publish_scoped(
             generation_path = f"/generation-{publication.resident_generation:020d}.json"
             if confirmed is None or not any(path.endswith(generation_path) for path, _, _ in confirmed):
                 raise NativePolicySnapshotError("native_policy_snapshot_resident_changed")
+            # Resident confirmation also performs filesystem reads. Recheck the
+            # publication epoch and complete source after those reads, off hook.
+            if publisher._closed or publisher._epoch != publish_epoch:
+                return
+            if (
+                publisher._current_input_fingerprint()[0] != after_inputs
+                or connection.execute("pragma data_version").fetchone()[0] != data_version
+            ):
+                raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
             now_ms = int(publisher._wall_clock() * 1000)
             if cast(int, snapshot["expires_at_ms"]) <= now_ms or (
                 current_inputs.expires_at_ms is not None and current_inputs.expires_at_ms <= now_ms

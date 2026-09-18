@@ -4,6 +4,9 @@ use guard_policy_snapshot::{
     POLICY_SNAPSHOT_V4_PUSH_SCHEMA, POLICY_SNAPSHOT_V4_SCHEMA,
 };
 
+#[path = "edge_v4_defaults_tests.rs"]
+mod defaults_edge_tests;
+
 fn snapshot_v4(generation: u64, key: &[u8], root: &Path) -> PolicySnapshotV4 {
     let base = signed_snapshot(generation, key, root);
     let mut value = serde_json::to_value(base).unwrap();
@@ -357,7 +360,9 @@ fn scoped_observe_receipt_retains_the_would_enforce_action() {
         assert_eq!(result["observed_policy_action"], observed);
         assert_eq!(result["receipt"]["observed_policy_action"], observed);
         assert_eq!(result["receipt"]["observe_mode"], mode == "observe");
-        let actual_action = if mode == "observe" { "warn" } else { "block" };
+        // The actual generic consumer projects a policy-only Block to Allow;
+        // the original Block and selected rule remain in the receipt binding.
+        let actual_action = if mode == "observe" { "allow" } else { "block" };
         assert_eq!(result["result"]["policy_action"], actual_action);
         assert_eq!(result["receipt"]["policy_action"], actual_action);
         assert_eq!(
@@ -368,3 +373,53 @@ fn scoped_observe_receipt_retains_the_would_enforce_action() {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[test]
+fn managed_catalog_and_target_semantics_are_checked_before_durable_ack() {
+    let root = test_root("v4-managed-admission");
+    let key = install_test_key(&root, 37);
+    let store = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
+    let mut candidate = snapshot_v4(4, &key, &root);
+    let mut authority = serde_json::to_value(&candidate.scoped_authority).unwrap();
+    authority["managed"] = serde_json::json!({"revision":2,"managed_revision":7,
+        "catalog_digest":"e".repeat(64),"global_lockdown":true,"controls":[]});
+    candidate.scoped_authority = serde_json::from_value(authority.clone()).unwrap();
+    sign(&mut candidate, &key);
+    assert_eq!(
+        store.push(&push_value(&candidate)).unwrap_err(),
+        "native_scoped_managed_catalog_mismatch"
+    );
+    assert_eq!(store.current_generation(), None);
+    authority["managed"]["catalog_digest"] = crate::policy_scoped_managed::catalog_digest().into();
+    authority["managed"]["controls"] = serde_json::json!([
+        {"target_kind":"extension","target_id":"command.package.node","state":"enabled"}]);
+    candidate.scoped_authority = serde_json::from_value(authority.clone()).unwrap();
+    sign(&mut candidate, &key);
+    assert_eq!(
+        store.push(&push_value(&candidate)).unwrap_err(),
+        "native_scoped_managed_policy_unsupported"
+    );
+    assert_eq!(store.current_generation(), None);
+    authority["managed"]["controls"] = serde_json::json!([
+        {"target_kind":"extension","target_id":"command.filesystem","state":"disabled"}]);
+    candidate.scoped_authority = serde_json::from_value(authority).unwrap();
+    sign(&mut candidate, &key);
+    let ack: PolicySnapshotAckV2 =
+        serde_json::from_slice(&store.push(&push_value(&candidate)).unwrap()).unwrap();
+    assert_eq!(ack.status, "accepted");
+    assert_eq!(ack.policy_digest, candidate.policy_digest);
+    assert_eq!(ack.source_input_digest, candidate.source_input_digest);
+    drop(store);
+    let reopened = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
+    let current = reopened
+        .validate_versioned_request_snapshot(&reference(&candidate), root.to_str().unwrap(), 4)
+        .unwrap();
+    assert_eq!(
+        serde_json::to_value(current.as_ref()).unwrap(),
+        serde_json::to_value(candidate).unwrap()
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[path = "policy_store_expression_tests.rs"]
+mod expression_tests;

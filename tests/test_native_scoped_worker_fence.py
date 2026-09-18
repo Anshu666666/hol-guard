@@ -192,7 +192,7 @@ def test_scoped_native_deny_cannot_be_lowered_by_python_watch(
 
 @pytest.mark.parametrize("has_snapshot", [False, True])
 @pytest.mark.parametrize("native_available", [False, True])
-def test_scoped_pre_tool_fence_preserves_post_tool_response_shape(
+def test_scoped_authority_refusal_preserves_post_tool_response_shape(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     has_snapshot: bool,
@@ -215,7 +215,7 @@ def test_scoped_pre_tool_fence_preserves_post_tool_response_shape(
     }
 
     def forbidden(_binding: object) -> bool:
-        pytest.fail("post-tool results do not select a scoped pre-tool policy row")
+        pytest.fail("an unbound legacy result cannot establish scoped post-tool authority")
 
     monkeypatch.setattr(hook_worker_native, "hook_review_is_recording_only", lambda **_kwargs: False)
     host: Any = SimpleNamespace(
@@ -243,15 +243,12 @@ def test_scoped_pre_tool_fence_preserves_post_tool_response_shape(
         deadline=None,
     )
     output = actual["hookSpecificOutput"]
+    assert isinstance(output, dict)
     assert output["hookEventName"] == "PostToolUse"
     assert "permissionDecision" not in output
-    assert len(activities) == 1
-    if native_available:
-        assert actual["policy_action"] == "allow"
-        assert receipts == [None]
-        assert routes == ["native_resident"]
-    else:
-        assert actual["continue"] is True
-        assert actual["reason_code"] == "native_post_tool_unavailable"
-        assert receipts == []
-        assert routes == ["native_fail_safe"]
+    assert activities == []
+    assert actual["policy_action"] == "block"
+    assert actual["model_output_action"] == "block"
+    assert actual["reason_code"] == "native_scoped_authority_unavailable"
+    assert receipts == []
+    assert routes == ["native_fail_safe"]

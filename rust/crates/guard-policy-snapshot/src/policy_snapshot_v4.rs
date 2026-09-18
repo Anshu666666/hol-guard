@@ -148,6 +148,13 @@ pub fn validate_v4(
     if !matches!(snapshot.mode.as_str(), "enforce" | "observe") {
         return Err(SnapshotError::Mode);
     }
+    if snapshot
+        .scoped_authority
+        .managed_config()
+        .is_some_and(|origin| origin.mode() != snapshot.mode)
+    {
+        return Err(SnapshotError::Mode);
+    }
     validate_scope(&snapshot.scope_contract)?;
     validate_effective_policy(&snapshot.effective_policy)?;
     if snapshot.expires_at_ms <= snapshot.issued_at_ms

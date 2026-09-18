@@ -300,6 +300,8 @@ def test_renewal_materializes_higher_generation_before_expiry(tmp_path: Path, mo
         publisher._publish_once()
         first = publisher.current_snapshot()
         assert first is not None
+        assert isinstance(first["generation"], int)
+        assert isinstance(first["expires_at_ms"], int)
         due = publisher._renewal_due_monotonic
         assert due is not None
         assert due < clock.monotonic + 24 * 60 * 60
@@ -309,6 +311,8 @@ def test_renewal_materializes_higher_generation_before_expiry(tmp_path: Path, mo
         publisher._publish_once(renew_after_generation=first["generation"])
         renewed = publisher.current_snapshot()
         assert renewed is not None
+        assert isinstance(renewed["generation"], int)
+        assert isinstance(renewed["expires_at_ms"], int)
         assert renewed["generation"] > first["generation"]
         assert renewed["expires_at_ms"] > first["expires_at_ms"]
         assert len(calls) == 2
@@ -346,6 +350,8 @@ def test_renewal_failure_keeps_barrier_closed_at_expiry(
         publisher._publish_once()
         first = publisher.current_snapshot()
         assert first is not None
+        assert isinstance(first["generation"], int)
+        assert isinstance(first["expires_at_ms"], int)
         publisher._publish_once(renew_after_generation=first["generation"])
         assert publisher.is_ready()
         clock.wall = first["expires_at_ms"] / 1_000
@@ -383,6 +389,8 @@ def test_renewal_retry_reuses_candidate_with_bounded_backoff(
         publisher._publish_once()
         first = publisher.current_snapshot()
         assert first is not None
+        assert isinstance(first["generation"], int)
+        assert isinstance(first["expires_at_ms"], int)
         publisher._publish_once(renew_after_generation=first["generation"])
         retry_at = publisher._retry_not_before_monotonic
         assert retry_at is not None
@@ -391,6 +399,8 @@ def test_renewal_retry_reuses_candidate_with_bounded_backoff(
         publisher._publish_once(renew_after_generation=first["generation"])
         renewed = publisher.current_snapshot()
         assert renewed is not None
+        assert isinstance(renewed["generation"], int)
+        assert isinstance(renewed["expires_at_ms"], int)
         assert renewed["generation"] > first["generation"]
         assert len(calls) == 3
         assert calls[2] == calls[1]

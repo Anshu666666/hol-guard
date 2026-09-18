@@ -50,8 +50,9 @@ def test_canonical_disabled_sync_is_unverified_even_when_storage_commits(
     )
     store = _seed_v2_admission_store(tmp_path, verification)
     summary = _sync_receipts(store, monkeypatch, synced_at="2026-07-15T12:01:00Z", policy_bundle=bundle)
-    assert store.get_sync_payload("policy_bundle")["bundleHash"] == bundle["bundleHash"]
-    assert store.get_sync_payload("policy_bundle_ack")["status"] == "received"
+    stored, acknowledgement = store.get_sync_payload("policy_bundle"), store.get_sync_payload("policy_bundle_ack")
+    assert isinstance(stored, dict) and stored["bundleHash"] == bundle["bundleHash"]
+    assert isinstance(acknowledgement, dict) and acknowledgement["status"] == "received"
     assert summary["policy_application_status"] == "fallback"
 
 
@@ -78,7 +79,11 @@ def test_cloud_payload_uses_active_bundle_and_preserves_rollout_percentage(
     store = _seed_v2_admission_store(tmp_path, verification)
     _sync_receipts(store, monkeypatch, synced_at="2026-07-15T12:01:00Z", policy_bundle=bundle)
     payload = runner._cloud_runtime_session_payload(store, runner._local_guard_runtime_session())
-    assert payload["selectedEnforcementLane"] == "canonical"
+    acknowledgement = store.get_sync_payload("policy_bundle_ack")
+    assert isinstance(acknowledgement, dict) and acknowledgement["status"] == "received"
+    assert payload["canonicalPolicyEnforcement"] is True
+    assert payload["selectedEnforcementLane"] == "unverified"
+    assert payload["canonicalIncompatibilityReason"] == "native_policy_publication_pending"
     assert payload["canonicalRolloutPercentage"] == 100
 
 
@@ -104,7 +109,9 @@ def test_receipt_upload_does_not_reuse_generic_ack_for_another_identity(
     )
     store = _seed_v2_admission_store(tmp_path, verification)
     _sync_receipts(store, monkeypatch, synced_at="2026-07-15T12:01:00Z", policy_bundle=bundle)
-    ack = dict(store.get_sync_payload("policy_bundle_ack"))
+    acknowledgement = store.get_sync_payload("policy_bundle_ack")
+    assert isinstance(acknowledgement, dict)
+    ack = dict(acknowledgement)
     ack[field] = value
     store.set_sync_payload("policy_bundle_ack", ack, "2026-07-15T12:02:00Z")
     context = runner._receipt_sync_context(store, local_guard_online_at="2026-07-15T12:03:00Z")

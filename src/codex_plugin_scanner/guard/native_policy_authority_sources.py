@@ -11,8 +11,11 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import cast
 
+from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY
 from .models import PolicyDecision
 from .native_cloud_policy_capabilities import NativeCloudPolicyRequirement, native_cloud_policy_requirements
+from .native_policy_authority_command_source import has_canonical_command_expressions, signed_command_native_rows
+from .native_policy_authority_managed import FrozenNativeManagedAuthority
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .policy_bundle_decisions import build_policy_bundle_decisions
 from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY, verified_policy_materialization_time
@@ -88,27 +91,28 @@ def signed_bundle_native_rows(
     state: FrozenNativePolicySources,
     *,
     now: float,
+    managed: FrozenNativeManagedAuthority | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, object] | None, dict[str, object] | None]:
     """Rebuild the complete targeted generic authority after signature checks."""
     bundle, reason = cached_policy_bundle_validation(state, state.get_sync_payload("policy_bundle"), now=now)
     if reason is not None:
         raise NativePolicySnapshotError("native_policy_authority_bundle_unavailable")
+    active_managed = state.get_sync_payload(MANAGED_CONTROLS_ACTIVE_STATE_KEY) is not None
     if bundle is None:
+        if active_managed:
+            raise NativePolicySnapshotError("native_policy_authority_managed_unavailable")
         return [], None, None
     requirements = native_cloud_policy_requirements(bundle)
-    if requirements - {NativeCloudPolicyRequirement.SCOPED_RULES}:
-        # A separate authenticated managed consumer is still required. Do
-        # not acknowledge a generic projection of an unsupported whole input.
+    if requirements - {NativeCloudPolicyRequirement.SCOPED_RULES, NativeCloudPolicyRequirement.MANAGED_CONTROLS}:
         raise NativePolicySnapshotError("native_policy_authority_bundle_semantics_unsupported")
+    if active_managed or NativeCloudPolicyRequirement.MANAGED_CONTROLS in requirements:
+        if managed is None:
+            raise NativePolicySnapshotError("native_policy_authority_bundle_semantics_unsupported")
+        managed.require_signed_bundle(bundle, state.payloads)
     builder = (
         build_canonical_policy_bundle_decisions
         if bundle.get("contractVersion") == "guard-policy-bundle.v2"
         else build_policy_bundle_decisions
-    )
-    decisions = builder(
-        bundle,
-        device_id=state.device["installation_id"],
-        device_name=state.device["device_label"],
     )
     materialized_at = verified_policy_materialization_time(
         state.get_sync_payload(POLICY_BUNDLE_MATERIALIZATION_KEY),
@@ -116,6 +120,15 @@ def signed_bundle_native_rows(
         device_id=state.device["installation_id"],
         key=state.key_material[0],
         key_id=state.key_material[1],
+    )
+    decisions = (
+        []
+        if has_canonical_command_expressions(bundle)
+        else builder(
+            bundle,
+            device_id=state.device["installation_id"],
+            device_name=state.device["device_label"],
+        )
     )
     if decisions and materialized_at is None:
         raise NativePolicySnapshotError("native_policy_authority_materialization_unavailable")
@@ -143,6 +156,8 @@ def signed_bundle_native_rows(
         if identity is not None:
             row["_policy_rule_identity"] = identity.to_selected_row_dict()
         rows.append(row)
+    if has_canonical_command_expressions(bundle):
+        rows = signed_command_native_rows(state, bundle, materialized_at=materialized_at)
     return (
         rows,
         policy_defaults_from_validated_bundle(bundle),

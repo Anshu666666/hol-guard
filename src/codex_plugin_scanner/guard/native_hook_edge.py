@@ -363,7 +363,7 @@ def review_raw_hook_native(
         from .native_scoped_result import scoped_invocation_matches
 
         if not scoped_invocation_matches(
-            decoded, request_id=request_id, harness=harness, rule_digest=status.capabilities.rule_digest
+            decoded, request_id=request_id, harness=harness, rule_digest=status.capabilities.rule_digest, event=event
         ):
             decoded = None
     if decoded is None:

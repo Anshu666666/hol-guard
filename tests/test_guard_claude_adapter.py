@@ -18,7 +18,7 @@ from codex_plugin_scanner.guard.adapters.claude_code import (
     ClaudeCodeHarnessAdapter,
     _shell_command,
 )
-from tests.claude_hook_diagnostics import assert_claude_hook_asks_for_permission
+from tests.claude_hook_diagnostics import claude_hook_diagnostics
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -447,7 +447,19 @@ def test_claude_daemon_hook_command_falls_back_to_native_ask_on_daemon_miss(tmp_
         check=False,
     )
     elapsed_seconds = time.monotonic() - started_at
-    assert_claude_hook_asks_for_permission(result, elapsed_seconds=elapsed_seconds)
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        pytest.fail("Claude hook returned invalid JSON", pytrace=False)
+    diagnostic = claude_hook_diagnostics(payload, returncode=result.returncode, elapsed_seconds=elapsed_seconds)
+    returned_successfully = result.returncode == 0
+    assert returned_successfully, diagnostic
+    stderr_is_empty = result.stderr == ""
+    assert stderr_is_empty, diagnostic
+    expected_event = payload["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
+    assert expected_event, diagnostic
+    asks_for_permission = payload["hookSpecificOutput"]["permissionDecision"] == "ask"
+    assert asks_for_permission, diagnostic
 
 
 def test_claude_install_replaces_prior_session_start_guard_handlers_when_context_changes(tmp_path):

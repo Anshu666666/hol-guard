@@ -267,6 +267,8 @@ pub struct RuntimeCapabilitiesV1 {
     pub build_sha: String,
     pub target: String,
     pub features: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extension_catalog_digest: Option<String>,
 }
 
 #[cfg(test)]

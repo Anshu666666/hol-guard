@@ -46,7 +46,11 @@ def selected_enforcement_lane(
     required_capability: str | None = None,
     contract_version: str | None = None,
 ) -> tuple[EnforcementLane, str | None]:
-    """Return the live lane and a bounded incompatibility reason."""
+    """Resolve configured rollout/capability prerequisites, not native application.
+
+    Runtime posture additionally verifies current accepted native authority.
+    This selection alone does not prove a downloaded source was applied.
+    """
 
     flags = ManagedControlsFeatureFlags.from_environment()
     advertised = flags.runtime_capabilities(protected_authority=protected_authority)

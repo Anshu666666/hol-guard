@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import fields
 from typing import cast
 
+from .native_managed_configuration import NativeManagedConfiguration
 from .native_policy_authority_contract import (
     NATIVE_AUTHORITY_MAX_CONTROLS,
     NATIVE_AUTHORITY_MAX_ROWS,
@@ -18,6 +19,7 @@ from .native_policy_authority_contract import (
     NativePolicySourceKind,
     NativeScopedPolicyRow,
 )
+from .native_policy_authority_expressions import NativeScopedCommandExpression
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 
 
@@ -34,7 +36,12 @@ def _items(value: object) -> list[object]:
 
 
 def native_policy_authority_from_mapping(value: object) -> NativePolicyAuthorityDraft:
-    root = _mapping(value, {"schema", "generic_precedence", "rows", "managed"})
+    root_fields = {"schema", "generic_precedence", "rows", "managed"}
+    if isinstance(value, Mapping) and "command_expressions" in value:
+        root_fields.add("command_expressions")
+    if isinstance(value, Mapping) and "managed_config" in value:
+        root_fields.add("managed_config")
+    root = _mapping(value, root_fields)
     if root["schema"] != NATIVE_POLICY_AUTHORITY_SCHEMA or root["generic_precedence"] != "specificity-recency.v1":
         raise NativePolicySnapshotError("native_policy_authority_schema_invalid")
     rows: list[NativeScopedPolicyRow] = []
@@ -65,6 +72,14 @@ def native_policy_authority_from_mapping(value: object) -> NativePolicyAuthority
                 for item in raw_controls
             )
             managed = NativeManagedPolicyAuthority(**raw_managed)  # pyright: ignore[reportArgumentType]
-        return NativePolicyAuthorityDraft(tuple(rows), managed)
+        expressions = (
+            tuple(NativeScopedCommandExpression.from_mapping(item) for item in _items(root["command_expressions"]))
+            if "command_expressions" in root
+            else ()
+        )
+        managed_config = (
+            NativeManagedConfiguration.from_mapping(root["managed_config"]) if "managed_config" in root else None
+        )
+        return NativePolicyAuthorityDraft(tuple(rows), managed, expressions, managed_config)
     except (TypeError, ValueError) as error:
         raise NativePolicySnapshotError("native_policy_authority_encoding_invalid") from error

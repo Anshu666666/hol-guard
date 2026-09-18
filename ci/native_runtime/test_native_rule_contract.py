@@ -55,12 +55,24 @@ _COMPONENTS = (
         Path("rust/crates/guard-command/src/exact_command.rs"),
     ),
     (
+        "guard-policy-managed-configuration",
+        Path("rust/crates/guard-policy-snapshot/src/managed_configuration.rs"),
+    ),
+    (
         "guard-policy-scoped-authority",
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority.rs"),
     ),
     (
         "guard-policy-scoped-authority-decode",
         Path("rust/crates/guard-policy-snapshot/src/scoped_authority_decode.rs"),
+    ),
+    (
+        "guard-policy-command-expression",
+        Path("rust/crates/guard-policy-snapshot/src/command_expression.rs"),
+    ),
+    (
+        "guard-policy-scoped-command-expression",
+        Path("rust/crates/guard-policy-snapshot/src/scoped_command_expression.rs"),
     ),
     (
         "guard-policy-scoped-matcher",
@@ -79,14 +91,33 @@ _COMPONENTS = (
         Path("rust/crates/guard-runtime/src/policy_scoped_request.rs"),
     ),
     (
+        "guard-runtime-policy-scoped-sensitive-read",
+        Path("rust/crates/guard-runtime/src/policy_scoped_sensitive_read.rs"),
+    ),
+    (
+        "guard-runtime-policy-sensitive-configuration",
+        Path("rust/crates/guard-runtime/src/policy_sensitive_configuration.rs"),
+    ),
+    (
         "guard-runtime-policy-scoped-tool-request",
         Path("rust/crates/guard-runtime/src/policy_scoped_tool_request.rs"),
+    ),
+    ("guard-runtime-policy-scoped-managed", Path("rust/crates/guard-runtime/src/policy_scoped_managed.rs")),
+    (
+        "guard-runtime-policy-scoped-managed-catalog",
+        Path("rust/crates/guard-runtime/src/policy_scoped_managed_catalog.json"),
     ),
     ("guard-runtime-edge-v4", Path("rust/crates/guard-runtime/src/edge_v4.rs")),
     (
         "guard-runtime-policy-scoped-enforcement",
         Path("rust/crates/guard-runtime/src/policy_scoped_enforcement.rs"),
     ),
+    ("guard-runtime-approval", Path("rust/crates/guard-runtime/src/approval.rs")),
+    ("guard-runtime-approval-context", Path("rust/crates/guard-runtime/src/approval_context.rs")),
+    ("guard-runtime-approval-context-scoped", Path("rust/crates/guard-runtime/src/approval_context_scoped.rs")),
+    ("guard-runtime-approval-v4", Path("rust/crates/guard-runtime/src/approval_v4.rs")),
+    ("guard-runtime-policy-store-approval", Path("rust/crates/guard-runtime/src/policy_store_approval.rs")),
+    ("guard-runtime-edge", Path("rust/crates/guard-runtime/src/edge.rs")),
 )
 
 

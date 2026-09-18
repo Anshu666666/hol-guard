@@ -36,6 +36,7 @@ class StorePolicyMixin:
         raise_on_rejection: bool = False,
         approval_gate_grant: ApprovalGateGrant | None = None,
         remote_write_authorized: bool = False,
+        require_native_source_binding: bool = False,
     ) -> dict[str, object] | None:
         """Atomically activate one authenticated policy bundle and its rows.
 
@@ -253,27 +254,23 @@ class StorePolicyMixin:
             )
             if continuity_rejection is not None:
                 return reject(continuity_rejection, connection)
-            from .policy_bundle_materialization import (
-                POLICY_BUNDLE_MATERIALIZATION_KEY,
-                PolicyBundleMaterializationError,
-                PolicyMaterializationStore,
-                bind_policy_bundle_materialization,
-            )
+            from .policy_bundle_materialization import PolicyBundleMaterializationError, PolicyMaterializationStore
+            from .policy_bundle_staging import bind_staged_policy_rows
 
             try:
-                rows, materialization = bind_policy_bundle_materialization(
+                rows = bind_staged_policy_rows(
                     _policy.cast(PolicyMaterializationStore, _policy.cast(object, self)),
                     connection,
-                    bundle=policy_bundle,
+                    decisions=decisions,
                     rows=rows,
                     now=normalized_now,
+                    encoded_payloads=encoded_payloads,
+                    require_source_binding=require_native_source_binding,
                 )
+            except _policy.PolicyCompilationError:
+                return reject("policy_bundle_staging_invalid", connection)
             except PolicyBundleMaterializationError:
                 return reject("policy_bundle_materialization_unavailable", connection)
-            if materialization is not None:
-                encoded_payloads[POLICY_BUNDLE_MATERIALIZATION_KEY] = _policy.json.dumps(
-                    materialization, allow_nan=False
-                )
             self._replace_remote_policy_rows_locked(connection, rows)
             for state_key, payload_json in encoded_payloads.items():
                 connection.execute(

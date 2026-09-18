@@ -100,7 +100,7 @@ pub(crate) fn derive_sensitive_read_artifact(
         .and_then(Value::as_str)
         .ok_or(UNSUPPORTED)?;
     let cwd = absolute_lexical(envelope.source.cwd.as_deref().ok_or(UNSUPPORTED)?)?;
-    let home = absolute_lexical(envelope.source.home_dir.as_deref().ok_or(UNSUPPORTED)?)?;
+    let home = absolute_lexical(&envelope.source.home_dir)?;
     if let Some(value) = payload.get("cwd") {
         if absolute_lexical(value.as_str().ok_or(UNSUPPORTED)?)? != cwd {
             return Err(UNSUPPORTED.to_owned());

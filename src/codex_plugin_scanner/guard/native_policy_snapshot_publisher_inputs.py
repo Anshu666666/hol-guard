@@ -10,6 +10,7 @@ from threading import Condition
 from typing import TYPE_CHECKING, cast
 
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
+from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     NATIVE_POLICY_VERIFIER_KEY_NAME,
@@ -193,8 +194,11 @@ class NativePolicySnapshotPublisherInputs:
 
         with self._condition:
             workspaces = tuple(sorted(self._workspace_paths, key=str))
-        configs = [load_guard_config(self.guard_home)]
-        configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
+        # Never compile an empty/partial supported write. The condition above
+        # is released before this off-path file lock; ACK capture can reenter it.
+        with hold_policy_publication_mutation(self.guard_home):
+            configs = [load_guard_config(self.guard_home)]
+            configs.extend(load_guard_config(self.guard_home, workspace=workspace) for workspace in workspaces)
         configs = [overlay_synced_guard_policy(config, cloud_defaults) for config in configs]
         return _merge_effective_native_policies(
             tuple(effective_native_policy_v3(config) | {"mode": config.mode} for config in configs)

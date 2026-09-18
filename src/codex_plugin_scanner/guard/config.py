@@ -30,6 +30,7 @@ from .guard_home_state import database_has_custom_extension_state
 from .mdm.contracts import ManagedPolicy, ManagedPolicyState
 from .mdm.policy import apply_managed_policy, fail_closed_managed_policy, load_managed_policy
 from .models import GUARD_ACTION_VALUES, GuardAction, GuardMode
+from .native_policy_publication_lock import hold_policy_publication_mutation
 from .presentation_mode import (
     PRESENTATION_SCHEMA_VERSION,
     coerce_persisted_presentation_mode,
@@ -698,7 +699,7 @@ def update_guard_settings(
 ) -> GuardConfig:
     """Persist safe local Guard settings to config.toml and return the updated config."""
 
-    with _GUARD_SETTINGS_WRITE_LOCK:
+    with _GUARD_SETTINGS_WRITE_LOCK, hold_policy_publication_mutation(guard_home):
         return _update_guard_settings_locked(
             guard_home,
             payload,
@@ -807,7 +808,6 @@ def _update_guard_settings_locked(
         raise ValueError("Cloud sync requires a paid team plan.")
     _write_guard_config(guard_home / "config.toml", next_payload)
     updated = load_guard_config(guard_home)
-    notify_native_policy_mutation(guard_home)
     record_posture_change_if_needed(
         guard_home,
         previous=current_config.protection_posture,
@@ -831,14 +831,14 @@ def update_guard_update_channel(
     require_settings_write(guard_home, approval_gate_grant=approval_gate_grant)
     if not isinstance(update_channel, str) or update_channel not in VALID_UPDATE_CHANNELS:
         raise ValueError("Update channel must be stable or alpha.")
-    current_config = load_guard_config(guard_home)
-    if "update_channel" in current_config.managed_locked_settings:
-        raise ValueError("Managed policy locks the update channel.")
-    current = _read_toml(guard_home / "config.toml")
-    current["update_channel"] = update_channel
-    _write_guard_config(guard_home / "config.toml", current)
-    updated = load_guard_config(guard_home)
-    notify_native_policy_mutation(guard_home)
+    with hold_policy_publication_mutation(guard_home):
+        current_config = load_guard_config(guard_home)
+        if "update_channel" in current_config.managed_locked_settings:
+            raise ValueError("Managed policy locks the update channel.")
+        current = _read_toml(guard_home / "config.toml")
+        current["update_channel"] = update_channel
+        _write_guard_config(guard_home / "config.toml", current)
+        updated = load_guard_config(guard_home)
     return updated
 
 
@@ -850,11 +850,11 @@ def reset_guard_settings(
     """Reset editable local Guard settings while preserving non-dashboard config."""
 
     require_settings_write(guard_home, approval_gate_grant=approval_gate_grant)
-    current = _read_toml(guard_home / "config.toml")
-    next_payload = {key: value for key, value in current.items() if key not in EDITABLE_GUARD_SETTING_KEYS}
-    _write_guard_config(guard_home / "config.toml", next_payload)
-    updated = load_guard_config(guard_home)
-    notify_native_policy_mutation(guard_home)
+    with hold_policy_publication_mutation(guard_home):
+        current = _read_toml(guard_home / "config.toml")
+        next_payload = {key: value for key, value in current.items() if key not in EDITABLE_GUARD_SETTING_KEYS}
+        _write_guard_config(guard_home / "config.toml", next_payload)
+        updated = load_guard_config(guard_home)
     return updated
 
 
@@ -1156,7 +1156,12 @@ def _incoming_selects_protection_posture(
 def _write_guard_config(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = _toml_lines_for_table(payload, ())
-    path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+    try:
+        path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+    finally:
+        # All supported callers hold the publication mutation lock through this
+        # write and notification, including a write that fails after truncation.
+        notify_native_policy_mutation(path.parent)
 
 
 def _toml_lines_for_table(payload: Mapping[str, object], path: tuple[str, ...]) -> list[str]:

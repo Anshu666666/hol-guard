@@ -18,6 +18,7 @@ from .native_policy_authority_sources import (
     signed_bundle_native_rows,
     signed_memory_native_rows,
 )
+from .native_policy_row_sort import native_policy_row_sort_key
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from .policy_bundle_trusted_keys import MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY
@@ -240,12 +241,7 @@ def _capture_native_policy_authority_inputs(
         # Source-owned rows are reconstructed from authenticated content, so
         # their database IDs are not authority. IDs in this draft identify
         # rows only within one encoded snapshot; no approval can consume them.
-        normalized = sorted(
-            rows,
-            key=lambda value: _canonical(
-                {key: item for key, item in value.items() if key not in {"decision_id", "reason", "owner"}}
-            ),
-        )
+        normalized = sorted(rows, key=native_policy_row_sort_key)
         active: list[dict[str, object]] = []
         rule_identities: list[tuple[int, PolicyRuleIdentity]] = []
         for index, row in enumerate(normalized, start=1):

@@ -8,8 +8,8 @@ from typing import Protocol
 from .models import PolicyDecision
 from .policy_bundle_decisions import build_policy_bundle_decisions
 from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY, verified_policy_materialization_time
+from .policy_bundle_staging import prepare_canonical_policy_bundle_staging
 from .policy_rule_identity import PolicyRuleIdentity, canonical_rule_identity
-from .runtime.canonical_policy_decisions import build_canonical_policy_bundle_decisions
 from .store_base import _canonical_utc_timestamp
 from .synced_policy import SyncPayloadReader, cached_policy_bundle_validation
 
@@ -34,16 +34,20 @@ def current_policy_bundle_row_authorities(
         return {}
     try:
         device = store.get_device_metadata()
-        builder = (
-            build_canonical_policy_bundle_decisions
-            if validated_bundle.get("contractVersion") == "guard-policy-bundle.v2"
-            else build_policy_bundle_decisions
-        )
-        decisions = builder(
-            validated_bundle,
-            device_id=str(device["installation_id"]),
-            device_name=str(device["device_label"]),
-        )
+        if validated_bundle.get("contractVersion") == "guard-policy-bundle.v2":
+            decisions = prepare_canonical_policy_bundle_staging(
+                validated_bundle,
+                device_id=str(device["installation_id"]),
+                device_name=str(device["device_label"]),
+            ).decisions
+        else:
+            decisions = tuple(
+                build_policy_bundle_decisions(
+                    validated_bundle,
+                    device_id=str(device["installation_id"]),
+                    device_name=str(device["device_label"]),
+                )
+            )
         if not decisions:
             return {}
         key, key_id = store._policy_integrity_secret_material(create=False)

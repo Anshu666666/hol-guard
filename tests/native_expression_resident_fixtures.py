@@ -11,6 +11,7 @@ import hashlib
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -41,12 +42,23 @@ class ExpressionSource:
     block_expires_at: datetime
 
 
-def prepare_expression_store(tmp_path: Path) -> tuple[GuardStore, Path]:
-    store, workspace = prepare_store(tmp_path)
+def configure_expression_fixture_policy(
+    store: GuardStore, *, unknown_publisher_action: Literal["allow", "review"] = "allow"
+) -> None:
+    # The controlled command baseline must not inherit the ordinary unknown-
+    # publisher Review or subprocess Warn floor. The preflight checks other
+    # configured risk defaults. Intrinsic/managed composition is not mocked.
     (store.guard_home / "config.toml").write_text(
-        'mode = "enforce"\ndefault_action = "allow"\n[harnesses]\ncodex = "allow"\n',
+        'mode = "enforce"\ndefault_action = "allow"\n'
+        f'unknown_publisher_action = "{unknown_publisher_action}"\n'
+        'subprocess_action = "allow"\n[harnesses]\ncodex = "allow"\n',
         encoding="utf-8",
     )
+
+
+def prepare_expression_store(tmp_path: Path) -> tuple[GuardStore, Path]:
+    store, workspace = prepare_store(tmp_path)
+    configure_expression_fixture_policy(store)
     return store, workspace
 
 

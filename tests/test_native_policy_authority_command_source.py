@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import copy
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,11 +15,13 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from codex_plugin_scanner.guard.models import PolicyDecision
 from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
+from codex_plugin_scanner.guard.policy_bundle_materialization import bind_policy_bundle_materialization
 from codex_plugin_scanner.guard.policy_bundle_parser import policy_bundle_acceptance_checkpoint
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import policy_bundle_keyring_payload
 from codex_plugin_scanner.guard.policy_bundle_v2 import (
     canonical_policy_bundle_v2_payload,
     computed_policy_bundle_v2_hash,
+    payload_hash_for_policy_bundle_v2,
 )
 from codex_plugin_scanner.guard.policy_document_types import PolicyCompilationError
 from codex_plugin_scanner.guard.store import GuardStore
@@ -201,9 +204,22 @@ def test_device_target_uses_exact_mac_bound_canonical_installation(
 
 @pytest.mark.parametrize("operator,case_sensitive", [("glob", True), ("regex", True), ("exact", False)])
 def test_unsupported_expression_refuses_whole_source(tmp_path: Path, operator: str, case_sensitive: bool) -> None:
-    store = _store(
-        tmp_path,
-        changes={
+    store = _store(tmp_path)
+    # Stage a valid source first. Then model hostile durable replacement by a
+    # different genuinely signed source. Ordinary staging now refuses this
+    # dialect earlier; the reader must independently reject it too.
+    bundle = copy.deepcopy(store.get_sync_payload("policy_bundle"))
+    assert isinstance(bundle, dict)
+    payload = bundle["payload"]
+    assert isinstance(payload, dict)
+    spec = payload["spec"]
+    assert isinstance(spec, dict)
+    rules = spec["rules"]
+    assert isinstance(rules, list) and isinstance(rules[1], dict)
+    match = rules[1]["match"]
+    assert isinstance(match, dict)
+    match.update(
+        {
             "devices": ["off-target"],
             "commands": {
                 "combinator": "all",
@@ -216,7 +232,37 @@ def test_unsupported_expression_refuses_whole_source(tmp_path: Path, operator: s
                     }
                 ],
             },
-        },
+        }
     )
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key = _verification_key(private, workspace_id=_WORKSPACE)
+    replacement = _signed_bundle(private, key, payload_base=payload, rollout_state="enforcing", bundle_version=10)
+    replacement["workspaceId"] = _WORKSPACE
+    replacement["payloadHash"] = payload_hash_for_policy_bundle_v2(replacement)
+    replacement["bundleHash"] = computed_policy_bundle_v2_hash(replacement)
+    verifier = replacement["verifier"]
+    assert isinstance(verifier, dict)
+    verifier["signature"] = base64.b64encode(
+        private.sign(
+            canonical_policy_bundle_v2_payload(replacement),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
+        )
+    ).decode("ascii")
+    with store._connect() as connection:
+        _, materialization = bind_policy_bundle_materialization(
+            store,
+            connection,
+            bundle=replacement,
+            rows=[],
+            now=_NOW,
+            require_source_binding=True,
+        )
+        for name, value in {
+            "policy_bundle": replacement,
+            "policy_bundle_keyring": policy_bundle_keyring_payload((key,), workspace_id=_WORKSPACE),
+            "policy_bundle_materialization": materialization,
+        }.items():
+            connection.execute("update sync_state set payload_json=? where state_key=?", (json.dumps(value), name))
     with pytest.raises(PolicyCompilationError, match=r"command\.rule"):
         read_native_policy_authority_inputs(store, now=_TIME)

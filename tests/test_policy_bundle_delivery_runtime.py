@@ -135,6 +135,7 @@ def test_receipt_sync_context_uploads_v2_policy_bundle_acknowledgement(tmp_path:
     acknowledgement = {
         "contractVersion": "guard-policy-bundle.v2",
         **_v2_delivery(bundle_version=3),
+        "deviceId": store.get_or_create_installation_id(),
         "sequence": 1,
         "status": "applied",
         "observedAt": "2026-04-19T00:00:11Z",

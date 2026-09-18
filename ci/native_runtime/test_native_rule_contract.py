@@ -83,6 +83,12 @@ _COMPONENTS = (
         "guard-runtime-policy-scoped-enforcement",
         Path("rust/crates/guard-runtime/src/policy_scoped_enforcement.rs"),
     ),
+    ("guard-runtime-approval", Path("rust/crates/guard-runtime/src/approval.rs")),
+    ("guard-runtime-approval-context", Path("rust/crates/guard-runtime/src/approval_context.rs")),
+    ("guard-runtime-approval-context-scoped", Path("rust/crates/guard-runtime/src/approval_context_scoped.rs")),
+    ("guard-runtime-approval-v4", Path("rust/crates/guard-runtime/src/approval_v4.rs")),
+    ("guard-runtime-policy-store-approval", Path("rust/crates/guard-runtime/src/policy_store_approval.rs")),
+    ("guard-runtime-edge", Path("rust/crates/guard-runtime/src/edge.rs")),
 )
 
 

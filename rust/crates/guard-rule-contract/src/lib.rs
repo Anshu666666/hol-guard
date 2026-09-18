@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 pub const RULE_CONTRACT_SCHEMA: &str = "hol-guard-native-rule-contract.v2";
 const RULE_CONTRACT_DOMAIN: &[u8] = b"hol-guard-native-rule-contract.v2\0";
 
-const COMPONENTS: [(&str, &[u8]); 27] = [
+const COMPONENTS: [(&str, &[u8]); 33] = [
     (
         "guard-rules",
         include_bytes!("../../guard-rules/src/lib.rs"),
@@ -115,6 +115,30 @@ const COMPONENTS: [(&str, &[u8]); 27] = [
         "guard-runtime-policy-scoped-enforcement",
         include_bytes!("../../guard-runtime/src/policy_scoped_enforcement.rs"),
     ),
+    (
+        "guard-runtime-approval",
+        include_bytes!("../../guard-runtime/src/approval.rs"),
+    ),
+    (
+        "guard-runtime-approval-context",
+        include_bytes!("../../guard-runtime/src/approval_context.rs"),
+    ),
+    (
+        "guard-runtime-approval-context-scoped",
+        include_bytes!("../../guard-runtime/src/approval_context_scoped.rs"),
+    ),
+    (
+        "guard-runtime-approval-v4",
+        include_bytes!("../../guard-runtime/src/approval_v4.rs"),
+    ),
+    (
+        "guard-runtime-policy-store-approval",
+        include_bytes!("../../guard-runtime/src/policy_store_approval.rs"),
+    ),
+    (
+        "guard-runtime-edge",
+        include_bytes!("../../guard-runtime/src/edge.rs"),
+    ),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -207,6 +231,12 @@ mod tests {
                 "guard-runtime-policy-scoped-tool-request",
                 "guard-runtime-edge-v4",
                 "guard-runtime-policy-scoped-enforcement",
+                "guard-runtime-approval",
+                "guard-runtime-approval-context",
+                "guard-runtime-approval-context-scoped",
+                "guard-runtime-approval-v4",
+                "guard-runtime-policy-store-approval",
+                "guard-runtime-edge",
             ]
         );
         assert!(first

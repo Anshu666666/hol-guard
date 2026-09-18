@@ -13,6 +13,14 @@ class ImportedCallable:
     qualname: str
 
 
+@dataclass(frozen=True, slots=True)
+class CallableAlternatives:
+    targets: tuple[ImportedCallable, ...]
+
+
+CallableTarget = ImportedCallable | CallableAlternatives
+
+
 def _read(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -223,13 +231,33 @@ def _class_method(
 
 def resolve_member(
     root: Path, module_path: str, parts: tuple[str, ...], seen: frozenset[tuple[str, tuple[str, ...]]] = frozenset()
-) -> ImportedCallable | None:
+) -> CallableTarget | None:
     """Resolve exact source identity, refusing implicit inheritance and dynamic exports."""
     identity = (module_path, parts)
     if not parts or identity in seen:
         return None
     seen = seen | {identity}
     tree = ast.parse(_read(root / module_path), filename=module_path)
+    from scripts.ci.rust_io_ownership_optionals import optional_function_branches, optional_support_functions
+
+    if len(parts) == 1:
+        for imported, fallback, _handler in optional_function_branches(tree):
+            if fallback.name != parts[0]:
+                continue
+            alias = next(a for a in imported.names if (a.asname or a.name) == parts[0])
+            resolved = resolve_import(root, module_path, imported, alias, (), seen)
+            if resolved is None:
+                return None
+            targets = resolved.targets if isinstance(resolved, CallableAlternatives) else (resolved,)
+            for target in targets:
+                target_tree = ast.parse(_read(root / target.path), filename=target.path)
+                functions = (*target_tree.body, *optional_support_functions(target_tree))
+                exact = [
+                    item for item in functions if isinstance(item, ast.FunctionDef) and item.name == target.qualname
+                ]
+                if len(exact) != 1 or exact[0].decorator_list:
+                    return None
+            return CallableAlternatives(tuple(dict.fromkeys((*targets, ImportedCallable(module_path, fallback.name)))))
     sites = _bindings(tree.body, parts[0])
     if not sites:
         if Path(module_path).name != "__init__.py" or any(
@@ -243,6 +271,9 @@ def resolve_member(
 
         node = optional_external_class(root, module_path, tree, parts[0])
         if node is None:
+            support = next((f for f in optional_support_functions(tree) if f.name == parts[0]), None)
+            if support is not None and len(parts) == 1:
+                return ImportedCallable(module_path, support.name)
             return None
     else:
         node = sites[0][0]
@@ -273,7 +304,7 @@ def resolve_import(
     alias: ast.alias,
     suffix: tuple[str, ...],
     seen: frozenset[tuple[str, tuple[str, ...]]] = frozenset(),
-) -> ImportedCallable | None:
+) -> CallableTarget | None:
     if isinstance(node, ast.ImportFrom):
         target = _import_target_path(root, source_path, node, alias.name)
         parts = ((alias.name,) if node.module else ()) + suffix

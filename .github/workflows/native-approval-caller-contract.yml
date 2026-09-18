@@ -30,6 +30,9 @@ on:
       - "tests/test_rust_io_exception_constructors.py"
       - "tests/test_rust_io_conditional_imports.py"
       - "tests/test_rust_io_optional_dependencies.py"
+      - "tests/test_rust_io_optional_functions.py"
+      - "scripts/ci/rust_io_graph_frontiers.py"
+      - "tests/test_rust_io_graph_frontiers.py"
       - "tests/test_rust_io_ownership_gate.py"
       - "docs/guard/contracts/*ownership*.json"
       - "basedpyright.native-approval-caller.json"
@@ -75,9 +78,22 @@ jobs:
       - name: Verify opaque proof and durable application boundaries
         run: |
           uv run --no-sync pytest -q tests/test_native_approval_queue_state.py tests/test_native_approval_challenge_binding.py tests/test_native_approval_request_claim.py tests/test_native_approval_delivery.py tests/test_native_approval_application.py tests/test_native_review_delivery.py tests/test_native_scoped_approval_caller.py tests/test_native_approval_v4_transport.py tests/test_native_approval_caller_evidence.py tests/test_native_approval_interop_artifact.py tests/test_guard_review_event_outbox.py tests/test_guard_review_event_outbox_delivery.py tests/test_guard_exact_cloud_review*.py
+      - name: Verify import alternatives and diagnostic contracts
+        run: uv run --no-sync pytest -q tests/test_rust_io_optional_functions.py tests/test_rust_io_graph_frontiers.py
       - name: Preserve strict authority and capability ownership
         run: |
           uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .
           uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .
           uv run --no-sync python scripts/ci/python_capability_cleanup_gate.py --root .
           uv run --no-sync pytest -q tests/test_python_capability_cleanup_gate.py tests/test_rust_io_class_resolution.py tests/test_rust_io_lexical_resolution.py tests/test_rust_io_constructor_resolution.py tests/test_rust_io_constructor_defaults.py tests/test_rust_io_exception_constructors.py tests/test_rust_io_conditional_imports.py tests/test_rust_io_optional_dependencies.py tests/test_rust_io_ownership_gate.py
+      - name: Diagnose unresolved I/O graph frontiers without acceptance
+        if: ${{ always() }}
+        timeout-minutes: 4
+        run: timeout 180s uv run --no-sync python -m scripts.ci.rust_io_graph_frontiers --root . --json artifacts/io-graph-frontiers.json
+      - name: Retain non-accepting graph diagnostic
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: io-graph-frontiers-${{ matrix.python }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/io-graph-frontiers.json
+          if-no-files-found: error

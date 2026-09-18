@@ -112,3 +112,55 @@ def optional_external_classes(root: Path, path: str, tree: ast.Module) -> Iterat
             and optional_external_class(root, path, tree, node.name) is node
         ):
             yield node
+
+
+def optional_function_branches(tree: ast.Module) -> Iterator[tuple[ast.ImportFrom, ast.FunctionDef, ast.ExceptHandler]]:
+    """Identify exact repository-import/local-function recovery alternatives."""
+    for candidate in tree.body:
+        if (
+            not isinstance(candidate, ast.Try)
+            or len(candidate.handlers) != 1
+            or candidate.orelse
+            or candidate.finalbody
+        ):
+            continue
+        handler = candidate.handlers[0]
+        if (
+            not isinstance(handler.type, ast.Name)
+            or handler.type.id not in {"ImportError", "ModuleNotFoundError"}
+            or handler.name is not None
+            or _bindings(tree.body, handler.type.id)
+        ):
+            continue
+        for function in handler.body:
+            if not isinstance(function, ast.FunctionDef) or function.decorator_list:
+                continue
+            imports = _bindings(candidate.body, function.name)
+            if len(imports) != 1 or not imports[0][1] or not isinstance(imports[0][0], ast.ImportFrom):
+                continue
+            imported = imports[0][0]
+            if any(a.name == "*" for a in imported.names):
+                continue
+            fallback = _bindings(handler.body, function.name)
+            whole = _bindings(tree.body, function.name)
+            if (
+                len(fallback) == 1
+                and fallback[0][1]
+                and fallback[0][0] is function
+                and len(whole) == 2
+                and {id(node) for node, _direct in whole} == {id(imported), id(function)}
+            ):
+                yield imported, function, handler
+
+
+def optional_support_functions(tree: ast.Module) -> Iterator[ast.FunctionDef]:
+    """Keep unique fallback helpers in the same verified exception handler."""
+    emitted: set[int] = set()
+    for _imported, exported, handler in optional_function_branches(tree):
+        for function in handler.body:
+            if not isinstance(function, ast.FunctionDef) or function.decorator_list or id(function) in emitted:
+                continue
+            sites = _bindings(tree.body, function.name)
+            if function is exported or (len(sites) == 1 and sites[0][0] is function):
+                emitted.add(id(function))
+                yield function

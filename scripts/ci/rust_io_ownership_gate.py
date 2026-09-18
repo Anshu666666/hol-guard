@@ -27,8 +27,9 @@ if __package__ is None:
 
 from scripts.ci.rust_io_ownership_constructors import constructor_node
 from scripts.ci.rust_io_ownership_contract import capability_contract
-from scripts.ci.rust_io_ownership_optionals import optional_external_classes
-from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_call
+from scripts.ci.rust_io_ownership_optionals import optional_external_classes, optional_support_functions
+from scripts.ci.rust_io_ownership_resolver import FunctionRecordLike, resolve_calls
+from scripts.ci.rust_io_ownership_resolver import resolve_call as resolve_call
 
 SCHEMA: Final = "hol-guard.decision-critical-io.v1"
 NATIVE_MODES: Final = frozenset({"auto", "force"})
@@ -209,6 +210,8 @@ def _functions(tree: ast.AST, path: str, root: Path | None = None) -> Iterable[F
             # source-visible fallback constructor and method in the inventory.
             for cls in optional_external_classes(root, path, tree):
                 yield from visit([cls])
+            for function in optional_support_functions(tree):
+                yield from visit([function])
 
 
 def _function_map(root: Path) -> dict[tuple[str, str], list[FunctionRecord]]:
@@ -320,8 +323,7 @@ def _reachable_records(
         seen.add(identity)
         result.append(record)
         for name in _calls(record):
-            resolved = resolve_call(root, cast(FunctionRecordLike, cast(object, record)), name, records_view)
-            if resolved is not None:
+            for resolved in resolve_calls(root, cast(FunctionRecordLike, cast(object, record)), name, records_view):
                 pending.append(cast(FunctionRecord, cast(object, resolved)))
     return tuple(result)
 

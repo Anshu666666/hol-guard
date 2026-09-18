@@ -8,8 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
 
-from scripts.ci.rust_io_ownership_optionals import lexical_definitions, optional_external_class
+from scripts.ci.rust_io_ownership_optionals import (
+    lexical_definitions,
+    optional_external_class,
+    optional_support_functions,
+)
 from scripts.ci.rust_io_ownership_symbols import (
+    CallableAlternatives,
+    CallableTarget,
     ImportedCallable,
     _bindings,
     _import_target_path,
@@ -117,7 +123,7 @@ def _visible_imports(root: Path, record: FunctionRecordLike) -> tuple[_VisibleIm
     return tuple(visible)
 
 
-def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> CallableTarget | None:
     parts = tuple(name.split("."))
     if len(parts) < 2 or any(not part for part in parts):
         return None
@@ -174,7 +180,7 @@ def _qualified_imported_callable(root: Path, record: FunctionRecordLike, name: s
     return None
 
 
-def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -> CallableTarget | None:
     """Resolve one bare name using function closures then the module, never classes."""
     tree = ast.parse(_read(root / record.path), filename=record.path)
     scopes = _function_scopes(tree, record.qualname)
@@ -211,7 +217,9 @@ def _bare_imported_callable(root: Path, record: FunctionRecordLike, name: str) -
         if isinstance(node, (ast.Global, ast.Nonlocal)):
             raise RuntimeError(f"unresolved explicit lexical declaration {name!r}")
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if not direct:
+            if not direct and not (
+                scope is tree and any(function is node for function in optional_support_functions(tree))
+            ):
                 raise RuntimeError(f"ambiguous conditional lexical helper {name!r}")
             qualname = qualified_name(tree.body, node)
             if qualname is None:
@@ -303,12 +311,16 @@ def _receiver_constructor(
         return None
     exact = resolve_member(root, record.path, (class_name, method.name))
     constructor = resolve_member(root, record.path, (class_name,))
-    if exact is None or exact.qualname != record.qualname or constructor is None:
+    if (
+        not isinstance(exact, ImportedCallable)
+        or exact.qualname != record.qualname
+        or not isinstance(constructor, ImportedCallable)
+    ):
         raise RuntimeError(f"unresolved class receiver construction {name!r}")
     return constructor
 
 
-def _callable_target(root: Path, record: FunctionRecordLike, name: str) -> ImportedCallable | None:
+def _callable_target(root: Path, record: FunctionRecordLike, name: str) -> CallableTarget | None:
     parts = name.split(".")
     if len(parts) == 2 and parts[0] in {"self", "cls"}:
         return _receiver_callable(root, record, name)
@@ -320,7 +332,34 @@ def _callable_target(root: Path, record: FunctionRecordLike, name: str) -> Impor
 def imported_symbol_path(root: Path, record: FunctionRecordLike, name: str) -> str | None:
     """Return the exact lexical or repository-qualified callable source path."""
     target = _callable_target(root, record, name)
+    if isinstance(target, CallableAlternatives):
+        raise RuntimeError(f"multiple exact repository callable paths for {name!r}")
     return target.path if target is not None else None
+
+
+def resolve_calls(
+    root: Path,
+    record: RecordT,
+    name: str,
+    records: Mapping[tuple[str, str], list[RecordT]],
+) -> tuple[RecordT, ...]:
+    """Retain every verified callable alternative, never a best-effort choice."""
+    target = _callable_target(root, record, name)
+    if target is None:
+        return ()
+    targets = target.targets if isinstance(target, CallableAlternatives) else (target,)
+    result: list[RecordT] = []
+    for selected in targets:
+        exact = [
+            candidate
+            for values in records.values()
+            for candidate in values
+            if candidate.path == selected.path and candidate.qualname == selected.qualname
+        ]
+        if len(exact) != 1:
+            raise RuntimeError(f"ambiguous repository helper {name!r}: {selected}")
+        result.append(exact[0])
+    return tuple(result)
 
 
 def resolve_call(
@@ -329,16 +368,8 @@ def resolve_call(
     name: str,
     records: Mapping[tuple[str, str], list[RecordT]],
 ) -> RecordT | None:
-    """Resolve an exact visible callable, never an unrelated same-named helper."""
-    target = _callable_target(root, record, name)
-    if target is None:
-        return None
-    exact = [
-        candidate
-        for values in records.values()
-        for candidate in values
-        if candidate.path == target.path and candidate.qualname == target.qualname
-    ]
-    if len(exact) != 1:
-        raise RuntimeError(f"ambiguous repository helper {name!r}: {target}")
-    return exact[0]
+    """The single-target API cannot silently select one possible callable."""
+    targets = resolve_calls(root, record, name, records)
+    if len(targets) > 1:
+        raise RuntimeError(f"multiple exact repository callable targets for {name!r}")
+    return targets[0] if targets else None

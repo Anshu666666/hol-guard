@@ -5,8 +5,8 @@
 //! allows may satisfy ordinary review; they do not become one-shot approvals.
 
 use crate::policy_enforcement::{
-    configured_pre_tool_policy_action, sensitive_read_configuration_with_origin,
-    validate_pre_tool_result_matrix,
+    configured_pre_tool_policy_action, generic_command_configuration,
+    sensitive_read_configuration_with_origin, validate_pre_tool_result_matrix,
 };
 use crate::policy_scoped_request::derive_scoped_policy_request;
 use guard_command::exact_command::exact_shell_command_from_hook;
@@ -25,6 +25,10 @@ mod tests;
 #[cfg(test)]
 #[path = "policy_scoped_sensitive_tests.rs"]
 mod sensitive_tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_generic_tests.rs"]
+mod generic_tests;
 
 pub(crate) struct ScopedPolicyEvaluation {
     pub(crate) result: PreToolResultV1,
@@ -148,10 +152,25 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         canonical_harness,
     )
     .ok();
-    // This origin extension currently has actual producer/evaluator parity only
-    // for the bounded sensitive-read shape. Generic commands need their own
-    // within-origin selector hierarchy proof before this feature can be advertised.
-    if sensitive.is_none() && snapshot.scoped_authority.managed_config().is_some() {
+    let generic_configuration =
+        if sensitive.is_none() && snapshot.scoped_authority.command_expressions().is_empty() {
+            generic_command_configuration(
+                &snapshot.effective_policy,
+                snapshot.scoped_authority.managed_config(),
+                envelope,
+                canonical_harness,
+                request
+                    .artifact_id()
+                    .ok_or("native_scoped_request_identity_unsupported")?,
+            )?
+        } else {
+            None
+        };
+    // Retain explicit refusal for managed origins on every unproved producer.
+    if sensitive.is_none()
+        && generic_configuration.is_none()
+        && snapshot.scoped_authority.managed_config().is_some()
+    {
         return Err("native_managed_configuration_request_unsupported".to_owned());
     }
     let sensitive_configuration = sensitive
@@ -182,6 +201,8 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         .map_or(Value::Null, |value| value.into());
     let configured = if let Some(policy) = &sensitive_configuration {
         action(&policy.evaluated_action)?
+    } else if let Some(policy) = &generic_configuration {
+        action(policy.evaluated_action())?
     } else {
         action(&configured_pre_tool_policy_action(
             &snapshot.effective_policy,
@@ -190,12 +211,15 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         )?)?
     };
     let intrinsic_action = action(&intrinsic.minimum_action)?;
-    // Only this proven typed producer replaces the generic file-read fallback.
+    // Proven source producers replace only their specific fallback reviews.
     // Independent scanner/native restrictions retain their original floors.
-    let intrinsic_floor = if sensitive.is_some()
-        && intrinsic_action == PolicyAction::Review
-        && intrinsic.reason_code == "native_file_read_review"
-        && intrinsic.action.action_type == guard_contracts::PreToolActionTypeV1::FileRead
+    let intrinsic_floor = if intrinsic_action == PolicyAction::Review
+        && ((sensitive.is_some()
+            && intrinsic.reason_code == "native_file_read_review"
+            && intrinsic.action.action_type == guard_contracts::PreToolActionTypeV1::FileRead)
+            || generic_configuration
+                .as_ref()
+                .is_some_and(|policy| policy.replaces_fallback_review(&intrinsic)))
     {
         PolicyAction::Allow
     } else {
@@ -247,8 +271,19 @@ pub(crate) fn apply_scoped_pre_tool_policy(
             .filter(|row| effective != current && effective == row.action())
             .map(ScopedPolicyRow::decision_id)
     });
-    let observed_policy_action = (snapshot.mode == "observe").then(|| name(effective));
-    if snapshot.mode == "observe"
+    let observed_policy_action = if generic_configuration.is_some() {
+        if snapshot.mode == "observe" && rank(effective) > 1 && rank(authority_floor) <= 1 {
+            let observed = Some(name(effective));
+            effective = authority_floor;
+            observed
+        } else {
+            None
+        }
+    } else {
+        (snapshot.mode == "observe").then(|| name(effective))
+    };
+    if generic_configuration.is_none()
+        && snapshot.mode == "observe"
         && rank(effective) > rank(authority_floor)
         && rank(authority_floor) <= 1
         && (sensitive_configuration.is_none() || rank(effective) > 1)

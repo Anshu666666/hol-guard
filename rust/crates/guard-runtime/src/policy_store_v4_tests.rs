@@ -357,7 +357,9 @@ fn scoped_observe_receipt_retains_the_would_enforce_action() {
         assert_eq!(result["observed_policy_action"], observed);
         assert_eq!(result["receipt"]["observed_policy_action"], observed);
         assert_eq!(result["receipt"]["observe_mode"], mode == "observe");
-        let actual_action = if mode == "observe" { "warn" } else { "block" };
+        // The actual generic consumer projects a policy-only Block to Allow;
+        // the original Block and selected rule remain in the receipt binding.
+        let actual_action = if mode == "observe" { "allow" } else { "block" };
         assert_eq!(result["result"]["policy_action"], actual_action);
         assert_eq!(result["receipt"]["policy_action"], actual_action);
         assert_eq!(

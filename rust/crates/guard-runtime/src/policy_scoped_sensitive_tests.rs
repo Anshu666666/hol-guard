@@ -349,8 +349,8 @@ fn managed_configuration_origin_refuses_unproven_generic_request_semantics() {
     let values = vectors();
     let case = &values["cases"][0];
     for payload in [
-        json!({"tool_name":"Shell","tool_input":{"command":"printf Synthetic"}}),
-        json!({"tool_name":"Shell","tool_input":{"command":"ssh synthetic-host"}}),
+        json!({"tool_name":"Shell","tool_input":{"command":"true"}}),
+        json!({"tool_name":"Shell","tool_input":{"command":"whoami"}}),
     ] {
         let mut source = envelope(case);
         source.harness = "codex".to_owned();

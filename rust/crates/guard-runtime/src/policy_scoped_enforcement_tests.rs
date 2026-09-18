@@ -208,7 +208,7 @@ fn observe_retains_the_winning_scoped_rule_identity_before_projection() {
     let mut policy = snapshot("allow", vec![row(7, "artifact", "block", "signed-bundle")]);
     policy.mode = "observe".to_owned();
     let result = evaluate(&policy, &envelope(COMMAND));
-    assert_eq!(result.result.minimum_action, "warn");
+    assert_eq!(result.result.minimum_action, "allow");
     assert_eq!(result.result.decision, "allow");
     assert_eq!(result.observed_policy_action, Some("block"));
     assert_eq!(result.selected_decision_id, Some(7));
@@ -268,21 +268,18 @@ fn current_terminal_and_every_intrinsic_floor_survive_signed_allow() {
             let result =
                 apply_scoped_pre_tool_policy(&policy, &source, "codex", intrinsic, 100).unwrap();
             assert_eq!(result.result.minimum_action, floor);
-            assert_eq!(
-                result.observed_policy_action,
-                if mode == "observe" { Some(floor) } else { None }
-            );
+            assert_eq!(result.observed_policy_action, None);
             assert_eq!(result.selected_decision_id, None);
         }
     }
 }
 
 #[test]
-fn observe_policy_warning_retains_its_rule_but_not_an_equal_default() {
+fn observe_policy_projection_retains_its_rule_but_not_an_equal_default() {
     let mut policy = snapshot("allow", vec![row(7, "artifact", "block", "signed-memory")]);
     policy.mode = "observe".to_owned();
     let result = evaluate(&policy, &envelope(COMMAND));
-    assert_eq!(result.result.minimum_action, "warn");
+    assert_eq!(result.result.minimum_action, "allow");
     assert_eq!(result.result.decision, "allow");
     assert_eq!(result.observed_policy_action, Some("block"));
     assert_eq!(result.selected_decision_id, Some(7));
@@ -364,10 +361,7 @@ fn managed_lockdown_cannot_be_lowered_by_exact_allow_or_observe() {
             assert_eq!(result.result.minimum_action, "block");
             assert_eq!(result.result.decision, "deny");
             assert_eq!(result.selected_decision_id, None);
-            assert_eq!(
-                result.observed_policy_action,
-                (mode == "observe").then_some("block")
-            );
+            assert_eq!(result.observed_policy_action, None);
         }
     }
 }

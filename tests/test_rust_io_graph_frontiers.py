@@ -1,11 +1,19 @@
 """The frontier report accumulates blockers without becoming a gate waiver."""
 
 import json
+from typing import cast
 
 import pytest
 
 from scripts.ci import rust_io_graph_frontiers as frontiers
 from scripts.ci import rust_io_ownership_gate as gate
+
+
+def record_rows(report: dict[str, object], key: str) -> list[dict[str, object]]:
+    value = report[key]
+    assert isinstance(value, list)
+    assert all(isinstance(row, dict) and all(isinstance(key, str) for key in row) for row in value)
+    return cast(list[dict[str, object]], value)
 
 
 def setup_source(tmp_path, monkeypatch, body):
@@ -39,9 +47,9 @@ def hidden_tail(): open('unknown tail')
     assert report["authoritative_gate_required"] is True
     assert report["known_reachable_count"] == 2
     assert report["all_root_bindings_resolved"] is False
-    assert {row["call"] for row in report["unresolved"]} == {"first", "second"}
-    assert len(report["reachable_unclassified_io"]) == 1
-    assert report["reachable_unclassified_io"][0]["path"] == path
+    assert {row["call"] for row in record_rows(report, "unresolved")} == {"first", "second"}
+    assert len(record_rows(report, "reachable_unclassified_io")) == 1
+    assert record_rows(report, "reachable_unclassified_io")[0]["path"] == path
     with pytest.raises(RuntimeError, match="ambiguous"):
         gate._reachable_records(tmp_path, gate._function_map(tmp_path))
 
@@ -59,7 +67,7 @@ def test_missing_root_is_reported_without_fabricated_closure(tmp_path, monkeypat
     path = setup_source(tmp_path, monkeypatch, "def different(): pass\n")
     report = frontiers.diagnose(tmp_path)
     assert report["known_reachable_count"] == 0
-    assert report["unresolved"][0]["path"] == path
+    assert record_rows(report, "unresolved")[0]["path"] == path
     assert report["acceptance"] is False
 
 

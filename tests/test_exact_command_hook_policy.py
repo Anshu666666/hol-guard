@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 
 import pytest
@@ -443,3 +444,29 @@ def test_outer_hook_local_queue_discloses_only_original_consented_source(
         assert source["artifactId"] == requests[0]["artifact_id"]
     else:
         assert source is None
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX detached-worker ownership probe")
+def test_exact_policy_fixture_does_not_launch_detached_approval_workers(tmp_path, capsys, monkeypatch):
+    from tests.guard_exact_policy_process_probe import capture_detached_approval_launches
+
+    with capture_detached_approval_launches(monkeypatch, tmp_path / "guard-home") as probe:
+        store, workspace, _ = _prepared(tmp_path, capsys, "memory")
+        rc, output = _run(capsys, store, workspace)
+        assert rc == 0 and output["policy_action"] == "allow"
+    assert probe.children_reaped is True
+    assert probe.requests == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX detached-worker ownership probe")
+def test_detached_approval_probe_observes_real_scheduler(tmp_path, monkeypatch):
+    from codex_plugin_scanner.guard.daemon import manager
+    from tests.guard_exact_policy_process_probe import capture_detached_approval_launches
+
+    guard_home = tmp_path / "probe-positive"
+    with capture_detached_approval_launches(monkeypatch, guard_home) as probe:
+        predicted = manager.schedule_guard_daemon_ensure(guard_home, home_dir=tmp_path)
+        assert predicted == manager.guard_daemon_url_for_home(guard_home)
+        assert probe.requests == 1
+        assert probe.live_child_observed is True
+    assert probe.children_reaped is True

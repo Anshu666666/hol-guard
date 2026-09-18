@@ -1111,6 +1111,35 @@ class RuntimeMcpGuardProxy:
             policy_action="require-reapproval",
         )
 
+    def _inline_catalog_invalidation_response(
+        self,
+        *,
+        authority: _ToolCallAuthority,
+        message_id: object,
+        tool_name: str,
+        params: dict[str, Any],
+        scanner_evidence: tuple[dict[str, object], ...],
+        package_request: bool,
+    ) -> tuple[dict[str, Any], dict[str, Any]] | None:
+        if (
+            authority.catalog_generation == self._tool_catalog_generation
+            and authority.catalog_state == self._tool_catalog_state
+        ):
+            return None
+        binding = current_tool_call_binding()
+        if binding is not None:
+            binding.check()
+        # A notification observed during approval invalidates that approval.
+        # Build only a fresh denial; never remember or execute the old allow.
+        return self._catalog_boundary_failure_response(
+            message_id=message_id,
+            tool_name=tool_name,
+            params=params,
+            scanner_evidence=scanner_evidence,
+            phase="after_inline_approval",
+            package_request=package_request,
+        )
+
     def _disable_saved_allow_without_complete_catalog(self, decision: ToolCallDecision) -> ToolCallDecision:
         """Reject saved-allow authority until this process has a complete catalog."""
 
@@ -1689,6 +1718,16 @@ class RuntimeMcpGuardProxy:
             if self._inline_prompt_available and approval_callback is not None:
                 approval_result = approval_callback(self._inline_approval_request(tool_name, decision.summary))
                 if _approval_allows(approval_result):
+                    invalidated = self._inline_catalog_invalidation_response(
+                        authority=authority,
+                        message_id=message.get("id"),
+                        tool_name=tool_name,
+                        params=params,
+                        scanner_evidence=decision_scanner_evidence,
+                        package_request=True,
+                    )
+                    if invalidated is not None:
+                        return invalidated
                     try:
                         allow_tool_call(
                             store=self.store,
@@ -1824,6 +1863,16 @@ class RuntimeMcpGuardProxy:
         if self._inline_prompt_available and approval_callback is not None:
             approval_result = approval_callback(self._inline_approval_request(tool_name, decision.summary))
             if _approval_allows(approval_result):
+                invalidated = self._inline_catalog_invalidation_response(
+                    authority=authority,
+                    message_id=message.get("id"),
+                    tool_name=tool_name,
+                    params=params,
+                    scanner_evidence=decision_scanner_evidence,
+                    package_request=False,
+                )
+                if invalidated is not None:
+                    return invalidated
                 return self._allow_and_forward(
                     message=message,
                     child_stdin=child_stdin,

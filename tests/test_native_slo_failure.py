@@ -4,10 +4,13 @@ import hashlib
 import json
 import os
 import stat
+from pathlib import Path
+from typing import NoReturn
 
 import pytest
 
 from codex_plugin_scanner.guard.codex_hook_file_integrity import CodexHookIntegrityError, validate_regular_file
+from codex_plugin_scanner.guard.config_source_io import GuardConfigSourceError, capture_guard_config
 from scripts import native_slo_failure as failures
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence
 
@@ -76,3 +79,102 @@ def test_unknown_integrity_reason_is_digest_only_and_does_not_read_interpreter(m
     assert detail["reason"] == "unclassified_failure"
     assert detail["diagnostic_digest"] == hashlib.sha256(str(error).encode()).hexdigest()
     assert "private_identity_marker" not in json.dumps(detail)
+
+
+def test_actual_config_capture_retains_wrapped_io_cause_without_private_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard import config_source_io
+
+    path = tmp_path / "config.toml"
+    original = b'default_action = "block"\n'
+    path.write_bytes(original)
+    cause = OSError(32, "private_marker C:\\fixture\\private-file.toml")
+
+    def fail_read(*_args: object) -> NoReturn:
+        raise cause
+
+    monkeypatch.setattr(config_source_io, "_read_descriptor", fail_read)
+    with pytest.raises(GuardConfigSourceError) as caught:
+        _ = capture_guard_config(path)
+    assert caught.value.__cause__ is cause
+    detail = failure_evidence(caught.value)
+    assert detail["category"] == "GuardConfigSourceError"
+    assert detail["reason"] == "unclassified_failure"
+    assert detail["diagnostic_digest"] == "0738075fe78c3c3f3717ba62fdb3e78611bf0bad995eb513d0e7d83e87c730dc"
+    assert detail["config_cause_count"] == 1
+    assert detail["config_cause_1_category"] == type(cause).__name__
+    assert detail["config_cause_1_errno"] == 32
+    assert detail["config_cause_1_origin"] == "config_source_io._capture_in_parent"
+    assert "private_marker" not in json.dumps(detail)
+    assert path.read_bytes() == original
+    forwarded = failure_evidence(FixtureFailureError(detail))
+    assert forwarded == {**detail, "reason": "qualification_fixture.unclassified_failure"}
+
+
+def test_configuration_cause_evidence_is_bounded_and_retains_numeric_windows_error() -> None:
+    error = GuardConfigSourceError("guard_config_source_unavailable")
+    cause = OSError(13, "private_marker")
+    cause.winerror = 32
+    error.__cause__ = cause
+    detail = failure_evidence(error)
+    assert detail["config_cause_1_winerror"] == 32
+    assert detail["config_cause_1_errno"] == 13
+    assert "private_marker" not in json.dumps(detail)
+
+
+def test_configuration_cause_collection_never_consults_custom_exception_callbacks() -> None:
+    class HostileError(OSError):
+        def __getattribute__(self, _name: str) -> NoReturn:
+            pytest.fail("custom cause attribute must not be read")
+
+        def __str__(self) -> NoReturn:
+            pytest.fail("custom cause message must not be formatted")
+
+    error = GuardConfigSourceError("guard_config_source_unavailable")
+    error.__cause__ = HostileError("private_marker")
+    detail = failure_evidence(error)
+    assert detail["config_cause_count"] == 1
+    assert detail["config_cause_1_category"] == "unclassified"
+    assert detail["config_cause_unavailable"] is True
+    assert "private_marker" not in json.dumps(detail)
+
+
+def test_configuration_cause_collection_preserves_suppression_and_bounds_cycles() -> None:
+    error = GuardConfigSourceError("guard_config_source_unavailable")
+    error.__context__ = OSError(13, "private_marker")
+    error.__suppress_context__ = True
+    assert failure_evidence(error)["config_cause_count"] == 0
+    error.__cause__ = error
+    detail = failure_evidence(error)
+    assert detail["config_cause_cycle"] is True
+    assert detail["config_cause_count"] == 0
+
+
+def test_configuration_cause_collection_stops_after_three_explicit_links() -> None:
+    error = GuardConfigSourceError("guard_config_source_unavailable")
+    previous: Exception = error
+    for _index in range(4):
+        current = RuntimeError("private_marker")
+        previous.__cause__ = current
+        previous = current
+    detail = failure_evidence(error)
+    assert detail["config_cause_count"] == 3
+    assert detail["config_cause_truncated"] is True
+    assert not any(key.startswith("config_cause_4_") for key in detail)
+    wrapped = {"runs": [{"arms": [{"failure": detail}]}]}
+    assert failures.assert_privacy_safe(wrapped) == wrapped
+
+
+def test_optional_configuration_diagnostic_failure_keeps_primary_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    error = GuardConfigSourceError("guard_config_source_unavailable")
+
+    def fail_diagnostic(_error: Exception) -> NoReturn:
+        raise RuntimeError("private_marker")
+
+    monkeypatch.setattr(failures, "_configuration_failure_metadata", fail_diagnostic)
+    detail = failure_evidence(error)
+    assert detail["category"] == "GuardConfigSourceError"
+    assert detail["reason"] == "unclassified_failure"
+    assert detail["config_diagnostic_available"] is False
+    assert "private_marker" not in json.dumps(detail)

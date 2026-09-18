@@ -32,6 +32,29 @@ _CODEX_FILE_FAILURE_CODES = frozenset(
     for role in _CODEX_FILE_ROLES
     for suffix in ("missing", "not_regular", "owner_untrusted", "permissions_unsafe", "not_executable")
 )
+_CONFIG_CAUSE_TYPES = (
+    OSError,
+    PermissionError,
+    FileNotFoundError,
+    NotADirectoryError,
+    IsADirectoryError,
+    FileExistsError,
+    BlockingIOError,
+    TimeoutError,
+    InterruptedError,
+    BrokenPipeError,
+    ConnectionError,
+    ConnectionAbortedError,
+    ConnectionRefusedError,
+    ConnectionResetError,
+    RuntimeError,
+    ValueError,
+    TypeError,
+    AttributeError,
+    ImportError,
+    ModuleNotFoundError,
+    NotImplementedError,
+)
 
 
 def _interpreter_failure_metadata() -> dict[str, object]:
@@ -90,6 +113,45 @@ def _location(error: Exception) -> dict[str, object]:
     return result
 
 
+def _configuration_failure_metadata(error: Exception) -> dict[str, object]:
+    """Retain explicit bounded causes after rejection, without reading files or error text."""
+    from codex_plugin_scanner.guard.config_source_io import GuardConfigSourceError
+
+    if type(error) is not GuardConfigSourceError:
+        return {}
+    result: dict[str, object] = {"config_diagnostic_available": True, "config_cause_count": 0}
+    seen = {id(error)}
+    cause = error.__cause__
+    for index in range(1, 4):
+        if cause is None:
+            break
+        if id(cause) in seen:
+            result["config_cause_cycle"] = True
+            break
+        seen.add(id(cause))
+        prefix = f"config_cause_{index}_"
+        cause_type = type(cause)
+        result["config_cause_count"] = index
+        if not any(cause_type is allowed for allowed in _CONFIG_CAUSE_TYPES):
+            result[prefix + "category"] = "unclassified"
+            result["config_cause_unavailable"] = True
+            break
+        result[prefix + "category"] = cause_type.__name__
+        if isinstance(cause, Exception):
+            for name, value in _location(cause).items():
+                if name != "errno" or (type(value) is int and 0 <= value <= 0xFFFFFFFF):
+                    result[prefix + name] = value
+        if isinstance(cause, OSError):
+            winerror = getattr(cause, "winerror", None)
+            if type(winerror) is int and 0 <= winerror <= 0xFFFFFFFF:
+                result[prefix + "winerror"] = winerror
+        cause = cause.__cause__
+    else:
+        if cause is not None:
+            result["config_cause_truncated"] = True
+    return result
+
+
 def failure_evidence(error: Exception) -> dict[str, object]:
     if isinstance(error, FixtureFailureError):
         return {**error.detail, "reason": "qualification_fixture." + str(error.detail["reason"])[:64]}
@@ -101,6 +163,11 @@ def failure_evidence(error: Exception) -> dict[str, object]:
         "diagnostic_digest": hashlib.sha256(message.encode("utf-8", errors="replace")).hexdigest(),
         **_location(error),
     }
+    try:
+        evidence.update(_configuration_failure_metadata(error))
+    except Exception:
+        # Optional failure evidence must not replace the original failure.
+        evidence["config_diagnostic_available"] = False
     from codex_plugin_scanner.guard.codex_hook_file_integrity import CodexHookIntegrityError
 
     if isinstance(error, CodexHookIntegrityError) and error.reason in _CODEX_FILE_FAILURE_CODES:

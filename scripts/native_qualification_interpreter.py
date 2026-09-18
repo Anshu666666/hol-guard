@@ -20,6 +20,8 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
+from scripts.native_qualification_process import observe_probe_exit
+
 _MAX_INTERPRETER_BYTES = 128 * 1024 * 1024
 _MAX_CONFIG_BYTES = 16 * 1024
 _MAX_PROBE_BYTES = 16 * 1024
@@ -153,7 +155,7 @@ def _probe_output(python: Path, environment: dict[str, str], *, managed: bool) -
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError("qualification_interpreter_probe_deadline")
-            status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            status = observe_probe_exit(process.pid)
             if status is not None:
                 if status.si_code != os.CLD_EXITED or status.si_status != 0:
                     raise RuntimeError("qualification_interpreter_isolated_probe_failed")
@@ -166,14 +168,18 @@ def _probe_output(python: Path, environment: dict[str, str], *, managed: bool) -
         # The leader may already have exited while a descendant retains a
         # pipe. Do not poll/reap it before retiring the owned session on that
         # failure path: its unreaped PID keeps the group identity reserved.
-        if failed:
-            with suppress(ProcessLookupError):
-                os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=2)
-        if process.stdout is not None:
-            process.stdout.close()
-        if process.stderr is not None:
-            process.stderr.close()
+        try:
+            if failed:
+                try:
+                    with suppress(ProcessLookupError):
+                        os.killpg(process.pid, signal.SIGKILL)
+                finally:
+                    process.wait(timeout=2)
+        finally:
+            if process.stdout is not None:
+                process.stdout.close()
+            if process.stderr is not None:
+                process.stderr.close()
 
 
 def _probe(python: Path, *, managed: bool) -> dict[str, Any]:

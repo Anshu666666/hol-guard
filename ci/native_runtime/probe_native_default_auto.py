@@ -24,7 +24,6 @@ if str(_REPO_ROOT) not in sys.path:
 
 import codex_plugin_scanner
 from codex_plugin_scanner.guard.config import hook_fast_path_enabled
-from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
 from codex_plugin_scanner.guard.native_resident_client import (
@@ -347,6 +346,18 @@ def _publisher_error_diagnostic(publisher: object) -> str | None:
     return code if type(code) is str and code in allowed else "other"
 
 
+def _evidence_failure_snapshot(value: object) -> dict[str, int] | None:
+    """Keep diagnostics unavailable for an installed baseline without counters."""
+
+    try:
+        from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
+    except ModuleNotFoundError as error:
+        if error.name != "codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics":
+            raise
+        return None
+    return evidence_failure_snapshot(value)
+
+
 def _installed_hook_corpus(root: Path) -> dict[str, object]:
     guard_home = root / "hook-home"
     workspace = root / "hook-workspace"
@@ -435,8 +446,8 @@ def _installed_hook_corpus(root: Path) -> dict[str, object]:
             "durable_pending": evidence_stats["receipt_durable_pending"],
         },
         "evidence_failure_diagnostics": {
-            "all_evidence": evidence_failure_snapshot(evidence_stats.get("failure_diagnostics")),
-            "native_receipts": evidence_failure_snapshot(evidence_stats.get("receipt_failure_diagnostics")),
+            "all_evidence": _evidence_failure_snapshot(evidence_stats.get("failure_diagnostics")),
+            "native_receipts": _evidence_failure_snapshot(evidence_stats.get("receipt_failure_diagnostics")),
         },
         "mode_invariants": mode_invariants,
     }

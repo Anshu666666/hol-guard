@@ -20,11 +20,11 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 104
+    assert payload["scope_files"] == 105
     assert payload["capabilities"] == {
         "hook_control_and_transport": 81,
         "python_reference_oracle": 17,
-        "hook_evidence_persistence": 4,
+        "hook_evidence_persistence": 5,
         "legacy_python_resident_transport": 2,
     }
     assert payload["candidate_evidence"] == [
@@ -39,6 +39,14 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
     assert payload["dynamic_import_destinations_checked"] is True
     assert payload["dynamic_import_unbounded"] == []
     assert payload["dynamic_import_count"] == len(payload["dynamic_import_evidence"])
+
+
+def test_evidence_diagnostics_has_explicit_non_authoritative_ownership() -> None:
+    contract, owners, scope = GATE._validate_contract(ROOT)
+    path = "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py"
+    assert path in scope
+    assert owners[path] == "hook_evidence_persistence"
+    assert GATE._capability_classes(contract)[owners[path]] == "required_control_plane"
 
 
 def test_native_review_and_codex_continuation_files_have_explicit_control_ownership() -> None:

@@ -4,11 +4,44 @@ use std::sync::atomic::Ordering;
 pub(crate) struct ApprovalPolicyFence<'a> {
     pub(crate) generation: u64,
     pub(crate) policy_digest: &'a str,
+    pub(crate) source_input_digest: Option<&'a str>,
     pub(crate) rule_digest: &'a str,
     pub(crate) runtime_identity: &'a str,
 }
 
 impl PolicySnapshotStore {
+    /// Keep source reconstruction and issuance under the current snapshot lock.
+    /// The callback cannot reacquire state; external authority is checked again
+    /// before its result is returned.
+    pub(crate) fn with_versioned_approval_fence<F, T>(
+        &self,
+        envelope: &guard_contracts::GuardHookEnvelopeV2,
+        callback: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce(&AuthenticatedPolicySnapshot) -> Result<T, String>,
+    {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| "native_policy_snapshot_state_unavailable".to_owned())?;
+        let snapshot = self.validate_request_snapshot_locked(
+            &state,
+            &envelope.policy_snapshot,
+            &envelope.source.guard_home,
+            envelope.policy_generation,
+            now_ms()?,
+        )?;
+        let result = callback(snapshot.as_ref())?;
+        self.validate_request_snapshot_locked(
+            &state,
+            &envelope.policy_snapshot,
+            &envelope.source.guard_home,
+            envelope.policy_generation,
+            now_ms()?,
+        )?;
+        Ok(result)
+    }
     pub(crate) fn approval_v4_authority(
         &self,
     ) -> Result<&crate::policy_store::approval_v4_authority::ApprovalV4Authority, String> {
@@ -120,6 +153,7 @@ impl PolicySnapshotStore {
         if state.invalid_on_startup
             || *snapshot.generation() != expected.generation
             || snapshot.policy_digest() != expected.policy_digest
+            || snapshot.source_input_digest() != expected.source_input_digest
             || snapshot.rule_digest() != expected.rule_digest
             || snapshot.runtime_identity() != expected.runtime_identity
         {
@@ -160,6 +194,7 @@ impl PolicySnapshotStore {
         if state.invalid_on_startup
             || *snapshot.generation() != expected.generation
             || snapshot.policy_digest() != expected.policy_digest
+            || snapshot.source_input_digest() != expected.source_input_digest
             || snapshot.rule_digest() != expected.rule_digest
             || snapshot.runtime_identity() != expected.runtime_identity
         {

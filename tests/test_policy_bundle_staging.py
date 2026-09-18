@@ -32,6 +32,12 @@ _TIME = datetime(2026, 9, 17, tzinfo=timezone.utc).timestamp()
 _WORKSPACE = "00000000-0000-4000-8000-000000000061"
 
 
+def _path_child(parent: dict[str, Any] | list[Any], part: str) -> dict[str, Any] | list[Any]:
+    child = parent[int(part)] if isinstance(parent, list) else parent[part]
+    assert isinstance(child, (dict, list))
+    return child
+
+
 def _fixture(
     tmp_path: Path,
     *,
@@ -75,7 +81,7 @@ def _fixture(
             parent: dict[str, Any] | list[Any] = command
             parts = path.split(".")
             for part in parts[:-1]:
-                parent = parent[int(part)] if isinstance(parent, list) else parent[part]
+                parent = _path_child(parent, part)
             assert isinstance(parent, dict)
             parent[parts[-1]] = value
     generic_rules = [plain] if generic else []

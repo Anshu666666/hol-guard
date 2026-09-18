@@ -15,6 +15,7 @@ from typing import Any
 import pytest
 
 from codex_plugin_scanner.guard import native_hook_edge
+from codex_plugin_scanner.guard.config import load_guard_config
 from codex_plugin_scanner.guard.native_policy_authority_contract import (
     NATIVE_SCOPED_AUTHORITY_FEATURE,
     NativePolicyAuthorityCapabilities,
@@ -22,17 +23,44 @@ from codex_plugin_scanner.guard.native_policy_authority_contract import (
 from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
+from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_native_policy_v3
 from scripts.native_slo_session import stop_native_resident
 from tests.native_expression_resident_fixtures import (
     ARTIFACT,
     COMMAND,
     EXACT_COMMAND,
     ExpressionSource,
+    configure_expression_fixture_policy,
     expression_test_status,
     prepare_expression_store,
     publish_expression_source,
 )
 from tests.native_scoped_resident_fixtures import raw_payload
+
+
+def test_expression_resident_baseline_config_is_explicit_and_retains_risk_floors(tmp_path: Path) -> None:
+    store, _ = prepare_expression_store(tmp_path)
+    loaded = load_guard_config(store.guard_home)
+    policy = effective_native_policy_v3(loaded)
+    defaults = effective_native_policy_v3(load_guard_config(tmp_path / "unconfigured"))
+    assert loaded.mode == "enforce"
+    assert policy["default_action"] == "allow"
+    assert policy["harness_actions"] == {"codex": "allow"}
+    assert policy["unknown_publisher_action"] == "allow"
+    assert policy["subprocess_action"] == "allow"
+    for key in (
+        "risk_actions",
+        "changed_hash_action",
+        "new_network_domain_action",
+        "sandbox_analysis",
+        "protection_posture",
+    ):
+        assert policy[key] == defaults[key]
+    assert policy["changed_hash_action"] == "require-reapproval"
+    risks = policy["risk_actions"]
+    assert isinstance(risks, dict)
+    assert risks["guard_bypass"] == "block"
+    assert risks["local_secret_read"] == "require-reapproval"
 
 
 def test_expression_resident_source_preflight_is_signed_complete_and_expiry_bound(tmp_path: Path) -> None:
@@ -66,6 +94,9 @@ def test_signed_command_expressions_are_consumed_by_actual_resident(
     source: ExpressionSource | None = None
     monkeypatch.setattr(native_hook_edge, "native_runtime_status", lambda: status)
     store, workspace = prepare_expression_store(tmp_path)
+    # Prove the real configured Review floor first. A later explicit fixture
+    # configuration must produce Allow before any signed expression is added.
+    configure_expression_fixture_policy(store, unknown_publisher_action="review")
     other_workspace = tmp_path / "other-workspace"
     other_workspace.mkdir()
     publisher = NativePolicySnapshotPublisher(store=store, status_provider=lambda: status)
@@ -116,7 +147,14 @@ def test_signed_command_expressions_are_consumed_by_actual_resident(
     try:
         publisher._publish_once()
         assert publisher.is_ready(), publisher.last_error
+        configured_review = require_action(evaluate(), "review", None)
+        configure_expression_fixture_policy(store)
+        publisher.request_publish()
+        assert not publisher.is_ready()
+        publisher._publish_once()
+        assert publisher.is_ready(), publisher.last_error
         before = require_action(evaluate(), "allow", None)
+        assert before["receipt"]["policy_digest"] != configured_review["receipt"]["policy_digest"]
         source = publish_expression_source(store, workspace)
         assert not publisher.is_ready()
         publisher._publish_once()

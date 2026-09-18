@@ -31,6 +31,7 @@ jobs:
           uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_expression_resident_fixtures.py tests/test_native_expression_policy_resident.py
           uv run --no-sync pytest -q tests/test_native_expression_resident_evidence.py
           uv run --no-sync pytest -q tests/test_native_expression_policy_resident.py::test_expression_resident_source_preflight_is_signed_complete_and_expiry_bound
+          uv run --no-sync pytest -q tests/test_native_expression_policy_resident.py::test_expression_resident_baseline_config_is_explicit_and_retains_risk_floors
       - name: Build runtime from exact source
         env:
           HOL_GUARD_BUILD_SHA: ${{ github.sha }}

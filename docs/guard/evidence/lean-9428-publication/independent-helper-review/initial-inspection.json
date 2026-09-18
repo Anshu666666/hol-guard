@@ -1,0 +1,60 @@
+{
+  "schema": "hol-guard.lean-digest-restoration-independent-review.v1",
+  "reviewed_at": "2026-09-18T14:22:52.007058+00:00",
+  "scope": "Read-only exact commit/source/receipt inspection; no scan, test, source edit, ignore mutation or GitHub action performed.",
+  "reviewed_commit": "5e5f5fe5beaaee38d526f4cd8fc34e99488ea0d9",
+  "source_parent": "4edad2ca1dc075c69cbec7c3b59d1a59fc4d3505",
+  "tree": "c57e1166bf1c9836c494ec26ea42f674d7700fe1",
+  "cleanup_commit": "c9ed06bbcb7cef2ecbb93955fdad34be71710aa7",
+  "historical_parent": "590ce01334a7724f3f1349b2ab252110a5a268f5",
+  "restoration_receipt_sha256": "95641ad039570da467e7d7280a640c506d17af9303f787a189ec2dbf6b89b1e3",
+  "audit_sha256": "9a96e3f1d617b6fc829631a767776ff9a7a76364b27aeba55bdf3f4060081ff3",
+  "helper_sha256": "b3cd31aa37cb36cca9a0b1fa76513463eccf1bfd6609325bbe6ef1fbfaf56fe3",
+  "original_helper_sha256": "b9bb79f126d122e1d75476d02aaf753563b81dbf6c4230ab19f578aaae918bd7",
+  "commit_checks": {
+    "changed_paths": [
+      ".gitleaksignore"
+    ],
+    "inserted_lines": 100,
+    "original_cleanup_bytes_remain_exact_prefix": true,
+    "original_cleanup_fingerprint_order_preserved": true,
+    "restored_fingerprints": 96,
+    "restored_set_equals_audited_findings_and_exact_historical_removal": true,
+    "restored_order_matches_original_historical_order": true,
+    "cleanup_fingerprint_count": 55,
+    "final_fingerprint_count": 151,
+    "final_fingerprint_set_equals_historical_set": true,
+    "other_cleanup_controls_byte_identical": [
+      ".gitignore",
+      ".gitattributes"
+    ],
+    "deleted_historical_paths_checked_absent": 1306
+  },
+  "helper_checks": {
+    "binary_sha256_version_and_release_base_unchanged": true,
+    "scan_command_ast_identical_to_original": true,
+    "environment_selection_and_config_removal_unchanged": true,
+    "scan_range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..args.commit",
+    "single_parent_asserted_as_cleanup_commit": true,
+    "actual_tree_matches_local_clean_tree": true,
+    "restoration_and_audit_bytes_hard_pinned": true,
+    "exact_ignore_from_actual_commit_matches_local_bytes": true,
+    "other_controls_match_actual_commit_parent_and_local_bytes": true,
+    "deleted_paths_absence_guarded": true,
+    "receipt_explicitly_records_suppression_added_and_ignore_changed": true,
+    "receipt_disclaims_new_fingerprint_patterns_and_security_alert_changes": true
+  },
+  "findings": [
+    {
+      "id": "exact-restoration-tree-binding",
+      "status": "reported_before_use",
+      "detail": "The helper compares actual commit tree to clean local HEAD but does not compare either to the hard-pinned restoration receipt local_tree. A different clean tree containing the same ignore/controls and absent deleted paths can satisfy the present assertions.",
+      "minimal_correction": "Assert tree == restoration[\"local_tree\"] and verify restoration[\"local_commit\"] resolves to that tree before scanning."
+    }
+  ],
+  "limitations": [
+    "This is static and object-data review, not a scanner result.",
+    "The reviewed local staging commit has parent4edad; the later actual publication object must have exactly c9 as its sole parent and the reviewed tree. The helper is designed to verify that actual object at invocation.",
+    "All limitations of the pinned historical audit remain in force, including unavailable historical launcher bytes and unchanged original runtime failures."
+  ]
+}

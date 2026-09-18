@@ -1,0 +1,30 @@
+{
+  "schema": "hol-guard.lean-digest-restoration-revised-helper-review.v1",
+  "reviewed_at": "2026-09-18T14:24:22.264441+00:00",
+  "helper_sha256": "9a03448d5caebe0f08ae5531ba8a7f776a1757e6073ac630c29ad7e1383cc3cf",
+  "original_helper_sha256": "b9bb79f126d122e1d75476d02aaf753563b81dbf6c4230ab19f578aaae918bd7",
+  "initial_inspection_sha256": "51e7b006ce6417898cf26f4d7bcf0b96dc3795e65dda71b7b6a0ea93642f9aef",
+  "scope": "Read-only revised helper review before invocation; no scans, tests, source changes or GitHub mutation.",
+  "finding_disposition": {
+    "id": "exact-restoration-tree-binding",
+    "status": "addressed_in_helper_pending_exact_final_metadata_readback",
+    "clarification": "Initial finding concerned final publication binding in the scanner helper, not the production source or ignore-only commit. Directly freezing the final tree at the restoration tree would reject expected lean documentation. The revised design correctly pins separate final publication metadata and restricts subsequent paths."
+  },
+  "revised_checks": {
+    "publication_metadata_path_and_digest_required": true,
+    "publication_bytes_equal_supplied_digest": true,
+    "actual_and_clean_local_tree_equal_metadata_tree": true,
+    "local_head_equals_metadata_head": true,
+    "supplied_root_equals_metadata_root": true,
+    "actual_single_parent_equals_metadata_and_fixed_c9_parent": true,
+    "restoration_commit_resolves_to_exact_pinned_tree": true,
+    "restoration_commit_is_ancestor_of_local_prepared_head": true,
+    "post_restoration_diff_limited_to_seven_exact_lean_document_paths": true,
+    "scan_command_and_binary_base_environment_unchanged": true,
+    "original_helper_unmodified": true,
+    "receipt_records_final_metadata_digest_restoration_source_and_later_paths": true
+  },
+  "remaining_findings": [],
+  "pending": "Inspect the final prepared-publication metadata and exact Git object once supplied; current tree-build.json is the earlier six-group source tree reconstruction, not final publication metadata.",
+  "source_scope": "Restoration commit5e5f remains source-parent4edad, changes only .gitleaksignore, preserves all96 exact audited fingerprints and all1306 deletions. No new qualification credit."
+}

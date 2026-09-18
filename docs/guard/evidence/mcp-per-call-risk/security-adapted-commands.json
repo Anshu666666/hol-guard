@@ -1,0 +1,58 @@
+{
+  "cwd": "/workspace/scratch/c25672eb4c10/rsp100-per-call",
+  "lock": [
+    "flock",
+    "--close",
+    "-w",
+    "180",
+    "/workspace/scratch/c25672eb4c10/validation.lock"
+  ],
+  "environment": {
+    "PYTHONPATH": "src"
+  },
+  "python": "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+  "focused": [
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_mcp_per_call_risk_prototype.py"
+  ],
+  "broad": [
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "-p",
+    "tests.guard_mcp_per_call_prototype_plugin",
+    "--per-call-prototype-receipt=/workspace/scratch/c25672eb4c10/rsp100-review/per-call-security-adapted-integration.json",
+    "-k",
+    "not retained_default_derives_facts_at_both_authority_consumers",
+    "tests/test_runtime_mcp_tool_call_binding.py",
+    "tests/test_mcp_request_risk_facts.py",
+    "tests/test_mcp_catalog_generation_cache.py",
+    "tests/test_mcp_framing_bounds.py",
+    "tests/test_guard_runtime_mcp_saved_blocks.py",
+    "tests/test_guard_mcp_package_proxy_phase14.py",
+    "tests/test_guard_external_archive_launch_binding.py",
+    "tests/test_runtime_mcp_authority_callbacks.py",
+    "tests/test_mcp_package_drain_authority_review.py"
+  ],
+  "type_arguments": [
+    "-m",
+    "basedpyright",
+    "--pythonpath",
+    "/workspace/scratch/c25672eb4c10/validation-venv/bin/python",
+    "--outputjson",
+    "scripts/guard_mcp_per_call_risk_prototype.py",
+    "tests/test_mcp_per_call_risk_prototype.py",
+    "tests/guard_mcp_per_call_prototype_plugin.py"
+  ],
+  "ruff_files": [
+    "scripts/guard_mcp_per_call_risk_prototype.py",
+    "tests/test_mcp_per_call_risk_prototype.py",
+    "tests/guard_mcp_per_call_prototype_plugin.py"
+  ]
+}

@@ -28,11 +28,11 @@ jobs:
           uv python install 3.12
           python_path=$(uv python find 3.12)
           "$python_path" -c 'import sys,unicodedata; assert sys.version_info[:2] == (3,12); assert unicodedata.unidata_version == "15.0.0"'
-          uv pip install --python "$python_path" pip
+          uv venv --python "$python_path" --seed /tmp/oracle-download-env
           mkdir -p /tmp/native-extension-oracle/wheels
           uv export --frozen --no-dev --extra dev --no-emit-project --format requirements-txt --output-file /tmp/native-extension-oracle/requirements.txt
-          "$python_path" -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels --requirement /tmp/native-extension-oracle/requirements.txt
-          "$python_path" -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels 'hatchling<1.31'
+          /tmp/oracle-download-env/bin/python -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels --requirement /tmp/native-extension-oracle/requirements.txt
+          /tmp/oracle-download-env/bin/python -m pip download --only-binary=:all: --dest /tmp/native-extension-oracle/wheels 'hatchling<1.31'
           python_root=$(dirname "$(dirname "$python_path")")
           tar -C "$python_root" -czf /tmp/native-extension-oracle/python312.tar.gz .
           "$python_path" -c 'import sys,unicodedata; print(sys.version); print(unicodedata.unidata_version)' > /tmp/native-extension-oracle/VERSION.txt

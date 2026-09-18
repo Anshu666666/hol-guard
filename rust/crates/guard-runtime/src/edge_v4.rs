@@ -1,9 +1,10 @@
 //! Scoped resident evaluation with an exact immutable source commitment.
 
 use crate::edge::{authoritative_event, canonical_harness, payload_kind, request_identity};
-use crate::native_hook_receipt::receipt_from_scoped_pre_tool;
+use crate::native_hook_receipt::{receipt_from_post_tool, receipt_from_scoped_pre_tool};
 use guard_contracts::{
-    GuardHookEnvelopeV2, GuardHookPayloadKindV2, NativeHookDecisionReceiptV1, PreToolResultV1,
+    GuardHookEnvelopeV2, GuardHookPayloadKindV2, HookReviewResponseV1, NativeHookDecisionReceiptV1,
+    NativeHookRequestV1, PreToolResultV1, NATIVE_PROTOCOL_VERSION,
 };
 use guard_policy_snapshot::PolicySnapshotV4;
 use serde::Serialize;
@@ -29,10 +30,17 @@ struct ScopedEdgeResult<'a> {
     harness: String,
     event_name: String,
     payload_kind: GuardHookPayloadKindV2,
-    result: PreToolResultV1,
-    observed_policy_action: Option<&'static str>,
+    result: ScopedHookResult,
+    observed_policy_action: Option<String>,
     receipt: NativeHookDecisionReceiptV1,
     policy_binding: ScopedDecisionBinding<'a>,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum ScopedHookResult {
+    Pre(PreToolResultV1),
+    Post(HookReviewResponseV1),
 }
 
 /// Only the versioned resident store may provide the authenticated snapshot.
@@ -44,37 +52,129 @@ pub(crate) fn evaluate(
     let harness = canonical_harness(&envelope.harness)?;
     let event_name = authoritative_event(&envelope)?;
     let kind = payload_kind(&envelope.raw_payload)?;
-    if event_name != "PreToolUse" || kind != GuardHookPayloadKindV2::Inline {
+    let defaults_only = snapshot.scoped_authority.is_defaults_only();
+    if (!defaults_only && (event_name != "PreToolUse" || kind != GuardHookPayloadKindV2::Inline))
+        || kind == GuardHookPayloadKindV2::EncryptedPayloadRef
+        || !matches!(event_name.as_str(), "PreToolUse" | "PostToolUse")
+    {
         return Err("native_scoped_hook_route_unsupported".to_owned());
     }
     let (request_id, request_digest) = request_identity(&envelope)?;
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| "native_policy_clock_invalid".to_owned())?
-        .as_millis();
-    let now_ms = u64::try_from(now).map_err(|_| "native_policy_clock_invalid".to_owned())?;
-    let intrinsic = guard_command::pretool::evaluate_pre_tool_envelope(
-        &harness,
-        &event_name,
-        &envelope.raw_payload,
-    );
-    let evaluated = crate::policy_scoped_enforcement::apply_scoped_pre_tool_policy(
-        snapshot, &envelope, &harness, intrinsic, now_ms,
-    )?;
     // The receipt uses the verified full snapshot, never unverified fields
     // supplied beside a compact request reference.
     let mut receipt_envelope = envelope;
     receipt_envelope.policy_snapshot = serde_json::to_value(snapshot)
         .map_err(|_| "native_hook_edge_response_invalid".to_owned())?;
-    let receipt = receipt_from_scoped_pre_tool(
-        &receipt_envelope,
-        &request_id,
-        &request_digest,
-        &harness,
-        &kind,
-        &evaluated.result,
-        evaluated.observed_policy_action,
-    )?;
+    let (result, observed_policy_action, selected_decision_id, receipt) =
+        if event_name == "PreToolUse" {
+            let intrinsic = guard_command::pretool::evaluate_pre_tool_envelope(
+                &harness,
+                &event_name,
+                &receipt_envelope.raw_payload,
+            );
+            // Preserve the existing V4 producer/composition wherever it has a
+            // proven identity. The broader defaults route applies only when the
+            // complete authority is empty, so it cannot omit a scoped condition.
+            let scoped_request = kind == GuardHookPayloadKindV2::Inline
+                && crate::policy_scoped_request::derive_scoped_policy_request(
+                    &receipt_envelope,
+                    &harness,
+                )
+                .is_ok();
+            let (result, observed, selected) = if defaults_only && !scoped_request {
+                let observed = if snapshot.mode == "observe" {
+                    Some(
+                        crate::policy_enforcement::apply_pre_tool_defaults(
+                            &snapshot.effective_policy,
+                            "enforce",
+                            &receipt_envelope.raw_payload,
+                            intrinsic.clone(),
+                        )?
+                        .policy_action,
+                    )
+                } else {
+                    None
+                };
+                let result = crate::policy_enforcement::apply_pre_tool_defaults(
+                    &snapshot.effective_policy,
+                    &snapshot.mode,
+                    &receipt_envelope.raw_payload,
+                    intrinsic,
+                )?;
+                (result, observed, None)
+            } else {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map_err(|_| "native_policy_clock_invalid".to_owned())?
+                    .as_millis();
+                let now_ms =
+                    u64::try_from(now).map_err(|_| "native_policy_clock_invalid".to_owned())?;
+                let evaluated = crate::policy_scoped_enforcement::apply_scoped_pre_tool_policy(
+                    snapshot,
+                    &receipt_envelope,
+                    &harness,
+                    intrinsic,
+                    now_ms,
+                )?;
+                (
+                    evaluated.result,
+                    evaluated.observed_policy_action.map(str::to_owned),
+                    evaluated.selected_decision_id,
+                )
+            };
+            let receipt = receipt_from_scoped_pre_tool(
+                &receipt_envelope,
+                &request_id,
+                &request_digest,
+                &harness,
+                &kind,
+                &result,
+                observed.as_deref(),
+            )?;
+            (ScopedHookResult::Pre(result), observed, selected, receipt)
+        } else {
+            // Only a fully authenticated, empty scoped authority reaches this
+            // branch. A scoped row or managed origin cannot be silently ignored.
+            let request = NativeHookRequestV1 {
+                protocol_version: NATIVE_PROTOCOL_VERSION,
+                request_id: receipt_envelope.request_id.clone(),
+                harness: harness.clone(),
+                event_name: event_name.clone(),
+                payload: receipt_envelope.raw_payload.clone(),
+                cwd: receipt_envelope.source.cwd.clone(),
+                home_dir: receipt_envelope.source.home_dir.clone(),
+                guard_home: receipt_envelope.source.guard_home.clone(),
+                source_ref_external_allowed: receipt_envelope.source.source_ref_external_allowed,
+                observe_mode: false,
+                deadline_budget_ms: receipt_envelope.deadline_budget_ms,
+            };
+            let intrinsic = guard_hook_core::review_post_tool(&request);
+            let mut result = crate::policy_enforcement::apply_post_tool_defaults(
+                &snapshot.effective_policy,
+                &snapshot.mode,
+                &request,
+                kind.clone(),
+                intrinsic,
+            )?;
+            // The existing default routine owns decision/excerpt semantics. Bind
+            // its observation metadata to the authenticated V4 mode as well.
+            result.observe_mode = snapshot.mode == "observe";
+            result.observed_policy_action = result
+                .observe_mode
+                .then(|| result.policy_action.clone())
+                .flatten();
+            let observed = result.observed_policy_action.clone();
+            let receipt = receipt_from_post_tool(
+                &receipt_envelope,
+                None,
+                &request_id,
+                &request_digest,
+                &harness,
+                &kind,
+                &result,
+            )?;
+            (ScopedHookResult::Post(result), observed, None, receipt)
+        };
     crate::encode_response(&ScopedEdgeResult {
         schema: "guard-hook-edge-result.v3",
         authority: "rust",
@@ -82,8 +182,8 @@ pub(crate) fn evaluate(
         harness,
         event_name,
         payload_kind: kind,
-        result: evaluated.result,
-        observed_policy_action: evaluated.observed_policy_action,
+        result,
+        observed_policy_action,
         receipt,
         policy_binding: ScopedDecisionBinding {
             policy_generation: snapshot.generation,
@@ -91,7 +191,7 @@ pub(crate) fn evaluate(
             source_input_digest: &snapshot.source_input_digest,
             runtime_identity: &snapshot.runtime_identity,
             resident_generation,
-            selected_decision_id: evaluated.selected_decision_id,
+            selected_decision_id,
         },
     })
 }

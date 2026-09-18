@@ -19,6 +19,7 @@ from .native_policy_snapshot_constants import (
 )
 
 if TYPE_CHECKING:
+    from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
     from .store import GuardStore
 
 
@@ -246,8 +247,10 @@ class NativePolicySnapshotPublisherInputs:
             from .native_policy_snapshot_publisher_scoped import scoped_policy_input_changed
 
             return scoped_policy_input_changed(self, force_republish=force_republish)
+        from .native_policy_snapshot_publisher_context import compiled_v3_compatible_policy
+
         try:
-            effective_policy, cloud_inputs = self._compiled_native_policy()
+            effective_policy, cloud_inputs = compiled_v3_compatible_policy(cast("NativePolicySnapshotPublisher", self))
             # ``_compiled_effective_policy`` carries the raw mode beside the
             # bounded policy so snapshot generation can derive enforce versus
             # observe. ``config_digest`` deliberately covers only the
@@ -261,8 +264,17 @@ class NativePolicySnapshotPublisherInputs:
                 cast(str, effective_policy["mode"]),
             )
         except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError, sqlite3.Error):
-            current_fingerprint = ("unavailable", "")
-            cloud_inputs = NativeCloudPolicyInputs()
+            # Even a malformed new row or managed source changes the required
+            # contract. It cannot retain a source-free resident's ready state.
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            changed = (
+                self._observed_policy_fingerprint != ("unavailable", "") or self._observed_scoped_digest is not None
+            )
+            self._observed_policy_fingerprint = ("unavailable", "")
+            self._observed_scoped_digest = None
+            return force_republish or changed
         # Observation is independent of acknowledgment: unchanged inputs must
         # not reset a failed publication's retry backoff on every database write.
         previous_fingerprint = (
@@ -271,7 +283,8 @@ class NativePolicySnapshotPublisherInputs:
             else self._published_policy_fingerprint
         )
         self._observed_policy_fingerprint = current_fingerprint
-        source_changed = self._observed_cloud_inputs.source_identity != cloud_inputs.source_identity
+        source_changed = self._observed_scoped_digest != cloud_inputs.input_digest
+        self._observed_scoped_digest = cloud_inputs.input_digest
         self._observed_cloud_inputs = cloud_inputs
         return force_republish or source_changed or previous_fingerprint != current_fingerprint
 

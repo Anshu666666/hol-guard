@@ -21,6 +21,8 @@ GENERIC = "test_generic_origins_reach_actual_auto_resident"
 GENERIC_CONTROL = "test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident"
 GENERIC_DEFAULT_SYNC = "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[defaults]"
 GENERIC_SCOPED_SYNC = "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[scoped]"
+DEFAULTS_ENFORCE = "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[enforce]"
+DEFAULTS_OBSERVE = "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[observe]"
 SOURCE = "a" * 40
 
 
@@ -75,6 +77,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
             f'<testcase name="{name}">{children}</testcase><testcase name="{SECOND}"/>'
             f'<testcase name="{GENERIC}"/><testcase name="{GENERIC_CONTROL}"/>'
             f'<testcase name="{GENERIC_DEFAULT_SYNC}"/><testcase name="{GENERIC_SCOPED_SYNC}"/>'
+            f'<testcase name="{DEFAULTS_ENFORCE}"/><testcase name="{DEFAULTS_OBSERVE}"/>'
         )
 
     def test_only_exact_completed_case_emits_passing_source_scoped_report(self):
@@ -83,7 +86,9 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
         assert report is not None
         self.assertEqual(report["status"], "pass")
         self.assertEqual(report["schema"], "native-origin-resident-proof.v1")
-        self.assertEqual(report["assertionCount"], 6)
+        self.assertEqual(report["assertionCount"], 8)
+        self.assertEqual(report["defaultsHookModes"], ["enforce", "observe"])
+        self.assertEqual(report["defaultsHookEvents"], ["PreToolUse", "PostToolUse"])
         self.assertEqual(report["genericSignedSyncShapes"], ["defaults", "scoped"])
         self.assertEqual(report["genericOriginVectorCount"], 260)
         self.assertEqual(report["sourceSha"], SOURCE)
@@ -150,7 +155,7 @@ class SensitiveResidentEvidenceTests(unittest.TestCase):
                     self.assertFalse(report["allAssertionsPassed"])
 
     def test_each_generic_sync_shape_must_complete_and_pass(self):
-        for name in (GENERIC_DEFAULT_SYNC, GENERIC_SCOPED_SYNC):
+        for name in (GENERIC_DEFAULT_SYNC, GENERIC_SCOPED_SYNC, DEFAULTS_ENFORCE, DEFAULTS_OBSERVE):
             for replacement in (
                 "",
                 f'<testcase name="{name}"><skipped/></testcase>',

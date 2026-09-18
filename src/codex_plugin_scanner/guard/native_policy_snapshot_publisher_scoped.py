@@ -142,14 +142,6 @@ def publish_scoped(
         with publisher._condition:
             if publisher._closed or publisher._epoch != publish_epoch:
                 return
-            # Metadata checks run in the publisher worker, never a synchronous hook.
-            # A mutation during the authenticated re-read cannot be committed under
-            # an unchanged epoch merely because its earlier source digest matched.
-            if (
-                publisher._current_input_fingerprint()[0] != after_inputs
-                or connection.execute("pragma data_version").fetchone()[0] != data_version
-            ):
-                raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
             confirmed = publisher._confirm_resident_fingerprint(
                 before_resident,
                 observed_resident,
@@ -159,6 +151,15 @@ def publish_scoped(
             generation_path = f"/generation-{publication.resident_generation:020d}.json"
             if confirmed is None or not any(path.endswith(generation_path) for path, _, _ in confirmed):
                 raise NativePolicySnapshotError("native_policy_snapshot_resident_changed")
+            # Resident confirmation also performs filesystem reads. Recheck the
+            # publication epoch and complete source after those reads, off hook.
+            if publisher._closed or publisher._epoch != publish_epoch:
+                return
+            if (
+                publisher._current_input_fingerprint()[0] != after_inputs
+                or connection.execute("pragma data_version").fetchone()[0] != data_version
+            ):
+                raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
             now_ms = int(publisher._wall_clock() * 1000)
             if cast(int, snapshot["expires_at_ms"]) <= now_ms or (
                 current_inputs.expires_at_ms is not None and current_inputs.expires_at_ms <= now_ms

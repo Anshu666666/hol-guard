@@ -4,6 +4,9 @@ use guard_policy_snapshot::{
     POLICY_SNAPSHOT_V4_PUSH_SCHEMA, POLICY_SNAPSHOT_V4_SCHEMA,
 };
 
+#[path = "edge_v4_defaults_tests.rs"]
+mod defaults_edge_tests;
+
 fn snapshot_v4(generation: u64, key: &[u8], root: &Path) -> PolicySnapshotV4 {
     let base = signed_snapshot(generation, key, root);
     let mut value = serde_json::to_value(base).unwrap();

@@ -97,6 +97,15 @@ on:
       - "tests/test_native_sensitive_read_policy_vectors.py"
       - "tests/test_native_sensitive_read_runtime_policy.py"
       - "tests/test_native_sensitive_read_sources.py"
+      - "src/codex_plugin_scanner/guard/native_scoped_result.py"
+      - "src/codex_plugin_scanner/guard/native_hook_edge.py"
+      - "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py"
+      - "src/codex_plugin_scanner/guard/daemon/hook_worker_responses.py"
+      - "tests/test_native_defaults_edge.py"
+      - "tests/test_native_scoped_worker_fence.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py"
+      - "tests/test_native_policy_source_selection.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -139,6 +148,8 @@ jobs:
         run: uv run --no-sync pytest -q tests/test_native_policy_bundle_ack.py tests/test_generic_policy_native_application.py tests/test_policy_bundle_sync_outcomes.py tests/test_policy_bundle_v2_runtime_admission.py tests/test_native_policy_config_mutation.py tests/test_policy_bundle_staging.py tests/test_policy_bundle_v2.py tests/test_canonical_policy_row_authority.py tests/test_guard_settings_sync_preservation.py tests/test_native_policy_row_sort.py tests/test_native_expression_sync.py tests/test_native_expression_policy_resident.py::test_expression_resident_baseline_config_is_explicit_and_retains_risk_floors tests/test_native_expression_sync_resident.py::test_signed_sync_fixture_leaves_target_policy_unstaged
       - name: Verify sensitive reads and independent configuration origins
         run: uv run --no-sync pytest -q tests/test_managed_action_origin.py tests/test_managed_action_representation.py tests/test_managed_local_origin.py tests/test_native_managed_capture.py tests/test_native_managed_configuration.py tests/test_native_managed_configuration_wire.py tests/test_native_sensitive_read_managed_floors.py tests/test_native_sensitive_read_mixed_origin_vectors.py tests/test_native_sensitive_read_policy_vectors.py tests/test_native_sensitive_read_runtime_policy.py tests/test_native_sensitive_read_sources.py tests/test_guard_mdm_policy.py tests/test_guard_protection_posture.py tests/test_guard_approval_context.py
+      - name: Verify complete source selection and hook response fences
+        run: uv run --no-sync pytest -q tests/test_native_policy_source_selection.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py
       - name: Preserve authority and I/O ownership
         run: |
           uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .

@@ -350,6 +350,23 @@ impl NativePolicyAuthority {
         self.0.managed_config.as_deref()
     }
 
+    /// True only when no scoped condition or independently composed origin
+    /// remains. The containing snapshot still requires full authentication.
+    pub fn is_defaults_only(&self) -> bool {
+        let RawAuthority {
+            schema: _,
+            generic_precedence: _,
+            rows,
+            managed,
+            command_expressions,
+            managed_config,
+        } = &self.0;
+        rows.is_empty()
+            && managed.is_none()
+            && command_expressions.is_empty()
+            && managed_config.is_none()
+    }
+
     pub fn canonical_bytes(&self) -> Result<Vec<u8>, AuthorityError> {
         let value = serde_json::to_value(self).map_err(|_| AuthorityError::Encoding)?;
         let bytes = super::canonical_json_bytes(&value).map_err(|_| AuthorityError::Encoding)?;

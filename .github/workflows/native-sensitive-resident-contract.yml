@@ -29,7 +29,7 @@ jobs:
           uv run --no-sync ruff check tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/test_native_sensitive_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
           uv run --no-sync ruff format --check tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/test_native_sensitive_resident_evidence.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
           uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_sensitive_resident_fixtures.py tests/test_native_sensitive_policy_resident.py tests/test_native_generic_policy_resident.py tests/test_native_generic_sync_resident.py tests/native_source_bundle.py tests/test_native_source_bundle.py tests/native_generic_policy_vectors.py tests/test_native_generic_policy_vectors.py tests/test_generic_rule_observe_outer.py tests/test_generic_managed_benign_outer.py
-          uv run --no-sync pytest -q tests/test_native_sensitive_resident_evidence.py tests/test_native_source_bundle.py tests/test_native_scoped_result.py tests/test_native_hook_edge.py
+          uv run --no-sync pytest -q tests/test_native_sensitive_resident_evidence.py tests/test_native_source_bundle.py tests/test_native_scoped_result.py tests/test_native_hook_edge.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py tests/test_native_policy_source_selection.py
           uv run --no-sync pytest -q tests/test_native_sensitive_policy_resident.py::test_sensitive_resident_fixture_uses_actual_loaded_origins tests/test_native_generic_policy_resident.py::test_generic_resident_fixture_preserves_all_actual_origin_projections tests/test_native_generic_sync_resident.py::test_generic_sync_source_is_signed_and_target_authority_is_unstaged
           uv run --no-sync pytest -q tests/test_generic_managed_origin_outer.py tests/test_generic_managed_benign_outer.py tests/test_generic_rule_observe_outer.py tests/test_native_generic_policy_vectors.py
       - name: Build runtime from exact source
@@ -95,6 +95,8 @@ jobs:
               "test_generic_signed_lockdown_and_withdrawal_reach_actual_auto_resident",
               "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[defaults]",
               "test_ordinary_generic_sync_requires_actual_auto_resident_acceptance[scoped]",
+              "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[enforce]",
+              "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[observe]",
           }
           passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
               all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
@@ -122,6 +124,8 @@ jobs:
               "sourceAdmission": "loaded-mdm-test-file-and-ordinary-signed-sync",
               "genericOriginVectorCount": 260,
               "genericSignedSyncShapes": ["defaults", "scoped"],
+              "defaultsHookModes": ["enforce", "observe"],
+              "defaultsHookEvents": ["PreToolUse", "PostToolUse"],
               "nativeAutoRequired": True,
               "productionAdvertisement": "not-evaluated",
               "installedWheel": "not-evaluated",
@@ -129,7 +133,7 @@ jobs:
           }
           (directory / "proof.json").write_text(json.dumps(report, indent=2) + "\n")
           print(json.dumps(report))
-          assert passed, "All six origin and signed-sync resident cases must execute and pass against exact clean source."
+          assert passed, "All eight origin and signed-sync resident cases must execute and pass against exact clean source."
           PY
       - name: Retain origin resident assertions
         if: always()

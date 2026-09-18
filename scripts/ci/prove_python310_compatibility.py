@@ -17,9 +17,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 BASE = "bc0479bcab1cbc925421c9ebc7a7b926bccd131d"
 BASE_TREE = "28ad4a5c3f0f3f5860f81a19c150b43aca7b6ba6"
-PARENT = "5dc6b72ecca8bceb9bf57971df54d4a0461b2175"
+PARENT = "f62e3cb7008eaf98ff0c2e2f9f9635af6b4448ee"
 HTTP = "tests/test_guard_bounded_http_exception_compatibility.py"
 LIFECYCLE = "tests/test_guard_daemon_lifecycle_transition.py"
 LIFECYCLE_CASE = "test_failed_start_retains_ownership_when_serve_join_returns_a_live_thread"
@@ -35,6 +37,7 @@ CHANGED = {
 PHASES = ("setup", "call", "teardown")
 _COLLECTED: list[dict[str, Any]] = []
 _REPORTS: list[dict[str, Any]] = []
+_CALL_ERRORS: dict[tuple[str, str], dict[str, object]] = {}
 _DESELECTED = 0
 _COLLECTION_ERRORS = 0
 _INTERNAL_ERRORS = 0
@@ -98,15 +101,52 @@ def pytest_internalerror(excrepr: Any, excinfo: Any) -> None:
     _INTERNAL_ERRORS += 1
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: Any, call: Any):
+    yield
+    if call.excinfo is None:
+        return
+    error = call.excinfo.value
+    terminal = error.__traceback__
+    bounded_terminal = False
+    for _ in range(64):
+        if terminal is None:
+            break
+        if terminal.tb_next is None:
+            bounded_terminal = True
+            break
+        terminal = terminal.tb_next
+    exact_attribute = type(error) is AttributeError
+    target = getattr(error, "obj", None) if exact_attribute else None
+    source_frame = bool(
+        bounded_terminal and terminal is not None
+        and Path(terminal.tb_frame.f_code.co_filename).resolve()
+        == Path("src/codex_plugin_scanner/guard/daemon/bounded_http.py").resolve()
+        and terminal.tb_frame.f_code.co_name == "handle_error"
+        and terminal.tb_frame.f_code.co_firstlineno == 341 and terminal.tb_lineno == 342
+    )
+    _CALL_ERRORS[(item.nodeid, call.when)] = {
+        "exceptionKind": "attribute" if exact_attribute else "assertion"
+        if type(error) is AssertionError else "runtime" if type(error) is RuntimeError else "other",
+        "expectedAttribute": exact_attribute and getattr(error, "name", None) == "exception",
+        "sysModuleObject": type(target) is type(sys) and getattr(target, "__name__", None) == "sys",
+        "sourceFrame": source_frame,
+    }
+
+
 def pytest_runtest_logreport(report: Any) -> None:
-    message = str(getattr(getattr(report.longrepr, "reprcrash", None), "message", ""))
-    missing_api = bool(re.fullmatch(
-        r"AttributeError: module 'sys' has no attribute 'exception'", message
-    ))
+    observed = _CALL_ERRORS.get((report.nodeid, report.when), {})
+    missing_api = (
+        observed.get("exceptionKind") == "attribute"
+        and observed.get("expectedAttribute") is True
+        and observed.get("sysModuleObject") is True
+        and observed.get("sourceFrame") is True
+    )
     _REPORTS.append({
         "node": report.nodeid, "when": report.when, "outcome": report.outcome,
         "failureCategory": "missing_sys_exception" if report.failed and missing_api
         else "unexpected_failure" if report.failed else None,
+        **({"exceptionObservation": observed} if report.failed else {}),
     })
 
 
@@ -267,6 +307,21 @@ def prove() -> int:
         if validate_collection(observed) != nodes:
             raise RuntimeError("selection_changed")
         reports = observed["reports"]
+        result["phaseReports"] = reports
+        result["observedRunnerExit"] = observed["exit"]
+        result["observedCallOutcomes"] = {
+            outcome: sum(row["when"] == "call" and row["outcome"] == outcome for row in reports)
+            for outcome in ("passed", "failed", "skipped")
+        }
+        result["cases"] = [
+            {**entry, "observedPhases": [row for row in reports if row["node"] == entry["node"]]}
+            for entry in nodes
+        ]
+        junit = ET.parse(destination / "results.xml").getroot()
+        suites = [junit] if junit.tag == "testsuite" else list(junit.iter("testsuite"))
+        totals = {key: sum(int(suite.attrib.get(key, 0)) for suite in suites)
+                  for key in ("tests", "failures", "errors", "skipped")}
+        result["junit"] = totals
         if len(reports) != 72 or {row["node"] for row in reports} != {row["node"] for row in nodes}:
             raise RuntimeError("phase_incomplete")
         cases = []
@@ -285,10 +340,6 @@ def prove() -> int:
             elif call["outcome"] != "passed":
                 raise RuntimeError("lifecycle_control_failed")
             cases.append({**entry, "outcome": call["outcome"], "failureCategory": call["failureCategory"]})
-        junit = ET.parse(destination / "results.xml").getroot()
-        suites = [junit] if junit.tag == "testsuite" else list(junit.iter("testsuite"))
-        totals = {key: sum(int(suite.attrib.get(key, 0)) for suite in suites)
-                  for key in ("tests", "failures", "errors", "skipped")}
         if totals != {"tests": 24, "failures": 22, "errors": 0, "skipped": 0}:
             raise RuntimeError("junit_mismatch")
         result["cases"] = cases

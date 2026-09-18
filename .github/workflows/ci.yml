@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 3
+          fetch-depth: 4
           persist-credentials: false
       - name: Verify reviewed driver and unchanged product before setup
         run: |
@@ -52,10 +52,10 @@ jobs:
               raise SystemExit("Diagnostic commit mismatch.")
           if git("rev-parse", "HEAD^{tree}") != tree:
               raise SystemExit("Diagnostic tree mismatch.")
-          if git("show", "-s", "--format=%P", "HEAD") != "5dc6b72ecca8bceb9bf57971df54d4a0461b2175":
+          if git("show", "-s", "--format=%P", "HEAD") != "f62e3cb7008eaf98ff0c2e2f9f9635af6b4448ee":
               raise SystemExit("Unexpected diagnostic parent.")
           expected = {
-              "scripts/ci/prove_python310_compatibility.py": "4f325bcb3d5830cf26699955bc256c46c298d2d3",
+              "scripts/ci/prove_python310_compatibility.py": "1f1c42c628e362d5c62f71683c2f9a1abb6e5c1f",
               "tests/test_guard_bounded_http_exception_compatibility.py": "a0d8a20f4e17694feccacaa8a2cec3af0c8901ac",
               "tests/test_guard_daemon_lifecycle_transition.py": "05db6d62a4cf734c77370daa148cb90fc26149d7",
               "src/codex_plugin_scanner/guard/daemon/bounded_http.py": "96561ddfaa5b0edb50b3a21ecf3ee1a9eeca68b8",

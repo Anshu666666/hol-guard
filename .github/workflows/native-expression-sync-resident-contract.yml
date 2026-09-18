@@ -1,0 +1,111 @@
+name: Native expression sync resident contract
+on:
+  push:
+    branches: [fix/native-expression-sync-resident-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-expression-sync-resident-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  expression-sync-resident:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Validate ordinary signed sync source fixture
+        run: |
+          uv run --no-sync ruff check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py
+          uv run --no-sync ruff format --check tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py tests/test_native_expression_sync_resident_evidence.py
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/native_expression_sync_fixtures.py tests/test_native_expression_sync_resident.py
+          uv run --no-sync pytest -q tests/test_native_expression_sync_resident_evidence.py
+          uv run --no-sync pytest -q tests/test_native_expression_sync_resident.py::test_signed_sync_fixture_leaves_target_policy_unstaged
+      - name: Build runtime from exact source
+        env:
+          HOL_GUARD_BUILD_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          rustup toolchain install 1.88.0 --profile minimal
+          export HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+      - name: Require ordinary signed sync and actual resident authority fences
+        env:
+          HOL_GUARD_NATIVE: auto
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+        run: |
+          mkdir -p artifacts/native-expression-sync-resident
+          uv run --no-sync pytest -q -m slow tests/test_native_expression_sync_resident.py --junitxml=artifacts/native-expression-sync-resident/results.xml
+      - name: Verify exact completed resident cases
+        if: always()
+        run: |
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          directory = Path("artifacts/native-expression-sync-resident")
+          directory.mkdir(parents=True, exist_ok=True)
+          result = directory / "results.xml"
+          root = ET.parse(result).getroot() if result.is_file() else None
+          cases = list(root.iter("testcase")) if root is not None else []
+          expected = {
+              "test_ordinary_signed_sync_reaches_actual_resident_and_preserves_authority_fences",
+          }
+          passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
+              all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
+          )
+          if root is not None:
+              passed = passed and not any(node.tag in {"skipped", "failure", "error"} for node in root.iter())
+              passed = passed and all(
+                  suite.get(field, "0") == "0"
+                  for suite in root.iter() if suite.tag in {"testsuite", "testsuites"}
+                  for field in ("errors", "failures", "skipped")
+              )
+          clean = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip() == ""
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          binary = Path("rust/target/release/hol-guard-runtime")
+          passed = passed and clean and source == os.environ["GITHUB_SHA"] and binary.is_file()
+          report = {
+              "schema": "native-expression-sync-resident-proof.v1",
+              "sourceSha": source,
+              "exactCleanSourceVerified": clean and source == os.environ["GITHUB_SHA"],
+              "runtimeBinarySha256": hashlib.sha256(binary.read_bytes()).hexdigest() if binary.is_file() else None,
+              "assertionCount": len(cases),
+              "allAssertionsPassed": passed,
+              "stagedFeatureNegotiation": True,
+              "ordinarySyncAdmission": "controlled-http-source-fixture",
+              "nativeAutoRequired": True,
+              "productionAdvertisement": "not-evaluated",
+              "installedWheel": "not-evaluated",
+              "status": "pass" if passed else "fail",
+          }
+          (directory / "proof.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report))
+          assert passed, "The ordinary-sync resident case must execute and pass against exact clean source."
+          PY
+      - name: Retain ordinary-sync resident assertions
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-expression-sync-resident-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/native-expression-sync-resident/proof.json
+            artifacts/native-expression-sync-resident/results.xml
+          if-no-files-found: error
+          retention-days: 30

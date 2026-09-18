@@ -89,6 +89,7 @@ from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
 from ..policy_document_io import PolicyCompilationError
+from ..policy_lane_capabilities import source_runtime_lane_observation
 from ..policy_memory_source import attach_disclosed_policy_source
 from ..policy_sync_outcomes import policy_sync_outcomes
 from ..redaction import redact_sensitive_text
@@ -149,6 +150,7 @@ from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_r
 from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
 from .receipt_sync_cursor import _receipt_sync_cursor_rowid, _receipt_sync_rows_for_upload
+from .session_observation import cloud_local_identity_source_payload as _cloud_local_identity_source_payload
 from .signals import RiskSignalV2
 from .supply_chain_bundle import (
     SupplyChainBundleError,
@@ -6112,6 +6114,7 @@ def _cloud_runtime_session_payload(store: GuardStore, session: dict[str, object]
         "localIdentity": local_identity,
         "localIdentitySource": _cloud_local_identity_source_payload(local_identity),
         "packageManagerCoverage": package_manager_coverage,
+        "runtimeLaneProfile": source_runtime_lane_observation(),
         "workspace": workspace,
         "capabilities": capabilities,
         "operations": [],
@@ -6188,24 +6191,6 @@ def _cloud_local_identity_payload(*, observed_at: str) -> dict[str, object]:
         payload["ipAddress"] = private_ip
         payload["privateIpAddress"] = private_ip
     return payload
-
-
-def _cloud_local_identity_source_payload(local_identity: dict[str, object]) -> dict[str, str]:
-    source: dict[str, str] = {
-        "daemonId": "local-guard",
-        "daemonVersion": "local-guard",
-        "daemonStatus": "local-guard",
-        "relayState": "local-guard",
-    }
-    if "hostname" in local_identity:
-        source["hostname"] = "local-guard"
-    if "ipAddress" in local_identity:
-        source["ipAddress"] = "local-guard"
-    if "privateIpAddress" in local_identity:
-        source["privateIpAddress"] = "local-guard"
-    if "publicIpAddress" in local_identity:
-        source["publicIpAddress"] = "local-guard"
-    return source
 
 
 def _safe_hostname() -> str | None:

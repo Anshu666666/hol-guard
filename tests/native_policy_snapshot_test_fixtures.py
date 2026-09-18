@@ -37,6 +37,7 @@ def _status() -> SimpleNamespace:
         compatible=True,
         identity=SimpleNamespace(path=Path("/tmp/hol-guard-runtime"), sha256="a" * 64),
         capabilities=SimpleNamespace(
+            extension_catalog_digest=None,
             rule_digest="b" * 64,
             features=(
                 "resident-protocol-v2",

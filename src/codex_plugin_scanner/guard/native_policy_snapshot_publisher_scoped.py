@@ -110,7 +110,9 @@ def publish_scoped(
             rule_digest=capabilities.rule_digest,
             master_key=master_key,
             inputs=inputs,
-            capabilities=NativePolicyAuthorityCapabilities(4, frozenset(capabilities.features)),
+            capabilities=NativePolicyAuthorityCapabilities(
+                4, frozenset(capabilities.features), capabilities.extension_catalog_digest
+            ),
             client=client,
             wall_clock=publisher._wall_clock,
             monotonic_clock=publisher._monotonic_clock,

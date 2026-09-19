@@ -42,6 +42,7 @@ from tests.guard_review_signing_helpers import (
     review_verification_keys,
     sign_review_payload,
 )
+from tests.oauth_refresh_fixture_support import validating_refresh_fixture
 
 
 @pytest.fixture(autouse=True)
@@ -1124,6 +1125,7 @@ def test_poll_once_reuses_cached_access_token_across_oauth_polls(
     observed_refresh_tokens: list[str] = []
     observed_access_tokens: list[str] = []
 
+    @validating_refresh_fixture
     def fake_refresh(
         *,
         token_endpoint: str,
@@ -1392,6 +1394,7 @@ def test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_sta
             waits.append(seconds)
             return len(waits) >= 3
 
+    @validating_refresh_fixture
     def fake_refresh(
         *,
         token_endpoint: str,

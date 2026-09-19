@@ -89,6 +89,7 @@ from codex_plugin_scanner.guard.store import (
 )
 from codex_plugin_scanner.guard.synced_policy import synced_policy_payload
 from tests.guard_review_authority_fixtures import enroll_review_authority
+from tests.oauth_refresh_fixture_support import validating_refresh_fixture
 from tests.policy_bundle_activation_helpers import activate_signed_policy_bundle
 from tests.policy_bundle_signing_helpers import (
     policy_bundle_test_keyring,
@@ -23854,6 +23855,7 @@ def test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation(tmp_p
         with refresh_lock:
             yield
 
+    @validating_refresh_fixture
     def _fake_refresh(
         *,
         token_endpoint: str,

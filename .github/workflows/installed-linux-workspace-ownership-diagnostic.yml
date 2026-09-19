@@ -1,0 +1,191 @@
+name: Installed Linux workspace ownership diagnosis at 8156
+
+on:
+  push:
+    branches:
+      - diagnostic/workspace-ownership-8156
+    paths:
+      - .github/workflows/installed-linux-workspace-ownership-diagnostic.yml
+      - ci/installed_lifecycle_diagnostic/summarize_workspace_attempt.py
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: installed-linux-workspace-ownership-diagnostic-8156
+  cancel-in-progress: false
+
+jobs:
+  workspace_publication:
+    name: Installed workspace ownership diagnosis (8156)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        path: diagnostic
+        persist-credentials: false
+        ref: ${{ github.sha }}
+        fetch-depth: 1
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: 8156ba5ec1e69908290d481bad421ba5f9bd93b2
+        path: source
+        persist-credentials: false
+        fetch-depth: 1
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      with:
+        python-version: 3.12.14
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+      with:
+        version: 0.9.26
+        enable-cache: false
+    - name: Prepare private evidence directory
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -m 700 "$RUNNER_TEMP/workspace-publication-evidence"
+      id: prepare
+    - name: Download and verify exact existing wheel
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -I diagnostic/ci/installed_lifecycle_diagnostic/download_bound_wheel.py \
+          --output-directory "$RUNNER_TEMP/workspace-publication-artifact" \
+          --receipt "$RUNNER_TEMP/workspace-publication-evidence/artifact-binding.json" \
+          --source-root "$GITHUB_WORKSPACE/source"
+      id: artifact
+    - name: Materialize exact qualification helpers and run offline controls
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -I -B diagnostic/ci/workspace_publication_diagnostic/materialize_helpers.py \
+          --production-source source
+        python -I -B diagnostic/ci/workspace_publication_diagnostic/offline_controls.py \
+          --output "$RUNNER_TEMP/workspace-publication-evidence/offline-controls.json"
+    - name: Install pinned dependency versions and the bound wheel without builds
+      shell: bash
+      run: |
+        set -euo pipefail
+        witness_venv="$RUNNER_TEMP/workspace-publication-venv"
+        witness_wheel="$RUNNER_TEMP/workspace-publication-artifact/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl"
+        uv venv --python "$pythonLocation/bin/python" "$witness_venv"
+        uv pip install --python "$witness_venv/bin/python" --no-deps --only-binary=:all: \
+          -r diagnostic/ci/installed_lifecycle_diagnostic/requirements-8156.txt \
+          -r diagnostic/ci/installed_lifecycle_diagnostic/requirements-workspace-observer-8156.txt \
+          "$witness_wheel"
+        uv pip check --python "$witness_venv/bin/python" > "$RUNNER_TEMP/workspace-publication-evidence/dependency-check.txt" 2>&1
+    - name: Record installed environment before execution
+      shell: bash
+      run: |
+        set -euo pipefail
+        "$RUNNER_TEMP/workspace-publication-venv/bin/python" -I -B \
+          diagnostic/ci/installed_lifecycle_diagnostic/snapshot_installed_environment.py \
+          --wheel "$RUNNER_TEMP/workspace-publication-artifact/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl" \
+          --output "$RUNNER_TEMP/workspace-publication-evidence/environment-before.json" \
+          --requirements "$GITHUB_WORKSPACE/diagnostic/ci/installed_lifecycle_diagnostic/requirements-8156.txt" \
+          --observer-requirements "$GITHUB_WORKSPACE/diagnostic/ci/installed_lifecycle_diagnostic/requirements-workspace-observer-8156.txt"
+      id: snapshot_before
+    - name: Check the actual Unix socket prerequisite once
+      id: prerequisite
+      timeout-minutes: 1
+      shell: bash
+      run: |
+        set -euo pipefail
+        "$RUNNER_TEMP/workspace-publication-venv/bin/python" -I -B \
+          diagnostic/ci/installed_lifecycle_diagnostic/probe_owned_unix_prerequisite.py \
+          --output "$RUNNER_TEMP/workspace-publication-evidence/unix-prerequisite.json"
+    - name: Run one finite installed workspace matrix
+      shell: bash
+      run: |
+        set -euo pipefail
+        "$RUNNER_TEMP/workspace-publication-venv/bin/python" -I -B \
+          diagnostic/ci/workspace_publication_diagnostic/run_witness.py \
+          --wheel "$RUNNER_TEMP/workspace-publication-artifact/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl" \
+          --output-directory "$RUNNER_TEMP/workspace-publication-evidence/attempt-001"
+      id: witness
+      timeout-minutes: 5
+    - name: Print bounded ownership and phase facts from the unchanged receipts
+      if: always() && steps.prepare.outcome == 'success'
+      timeout-minutes: 1
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -I -B diagnostic/ci/installed_lifecycle_diagnostic/summarize_workspace_attempt.py \
+          --attempt-directory "$RUNNER_TEMP/workspace-publication-evidence/attempt-001"
+    - name: Record installed environment after execution
+      if: always() && steps.snapshot_before.outcome == 'success'
+      shell: bash
+      run: |
+        set -euo pipefail
+        witness_venv="$RUNNER_TEMP/workspace-publication-venv"
+        if [ -x "$witness_venv/bin/python" ]; then
+          "$witness_venv/bin/python" -I -B \
+            diagnostic/ci/installed_lifecycle_diagnostic/snapshot_installed_environment.py \
+            --wheel "$RUNNER_TEMP/workspace-publication-artifact/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl" \
+            --output "$RUNNER_TEMP/workspace-publication-evidence/environment-after.json" \
+            --requirements "$GITHUB_WORKSPACE/diagnostic/ci/installed_lifecycle_diagnostic/requirements-8156.txt" \
+            --observer-requirements "$GITHUB_WORKSPACE/diagnostic/ci/installed_lifecycle_diagnostic/requirements-workspace-observer-8156.txt"
+        fi
+    - name: Require unchanged installed artifact snapshot
+      if: always() && steps.snapshot_before.outcome == 'success'
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -I -B - <<'PY'
+        import os
+        from pathlib import Path
+        root = Path(os.environ["RUNNER_TEMP"]) / "workspace-publication-evidence"
+        if (root / "environment-before.json").read_bytes() != (root / "environment-after.json").read_bytes():
+            raise SystemExit("installed_environment_changed")
+        PY
+    - name: Bind the hosted source and execution identity
+      if: always() && steps.prepare.outcome == 'success'
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -I -B - <<'PY_CONTEXT'
+        import hashlib, json, os
+        from pathlib import Path
+        root = Path(os.environ["GITHUB_WORKSPACE"]) / "diagnostic"
+        source_files = [root / ".github/workflows/installed-linux-workspace-ownership-diagnostic.yml"]
+        source_files += sorted((root / "ci/installed_lifecycle_diagnostic").glob("*.py"))
+        source_files += [root / "ci/installed_lifecycle_diagnostic/requirements-8156.txt"]
+        source_files += [root / "ci/installed_lifecycle_diagnostic/requirements-workspace-observer-8156.txt"]
+        source_files += sorted((root / "ci/workspace_publication_diagnostic").glob("*.py"))
+        source_files += [root / "ci/workspace_publication_diagnostic/source-manifest.json"]
+        names = ("GITHUB_REPOSITORY", "GITHUB_SHA", "GITHUB_REF", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB", "GITHUB_WORKFLOW_REF", "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion")
+        receipt = {"schema": "workspace-hosted-context.v1", "context": {name: os.environ.get(name) for name in names}, "diagnostic_sources": [{"path": str(path.relative_to(root)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "bytes": path.stat().st_size} for path in source_files]}
+        destination = Path(os.environ["RUNNER_TEMP"]) / "workspace-publication-evidence/hosted-context.json"
+        with destination.open("x") as handle:
+            json.dump(receipt, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        PY_CONTEXT
+    - name: Upload bounded workspace evidence
+      if: always() && steps.prepare.outcome == 'success'
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: installed-workspace-ownership-8156-${{ github.run_id }}-${{ github.run_attempt }}
+        if-no-files-found: error
+        retention-days: 90
+        path: |
+          ${{ runner.temp }}/workspace-publication-evidence/artifact-binding.json
+          ${{ runner.temp }}/workspace-publication-evidence/offline-controls.json
+          ${{ runner.temp }}/workspace-publication-evidence/environment-before.json
+          ${{ runner.temp }}/workspace-publication-evidence/environment-after.json
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/harness-source-inventory.json
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/receipt.json
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/worker-receipt.json
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/collector-report.json
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/publisher-ledger.jsonl
+          ${{ runner.temp }}/workspace-publication-evidence/attempt-001/receipt-identities.jsonl
+          ${{ runner.temp }}/workspace-publication-evidence/dependency-check.txt
+          ${{ runner.temp }}/workspace-publication-evidence/unix-prerequisite.json
+          ${{ runner.temp }}/workspace-publication-evidence/hosted-context.json
+    if: github.repository == 'hashgraph-online/hol-guard' && github.run_attempt == '1'

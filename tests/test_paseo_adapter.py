@@ -27,6 +27,7 @@ from codex_plugin_scanner.guard.inventory_contract import (
 )
 from codex_plugin_scanner.guard.managed_install_proof import bind_managed_install_proof, verify_managed_install_proof
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.guard_aibom_authority_support import seed_aibom_credentials
 
 
 @pytest.fixture
@@ -453,7 +454,7 @@ def test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_con
     native = GuardAgentInventorySnapshot("pi:native", "pi:agent", "pi", generated)
     snapshots = (local, native) if include_native else (local,)
     store = GuardStore(context.guard_home)
-    monkeypatch.setattr(store, "get_cloud_workspace_id", lambda: "workspace-1")
+    seed_aibom_credentials(store, workspace_id="workspace-1")
     sent: list[dict[str, object]] = []
     uploads: list[tuple[object, ...]] = []
 

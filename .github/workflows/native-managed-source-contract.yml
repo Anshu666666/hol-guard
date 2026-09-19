@@ -248,6 +248,85 @@ jobs:
           version: "0.9.26"
           enable-cache: false
       - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Prepare an owned Python executable for integrity checks
+        run: |
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import shutil
+          import sys
+          import sysconfig
+          from pathlib import Path
+
+          launcher = Path(sys.executable).absolute()
+          environment = Path(".venv").resolve(strict=True)
+          if launcher.parent != environment / "bin":
+              raise RuntimeError("Unexpected project interpreter location.")
+          configuration = environment / "pyvenv.cfg"
+          original_configuration = configuration.read_bytes()
+          source = launcher.resolve(strict=True)
+          owned = launcher.with_name(".python-owned")
+          with source.open("rb") as original, owned.open("xb") as destination:
+              shutil.copyfileobj(original, destination)
+          owned.chmod(0o700)
+          source_digest = hashlib.sha256(source.read_bytes()).hexdigest()
+          if hashlib.sha256(owned.read_bytes()).hexdigest() != source_digest:
+              raise RuntimeError("Project interpreter copy did not preserve its bytes.")
+          owned.replace(launcher)
+
+          from codex_plugin_scanner.guard.codex_hook_file_integrity import validate_regular_file
+          from codex_plugin_scanner.guard.codex_hook_launch_runtime import (
+              isolated_hook_environment,
+              run_isolated_hook_process,
+          )
+
+          validate_regular_file(launcher, role="interpreter", executable_required=True)
+          expected = {
+              "version": list(sys.version_info[:3]),
+              "prefix": sys.prefix,
+              "base_prefix": sys.base_prefix,
+              "purelib": sysconfig.get_path("purelib"),
+              "platlib": sysconfig.get_path("platlib"),
+              "sha256": source_digest,
+          }
+          probe_code = (
+              "import hashlib,json,sys,sysconfig;from pathlib import Path;"
+              "print(json.dumps({'version':list(sys.version_info[:3]),"
+              "'prefix':sys.prefix,'base_prefix':sys.base_prefix,"
+              "'purelib':sysconfig.get_path('purelib'),'platlib':sysconfig.get_path('platlib'),"
+              "'sha256':hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()}))"
+          )
+          probe = run_isolated_hook_process(
+              [str(launcher), "-I", "-c", probe_code],
+              input_text="",
+              cwd=environment,
+              environment=isolated_hook_environment(),
+              timeout_seconds=10,
+              output_limit=4096,
+          )
+          if (
+              probe.returncode != 0
+              or probe.timed_out
+              or probe.output_limit_exceeded
+              or probe.containment_failed
+          ):
+              raise RuntimeError(
+                  "The isolated project interpreter could not start: "
+                  + json.dumps(
+                      {
+                          "returncode": probe.returncode,
+                          "timed_out": probe.timed_out,
+                          "output_limit_exceeded": probe.output_limit_exceeded,
+                          "containment_failed": probe.containment_failed,
+                          "stderr": probe.stderr[-1000:],
+                      },
+                      sort_keys=True,
+                  )
+              )
+          if json.loads(probe.stdout) != expected or configuration.read_bytes() != original_configuration:
+              raise RuntimeError("The isolated project interpreter changed its environment or executable identity.")
+          print(json.dumps({"isolated_interpreter": "verified", "version": expected["version"], "sha256": source_digest}))
+          PY
       - name: Lint and typecheck the actual source closure
         run: |
           source_paths="$(uv run --no-sync python -c 'import json; print("\n".join(json.load(open("basedpyright.native-managed-source.json"))["include"]))')"

@@ -53,6 +53,87 @@ def _submit_method_has_no_decision_io(source: str) -> None:
         raise RuntimeError("receipt handoff submit method performs decision-time I/O")
 
 
+def _validate_submit_delegate(root: Path, writer_source: str) -> None:
+    """Keep the decision-I/O check on the actual admission body after its split."""
+    tree = ast.parse(writer_source)
+    classes = [
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "RuntimeHookEvidenceWriter"
+    ]
+    methods = [
+        node
+        for owner in classes
+        for node in owner.body
+        if isinstance(node, ast.FunctionDef) and node.name == "submit_native_decision_receipt"
+    ]
+    if len(classes) != 1 or len(methods) != 1:
+        raise RuntimeError("receipt handoff class or method is not unique")
+    method = methods[0]
+    helper_path = "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py"
+    helper_alias = "_evidence_operations"
+    mentions_helper = any(isinstance(node, ast.Name) and node.id == helper_alias for node in ast.walk(method))
+    imports = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+        and (
+            node.module == "runtime_hook_evidence_operations"
+            or any(alias.name == "runtime_hook_evidence_operations" for alias in node.names)
+        )
+    ]
+    if not imports and not mentions_helper and not (root / helper_path).exists():
+        return  # The unchanged historical direct admission body was already inspected.
+    if (
+        len(imports) != 1
+        or imports[0].level != 1
+        or imports[0].module is not None
+        or len(imports[0].names) != 1
+        or imports[0].names[0].name != "runtime_hook_evidence_operations"
+        or imports[0].names[0].asname != helper_alias
+    ):
+        raise RuntimeError("receipt admission helper import is disconnected")
+    body = list(method.body)
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+        if isinstance(body[0].value.value, str):
+            body.pop(0)
+    expected = ast.parse("return _evidence_operations.submit_native_decision_receipt(self, receipt)").body
+    if method.decorator_list or len(body) != 1 or ast.dump(body[0]) != ast.dump(expected[0]):
+        raise RuntimeError("receipt admission facade is not the exact unconditional delegate")
+    helper_source = _read(root, helper_path)
+    helper = ast.parse(helper_source, filename=helper_path)
+    targets = [
+        node
+        for node in helper.body
+        if isinstance(node, ast.FunctionDef) and node.name == "submit_native_decision_receipt"
+    ]
+    if len(targets) != 1 or targets[0].decorator_list:
+        raise RuntimeError("receipt admission helper is not one direct function")
+    for function in (method, targets[0]):
+        arguments = function.args
+        if (
+            [argument.arg for argument in arguments.args] != ["self", "receipt"]
+            or arguments.posonlyargs
+            or arguments.kwonlyargs
+            or arguments.vararg
+            or arguments.kwarg
+            or arguments.defaults
+            or arguments.kw_defaults
+        ):
+            raise RuntimeError("receipt admission helper argument contract changed")
+    facade_imports = [
+        node
+        for node in helper.body
+        if isinstance(node, ast.ImportFrom)
+        and node.level == 1
+        and node.module is None
+        and len(node.names) == 1
+        and node.names[0].name == "runtime_hook_evidence_writer"
+        and node.names[0].asname == "_writer"
+    ]
+    if len(facade_imports) != 1:
+        raise RuntimeError("receipt admission live facade import is disconnected")
+    _submit_method_has_no_decision_io(helper_source)
+
+
 def _validate_contract(root: Path) -> None:
     manifest = load_manifest(root / "docs/guard/contracts/hook-data-plane-ownership.v2.json")
     contract = manifest["decision_receipt"]
@@ -115,6 +196,7 @@ def _validate_python_sources(root: Path) -> None:
     )
     _contains_all(journal, ("NATIVE_HOOK_DECISION_RECEIPT_SCHEMA",), "receipt journal schema")
     _submit_method_has_no_decision_io(writer)
+    _validate_submit_delegate(root, writer)
 
 
 def _validate_hook_routes(root: Path) -> None:

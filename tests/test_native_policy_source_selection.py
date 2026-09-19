@@ -42,8 +42,8 @@ def test_empty_authenticated_authority_preserves_v3_regardless_of_available_v4_f
     try:
         context = publisher._publication_context()
         assert context is not None
-        assert isinstance(context[-1], NativeCloudPolicyInputs)
-        assert context[-1].defaults is None and context[-1].source_identity is None
+        assert isinstance(context[5], NativeCloudPolicyInputs)
+        assert context[5].defaults is None and context[5].source_identity is None
         assert publisher._scoped_publication_enabled is False
     finally:
         publisher.close()
@@ -72,9 +72,9 @@ def test_complete_local_authority_selects_supported_v4(tmp_path):
     )
     try:
         context = publisher._publication_context()
-        assert context is not None and isinstance(context[-1], NativeVerifiedPolicyInputs)
-        assert len(context[-1].authority.rows) == 1
-        assert context[-1].authority.rows[0].action.value == "block"
+        assert context is not None and isinstance(context[5], NativeVerifiedPolicyInputs)
+        assert len(context[5].authority.rows) == 1
+        assert context[5].authority.rows[0].action.value == "block"
     finally:
         publisher.close()
 
@@ -146,10 +146,10 @@ def test_existing_authenticated_defaults_v3_support_does_not_promote_canonical_r
         publisher._publish_once()
         assert publisher.is_ready(), publisher.last_error
         context = publisher._publication_context()
-        assert context is not None and isinstance(context[-1], NativeCloudPolicyInputs)
-        assert context[-1].defaults is not None and context[-1].source_identity is not None
-        assert context[-1].defaults["defaultAction"] == "block"
-        assert context[-1].source_identity[1] == bundle["bundleHash"]
+        assert context is not None and isinstance(context[5], NativeCloudPolicyInputs)
+        assert context[5].defaults is not None and context[5].source_identity is not None
+        assert context[5].defaults["defaultAction"] == "block"
+        assert context[5].source_identity[1] == bundle["bundleHash"]
         assert publisher._v4_publication is None
         assert store.get_sync_payload("policy_bundle_ack") == prior_ack
         assert store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
@@ -175,11 +175,11 @@ def test_authenticated_defaults_with_complete_v4_support_keeps_full_source_commi
     _activate_defaults(store, bundle, keys)
     try:
         context = publisher._publication_context()
-        assert context is not None and isinstance(context[-1], NativeVerifiedPolicyInputs)
-        assert context[-1].defaults is not None
-        assert context[-1].defaults["defaultAction"] == "block"
-        assert context[-1].sources[0]["digest"] == bundle["bundleHash"]
-        assert context[-1].authority.rows == ()
+        assert context is not None and isinstance(context[5], NativeVerifiedPolicyInputs)
+        assert context[5].defaults is not None
+        assert context[5].defaults["defaultAction"] == "block"
+        assert context[5].sources[0]["digest"] == bundle["bundleHash"]
+        assert context[5].authority.rows == ()
     finally:
         publisher.close()
 

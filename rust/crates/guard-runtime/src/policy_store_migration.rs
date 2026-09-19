@@ -64,6 +64,7 @@ pub(super) fn load_legacy_authority(
                     policy_digest: Some(floor.policy_digest),
                     invalid_on_startup: true,
                     migrate: true,
+                    command_control_floor: None,
                 });
             }
             return Err(error);
@@ -78,6 +79,7 @@ pub(super) fn load_legacy_authority(
                 policy_digest: None,
                 invalid_on_startup: false,
                 migrate: false,
+                command_control_floor: None,
             });
         };
         return Ok(LoadedAuthority {
@@ -87,6 +89,7 @@ pub(super) fn load_legacy_authority(
             policy_digest: Some(floor.policy_digest),
             invalid_on_startup: false,
             migrate: true,
+            command_control_floor: None,
         });
     };
 
@@ -134,6 +137,8 @@ pub(super) fn load_legacy_authority(
         policy_digest,
         invalid_on_startup,
         migrate: true,
+        // Command-control authority starts only from a current bound snapshot.
+        command_control_floor: None,
     })
 }
 

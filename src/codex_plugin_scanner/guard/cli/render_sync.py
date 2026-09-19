@@ -16,4 +16,6 @@ def render_sync_summary(console: Console, payload: dict[str, object]) -> None:
     degraded = payload.get("telemetry_status") == "degraded"
     if degraded:
         body.add_row("Telemetry", "uploads delayed")
+    elif payload.get("telemetry_status") == "paused":
+        body.add_row("Telemetry", "uploads paused")
     console.print(Panel(body, title="Guard sync complete", border_style="yellow" if degraded else "green"))

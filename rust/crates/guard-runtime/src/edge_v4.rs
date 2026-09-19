@@ -2,13 +2,15 @@
 
 use crate::edge::{authoritative_event, canonical_harness, payload_kind, request_identity};
 use crate::native_hook_receipt::{receipt_from_post_tool, receipt_from_scoped_pre_tool};
+use crate::policy_enforcement::AdmittedScopedPolicySnapshot;
 use guard_contracts::{
     GuardHookEnvelopeV2, GuardHookPayloadKindV2, HookReviewResponseV1, NativeHookDecisionReceiptV1,
     NativeHookRequestV1, PreToolResultV1, NATIVE_PROTOCOL_VERSION,
 };
+#[cfg(test)]
 use guard_policy_snapshot::PolicySnapshotV4;
 use serde::Serialize;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize)]
 #[serde(deny_unknown_fields)]
@@ -39,14 +41,14 @@ struct ScopedEdgeResult<'a> {
 #[derive(Serialize)]
 #[serde(untagged)]
 enum ScopedHookResult {
-    Pre(PreToolResultV1),
-    Post(HookReviewResponseV1),
+    Pre(Box<PreToolResultV1>),
+    Post(Box<HookReviewResponseV1>),
 }
 
 /// Only the versioned resident store may provide the authenticated snapshot.
-pub(crate) fn evaluate(
+pub(crate) fn evaluate_admitted(
     envelope: GuardHookEnvelopeV2,
-    snapshot: &PolicySnapshotV4,
+    snapshot: &AdmittedScopedPolicySnapshot,
     resident_generation: u64,
 ) -> Result<Vec<u8>, String> {
     let harness = canonical_harness(&envelope.harness)?;
@@ -63,65 +65,12 @@ pub(crate) fn evaluate(
     // The receipt uses the verified full snapshot, never unverified fields
     // supplied beside a compact request reference.
     let mut receipt_envelope = envelope;
-    receipt_envelope.policy_snapshot = serde_json::to_value(snapshot)
+    receipt_envelope.policy_snapshot = serde_json::to_value(snapshot.snapshot())
         .map_err(|_| "native_hook_edge_response_invalid".to_owned())?;
     let (result, observed_policy_action, selected_decision_id, receipt) =
         if event_name == "PreToolUse" {
-            let intrinsic = guard_command::pretool::evaluate_pre_tool_envelope(
-                &harness,
-                &event_name,
-                &receipt_envelope.raw_payload,
-            );
-            // Preserve the existing V4 producer/composition wherever it has a
-            // proven identity. The broader defaults route applies only when the
-            // complete authority is empty, so it cannot omit a scoped condition.
-            let scoped_request = kind == GuardHookPayloadKindV2::Inline
-                && crate::policy_scoped_request::derive_scoped_policy_request(
-                    &receipt_envelope,
-                    &harness,
-                )
-                .is_ok();
-            let (result, observed, selected) = if defaults_only && !scoped_request {
-                let observed = if snapshot.mode == "observe" {
-                    Some(
-                        crate::policy_enforcement::apply_pre_tool_defaults(
-                            &snapshot.effective_policy,
-                            "enforce",
-                            &receipt_envelope.raw_payload,
-                            intrinsic.clone(),
-                        )?
-                        .policy_action,
-                    )
-                } else {
-                    None
-                };
-                let result = crate::policy_enforcement::apply_pre_tool_defaults(
-                    &snapshot.effective_policy,
-                    &snapshot.mode,
-                    &receipt_envelope.raw_payload,
-                    intrinsic,
-                )?;
-                (result, observed, None)
-            } else {
-                let now = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map_err(|_| "native_policy_clock_invalid".to_owned())?
-                    .as_millis();
-                let now_ms =
-                    u64::try_from(now).map_err(|_| "native_policy_clock_invalid".to_owned())?;
-                let evaluated = crate::policy_scoped_enforcement::apply_scoped_pre_tool_policy(
-                    snapshot,
-                    &receipt_envelope,
-                    &harness,
-                    intrinsic,
-                    now_ms,
-                )?;
-                (
-                    evaluated.result,
-                    evaluated.observed_policy_action.map(str::to_owned),
-                    evaluated.selected_decision_id,
-                )
-            };
+            let (result, observed, selected) =
+                evaluate_pre_tool(&receipt_envelope, snapshot, &harness, &kind, defaults_only)?;
             let receipt = receipt_from_scoped_pre_tool(
                 &receipt_envelope,
                 &request_id,
@@ -131,7 +80,12 @@ pub(crate) fn evaluate(
                 &result,
                 observed.as_deref(),
             )?;
-            (ScopedHookResult::Pre(result), observed, selected, receipt)
+            (
+                ScopedHookResult::Pre(Box::new(result)),
+                observed,
+                selected,
+                receipt,
+            )
         } else {
             // Only a fully authenticated, empty scoped authority reaches this
             // branch. A scoped row or managed origin cannot be silently ignored.
@@ -151,6 +105,7 @@ pub(crate) fn evaluate(
             let intrinsic = guard_hook_core::review_post_tool(&request);
             let mut result = crate::policy_enforcement::apply_post_tool_defaults(
                 &snapshot.effective_policy,
+                &snapshot.compiled,
                 &snapshot.mode,
                 &request,
                 kind.clone(),
@@ -173,7 +128,12 @@ pub(crate) fn evaluate(
                 &kind,
                 &result,
             )?;
-            (ScopedHookResult::Post(result), observed, None, receipt)
+            (
+                ScopedHookResult::Post(Box::new(result)),
+                observed,
+                None,
+                receipt,
+            )
         };
     crate::encode_response(&ScopedEdgeResult {
         schema: "guard-hook-edge-result.v3",
@@ -194,4 +154,100 @@ pub(crate) fn evaluate(
             selected_decision_id,
         },
     })
+}
+
+fn evaluate_pre_tool(
+    envelope: &GuardHookEnvelopeV2,
+    snapshot: &AdmittedScopedPolicySnapshot,
+    harness: &str,
+    kind: &GuardHookPayloadKindV2,
+    defaults_only: bool,
+) -> Result<(PreToolResultV1, Option<String>, Option<u64>), String> {
+    let deadline = Some(
+        Instant::now()
+            + Duration::from_millis(envelope.deadline_budget_ms.unwrap_or(9_000).min(9_000)),
+    );
+    let scoped_request = *kind == GuardHookPayloadKindV2::Inline
+        && crate::policy_scoped_request::derive_scoped_policy_request(envelope, harness).is_ok();
+    if defaults_only && !scoped_request {
+        // Preserve the existing V3 ordering and Observe behavior for defaults.
+        let intrinsic = guard_command::pretool::evaluate_pre_tool_envelope_with_extensions(
+            harness,
+            "PreToolUse",
+            &envelope.raw_payload,
+            snapshot.command_extensions.as_ref(),
+            deadline,
+        );
+        let observed = if snapshot.mode == "observe" {
+            Some(
+                crate::policy_enforcement::apply_pre_tool_defaults(
+                    &snapshot.effective_policy,
+                    &snapshot.compiled,
+                    "enforce",
+                    &envelope.raw_payload,
+                    intrinsic.clone(),
+                )?
+                .policy_action,
+            )
+        } else {
+            None
+        };
+        let result = crate::policy_enforcement::apply_pre_tool_defaults(
+            &snapshot.effective_policy,
+            &snapshot.compiled,
+            &snapshot.mode,
+            &envelope.raw_payload,
+            intrinsic,
+        )?;
+        return Ok((result, observed, None));
+    }
+    // Scoped composition may satisfy the classifier's fallback review. Join
+    // independent command floors afterwards, including an equal review floor.
+    let (result, (observed, selected, composed_action)) =
+        guard_command::pretool::evaluate_pre_tool_envelope_with_composition(
+            harness,
+            "PreToolUse",
+            &envelope.raw_payload,
+            snapshot.command_extensions.as_ref(),
+            deadline,
+            |intrinsic| {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map_err(|_| "native_policy_clock_invalid".to_owned())?
+                    .as_millis();
+                let now_ms =
+                    u64::try_from(now).map_err(|_| "native_policy_clock_invalid".to_owned())?;
+                let evaluated =
+                    crate::policy_scoped_enforcement::apply_scoped_pre_tool_policy_compiled(
+                        snapshot,
+                        &snapshot.compiled,
+                        envelope,
+                        harness,
+                        intrinsic,
+                        now_ms,
+                    )?;
+                let composed_action = evaluated.result.minimum_action.clone();
+                Ok((
+                    evaluated.result,
+                    (
+                        evaluated.observed_policy_action.map(str::to_owned),
+                        evaluated.selected_decision_id,
+                        composed_action,
+                    ),
+                ))
+            },
+        )?;
+    crate::policy_enforcement::validate_pre_tool_result_matrix(&result)?;
+    let selected = selected.filter(|_| result.minimum_action == composed_action);
+    Ok((result, observed, selected))
+}
+
+#[cfg(test)]
+pub(crate) fn evaluate(
+    envelope: GuardHookEnvelopeV2,
+    snapshot: &PolicySnapshotV4,
+    resident_generation: u64,
+) -> Result<Vec<u8>, String> {
+    let admitted = AdmittedScopedPolicySnapshot::new(snapshot.clone())?;
+    evaluate_admitted(envelope, &admitted, resident_generation)
 }

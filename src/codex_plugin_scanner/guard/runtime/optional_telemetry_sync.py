@@ -42,6 +42,8 @@ def sync_nonessential_telemetry(
     previous_event_summary = store.get_sync_payload("guard_events_v1_summary")
     events = _upload(guard_events, authorization_errors)
     event_reason = events.reason or _returned_event_failure(events.value)
+    event_paused = events.reason is None and _returned_event_pause(events.value)
+    event_status = "degraded" if event_reason else "paused" if event_paused else "success"
     event_payload = events.value
     if events.reason is not None:
         previous = store.get_sync_payload("guard_events_v1_summary")
@@ -57,13 +59,13 @@ def sync_nonessential_telemetry(
             "progress_known": progress_known,
         }
     return {
-        "telemetry_status": "degraded" if pain.reason or event_reason else "success",
+        "telemetry_status": "degraded" if pain.reason or event_reason else "paused" if event_paused else "success",
         "pain_signals_uploaded": pain.value if pain.reason is None else pain.completed,
         "pain_signals_upload_status": "degraded" if pain.reason else "success",
         "pain_signals_upload_reason": pain.reason,
         "guard_events_v1": event_payload,
-        "guard_events_upload_status": "degraded" if event_reason else "success",
-        "guard_events_upload_reason": event_reason,
+        "guard_events_upload_status": event_status,
+        "guard_events_upload_reason": "optional_upload_paused" if event_paused else event_reason,
     }
 
 
@@ -117,7 +119,18 @@ def _failure_reason(chain: list[BaseException]) -> str:
     )
 
 
+def _returned_event_pause(value: object) -> bool:
+    return (
+        isinstance(value, dict)
+        and value.get("sync_skipped") is True
+        and value.get("sync_reason") == "optional_upload_paused"
+        and value.get("status") in (None, "paused")
+    )
+
+
 def _returned_event_failure(value: object) -> str | None:
+    if _returned_event_pause(value):
+        return None
     if not isinstance(value, dict) or (value.get("sync_skipped") is not True and value.get("status") != "failed"):
         return None
     return {

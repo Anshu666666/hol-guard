@@ -227,7 +227,7 @@ fn build_action_identity(
 pub(super) fn derive_context_with_snapshot(
     envelope: &guard_contracts::GuardHookEnvelopeV2,
     store: &crate::policy_store::PolicySnapshotStore,
-    snapshot: &guard_policy_snapshot::PolicySnapshotV3,
+    snapshot: &crate::policy_enforcement::AdmittedPolicySnapshot,
 ) -> Result<ApprovalContext, String> {
     let edge_bytes = crate::edge::evaluate_envelope_with_snapshot(envelope.clone(), snapshot)
         .map_err(|error| {
@@ -265,7 +265,7 @@ pub(super) fn derive_context_with_snapshot(
     context_from_result(
         envelope,
         store,
-        &AuthenticatedPolicySnapshot::V3(snapshot.clone()),
+        &AuthenticatedPolicySnapshot::V3(snapshot.snapshot().clone()),
         request_id,
         request_digest,
         edge_result.harness,

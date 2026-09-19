@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Any
 
 from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
+from .native_command_control_binding import validate_native_command_control_binding
 from .native_managed_capture import bind_configuration_origin
+from .native_policy_authority_blocked import command_controls_blocked
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_constants import _REQUIRED_PUBLISH_FEATURES, NativePolicySnapshotError
@@ -28,6 +30,7 @@ PublicationContext = tuple[
     Mapping[str, object],
     Callable[..., bytes | None],
     NativeCloudPolicyInputs | NativeVerifiedPolicyInputs,
+    Mapping[str, object],
 ]
 
 
@@ -58,6 +61,7 @@ def _v3_inputs_from_capture(
     inputs: NativeVerifiedPolicyInputs,
     *,
     allow_signed_defaults: bool,
+    command_extensions: Mapping[str, object],
 ) -> CapturedV3PublicationInputs:
     authority = inputs.authority
     if (
@@ -65,12 +69,15 @@ def _v3_inputs_from_capture(
         or publisher._source_memory_required
         or authority.rows
         or authority.command_expressions
-        or authority.managed is not None
         or authority.managed_config is not None
     ):
         raise NativePolicySnapshotError("native_policy_authority_scoped_consumer_required")
-    sources = inputs.sources
-    cloud = read_native_cloud_policy_inputs(publisher.store, now=publisher._wall_clock())
+    sources = _v3_sources_with_command_binding(inputs, command_extensions)
+    cloud = read_native_cloud_policy_inputs(
+        publisher.store,
+        now=publisher._wall_clock(),
+        command_controls_bound=authority.managed is not None,
+    )
     if sources:
         if not allow_signed_defaults or len(sources) != 1 or sources[0].get("kind") != "signed-bundle":
             raise NativePolicySnapshotError("native_policy_authority_scoped_consumer_required")
@@ -92,23 +99,76 @@ def _v3_inputs_from_capture(
     )
 
 
+def _v3_sources_with_command_binding(
+    inputs: NativeVerifiedPolicyInputs, binding: Mapping[str, object]
+) -> list[dict[str, object]]:
+    """Require the native program to consume the exact complete frozen controls.
+
+    The effective digest binds both original layers, their health, catalog and
+    independent revisions. Equality also preserves local opt-in origins that
+    a composed list alone cannot express. The source reader has already
+    rejected targeted rules, delegated targets and unsupported extensions.
+    """
+    validate_native_command_control_binding(binding)
+    controls = [
+        source for source in inputs.sources if source.get("kind") in {"managed-controls", "blocked-command-controls"}
+    ]
+    managed = inputs.authority.managed
+    if not controls:
+        if managed is not None or binding.get("health") != "unenrolled":
+            raise NativePolicySnapshotError("native_command_control_binding_changed")
+        return inputs.sources
+    if len(controls) != 1 or "authority" not in binding:
+        raise NativePolicySnapshotError("native_command_control_binding_changed")
+    source = controls[0]
+    if any(
+        binding.get(field) != source.get(field)
+        for field in ("revision", "managed_revision", "catalog_digest", "effective_digest")
+    ):
+        raise NativePolicySnapshotError("native_command_control_binding_changed")
+    if source.get("kind") == "blocked-command-controls":
+        if (
+            managed is not None
+            or not command_controls_blocked(binding)
+            or binding.get("health") != source.get("health")
+        ):
+            raise NativePolicySnapshotError("native_command_control_binding_changed")
+    elif (
+        managed is None
+        or binding.get("health") != "protected"
+        or any(
+            binding.get(field) != getattr(managed, field)
+            for field in ("revision", "managed_revision", "catalog_digest")
+        )
+    ):
+        raise NativePolicySnapshotError("native_command_control_binding_changed")
+    return [source for source in inputs.sources if source not in controls]
+
+
 def compiled_v3_compatible_policy(
     publisher: NativePolicySnapshotPublisher,
     *,
     allow_signed_defaults: bool = True,
+    command_extensions: Mapping[str, object] | None = None,
 ) -> tuple[dict[str, object], CapturedV3PublicationInputs]:
     refresh_source_requirement(publisher)
     # The observer can run before the first publication. Bootstrap only the
     # existing local integrity key; this never creates policy authority.
     publisher.store._policy_integrity_secret_material(create=True)
-    inputs = read_native_policy_authority_inputs(publisher.store, now=publisher._wall_clock())
+    if command_extensions is None:
+        command_extensions = publisher._compiled_command_extensions()
+    inputs = read_native_policy_authority_inputs(
+        publisher.store, now=publisher._wall_clock(), command_extensions=command_extensions
+    )
     config = (
         publisher._compiled_effective_policy()
         if inputs.defaults is None
         else publisher._compiled_effective_policy(cloud_defaults=inputs.defaults)
     )
     inputs = bind_configuration_origin(config, inputs)
-    return config, _v3_inputs_from_capture(publisher, inputs, allow_signed_defaults=allow_signed_defaults)
+    return config, _v3_inputs_from_capture(
+        publisher, inputs, allow_signed_defaults=allow_signed_defaults, command_extensions=command_extensions
+    )
 
 
 def publication_context(
@@ -171,33 +231,58 @@ def publication_context(
                 publish_epoch=publish_epoch,
             )
             return None
+        # Catalog preparation may invalidate an older publication epoch. It
+        # must finish before the coherent SQL/source capture begins.
+        command_extensions = self._compiled_command_extensions()
+        with self._condition:
+            if self._closed or self._epoch != publish_epoch:
+                return None
         if not self._scoped_publication_enabled and not features.intersection(SCOPED_PUBLISH_FEATURES):
             if not _REQUIRED_PUBLISH_FEATURES.issubset(features):
                 raise NativePolicySnapshotError("native_policy_snapshot_protocol_unsupported")
             # Retain the established authenticated V3 refusal diagnostics.
             # Passing this preflight never bypasses the complete capture below.
-            _ = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
+            _ = read_native_cloud_policy_inputs(
+                self.store,
+                now=self._wall_clock(),
+                command_controls_bound=command_extensions.get("health") == "protected",
+            )
         # Capabilities describe what a runtime can consume, not the authority
         # selected for this publication. Authenticate the complete input first.
-        config, inputs = compiled_scoped_policy(self)
+        config, inputs = (
+            compiled_scoped_policy(self, command_extensions=command_extensions)
+            if command_controls_blocked(command_extensions)
+            else compiled_scoped_policy(self)
+        )
+        # Both publication contracts carry the same command binding. A
+        # concurrent writer must not pair an earlier command projection with
+        # a later complete managed capture, even before the post-ACK fence.
+        _ = _v3_sources_with_command_binding(inputs, command_extensions)
         scoped = requires_scoped_publication(self, inputs)
-        compatible_defaults = (
+        compatible_v3 = (
             scoped
             and not self._scoped_publication_enabled
             and not features.intersection(SCOPED_PUBLISH_FEATURES)
             and not inputs.authority.rows
             and not inputs.authority.command_expressions
-            and inputs.authority.managed is None
             and inputs.authority.managed_config is None
             and not self._source_memory_required
-            and len(inputs.sources) == 1
-            and inputs.sources[0].get("kind") == "signed-bundle"
+            and all(
+                source.get("kind") in {"signed-bundle", "managed-controls", "blocked-command-controls"}
+                for source in inputs.sources
+            )
         )
         cloud_inputs: NativeCloudPolicyInputs | NativeVerifiedPolicyInputs
-        if not scoped or compatible_defaults:
-            cloud_inputs = _v3_inputs_from_capture(self, inputs, allow_signed_defaults=compatible_defaults)
+        if not scoped or compatible_v3:
+            cloud_inputs = _v3_inputs_from_capture(
+                self, inputs, allow_signed_defaults=compatible_v3, command_extensions=command_extensions
+            )
             scoped = False
         else:
+            if command_controls_blocked(command_extensions):
+                # V4 currently has no authority variant for this refusal.
+                # Keep all scoped sources unavailable instead of erasing one.
+                raise NativePolicySnapshotError("native_policy_authority_scoped_consumer_required")
             cloud_inputs = inputs
         with self._condition:
             if self._closed or self._epoch != publish_epoch:
@@ -218,7 +303,7 @@ def publication_context(
         with self._condition:
             if self._closed or self._epoch != publish_epoch:
                 return None
-            return identity, capabilities, material[0], config, client, cloud_inputs
+            return identity, capabilities, material[0], config, client, cloud_inputs, command_extensions
     except (OSError, RuntimeError, TypeError, ValueError, AttributeError, sqlite3.Error):
         with self._condition:
             if not self._closed and self._epoch == publish_epoch:
@@ -270,8 +355,8 @@ def capture_for_reservation(
                 if current is None:
                     raise NativePolicySnapshotError("native_policy_snapshot_runtime_unavailable")
                 try:
-                    identity, capabilities, _, _, _, inputs = current
-                    old_identity, old_capabilities, _, _, _, old_inputs = expected
+                    identity, capabilities, _, _, _, inputs, _ = current
+                    old_identity, old_capabilities, _, _, _, old_inputs, _ = expected
                     if (
                         identity.path != old_identity.path
                         or identity.sha256 != old_identity.sha256

@@ -28,6 +28,8 @@ pub struct PolicySnapshotV4 {
     pub mode: String,
     pub scope_contract: ScopeContractV3,
     pub effective_policy: EffectiveNativePolicyV3,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command_extensions: Option<guard_contracts::NativeCommandControlBindingV1>,
     pub scoped_authority: NativePolicyAuthority,
     pub source_input_digest: String,
     pub issued_at_ms: u64,
@@ -59,7 +61,7 @@ pub fn policy_digest_v4(snapshot: &PolicySnapshotV4) -> Result<String, SnapshotE
         .scoped_authority
         .content_digest()
         .map_err(|_| SnapshotError::Policy)?;
-    let value = serde_json::json!({
+    let mut value = serde_json::json!({
         "config_digest": snapshot.config_digest,
         "effective_policy_digest": config_digest(&snapshot.effective_policy)?,
         "mode": snapshot.mode,
@@ -71,6 +73,12 @@ pub fn policy_digest_v4(snapshot: &PolicySnapshotV4) -> Result<String, SnapshotE
         "source_input_digest": snapshot.source_input_digest,
         "version": snapshot.version,
     });
+    if let Some(binding) = &snapshot.command_extensions {
+        value["command_extensions_digest"] =
+            serde_json::Value::String(digest_bytes(&canonical_json_bytes(
+                &serde_json::to_value(binding).map_err(|_| SnapshotError::Serialization)?,
+            )?));
+    }
     Ok(digest_bytes(&canonical_json_bytes(&value)?))
 }
 
@@ -157,6 +165,9 @@ pub fn validate_v4(
     }
     validate_scope(&snapshot.scope_contract)?;
     validate_effective_policy(&snapshot.effective_policy)?;
+    if let Some(binding) = &snapshot.command_extensions {
+        binding.validate().map_err(|_| SnapshotError::Policy)?;
+    }
     if snapshot.expires_at_ms <= snapshot.issued_at_ms
         || snapshot.expires_at_ms - snapshot.issued_at_ms > POLICY_SNAPSHOT_MAX_EXPIRY_MS
     {

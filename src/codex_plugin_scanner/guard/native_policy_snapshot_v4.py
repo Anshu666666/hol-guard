@@ -47,6 +47,7 @@ def _base_projection(snapshot: Mapping[str, object]) -> dict[str, object]:
         rule_digest=cast(str, base.get("rule_digest")),
         runtime_identity=cast(str, base.get("runtime_identity")),
         scope_digest=cast(str, scope.get("scope_digest")),
+        command_extensions=cast(Mapping[str, object] | None, base.get("command_extensions")),
     )
     return base
 
@@ -54,20 +55,21 @@ def _base_projection(snapshot: Mapping[str, object]) -> dict[str, object]:
 def policy_digest_v4(snapshot: Mapping[str, object]) -> str:
     scope = snapshot["scope_contract"]
     assert isinstance(scope, Mapping)
-    return _digest_v3(
-        {
-            "config_digest": snapshot["config_digest"],
-            "effective_policy_digest": _digest_v3(snapshot["effective_policy"]),
-            "mode": snapshot["mode"],
-            "protocol_version": snapshot["protocol_version"],
-            "rule_digest": snapshot["rule_digest"],
-            "runtime_identity": snapshot["runtime_identity"],
-            "scope_digest": scope["scope_digest"],
-            "scoped_authority_digest": _digest_v3(snapshot["scoped_authority"]),
-            "source_input_digest": snapshot["source_input_digest"],
-            "version": snapshot["version"],
-        }
-    )
+    value: dict[str, object] = {
+        "config_digest": snapshot["config_digest"],
+        "effective_policy_digest": _digest_v3(snapshot["effective_policy"]),
+        "mode": snapshot["mode"],
+        "protocol_version": snapshot["protocol_version"],
+        "rule_digest": snapshot["rule_digest"],
+        "runtime_identity": snapshot["runtime_identity"],
+        "scope_digest": scope["scope_digest"],
+        "scoped_authority_digest": _digest_v3(snapshot["scoped_authority"]),
+        "source_input_digest": snapshot["source_input_digest"],
+        "version": snapshot["version"],
+    }
+    if "command_extensions" in snapshot:
+        value["command_extensions_digest"] = _digest_v3(snapshot["command_extensions"])
+    return _digest_v3(value)
 
 
 def validate_snapshot_v4(snapshot: Mapping[str, object], *, allow_empty_mac: bool = False) -> None:
@@ -141,6 +143,7 @@ def build_policy_snapshot_v4(
     authority: NativePolicyAuthorityDraft,
     capabilities: NativePolicyAuthorityCapabilities,
     source_input_digest: str,
+    command_extensions: Mapping[str, object] | None = None,
     issued_at_ms: int | None = None,
     expires_at_ms: int | None = None,
 ) -> dict[str, object]:
@@ -164,6 +167,7 @@ def build_policy_snapshot_v4(
         generation=generation,
         issued_at_ms=issued_at_ms,
         expires_at_ms=expires_at_ms,
+        command_extensions=command_extensions,
     )
     snapshot.update(schema=SNAPSHOT_SCHEMA, version=4, scoped_authority=scoped, source_input_digest=source_input_digest)
     snapshot["policy_digest"] = policy_digest_v4(snapshot)

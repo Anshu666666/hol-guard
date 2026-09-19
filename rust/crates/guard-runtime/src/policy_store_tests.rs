@@ -25,12 +25,20 @@ use std::path::{Path, PathBuf};
 #[cfg(windows)]
 use super::normalize_scope_text;
 
+#[path = "policy_store_admission_tests.rs"]
+mod admission_tests;
 #[path = "policy_client_currentness_tests.rs"]
 mod client_currentness_tests;
+#[path = "policy_store_command_authority_tests.rs"]
+mod command_authority_tests;
+#[path = "policy_store_command_floor_tests.rs"]
+mod command_floor_tests;
 #[path = "policy_store_control_tests.rs"]
 mod control_tests;
 #[path = "policy_store_fault_tests.rs"]
 mod fault_tests;
+#[path = "policy_store_fixture_tests.rs"]
+mod fixture_tests;
 #[path = "policy_store_migration_tests.rs"]
 mod migration_tests;
 #[path = "policy_store_v4_tests.rs"]
@@ -77,7 +85,9 @@ fn fixture_file(path: &Path, bytes: &[u8]) {
     {
         use std::io::Write;
         let private_root = path.parent().unwrap_or(path);
-        let mut file = crate::resident_state::private_file(path, true, private_root).unwrap();
+        // Match fs::write below: fault and marker fixtures intentionally replace
+        // existing bytes. CREATE_NEW correctly rejects those repeated writes.
+        let mut file = crate::resident_state::private_file(path, false, private_root).unwrap();
         file.write_all(bytes).unwrap();
     }
     #[cfg(not(windows))]
@@ -111,6 +121,7 @@ fn signed_snapshot_with_policy(
             workspace_binding: "request-source".into(),
         },
         effective_policy,
+        command_extensions: None,
         issued_at_ms: now_ms().unwrap().saturating_sub(1),
         expires_at_ms: now_ms().unwrap() + 60_000,
         integrity: SnapshotIntegrityV3 {
@@ -269,41 +280,6 @@ fn generation_rollback_and_same_generation_mutation_are_rejected() {
     assert_eq!(
         store.push(&mutated_request).unwrap_err(),
         "snapshot_digest_mismatch"
-    );
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[test]
-fn restart_rehydrates_snapshot_and_hook_validation_uses_memory() {
-    let root = test_root("restart");
-    let key = install_test_key(&root, 9);
-    let store = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
-    let snapshot = signed_snapshot(4, &key, &root);
-    let request = serde_json::json!({
-        "schema": POLICY_SNAPSHOT_PUSH_SCHEMA,
-        "snapshot": snapshot,
-    });
-    store.push(&request).unwrap();
-    let restored = PolicySnapshotStore::new(&root, &"a".repeat(64)).unwrap();
-    assert_eq!(restored.current_generation(), Some(4));
-    let snapshot_value = request["snapshot"].clone();
-    assert!(restored
-        .validate_request_snapshot(&snapshot_value, root.to_string_lossy().as_ref(), 4,)
-        .is_ok());
-    let compact_reference = serde_json::json!({
-        "generation": snapshot.generation,
-        "policy_digest": snapshot.policy_digest.clone(),
-        "runtime_identity": snapshot.runtime_identity.clone(),
-    });
-    assert!(restored
-        .validate_request_snapshot(&compact_reference, root.to_string_lossy().as_ref(), 4,)
-        .is_ok());
-    fs::remove_file(root.join(SNAPSHOT_FILE_NAME)).unwrap();
-    assert_eq!(
-        restored
-            .validate_request_snapshot(&snapshot_value, root.to_string_lossy().as_ref(), 4,)
-            .unwrap_err(),
-        "native_policy_snapshot_context_mismatch"
     );
     fs::remove_dir_all(root).unwrap();
 }

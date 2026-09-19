@@ -17,6 +17,8 @@ from contextvars import ContextVar
 from types import TracebackType
 from typing import Any, Literal
 
+from .sqlite_constants import SQLITE_CACHE_SIZE_KIB, SQLITE_MMAP_SIZE_BYTES
+
 _DEADLINE: ContextVar[float | None] = ContextVar("guard_sqlite_maintenance_deadline", default=None)
 
 
@@ -122,8 +124,8 @@ class DeadlineConnection(sqlite3.Connection):
                 (self._internal_pragma and name == "busy_timeout")
                 or (name in {"busy_timeout", "journal_mode"} and second is None)
                 or (name == "synchronous" and second is not None and second.lower() == "normal")
-                or (name == "cache_size" and second == "-262144")
-                or (name == "mmap_size" and second == "1073741824")
+                or (name == "cache_size" and second == str(-SQLITE_CACHE_SIZE_KIB))
+                or (name == "mmap_size" and second == str(SQLITE_MMAP_SIZE_BYTES))
             )
         elif action in {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE}:
             allowed = database in {None, "main", "temp"} and not (

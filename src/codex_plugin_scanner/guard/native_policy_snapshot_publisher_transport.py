@@ -94,7 +94,7 @@ def _publish_snapshot_v3(
             publish_epoch=publish_epoch,
             deadline_monotonic=reservation_deadline,
         ) as captured:
-            identity, capabilities, master_key, config, client, inputs = captured
+            identity, capabilities, master_key, config, client, inputs, command_extensions = captured
             if isinstance(inputs, NativeVerifiedPolicyInputs):
                 raise NativePolicySnapshotError("native_policy_snapshot_inputs_changed")
             try:
@@ -115,6 +115,7 @@ def _publish_snapshot_v3(
                     deadline_monotonic=reservation_deadline,
                     renew_after_generation=renew_after_generation,
                     allow_superseded_cache=True,
+                    command_extensions=command_extensions,
                 )
             finally:
                 master_key = b""

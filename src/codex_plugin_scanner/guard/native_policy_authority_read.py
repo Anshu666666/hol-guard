@@ -10,6 +10,11 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
 from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY
+from .native_policy_authority_blocked import (
+    FrozenNativeBlockedCommandAuthority,
+    command_controls_blocked,
+    read_frozen_native_blocked_command_authority,
+)
 from .native_policy_authority_compile import compile_native_policy_authority, compile_native_policy_row
 from .native_policy_authority_contract import NATIVE_AUTHORITY_MAX_ROWS, NativePolicyAuthorityDraft
 from .native_policy_authority_managed import (
@@ -116,7 +121,9 @@ def _credentials_for_capture(
     return {key: value for key, value in credentials.items() if key in needed_fields}
 
 
-def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> NativeVerifiedPolicyInputs:
+def read_native_policy_authority_inputs(
+    store: GuardStore, *, now: float, command_extensions: Mapping[str, object] | None = None
+) -> NativeVerifiedPolicyInputs:
     """Authenticate one SQL snapshot after existing off-hook preparation.
 
     The first SQL read in the captured transaction is its linearization point.
@@ -124,7 +131,11 @@ def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> Nat
     of current resident application: the publication/reservation/ACK callers
     retain their separate source, epoch, metadata and data_version fences.
     """
-    managed = read_frozen_native_managed_authority(store)
+    managed = (
+        read_frozen_native_blocked_command_authority(store, command_extensions)
+        if command_extensions is not None and command_controls_blocked(command_extensions)
+        else read_frozen_native_managed_authority(store)
+    )
     result = _capture_native_policy_authority_inputs(store, now=now, managed=managed)
     if managed is not None:
         managed.require_current_secrets(store)
@@ -137,7 +148,7 @@ def _capture_native_policy_authority_inputs(
     store: GuardStore,
     *,
     now: float,
-    managed: FrozenNativeManagedAuthority | None,
+    managed: FrozenNativeManagedAuthority | FrozenNativeBlockedCommandAuthority | None,
 ) -> NativeVerifiedPolicyInputs:
     """Reconstruct signed authority and verify local rows from one database view.
 
@@ -162,7 +173,11 @@ def _capture_native_policy_authority_inputs(
             f"select state_key, payload_json from sync_state where state_key in ({placeholders})",
             state_keys,
         ).fetchall()
-        captured_managed = read_frozen_native_managed_authority(store, connection=connection)
+        captured_managed = (
+            managed.recapture(store, connection)
+            if isinstance(managed, FrozenNativeBlockedCommandAuthority)
+            else read_frozen_native_managed_authority(store, connection=connection)
+        )
         if managed is None and captured_managed is not None:
             raise NativePolicySnapshotError("native_policy_authority_managed_consumer_required")
         if captured_managed != managed:

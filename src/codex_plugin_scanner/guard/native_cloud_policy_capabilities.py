@@ -59,15 +59,21 @@ def native_cloud_policy_requirements(bundle: Mapping[str, object]) -> frozenset[
     return frozenset(requirements)
 
 
-def require_native_v3_cloud_policy_support(bundle: Mapping[str, object]) -> None:
-    """V3 consumes defaults; no native feature assertion can add missing fields.
+def require_native_v3_cloud_policy_support(
+    bundle: Mapping[str, object], *, command_controls_bound: bool = False
+) -> None:
+    """V3 consumes defaults and an independently authenticated command binding.
 
-    Scoped and managed authority needs an explicitly versioned producer and
-    consumer contract. Until both exist, publication must remain unavailable
-    instead of acknowledging a snapshot that silently dropped those inputs.
+    The caller must authenticate the complete managed activation and compare
+    its exact control snapshot with the packaged command binding. This flag
+    only permits reading defaults during that process; it is not application
+    evidence and cannot represent any scoped, targeted or delegated rule.
     """
 
-    if native_cloud_policy_requirements(bundle):
+    requirements = native_cloud_policy_requirements(bundle)
+    if command_controls_bound:
+        requirements -= {NativeCloudPolicyRequirement.MANAGED_CONTROLS}
+    if requirements:
         raise NativePolicySnapshotError("native_cloud_policy_semantics_unsupported")
 
 

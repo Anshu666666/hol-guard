@@ -19,7 +19,7 @@ impl PolicySnapshotStore {
         callback: F,
     ) -> Result<T, String>
     where
-        F: FnOnce(&AuthenticatedPolicySnapshot) -> Result<T, String>,
+        F: FnOnce(&AdmittedVersionedPolicySnapshot) -> Result<T, String>,
     {
         let state = self
             .state
@@ -32,6 +32,8 @@ impl PolicySnapshotStore {
             envelope.policy_generation,
             now_ms()?,
         )?;
+        let _command_lease =
+            self.command_authority_lease_for_binding(snapshot.command_extensions())?;
         let result = callback(snapshot.as_ref())?;
         self.validate_request_snapshot_locked(
             &state,
@@ -159,6 +161,8 @@ impl PolicySnapshotStore {
         {
             return Err("native_approval_policy_context_mismatch".to_owned());
         }
+        let _command_lease =
+            self.command_authority_lease_for_binding(snapshot.command_extensions())?;
         if *snapshot.expires_at_ms() <= now {
             return Err("native_approval_receipt_expired".to_owned());
         }
@@ -200,6 +204,8 @@ impl PolicySnapshotStore {
         {
             return Err("native_approval_policy_context_mismatch".to_owned());
         }
+        let _command_lease =
+            self.command_authority_lease_for_binding(snapshot.command_extensions())?;
         if *snapshot.expires_at_ms() <= now {
             return Err("native_approval_receipt_expired".to_owned());
         }

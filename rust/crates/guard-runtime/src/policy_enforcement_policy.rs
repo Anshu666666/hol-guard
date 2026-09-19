@@ -2,6 +2,41 @@ use super::{normalized_harness, MAX_SELECTOR_VALUE_BYTES, VALID_ACTIONS, VALID_R
 use guard_policy_snapshot::EffectiveNativePolicyV3;
 use std::collections::BTreeMap;
 
+/// Generation-owned indexes. The signed policy is retained unchanged; only
+/// derived selector keys are canonicalized here, before snapshot publication.
+#[derive(Debug)]
+pub(crate) struct CompiledEffectivePolicy {
+    pub(super) harness_actions: BTreeMap<String, String>,
+    pub(super) harness_risk_actions: BTreeMap<String, BTreeMap<String, String>>,
+}
+
+impl CompiledEffectivePolicy {
+    pub(crate) fn new(policy: &EffectiveNativePolicyV3) -> Result<Self, String> {
+        validate_effective_policy(policy)?;
+        Ok(Self {
+            harness_actions: canonical_map(&policy.harness_actions)?,
+            harness_risk_actions: canonical_map(&policy.harness_risk_actions)?,
+        })
+    }
+}
+
+fn canonical_map<T: Clone + PartialEq>(
+    map: &BTreeMap<String, T>,
+) -> Result<BTreeMap<String, T>, String> {
+    let mut canonical = BTreeMap::new();
+    for (configured, action) in map {
+        let normalized = normalized_harness(configured);
+        if let Some(previous) = canonical.get(&normalized) {
+            if previous != action {
+                return Err("native_policy_harness_selector_conflict".to_owned());
+            }
+        } else {
+            canonical.insert(normalized, action.clone());
+        }
+    }
+    Ok(canonical)
+}
+
 pub(super) fn policy_map_action(
     map: &std::collections::BTreeMap<String, String>,
     key: &str,
@@ -84,6 +119,26 @@ pub(super) fn validate_effective_policy(policy: &EffectiveNativePolicyV3) -> Res
     Ok(())
 }
 
+/// Compute configured policy independently of the intrinsic action and scoped winner.
+pub(crate) fn configured_pre_tool_policy_action(
+    policy: &EffectiveNativePolicyV3,
+    compiled: &CompiledEffectivePolicy,
+    payload: &serde_json::Value,
+    result: &guard_contracts::PreToolResultV1,
+) -> Result<String, String> {
+    let harness = normalized_harness(&result.action.harness);
+    let mut facts = super::payload_facts(payload, result.action.action_type, &result.reason_code)?;
+    facts.sensitive_target |= result.action.sensitive_target;
+    super::policy_floor(
+        policy,
+        compiled,
+        &harness,
+        result.action.action_type,
+        &facts,
+        &result.reason_code,
+    )
+}
+
 pub(super) fn canonical_harness_action(
     map: &std::collections::BTreeMap<String, String>,
     harness: &str,
@@ -128,20 +183,27 @@ pub(super) fn canonical_harness_risk_actions<'a>(
     Ok(selected)
 }
 
-/// Compute configured policy independently of the intrinsic action and scoped winner.
-pub(crate) fn configured_pre_tool_policy_action(
-    policy: &EffectiveNativePolicyV3,
-    payload: &serde_json::Value,
-    result: &guard_contracts::PreToolResultV1,
-) -> Result<String, String> {
-    let harness = normalized_harness(&result.action.harness);
-    let mut facts = super::payload_facts(payload, result.action.action_type, &result.reason_code)?;
-    facts.sensitive_target |= result.action.sensitive_target;
-    super::policy_floor(
-        policy,
-        &harness,
-        result.action.action_type,
-        &facts,
-        &result.reason_code,
-    )
+pub(super) fn policy_override_reason(action: &str) -> (&'static str, &'static str) {
+    match action {
+        "block" => (
+            "native_policy_block",
+            "HOL Guard blocked this hook action under the installed native policy.",
+        ),
+        "sandbox-required" => (
+            "native_policy_sandbox_required",
+            "HOL Guard requires sandbox enforcement under the installed native policy.",
+        ),
+        "require-reapproval" => (
+            "native_policy_reapproval_required",
+            "HOL Guard requires fresh approval under the installed native policy.",
+        ),
+        "review" => (
+            "native_policy_review_required",
+            "HOL Guard requires review under the installed native policy.",
+        ),
+        _ => (
+            "native_policy_warning",
+            "HOL Guard raised this action under the installed native policy.",
+        ),
+    }
 }

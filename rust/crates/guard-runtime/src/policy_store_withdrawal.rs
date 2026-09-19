@@ -283,12 +283,13 @@ impl PolicySnapshotStore {
             self.authority_changed.store(true, Ordering::SeqCst);
             "native_policy_snapshot_context_mismatch".to_owned()
         })?;
-        persist_authority(
+        persist_authority_with_control_floor(
             &self.authority_path,
             intent.retirement_generation,
             &intent.retirement_policy_digest,
             None,
             &self.verifier_key,
+            state.command_control_floor.as_ref(),
         )
         .inspect_err(|_| self.authority_changed.store(true, Ordering::SeqCst))?;
         state.generation_floor = intent.retirement_generation;

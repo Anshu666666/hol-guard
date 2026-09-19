@@ -116,7 +116,12 @@ fn authenticated_defaults_preserve_existing_pre_and_post_decisions_for_every_act
                     }
                     let actual = edge(&store, source.clone());
                     let expected: Value = serde_json::from_slice(
-                        &crate::edge::evaluate_envelope_with_snapshot(source, &legacy).unwrap(),
+                        &crate::edge::evaluate_envelope_with_snapshot(
+                            source,
+                            &crate::policy_enforcement::AdmittedPolicySnapshot::new(legacy.clone())
+                                .unwrap(),
+                        )
+                        .unwrap(),
                     )
                     .unwrap();
                     let mut result = actual["result"].clone();
@@ -186,7 +191,11 @@ fn existing_scoped_generic_composition_is_not_replaced_by_the_defaults_extension
         );
         let actual = edge(&store, source.clone());
         let prior: Value = serde_json::from_slice(
-            &crate::edge::evaluate_envelope_with_snapshot(source, &legacy).unwrap(),
+            &crate::edge::evaluate_envelope_with_snapshot(
+                source,
+                &crate::policy_enforcement::AdmittedPolicySnapshot::new(legacy.clone()).unwrap(),
+            )
+            .unwrap(),
         )
         .unwrap();
         // These are distinct preexisting producer semantics, not authority
@@ -418,3 +427,6 @@ fn defaults_edge_requires_current_full_native_source_and_refuses_unsupported_tra
     assert!(crate::edge::evaluate_envelope_with_store(withdrawn, &store).is_err());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[path = "policy_store_versioned_command_tests.rs"]
+mod command_tests;

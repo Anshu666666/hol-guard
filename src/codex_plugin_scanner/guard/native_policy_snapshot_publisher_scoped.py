@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from .mdm.policy import managed_policy_cache_read_only
 from .native_managed_capture import bind_configuration_origin
+from .native_policy_authority_blocked import command_controls_blocked
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_decision_context import NativePolicyDecisionContext, capture_native_policy_decision
@@ -35,9 +36,10 @@ class ScopedSnapshotBinding:
     runtime_identity: str
     resident_generation: int
     mode: str
+    command_extensions_bound: bool = False
 
     def to_request_binding(self) -> dict[str, object]:
-        return {
+        binding: dict[str, object] = {
             "generation": self.generation,
             "policy_digest": self.policy_digest,
             "source_input_digest": self.source_input_digest,
@@ -45,6 +47,9 @@ class ScopedSnapshotBinding:
             "resident_generation": self.resident_generation,
             "mode": self.mode,
         }
+        if self.command_extensions_bound:
+            binding["command_extensions_bound"] = True
+        return binding
 
 
 def _policy_fingerprint(config: Mapping[str, object]) -> tuple[str, str]:
@@ -55,16 +60,29 @@ def _policy_fingerprint(config: Mapping[str, object]) -> tuple[str, str]:
 
 def compiled_scoped_policy(
     publisher: NativePolicySnapshotPublisherInputs,
+    *,
+    command_extensions: Mapping[str, object] | None = None,
 ) -> tuple[dict[str, object], NativeVerifiedPolicyInputs]:
-    inputs = read_native_policy_authority_inputs(publisher.store, now=publisher._wall_clock())
+    inputs = read_native_policy_authority_inputs(
+        publisher.store, now=publisher._wall_clock(), command_extensions=command_extensions
+    )
     config = publisher._compiled_effective_policy(cloud_defaults=inputs.defaults)
     return config, bind_configuration_origin(config, inputs)
 
 
-def scoped_policy_input_changed(publisher: NativePolicySnapshotPublisherInputs, *, force_republish: bool) -> bool:
+def scoped_policy_input_changed(
+    publisher: NativePolicySnapshotPublisherInputs,
+    *,
+    force_republish: bool,
+    command_extensions: Mapping[str, object] | None = None,
+) -> bool:
     """Observe semantic changes off-path; receipt-only writes do not revoke readiness."""
     try:
-        config, inputs = compiled_scoped_policy(publisher)
+        config, inputs = (
+            compiled_scoped_policy(publisher, command_extensions=command_extensions)
+            if command_extensions is not None and command_controls_blocked(command_extensions)
+            else compiled_scoped_policy(publisher)
+        )
         fingerprint = _policy_fingerprint(config)
         source_digest = inputs.input_digest
     except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError, sqlite3.Error):
@@ -73,7 +91,12 @@ def scoped_policy_input_changed(publisher: NativePolicySnapshotPublisherInputs, 
     previous_source = publisher._observed_scoped_digest
     publisher._observed_policy_fingerprint = fingerprint
     publisher._observed_scoped_digest = source_digest
-    return force_republish or previous != fingerprint or previous_source != source_digest
+    changed = force_republish or previous != fingerprint or previous_source != source_digest
+    if changed or source_digest is None:
+        with publisher._condition:
+            publisher._acked = False
+            publisher._condition.notify_all()
+    return changed
 
 
 def _capture_metadata_equal(
@@ -99,7 +122,7 @@ def publish_scoped(
     renew_after_generation: int | None,
 ) -> None:
     """An ACK alone never opens readiness or supplies canonical provenance."""
-    identity, capabilities, master_key, config, client, inputs = context
+    identity, capabilities, master_key, config, client, inputs, command_extensions = context
     from .native_policy_snapshot_publisher_context import capture_for_reservation
 
     def fresh_candidate(minimum: int | None, deadline: float) -> NativeV4Candidate:
@@ -109,7 +132,7 @@ def publish_scoped(
             publish_epoch=publish_epoch,
             deadline_monotonic=deadline,
         ) as captured:
-            fresh_identity, fresh_capabilities, fresh_key, fresh_config, _, fresh_inputs = captured
+            fresh_identity, fresh_capabilities, fresh_key, fresh_config, _, fresh_inputs, fresh_extensions = captured
             if not isinstance(fresh_inputs, NativeVerifiedPolicyInputs):
                 raise NativePolicySnapshotError("native_policy_snapshot_inputs_changed")
             try:
@@ -126,6 +149,7 @@ def publish_scoped(
                         fresh_capabilities.extension_catalog_digest,
                     ),
                     issued_at_ms=int(publisher._wall_clock() * 1_000),
+                    command_extensions=fresh_extensions,
                     minimum_generation=minimum,
                     deadline_monotonic=deadline,
                 )
@@ -148,6 +172,7 @@ def publish_scoped(
                 4, frozenset(capabilities.features), capabilities.extension_catalog_digest
             ),
             client=client,
+            command_extensions=command_extensions,
             wall_clock=publisher._wall_clock,
             monotonic_clock=publisher._monotonic_clock,
             minimum_generation=renew_after_generation,
@@ -162,7 +187,14 @@ def publish_scoped(
     with managed_policy_cache_read_only(), publisher.store._connect() as connection:
         data_version = connection.execute("pragma data_version").fetchone()[0]
         before_inputs = publisher._current_input_fingerprint()[0]
-        current_config, current_inputs = compiled_scoped_policy(publisher)
+        current_extensions = publisher._compiled_command_extensions()
+        if current_extensions != snapshot.get("command_extensions", {}):
+            raise NativePolicySnapshotError("native_command_control_binding_changed")
+        current_config, current_inputs = (
+            compiled_scoped_policy(publisher, command_extensions=current_extensions)
+            if command_controls_blocked(current_extensions)
+            else compiled_scoped_policy(publisher)
+        )
         after_inputs = publisher._current_input_fingerprint()[0]
         fingerprint = _policy_fingerprint(current_config)
         if (
@@ -210,10 +242,13 @@ def publish_scoped(
                 cast(str, snapshot["runtime_identity"]),
                 publication.resident_generation,
                 cast(str, snapshot["mode"]),
+                "command_extensions" in snapshot,
             )
             publisher._published_config_digest = fingerprint[0]
             publisher._published_policy_fingerprint = fingerprint
             publisher._observed_policy_fingerprint = fingerprint
+            publisher._published_command_control_digest = _digest_v3(current_extensions)
+            publisher._observed_command_control_digest = publisher._published_command_control_digest
             publisher._observed_scoped_digest = inputs.input_digest
             publisher._input_fingerprint = after_inputs, confirmed
             publisher._acked = True
@@ -245,6 +280,7 @@ def scoped_result_is_current(publisher: NativePolicySnapshotPublisher, binding: 
     if expected is None or publication is None:
         return False
     _ = expected.pop("mode")
+    expected.pop("command_extensions_bound", None)
     expected["policy_generation"] = expected.pop("generation")
     if set(binding) != {*expected, "selected_decision_id"}:
         return False

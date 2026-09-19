@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from .native_command_control_binding import capture_native_command_control_binding
 from .native_managed_configuration import MANAGED_CONFIGURATION_INPUT_KEY
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
@@ -48,6 +49,7 @@ def reserve_snapshot_v4(
     inputs: NativeVerifiedPolicyInputs,
     capabilities: NativePolicyAuthorityCapabilities,
     issued_at_ms: int,
+    command_extensions: Mapping[str, object] | None = None,
     minimum_generation: int | None = None,
     deadline_monotonic: float | None = None,
 ) -> NativeV4Candidate:
@@ -71,6 +73,7 @@ def reserve_snapshot_v4(
     try:
         verifier_key = derive_native_policy_verifier_key(master_key)
         frozen_config = config
+        binding = capture_native_command_control_binding(command_extensions) if command_extensions is not None else None
 
         def build(generation: int) -> dict[str, object]:
             assert verifier_key is not None
@@ -86,6 +89,7 @@ def reserve_snapshot_v4(
                 source_input_digest=inputs.input_digest,
                 issued_at_ms=issued_at_ms,
                 expires_at_ms=expiry,
+                command_extensions=binding,
             )
 
         # Policy identity omits generation and lease timestamps. Validate and

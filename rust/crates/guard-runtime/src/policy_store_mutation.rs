@@ -131,9 +131,11 @@ pub(super) fn refresh_floor(
         || loaded.policy_digest != state.policy_digest
         || loaded.canonical_bytes != state.canonical_bytes
         || loaded.snapshot.is_some() != state.snapshot.is_some()
+        || loaded.command_control_floor != state.command_control_floor
     {
         state.generation_floor = loaded.generation_floor;
         state.policy_digest = loaded.policy_digest;
+        state.command_control_floor = loaded.command_control_floor;
         state.snapshot = None;
         state.canonical_bytes.clear();
         store.authority_changed.store(true, Ordering::SeqCst);

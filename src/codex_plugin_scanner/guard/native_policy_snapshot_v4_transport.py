@@ -110,6 +110,7 @@ def publish_snapshot_v4(
     inputs: NativeVerifiedPolicyInputs,
     capabilities: NativePolicyAuthorityCapabilities,
     client: Callable[..., bytes | None],
+    command_extensions: Mapping[str, object] | None = None,
     wall_clock: Callable[[], float] = time.time,
     monotonic_clock: Callable[[], float] = time.monotonic,
     minimum_generation: int | None = None,
@@ -141,6 +142,7 @@ def publish_snapshot_v4(
                     inputs=inputs,
                     capabilities=capabilities,
                     issued_at_ms=int(wall_clock() * 1_000),
+                    command_extensions=command_extensions,
                     minimum_generation=minimum_generation,
                     deadline_monotonic=reservation_deadline,
                 )

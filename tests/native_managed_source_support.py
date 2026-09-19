@@ -37,6 +37,7 @@ def managed_store(
     lockdown: bool = False,
     targeted: bool = False,
     custom: bool = False,
+    scoped: bool = True,
 ) -> GuardStore:
     store = _activated_store(tmp_path, action="block")
     store._extension_control_authority_secret_store = MemorySecretStore()
@@ -77,7 +78,7 @@ def managed_store(
             "apiVersion": "guard.hashgraphonline.com/v1alpha1",
             "kind": "GuardPolicy",
             "metadata": {"id": "synthetic.policy", "name": "Synthetic policy", "revision": 9},
-            "spec": {"defaults": {"mode": "enforce", "defaultAction": "warn"}, "rules": [rule]},
+            "spec": {"defaults": {"mode": "enforce", "defaultAction": "warn"}, "rules": [rule] if scoped else []},
             "x-hol-extension-controls": {
                 "schemaVersion": "guard.extension-controls.v1",
                 "authorityMode": "managed-restrictive",

@@ -7,6 +7,8 @@ from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 
+from .sqlite_constants import SQLITE_CACHE_SIZE_KIB as SQLITE_CACHE_SIZE_KIB
+from .sqlite_constants import SQLITE_MMAP_SIZE_BYTES as SQLITE_MMAP_SIZE_BYTES
 from .sqlite_deadline import sqlite_deadline_timeout
 
 _DEFAULT_SQLITE_CONNECT_TIMEOUT_SECONDS = 30.0
@@ -55,8 +57,3 @@ def sqlite_connect_timeout_override(timeout_seconds: float) -> Generator[None]:
 SQLITE_CONNECT_TIMEOUT_SECONDS = _sqlite_base_timeout_seconds()
 SQLITE_BUSY_TIMEOUT_MS = int(SQLITE_CONNECT_TIMEOUT_SECONDS * 1000)
 SQLITE_WAL_BUSY_TIMEOUT_MS = 1000
-# Per-connection hot-path tuning (connection-scoped, applied in _connect).
-# Negative cache_size = KiB; 256 MiB page cache so multi-GB stores don't thrash.
-SQLITE_CACHE_SIZE_KIB = 256 * 1024
-# mmap window for read-heavy paths; SQLite falls back gracefully if unsupported.
-SQLITE_MMAP_SIZE_BYTES = 1024 * 1024 * 1024

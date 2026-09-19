@@ -1,19 +1,20 @@
 //! Reconstruct scoped approval context through the same resident evaluator.
 use super::{context_from_result, derive_context_with_snapshot, ApprovalContext};
-use crate::policy_store::{AuthenticatedPolicySnapshot, PolicySnapshotStore};
+use crate::policy_store::{AdmittedVersionedPolicySnapshot, PolicySnapshotStore};
 use guard_contracts::{GuardHookEnvelopeV2, PreToolResultV1};
 use serde_json::Value;
 
 pub(in crate::approval) fn derive_context_with_versioned_snapshot(
     envelope: &GuardHookEnvelopeV2,
     store: &PolicySnapshotStore,
-    snapshot: &AuthenticatedPolicySnapshot,
+    snapshot: &AdmittedVersionedPolicySnapshot,
 ) -> Result<ApprovalContext, String> {
-    let AuthenticatedPolicySnapshot::V4(scoped) = snapshot else {
+    let AdmittedVersionedPolicySnapshot::V4(scoped) = snapshot else {
         return derive_context_with_snapshot(envelope, store, snapshot.as_v3()?);
     };
     crate::edge::validate_envelope_shape(envelope)?;
-    let bytes = crate::edge_v4::evaluate(envelope.clone(), scoped, store.resident_generation())?;
+    let bytes =
+        crate::edge_v4::evaluate_admitted(envelope.clone(), scoped, store.resident_generation())?;
     if bytes.len() > guard_contracts::NATIVE_APPROVAL_MAX_BYTES * 2 {
         return Err("native_approval_edge_result_too_large".to_owned());
     }
@@ -36,7 +37,7 @@ pub(in crate::approval) fn derive_context_with_versioned_snapshot(
     context_from_result(
         envelope,
         store,
-        snapshot,
+        &snapshot.authenticated(),
         request_id,
         request_digest,
         harness,

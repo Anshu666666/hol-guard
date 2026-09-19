@@ -168,6 +168,17 @@ def read_frozen_native_managed_authority(
     try:
         key = store._authority_key(required=False)
         anchor = store._read_anchor(key=key) if key is not None else None
+        if connection is None and key is None and anchor is None:
+            # A standalone source capture does not need a command manifest
+            # when controls have never been enrolled. The ordinary local
+            # reader can establish this preparatory absence without a target
+            # manifest. The complete SQL capture below still checks managed
+            # activation and fences any intervening enrollment. Publication
+            # separately requires its packaged command binding.
+            absent = store.read_extension_control_authority(catalog_digest=_REGISTRY.catalog_digest)
+            if absent.health is AuthorityHealth.UNENROLLED:
+                require_unenrolled_secrets(store)
+                return None
         view = (
             store.read_extension_control_authority_for_registry(_REGISTRY)
             if connection is None

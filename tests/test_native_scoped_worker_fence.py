@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -56,6 +56,9 @@ def test_worker_rechecks_scoped_publication_before_receipt_or_allow(
         metrics=SimpleNamespace(record_route=routes.append),
         activity_writer=None,
     )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
+    )
     actual = worker_module.HookWorker._review_native_edge(
         host,
         payload={"tool_name": "Bash", "tool_input": {"command": "printf safe"}},
@@ -91,6 +94,9 @@ def test_worker_rejects_scoped_readiness_loss_before_transport(tmp_path: Path) -
         _review_raw_hook_native=forbidden,
         _record_native_decision_receipt=forbidden,
         metrics=SimpleNamespace(record_route=lambda _route: None),
+    )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
     )
     actual = worker_module.HookWorker._review_native_edge(
         host,
@@ -172,6 +178,9 @@ def test_scoped_native_deny_cannot_be_lowered_by_python_watch(
         metrics=SimpleNamespace(record_route=lambda _route: None),
         activity_writer=None,
     )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
+    )
     actual = worker_module.HookWorker._review_native_edge(
         host,
         payload={"tool_name": "Bash", "tool_input": {"command": "printf safe"}},
@@ -230,6 +239,9 @@ def test_scoped_authority_refusal_preserves_post_tool_response_shape(
         _record_post_tool_activity=lambda **kwargs: activities.append(kwargs),
         metrics=SimpleNamespace(record_route=routes.append),
         activity_writer=None,
+    )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
     )
     actual = worker_module.HookWorker._review_native_edge(
         host,

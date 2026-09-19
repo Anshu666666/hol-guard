@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import FrozenInstanceError
+from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pytest
 
@@ -33,7 +35,7 @@ _MASTER = b"s" * 32
 _CAPABILITIES = NativePolicyAuthorityCapabilities(4, frozenset({"policy-scoped-authority-v1"}))
 
 
-def _inputs(expiry=2000):
+def _inputs(expiry: int | None = 2000):
     authority = native_policy_authority_from_mapping(
         {
             "schema": "guard-native-policy-authority.v1",
@@ -61,10 +63,20 @@ def _inputs(expiry=2000):
     return NativeVerifiedPolicyInputs(authority, None, "[]", "d" * 64, expiry, ())
 
 
-def _arguments(tmp_path, **updates):
+class _Arguments(TypedDict):
+    config: dict[str, object]
+    guard_home: Path
+    runtime_identity: str
+    rule_digest: str
+    master_key: bytes
+    inputs: NativeVerifiedPolicyInputs
+    capabilities: NativePolicyAuthorityCapabilities
+
+
+def _arguments(tmp_path: Path, **updates: Any) -> _Arguments:
     home = tmp_path / "guard"
     home.mkdir(mode=0o700, exist_ok=True)
-    return {
+    values = {
         "config": _config(),
         "guard_home": home,
         "runtime_identity": "a" * 64,
@@ -74,6 +86,8 @@ def _arguments(tmp_path, **updates):
         "capabilities": _CAPABILITIES,
         **updates,
     }
+    # Fault-injection cases deliberately vary typed generation inputs.
+    return cast(_Arguments, cast(object, values))
 
 
 def _reserve(tmp_path, **updates):
@@ -121,20 +135,21 @@ def test_each_attempt_reserves_fresh_signed_bytes_and_frozen_source(tmp_path):
         now_ms=1000,
     )
     assert _read_v3_generation_state(tmp_path / "guard") == (2, second.snapshot["policy_digest"])
-    exposed = second.snapshot
+    exposed = cast(dict[str, Any], second.snapshot)
     exposed["scoped_authority"]["rows"][0]["action"] = "allow"
-    assert second.snapshot["scoped_authority"]["rows"][0]["action"] == "block"
+    assert cast(dict[str, Any], second.snapshot)["scoped_authority"]["rows"][0]["action"] == "block"
     with pytest.raises(FrozenInstanceError):
-        second.snapshot_bytes = b"{}"
+        second.__setattr__("snapshot_bytes", b"{}")
 
 
 def test_actual_shared_generation_lock_serializes_concurrent_reservations(tmp_path):
     arguments = _arguments(tmp_path)
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(lambda _: generation.reserve_snapshot_v4(**arguments, issued_at_ms=1000), range(8)))
-    assert sorted(item.snapshot["generation"] for item in results) == list(range(1, 9))
+    assert sorted(cast(int, item.snapshot["generation"]) for item in results) == list(range(1, 9))
     assert len({item.snapshot_bytes for item in results}) == 8
-    assert _read_v3_generation_state(tmp_path / "guard")[0] == 8
+    state = _read_v3_generation_state(tmp_path / "guard")
+    assert state is not None and state[0] == 8
 
 
 def test_pending_v3_journal_is_recovered_before_v4_reservation(tmp_path):
@@ -230,8 +245,10 @@ def test_attempt_snapshot_freezes_config_before_lock_entry(tmp_path, monkeypatch
 
     monkeypatch.setattr(generation, "_v3_generation_lock", interposed)
     candidate = _reserve(tmp_path, config=config)
-    assert candidate.snapshot["effective_policy"]["default_action"] == "warn"
-    assert _read_v3_generation_state(tmp_path / "guard")[1] == candidate.snapshot["policy_digest"]
+    policy = candidate.snapshot["effective_policy"]
+    assert isinstance(policy, dict) and policy["default_action"] == "warn"
+    state = _read_v3_generation_state(tmp_path / "guard")
+    assert state is not None and state[1] == candidate.snapshot["policy_digest"]
 
 
 @pytest.mark.parametrize(
@@ -331,7 +348,8 @@ def test_repeated_recovery_and_missing_ack_never_mark_application(tmp_path):
     assert attempts == [1, 2]
     with pytest.raises(NativePolicySnapshotError):
         _publish(tmp_path, lambda **_kwargs: None)
-    assert _read_v3_generation_state(tmp_path / "guard")[0] == 3
+    state = _read_v3_generation_state(tmp_path / "guard")
+    assert state is not None and state[0] == 3
 
 
 def test_source_expiry_during_ipc_refuses_even_an_exact_accepted_ack(tmp_path):
@@ -349,3 +367,41 @@ def test_source_expiry_during_ipc_refuses_even_an_exact_accepted_ack(tmp_path):
             wall_clock=lambda: now[0],
             monotonic_clock=lambda: 10.0,
         )
+
+
+def test_scoped_generation_authenticates_and_detaches_command_controls(tmp_path):
+    from tests.test_native_command_control_binding import _binding
+
+    binding = _binding()
+    candidate = _reserve(tmp_path, command_extensions=binding)
+    snapshot = candidate.snapshot
+    assert snapshot["command_extensions"] == binding
+    verify_snapshot_v4(
+        snapshot,
+        verifier_key=derive_native_policy_verifier_key(_MASTER),
+        expected_runtime_identity="a" * 64,
+        expected_rule_digest="b" * 64,
+        minimum_generation=1,
+        now_ms=1000,
+    )
+    layers = binding["layers"]
+    assert isinstance(layers, list) and isinstance(layers[0], dict)
+    layers[0]["global_lockdown"] = True
+    retained = candidate.snapshot["command_extensions"]
+    assert isinstance(retained, dict)
+    retained_layers = retained["layers"]
+    assert isinstance(retained_layers, list) and isinstance(retained_layers[0], dict)
+    assert retained_layers[0]["global_lockdown"] is False
+    del snapshot["command_extensions"]
+    with pytest.raises(NativePolicySnapshotError, match="digest_mismatch"):
+        verify_snapshot_v4(
+            snapshot,
+            verifier_key=derive_native_policy_verifier_key(_MASTER),
+            expected_runtime_identity="a" * 64,
+            expected_rule_digest="b" * 64,
+            minimum_generation=1,
+            now_ms=1000,
+        )
+    changed = _reserve(tmp_path, command_extensions=_binding(revision=4))
+    assert changed.snapshot["policy_digest"] != candidate.snapshot["policy_digest"]
+    assert changed.snapshot["source_input_digest"] == candidate.snapshot["source_input_digest"]

@@ -115,8 +115,9 @@ fn compose(current: PolicyAction, selected: &ScopedPolicyRow) -> PolicyAction {
 
 /// The snapshot must have passed resident authentication and request fencing.
 /// Unsupported semantics are errors, never a partial successful application.
-pub(crate) fn apply_scoped_pre_tool_policy(
+pub(crate) fn apply_scoped_pre_tool_policy_compiled(
     snapshot: &PolicySnapshotV4,
+    compiled: &crate::policy_enforcement::CompiledEffectivePolicy,
     envelope: &GuardHookEnvelopeV2,
     canonical_harness: &str,
     intrinsic: PreToolResultV1,
@@ -206,6 +207,7 @@ pub(crate) fn apply_scoped_pre_tool_policy(
     } else {
         action(&configured_pre_tool_policy_action(
             &snapshot.effective_policy,
+            compiled,
             &configured_payload,
             &intrinsic,
         )?)?
@@ -314,4 +316,24 @@ pub(crate) fn apply_scoped_pre_tool_policy(
         observed_policy_action,
         selected_decision_id,
     })
+}
+
+#[cfg(test)]
+fn apply_scoped_pre_tool_policy(
+    snapshot: &PolicySnapshotV4,
+    envelope: &GuardHookEnvelopeV2,
+    canonical_harness: &str,
+    intrinsic: PreToolResultV1,
+    now_ms: u64,
+) -> Result<ScopedPolicyEvaluation, String> {
+    let compiled =
+        crate::policy_enforcement::CompiledEffectivePolicy::new(&snapshot.effective_policy)?;
+    apply_scoped_pre_tool_policy_compiled(
+        snapshot,
+        &compiled,
+        envelope,
+        canonical_harness,
+        intrinsic,
+        now_ms,
+    )
 }

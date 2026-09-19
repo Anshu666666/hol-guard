@@ -44,7 +44,9 @@ class NativeCloudPolicyInputs:
     expires_at_ms: int | None = None
 
 
-def read_native_cloud_policy_inputs(store: GuardStore, *, now: float) -> NativeCloudPolicyInputs:
+def read_native_cloud_policy_inputs(
+    store: GuardStore, *, now: float, command_controls_bound: bool = False
+) -> NativeCloudPolicyInputs:
     """Authenticate a transaction-consistent input without retaining credentials."""
 
     with store._connect() as connection:
@@ -72,7 +74,7 @@ def read_native_cloud_policy_inputs(store: GuardStore, *, now: float) -> NativeC
         if reason is not None:
             raise NativePolicySnapshotError("native_cloud_policy_authority_unavailable")
         return NativeCloudPolicyInputs()
-    require_native_v3_cloud_policy_support(bundle)
+    require_native_v3_cloud_policy_support(bundle, command_controls_bound=command_controls_bound)
     defaults = policy_defaults_from_validated_bundle(bundle)
     revision = bundle.get("bundleVersion")
     digest = bundle.get("bundleHash")

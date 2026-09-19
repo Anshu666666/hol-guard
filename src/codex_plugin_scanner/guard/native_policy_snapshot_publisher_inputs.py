@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, cast
 
 from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
+from .native_command_control_authority import AUTHORITY_FILE_NAME
+from .native_command_control_binding import read_native_command_control_binding
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
@@ -21,12 +23,16 @@ from .native_policy_snapshot_constants import (
 
 if TYPE_CHECKING:
     from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from .runtime.extension_control_runtime import ExtensionControlRuntime
     from .store import GuardStore
 
 
 class NativePolicySnapshotPublisherInputs:
     """Mixin containing filesystem observation outside synchronous hooks."""
 
+    _command_control_runtime: ExtensionControlRuntime | None = None
+    _published_command_control_digest: str | None = None
+    _observed_command_control_digest: str | None = None
     guard_home: Path  # pyright: ignore[reportUninitializedInstanceVariable]
     _condition: Condition  # pyright: ignore[reportUninitializedInstanceVariable]
     _scoped_publication_enabled: bool  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -54,6 +60,7 @@ class NativePolicySnapshotPublisherInputs:
             self.guard_home / "guard.db-shm",
             self.guard_home / "guard.db-journal",
             self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / NATIVE_POLICY_VERIFIER_KEY_NAME,
+            self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / AUTHORITY_FILE_NAME,
             *self._external_policy_paths(),
             *self._workspace_policy_paths(),
         )
@@ -213,6 +220,17 @@ class NativePolicySnapshotPublisherInputs:
         )
         return policy, cloud_inputs
 
+    def _compiled_command_extensions(self) -> dict[str, object]:
+        try:
+            binding, runtime = read_native_command_control_binding(self.store, self._command_control_runtime)
+            self._command_control_runtime = runtime
+            return binding
+        except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError):
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            raise
+
     @staticmethod
     def _external_policy_paths() -> tuple[Path, ...]:
         try:
@@ -233,6 +251,10 @@ class NativePolicySnapshotPublisherInputs:
             database_paths = {
                 str(self.guard_home / name) for name in ("guard.db", "guard.db-wal", "guard.db-shm", "guard.db-journal")
             }
+            # The authority marker is atomically replaced after verified reads.
+            # Its bytes, and database commits, are checked below before revoking
+            # an unchanged generation merely because an inode was refreshed.
+            database_paths.add(str(self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY / AUTHORITY_FILE_NAME))
             database_only_change = all(path in database_paths for path in changed_paths)
             if not database_only_change:
                 # Guard config, workspace overrides, MDM policy files, and
@@ -244,17 +266,40 @@ class NativePolicySnapshotPublisherInputs:
                 with self._condition:
                     self._acked = False
                     self._condition.notify_all()
+        try:
+            command_extensions = self._compiled_command_extensions()
+            command_digest = _digest_v3(command_extensions)
+        except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError, sqlite3.Error):
+            changed = self._observed_command_control_digest != "unavailable"
+            self._observed_command_control_digest = "unavailable"
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            return force_republish or changed
+        previous_command_digest = (
+            self._observed_command_control_digest
+            if self._observed_command_control_digest is not None
+            else self._published_command_control_digest
+        )
+        self._observed_command_control_digest = command_digest
+        force_republish |= previous_command_digest != command_digest
+        if force_republish:
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
         if self._scoped_publication_enabled:
             from .native_policy_snapshot_publisher_scoped import scoped_policy_input_changed
 
             with managed_policy_cache_read_only():
-                return scoped_policy_input_changed(self, force_republish=force_republish)
+                return scoped_policy_input_changed(
+                    self, force_republish=force_republish, command_extensions=command_extensions
+                )
         from .native_policy_snapshot_publisher_context import compiled_v3_compatible_policy
 
         try:
             with managed_policy_cache_read_only():
                 effective_policy, cloud_inputs = compiled_v3_compatible_policy(
-                    cast("NativePolicySnapshotPublisher", self)
+                    cast("NativePolicySnapshotPublisher", self), command_extensions=command_extensions
                 )
             # ``_compiled_effective_policy`` carries the raw mode beside the
             # bounded policy so snapshot generation can derive enforce versus
@@ -291,7 +336,12 @@ class NativePolicySnapshotPublisherInputs:
         source_changed = self._observed_scoped_digest != cloud_inputs.input_digest
         self._observed_scoped_digest = cloud_inputs.input_digest
         self._observed_cloud_inputs = cloud_inputs
-        return force_republish or source_changed or previous_fingerprint != current_fingerprint
+        changed = force_republish or source_changed or previous_fingerprint != current_fingerprint
+        if changed:
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+        return changed
 
     @staticmethod
     def _resolved_workspace(workspace: Path) -> Path:

@@ -54,8 +54,16 @@ def retain_source_free_v3_lease(
             version = observer.execute("pragma data_version").fetchone()[0]
             before = publisher._current_input_fingerprint()
             refresh_source_requirement(publisher)
+            command_extensions = publisher._compiled_command_extensions()
+            if command_extensions != snapshot.get("command_extensions", {}):
+                return False
             config, captured_inputs = compiled_scoped_policy(publisher)
-            current_inputs = _v3_inputs_from_capture(publisher, captured_inputs, allow_signed_defaults=False)
+            current_inputs = _v3_inputs_from_capture(
+                publisher,
+                captured_inputs,
+                allow_signed_defaults=False,
+                command_extensions=command_extensions,
+            )
             after = publisher._current_input_fingerprint()
             directory = publisher._resident_directory_fingerprint()
             if (

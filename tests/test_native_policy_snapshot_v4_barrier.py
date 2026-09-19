@@ -2,19 +2,29 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import sqlite3
 import threading
 from dataclasses import replace
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
 from codex_plugin_scanner.guard import native_policy_snapshot_publisher_scoped as scoped
+from codex_plugin_scanner.guard.native_command_control_binding import build_native_command_control_binding
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.policy_rule_identity import PolicyRuleIdentity
+from codex_plugin_scanner.guard.runtime.extension_control_authority import (
+    AuthorityHealth,
+    ExtensionControlAuthorityView,
+)
+from codex_plugin_scanner.guard.runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
+from codex_plugin_scanner.guard.store import GuardStore
 from tests.native_policy_snapshot_test_fixtures import _config, _status
+from tests.test_native_command_control_binding import _binding, _metadata
 from tests.test_native_policy_snapshot_v4_publication import _ack, _inputs
 
 _IDENTITY = PolicyRuleIdentity("synthetic-policy", "synthetic-rule", "7")
@@ -44,6 +54,12 @@ def barrier(tmp_path, monkeypatch):
         calls=[],
         during_ack=None,
         materialize=True,
+        command_extensions=build_native_command_control_binding(
+            ExtensionControlRuntimeSnapshot.from_authority_view(
+                ExtensionControlAuthorityView(AuthorityHealth.UNENROLLED, 0, _metadata().catalog_digest, (), 0)
+            ),
+            _metadata(),
+        ),
     )
     store = SimpleNamespace(
         guard_home=home,
@@ -63,20 +79,22 @@ def barrier(tmp_path, monkeypatch):
         return json.dumps(_ack(snapshot)).encode()
 
     publisher = NativePolicySnapshotPublisher(
-        store=store,
+        store=cast(GuardStore, cast(object, store)),
         status_provider=lambda: state.status,
         client_request=client,
         wall_clock=lambda: state.now,
     )
     monkeypatch.setattr(publisher, "_compiled_effective_policy", lambda **kwargs: dict(state.config))
+    monkeypatch.setattr(publisher, "_compiled_command_extensions", lambda: copy.deepcopy(state.command_extensions))
     yield publisher, state
     publisher.close()
 
 
-def _result_binding(publisher, selected=7):
+def _result_binding(publisher, selected: int | None = 7):
     binding = publisher.current_snapshot_binding()
     assert binding is not None
     binding.pop("mode")
+    binding.pop("command_extensions_bound", None)
     binding["policy_generation"] = binding.pop("generation")
     binding["selected_decision_id"] = selected
     return binding
@@ -340,7 +358,10 @@ def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_pat
         _resident(store.guard_home)
         if revoke:
             keyring = store.get_sync_payload("policy_bundle_keyring")
-            keyring["keys"][0]["state"] = "revoked"
+            assert isinstance(keyring, dict)
+            keys = keyring["keys"]
+            assert isinstance(keys, list) and isinstance(keys[0], dict)
+            keys[0]["state"] = "revoked"
             store.set_sync_payload("policy_bundle_keyring", keyring, _NOW)
         return json.dumps(_ack(snapshot)).encode()
 
@@ -363,6 +384,7 @@ def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_pat
             binding = _result_binding(publisher, selected)
             assert publisher.result_binding_is_current(binding)
             identity = publisher.policy_rule_identity_for_result(binding)
+            assert identity is not None
             assert identity.to_dict() == {
                 "policyId": "synthetic.policy",
                 "ruleId": "synthetic.rule",
@@ -442,3 +464,23 @@ def test_missing_legacy_required_feature_cannot_be_hidden_by_an_unrelated_featur
     _assert_closed(publisher)
     assert not state.calls
     assert publisher.last_error == "native_policy_snapshot_protocol_unsupported"
+
+
+def test_changed_command_controls_reject_scoped_ack_with_unchanged_source(barrier):
+    publisher, state = barrier
+    original_source = state.inputs.input_digest
+    state.during_ack = lambda: setattr(state, "command_extensions", _binding(revision=4))
+    publisher._publish_once()
+    assert len(state.calls) == 1
+    assert state.inputs.input_digest == original_source
+    _assert_closed(publisher)
+    assert publisher.last_error == "native_command_control_binding_changed"
+
+
+def test_scoped_request_binding_retains_command_mutation_fence(barrier):
+    publisher, _ = barrier
+    publisher._publish_once()
+    assert publisher.is_ready()
+    binding = publisher.current_snapshot_binding()
+    assert binding is not None and binding["command_extensions_bound"] is True
+    assert publisher.result_binding_is_current(_result_binding(publisher))

@@ -1011,6 +1011,7 @@ class StoreConnectionSchemaMixin:
             self._enable_wal_mode(connection)
             for statement in statements:
                 connection.execute(statement)
+            store_native_decision_receipts.ensure_native_command_receipt_binding_schema(connection, applied_at=_now())
             ensure_resume_schema(connection)
             ensure_command_activity_schema(connection, applied_at=_now())
             ensure_command_activity_health_schema(connection, applied_at=_now())

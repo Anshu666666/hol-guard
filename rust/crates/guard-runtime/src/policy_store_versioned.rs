@@ -30,13 +30,10 @@ impl AuthenticatedPolicySnapshot {
     snapshot_field!(runtime_identity, String);
     snapshot_field!(scope_contract, guard_policy_snapshot::ScopeContractV3);
     snapshot_field!(expires_at_ms, u64);
-
-    pub(crate) fn as_v3(&self) -> Result<&PolicySnapshotV3, String> {
-        match self {
-            Self::V3(value) => Ok(value),
-            Self::V4(_) => Err("native_policy_snapshot_consumer_version_unsupported".to_owned()),
-        }
-    }
+    snapshot_field!(
+        command_extensions,
+        Option<guard_contracts::NativeCommandControlBindingV1>
+    );
 
     pub(crate) fn source_input_digest(&self) -> Option<&str> {
         match self {
@@ -126,6 +123,78 @@ impl AuthenticatedPolicySnapshot {
         ack.status = POLICY_SNAPSHOT_ACK_REQUIRES_NEW_GENERATION.to_owned();
         serde_json::to_vec(&ack).map_err(|_| "native_policy_snapshot_ack_encode_failed".to_owned())
     }
+}
+
+/// Immutable resident admission. Raw authenticated values stay the wire and
+/// durable representation; selector and command indexes belong to one generation.
+#[derive(Debug)]
+pub(crate) enum AdmittedVersionedPolicySnapshot {
+    V3(Arc<crate::policy_enforcement::AdmittedPolicySnapshot>),
+    V4(Arc<crate::policy_enforcement::AdmittedScopedPolicySnapshot>),
+}
+
+impl AdmittedVersionedPolicySnapshot {
+    pub(super) fn new(snapshot: AuthenticatedPolicySnapshot) -> Result<Self, String> {
+        match snapshot {
+            AuthenticatedPolicySnapshot::V3(value) => {
+                crate::policy_enforcement::AdmittedPolicySnapshot::new(value)
+                    .map(|value| Self::V3(Arc::new(value)))
+            }
+            AuthenticatedPolicySnapshot::V4(value) => {
+                crate::policy_enforcement::AdmittedScopedPolicySnapshot::new(value)
+                    .map(|value| Self::V4(Arc::new(value)))
+            }
+        }
+    }
+
+    snapshot_field!(generation, u64);
+    snapshot_field!(policy_digest, String);
+    snapshot_field!(rule_digest, String);
+    snapshot_field!(runtime_identity, String);
+    snapshot_field!(scope_contract, guard_policy_snapshot::ScopeContractV3);
+    snapshot_field!(expires_at_ms, u64);
+
+    pub(crate) fn command_extensions(
+        &self,
+    ) -> Option<&guard_contracts::NativeCommandControlBindingV1> {
+        match self {
+            Self::V3(value) => value.snapshot().command_extensions.as_ref(),
+            Self::V4(value) => value.snapshot().command_extensions.as_ref(),
+        }
+    }
+
+    pub(crate) fn source_input_digest(&self) -> Option<&str> {
+        match self {
+            Self::V3(_) => None,
+            Self::V4(value) => Some(&value.source_input_digest),
+        }
+    }
+
+    pub(crate) fn as_v3(
+        &self,
+    ) -> Result<&Arc<crate::policy_enforcement::AdmittedPolicySnapshot>, String> {
+        match self {
+            Self::V3(value) => Ok(value),
+            Self::V4(_) => Err("native_policy_snapshot_consumer_version_unsupported".to_owned()),
+        }
+    }
+
+    /// Materialize only at non-hook boundaries that need the durable wire value.
+    pub(crate) fn authenticated(&self) -> AuthenticatedPolicySnapshot {
+        match self {
+            Self::V3(value) => AuthenticatedPolicySnapshot::V3(value.snapshot().clone()),
+            Self::V4(value) => AuthenticatedPolicySnapshot::V4(value.snapshot().clone()),
+        }
+    }
+
+    pub(super) fn encode_ack(
+        &self,
+        idempotent: bool,
+        resident_generation: u64,
+    ) -> Result<Vec<u8>, String> {
+        self.authenticated()
+            .encode_ack(idempotent, resident_generation)
+    }
 
     pub(super) fn matches_reference(
         &self,
@@ -155,8 +224,20 @@ impl AuthenticatedPolicySnapshot {
                 && object.get("source_input_digest").and_then(Value::as_str)
                     == self.source_input_digest());
         }
-        let candidate: Self = serde_json::from_value(value.clone())
+        let candidate: AuthenticatedPolicySnapshot = serde_json::from_value(value.clone())
             .map_err(|_| "native_policy_snapshot_invalid".to_owned())?;
         Ok(candidate.bytes()? == canonical)
+    }
+}
+
+impl Serialize for AdmittedVersionedPolicySnapshot {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::V3(value) => value.snapshot().serialize(serializer),
+            Self::V4(value) => value.snapshot().serialize(serializer),
+        }
     }
 }

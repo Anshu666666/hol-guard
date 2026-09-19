@@ -14,6 +14,7 @@ from typing import cast
 from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY
 from .models import PolicyDecision
 from .native_cloud_policy_capabilities import NativeCloudPolicyRequirement, native_cloud_policy_requirements
+from .native_policy_authority_blocked import FrozenNativeBlockedCommandAuthority
 from .native_policy_authority_command_source import has_canonical_command_expressions, signed_command_native_rows
 from .native_policy_authority_managed import FrozenNativeManagedAuthority
 from .native_policy_snapshot_constants import NativePolicySnapshotError
@@ -91,7 +92,7 @@ def signed_bundle_native_rows(
     state: FrozenNativePolicySources,
     *,
     now: float,
-    managed: FrozenNativeManagedAuthority | None = None,
+    managed: FrozenNativeManagedAuthority | FrozenNativeBlockedCommandAuthority | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, object] | None, dict[str, object] | None]:
     """Rebuild the complete targeted generic authority after signature checks."""
     bundle, reason = cached_policy_bundle_validation(state, state.get_sync_payload("policy_bundle"), now=now)

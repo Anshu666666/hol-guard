@@ -15,6 +15,7 @@ from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
 from .native_policy_decision_context import NativePolicyDecisionContext
+from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_SECONDS,
     _PUBLISH_TIMEOUT_SECONDS,
@@ -105,6 +106,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._published_config_digest: str | None = None
         self._published_policy_fingerprint: tuple[str, str] | None = None
         self._observed_policy_fingerprint: tuple[str, str] | None = None
+        self._published_command_control_digest: str | None = None
+        self._observed_command_control_digest: str | None = None
+        self._command_control_runtime = None
+        self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
         self._published_cloud_inputs = NativeCloudPolicyInputs()
         self._observed_cloud_inputs = NativeCloudPolicyInputs()
         self._renewal_due_monotonic: float | None = None
@@ -292,12 +297,15 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             snapshot = self._snapshot
             if self._v4_publication is not None:
                 return scoped_binding(self)
-            return {
+            binding = {
                 "generation": snapshot.get("generation"),
                 "policy_digest": snapshot.get("policy_digest"),
                 "runtime_identity": snapshot.get("runtime_identity"),
                 "mode": snapshot.get("mode"),
             }
+            if "command_extensions" in snapshot:
+                binding["command_extensions_bound"] = True
+            return binding
 
     def result_binding_is_current(self, binding: Mapping[str, object]) -> bool:
         """Fence a V4 response before exposing its decision or receipt."""
@@ -363,6 +371,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 self._input_fingerprint = fingerprint
                 if self._policy_input_changed(changed_paths):
                     self.request_publish()
+            if self._monotonic_clock() >= self._reconcile_due_monotonic:
+                self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
+                if self._policy_input_changed():
+                    self.request_publish()
             with self._condition:
                 if self._closed:
                     return
@@ -419,8 +431,21 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         v3_transport_active = False
         v3_postack_database_race = False
         try:
-            # Compile and validate policy asynchronously; failures keep the barrier closed.
-            context = self._publication_context(publish_epoch=publish_epoch)
+            # A first verified read may migrate authenticated catalog state.
+            # Recapture once only when that operation changes the epoch; an old
+            # capture never inherits the newer mutation barrier.
+            for _ in range(2):
+                with self._condition:
+                    publish_epoch = self._epoch
+                context = self._publication_context(publish_epoch=publish_epoch)
+                with self._condition:
+                    if self._closed:
+                        return
+                    if self._epoch == publish_epoch:
+                        break
+                context = None
+            else:
+                return
             if context is None:
                 return
             cloud_inputs = context[5]
@@ -455,8 +480,13 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                     source_observer = capture.enter_context(self.store._connect())
                     source_version = source_observer.execute("pragma data_version").fetchone()[0]
                     before_source = self._current_input_fingerprint()[0]
+                    current_command_extensions = self._compiled_command_extensions()
+                    if current_command_extensions != snapshot.get("command_extensions", {}):
+                        raise NativePolicySnapshotError("native_command_control_binding_changed")
                     current_config, current_cloud_inputs = compiled_v3_compatible_policy(
-                        self, allow_signed_defaults=cloud_inputs.source_identity is not None
+                        self,
+                        allow_signed_defaults=cloud_inputs.source_identity is not None,
+                        command_extensions=current_command_extensions,
                     )
                     source_fingerprint = self._current_input_fingerprint()[0]
                     if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
@@ -481,6 +511,8 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                         )
                         raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
                 else:
+                    if self._compiled_command_extensions() != snapshot.get("command_extensions", {}):
+                        raise NativePolicySnapshotError("native_command_control_binding_changed")
                     current_cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
                     if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
                         raise NativePolicySnapshotError("native_cloud_policy_changed_during_publish")
@@ -533,6 +565,8 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                         cast(str, snapshot["mode"]),
                     )
                     self._observed_policy_fingerprint = self._published_policy_fingerprint
+                    self._published_command_control_digest = _digest_v3(snapshot.get("command_extensions", {}))
+                    self._observed_command_control_digest = self._published_command_control_digest
                     self._published_cloud_inputs = cloud_inputs
                     self._observed_cloud_inputs = cloud_inputs
                     if isinstance(cloud_inputs, CapturedV3PublicationInputs):

@@ -1,729 +1,434 @@
-name: CI
+name: Receipt fixture union acceptance
+
 on:
-  push:
-    branches: [main, release/3.0, release/3.1, release/3.2]
-  pull_request:
-    branches: [main, release/3.0, release/3.2]
-  schedule:
-    - cron: "0 5 * * 1"
   workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact composed fixture acceptance source
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Exact diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Exact diagnostic tree
+        required: true
+        type: string
 
 permissions:
-  actions: read
   contents: read
 
-env:
-  CI_UV_CACHE_DEPENDENCY_GLOB: |
-    pyproject.toml
-    uv.lock
-    requirements.txt
-    docker-requirements.txt
-
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: receipt-fixture-union-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Validate protected test invariants
-        run: uv run --no-sync python scripts/ci/test_inventory.py --output test-inventory.json
-      - name: Publish test inventory
-        run: cat test-inventory.json
-      - name: Inventory required release collection and configured install checks
-        run: |
-          uv run --no-sync python scripts/ci/release_required_evidence.py \
-            --output release-required-evidence.json
-          cat release-required-evidence.json
-      - name: Publish exact test-body duplicate candidates
-        run: |
-          uv run --no-sync python scripts/ci/test_duplicate_candidates.py \
-            --output test-duplicate-candidates.json
-          cat test-duplicate-candidates.json
-      - name: Lint production sources
-        run: |
-          uv run --no-sync python -m ruff check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - name: Check formatting for production sources
-        run: |
-          uv run --no-sync python -m ruff format --check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - run: uv run --no-sync basedpyright --level error
-      - name: Dead-code scan (L329)
-        run: uv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/ --select=F401,F811,F841
-      - name: TODO/FIXME scan (L330)
-        run: |
-          count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore" | wc -l | tr -d ' ')
-          echo "Guard TODO/FIXME count: $count"
-          if [ "$count" -gt "0" ]; then
-            grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore"
-            exit 1
-          fi
-
-  test-plan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Restore latest trusted duration telemetry
-        id: latest-duration-telemetry
-        continue-on-error: true
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TELEMETRY_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
-        run: |
-          run_id=$(
-            gh api --method GET "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs" \
-              -f branch="$TELEMETRY_BRANCH" -f event=push -f status=success -f per_page=1 \
-              --jq '.workflow_runs[0].id // empty'
-          )
-          test -n "$run_id"
-          read -r event conclusion branch workflow_path < <(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" \
-              --jq '[.event, .conclusion, .head_branch, .path] | @tsv'
-          )
-          test "$event" = "push"
-          test "$conclusion" = "success"
-          test "$branch" = "$TELEMETRY_BRANCH"
-          test "$workflow_path" = ".github/workflows/ci.yml"
-          artifact_id=$(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?name=pytest-duration-manifest-candidate&per_page=100" \
-              --jq '.artifacts | map(select(.expired == false and .name == "pytest-duration-manifest-candidate")) | .[0].id // empty'
-          )
-          test -n "$artifact_id"
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > /tmp/duration-manifest.zip
-          unzip -p /tmp/duration-manifest.zip pytest-duration-manifest-candidate.json.gz \
-            > /tmp/pytest-duration-manifest.json.gz
-          gzip -t /tmp/pytest-duration-manifest.json.gz
-          mv /tmp/pytest-duration-manifest.json.gz pytest-duration-manifest.latest.json.gz
-      - name: Collect once and build 96 affinity-aware pytest shards
-        shell: bash
-        run: |
-          manifest=ci/pytest-duration-manifest.json.gz
-          if test -s pytest-duration-manifest.latest.json.gz; then
-            manifest=pytest-duration-manifest.latest.json.gz
-          fi
-          uv run --no-sync python scripts/ci/build_pytest_shard_plan.py \
-            --shard-count 96 \
-            --duration-manifest "$manifest" \
-            --max-manifest-age-days 28 \
-            --output-directory pytest-shards
-      - name: Publish pytest shard plan
-        run: cat pytest-shards/plan.json
-      - name: Upload pytest shard plan
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-          if-no-files-found: error
-          retention-days: 1
-
-  tests:
-    needs: test-plan
-    runs-on: ubuntu-latest
+  fixture-acceptance:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-receipt-fixtures-20260919' }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
-        shard-index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]
+        python: ["3.10", "3.12"]
+    env:
+      EXPECTED_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      EXPECTED_DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+      MATRIX_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          # Every shard must collect under the same patch release or node assignments can overlap.
-          python-version: "3.12.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
-        run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Download pytest shard plan
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-      - name: Run pytest shard ${{ matrix.shard-index }}
-        shell: bash
-        run: |
-          shard_file=$(printf 'pytest-shards/shard-%02d.txt' "${{ matrix.shard-index }}")
-          test -s "$shard_file"
-          # This process-pool timing contract is owned by scheduling-sensitive, which runs it untraced.
-          PYTHONPATH=scripts/ci GUARD_PYTEST_DURATION_OUTPUT=pytest-durations.json GUARD_PYTEST_UNDER_COVERAGE=1 \
-            uv run --no-sync pytest -p pytest_duration_report "@$shard_file" --tb=short \
-            --deselect tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial \
-            --deselect tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon \
-            --cov --cov-branch --cov-report= --junitxml=pytest-junit.xml
-      - name: Upload pytest coverage data artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-coverage-${{ matrix.shard-index }}
-          path: .coverage
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 1
-      - name: Upload pytest outcome report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-junit-${{ matrix.shard-index }}
-          path: pytest-junit.xml
-          if-no-files-found: warn
-          retention-days: 1
-      - name: Upload pytest duration artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-durations-${{ matrix.shard-index }}
-          path: pytest-durations.json
-          if-no-files-found: warn
-          retention-days: 7
-
-  duration-manifest-candidate:
-    if: needs.tests.result == 'success'
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - name: Download pytest duration reports
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-durations-*
-          path: duration-reports
-      - name: Build duration manifest candidate
-        shell: bash
-        run: |
-          shopt -s globstar nullglob
-          reports=(duration-reports/**/pytest-durations.json)
-          test "${#reports[@]}" -eq 96
-          python3 scripts/ci/build_pytest_duration_manifest.py \
-            --output pytest-duration-manifest-candidate.json.gz \
-            --observed-at "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
-            "${reports[@]}"
-      - name: Upload pytest duration manifest candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-duration-manifest-candidate
-          path: pytest-duration-manifest-candidate.json.gz
-          if-no-files-found: error
-          retention-days: 90
-
-  sonar-guard:
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      has-token: ${{ steps.token-presence.outputs.has-token }}
-    steps:
-      - name: Check for SonarQube Cloud token
-        id: token-presence
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          if test -n "$SONAR_TOKEN"; then
-            echo "has-token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-token=false" >> "$GITHUB_OUTPUT"
-            echo "SONAR_TOKEN secret is not set; skipping SonarQube Cloud analysis"
-          fi
-
-  sonar:
-    needs: [sonar-guard, tests]
-    if: needs.sonar-guard.outputs.has-token == 'true' && vars.SONAR_CI_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        id: checkout
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Bind the composed fixture source and diagnostic
+        id: source_before
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "ea924506494786e6c66ade7d71aa51e4e1a768ca"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-receipt-fixtures-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [
+              source, "5102c8dac95edb18d15ef9054fdf15bad15bdfc6"
+          ]
+          assert git("rev-parse", source + "^{tree}") == "06beab45a68faa3087de8b4e8ef6b376aee611f2"
+          assert git("rev-parse", "5102c8dac95edb18d15ef9054fdf15bad15bdfc6^{tree}") == "f3d7585ffbfab7aff3920cc50f2c55daa1b5e98a"
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, "5102c8dac95edb18d15ef9054fdf15bad15bdfc6")
+          assert git("diff", "--name-status", "5102c8dac95edb18d15ef9054fdf15bad15bdfc6", source).splitlines() == ["M\tsrc/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","M\tsrc/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","A\ttests/support/guard_cli_upload_case.py","A\ttests/support/guard_event_upload_cases.py","A\ttests/support/inventory_receipt_fixture.py","A\ttests/support/optional_uploads.py","A\ttests/support/receipt_transport.py","M\ttests/test_guard_cli.py","M\ttests/test_guard_cloud_local_sync.py","M\ttests/test_guard_event_schema_v1.py","M\ttests/test_guard_events.py","M\ttests/test_guard_receipt_command_detail_backfill.py","M\ttests/test_guard_receipt_redaction_cursor.py","M\ttests/test_guard_runtime.py","M\ttests/test_inventory_daemon_scheduling.py","M\ttests/test_policy_bundle_v2.py","M\ttests/test_policy_telemetry_isolation.py","M\ttests/test_policy_telemetry_review_failures.py","M\ttests/test_policy_telemetry_transport.py"]
+          assert git("diff", "--name-status", source, "HEAD").splitlines() == ["M\t.github/workflows/ci.yml"]
+          assert len(git("ls-tree", "-r", "--name-only", source).splitlines()) == 4338
+          assert len(git("ls-tree", "-r", "--name-only", "HEAD").splitlines()) == 4338
+          pins = [
+              [".github/workflows/native-managed-source-contract.yml","100644","ae8180cb4e6710902c6a5d699cd636c3988fcee2"],
+              ["basedpyright.native-managed-source.json","100644","6b889e5409ffe4e4a9c562e23b8c16dfc0381701"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["docs/guard/contracts/hook-data-plane-ownership.v2.json","100644","a73156839953a3f2febb0b723a289076a0e77b41"],
+              ["docs/guard/contracts/python-capability-ownership.v1.json","100644","95c440ac60c1714f226b258f2ba61ae536990635"],
+              ["docs/guard/runtime-lane-capabilities.md","100644","b36be5df87c034287c2d8514d6ac0d3aac2a32d9"],
+              ["pyproject.toml","100644","64a0281ee6b4f57a74cab68ac992fec3d782a6bb"],
+              ["rust/crates/guard-runtime/src/resident_protocol.rs","100644","8f9fd6b945fb34be55c226de73b9b1f39fbd40d2"],
+              ["scripts/ci/python_hook_semantic_callgraph_gate.py","100644","bb50c30fff2c404a95b59e64879a999d4bdba0db"],
+              ["scripts/ci/rust_io_ownership_contract.py","100644","72ff99af196daf61e35f04fbf776c2da15569d9f"],
+              ["scripts/ci/rust_io_ownership_gate.py","100644","004e7379ba3eeca4af53209136fab3dc44a52da8"],
+              ["scripts/ci/rust_io_ownership_resolver.py","100644","cd08a07d6ed43308ae1c0626d02a168151e9fb9f"],
+              ["src/codex_plugin_scanner/guard/daemon/server.py","100644","2792f7cf919da55d02435b8fb3295ae2d514a6f5"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_read.py","100644","9dac9c06033f2c354a3fd0c174760006fa926a73"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","93f0d9c6be38ce9ae46abbe402b3097bb1efe618"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py","100644","f9b698c7c5fa22e4819613bce45d07932957042a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","eb0980b345de9878b4845116cd2561f6165dd138"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","100644","beec3175379593000147b86a6039543f9e8221b4"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","cd0749d72df7ab9a5328f57129ca1bf44c769e60"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","5f88a6ecdacc7fb426d5d6306a8faa44602de3a4"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","100644","9b59002f683443f190e6535bbdd66cddf525a1d0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","26b091171d6d9f377411e3f51543c1089ea2da56"],
+              ["src/codex_plugin_scanner/guard/oauth_connection_authority.py","100644","09b71c5a50fb7234347935d3d22421b29b809c96"],
+              ["src/codex_plugin_scanner/guard/policy_lane_capabilities.py","100644","89253e79d259ce4cb6adda7ba6e3daffbd58e72f"],
+              ["src/codex_plugin_scanner/guard/runtime/receipt_sync_steps.py","100644","fdf973a7b6c80fab7b2007fb850d91de9f63713a"],
+              ["src/codex_plugin_scanner/guard/runtime/runner.py","100644","62d1fd83e34dafaa1a05189da0b80a5249bf7b43"],
+              ["src/codex_plugin_scanner/guard/runtime/sync_request_attempts.py","100644","98a3182f51e7b5730feffab5bf7dd833f41cb966"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority.py","100644","39c5ff235685f3f2869155d1cf2d4d9097370967"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_support.py","100644","c6177516cbb6150bff636ee7e2f3685e9b95f8b9"],
+              ["src/codex_plugin_scanner/guard/store_sync_payload_mutations.py","100644","4cba562fb67a2fe20ee741cd0ec8b903efef02d8"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","e6809fc5e6b09590a63698e8d8bfef597252b9f4"],
+              ["tests/native_policy_snapshot_windows_handles.py","100644","23dac63bb6631785a4e316d28fde2ff5273ab18c"],
+              ["tests/native_policy_snapshot_windows_storage.py","100644","0622a7f2d469dddd88ae1e4ecff5b6d42db7b6cc"],
+              ["tests/support/guard_cli_upload_case.py","100644","f199a6ed8b0f4da5f06d7046a6a8b602bc0aaf57"],
+              ["tests/support/guard_event_upload_cases.py","100644","ad52d7ddbe9cd68e69c1f94edf06ffd035b0a77c"],
+              ["tests/support/inventory_receipt_fixture.py","100644","f8837304b3a697f435d7b496f119a49467159a5c"],
+              ["tests/support/optional_uploads.py","100644","36c18b2fee7f4607411e819006771c2eba7b8a52"],
+              ["tests/support/receipt_transport.py","100644","67dd414343dc3812f8103920624d90756f64681c"],
+              ["tests/test_canonical_policy_row_authority.py","100644","f4d5ef43a27a48bfa152f2934a255418df023774"],
+              ["tests/test_guard_cli.py","100644","45449faa511387cb79bf9fce1968ee6bdfaff7b8"],
+              ["tests/test_guard_cloud_local_sync.py","100644","54993cfad373befd61e9363e3d70e397f4c34cac"],
+              ["tests/test_guard_event_schema_v1.py","100644","b90a4a3042cc7109f7cfd9bfa38e394cd228ff38"],
+              ["tests/test_guard_events.py","100644","d819f789e2f374f30ca3020297764b6bd3bafcb5"],
+              ["tests/test_guard_receipt_command_detail_backfill.py","100644","8c24654fc121ccf1006980c011b1110a6a11bcc8"],
+              ["tests/test_guard_receipt_redaction_cursor.py","100644","4f27601d95d214191c0505484c6b97e260a0cb81"],
+              ["tests/test_guard_runtime.py","100644","b02bfe7374cd83ae2f877a2110adbf5ce5dacb73"],
+              ["tests/test_hook_data_plane_ownership_gate.py","100644","456811f0f581defedc00c8f63f61cf724342489f"],
+              ["tests/test_inventory_daemon_scheduling.py","100644","b5bc6ee6e742489ae0c512166e7f6c3a176ea809"],
+              ["tests/test_native_generic_sync_unstaged.py","100644","bb7bc3ec887ec188f8eb7ab8797c72ab0d598446"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","915b648d205aa205b7e6b303f37e504bd6b6f193"],
+              ["tests/test_native_policy_snapshot_contract.py","100644","abd5956fe0dc3cfc17db34404e6915ce23452fd9"],
+              ["tests/test_native_policy_snapshot_persistence.py","100644","f4a82792fa049724f2fd1133d43aa20aa59cbefb"],
+              ["tests/test_native_policy_snapshot_post_ack_retry.py","100644","241ed665d8b85ca554055a50ef44671a8b2f310e"],
+              ["tests/test_native_policy_snapshot_post_ack_retry_commit.py","100644","29280d37f563f3f2996fc2027ddd3a2de50ad6ff"],
+              ["tests/test_native_policy_snapshot_post_ack_retry_guards.py","100644","6512ccb8fd9432883c365ea159dc9bede82f46e7"],
+              ["tests/test_native_policy_snapshot_publisher.py","100644","c4ad2122cc3aa021ee9ae836f119e2c24bc12ad6"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","a663d5014bc62822c0c86d970b0ce056f4e97cd3"],
+              ["tests/test_native_policy_snapshot_resident_retry.py","100644","ac80c25fc582ecab7e77b48696b7a58a7e09a7ad"],
+              ["tests/test_native_policy_snapshot_v3_publisher.py","100644","b73e7f4ed86dd69d0f2ffc0924dbb493fe0c123f"],
+              ["tests/test_native_policy_snapshot_v4_barrier.py","100644","255359a8e7d239fc5c907c331414ef5f10d750f6"],
+              ["tests/test_native_policy_snapshot_v4_publication.py","100644","82214f98c06c9c43d854156b9cf6612cd4d7538a"],
+              ["tests/test_native_policy_snapshot_windows.py","100644","591822b3833b16f2bd287b19e4b2549018fafbd5"],
+              ["tests/test_native_source_free_renewal.py","100644","433d59d0a74d0d04be3cf4659df858a2ddd513ff"],
+              ["tests/test_oauth_resolver_connection_handoff.py","100644","6db848d4fe04bc43d9d1e2b9afc3ee96d24fbf5f"],
+              ["tests/test_policy_bundle_v2.py","100644","a6f4ea47535a1c6bb83fb613d564c20fce0dbbca"],
+              ["tests/test_policy_lane_cli.py","100644","5edc3668a27e47f7131ba72c2535fa55131399ab"],
+              ["tests/test_policy_telemetry_isolation.py","100644","b313790176fe2dc6654b1b1001a9ce4c135c0ae4"],
+              ["tests/test_policy_telemetry_review_failures.py","100644","3f9d1eea8a5d782f6e9660f9480e12380e155dc0"],
+              ["tests/test_policy_telemetry_transport.py","100644","303626f38498bf52ab0ecf8569da0c53e7968b59"],
+              ["tests/test_python_hook_semantic_callgraph_gate.py","100644","ee076f1048776e4160aff5e5737f4df95aa2fd4e"],
+              ["tests/test_receipt_preselection_lock_scope.py","100644","bd0c61fa8b673360f7083bc6934b01fb6d2ee1e8"],
+              ["tests/test_receipt_runner_preference_integration.py","100644","77764873fb1cb37913ae5f5c63d535634d0d9502"],
+              ["tests/test_receipt_sync_authority.py","100644","e2a6b8e23c654c383f6a729867b1873364d86acd"],
+              ["tests/test_receipt_upload_preparation.py","100644","0068c264c9e80643e9ab830bb0ccd21e6d3fc95d"],
+              ["tests/test_receipt_upload_preparation_metadata.py","100644","1c36bbb37bfc184d4a67f09a613a21455f8c9fe7"],
+              ["tests/test_rust_io_ownership_gate.py","100644","122441797c7439cb8184512a351a9e2e0e26e0b0"],
+              ["tests/test_sync_retry_attempt_preparation.py","100644","2b8e3df0231e01836abac195a47cd89f00e64bb7"],
+              ["tests/test_workspace_preference_authority.py","100644","38482e9ce6e96c409066a0e62d92d56aeaf4a62a"],
+              ["uv.lock","100644","10e18a310e63ba3c5940e25b44269d48dfc7f2da"],
+          ]
+          for path, mode, sha in pins:
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              assert git("hash-object", "--", path) == sha
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          print(json.dumps({"sourceGuard": "passed", "pins": len(pins), "sourceLeaves": 4338}, sort_keys=True))
+          PY
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Download pytest coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-coverage-*
-          path: coverage-data
-      - name: Cache Sonar analyzer downloads
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ${{ runner.temp }}/sonar/cache
-          key: sonar-analyzers-${{ runner.os }}-${{ hashFiles('sonar-project.properties') }}
-      - name: Initialize pinned Rust analysis toolchain
-        shell: bash
-        run: bash scripts/ci/setup_sonar_rust.sh
-      - name: Cache Rust analysis dependencies
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-        with:
-          workspaces: rust
-          shared-key: sonar
-          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      - name: Prepare coverage and pinned Rust analysis
-        shell: bash
-        run: bash scripts/ci/prepare_sonar_analysis.sh
-      - name: Analyze with SonarQube Cloud
-        uses: sonarsource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
-        env:
-          SONAR_USER_HOME: ${{ runner.temp }}/sonar
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@7a5fffe8e523c40e0c740b6bc2712ab503e52efa
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  scheduling-sensitive:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run scheduling-sensitive tests untraced
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_extension_control_recovery.py
-          tests/test_guard_sandbox.py
-          tests/test_guard_js_lockfile_resolution_phase11.py
-          tests/test_guard_runtime_hook_scheduler.py
-          tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial
-          tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon
-          tests/test_guard_continuation_contract.py
-          --tb=short
-
-  compatibility:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-version compatibility contracts
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_cisco_install_surfaces.py
-          tests/test_policy.py
-          tests/test_policy_bundle_parser.py
-          --tb=short
-
-  deep-compatibility:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13"]
-        shard-index: [0, 1, 2, 3]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python }}
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
+          enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
         run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Run deep compatibility shard ${{ matrix.shard-index }}
-        shell: bash
+          python -I - <<'PY'
+          import pathlib
+          import venv
+
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Verify installation fixture interpreter provenance
         run: |
-          uv run --no-sync python scripts/ci/pytest_shard.py \
-            --shard-index "${{ matrix.shard-index }}" \
-            --shard-count 4 \
-            --granularity file > pytest-files.txt
-          test -s pytest-files.txt
-          uv run --no-sync pytest @pytest-files.txt --tb=short
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
 
-  mutation-baseline:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run command parser mutation baseline
-        run: uv run --no-sync mutmut run --max-children 4
-      - name: Validate mutation baseline
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
+      - name: Run all 99 existing fixture and lifecycle cases
+        id: fixture_cases
         run: |
-          uv run --no-sync mutmut export-cicd-stats
-          uv run --no-sync python scripts/ci/mutation_gate.py --target command-model
-
-  ci-python-312:
-    name: ci (3.12)
-    if: always()
-    needs: [quality, test-plan, tests, compatibility, scheduling-sensitive]
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Verify Python CI dependencies
-        env:
-          QUALITY_RESULT: ${{ needs.quality.result }}
-          TEST_PLAN_RESULT: ${{ needs.test-plan.result }}
-          TESTS_RESULT: ${{ needs.tests.result }}
-          COMPATIBILITY_RESULT: ${{ needs.compatibility.result }}
-          SCHEDULING_SENSITIVE_RESULT: ${{ needs.scheduling-sensitive.result }}
+          python -I - <<'PY'
+          import json
+          import os
+          import pathlib
+          
+          selected = json.loads(r'''["tests/test_guard_event_schema_v1.py::test_sync_guard_events_marks_rejected_events_terminal","tests/test_guard_event_schema_v1.py::test_sync_guard_events_normalizes_registry_base_url","tests/test_guard_event_schema_v1.py::test_sync_guard_events_posts_to_v1_ingest","tests/test_guard_event_schema_v1.py::test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing","tests/test_guard_event_schema_v1.py::test_sync_receipts_uploads_pending_guard_events","tests/test_guard_cloud_local_sync.py::test_sync_guard_events_preserves_pending_events_when_rate_limited","tests/test_guard_cloud_local_sync.py::test_sync_guard_events_preserves_pending_events_when_v1_endpoint_is_unavailable","tests/test_guard_cloud_local_sync.py::test_sync_guard_events_preserves_unavailable_summary_when_no_events_pending","tests/test_guard_cloud_local_sync.py::test_sync_guard_events_records_failed_backoff_without_dropping_pending_events","tests/test_guard_receipt_redaction_cursor.py::test_receipt_sync_401_forces_oauth_refresh_before_retry","tests/test_guard_runtime.py::test_sync_receipts_uses_rowid_cursor_and_sync_context","tests/test_guard_runtime.py::test_sync_guard_events_rejects_untrusted_sync_host_before_network","tests/test_guard_runtime.py::test_sync_receipts_marks_latest_connect_first_sync_succeeded","tests/test_guard_runtime.py::test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata","tests/test_guard_receipt_command_detail_backfill.py::test_sync_receipts_persists_command_detail_backfill_progress_after_partial_success","tests/test_guard_runtime.py::test_sync_local_guard_cloud_proof_refreshes_oauth_once","tests/test_guard_runtime.py::test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows","tests/test_guard_runtime.py::test_sync_receipts_batches_large_local_history","tests/test_guard_runtime.py::test_sync_pain_signals_rejects_untrusted_sync_host_before_network","tests/test_guard_runtime.py::test_sync_receipts_uses_distinct_dpop_proofs_per_batch","tests/test_policy_telemetry_transport.py::test_later_page_failure_reports_completed_page_and_retries_only_pending_page","tests/test_policy_telemetry_transport.py::test_real_guard_event_failure_records_current_progress_and_retries_pending_event","tests/test_policy_telemetry_transport.py::test_real_pain_transport_failure_keeps_cursor_until_success[404-telemetry_endpoint_unavailable]","tests/test_policy_telemetry_transport.py::test_real_pain_transport_failure_keeps_cursor_until_success[429-telemetry_rate_limited]","tests/test_policy_telemetry_transport.py::test_real_pain_transport_failure_keeps_cursor_until_success[500-telemetry_service_error]","tests/test_policy_telemetry_review_failures.py::test_accepted_pain_page_cursor_failure_propagates_completed_count[OSError]","tests/test_policy_telemetry_review_failures.py::test_accepted_pain_page_cursor_failure_propagates_completed_count[OperationalError]","tests/test_policy_telemetry_review_failures.py::test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[\"\\xff\"]","tests/test_policy_telemetry_review_failures.py::test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[\"secret-canary\"]","tests/test_policy_telemetry_review_failures.py::test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[[]]","tests/test_policy_telemetry_review_failures.py::test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[null]","tests/test_policy_telemetry_review_failures.py::test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[{\"secret-canary\":]","tests/test_policy_telemetry_review_failures.py::test_permanent_telemetry_request_rejection_propagates[400-guard_events]","tests/test_policy_telemetry_review_failures.py::test_permanent_telemetry_request_rejection_propagates[400-pain_signals]","tests/test_policy_telemetry_review_failures.py::test_permanent_telemetry_request_rejection_propagates[413-guard_events]","tests/test_policy_telemetry_review_failures.py::test_permanent_telemetry_request_rejection_propagates[413-pain_signals]","tests/test_inventory_daemon_scheduling.py::test_inventory_finishes_while_actual_cloud_response_is_pending[False-runtime]","tests/test_inventory_daemon_scheduling.py::test_inventory_finishes_while_actual_cloud_response_is_pending[False-receipts]","tests/test_inventory_daemon_scheduling.py::test_inventory_finishes_while_actual_cloud_response_is_pending[True-runtime]","tests/test_inventory_daemon_scheduling.py::test_inventory_finishes_while_actual_cloud_response_is_pending[True-receipts]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-unchanged]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-refresh]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-token-replacement]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-workspace]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-source-aba]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-unchanged]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-refresh]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-token-replacement]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-workspace]","tests/test_inventory_daemon_scheduling.py::test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-source-aba]","tests/test_guard_events.py::TestGuardEvents::test_guard_sync_filters_noisy_incident_signals","tests/test_guard_events.py::TestGuardEvents::test_guard_sync_preserves_query_params_when_normalizing_legacy_receipts_endpoint","tests/test_guard_events.py::TestGuardEvents::test_guard_sync_uploads_all_pain_signals_across_batches","tests/test_guard_events.py::TestGuardEvents::test_guard_sync_uploads_local_pain_signals","tests/test_guard_cli.py::TestGuardCli::test_guard_login_and_sync_posts_receipts","tests/test_oauth_resolver_connection_handoff.py::test_failed_final_authority_fence_does_not_emit_a_source[reset-cached]","tests/test_oauth_resolver_connection_handoff.py::test_failed_final_authority_fence_does_not_emit_a_source[reset-nonpersisted]","tests/test_oauth_resolver_connection_handoff.py::test_failed_final_authority_fence_does_not_emit_a_source[aba-cached]","tests/test_oauth_resolver_connection_handoff.py::test_failed_final_authority_fence_does_not_emit_a_source[aba-nonpersisted]","tests/test_oauth_resolver_connection_handoff.py::test_plain_test_authentication_never_mints_optional_upload_authority[memory]","tests/test_oauth_resolver_connection_handoff.py::test_plain_test_authentication_never_mints_optional_upload_authority[environment]","tests/test_receipt_preselection_lock_scope.py::test_local_withdrawal_while_waiting_for_credential_lock_refuses_progress","tests/test_receipt_runner_preference_integration.py::test_final_real_retry_withdrawal_stops_all_remaining_selected_batches","tests/test_receipt_runner_preference_integration.py::test_acknowledged_first_batch_cannot_complete_backfill_after_later_empty_retry","tests/test_receipt_runner_preference_integration.py::test_external_cursor_zero_written_during_response_read_survives_completion","tests/test_receipt_runner_preference_integration.py::test_source_replacement_during_response_read_never_commits_selected_progress[default]","tests/test_receipt_runner_preference_integration.py::test_source_replacement_during_response_read_never_commits_selected_progress[secondary]","tests/test_receipt_runner_preference_integration.py::test_signed_control_is_processed_after_optional_completion_is_declined[new-revision]","tests/test_receipt_runner_preference_integration.py::test_signed_control_is_processed_after_optional_completion_is_declined[optional-ledger]","tests/test_receipt_sync_authority.py::test_fault_after_preference_and_cursor_writes_rolls_everything_back","tests/test_receipt_sync_authority.py::test_same_authority_token_refresh_allows_original_progress","tests/test_receipt_sync_authority.py::test_same_sql_source_check_refuses_epoch_change_after_initial_capture","tests/test_receipt_sync_authority.py::test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[withdraw]","tests/test_receipt_sync_authority.py::test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[local-redaction]","tests/test_receipt_sync_authority.py::test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[signed-redaction]","tests/test_receipt_sync_authority.py::test_legacy_confirmation_and_progress_preserve_existing_acknowledgement","tests/test_receipt_upload_preparation_metadata.py::test_mutable_backfill_metadata_cannot_escape_into_sent_progress[list]","tests/test_receipt_upload_preparation_metadata.py::test_mutable_backfill_metadata_cannot_escape_into_sent_progress[dict]","tests/test_sync_retry_attempt_preparation.py::test_actual_gateway_rate_nonce_and_timeout_retries_prepare_their_own_content[False]","tests/test_sync_retry_attempt_preparation.py::test_actual_gateway_rate_nonce_and_timeout_retries_prepare_their_own_content[True]","tests/test_sync_retry_attempt_preparation.py::test_existing_validator_still_refuses_the_prepared_attempt_before_transport","tests/test_workspace_preference_authority.py::test_workspace_aba_never_revives_old_request","tests/test_workspace_preference_authority.py::test_pending_reset_cannot_capture_or_accept_then_complete_reset_needs_confirmation","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-False-False-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-False-False-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-False-True-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-False-True-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-True-False-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-True-False-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-True-True-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[False-True-True-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-False-False-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-False-False-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-False-True-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-False-True-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-True-False-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-True-False-True]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-True-True-False]","tests/test_workspace_preference_authority.py::test_remote_permission_never_grants_local_consent[True-True-True-True]"]''')
+          assert len(selected) == len(set(selected)) == 99
+          report = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"receipt-fixtures-{os.environ['MATRIX_PYTHON']}.xml"
+          arguments = ["uv", "run", "--no-sync", "pytest", "-q", "--tb=short", f"--junitxml={report}", *selected]
+          print(json.dumps({"selectedExistingCases": len(selected), "junit": str(report)}, sort_keys=True), flush=True)
+          os.execvp(arguments[0], arguments)
+          PY
+      - name: Account for every actual classname and case
+        id: fixture_report
+        if: ${{ always() && (steps.fixture_cases.outcome == 'success' || steps.fixture_cases.outcome == 'failure') }}
         run: |
-          test "$QUALITY_RESULT" = "success"
-          test "$TEST_PLAN_RESULT" = "success"
-          test "$TESTS_RESULT" = "success"
-          test "$COMPATIBILITY_RESULT" = "success"
-          test "$SCHEDULING_SENSITIVE_RESULT" = "success"
-
-  dashboard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: "1.3.14"
-      - run: cd dashboard && bun install --frozen-lockfile
-      - run: cd dashboard && bun run test
-      - name: Dashboard build and bundle-size report (L331)
+          python -I - <<'PY'
+          import collections
+          import json
+          import os
+          import pathlib
+          import xml.etree.ElementTree as ET
+          
+          path = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"receipt-fixtures-{os.environ['MATRIX_PYTHON']}.xml"
+          root = ET.parse(path).getroot()
+          cases = root.findall(".//testcase")
+          expected = json.loads(r'''[["tests.test_guard_event_schema_v1","test_sync_guard_events_marks_rejected_events_terminal"],["tests.test_guard_event_schema_v1","test_sync_guard_events_normalizes_registry_base_url"],["tests.test_guard_event_schema_v1","test_sync_guard_events_posts_to_v1_ingest"],["tests.test_guard_event_schema_v1","test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing"],["tests.test_guard_event_schema_v1","test_sync_receipts_uploads_pending_guard_events"],["tests.test_guard_cloud_local_sync","test_sync_guard_events_preserves_pending_events_when_rate_limited"],["tests.test_guard_cloud_local_sync","test_sync_guard_events_preserves_pending_events_when_v1_endpoint_is_unavailable"],["tests.test_guard_cloud_local_sync","test_sync_guard_events_preserves_unavailable_summary_when_no_events_pending"],["tests.test_guard_cloud_local_sync","test_sync_guard_events_records_failed_backoff_without_dropping_pending_events"],["tests.test_guard_receipt_redaction_cursor","test_receipt_sync_401_forces_oauth_refresh_before_retry"],["tests.test_guard_runtime","test_sync_receipts_uses_rowid_cursor_and_sync_context"],["tests.test_guard_runtime","test_sync_guard_events_rejects_untrusted_sync_host_before_network"],["tests.test_guard_runtime","test_sync_receipts_marks_latest_connect_first_sync_succeeded"],["tests.test_guard_runtime","test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata"],["tests.test_guard_receipt_command_detail_backfill","test_sync_receipts_persists_command_detail_backfill_progress_after_partial_success"],["tests.test_guard_runtime","test_sync_local_guard_cloud_proof_refreshes_oauth_once"],["tests.test_guard_runtime","test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows"],["tests.test_guard_runtime","test_sync_receipts_batches_large_local_history"],["tests.test_guard_runtime","test_sync_pain_signals_rejects_untrusted_sync_host_before_network"],["tests.test_guard_runtime","test_sync_receipts_uses_distinct_dpop_proofs_per_batch"],["tests.test_policy_telemetry_transport","test_later_page_failure_reports_completed_page_and_retries_only_pending_page"],["tests.test_policy_telemetry_transport","test_real_guard_event_failure_records_current_progress_and_retries_pending_event"],["tests.test_policy_telemetry_transport","test_real_pain_transport_failure_keeps_cursor_until_success[404-telemetry_endpoint_unavailable]"],["tests.test_policy_telemetry_transport","test_real_pain_transport_failure_keeps_cursor_until_success[429-telemetry_rate_limited]"],["tests.test_policy_telemetry_transport","test_real_pain_transport_failure_keeps_cursor_until_success[500-telemetry_service_error]"],["tests.test_policy_telemetry_review_failures","test_accepted_pain_page_cursor_failure_propagates_completed_count[OSError]"],["tests.test_policy_telemetry_review_failures","test_accepted_pain_page_cursor_failure_propagates_completed_count[OperationalError]"],["tests.test_policy_telemetry_review_failures","test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[\"\\xff\"]"],["tests.test_policy_telemetry_review_failures","test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[\"secret-canary\"]"],["tests.test_policy_telemetry_review_failures","test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[[]]"],["tests.test_policy_telemetry_review_failures","test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[null]"],["tests.test_policy_telemetry_review_failures","test_invalid_guard_event_response_is_recorded_without_aborting_applied_policy[{\"secret-canary\":]"],["tests.test_policy_telemetry_review_failures","test_permanent_telemetry_request_rejection_propagates[400-guard_events]"],["tests.test_policy_telemetry_review_failures","test_permanent_telemetry_request_rejection_propagates[400-pain_signals]"],["tests.test_policy_telemetry_review_failures","test_permanent_telemetry_request_rejection_propagates[413-guard_events]"],["tests.test_policy_telemetry_review_failures","test_permanent_telemetry_request_rejection_propagates[413-pain_signals]"],["tests.test_inventory_daemon_scheduling","test_inventory_finishes_while_actual_cloud_response_is_pending[False-runtime]"],["tests.test_inventory_daemon_scheduling","test_inventory_finishes_while_actual_cloud_response_is_pending[False-receipts]"],["tests.test_inventory_daemon_scheduling","test_inventory_finishes_while_actual_cloud_response_is_pending[True-runtime]"],["tests.test_inventory_daemon_scheduling","test_inventory_finishes_while_actual_cloud_response_is_pending[True-receipts]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-unchanged]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-refresh]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-token-replacement]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-workspace]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[False-source-aba]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-unchanged]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-refresh]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-token-replacement]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-workspace]"],["tests.test_inventory_daemon_scheduling","test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_commit[True-source-aba]"],["tests.test_guard_events.TestGuardEvents","test_guard_sync_filters_noisy_incident_signals"],["tests.test_guard_events.TestGuardEvents","test_guard_sync_preserves_query_params_when_normalizing_legacy_receipts_endpoint"],["tests.test_guard_events.TestGuardEvents","test_guard_sync_uploads_all_pain_signals_across_batches"],["tests.test_guard_events.TestGuardEvents","test_guard_sync_uploads_local_pain_signals"],["tests.test_guard_cli.TestGuardCli","test_guard_login_and_sync_posts_receipts"],["tests.test_oauth_resolver_connection_handoff","test_failed_final_authority_fence_does_not_emit_a_source[reset-cached]"],["tests.test_oauth_resolver_connection_handoff","test_failed_final_authority_fence_does_not_emit_a_source[reset-nonpersisted]"],["tests.test_oauth_resolver_connection_handoff","test_failed_final_authority_fence_does_not_emit_a_source[aba-cached]"],["tests.test_oauth_resolver_connection_handoff","test_failed_final_authority_fence_does_not_emit_a_source[aba-nonpersisted]"],["tests.test_oauth_resolver_connection_handoff","test_plain_test_authentication_never_mints_optional_upload_authority[memory]"],["tests.test_oauth_resolver_connection_handoff","test_plain_test_authentication_never_mints_optional_upload_authority[environment]"],["tests.test_receipt_preselection_lock_scope","test_local_withdrawal_while_waiting_for_credential_lock_refuses_progress"],["tests.test_receipt_runner_preference_integration","test_final_real_retry_withdrawal_stops_all_remaining_selected_batches"],["tests.test_receipt_runner_preference_integration","test_acknowledged_first_batch_cannot_complete_backfill_after_later_empty_retry"],["tests.test_receipt_runner_preference_integration","test_external_cursor_zero_written_during_response_read_survives_completion"],["tests.test_receipt_runner_preference_integration","test_source_replacement_during_response_read_never_commits_selected_progress[default]"],["tests.test_receipt_runner_preference_integration","test_source_replacement_during_response_read_never_commits_selected_progress[secondary]"],["tests.test_receipt_runner_preference_integration","test_signed_control_is_processed_after_optional_completion_is_declined[new-revision]"],["tests.test_receipt_runner_preference_integration","test_signed_control_is_processed_after_optional_completion_is_declined[optional-ledger]"],["tests.test_receipt_sync_authority","test_fault_after_preference_and_cursor_writes_rolls_everything_back"],["tests.test_receipt_sync_authority","test_same_authority_token_refresh_allows_original_progress"],["tests.test_receipt_sync_authority","test_same_sql_source_check_refuses_epoch_change_after_initial_capture"],["tests.test_receipt_sync_authority","test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[withdraw]"],["tests.test_receipt_sync_authority","test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[local-redaction]"],["tests.test_receipt_sync_authority","test_current_local_and_signed_restrictions_refuse_progress_without_losing_preference[signed-redaction]"],["tests.test_receipt_sync_authority","test_legacy_confirmation_and_progress_preserve_existing_acknowledgement"],["tests.test_receipt_upload_preparation_metadata","test_mutable_backfill_metadata_cannot_escape_into_sent_progress[list]"],["tests.test_receipt_upload_preparation_metadata","test_mutable_backfill_metadata_cannot_escape_into_sent_progress[dict]"],["tests.test_sync_retry_attempt_preparation","test_actual_gateway_rate_nonce_and_timeout_retries_prepare_their_own_content[False]"],["tests.test_sync_retry_attempt_preparation","test_actual_gateway_rate_nonce_and_timeout_retries_prepare_their_own_content[True]"],["tests.test_sync_retry_attempt_preparation","test_existing_validator_still_refuses_the_prepared_attempt_before_transport"],["tests.test_workspace_preference_authority","test_workspace_aba_never_revives_old_request"],["tests.test_workspace_preference_authority","test_pending_reset_cannot_capture_or_accept_then_complete_reset_needs_confirmation"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-False-False-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-False-False-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-False-True-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-False-True-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-True-False-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-True-False-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-True-True-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[False-True-True-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-False-False-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-False-False-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-False-True-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-False-True-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-True-False-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-True-False-True]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-True-True-False]"],["tests.test_workspace_preference_authority","test_remote_permission_never_grants_local_consent[True-True-True-True]"]]''')
+          observed = collections.Counter((case.get("classname"), case.get("name")) for case in cases)
+          required = collections.Counter(map(tuple, expected))
+          results = []
+          for case in cases:
+              tags = [tag for tag in ("failure", "error", "skipped") if case.findall(tag)]
+              row = {
+                  "classname": case.get("classname"),
+                  "name": case.get("name"),
+                  "results": tags or ["passed"],
+                  "pytestSeconds": case.get("time"),
+              }
+              results.append(row)
+              print(json.dumps(row, sort_keys=True))
+          print(json.dumps({
+              "expectedCases": len(expected),
+              "actualCases": len(cases),
+              "missing": list((required - observed).elements()),
+              "unexpected": list((observed - required).elements()),
+              "failureNodes": len(root.findall(".//failure")),
+              "errorNodes": len(root.findall(".//error")),
+              "skipNodes": len(root.findall(".//skipped")),
+          }, sort_keys=True))
+          assert observed == required, "actual JUnit classname/name inventory differs"
+          assert len(cases) == len(expected) == 99
+          assert not root.findall(".//failure")
+          assert not root.findall(".//error")
+          assert not root.findall(".//skipped")
+          assert all(row["results"] == ["passed"] for row in results)
+          print(json.dumps({"existingCases": 99, "fixtureCases": 55, "lifecycleCases": 44, "allPassed": True}, sort_keys=True))
+          PY
+      - name: Check all 17 fixture files with pinned Ruff
+        id: fixture_lint
+        if: ${{ always() && (steps.fixture_cases.outcome == 'success' || steps.fixture_cases.outcome == 'failure') }}
         run: |
-          cd dashboard && bun run build
-          git diff --exit-code -- ../src/codex_plugin_scanner/guard/daemon/static
-          js_size=$(du -sh dist/assets/*.js 2>/dev/null | awk '{print $1}' | head -1)
-          css_size=$(du -sh dist/assets/*.css 2>/dev/null | awk '{print $1}' | head -1)
-          echo "Bundle JS: ${js_size:-unknown}, CSS: ${css_size:-unknown}"
-
-  cisco-full:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - run: python3.13 -m pip install --dry-run --no-deps --require-hashes -r docker-requirements.txt
-      - run: uv sync --frozen --extra dev --extra cisco --group cisco-mcp --python 3.13
-      - run: uv run --no-sync pytest tests/test_cisco_install_surfaces.py tests/test_mcp_security.py tests/test_cli.py tests/test_action_runner.py tests/test_live_cisco_smoke.py --tb=short
-
-  cross-platform:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ["3.12"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-platform Guard regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_guard_skill_directory_identity.py
-          tests/test_guard_skill_directory_identity_discovery.py
-          tests/test_guard_skill_directory_identity_downstream.py
-          tests/test_guard_skill_directory_identity_links.py
-          tests/test_guard_consumer_skill_directory_identity.py
-          tests/test_guard_runner_skill_directory_identity.py
-          tests/test_gemini_adapter.py
-          tests/test_gemini_skill_directory_identity.py
-          tests/test_antigravity_adapter.py
-          tests/test_guard_aibom_detection.py
-          tests/test_guard_aibom_content_upload_batches.py
-          tests/test_guard_aibom_skill_directory_identity.py
-          --tb=short
-      - name: Run Windows Codex hook process-tree regressions
-        if: runner.os == 'Windows'
-        run: >-
-          uv run --no-sync pytest
-          tests/test_codex_hook_fallback_isolation.py
-          -k "isolated_process_timeout_kills_descendants or isolated_process_closes_descendant_held_pipes_after_parent_exit"
-          --tb=short
-      - name: Build and exercise packaged Windows Core daemon gate
-        if: runner.os == 'Windows'
-        shell: pwsh
+          python -I - <<'PY'
+          import json
+          import os
+          
+          paths = json.loads(r'''["tests/support/guard_cli_upload_case.py","tests/support/guard_event_upload_cases.py","tests/support/inventory_receipt_fixture.py","tests/support/optional_uploads.py","tests/support/receipt_transport.py","tests/test_guard_cli.py","tests/test_guard_cloud_local_sync.py","tests/test_guard_event_schema_v1.py","tests/test_guard_events.py","tests/test_guard_receipt_command_detail_backfill.py","tests/test_guard_receipt_redaction_cursor.py","tests/test_guard_runtime.py","tests/test_inventory_daemon_scheduling.py","tests/test_policy_bundle_v2.py","tests/test_policy_telemetry_isolation.py","tests/test_policy_telemetry_review_failures.py","tests/test_policy_telemetry_transport.py"]''')
+          assert len(paths) == len(set(paths)) == 17
+          arguments = ["uv", "run", "--no-sync", "ruff", "check", *paths]
+          os.execvp(arguments[0], arguments)
+          PY
+      - name: Check all 17 fixture files with pinned Ruff format
+        id: fixture_format
+        if: ${{ always() && (steps.fixture_cases.outcome == 'success' || steps.fixture_cases.outcome == 'failure') }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
-          $dist = Join-Path $env:RUNNER_TEMP "hol-guard-frozen"
-          $work = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-work"
-          $spec = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-spec"
-          $versionFile = Join-Path $env:RUNNER_TEMP "hol-guard-version-info.txt"
-          New-Item -ItemType Directory -Force -Path $dist, $work, $spec | Out-Null
-          uv sync --frozen --extra dev --extra mdm-build --python ${{ matrix.python-version }}
-          $version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()
-          uv run --no-sync python scripts/mdm/windows/write-version-info.py `
-            --version $version --output $versionFile
-          uv run --no-sync python -I scripts/release/stage_guard_cloud_review_artifacts.py `
-            --source-root (Get-Location).Path
-          if ($LASTEXITCODE -ne 0) {
-            throw "Staging Guard cloud review artifacts failed with exit code $LASTEXITCODE"
-          }
-          uv run --no-sync pyinstaller --clean --noconfirm --onedir --name hol-guard `
-            --collect-submodules codex_plugin_scanner --collect-data codex_plugin_scanner `
-            --version-file $versionFile `
-            --distpath $dist --workpath $work --specpath $spec `
-            scripts/mdm/hol-guard-entry.py
-          if ($LASTEXITCODE -ne 0) {
-            throw "PyInstaller failed with exit code $LASTEXITCODE"
-          }
-          $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE = Join-Path $dist "hol-guard/hol-guard.exe"
-          if (-not (Test-Path -LiteralPath $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE -PathType Leaf)) {
-            throw "Frozen hol-guard executable was not produced"
-          }
-          uv run --no-sync pytest tests/test_frozen_windows_daemon_bootstrap.py --tb=short
-
-  windows-updater:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.12"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run trusted updater and daemon regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_update_artifact.py
-          tests/test_guard_update_subprocess.py
-          tests/test_guard_update_isolation.py
-          tests/test_guard_phase03_local_install.py
-          tests/test_guard_phase03_remainder.py
-          tests/test_dashboard_update.py
-          tests/test_guard_daemon_manager.py
-          tests/test_guard_mdm_policy.py
-          --tb=short
+          python -I - <<'PY'
+          import json
+          import os
+          
+          paths = json.loads(r'''["tests/support/guard_cli_upload_case.py","tests/support/guard_event_upload_cases.py","tests/support/inventory_receipt_fixture.py","tests/support/optional_uploads.py","tests/support/receipt_transport.py","tests/test_guard_cli.py","tests/test_guard_cloud_local_sync.py","tests/test_guard_event_schema_v1.py","tests/test_guard_events.py","tests/test_guard_receipt_command_detail_backfill.py","tests/test_guard_receipt_redaction_cursor.py","tests/test_guard_runtime.py","tests/test_inventory_daemon_scheduling.py","tests/test_policy_bundle_v2.py","tests/test_policy_telemetry_isolation.py","tests/test_policy_telemetry_review_failures.py","tests/test_policy_telemetry_transport.py"]''')
+          assert len(paths) == len(set(paths)) == 17
+          arguments = ["uv", "run", "--no-sync", "ruff", "format", "--check", *paths]
+          os.execvp(arguments[0], arguments)
+          PY
+      - name: Verify all source bindings after the checks
+        id: source_after
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "ea924506494786e6c66ade7d71aa51e4e1a768ca"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-receipt-fixtures-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [
+              source, "5102c8dac95edb18d15ef9054fdf15bad15bdfc6"
+          ]
+          assert git("rev-parse", source + "^{tree}") == "06beab45a68faa3087de8b4e8ef6b376aee611f2"
+          assert git("rev-parse", "5102c8dac95edb18d15ef9054fdf15bad15bdfc6^{tree}") == "f3d7585ffbfab7aff3920cc50f2c55daa1b5e98a"
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, "5102c8dac95edb18d15ef9054fdf15bad15bdfc6")
+          assert git("diff", "--name-status", "5102c8dac95edb18d15ef9054fdf15bad15bdfc6", source).splitlines() == ["M\tsrc/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","M\tsrc/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","A\ttests/support/guard_cli_upload_case.py","A\ttests/support/guard_event_upload_cases.py","A\ttests/support/inventory_receipt_fixture.py","A\ttests/support/optional_uploads.py","A\ttests/support/receipt_transport.py","M\ttests/test_guard_cli.py","M\ttests/test_guard_cloud_local_sync.py","M\ttests/test_guard_event_schema_v1.py","M\ttests/test_guard_events.py","M\ttests/test_guard_receipt_command_detail_backfill.py","M\ttests/test_guard_receipt_redaction_cursor.py","M\ttests/test_guard_runtime.py","M\ttests/test_inventory_daemon_scheduling.py","M\ttests/test_policy_bundle_v2.py","M\ttests/test_policy_telemetry_isolation.py","M\ttests/test_policy_telemetry_review_failures.py","M\ttests/test_policy_telemetry_transport.py"]
+          assert git("diff", "--name-status", source, "HEAD").splitlines() == ["M\t.github/workflows/ci.yml"]
+          assert len(git("ls-tree", "-r", "--name-only", source).splitlines()) == 4338
+          assert len(git("ls-tree", "-r", "--name-only", "HEAD").splitlines()) == 4338
+          pins = [
+              [".github/workflows/native-managed-source-contract.yml","100644","ae8180cb4e6710902c6a5d699cd636c3988fcee2"],
+              ["basedpyright.native-managed-source.json","100644","6b889e5409ffe4e4a9c562e23b8c16dfc0381701"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["docs/guard/contracts/hook-data-plane-ownership.v2.json","100644","a73156839953a3f2febb0b723a289076a0e77b41"],
+              ["docs/guard/contracts/python-capability-ownership.v1.json","100644","95c440ac60c1714f226b258f2ba61ae536990635"],
+              ["docs/guard/runtime-lane-capabilities.md","100644","b36be5df87c034287c2d8514d6ac0d3aac2a32d9"],
+              ["pyproject.toml","100644","64a0281ee6b4f57a74cab68ac992fec3d782a6bb"],
+              ["rust/crates/guard-runtime/src/resident_protocol.rs","100644","8f9fd6b945fb34be55c226de73b9b1f39fbd40d2"],
+              ["scripts/ci/python_hook_semantic_callgraph_gate.py","100644","bb50c30fff2c404a95b59e64879a999d4bdba0db"],
+              ["scripts/ci/rust_io_ownership_contract.py","100644","72ff99af196daf61e35f04fbf776c2da15569d9f"],
+              ["scripts/ci/rust_io_ownership_gate.py","100644","004e7379ba3eeca4af53209136fab3dc44a52da8"],
+              ["scripts/ci/rust_io_ownership_resolver.py","100644","cd08a07d6ed43308ae1c0626d02a168151e9fb9f"],
+              ["src/codex_plugin_scanner/guard/daemon/server.py","100644","2792f7cf919da55d02435b8fb3295ae2d514a6f5"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_read.py","100644","9dac9c06033f2c354a3fd0c174760006fa926a73"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","93f0d9c6be38ce9ae46abbe402b3097bb1efe618"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py","100644","f9b698c7c5fa22e4819613bce45d07932957042a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","eb0980b345de9878b4845116cd2561f6165dd138"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","100644","beec3175379593000147b86a6039543f9e8221b4"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","cd0749d72df7ab9a5328f57129ca1bf44c769e60"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","5f88a6ecdacc7fb426d5d6306a8faa44602de3a4"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","100644","9b59002f683443f190e6535bbdd66cddf525a1d0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","26b091171d6d9f377411e3f51543c1089ea2da56"],
+              ["src/codex_plugin_scanner/guard/oauth_connection_authority.py","100644","09b71c5a50fb7234347935d3d22421b29b809c96"],
+              ["src/codex_plugin_scanner/guard/policy_lane_capabilities.py","100644","89253e79d259ce4cb6adda7ba6e3daffbd58e72f"],
+              ["src/codex_plugin_scanner/guard/runtime/receipt_sync_steps.py","100644","fdf973a7b6c80fab7b2007fb850d91de9f63713a"],
+              ["src/codex_plugin_scanner/guard/runtime/runner.py","100644","62d1fd83e34dafaa1a05189da0b80a5249bf7b43"],
+              ["src/codex_plugin_scanner/guard/runtime/sync_request_attempts.py","100644","98a3182f51e7b5730feffab5bf7dd833f41cb966"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority.py","100644","39c5ff235685f3f2869155d1cf2d4d9097370967"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_support.py","100644","c6177516cbb6150bff636ee7e2f3685e9b95f8b9"],
+              ["src/codex_plugin_scanner/guard/store_sync_payload_mutations.py","100644","4cba562fb67a2fe20ee741cd0ec8b903efef02d8"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","e6809fc5e6b09590a63698e8d8bfef597252b9f4"],
+              ["tests/native_policy_snapshot_windows_handles.py","100644","23dac63bb6631785a4e316d28fde2ff5273ab18c"],
+              ["tests/native_policy_snapshot_windows_storage.py","100644","0622a7f2d469dddd88ae1e4ecff5b6d42db7b6cc"],
+              ["tests/support/guard_cli_upload_case.py","100644","f199a6ed8b0f4da5f06d7046a6a8b602bc0aaf57"],
+              ["tests/support/guard_event_upload_cases.py","100644","ad52d7ddbe9cd68e69c1f94edf06ffd035b0a77c"],
+              ["tests/support/inventory_receipt_fixture.py","100644","f8837304b3a697f435d7b496f119a49467159a5c"],
+              ["tests/support/optional_uploads.py","100644","36c18b2fee7f4607411e819006771c2eba7b8a52"],
+              ["tests/support/receipt_transport.py","100644","67dd414343dc3812f8103920624d90756f64681c"],
+              ["tests/test_canonical_policy_row_authority.py","100644","f4d5ef43a27a48bfa152f2934a255418df023774"],
+              ["tests/test_guard_cli.py","100644","45449faa511387cb79bf9fce1968ee6bdfaff7b8"],
+              ["tests/test_guard_cloud_local_sync.py","100644","54993cfad373befd61e9363e3d70e397f4c34cac"],
+              ["tests/test_guard_event_schema_v1.py","100644","b90a4a3042cc7109f7cfd9bfa38e394cd228ff38"],
+              ["tests/test_guard_events.py","100644","d819f789e2f374f30ca3020297764b6bd3bafcb5"],
+              ["tests/test_guard_receipt_command_detail_backfill.py","100644","8c24654fc121ccf1006980c011b1110a6a11bcc8"],
+              ["tests/test_guard_receipt_redaction_cursor.py","100644","4f27601d95d214191c0505484c6b97e260a0cb81"],
+              ["tests/test_guard_runtime.py","100644","b02bfe7374cd83ae2f877a2110adbf5ce5dacb73"],
+              ["tests/test_hook_data_plane_ownership_gate.py","100644","456811f0f581defedc00c8f63f61cf724342489f"],
+              ["tests/test_inventory_daemon_scheduling.py","100644","b5bc6ee6e742489ae0c512166e7f6c3a176ea809"],
+              ["tests/test_native_generic_sync_unstaged.py","100644","bb7bc3ec887ec188f8eb7ab8797c72ab0d598446"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","915b648d205aa205b7e6b303f37e504bd6b6f193"],
+              ["tests/test_native_policy_snapshot_contract.py","100644","abd5956fe0dc3cfc17db34404e6915ce23452fd9"],
+              ["tests/test_native_policy_snapshot_persistence.py","100644","f4a82792fa049724f2fd1133d43aa20aa59cbefb"],
+              ["tests/test_native_policy_snapshot_post_ack_retry.py","100644","241ed665d8b85ca554055a50ef44671a8b2f310e"],
+              ["tests/test_native_policy_snapshot_post_ack_retry_commit.py","100644","29280d37f563f3f2996fc2027ddd3a2de50ad6ff"],
+              ["tests/test_native_policy_snapshot_post_ack_retry_guards.py","100644","6512ccb8fd9432883c365ea159dc9bede82f46e7"],
+              ["tests/test_native_policy_snapshot_publisher.py","100644","c4ad2122cc3aa021ee9ae836f119e2c24bc12ad6"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","a663d5014bc62822c0c86d970b0ce056f4e97cd3"],
+              ["tests/test_native_policy_snapshot_resident_retry.py","100644","ac80c25fc582ecab7e77b48696b7a58a7e09a7ad"],
+              ["tests/test_native_policy_snapshot_v3_publisher.py","100644","b73e7f4ed86dd69d0f2ffc0924dbb493fe0c123f"],
+              ["tests/test_native_policy_snapshot_v4_barrier.py","100644","255359a8e7d239fc5c907c331414ef5f10d750f6"],
+              ["tests/test_native_policy_snapshot_v4_publication.py","100644","82214f98c06c9c43d854156b9cf6612cd4d7538a"],
+              ["tests/test_native_policy_snapshot_windows.py","100644","591822b3833b16f2bd287b19e4b2549018fafbd5"],
+              ["tests/test_native_source_free_renewal.py","100644","433d59d0a74d0d04be3cf4659df858a2ddd513ff"],
+              ["tests/test_oauth_resolver_connection_handoff.py","100644","6db848d4fe04bc43d9d1e2b9afc3ee96d24fbf5f"],
+              ["tests/test_policy_bundle_v2.py","100644","a6f4ea47535a1c6bb83fb613d564c20fce0dbbca"],
+              ["tests/test_policy_lane_cli.py","100644","5edc3668a27e47f7131ba72c2535fa55131399ab"],
+              ["tests/test_policy_telemetry_isolation.py","100644","b313790176fe2dc6654b1b1001a9ce4c135c0ae4"],
+              ["tests/test_policy_telemetry_review_failures.py","100644","3f9d1eea8a5d782f6e9660f9480e12380e155dc0"],
+              ["tests/test_policy_telemetry_transport.py","100644","303626f38498bf52ab0ecf8569da0c53e7968b59"],
+              ["tests/test_python_hook_semantic_callgraph_gate.py","100644","ee076f1048776e4160aff5e5737f4df95aa2fd4e"],
+              ["tests/test_receipt_preselection_lock_scope.py","100644","bd0c61fa8b673360f7083bc6934b01fb6d2ee1e8"],
+              ["tests/test_receipt_runner_preference_integration.py","100644","77764873fb1cb37913ae5f5c63d535634d0d9502"],
+              ["tests/test_receipt_sync_authority.py","100644","e2a6b8e23c654c383f6a729867b1873364d86acd"],
+              ["tests/test_receipt_upload_preparation.py","100644","0068c264c9e80643e9ab830bb0ccd21e6d3fc95d"],
+              ["tests/test_receipt_upload_preparation_metadata.py","100644","1c36bbb37bfc184d4a67f09a613a21455f8c9fe7"],
+              ["tests/test_rust_io_ownership_gate.py","100644","122441797c7439cb8184512a351a9e2e0e26e0b0"],
+              ["tests/test_sync_retry_attempt_preparation.py","100644","2b8e3df0231e01836abac195a47cd89f00e64bb7"],
+              ["tests/test_workspace_preference_authority.py","100644","38482e9ce6e96c409066a0e62d92d56aeaf4a62a"],
+              ["uv.lock","100644","10e18a310e63ba3c5940e25b44269d48dfc7f2da"],
+          ]
+          for path, mode, sha in pins:
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              assert git("hash-object", "--", path) == sha
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          print(json.dumps({"sourceGuard": "passed", "pins": len(pins), "sourceLeaves": 4338}, sort_keys=True))
+          PY

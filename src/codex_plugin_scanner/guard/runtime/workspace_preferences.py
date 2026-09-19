@@ -14,12 +14,12 @@ from ..workspace_preference_authority import (
     capture_workspace_preference_state,
     parse_workspace_preferences,
 )
+from .receipt_redaction import compose_receipt_redaction_level
 
 if TYPE_CHECKING:
     from ..store import GuardStore
 
 __all__ = ["CONTRACT", "WorkspacePreferences", "parse_workspace_preferences"]
-_LEVELS = {"none": 0, "partial": 1, "full": 2}
 
 
 def read_workspace_preferences(store: GuardStore) -> WorkspacePreferences | None:
@@ -67,18 +67,9 @@ def effective_receipt_redaction_level(
     store: GuardStore, *, required_connection: OAuthConnectionSnapshot | None = None
 ) -> str:
     try:
-        local = load_guard_config(store.guard_home).receipt_redaction_level
-        if local not in _LEVELS:
-            return "full"
-        levels = [local]
+        config = load_guard_config(store.guard_home)
         signed = validated_synced_policy_bundle(store)
-        if signed is not None:
-            level = signed.get("receiptRedactionLevel")
-            if isinstance(level, str) and level in _LEVELS:
-                levels.append(level)
         current = capture_workspace_preference_state(store, required_connection=required_connection).preferences
-        if current is not None:
-            levels.append(current.redaction_level)
-        return max(levels, key=_LEVELS.__getitem__)
+        return compose_receipt_redaction_level(config, signed, None if current is None else current.redaction_level)
     except (OSError, RuntimeError, ValueError, TypeError):
         return "full"

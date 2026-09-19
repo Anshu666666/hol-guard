@@ -120,7 +120,46 @@ mod tests {
     use super::*;
     use crate::policy_scoped_sensitive_read::derive_sensitive_read_artifact;
     use guard_contracts::GuardHookEnvelopeV2;
-    use serde_json::json;
+    use serde_json::{json, Value};
+
+    fn envelope(case: &Value) -> GuardHookEnvelopeV2 {
+        serde_json::from_value(json!({
+            "schema":"guard-hook-envelope.v2", "harness":case["harness"],
+            "event":"PreToolUse", "raw_payload":case["payload"],
+            "policy_generation":1, "policy_snapshot":{}, "source":case["source"]
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn matches_all_actual_python_evaluation_and_observe_vectors() {
+        let values = crate::policy_scoped_enforcement::policy_vector_ordinary::vectors();
+        let cases = values["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 133);
+        for case in cases {
+            let source = envelope(case);
+            let artifact = derive_sensitive_read_artifact(&source, &source.harness).unwrap();
+            assert_eq!(artifact.artifact_id, case["artifactId"].as_str().unwrap());
+            let policy = serde_json::from_value(case["effectivePolicy"].clone()).unwrap();
+            let result =
+                sensitive_read_configuration(&policy, &source.harness, &artifact.artifact_id)
+                    .unwrap();
+            assert_eq!(
+                result.evaluated_action,
+                case["expected"]["evaluatedPolicyAction"].as_str().unwrap(),
+                "{} evaluated",
+                case["name"]
+            );
+            if case["mode"] == "observe" {
+                assert_eq!(
+                    result.observe_action,
+                    case["expected"]["finalPolicyAction"].as_str().unwrap(),
+                    "{} Observe",
+                    case["name"]
+                );
+            }
+        }
+    }
 
     fn sample_source() -> GuardHookEnvelopeV2 {
         serde_json::from_value(json!({

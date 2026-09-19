@@ -22,6 +22,7 @@ from .hook_availability_policy import (
     hook_review_is_recording_only,
     recording_only_pre_tool_response,
 )
+from .hook_native_activity import _record_native_pre_activity, _record_unavailable_native
 from .hook_native_policy_context import capture_result_context
 from .hook_native_review_approval import pause_native_pre_tool_for_approval
 from .hook_native_review_fence import native_review_fence
@@ -139,69 +140,6 @@ class _HookWorkerNativeHost(Protocol):
     _review_native_edge_with_snapshot: Callable[..., tuple[dict[str, object], bool]]
     _record_post_tool_activity: Callable[..., None]
     _record_native_decision_receipt: Callable[[object], Mapping[str, object] | None]
-
-
-def _record_native_pre_activity(
-    host: _HookWorkerNativeHost,
-    harness: str,
-    payload: Mapping[str, object],
-    response: dict[str, object],
-    receipt: Mapping[str, object] | None = None,
-) -> dict[str, object]:
-    submit = getattr(host.activity_writer, "submit_command_activity", None)
-    if callable(submit):
-        with suppress(Exception):
-            submit(
-                harness=harness,
-                event="PreToolUse",
-                payload=payload,
-                succeeded=True,
-                policy_action=response.get("policy_action"),
-                receipt_id=receipt.get("decision_id") if receipt is not None else None,
-                prompted=response.get("prompted") is True,
-                approval_reuse_status=response.get("approval_reuse_status", "not-applicable"),
-            )
-    return response
-
-
-def _record_unavailable_native(
-    host: _HookWorkerNativeHost,
-    payload: dict[str, object],
-    *,
-    harness: str,
-    event_name: str,
-    reason_code: str,
-    workspace: Path | None,
-    home_dir: Path,
-    guard_home: Path,
-    recording_only: bool,
-) -> dict[str, object]:
-    response = availability_harness_response(
-        payload,
-        harness=harness,
-        event_name=event_name,
-        reason_code=reason_code,
-        reason="HOL Guard could not complete the native hook decision safely.",
-        workspace=workspace,
-        home_dir=home_dir,
-        guard_home=guard_home,
-        recording_only=recording_only,
-    )
-    route = "native_degraded" if response.get("reason_code") == "native_degraded_emergency_safe" else "native_fail_safe"
-    host.metrics.record_route(route)
-    if event_name == "PreToolUse":
-        writer = host.activity_writer
-        submit = getattr(writer, "submit_command_activity", None)
-        if callable(submit):
-            with suppress(Exception):
-                _ = submit(
-                    harness=harness,
-                    event=event_name,
-                    payload=payload,
-                    succeeded=str(response.get("policy_action") or "") != "block",
-                    policy_action=response.get("policy_action"),
-                )
-    return response
 
 
 def _scoped_authority_unavailable(
@@ -390,6 +328,8 @@ class HookWorkerNativeMixin:
                 self.metrics.record_route("native_resident")
             return response
         except TimeoutError:
+            if required or scoped or policy_authority_required(publisher):
+                return _scoped_authority_unavailable(self, harness, event_name)
             return _record_unavailable_native(
                 self,
                 payload,
@@ -402,6 +342,8 @@ class HookWorkerNativeMixin:
                 recording_only=recording_only,
             )
         except (OSError, NativePolicySnapshotError):
+            if required or scoped or policy_authority_required(publisher):
+                return _scoped_authority_unavailable(self, harness, event_name)
             if fenced is False:
                 raise
             return _record_unavailable_native(

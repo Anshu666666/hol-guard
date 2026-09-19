@@ -310,8 +310,7 @@ class RuntimeHookScheduler:
             self._active_by_harness[item.harness] = self._active_by_harness.get(item.harness, 0) + 1
             self._active_by_client[item.client_key] = self._active_by_client.get(item.client_key, 0) + 1
             self._admitted += 1
-        # Awakened callers dispatch again before waiting. A no-op notification
-        # would make them continually wake each other while capacity is full.
+        # Avoid repeated wakeups from blocked callers when dispatch changes no queue state.
         if self._queued != queued_before:
             self._condition.notify_all()
 
@@ -478,8 +477,7 @@ class RuntimeHookScheduler:
                 self._service_time_by_lane[item.lane].append((finished_at, service_time))
             self._dispatch()
 
-            # Byte reservations also wait here, including when no reviews are
-            # queued and dispatch has no admission or expiry to announce.
+            # Wake byte reservations even when dispatch has no review admission or expiry.
             self._condition.notify_all()
 
     def _oldest_queued_ms(self, now: float) -> float:

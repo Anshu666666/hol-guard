@@ -41,6 +41,10 @@ class CapturedV3PublicationInputs(NativeCloudPolicyInputs):
     input_digest: str = ""
 
 
+class NativePolicyCaptureChangedError(NativePolicySnapshotError):
+    """A local reservation refused a database race with unchanged captured policy."""
+
+
 def requires_scoped_publication(publisher: NativePolicySnapshotPublisher, inputs: NativeVerifiedPolicyInputs) -> bool:
     authority = inputs.authority
     return bool(
@@ -331,7 +335,8 @@ def capture_for_reservation(
     The caller reserves signed bytes inside this scope and releases it before
     transport. A native retirement then fences any older prepared request.
     """
-    from .native_policy_snapshot_publisher_scoped import _capture_metadata_equal
+    from .native_policy_snapshot_publisher_scoped import _capture_metadata_equal, _policy_fingerprint
+    from .native_policy_snapshot_v3_renewal import _external_source_metadata
 
     remaining = deadline_monotonic - time.monotonic()
     if remaining <= 0:
@@ -384,6 +389,25 @@ def capture_for_reservation(
                             )
                         if retry_capture:
                             continue
+                        # Keep this reservation refused. Only a locally observed
+                        # database race in the same source-free V3 policy may
+                        # request one fresh worker attempt; resident error text
+                        # cannot manufacture this eligibility.
+                        database = str(publisher.store.path)
+                        if (
+                            isinstance(inputs, CapturedV3PublicationInputs)
+                            and isinstance(old_inputs, CapturedV3PublicationInputs)
+                            and inputs.source_identity is None
+                            and old_inputs.source_identity is None
+                            and inputs.defaults is None
+                            and old_inputs.defaults is None
+                            and inputs.input_digest == old_inputs.input_digest
+                            and _policy_fingerprint(current[3]) == _policy_fingerprint(expected[3])
+                            and current[6] == expected[6]
+                            and _external_source_metadata(before, database)
+                            == _external_source_metadata(after, database)
+                        ):
+                            raise NativePolicyCaptureChangedError("native_policy_authority_capture_changed")
                         raise NativePolicySnapshotError("native_policy_authority_capture_changed")
                     if time.monotonic() >= deadline_monotonic:
                         raise NativePolicySnapshotError("native_policy_snapshot_deadline_exceeded")

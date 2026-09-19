@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -11,6 +12,7 @@ import pytest
 
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings
 from codex_plugin_scanner.guard.cli import extension_controls_commands as cli
+from codex_plugin_scanner.guard.daemon import extension_control_api as api_module
 from codex_plugin_scanner.guard.daemon.client import GuardDaemonRequestError, GuardSurfaceDaemonClient
 from codex_plugin_scanner.guard.daemon.extension_control_api import ExtensionControlApiService
 from codex_plugin_scanner.guard.daemon.extension_control_errors import ExtensionControlApiError
@@ -40,6 +42,70 @@ def _local_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> GuardStore:
     _enroll(store)
     assert store.read_extension_control_authority_for_registry(REGISTRY).health is AuthorityHealth.PROTECTED
     return store
+
+
+def _key_recovery_before(store: GuardStore) -> dict[str, object]:
+    key = store._authority_key(required=True)
+    assert isinstance(key, bytes)
+    with store._connect() as connection:
+        snapshot = connection.execute("select * from extension_control_authority_snapshot").fetchone()
+        assert snapshot is not None
+        transitions = connection.execute(
+            "select * from extension_control_authority_transition order by revision"
+        ).fetchall()
+        proofs = connection.execute(
+            "select * from extension_control_authority_proof order by transition_revision, proof_id_hash"
+        ).fetchall()
+    return {
+        "key_digest": hashlib.sha256(key).hexdigest(),
+        "snapshot": dict(snapshot),
+        "transitions": [dict(row) for row in transitions],
+        "proofs": [dict(row) for row in proofs],
+    }
+
+
+def _observe_real_key_recovery(
+    store: GuardStore, monkeypatch: pytest.MonkeyPatch, *, via_cli: bool = False
+) -> list[str]:
+    module = cli if via_cli else api_module
+    consume = module.consume_extension_control_grant
+    recover = store.recover_extension_control_authority
+    events: list[str] = []
+
+    def consume_then_record(*args, **kwargs):
+        consume(*args, **kwargs)
+        events.append("consumed")
+
+    def recover_after_consumption(*args, **kwargs):
+        assert events == ["consumed"], "Recovery requires a consumed real approval grant."
+        result = recover(*args, **kwargs)
+        events.append("recovered")
+        return result
+
+    monkeypatch.setattr(module, "consume_extension_control_grant", consume_then_record)
+    monkeypatch.setattr(store, "recover_extension_control_authority", recover_after_consumption)
+    return events
+
+
+def _assert_complete_key_recovery(
+    store: GuardStore, before: dict[str, object], events: list[str], *, verify_key_change: bool = True
+) -> None:
+    assert events == ["consumed", "recovered"]
+    current = store.read_extension_control_authority_for_registry(REGISTRY)
+    assert current.health is AuthorityHealth.PROTECTED
+    assert current.revision == 0 and current.managed_revision == 0 and current.layers == ()
+    if verify_key_change:
+        key = store._authority_key(required=True)
+        assert isinstance(key, bytes)
+        assert hashlib.sha256(key).hexdigest() != before["key_digest"]
+    with store._connect() as connection:
+        archives = connection.execute("select * from extension_control_authority_recovery_archive").fetchall()
+    assert len(archives) == 1
+    archive = archives[0]
+    assert archive["reason"] == "authentication-key-missing"
+    assert json.loads(archive["snapshot_row_json"]) == before["snapshot"]
+    assert json.loads(archive["transition_rows_json"]) == before["transitions"]
+    assert json.loads(archive["proof_rows_json"]) == before["proofs"]
 
 
 def _damage(store: GuardStore, kind: str) -> None:
@@ -80,6 +146,8 @@ def test_api_missing_key_recovery_requires_approval_and_rebuilds_authenticated_c
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     store = _local_store(tmp_path, monkeypatch)
+    key_before = _key_recovery_before(store)
+    key_events = _observe_real_key_recovery(store, monkeypatch)
     old_key = store._secret_store().get_secret(store._key_ref())
     assert old_key is not None
     _damage(store, "key")
@@ -99,6 +167,7 @@ def test_api_missing_key_recovery_requires_approval_and_rebuilds_authenticated_c
     assert response["health"] == AuthorityHealth.PROTECTED.value
     assert runtime.current().health is AuthorityHealth.PROTECTED
     assert store.read_extension_control_authority_for_registry(REGISTRY).health is AuthorityHealth.PROTECTED
+    _assert_complete_key_recovery(store, key_before, key_events, verify_key_change=False)
     store._secret_store().set_secret(store._key_ref(), old_key)
     assert store.read_extension_control_authority_for_registry(REGISTRY).health in {
         AuthorityHealth.TAMPERED,
@@ -153,6 +222,8 @@ def test_cli_success_follows_complete_persisted_authority(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], damage: str
 ) -> None:
     store = _local_store(tmp_path, monkeypatch)
+    key_before = _key_recovery_before(store) if damage == "key" else None
+    key_events = _observe_real_key_recovery(store, monkeypatch, via_cli=True) if damage == "key" else []
     _damage(store, damage)
     monkeypatch.setattr(cli, "GuardStore", lambda _guard_home: store)
     monkeypatch.setattr(
@@ -170,6 +241,9 @@ def test_cli_success_follows_complete_persisted_authority(
         output_stream=output,
     )
     composed = store.read_extension_control_authority_for_registry(REGISTRY)
+    if damage == "key":
+        assert key_before is not None
+        _assert_complete_key_recovery(store, key_before, key_events)
     if damage in {"local", "key"}:
         assert result == 0
         assert json.loads(output.getvalue())["health"] == composed.health.value == AuthorityHealth.PROTECTED.value
@@ -186,6 +260,8 @@ def test_authenticated_http_recovery_reports_complete_authority(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str
 ) -> None:
     store = _local_store(tmp_path, monkeypatch)
+    key_before = _key_recovery_before(store) if damage == "key" else None
+    key_events = _observe_real_key_recovery(store, monkeypatch) if damage == "key" else []
     _damage(store, damage)
     daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
     daemon.start()
@@ -202,6 +278,9 @@ def test_authenticated_http_recovery_reports_complete_authority(
             assert client.effective_extension_controls()["health"] == AuthorityHealth.TAMPERED.value
         else:
             response = client.recover_extension_control_authority(payload)
+            if damage == "key":
+                assert key_before is not None
+                _assert_complete_key_recovery(store, key_before, key_events)
             assert response["health"] == AuthorityHealth.PROTECTED.value
             assert client.effective_extension_controls()["health"] == AuthorityHealth.PROTECTED.value
     finally:

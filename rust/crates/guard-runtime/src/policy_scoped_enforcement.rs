@@ -329,3 +329,31 @@ fn apply_scoped_pre_tool_policy(
         now_ms,
     )
 }
+
+#[cfg(test)]
+#[path = "policy_vector_fixtures.rs"]
+mod policy_vector_fixtures;
+
+#[cfg(test)]
+#[path = "policy_vector_ordinary.rs"]
+pub(crate) mod policy_vector_ordinary;
+
+#[cfg(test)]
+#[path = "policy_vector_mixed.rs"]
+mod policy_vector_mixed;
+
+#[cfg(test)]
+#[path = "policy_vector_generic.rs"]
+mod policy_vector_generic;
+
+#[cfg(test)]
+#[path = "policy_vector_commitment_tests.rs"]
+mod policy_vector_commitment_tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_sensitive_tests.rs"]
+mod sensitive_tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_generic_tests.rs"]
+mod generic_tests;

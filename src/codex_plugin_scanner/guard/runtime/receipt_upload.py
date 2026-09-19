@@ -21,11 +21,10 @@ from ..receipt_sync_authority import (
 )
 from ..synced_policy import validated_synced_policy_bundle
 from ..workspace_preference_authority import CONTRACT, WorkspacePreferenceState, _plain_json
+from .receipt_redaction import compose_receipt_redaction_level
 
 if TYPE_CHECKING:
     from ..store import GuardStore
-
-_LEVELS = {"none": 0, "partial": 1, "full": 2}
 
 
 def capture_optional_receipt_state(
@@ -45,19 +44,9 @@ def optional_upload_settings(
     """A current source permits optional content only within all local privacy limits."""
     try:
         config = load_guard_config(store.guard_home)
-        local_level = config.receipt_redaction_level
-        if local_level not in _LEVELS:
-            return False, "full"
-        levels = [local_level]
         signed = validated_synced_policy_bundle(store)
-        if signed is not None and "receiptRedactionLevel" in signed:
-            signed_level = signed["receiptRedactionLevel"]
-            if type(signed_level) is not str or signed_level not in _LEVELS:
-                return False, "full"
-            levels.append(signed_level)
-        if state is not None and state.preferences is not None:
-            levels.append(state.preferences.redaction_level)
-        level = max(levels, key=_LEVELS.__getitem__)
+        remote_level = None if state is None or state.preferences is None else state.preferences.redaction_level
+        level = compose_receipt_redaction_level(config, signed, remote_level)
         if (
             config.sync is not True
             or (telemetry and config.telemetry is not True)

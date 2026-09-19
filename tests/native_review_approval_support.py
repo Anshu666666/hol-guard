@@ -41,6 +41,57 @@ def _test_request_digest(harness: str, payload: object, workspace: object) -> st
     return hashlib.sha256(encoded).hexdigest()
 
 
+
+def _bound_review_evidence(
+    *,
+    harness: str,
+    payload: dict[str, object],
+    workspace: Path | None,
+    native_result: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Attach the current verified native command-policy domain to a test review."""
+
+    from .test_native_command_observations import _observations
+
+    result = copy.deepcopy(native_result)
+    observations = _observations()
+    result["command_extensions"] = observations
+    result.setdefault("decision", "deny")
+    result.setdefault("policy_action", "review")
+    result.setdefault("minimum_action", result["policy_action"])
+    result.setdefault("reason_code", "native_pre_tool_unknown_review")
+    result.setdefault("reason", "HOL Guard requires review for this bounded action.")
+
+    digest = _test_request_digest(harness, payload, workspace)
+    receipt: dict[str, object] = {
+        "schema": "guard-native-hook-decision-receipt.v1",
+        "version": 1,
+        "authority": "rust",
+        "decision_id": "0" * 64,
+        "request_id": f"sha256:{digest}",
+        "request_digest": digest,
+        "harness": harness,
+        "event_name": "PreToolUse",
+        "payload_kind": "inline",
+        "policy_generation": 1,
+        "policy_digest": "a" * 64,
+        "rule_digest": "b" * 64,
+        "runtime_identity": "c" * 64,
+        "decision": result["decision"],
+        "model_output_action": "not_applicable",
+        "policy_action": result["policy_action"],
+        "observed_policy_action": result.get("observed_policy_action"),
+        "reason_code": result["reason_code"],
+        "workspace_bound": workspace is not None,
+        "source_ref_external_allowed": False,
+        "reviewed_output_sha256": result.get("reviewed_output_sha256"),
+        "observe_mode": result.get("observe_mode") is True,
+        "deadline_budget_ms": None,
+        "command_extensions": copy.deepcopy(observations["binding"]),
+    }
+    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+    return result, receipt
+
 def _worker(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

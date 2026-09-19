@@ -1,0 +1,181 @@
+{
+  "schema": "pr2974.external-navigation-preservation.completed-source-review.v1",
+  "status": "PRESERVED_SOURCE_PREPARED_FOR_ROOT_REVIEW_NO_REF_CHANGE",
+  "candidate": {
+    "commit": "99f2b78f173d10f2b1d60da2a58da65663a83311",
+    "tree": "a10d23795cb689f9ca4dd43fcc82d5f769847a99",
+    "sole_parent": "a37a5df6e62d41dd99c25f3046752cf3db4eaef4",
+    "leaf_count": 4622
+  },
+  "incoming": {
+    "commit": "a37a5df6e62d41dd99c25f3046752cf3db4eaef4",
+    "tree": "8797b3f984cd023db9b387c893fc911875d7cfa7",
+    "sole_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+    "leaf_count": 4546,
+    "changed_from443": [
+      "tests/test_managed_controls_contract_docs.py"
+    ],
+    "all_other4545_leaves_unchanged": true
+  },
+  "reviewed_source": {
+    "commit": "22f2bcb35291152bc3e249a889a494cb1a1b5502",
+    "tree": "34b0b91a5f123ebc26d94ba12486d3f0619a357f",
+    "sole_parent": "4315464593b267f65b419140b575414e17d067b4",
+    "all_other4621_leaves_preserved_exactly_in_candidate": true
+  },
+  "conclusion": "The incoming application-wiring assertion was not contained in22f. Candidate99f2 preserves that assertion and its exact APP_PATH/read support at the corresponding anchors, keeping the complete reviewed22f source and generated report otherwise unchanged.",
+  "restored_lines": [
+    "APP_PATH = ROOT / \"dashboard\" / \"src\" / \"app.tsx\"\n",
+    "    app = APP_PATH.read_text(encoding=\"utf-8\")\n",
+    "    assert 'import { navigate, viewTitle } from \"./app-routing\";' in app\n"
+  ],
+  "navigation_file": {
+    "git_blob": "290251bf59dc6e503a45e3e241e9e49884cbd035",
+    "sha256": "93d21262098c4fa3c880aa340f9d9030bc1e92adf61bb0371fc58ac0b62b5418",
+    "bytes": 15023,
+    "lines": 317
+  },
+  "exact_inverses": {
+    "incoming_minus_exact_three_lines_equals_complete9f_source": true,
+    "proposed_minus_exact_three_lines_equals_complete22f_source": true,
+    "current22f_equals_actual80878_formatted_blob_and_a77": true,
+    "three_incoming_lines_restored_at_same_unique_statement_anchors": true,
+    "no_other_proposed_file_bytes_changed_from22f": true
+  },
+  "prior_formatter_bridge": {
+    "receipt_blob": "41fc48ec91fe84fed252336f61e482f483b62779",
+    "receipt_sha256": "b05a31702538faba279aaf952525d0bc838439930fc0cb2000a4d5f32fe0c59d",
+    "receipt_bytes": 211959,
+    "run_id": 35442510659,
+    "job_id": 105895678449,
+    "harness": "4020bb79c329ebb39a5003b562827f0c73db03e3",
+    "strict_bridge": {
+      "original_bridge_blob": "519d3d754a00092501a6947c4cf3947207e6a0c9",
+      "actual_report": {
+        "path": "format-bridges/tests/test_managed_controls_contract_docs.py.json",
+        "bytes": 1008404,
+        "sha256": "577be7a8cbe3bf241d54592f7f6584a4aceba8d808fb61f9bad43f45d0c5bc18"
+      },
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "ddc612e0a67795de9f6e7e8e46a74ae4a2400748a1b29afa287b9e875817411b",
+        "before": "ddc612e0a67795de9f6e7e8e46a74ae4a2400748a1b29afa287b9e875817411b"
+      },
+      "ordered_literal_values_exactly_equal": true,
+      "canonical_tokens_exactly_equal": true,
+      "anchored_comments_exactly_equal": true,
+      "actual_imports_or_execution_performed": false
+    },
+    "embedded_complete_before_after_source_equal_fresh9f_80878_reads": true,
+    "scope": "Prior executed strict bridge applies only9f to80878 layout. New three-line augmentation is a separately proved exact textual preservation; no new parser/formatter/test execution is claimed."
+  },
+  "dashboard_sources": [
+    {
+      "path": "dashboard/src/app.tsx",
+      "git_blob": "ead1cca3980b6821b34d69fa7e6dbbef176121c5",
+      "sha256": "babde8861a84596ee27fdd8b75bd3afec72ed7c125a009ad0229592b986123cc",
+      "bytes": 10665,
+      "literal": "import { navigate, viewTitle } from \"./app-routing\";",
+      "literal_count": 1,
+      "line": 5,
+      "context": [
+        "import { ApprovalCenterLayout } from \"./approval-center-layout\";",
+        "import { ErrorBoundary } from \"./error-boundary\";",
+        "import { lazyWorkspace } from \"./lazy-workspace\";",
+        "import { navigate, viewTitle } from \"./app-routing\";",
+        "import { useAppData } from \"./use-app-data\";",
+        "import { useAppActions } from \"./use-app-actions\";",
+        ""
+      ],
+      "incoming_current_proposed_blobs_all_equal": true,
+      "candidate_complete_actual_body_refetched_and_equal": true
+    },
+    {
+      "path": "dashboard/src/app-routing.ts",
+      "git_blob": "2a5e8b43eef9538bf792a5ab0cf4655a7c2fc90f",
+      "sha256": "eeef5d0a26e755a59be7fbacadc8adacead067b1d9d31ba536b2a81e96dae0be",
+      "bytes": 2925,
+      "literal": "if (view === \"policy\") return \"Rules & exceptions\";",
+      "literal_count": 1,
+      "line": 43,
+      "context": [
+        "  if (view === \"settings\") return \"Settings\";",
+        "  if (view === \"supply-chain\") return \"Supply Chain\";",
+        "  if (view === \"audit\") return \"Audit\";",
+        "  if (view === \"policy\") return \"Rules & exceptions\";",
+        "  if (view === \"feed-health\") return \"Feed Health\";",
+        "  if (view === \"about\") return \"About\";",
+        "  if (view === \"extensions\") return \"Extensions\";"
+      ],
+      "incoming_current_proposed_blobs_all_equal": true,
+      "candidate_complete_actual_body_refetched_and_equal": true
+    }
+  ],
+  "change_accounting": {
+    "source_leaves": 4622,
+    "unchanged_other22f_leaves": 4621,
+    "changes_from_a37": 89,
+    "reviewed_union_source_paths": 88,
+    "additional_actual_report_paths": 1,
+    "added_paths": 76,
+    "replaced_existing_paths": 13,
+    "deleted_paths": 0,
+    "unchanged_a37_paths_excluding_navigation": 4533,
+    "other_a37_existing_union_replacements": 11,
+    "other_a37_actual_report_replacements": 1,
+    "outside_reviewed88_scope_and_report": [],
+    "reviewed88_scope_blob": "d3073f59afef68143ee7458f4d050d4f54400ed7",
+    "scope_note": "The88 map defines reviewed path scope. Current source bytes are always taken from exact22f, including its later source-witness repair."
+  },
+  "protected_corpus": {
+    "input_map_blob": "5727805d990e2e63dafaabbb5490f9d9806a0a13",
+    "source_binding_count": 452,
+    "all452_path_mode_git_blobs_identical_from22f_to_proposed": true,
+    "all452_current22f_git_blobs_equal_the_prior_actual_map": true,
+    "all452_report_binding_ids_and_hashes_equal_prior_map": true,
+    "navigation_test_outside_corpus_inputs": true,
+    "report_path": "tests/fixtures/guard-command-corpus/decision-diff-report.json",
+    "report": {
+      "git_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+      "sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+      "bytes": 56740
+    },
+    "report_unchanged": true,
+    "candidate_complete_report_bytes_refetched_and_equal": true
+  },
+  "verification": {
+    "all_four_full_merkle_trees_recomputed": true,
+    "tree_names": [
+      "443 baseline",
+      "a37 incoming",
+      "22f reviewed",
+      "99f2 candidate"
+    ],
+    "actual_candidate_header_and_parent_verified": true,
+    "actual_all4622_leaves_equal_expected": true,
+    "actual_nav_app_routing_and_report_fullbytes_verified": true,
+    "source_proof_and_complete_packet_readback_equal": true
+  },
+  "evidence": {
+    "source_proof": {
+      "git_blob": "ca37cc90869742fca1f74a9e3a58e75412fbd277",
+      "sha256": "d7d87e875f700ebaf4aad87dd03db778bed9c91b49f3c41708d41693ee06e7a7",
+      "bytes": 40418
+    },
+    "complete_source_packet": {
+      "git_blob": "62f745b88d206f34f438d8471e4916399dc2a4ca",
+      "sha256": "64aa668fce09610d627af4d30c1d02d7bbde5b01cbb3fb55d01eeb14637f8847",
+      "bytes": 288862
+    }
+  },
+  "validation_limits": {
+    "no_tests_or_parsers_or_formatter_executed": true,
+    "no_new_metrics": true,
+    "final594_outcomes_remain_bound_to_exact22f": true,
+    "new_application_wiring_assertion_not_executed": true,
+    "natural_PR_CI_will_test_new_assertion": true,
+    "refs_changed": false,
+    "qualification_promoted": false
+  },
+  "remaining": "Root review and ordinary canonical fast-forward/PR CI. No result for the newly restored assertion is claimed; existing594 results remain attributed to exact22f."
+}

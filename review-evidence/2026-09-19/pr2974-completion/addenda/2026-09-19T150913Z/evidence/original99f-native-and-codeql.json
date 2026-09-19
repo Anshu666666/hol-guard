@@ -1,0 +1,536 @@
+{
+  "schema": "pr2974-99f2-observed-failures-compact.v1",
+  "source_head": "99f2b78f173d10f2b1d60da2a58da65663a83311",
+  "merge_head": "842909608a0b220a6fbdd908659704b1e470bf30",
+  "both_tree": "a10d23795cb689f9ca4dd43fcc82d5f769847a99",
+  "native": {
+    "run_id": 35450484212,
+    "job_id": 105916699359,
+    "step_number": 13,
+    "step_name": "Measure installed adapter-to-decision SLOs",
+    "started_utc": "2026-09-19T15:04:07Z",
+    "completed_utc": "2026-09-19T15:05:12Z",
+    "job_conclusion": "failure",
+    "original_full_log": {
+      "bytes": 91936,
+      "sha256": "f0b6d3815730c1236d0f64890e587d6f774f488dd1686461f9595c17d82fe738"
+    },
+    "original_complete_report": {
+      "start": 756,
+      "end": 1138,
+      "raw": "{\n  \"concurrency\": {\n    \"sixteen\": {\n      \"deadline_ms\": 1000.0,\n      \"errors\": 0,\n      \"latency\": {\n        \"count\": 16,\n        \"max_ms\": 1032.589,\n        \"p50_ms\": 941.903,\n        \"p95_ms\": 1032.589,\n        \"p99_ms\": 1032.589\n      },\n      \"native_overloads\": 0,\n      \"overloaded\": 0,\n      \"route_attribution\": \"isolated_batch_counter_conservation\",\n      \"routes\": {\n        \"native_resident\": 16\n      }\n    },\n    \"sixty_four\": {\n      \"bounded\": true,\n      \"errors\": 0,\n      \"fail_safe\": 0,\n      \"latency\": {\n        \"count\": 64,\n        \"max_ms\": 1850.621,\n        \"p50_ms\": 1055.124,\n        \"p95_ms\": 1841.811,\n        \"p99_ms\": 1850.621\n      },\n      \"latency_ceiling_ms\": null,\n      \"native_overloads\": 0,\n      \"overloaded\": 32,\n      \"route_attribution\": \"isolated_batch_counter_conservation\",\n      \"routes\": {\n        \"engine_bypassed\": 32,\n        \"native_resident\": 32\n      }\n    }\n  },\n  \"corpus\": {\n    \"corpus_origin\": \"installed_wheel_ownership_contract\",\n    \"fail_safe_decisions\": 0,\n    \"fail_safe_rate\": 0.0,\n    \"harnesses\": 13,\n    \"installed\": {\n      \"fail_safe\": 0,\n      \"oneshot\": 0,\n      \"python_semantic\": 0,\n      \"python_semantic_decisions\": 0,\n      \"resident\": 21,\n      \"routes\": 21\n    },\n    \"observations\": 146,\n    \"oneshot_decisions\": 0,\n    \"python_fallback_decisions\": 0,\n    \"python_semantic_decisions\": 0,\n    \"resident_share\": 1.0,\n    \"route_corpus\": \"installed_routes\",\n    \"routes\": 21,\n    \"rss_baseline_bytes\": 585838592,\n    \"rss_growth\": 0.014759,\n    \"rss_peak_bytes\": 594485248,\n    \"safe_failure_rate\": 0.0,\n    \"safe_failures\": 0,\n    \"safe_failures_by_size\": {},\n    \"security_denials\": 32,\n    \"security_denials_by_size\": {\n      \"1k\": 32\n    },\n    \"warm_failures\": 0\n  },\n  \"errors_16\": 0,\n  \"errors_64\": 0,\n  \"evidence_class\": \"smoke\",\n  \"gates\": {\n    \"1m_latency\": true,\n    \"250k_latency\": true,\n    \"5m_latency\": true,\n    \"cold_latency\": true,\n    \"concurrency\": false,\n    \"concurrency_64_bounded\": true,\n    \"installed_corpus\": true,\n    \"python_fallback\": true,\n    \"readiness\": true,\n    \"recovery_latency\": false,\n    \"resident_share\": true,\n    \"rss\": true,\n    \"safe_corpus\": true,\n    \"warm_latency\": true\n  },\n  \"installed_launcher\": {\n    \"boundary\": \"INSTALLED_LAUNCHER\",\n    \"cases_validated\": [\n      \"benign\",\n      \"redacted\"\n    ],\n    \"configuration\": \"registered_argv\",\n    \"event\": \"PostToolUse\",\n    \"evidence_class\": \"smoke\",\n    \"harness\": \"claude-code\",\n    \"latency\": {\n      \"count\": 2,\n      \"max_ms\": 598.283,\n      \"p50_ms\": 571.331,\n      \"p95_ms\": 598.283,\n      \"p99_ms\": 598.283\n    },\n    \"process_startup_included\": true,\n    \"qualification_complete\": false,\n    \"remaining_routes\": \"not_measured\",\n    \"stdout_and_exit_checked\": true\n  },\n  \"latency\": {\n    \"boundary\": \"DAEMON_INGRESS\",\n    \"cold_native_oneshot\": {\n      \"count\": 2,\n      \"max_ms\": 19.491,\n      \"p50_ms\": 18.829,\n      \"p95_ms\": 19.491,\n      \"p99_ms\": 19.491\n    },\n    \"readiness\": {\n      \"count\": 2,\n      \"max_ms\": 0.103,\n      \"p50_ms\": 0.094,\n      \"p95_ms\": 0.103,\n      \"p99_ms\": 0.103\n    },\n    \"resident_recovery\": {\n      \"count\": 2,\n      \"max_ms\": 2005.478,\n      \"p50_ms\": 1539.07,\n      \"p95_ms\": 2005.478,\n      \"p99_ms\": 2005.478\n    },\n    \"size_classes\": {\n      \"1k\": {\n        \"count\": 122,\n        \"max_ms\": 1850.621,\n        \"p50_ms\": 483.005,\n        \"p95_ms\": 1809.518,\n        \"p99_ms\": 1846.435\n      },\n      \"1m\": {\n        \"count\": 8,\n        \"max_ms\": 138.38,\n        \"p50_ms\": 127.378,\n        \"p95_ms\": 138.38,\n        \"p99_ms\": 138.38\n      },\n      \"250k\": {\n        \"count\": 8,\n        \"max_ms\": 150.97,\n        \"p50_ms\": 118.297,\n        \"p95_ms\": 150.97,\n        \"p99_ms\": 150.97\n      },\n      \"5m\": {\n        \"count\": 8,\n        \"max_ms\": 453.654,\n        \"p50_ms\": 242.004,\n        \"p95_ms\": 453.654,\n        \"p99_ms\": 453.654\n      }\n    },\n    \"warm_all_harnesses\": {\n      \"count\": 42,\n      \"max_ms\": 145.59,\n      \"p50_ms\": 94.523,\n      \"p95_ms\": 126.694,\n      \"p99_ms\": 145.59\n    },\n    \"warm_by_event\": {\n      \"PostToolUse\": {\n        \"count\": 16,\n        \"max_ms\": 126.694,\n        \"p50_ms\": 87.773,\n        \"p95_ms\": 126.694,\n        \"p99_ms\": 126.694\n      },\n      \"PreToolUse\": {\n        \"count\": 26,\n        \"max_ms\": 145.59,\n        \"p50_ms\": 100.181,\n        \"p95_ms\": 132.998,\n        \"p99_ms\": 145.59\n      }\n    },\n    \"warm_by_route\": {\n      \"claude-code.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 111.466,\n        \"p50_ms\": 103.935,\n        \"p95_ms\": 111.466,\n        \"p99_ms\": 111.466\n      },\n      \"claude-code.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 95.286,\n        \"p50_ms\": 85.304,\n        \"p95_ms\": 95.286,\n        \"p99_ms\": 95.286\n      },\n      \"cline.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 79.664,\n        \"p50_ms\": 73.362,\n        \"p95_ms\": 79.664,\n        \"p99_ms\": 79.664\n      },\n      \"cline.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 93.759,\n        \"p50_ms\": 73.124,\n        \"p95_ms\": 93.759,\n        \"p99_ms\": 93.759\n      },\n      \"codex.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 99.939,\n        \"p50_ms\": 91.09,\n        \"p95_ms\": 99.939,\n        \"p99_ms\": 99.939\n      },\n      \"codex.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 123.607,\n        \"p50_ms\": 112.492,\n        \"p95_ms\": 123.607,\n        \"p99_ms\": 123.607\n      },\n      \"copilot.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 93.281,\n        \"p50_ms\": 86.513,\n        \"p95_ms\": 93.281,\n        \"p99_ms\": 93.281\n      },\n      \"copilot.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 79.497,\n        \"p50_ms\": 74.028,\n        \"p95_ms\": 79.497,\n        \"p99_ms\": 79.497\n      },\n      \"cursor.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 89.916,\n        \"p50_ms\": 80.297,\n        \"p95_ms\": 89.916,\n        \"p99_ms\": 89.916\n      },\n      \"cursor.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 73.774,\n        \"p50_ms\": 71.371,\n        \"p95_ms\": 73.774,\n        \"p99_ms\": 73.774\n      },\n      \"grok.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 122.852,\n        \"p50_ms\": 112.309,\n        \"p95_ms\": 122.852,\n        \"p99_ms\": 122.852\n      },\n      \"hermes.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 98.786,\n        \"p50_ms\": 81.642,\n        \"p95_ms\": 98.786,\n        \"p99_ms\": 98.786\n      },\n      \"kimi.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 126.694,\n        \"p50_ms\": 96.124,\n        \"p95_ms\": 126.694,\n        \"p99_ms\": 126.694\n      },\n      \"kimi.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 145.59,\n        \"p50_ms\": 126.672,\n        \"p95_ms\": 145.59,\n        \"p99_ms\": 145.59\n      },\n      \"omp.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 126.596,\n        \"p50_ms\": 106.113,\n        \"p95_ms\": 126.596,\n        \"p99_ms\": 126.596\n      },\n      \"omp.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 112.334,\n        \"p50_ms\": 105.66,\n        \"p95_ms\": 112.334,\n        \"p99_ms\": 112.334\n      },\n      \"openclaw.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 132.998,\n        \"p50_ms\": 120.839,\n        \"p95_ms\": 132.998,\n        \"p99_ms\": 132.998\n      },\n      \"opencode.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 117.898,\n        \"p50_ms\": 91.095,\n        \"p95_ms\": 117.898,\n        \"p99_ms\": 117.898\n      },\n      \"pi.PostToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 92.123,\n        \"p50_ms\": 76.928,\n        \"p95_ms\": 92.123,\n        \"p99_ms\": 92.123\n      },\n      \"pi.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 121.97,\n        \"p50_ms\": 105.761,\n        \"p95_ms\": 121.97,\n        \"p99_ms\": 121.97\n      },\n      \"zcode.PreToolUse\": {\n        \"count\": 2,\n        \"max_ms\": 108.015,\n        \"p50_ms\": 106.498,\n        \"p95_ms\": 108.015,\n        \"p99_ms\": 108.015\n      }\n    }\n  },\n  \"passed\": false,\n  \"python_semantic_decisions\": 0,\n  \"qualification_complete\": false,\n  \"reference_review\": {\n    \"full_review_qualified\": true,\n    \"missing_scopes\": [],\n    \"platform_denial_cases\": [],\n    \"platform_denial_timing_eligible\": false\n  },\n  \"routes\": {\n    \"engine_bypassed\": 32,\n    \"native_resident\": 114\n  },\n  \"runtime\": {\n    \"architecture\": \"x86_64\",\n    \"build_sha\": \"842909608a0b220a6fbdd908659704b1e470bf30\",\n    \"installed_package_sha256\": \"ce5af836c10a980e5e62e71599c8e6d3b632d8c31f69f15d6b0b4ca5ad7b5374\",\n    \"mode\": \"auto\",\n    \"package_origin\": \"installed\",\n    \"package_record_sha256\": \"a2a98ac547c862c54ecd57967904f9fbec9584988ce732b887801badd5c2127e\",\n    \"package_version\": \"3.0.1\",\n    \"protocol_version\": 1,\n    \"python_version\": \"3.12.10\",\n    \"rule_digest\": \"18e058ea6ee365ae7dff9547d91f26ac1b984f374896878e8698cd8b4705a41f\",\n    \"runtime_sha256\": \"836e3479883f699a44e8e6e26384bd44210c0bac5dbcfa27707abad054b0fef6\",\n    \"runtime_version\": \"3.0.1\",\n    \"system\": \"Darwin\",\n    \"target\": \"x86_64-macos\"\n  },\n  \"schema\": \"hol-guard.native-installed-slo.v1\",\n  \"scope\": \"daemon_ingress_and_registered_launcher\",\n  \"thresholds\": {\n    \"direct_cold_p95_ms\": 150.0,\n    \"installed_adapter_concurrent_p99_ms\": 1000.0,\n    \"installed_adapter_p95_ms\": 1000.0,\n    \"readiness_p95_ms\": 400.0\n  },\n  \"timing_boundaries\": {\n    \"DAEMON_INGRESS\": \"normalized_http_to_harness_decision\",\n    \"INSTALLED_LAUNCHER\": \"registered_argv\",\n    \"KERNEL\": \"not_measured\",\n    \"NATIVE_CLIENT\": \"cold_native_process\"\n  }\n}\n",
+      "data": {
+        "concurrency": {
+          "sixteen": {
+            "deadline_ms": 1000,
+            "errors": 0,
+            "latency": {
+              "count": 16,
+              "max_ms": 1032.589,
+              "p50_ms": 941.903,
+              "p95_ms": 1032.589,
+              "p99_ms": 1032.589
+            },
+            "native_overloads": 0,
+            "overloaded": 0,
+            "route_attribution": "isolated_batch_counter_conservation",
+            "routes": {
+              "native_resident": 16
+            }
+          },
+          "sixty_four": {
+            "bounded": true,
+            "errors": 0,
+            "fail_safe": 0,
+            "latency": {
+              "count": 64,
+              "max_ms": 1850.621,
+              "p50_ms": 1055.124,
+              "p95_ms": 1841.811,
+              "p99_ms": 1850.621
+            },
+            "latency_ceiling_ms": null,
+            "native_overloads": 0,
+            "overloaded": 32,
+            "route_attribution": "isolated_batch_counter_conservation",
+            "routes": {
+              "engine_bypassed": 32,
+              "native_resident": 32
+            }
+          }
+        },
+        "corpus": {
+          "corpus_origin": "installed_wheel_ownership_contract",
+          "fail_safe_decisions": 0,
+          "fail_safe_rate": 0,
+          "harnesses": 13,
+          "installed": {
+            "fail_safe": 0,
+            "oneshot": 0,
+            "python_semantic": 0,
+            "python_semantic_decisions": 0,
+            "resident": 21,
+            "routes": 21
+          },
+          "observations": 146,
+          "oneshot_decisions": 0,
+          "python_fallback_decisions": 0,
+          "python_semantic_decisions": 0,
+          "resident_share": 1,
+          "route_corpus": "installed_routes",
+          "routes": 21,
+          "rss_baseline_bytes": 585838592,
+          "rss_growth": 0.014759,
+          "rss_peak_bytes": 594485248,
+          "safe_failure_rate": 0,
+          "safe_failures": 0,
+          "safe_failures_by_size": {},
+          "security_denials": 32,
+          "security_denials_by_size": {
+            "1k": 32
+          },
+          "warm_failures": 0
+        },
+        "errors_16": 0,
+        "errors_64": 0,
+        "evidence_class": "smoke",
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": false,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": false,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "installed_launcher": {
+          "boundary": "INSTALLED_LAUNCHER",
+          "cases_validated": [
+            "benign",
+            "redacted"
+          ],
+          "configuration": "registered_argv",
+          "event": "PostToolUse",
+          "evidence_class": "smoke",
+          "harness": "claude-code",
+          "latency": {
+            "count": 2,
+            "max_ms": 598.283,
+            "p50_ms": 571.331,
+            "p95_ms": 598.283,
+            "p99_ms": 598.283
+          },
+          "process_startup_included": true,
+          "qualification_complete": false,
+          "remaining_routes": "not_measured",
+          "stdout_and_exit_checked": true
+        },
+        "latency": {
+          "boundary": "DAEMON_INGRESS",
+          "cold_native_oneshot": {
+            "count": 2,
+            "max_ms": 19.491,
+            "p50_ms": 18.829,
+            "p95_ms": 19.491,
+            "p99_ms": 19.491
+          },
+          "readiness": {
+            "count": 2,
+            "max_ms": 0.103,
+            "p50_ms": 0.094,
+            "p95_ms": 0.103,
+            "p99_ms": 0.103
+          },
+          "resident_recovery": {
+            "count": 2,
+            "max_ms": 2005.478,
+            "p50_ms": 1539.07,
+            "p95_ms": 2005.478,
+            "p99_ms": 2005.478
+          },
+          "size_classes": {
+            "1k": {
+              "count": 122,
+              "max_ms": 1850.621,
+              "p50_ms": 483.005,
+              "p95_ms": 1809.518,
+              "p99_ms": 1846.435
+            },
+            "1m": {
+              "count": 8,
+              "max_ms": 138.38,
+              "p50_ms": 127.378,
+              "p95_ms": 138.38,
+              "p99_ms": 138.38
+            },
+            "250k": {
+              "count": 8,
+              "max_ms": 150.97,
+              "p50_ms": 118.297,
+              "p95_ms": 150.97,
+              "p99_ms": 150.97
+            },
+            "5m": {
+              "count": 8,
+              "max_ms": 453.654,
+              "p50_ms": 242.004,
+              "p95_ms": 453.654,
+              "p99_ms": 453.654
+            }
+          },
+          "warm_all_harnesses": {
+            "count": 42,
+            "max_ms": 145.59,
+            "p50_ms": 94.523,
+            "p95_ms": 126.694,
+            "p99_ms": 145.59
+          },
+          "warm_by_event": {
+            "PostToolUse": {
+              "count": 16,
+              "max_ms": 126.694,
+              "p50_ms": 87.773,
+              "p95_ms": 126.694,
+              "p99_ms": 126.694
+            },
+            "PreToolUse": {
+              "count": 26,
+              "max_ms": 145.59,
+              "p50_ms": 100.181,
+              "p95_ms": 132.998,
+              "p99_ms": 145.59
+            }
+          },
+          "warm_by_route": {
+            "claude-code.PostToolUse": {
+              "count": 2,
+              "max_ms": 111.466,
+              "p50_ms": 103.935,
+              "p95_ms": 111.466,
+              "p99_ms": 111.466
+            },
+            "claude-code.PreToolUse": {
+              "count": 2,
+              "max_ms": 95.286,
+              "p50_ms": 85.304,
+              "p95_ms": 95.286,
+              "p99_ms": 95.286
+            },
+            "cline.PostToolUse": {
+              "count": 2,
+              "max_ms": 79.664,
+              "p50_ms": 73.362,
+              "p95_ms": 79.664,
+              "p99_ms": 79.664
+            },
+            "cline.PreToolUse": {
+              "count": 2,
+              "max_ms": 93.759,
+              "p50_ms": 73.124,
+              "p95_ms": 93.759,
+              "p99_ms": 93.759
+            },
+            "codex.PostToolUse": {
+              "count": 2,
+              "max_ms": 99.939,
+              "p50_ms": 91.09,
+              "p95_ms": 99.939,
+              "p99_ms": 99.939
+            },
+            "codex.PreToolUse": {
+              "count": 2,
+              "max_ms": 123.607,
+              "p50_ms": 112.492,
+              "p95_ms": 123.607,
+              "p99_ms": 123.607
+            },
+            "copilot.PostToolUse": {
+              "count": 2,
+              "max_ms": 93.281,
+              "p50_ms": 86.513,
+              "p95_ms": 93.281,
+              "p99_ms": 93.281
+            },
+            "copilot.PreToolUse": {
+              "count": 2,
+              "max_ms": 79.497,
+              "p50_ms": 74.028,
+              "p95_ms": 79.497,
+              "p99_ms": 79.497
+            },
+            "cursor.PostToolUse": {
+              "count": 2,
+              "max_ms": 89.916,
+              "p50_ms": 80.297,
+              "p95_ms": 89.916,
+              "p99_ms": 89.916
+            },
+            "cursor.PreToolUse": {
+              "count": 2,
+              "max_ms": 73.774,
+              "p50_ms": 71.371,
+              "p95_ms": 73.774,
+              "p99_ms": 73.774
+            },
+            "grok.PreToolUse": {
+              "count": 2,
+              "max_ms": 122.852,
+              "p50_ms": 112.309,
+              "p95_ms": 122.852,
+              "p99_ms": 122.852
+            },
+            "hermes.PreToolUse": {
+              "count": 2,
+              "max_ms": 98.786,
+              "p50_ms": 81.642,
+              "p95_ms": 98.786,
+              "p99_ms": 98.786
+            },
+            "kimi.PostToolUse": {
+              "count": 2,
+              "max_ms": 126.694,
+              "p50_ms": 96.124,
+              "p95_ms": 126.694,
+              "p99_ms": 126.694
+            },
+            "kimi.PreToolUse": {
+              "count": 2,
+              "max_ms": 145.59,
+              "p50_ms": 126.672,
+              "p95_ms": 145.59,
+              "p99_ms": 145.59
+            },
+            "omp.PostToolUse": {
+              "count": 2,
+              "max_ms": 126.596,
+              "p50_ms": 106.113,
+              "p95_ms": 126.596,
+              "p99_ms": 126.596
+            },
+            "omp.PreToolUse": {
+              "count": 2,
+              "max_ms": 112.334,
+              "p50_ms": 105.66,
+              "p95_ms": 112.334,
+              "p99_ms": 112.334
+            },
+            "openclaw.PreToolUse": {
+              "count": 2,
+              "max_ms": 132.998,
+              "p50_ms": 120.839,
+              "p95_ms": 132.998,
+              "p99_ms": 132.998
+            },
+            "opencode.PreToolUse": {
+              "count": 2,
+              "max_ms": 117.898,
+              "p50_ms": 91.095,
+              "p95_ms": 117.898,
+              "p99_ms": 117.898
+            },
+            "pi.PostToolUse": {
+              "count": 2,
+              "max_ms": 92.123,
+              "p50_ms": 76.928,
+              "p95_ms": 92.123,
+              "p99_ms": 92.123
+            },
+            "pi.PreToolUse": {
+              "count": 2,
+              "max_ms": 121.97,
+              "p50_ms": 105.761,
+              "p95_ms": 121.97,
+              "p99_ms": 121.97
+            },
+            "zcode.PreToolUse": {
+              "count": 2,
+              "max_ms": 108.015,
+              "p50_ms": 106.498,
+              "p95_ms": 108.015,
+              "p99_ms": 108.015
+            }
+          }
+        },
+        "passed": false,
+        "python_semantic_decisions": 0,
+        "qualification_complete": false,
+        "reference_review": {
+          "full_review_qualified": true,
+          "missing_scopes": [],
+          "platform_denial_cases": [],
+          "platform_denial_timing_eligible": false
+        },
+        "routes": {
+          "engine_bypassed": 32,
+          "native_resident": 114
+        },
+        "runtime": {
+          "architecture": "x86_64",
+          "build_sha": "842909608a0b220a6fbdd908659704b1e470bf30",
+          "installed_package_sha256": "ce5af836c10a980e5e62e71599c8e6d3b632d8c31f69f15d6b0b4ca5ad7b5374",
+          "mode": "auto",
+          "package_origin": "installed",
+          "package_record_sha256": "a2a98ac547c862c54ecd57967904f9fbec9584988ce732b887801badd5c2127e",
+          "package_version": "3.0.1",
+          "protocol_version": 1,
+          "python_version": "3.12.10",
+          "rule_digest": "18e058ea6ee365ae7dff9547d91f26ac1b984f374896878e8698cd8b4705a41f",
+          "runtime_sha256": "836e3479883f699a44e8e6e26384bd44210c0bac5dbcfa27707abad054b0fef6",
+          "runtime_version": "3.0.1",
+          "system": "Darwin",
+          "target": "x86_64-macos"
+        },
+        "schema": "hol-guard.native-installed-slo.v1",
+        "scope": "daemon_ingress_and_registered_launcher",
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "timing_boundaries": {
+          "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+          "INSTALLED_LAUNCHER": "registered_argv",
+          "KERNEL": "not_measured",
+          "NATIVE_CLIENT": "cold_native_process"
+        }
+      }
+    },
+    "original_artifact": {
+      "id": 10587195135,
+      "bytes": 8368738,
+      "sha256": "c3b6ea44bb82b6fcca94a7c3e7ba873ba69a1b9cc99059a267ae1ca20ef0b424"
+    },
+    "false_gates": {
+      "concurrency": {
+        "observed_p99_ms": 1032.589,
+        "threshold_ms": 1000
+      },
+      "recovery_latency": {
+        "observed_p95_ms": 2005.478,
+        "threshold_ms": 1000
+      }
+    },
+    "other_gate_count": 12,
+    "all_other_gates_passed": true,
+    "no_source_cause_or_resolver_attribution": true
+  },
+  "codeql": {
+    "check": {
+      "id": 105916747729,
+      "name": "CodeQL",
+      "node_id": "CR_kwDORzZri88AAAAYqSFP0Q",
+      "head_sha": "99f2b78f173d10f2b1d60da2a58da65663a83311",
+      "external_id": "",
+      "url": "https://api.github.com/repos/hashgraph-online/hol-guard/check-runs/105916747729",
+      "html_url": "https://github.com/hashgraph-online/hol-guard/runs/105916747729",
+      "details_url": "https://github.com/hashgraph-online/hol-guard/runs/105916747729",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-09-19T15:01:42Z",
+      "completed_at": "2026-09-19T15:01:46Z",
+      "output": {
+        "title": "1 new alert including 1 high severity security vulnerability",
+        "summary": "### New alerts in code changed by this pull request\n\nSecurity Alerts:\n * 1 high\n\n\n_Alerts not introduced by this pull request might have been detected because the code changes were too large._\n\nSee annotations below for details.\n\n[View all branch alerts](/hashgraph-online/hol-guard/security/code-scanning?query=pr%3A2974+tool%3ACodeQL+is%3Aopen).",
+        "text": null,
+        "annotations_count": 1,
+        "annotations_url": "https://api.github.com/repos/hashgraph-online/hol-guard/check-runs/105916747729/annotations"
+      },
+      "check_suite": {
+        "id": 96002074717
+      },
+      "app": {
+        "id": 57789,
+        "client_id": "Iv1.4643383dd86f00de",
+        "slug": "github-advanced-security",
+        "node_id": "MDM6QXBwNTc3ODk=",
+        "owner": {
+          "login": "github",
+          "id": 9919,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/github",
+          "html_url": "https://github.com/github",
+          "followers_url": "https://api.github.com/users/github/followers",
+          "following_url": "https://api.github.com/users/github/following{/other_user}",
+          "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+          "organizations_url": "https://api.github.com/users/github/orgs",
+          "repos_url": "https://api.github.com/users/github/repos",
+          "events_url": "https://api.github.com/users/github/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/github/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "GitHub Advanced Security",
+        "description": "",
+        "external_url": "https://github.com/features/security",
+        "html_url": "https://github.com/apps/github-advanced-security",
+        "created_at": "2020-03-17T21:25:09Z",
+        "updated_at": "2026-09-14T08:13:48Z",
+        "permissions": {
+          "actions": "read",
+          "checks": "write",
+          "contents": "read",
+          "copilot_requests": "write",
+          "metadata": "read",
+          "pull_requests": "read"
+        },
+        "events": []
+      },
+      "pull_requests": [
+        {
+          "url": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/2974",
+          "id": 4561400866,
+          "number": 2974,
+          "head": {
+            "ref": "chore/resolve-2797-conflicts",
+            "sha": "99f2b78f173d10f2b1d60da2a58da65663a83311",
+            "repo": {
+              "id": 1194748811,
+              "url": "https://api.github.com/repos/hashgraph-online/hol-guard",
+              "name": "hol-guard"
+            }
+          },
+          "base": {
+            "ref": "release/3.2",
+            "sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+            "repo": {
+              "id": 1194748811,
+              "url": "https://api.github.com/repos/hashgraph-online/hol-guard",
+              "name": "hol-guard"
+            }
+          }
+        }
+      ]
+    },
+    "alert_number": 384,
+    "alert_source": "source_partition independent registered-tool read, sent15:12; actual original check metadata at15:01:46 already reports one high alert",
+    "no_disposition_or_mutation_by_this_observer": true
+  },
+  "original_shard12": {
+    "job": 105916833187,
+    "conclusion": "cancelled",
+    "pytest_summary": "237 passed in219.30s",
+    "printed_utc": "2026-09-19T15:06:27.4013543Z",
+    "cancellation_printed_utc": "2026-09-19T15:06:27.7155751Z",
+    "exact_six_node_attribution_not_reconstructed": true
+  },
+  "complete_original_cohort_receipt": {
+    "git_blob": "2ed219d1934cf7aef623f01b868fcb1a83291699",
+    "bytes": 3192986,
+    "sha256": "f8f68895b42c38473f621c392182bf3e091acbb8f8efb0920c32640aa036a582"
+  },
+  "all_original_failures_and_cancellations_preserved": true,
+  "qualification_complete": false
+}

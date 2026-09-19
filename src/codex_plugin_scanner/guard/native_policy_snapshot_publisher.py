@@ -46,6 +46,7 @@ from .native_policy_snapshot_publisher_scoped import (
 )
 from .native_policy_snapshot_publisher_transport import _decode_ack_v3, _publish_snapshot_v3
 from .native_policy_snapshot_source_requirement import refresh_source_requirement
+from .native_policy_snapshot_v3_renewal import _external_source_metadata
 from .native_policy_snapshot_v4_transport import NativeV4Publication
 from .native_policy_snapshot_windows_key import provision_native_policy_verifier_key
 
@@ -110,6 +111,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._renewal_after_generation: int | None = None
         self._retry_not_before_monotonic: float | None = None
         self._failure_count = 0
+        self._initial_database_capture_retry_used = False
         self._workspace_paths: set[Path] = set()
         self._input_fingerprint: (
             tuple[tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]] | None
@@ -412,8 +414,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             if renew_after_generation is None:
                 renew_after_generation = self._renewal_after_generation
             publish_epoch = self._epoch
+            unready_at_entry = not self._acked
         v3_capture_active = False
         v3_transport_active = False
+        v3_postack_database_race = False
         try:
             # Compile and validate policy asynchronously; failures keep the barrier closed.
             context = self._publication_context(publish_epoch=publish_epoch)
@@ -465,6 +469,16 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                         )
                         or source_observer.execute("pragma data_version").fetchone()[0] != source_version
                     ):
+                        # Discard this ACK even when the captured policy matches
+                        # and only database observations changed. A fresh publication may retry;
+                        # these equalities never make the old attempt ready.
+                        database = str(self.store.path)
+                        v3_postack_database_race = (
+                            current_cloud_inputs.input_digest == cloud_inputs.input_digest
+                            and _policy_fingerprint(current_config) == (snapshot["config_digest"], snapshot["mode"])
+                            and _external_source_metadata(before_source, database)
+                            == _external_source_metadata(source_fingerprint, database)
+                        )
                         raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
                 else:
                     current_cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
@@ -539,6 +553,29 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 v3_capture_active=v3_capture_active,
                 v3_transport_active=v3_transport_active,
             )
+            if unready_at_entry and v3_postack_database_race:
+                self._schedule_initial_database_capture_retry(publish_epoch=publish_epoch)
+
+    def _schedule_initial_database_capture_retry(self, *, publish_epoch: int) -> None:
+        """Allow one fresh full attempt without opening the failed barrier.
+
+        This lifetime allowance is not reset by workspace admission, policy
+        observation, or resident startup files. Later failures retain backoff.
+        The caller's readiness deadline and each publication budget are unchanged.
+        """
+        with self._condition:
+            if (
+                self._closed
+                or self._epoch != publish_epoch
+                or self._acked
+                or self._initial_database_capture_retry_used
+                or self._last_error != "native_policy_authority_changed_during_publish"
+            ):
+                return
+            self._initial_database_capture_retry_used = True
+            self._retry_not_before_monotonic = self._monotonic_clock()
+            self._condition.notify_all()
+        self._publish_event.set()
 
     def _publication_context(self, *, publish_epoch: int | None = None) -> PublicationContext | None:
         return publication_context(self, publish_epoch=publish_epoch)

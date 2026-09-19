@@ -160,6 +160,7 @@ def test_installation_retirement_fences_actual_resident_across_processes(
         if shape == "v4":
             publication = publisher._v4_publication
             assert publication is not None
+            assert publication.candidate.inputs.authority.rows
             replay = snapshot_push_bytes_v4(publication.candidate)
         else:
             snapshot = publisher.current_snapshot()
@@ -167,8 +168,12 @@ def test_installation_retirement_fences_actual_resident_across_processes(
             replay = _policy_snapshot_push_bytes_v3(snapshot)
         for event in ("PreToolUse", "PostToolUse"):
             accepted = edge(previous, event)
-            assert accepted is not None and accepted["authority"] == "rust"
-            assert accepted["receipt"]["policy_generation"] == old_generation
+            if shape == "v4" and event == "PostToolUse":
+                # Active scoped rows have no supported post-tool producer.
+                assert accepted is None, (shape, event)
+            else:
+                assert accepted is not None and accepted["authority"] == "rust", (shape, event)
+                assert accepted["receipt"]["policy_generation"] == old_generation
         # Stop publication, retaining the native resident and captured binding.
         # A remote process cannot invalidate this process's in-memory object.
         publisher.close()
@@ -263,10 +268,16 @@ def test_installation_retirement_fences_actual_resident_across_processes(
         fresh = current.current_snapshot_binding()
         assert fresh is not None
         assert isinstance(fresh["generation"], int) and fresh["generation"] > reserved[0]
+        if shape == "v4":
+            assert current._v4_publication is not None
+            assert current._v4_publication.candidate.inputs.authority.rows
         for event in ("PreToolUse", "PostToolUse"):
             accepted = edge(fresh, event)
-            assert accepted is not None and accepted["authority"] == "rust"
-            assert accepted["receipt"]["policy_generation"] == fresh["generation"]
+            if shape == "v4" and event == "PostToolUse":
+                assert accepted is None, (shape, event)
+            else:
+                assert accepted is not None and accepted["authority"] == "rust", (shape, event)
+                assert accepted["receipt"]["policy_generation"] == fresh["generation"]
             assert edge(previous, event) is None
     finally:
         publisher.close()

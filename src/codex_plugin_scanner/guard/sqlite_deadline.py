@@ -12,7 +12,7 @@ import math
 import sqlite3
 import time
 from collections.abc import Generator, Iterable, Iterator
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from contextvars import ContextVar
 from types import TracebackType
 from typing import Any, Literal
@@ -214,7 +214,9 @@ class DeadlineConnection(sqlite3.Connection):
     def _set_busy_timeout(self, timeout_ms: int) -> None:
         self._internal_pragma = True
         try:
-            sqlite3.Connection.execute(self, f"pragma busy_timeout={timeout_ms}")
+            # Connection.execute re-enters cursor overrides on Python 3.10.
+            with closing(sqlite3.Connection.cursor(self, sqlite3.Cursor)) as cursor:
+                cursor.execute(f"pragma busy_timeout={timeout_ms}")
         finally:
             self._internal_pragma = False
 
@@ -226,8 +228,11 @@ class DeadlineConnection(sqlite3.Connection):
     def begin_immediate(self) -> None:
         self._transaction_control = "BEGIN"
         try:
-            with self._operation(wait_for_lock=True):
-                sqlite3.Connection.execute(self, "begin immediate")
+            with (
+                self._operation(wait_for_lock=True),
+                closing(sqlite3.Connection.cursor(self, sqlite3.Cursor)) as cursor,
+            ):
+                cursor.execute("begin immediate")
         finally:
             self._transaction_control = None
 

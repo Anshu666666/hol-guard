@@ -4044,7 +4044,11 @@ clearer UX and an implementation plan with technical references.
             "dpop_key_material": object(),
         }
 
-        def fake_resolve_guard_sync_auth_context(current_store: GuardStore) -> dict[str, object]:
+        def fake_resolve_guard_sync_auth_context(
+            current_store: GuardStore,
+            *,
+            connection_observer: object | None = None,
+        ) -> dict[str, object]:
             assert current_store is store
             return shared_auth_context
 
@@ -4171,7 +4175,11 @@ clearer UX and an implementation plan with technical references.
             "dpop_key_material": object(),
         }
 
-        def fake_resolve_guard_sync_auth_context(current_store: GuardStore) -> dict[str, object]:
+        def fake_resolve_guard_sync_auth_context(
+            current_store: GuardStore,
+            *,
+            connection_observer: object | None = None,
+        ) -> dict[str, object]:
             assert current_store is store
             return shared_auth_context
 

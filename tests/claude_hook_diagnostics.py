@@ -141,9 +141,7 @@ def claude_prompt_diagnostics(payload: object) -> dict[str, str]:
     return result
 
 
-def assert_claude_hook_asks_for_permission(
-    result: subprocess.CompletedProcess[str], *, elapsed_seconds: float
-) -> None:
+def assert_claude_hook_asks_for_permission(result: subprocess.CompletedProcess[str], *, elapsed_seconds: float) -> None:
     """Preserve the generated hook regression assertions with finite diagnostics."""
     __tracebackhide__ = True
     try:

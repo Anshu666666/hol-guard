@@ -1,0 +1,560 @@
+{
+  "schema": 1,
+  "repository": "hashgraph-online/hol-guard",
+  "source_sha": "4ca5b2f0562b3f6f1829d0e531399ffc06790c9c",
+  "source_tree": "9ac7e6caac4438b5a7c61178ea182c843eca1289",
+  "source_parent": "3a54d774f33fb8c9ae834f5849449e866650217d",
+  "source_parent_tree": "c3c9133d9fe8222429a0bbf1f6812eb96d0c77ab",
+  "tracked_files": 4560,
+  "branch": "codex/pr2974-rsp131-sqlite-queue-finite-20260919",
+  "workflow_name": "PR2974 SQLite and queue observer finite validation",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "ruff_version": "0.15.17",
+  "basedpyright_version": "1.39.8",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "backend_versions": {
+    "build": "1.5.0",
+    "hatchling": "1.30.1",
+    "packaging": "26.0",
+    "pyproject-hooks": "1.2.0",
+    "pluggy": "1.6.0",
+    "pathspec": "1.1.1",
+    "trove-classifiers": "2026.6.1.19"
+  },
+  "source_inputs": {
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "fixed_files": {
+    "src/codex_plugin_scanner/guard/store_connection_schema.py": "1fa357edd734f75d85d1f29a3cf825cad630ca82ac0023a4d2b499f4a2b74a8a",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988",
+    "src/codex_plugin_scanner/guard/store_native_decision_receipts.py": "2969cfeb93f644a9b84612702fbf01e2708d8ea406be20fe4009f8a0abdde5da",
+    "tests/test_guard_runtime_hook_evidence_writer.py": "80e8dd763e8feab07405a31d24bc2b29bd9c3676622057873257cba8bd6bf60b",
+    "tests/test_native_decision_receipt.py": "36cffa5ccff1f7c6ff42c0e2b91f439a2a038e3010655b6f97f24d15cad3f6af",
+    "tests/test_native_slo_mixed_witness.py": "d22ef344a1cb15c300b3df46814aab7575709d80494994dc9939a8ccf266548f",
+    "tests/test_native_slo_mixed_controls.py": "cac09f39aeea07ce388749a28aa1a864f421ec75262db8b71d980e072d917f91",
+    "tests/test_native_slo_mixed_load.py": "08bead613ad7e5ad11058814dc001af5be0a3b6b159e63d98a16866cba5e3b9a",
+    "tests/test_native_receipt_persistence_gate.py": "5e74f660c521a5927c8d0088ac98410ea7e336f34ba468c51853f5b680aaa8ba",
+    "tests/test_python_capability_cleanup_gate.py": "26095357706d3150556d51c91dfb812616555955fbf06ccd9e3443c2155f41e0",
+    "tests/test_python_hook_semantic_callgraph_gate.py": "91e92ef2f6b472b169e1ea950535eb9e78c4795bf442632bfd8163e9cf0fa9b9",
+    "tests/test_native_command_activity_recording.py": "fddd6b542576f0ad6dccee1e5c9c379e81f639f71ab976bc4c37a6ba561ac05f"
+  },
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "partition_input_files": {
+    "docs/guard/contracts/python-capability-ownership.v1.json": {
+      "mode": "100644",
+      "git_blob": "05a680f5c2df33fbb93d5d87afd0433921b01836",
+      "sha256": "9ecd65fc94ea4cb1af9ee4cf99bb500088fb5a68df01a1856bb166c2966ffcd2",
+      "bytes": 9040,
+      "physical_lines": 177
+    },
+    "scripts/ci/native_receipt_persistence_gate.py": {
+      "mode": "100644",
+      "git_blob": "3e79699ee549fbf37e360fb170811b3b83f30da9",
+      "sha256": "ead6943febd3b53c2912c4aabe6a1b84a2de6543125e3a1658a01ee6cb415db5",
+      "bytes": 13785,
+      "physical_lines": 331
+    },
+    "scripts/ci/rsp131_sqlite_vfs/README.md": {
+      "mode": "100644",
+      "git_blob": "b3d456aa302a205e78f51cf25eb4abec4421cbcc",
+      "sha256": "8e28b98051aef3694c61c6a711cac978e2b275b2ed12b0f865b3abb1ae4c80dd",
+      "bytes": 7628,
+      "physical_lines": 122
+    },
+    "scripts/ci/rsp131_sqlite_vfs/control.c": {
+      "mode": "100644",
+      "git_blob": "295db495b24e06ca70e499b97dbe9ba9d88e062d",
+      "sha256": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb",
+      "bytes": 9173,
+      "physical_lines": 195
+    },
+    "scripts/ci/rsp131_sqlite_vfs/forward_fixture.c": {
+      "mode": "100644",
+      "git_blob": "30aa429ae3eca2c96923b4fe702af9e9ada9b61a",
+      "sha256": "0abbdd32afa377ff3d097a72be2b8eee49198fce74676786a98998dbc7d5ede2",
+      "bytes": 16136,
+      "physical_lines": 369
+    },
+    "scripts/ci/rsp131_sqlite_vfs/guard_vfs.h": {
+      "mode": "100644",
+      "git_blob": "74cdb69cc95493872db0fe255986af4c6d16aebf",
+      "sha256": "866d7fa20466afdbe9932121b08d971d41f13c2e09b4aedf7065488290c8b9af",
+      "bytes": 2194,
+      "physical_lines": 65
+    },
+    "scripts/ci/rsp131_sqlite_vfs/io.c": {
+      "mode": "100644",
+      "git_blob": "95338a3a6e64aabaef593b34cfa5d4d4f3afcd47",
+      "sha256": "0b70933f6e6200c129ac482c775fd41b8f41d3e29d06fc3af58cbad22acd985d",
+      "bytes": 6867,
+      "physical_lines": 182
+    },
+    "scripts/ci/rsp131_sqlite_vfs/vfs.c": {
+      "mode": "100644",
+      "git_blob": "c0afdcf7f893b96ca25ee59040ff52aefb9095da",
+      "sha256": "d11e596bb86fb6e47e0f637d31af20ce03197dd46e50446f7762a141a7d3f0c7",
+      "bytes": 6004,
+      "physical_lines": 142
+    },
+    "scripts/native_slo_mixed_server.py": {
+      "mode": "100644",
+      "git_blob": "71579f0583216f0c7eac71da0ca3f7e87fc22282",
+      "sha256": "484519e484d62d050d3b7ca235d4f30b2a2ecdac58d1859bddbeca300f339899",
+      "bytes": 14024,
+      "physical_lines": 307
+    },
+    "scripts/native_slo_mixed_witness.py": {
+      "mode": "100644",
+      "git_blob": "7eed5c4e047e48aa40a96c05048f4c5c46c32ab4",
+      "sha256": "0c1d0eea718ae881a78a416817b9aa8e777eead5839eb0e1dfa76505d7ff1521",
+      "bytes": 14796,
+      "physical_lines": 310
+    },
+    "scripts/native_slo_sqlite_vfs.py": {
+      "mode": "100644",
+      "git_blob": "dc86097a44c74177f38a1ed698cc417fa5cf6c7b",
+      "sha256": "fbe86a9778477e699ba8006166f6a0c7e1a9590fd8b02bc7cf07d6b8a03b28fd",
+      "bytes": 16021,
+      "physical_lines": 323
+    },
+    "scripts/native_slo_sqlite_vfs_identity.py": {
+      "mode": "100644",
+      "git_blob": "ee209d7a35690d2e1e93a98b21e9627e44b47ce1",
+      "sha256": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+      "bytes": 4806,
+      "physical_lines": 114
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py": {
+      "mode": "100644",
+      "git_blob": "7870a0edbd2119feb695a941ee91abae0cdf64c5",
+      "sha256": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2",
+      "bytes": 7571,
+      "physical_lines": 185
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py": {
+      "mode": "100644",
+      "git_blob": "81a0c7558cc808db58289852722b9fd25db7a516",
+      "sha256": "83e49d02059b387d5e0b366d7a9939e209f8da0f50427fd4d713285f152585dc",
+      "bytes": 12509,
+      "physical_lines": 283
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py": {
+      "mode": "100644",
+      "git_blob": "638be5df2af58f4806340658d635fc05fd8e8b71",
+      "sha256": "04577280e9ae7c660a56a4cab1e5a1b94db338909c7af1c1a69897f190bca33e",
+      "bytes": 21522,
+      "physical_lines": 487
+    },
+    "tests/test_guard_runtime_hook_evidence_operations.py": {
+      "mode": "100644",
+      "git_blob": "605a8c2f7c79b5382cf86e8c72f43ba30739ae07",
+      "sha256": "14a852184e282a63798f9aa87232d7b5ddbc6bed002a55fc6b3debff14739c75",
+      "bytes": 9133,
+      "physical_lines": 227
+    },
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py": {
+      "mode": "100644",
+      "git_blob": "0032c8d8013538aa318c05b404186f89911bdddb",
+      "sha256": "18b0941f80c27258921a7cc435083b08f88b7d4bccc76bfb44cc515c4cdba8aa",
+      "bytes": 14346,
+      "physical_lines": 335
+    },
+    "tests/test_native_receipt_submission_delegate_gate.py": {
+      "mode": "100644",
+      "git_blob": "5ae5559858c5d4f48ff07fa92d97680a5089303c",
+      "sha256": "5bfd43d2c36bce169d15d47a54cd18c4f111dd5f6e6909d5e5da731256ffbe1b",
+      "bytes": 5088,
+      "physical_lines": 124
+    },
+    "tests/test_native_slo_sqlite_vfs.py": {
+      "mode": "100644",
+      "git_blob": "f4746698cac88fc068fc98b8a330f829e4185585",
+      "sha256": "fbb9b0ce6f85b8160f034759b613b03db0587a9d384c1e4133fc6987ec1bfdaa",
+      "bytes": 20087,
+      "physical_lines": 465
+    },
+    "tests/test_python_capability_cleanup_gate.py": {
+      "mode": "100644",
+      "git_blob": "4922f1b86ec58e0ad17e1251a881e5b9df58aea8",
+      "sha256": "26095357706d3150556d51c91dfb812616555955fbf06ccd9e3443c2155f41e0",
+      "bytes": 12247,
+      "physical_lines": 329
+    }
+  },
+  "format_paths": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "tests/test_guard_runtime_hook_evidence_operations.py",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+    "tests/test_native_receipt_submission_delegate_gate.py",
+    "tests/test_native_slo_sqlite_vfs.py",
+    "tests/test_python_capability_cleanup_gate.py"
+  ],
+  "source_gates": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/ci/python_capability_cleanup_gate.py",
+    "scripts/ci/python_hook_semantic_callgraph_gate.py"
+  ],
+  "production_type_paths": [
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py"
+  ],
+  "diagnostic_type_paths": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py"
+  ],
+  "production_python_version": "3.10",
+  "diagnostic_python_version": "3.12",
+  "cohorts": [
+    {
+      "name": "writer-queue",
+      "timeout_seconds": 300,
+      "selectors": [
+        "tests/test_guard_runtime_hook_evidence_writer.py",
+        "tests/test_native_decision_receipt.py",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+        "tests/test_guard_runtime_hook_evidence_operations.py",
+        "tests/test_native_command_activity_recording.py::test_native_pre_and_post_keep_authoritative_decision",
+        "tests/test_native_command_activity_recording.py::test_approved_retry_preserves_prevented_attempt",
+        "tests/test_native_command_activity_recording.py::test_pre_without_decision_never_becomes_execution",
+        "tests/test_native_command_activity_recording.py::test_incompatible_approval_metadata_is_not_queued",
+        "tests/test_native_command_activity_recording.py::test_native_restrictive_decisions_keep_receipt_and_prompt"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_writer.py",
+          "expected_cases": 9,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_decision_receipt.py",
+          "expected_cases": 9,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+          "expected_cases": 18,
+          "origin": "new"
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_operations.py",
+          "expected_cases": 12,
+          "origin": "new"
+        },
+        {
+          "selector": "tests/test_native_command_activity_recording.py::test_native_pre_and_post_keep_authoritative_decision",
+          "expected_cases": 3,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_command_activity_recording.py::test_approved_retry_preserves_prevented_attempt",
+          "expected_cases": 1,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_command_activity_recording.py::test_pre_without_decision_never_becomes_execution",
+          "expected_cases": 1,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_command_activity_recording.py::test_incompatible_approval_metadata_is_not_queued",
+          "expected_cases": 1,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_command_activity_recording.py::test_native_restrictive_decisions_keep_receipt_and_prompt",
+          "expected_cases": 4,
+          "origin": "original"
+        }
+      ],
+      "modules": [
+        "tests/test_guard_runtime_hook_evidence_writer.py",
+        "tests/test_native_decision_receipt.py",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+        "tests/test_guard_runtime_hook_evidence_operations.py",
+        "tests/test_native_command_activity_recording.py"
+      ],
+      "expected_cases": 58
+    },
+    {
+      "name": "sqlite-vfs",
+      "timeout_seconds": 300,
+      "selectors": [
+        "tests/test_native_slo_sqlite_vfs.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py",
+          "expected_cases": 23,
+          "origin": "new"
+        }
+      ],
+      "modules": [
+        "tests/test_native_slo_sqlite_vfs.py"
+      ],
+      "expected_cases": 23
+    },
+    {
+      "name": "mixed-witness",
+      "timeout_seconds": 300,
+      "selectors": [
+        "tests/test_native_slo_mixed_witness.py",
+        "tests/test_native_slo_mixed_controls.py",
+        "tests/test_native_slo_mixed_load.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_mixed_witness.py",
+          "expected_cases": 8,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_controls.py",
+          "expected_cases": 5,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_load.py",
+          "expected_cases": 23,
+          "origin": "original"
+        }
+      ],
+      "modules": [
+        "tests/test_native_slo_mixed_witness.py",
+        "tests/test_native_slo_mixed_controls.py",
+        "tests/test_native_slo_mixed_load.py"
+      ],
+      "expected_cases": 36
+    },
+    {
+      "name": "persistence-gates",
+      "timeout_seconds": 600,
+      "selectors": [
+        "tests/test_native_receipt_persistence_gate.py",
+        "tests/test_native_receipt_submission_delegate_gate.py",
+        "tests/test_python_capability_cleanup_gate.py",
+        "tests/test_python_hook_semantic_callgraph_gate.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_receipt_persistence_gate.py",
+          "expected_cases": 9,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_native_receipt_submission_delegate_gate.py",
+          "expected_cases": 15,
+          "origin": "new"
+        },
+        {
+          "selector": "tests/test_python_capability_cleanup_gate.py",
+          "expected_cases": 19,
+          "origin": "original"
+        },
+        {
+          "selector": "tests/test_python_hook_semantic_callgraph_gate.py",
+          "expected_cases": 9,
+          "origin": "original"
+        }
+      ],
+      "modules": [
+        "tests/test_native_receipt_persistence_gate.py",
+        "tests/test_native_receipt_submission_delegate_gate.py",
+        "tests/test_python_capability_cleanup_gate.py",
+        "tests/test_python_hook_semantic_callgraph_gate.py"
+      ],
+      "expected_cases": 52
+    }
+  ],
+  "expected_new_cases": 68,
+  "expected_original_cases": 101,
+  "expected_total_cases": 169,
+  "expected_skips": 0,
+  "compile_controls": [
+    "v1",
+    "v2",
+    "v3",
+    "optional",
+    "vfs",
+    "failed_open_without_methods",
+    "failed_open_with_methods",
+    "unknown_version",
+    "thread",
+    "saturation"
+  ],
+  "harness_paths": [
+    ".github/workflows/pr2974-rsp131-sqlite-queue-finite.yml",
+    "ci/pr2974_rsp131_sqlite_queue_finite/common.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/environment.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/environment_setup.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/source_entry.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/source_contract.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/pytest_capture.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/finite_summary.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/driver.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/report_projection.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/manifest.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/formatter-evidence.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/queue-closure.json"
+  ],
+  "formatter": {
+    "path": "formatter-evidence.json",
+    "git_blob": "f50ac95afbd6232050c7d22a1a14a772b3a5bdcb",
+    "sha256": "159c4cc695cb70753baea30626919eefed2b7b375392dec5c8c3aff4647925f8",
+    "bytes": 2206039,
+    "source_sha": "2e03c527226074f600a4c0765cc91b397c611cb8",
+    "input_tree": "0b4d1a587238d9217e39a9284c12f859d538d584",
+    "post_format_tree": "c3c9133d9fe8222429a0bbf1f6812eb96d0c77ab",
+    "harness_sha": "39019ed6d1aea4be0ae7303810710845af304f47",
+    "run_id": "35448217954",
+    "run_attempt": "1",
+    "expected_commands": [
+      "prove-exact-unformatted-queue-source",
+      "uv-version",
+      "create-ruff-only-venv",
+      "install-hash-locked-ruff-only",
+      "ruff-environment-before",
+      "format-exact-12-files",
+      "check-exact-12-formatted-files",
+      "ruff-environment-after"
+    ]
+  },
+  "queue_closure": {
+    "path": "queue-closure.json",
+    "git_blob": "fe8c511be19e7e829d8de27f8e67dc8c98964f44",
+    "sha256": "0aa2b38c4253c90ff413900260aee1be64e0d41becc5c50ebe27e0a5ab092ebc",
+    "bytes": 643997,
+    "expected_source_definitions": 43,
+    "expected_cases": 58
+  },
+  "environment_scope": "Fresh frozen editable install from exact candidate;69 versions and METADATA/owned launcher hashes, not every installed byte; no installed-artifact qualification",
+  "scope": "Fresh finite validation of an optional logical SQLite VFS observer and queue-age observation on the exact immutable formatted candidate. Original conftest/fixtures, assertions, per-call timeouts and marker selection remain active. 169 source-selected cases require actual collection and complete setup/call/teardown/JUnit agreement. Includes ten compiled callback controls and actual Python SQLite transactions on this Linux host. No installed-artifact, native campaign, kernel syscall, physical-device, full-process-tree, performance or original RSP131 qualification.",
+  "qualification_complete": false,
+  "queue_autouse_fixtures": [
+    "_spawn_package_shim_sqlite_lock_holder",
+    "_default_unit_tests_to_python_rollback",
+    "_explicit_python_differential_oracle",
+    "_reset_guard_sync_resolver_override",
+    "_isolate_lifecycle_authority_home",
+    "_isolate_trust_attestation_env",
+    "_isolate_daemon_background_refresh_workers",
+    "_policy_integrity_keyring_for_selected_tests"
+  ],
+  "formatter_output_source": {
+    "commit": "3a54d774f33fb8c9ae834f5849449e866650217d",
+    "tree": "c3c9133d9fe8222429a0bbf1f6812eb96d0c77ab",
+    "sole_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+    "baseline_tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+    "tracked_files": 4560
+  },
+  "historical_format_paths": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "tests/test_guard_runtime_hook_evidence_operations.py",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+    "tests/test_native_receipt_submission_delegate_gate.py",
+    "tests/test_native_slo_sqlite_vfs.py"
+  ],
+  "existing_case_distinction": {
+    "source_selected_existing_cases": 101,
+    "existing_cases_with_unchanged_assertions": 100,
+    "one_existing_case_with_two_corrected_count_literals": "tests/test_python_capability_cleanup_gate.py::test_cleanup_contract_covers_every_scoped_hook_capability",
+    "new_cases": 68,
+    "actual_collection": false
+  },
+  "source_repair_packet": {
+    "git_blob": "3311d4005c13011b6af9208ba11e030770154dfa",
+    "sha256": "799c87c40a997ec447635d23b228b0b1151a98f6cc8d784a6d311059df2f9c71",
+    "bytes": 45174,
+    "content": "{\n  \"schema\": \"rsp131-capability-two-literal-source-correction-v1\",\n  \"parent_commit\": \"3a54d774f33fb8c9ae834f5849449e866650217d\",\n  \"parent_tree\": \"c3c9133d9fe8222429a0bbf1f6812eb96d0c77ab\",\n  \"expected_tree\": \"9ac7e6caac4438b5a7c61178ea182c843eca1289\",\n  \"changed_paths\": [\n    \"tests/test_python_capability_cleanup_gate.py\"\n  ],\n  \"before\": {\n    \"path\": \"tests/test_python_capability_cleanup_gate.py\",\n    \"mode\": \"100644\",\n    \"git_blob\": \"5ff92974670b9ca3d88f7e838a57e4050e95a61c\",\n    \"sha256\": \"d5a22e5c13c249fc9bd7614630ff6bb8ef3db179ab4120064de92a168a7b768a\",\n    \"bytes\": 12247,\n    \"physical_lines\": 329,\n    \"content\": \"from __future__ import annotations\\n\\nimport importlib.util\\nimport tarfile\\nfrom pathlib import Path\\nfrom zipfile import ZipFile\\n\\nimport pytest\\n\\nROOT = Path(__file__).resolve().parents[1]\\nSCRIPT = ROOT / \\\"scripts\\\" / \\\"ci\\\" / \\\"python_capability_cleanup_gate.py\\\"\\nSPEC = importlib.util.spec_from_file_location(\\\"python_capability_cleanup_gate\\\", SCRIPT)\\nassert SPEC is not None and SPEC.loader is not None\\nGATE = importlib.util.module_from_spec(SPEC)\\nSPEC.loader.exec_module(GATE)\\n\\n\\ndef test_cleanup_contract_covers_every_scoped_hook_capability() -> None:\\n    payload = GATE.run(ROOT)\\n\\n    assert payload[\\\"schema\\\"] == \\\"hol-guard.python-capability-cleanup.v1\\\"\\n    assert payload[\\\"status\\\"] == \\\"passed\\\"\\n    assert payload[\\\"scope_files\\\"] == 106\\n    assert payload[\\\"capabilities\\\"] == {\\n        \\\"hook_control_and_transport\\\": 82,\\n        \\\"python_reference_oracle\\\": 17,\\n        \\\"hook_evidence_persistence\\\": 5,\\n        \\\"legacy_python_resident_transport\\\": 2,\\n    }\\n    assert payload[\\\"candidate_evidence\\\"] == [\\n        {\\n            \\\"path\\\": \\\"src/codex_plugin_scanner/guard/native_runtime_resident.py\\\",\\n            \\\"module\\\": \\\"codex_plugin_scanner.guard.native_runtime_resident\\\",\\n            \\\"loc\\\": 498,\\n            \\\"source_importers\\\": [],\\n            \\\"package_excluded\\\": True,\\n        }\\n    ]\\n    assert payload[\\\"dynamic_import_destinations_checked\\\"] is True\\n    assert payload[\\\"dynamic_import_unbounded\\\"] == []\\n    assert payload[\\\"dynamic_import_count\\\"] == len(payload[\\\"dynamic_import_evidence\\\"])\\n\\n\\ndef test_evidence_diagnostics_has_explicit_non_authoritative_ownership() -> None:\\n    contract, owners, scope = GATE._validate_contract(ROOT)\\n    path = \\\"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py\\\"\\n    assert path in scope\\n    assert owners[path] == \\\"hook_evidence_persistence\\\"\\n    assert GATE._capability_classes(contract)[owners[path]] == \\\"required_control_plane\\\"\\n\\n\\ndef test_native_review_and_codex_continuation_files_have_explicit_control_ownership() -> None:\\n    contract, owners, scope = GATE._validate_contract(ROOT)\\n    classes = GATE._capability_classes(contract)\\n    expected = {\\n        \\\"native_runtime_identity.py\\\",\\n        \\\"daemon/hook_native_review_binding.py\\\",\\n        \\\"daemon/hook_native_review_fence.py\\\",\\n        \\\"daemon/hook_native_review_approval.py\\\",\\n        \\\"daemon/hook_native_review_continuation.py\\\",\\n        \\\"daemon/codex_native_live_decision.py\\\",\\n        \\\"codex_live_decision.py\\\",\\n        \\\"store_consumed_once_authority.py\\\",\\n        \\\"store_event_receipts.py\\\",\\n    }\\n    assert set(owners) == scope\\n    for relative in expected:\\n        path = f\\\"src/codex_plugin_scanner/guard/{relative}\\\"\\n        assert path in scope\\n        assert owners[path] == \\\"hook_control_and_transport\\\"\\n        assert classes[owners[path]] == \\\"required_control_plane\\\"\\n    # The legacy semantic engine remains an explicitly retained oracle even\\n    # though the new continuation transport invokes native decision authority.\\n    oracle = owners[\\\"src/codex_plugin_scanner/guard/runtime/hook_review_engine.py\\\"]\\n    assert oracle == \\\"python_reference_oracle\\\"\\n    assert classes[oracle] == \\\"named_reference_oracle\\\"\\n\\n\\ndef test_dynamic_import_gate_rejects_unbounded_destination(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\ndef load(destination: str):\\\\n    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_leak_sibling_function_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def unrelated():\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return destination\\\\n\\\"\\n        \\\"def load(destination: str):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:6\\\"]\\n\\n\\ndef test_dynamic_import_gate_preserves_function_local_static_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load():\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == []\\n    assert evidence[0].destination_values == (\\\"example.allowed\\\",)\\n\\n\\ndef test_dynamic_import_gate_resolves_statement_order_and_control_flow_conservatively(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"importlib.import_module(destination)\\\\n\\\"\\n        \\\"destination = 'example.late'\\\\n\\\"\\n        \\\"def load_branch(flag):\\\\n\\\"\\n        \\\"    if flag:\\\\n\\\"\\n        \\\"        branch_destination = user_supplied\\\\n\\\"\\n        \\\"    else:\\\\n\\\"\\n        \\\"        branch_destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return importlib.import_module(branch_destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert evidence[0].destination_kind == \\\"unbounded\\\"\\n    assert evidence[1].destination_kind == \\\"unbounded\\\"\\n    assert unbounded == [\\\"example:2\\\", \\\"example:9\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_use_future_loop_source_assignments(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"for destination in destinations:\\\\n\\\"\\n        \\\"    importlib.import_module(destination)\\\\n\\\"\\n        \\\"destinations = ('example.allowed',)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert evidence[0].destination_kind == \\\"unbounded\\\"\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_requires_proof_from_cross_module_callers(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load(destination):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\"\\n        \\\"load('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n    (source / \\\"caller.py\\\").write_text(\\n        \\\"from example import load\\\\nload(user_supplied)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_merge_same_name_functions_across_modules(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"first.py\\\").write_text(\\n        \\\"import importlib\\\\ndef load(destination):\\\\n    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n    (source / \\\"second.py\\\").write_text(\\n        \\\"def load(destination):\\\\n    return destination\\\\nload('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"first:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_merge_nested_same_name_functions(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load(destination):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\"\\n        \\\"def wrapper():\\\\n\\\"\\n        \\\"    def load(destination):\\\\n\\\"\\n        \\\"        return destination\\\\n\\\"\\n        \\\"    return load('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_inherit_conditional_parent_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"if user_supplied:\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"def load():\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:5\\\"]\\n\\n\\ndef test_dynamic_import_gate_collects_function_local_import_aliases(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"def load_with_module_alias():\\\\n\\\"\\n        \\\"    import importlib as local_importlib\\\\n\\\"\\n        \\\"    return local_importlib.import_module('example.allowed')\\\\n\\\"\\n        \\\"def load_with_function_alias():\\\\n\\\"\\n        \\\"    from importlib import import_module as local_load\\\\n\\\"\\n        \\\"    return local_load('example.other')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == []\\n    assert [item.destination_values for item in evidence] == [(\\\"example.allowed\\\",), (\\\"example.other\\\",)]\\n\\n\\ndef test_dynamic_import_graph_records_alias_and_static_expression(tmp_path: Path) -> None:\\n    package = tmp_path / \\\"src\\\" / \\\"codex_plugin_scanner\\\" / \\\"guard\\\"\\n    package.mkdir(parents=True)\\n    (package / \\\"native_runtime_resident.py\\\").write_text(\\\"\\\", encoding=\\\"utf-8\\\")\\n    (package / \\\"loader.py\\\").write_text(\\n        \\\"from importlib import import_module as load\\\\n\\\"\\n        \\\"prefix = 'codex_plugin_scanner.guard.'\\\\n\\\"\\n        \\\"destination = prefix + 'native_runtime_resident'\\\\n\\\"\\n        \\\"load(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    importers = GATE._production_importers(tmp_path, \\\"codex_plugin_scanner.guard.native_runtime_resident\\\")\\n\\n    assert any(item.startswith(\\\"codex_plugin_scanner.guard.loader:\\\") for item in importers)\\n\\n\\ndef test_cleanup_contract_rejects_empty_excluded_candidate_list() -> None:\\n    contract = GATE._read_json(ROOT / GATE.CONTRACT)\\n    contract[\\\"package_excluded_candidates\\\"] = []\\n\\n    with pytest.raises(RuntimeError, match=\\\"non-empty list\\\"):\\n        GATE._run_inputs(ROOT, contract)\\n\\n\\ndef test_retained_python_oracle_is_loaded_only_by_explicit_test_surface(monkeypatch: pytest.MonkeyPatch) -> None:\\n    monkeypatch.setenv(\\\"HOL_GUARD_NATIVE\\\", \\\"off\\\")\\n    monkeypatch.setenv(\\\"HOL_GUARD_TEST_MODE\\\", \\\"1\\\")\\n    monkeypatch.setenv(\\\"HOL_GUARD_PYTHON_ORACLE\\\", \\\"1\\\")\\n\\n    from codex_plugin_scanner.guard.cli.commands_hook_compat_loader import load_hook_compatibility_surface\\n\\n    surface = load_hook_compatibility_surface()\\n    assert surface is not None\\n    assert callable(surface[\\\"_run_hook_generic_payload\\\"])\\n    assert callable(surface[\\\"hydrate_hook_payload_reference\\\"])\\n\\n\\ndef test_excluded_dead_module_cannot_enter_a_package_artifact(tmp_path: Path) -> None:\\n    wheel = tmp_path / \\\"fixture.whl\\\"\\n    with ZipFile(wheel, \\\"w\\\") as archive:\\n        archive.writestr(\\\"codex_plugin_scanner/guard/native_runtime_resident.py\\\", b\\\"retained source\\\")\\n    with pytest.raises(RuntimeError, match=\\\"package artifact contains excluded dead module\\\"):\\n        GATE.run(ROOT, wheel)\\n\\n    sdist = tmp_path / \\\"fixture.tar.gz\\\"\\n    with tarfile.open(sdist, \\\"w:gz\\\") as archive:\\n        source = tmp_path / \\\"native_runtime_resident.py\\\"\\n        source.write_bytes(b\\\"retained source\\\")\\n        archive.add(source, arcname=\\\"hol_guard-3.0.1/src/codex_plugin_scanner/guard/native_runtime_resident.py\\\")\\n    with pytest.raises(RuntimeError, match=\\\"package artifact contains excluded dead module\\\"):\\n        GATE.run(ROOT, sdist)\\n\\n\\ndef test_cleanup_candidate_requires_dead_duplicate_class() -> None:\\n    candidate = \\\"src/codex_plugin_scanner/guard/native_runtime_resident.py\\\"\\n\\n    with pytest.raises(RuntimeError, match=\\\"not classified as dead_duplicate\\\"):\\n        GATE._candidate_evidence(\\n            ROOT,\\n            candidate,\\n            {candidate: \\\"hook_control_and_transport\\\"},\\n            {\\\"hook_control_and_transport\\\": \\\"required_control_plane\\\"},\\n            [candidate],\\n        )\\n\\n\\ndef test_parity_fixture_stays_language_neutral() -> None:\\n    fixture = GATE._validate_fixture(ROOT, \\\"tests/fixtures/native-hook-parity/cases.v1.json\\\")\\n\\n    assert fixture[\\\"case_count\\\"] == 6\\n\"\n  },\n  \"after\": {\n    \"path\": \"tests/test_python_capability_cleanup_gate.py\",\n    \"mode\": \"100644\",\n    \"git_blob\": \"4922f1b86ec58e0ad17e1251a881e5b9df58aea8\",\n    \"sha256\": \"26095357706d3150556d51c91dfb812616555955fbf06ccd9e3443c2155f41e0\",\n    \"bytes\": 12247,\n    \"physical_lines\": 329,\n    \"content\": \"from __future__ import annotations\\n\\nimport importlib.util\\nimport tarfile\\nfrom pathlib import Path\\nfrom zipfile import ZipFile\\n\\nimport pytest\\n\\nROOT = Path(__file__).resolve().parents[1]\\nSCRIPT = ROOT / \\\"scripts\\\" / \\\"ci\\\" / \\\"python_capability_cleanup_gate.py\\\"\\nSPEC = importlib.util.spec_from_file_location(\\\"python_capability_cleanup_gate\\\", SCRIPT)\\nassert SPEC is not None and SPEC.loader is not None\\nGATE = importlib.util.module_from_spec(SPEC)\\nSPEC.loader.exec_module(GATE)\\n\\n\\ndef test_cleanup_contract_covers_every_scoped_hook_capability() -> None:\\n    payload = GATE.run(ROOT)\\n\\n    assert payload[\\\"schema\\\"] == \\\"hol-guard.python-capability-cleanup.v1\\\"\\n    assert payload[\\\"status\\\"] == \\\"passed\\\"\\n    assert payload[\\\"scope_files\\\"] == 108\\n    assert payload[\\\"capabilities\\\"] == {\\n        \\\"hook_control_and_transport\\\": 82,\\n        \\\"python_reference_oracle\\\": 17,\\n        \\\"hook_evidence_persistence\\\": 7,\\n        \\\"legacy_python_resident_transport\\\": 2,\\n    }\\n    assert payload[\\\"candidate_evidence\\\"] == [\\n        {\\n            \\\"path\\\": \\\"src/codex_plugin_scanner/guard/native_runtime_resident.py\\\",\\n            \\\"module\\\": \\\"codex_plugin_scanner.guard.native_runtime_resident\\\",\\n            \\\"loc\\\": 498,\\n            \\\"source_importers\\\": [],\\n            \\\"package_excluded\\\": True,\\n        }\\n    ]\\n    assert payload[\\\"dynamic_import_destinations_checked\\\"] is True\\n    assert payload[\\\"dynamic_import_unbounded\\\"] == []\\n    assert payload[\\\"dynamic_import_count\\\"] == len(payload[\\\"dynamic_import_evidence\\\"])\\n\\n\\ndef test_evidence_diagnostics_has_explicit_non_authoritative_ownership() -> None:\\n    contract, owners, scope = GATE._validate_contract(ROOT)\\n    path = \\\"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py\\\"\\n    assert path in scope\\n    assert owners[path] == \\\"hook_evidence_persistence\\\"\\n    assert GATE._capability_classes(contract)[owners[path]] == \\\"required_control_plane\\\"\\n\\n\\ndef test_native_review_and_codex_continuation_files_have_explicit_control_ownership() -> None:\\n    contract, owners, scope = GATE._validate_contract(ROOT)\\n    classes = GATE._capability_classes(contract)\\n    expected = {\\n        \\\"native_runtime_identity.py\\\",\\n        \\\"daemon/hook_native_review_binding.py\\\",\\n        \\\"daemon/hook_native_review_fence.py\\\",\\n        \\\"daemon/hook_native_review_approval.py\\\",\\n        \\\"daemon/hook_native_review_continuation.py\\\",\\n        \\\"daemon/codex_native_live_decision.py\\\",\\n        \\\"codex_live_decision.py\\\",\\n        \\\"store_consumed_once_authority.py\\\",\\n        \\\"store_event_receipts.py\\\",\\n    }\\n    assert set(owners) == scope\\n    for relative in expected:\\n        path = f\\\"src/codex_plugin_scanner/guard/{relative}\\\"\\n        assert path in scope\\n        assert owners[path] == \\\"hook_control_and_transport\\\"\\n        assert classes[owners[path]] == \\\"required_control_plane\\\"\\n    # The legacy semantic engine remains an explicitly retained oracle even\\n    # though the new continuation transport invokes native decision authority.\\n    oracle = owners[\\\"src/codex_plugin_scanner/guard/runtime/hook_review_engine.py\\\"]\\n    assert oracle == \\\"python_reference_oracle\\\"\\n    assert classes[oracle] == \\\"named_reference_oracle\\\"\\n\\n\\ndef test_dynamic_import_gate_rejects_unbounded_destination(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\ndef load(destination: str):\\\\n    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_leak_sibling_function_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def unrelated():\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return destination\\\\n\\\"\\n        \\\"def load(destination: str):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:6\\\"]\\n\\n\\ndef test_dynamic_import_gate_preserves_function_local_static_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load():\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == []\\n    assert evidence[0].destination_values == (\\\"example.allowed\\\",)\\n\\n\\ndef test_dynamic_import_gate_resolves_statement_order_and_control_flow_conservatively(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"importlib.import_module(destination)\\\\n\\\"\\n        \\\"destination = 'example.late'\\\\n\\\"\\n        \\\"def load_branch(flag):\\\\n\\\"\\n        \\\"    if flag:\\\\n\\\"\\n        \\\"        branch_destination = user_supplied\\\\n\\\"\\n        \\\"    else:\\\\n\\\"\\n        \\\"        branch_destination = 'example.allowed'\\\\n\\\"\\n        \\\"    return importlib.import_module(branch_destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert evidence[0].destination_kind == \\\"unbounded\\\"\\n    assert evidence[1].destination_kind == \\\"unbounded\\\"\\n    assert unbounded == [\\\"example:2\\\", \\\"example:9\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_use_future_loop_source_assignments(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"for destination in destinations:\\\\n\\\"\\n        \\\"    importlib.import_module(destination)\\\\n\\\"\\n        \\\"destinations = ('example.allowed',)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert evidence[0].destination_kind == \\\"unbounded\\\"\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_requires_proof_from_cross_module_callers(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load(destination):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\"\\n        \\\"load('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n    (source / \\\"caller.py\\\").write_text(\\n        \\\"from example import load\\\\nload(user_supplied)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_merge_same_name_functions_across_modules(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"first.py\\\").write_text(\\n        \\\"import importlib\\\\ndef load(destination):\\\\n    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n    (source / \\\"second.py\\\").write_text(\\n        \\\"def load(destination):\\\\n    return destination\\\\nload('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"first:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_merge_nested_same_name_functions(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"def load(destination):\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\"\\n        \\\"def wrapper():\\\\n\\\"\\n        \\\"    def load(destination):\\\\n\\\"\\n        \\\"        return destination\\\\n\\\"\\n        \\\"    return load('example.allowed')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:3\\\"]\\n\\n\\ndef test_dynamic_import_gate_does_not_inherit_conditional_parent_bindings(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"import importlib\\\\n\\\"\\n        \\\"if user_supplied:\\\\n\\\"\\n        \\\"    destination = 'example.allowed'\\\\n\\\"\\n        \\\"def load():\\\\n\\\"\\n        \\\"    return importlib.import_module(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    _evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == [\\\"example:5\\\"]\\n\\n\\ndef test_dynamic_import_gate_collects_function_local_import_aliases(tmp_path: Path) -> None:\\n    source = tmp_path / \\\"src\\\"\\n    source.mkdir()\\n    (source / \\\"example.py\\\").write_text(\\n        \\\"def load_with_module_alias():\\\\n\\\"\\n        \\\"    import importlib as local_importlib\\\\n\\\"\\n        \\\"    return local_importlib.import_module('example.allowed')\\\\n\\\"\\n        \\\"def load_with_function_alias():\\\\n\\\"\\n        \\\"    from importlib import import_module as local_load\\\\n\\\"\\n        \\\"    return local_load('example.other')\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)\\n\\n    assert unbounded == []\\n    assert [item.destination_values for item in evidence] == [(\\\"example.allowed\\\",), (\\\"example.other\\\",)]\\n\\n\\ndef test_dynamic_import_graph_records_alias_and_static_expression(tmp_path: Path) -> None:\\n    package = tmp_path / \\\"src\\\" / \\\"codex_plugin_scanner\\\" / \\\"guard\\\"\\n    package.mkdir(parents=True)\\n    (package / \\\"native_runtime_resident.py\\\").write_text(\\\"\\\", encoding=\\\"utf-8\\\")\\n    (package / \\\"loader.py\\\").write_text(\\n        \\\"from importlib import import_module as load\\\\n\\\"\\n        \\\"prefix = 'codex_plugin_scanner.guard.'\\\\n\\\"\\n        \\\"destination = prefix + 'native_runtime_resident'\\\\n\\\"\\n        \\\"load(destination)\\\\n\\\",\\n        encoding=\\\"utf-8\\\",\\n    )\\n\\n    importers = GATE._production_importers(tmp_path, \\\"codex_plugin_scanner.guard.native_runtime_resident\\\")\\n\\n    assert any(item.startswith(\\\"codex_plugin_scanner.guard.loader:\\\") for item in importers)\\n\\n\\ndef test_cleanup_contract_rejects_empty_excluded_candidate_list() -> None:\\n    contract = GATE._read_json(ROOT / GATE.CONTRACT)\\n    contract[\\\"package_excluded_candidates\\\"] = []\\n\\n    with pytest.raises(RuntimeError, match=\\\"non-empty list\\\"):\\n        GATE._run_inputs(ROOT, contract)\\n\\n\\ndef test_retained_python_oracle_is_loaded_only_by_explicit_test_surface(monkeypatch: pytest.MonkeyPatch) -> None:\\n    monkeypatch.setenv(\\\"HOL_GUARD_NATIVE\\\", \\\"off\\\")\\n    monkeypatch.setenv(\\\"HOL_GUARD_TEST_MODE\\\", \\\"1\\\")\\n    monkeypatch.setenv(\\\"HOL_GUARD_PYTHON_ORACLE\\\", \\\"1\\\")\\n\\n    from codex_plugin_scanner.guard.cli.commands_hook_compat_loader import load_hook_compatibility_surface\\n\\n    surface = load_hook_compatibility_surface()\\n    assert surface is not None\\n    assert callable(surface[\\\"_run_hook_generic_payload\\\"])\\n    assert callable(surface[\\\"hydrate_hook_payload_reference\\\"])\\n\\n\\ndef test_excluded_dead_module_cannot_enter_a_package_artifact(tmp_path: Path) -> None:\\n    wheel = tmp_path / \\\"fixture.whl\\\"\\n    with ZipFile(wheel, \\\"w\\\") as archive:\\n        archive.writestr(\\\"codex_plugin_scanner/guard/native_runtime_resident.py\\\", b\\\"retained source\\\")\\n    with pytest.raises(RuntimeError, match=\\\"package artifact contains excluded dead module\\\"):\\n        GATE.run(ROOT, wheel)\\n\\n    sdist = tmp_path / \\\"fixture.tar.gz\\\"\\n    with tarfile.open(sdist, \\\"w:gz\\\") as archive:\\n        source = tmp_path / \\\"native_runtime_resident.py\\\"\\n        source.write_bytes(b\\\"retained source\\\")\\n        archive.add(source, arcname=\\\"hol_guard-3.0.1/src/codex_plugin_scanner/guard/native_runtime_resident.py\\\")\\n    with pytest.raises(RuntimeError, match=\\\"package artifact contains excluded dead module\\\"):\\n        GATE.run(ROOT, sdist)\\n\\n\\ndef test_cleanup_candidate_requires_dead_duplicate_class() -> None:\\n    candidate = \\\"src/codex_plugin_scanner/guard/native_runtime_resident.py\\\"\\n\\n    with pytest.raises(RuntimeError, match=\\\"not classified as dead_duplicate\\\"):\\n        GATE._candidate_evidence(\\n            ROOT,\\n            candidate,\\n            {candidate: \\\"hook_control_and_transport\\\"},\\n            {\\\"hook_control_and_transport\\\": \\\"required_control_plane\\\"},\\n            [candidate],\\n        )\\n\\n\\ndef test_parity_fixture_stays_language_neutral() -> None:\\n    fixture = GATE._validate_fixture(ROOT, \\\"tests/fixtures/native-hook-parity/cases.v1.json\\\")\\n\\n    assert fixture[\\\"case_count\\\"] == 6\\n\"\n  },\n  \"operations\": [\n    {\n      \"before\": \"assert payload[\\\"scope_files\\\"] == 106\",\n      \"after\": \"assert payload[\\\"scope_files\\\"] == 108\"\n    },\n    {\n      \"before\": \"\\\"hook_evidence_persistence\\\": 5,\",\n      \"after\": \"\\\"hook_evidence_persistence\\\": 7,\"\n    }\n  ],\n  \"whole_file_inverse_equal\": true,\n  \"all4559_other_leaves_unchanged\": true,\n  \"source_selected_count_proof\": {\n    \"scope_paths\": [\n      \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py\",\n      \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py\",\n      \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_failure.py\",\n      \"src/codex_plugin_scanner/guard/adapters/claude_daemon_hook_bridge.py\",\n      \"src/codex_plugin_scanner/guard/adapters/claude_daemon_hook_transport.py\",\n      \"src/codex_plugin_scanner/guard/adapters/claude_hook_argv.py\",\n      \"src/codex_plugin_scanner/guard/adapters/claude_hook_config.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cline_hook_payload.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cline_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py\",\n      \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_bridge.py\",\n      \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_bridge_flow.py\",\n      \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_resume.py\",\n      \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_transport.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_config.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_guard_cli.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_payload.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_head.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_reason.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_tail.py\",\n      \"src/codex_plugin_scanner/guard/adapters/cursor_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/desktop_hook_proxy.py\",\n      \"src/codex_plugin_scanner/guard/adapters/grok_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/hermes_runtime_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/hook_payloads.py\",\n      \"src/codex_plugin_scanner/guard/adapters/hook_python.py\",\n      \"src/codex_plugin_scanner/guard/adapters/hook_python_probe_code.py\",\n      \"src/codex_plugin_scanner/guard/adapters/hook_python_subprocess.py\",\n      \"src/codex_plugin_scanner/guard/adapters/kimi_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/pi_hooks.py\",\n      \"src/codex_plugin_scanner/guard/adapters/zcode_hooks.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_claude.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_compat_bootstrap.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_compat_loader.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_compatibility.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_copilot.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_generic.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_github_workflow.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_local_cli.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_native_floor.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_payload_preparation.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_eval.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_finish.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_review.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_state.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_hook_source_ref.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_support_hook_payload.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_support_hook_payload_loader.py\",\n      \"src/codex_plugin_scanner/guard/cli/commands_support_hook_state.py\",\n      \"src/codex_plugin_scanner/guard/codex_live_decision.py\",\n      \"src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_availability_floor.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_metrics.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_native_review_continuation.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_native_review_fence.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_native_review_retry.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_capacity.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_creation.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_metrics.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_protocol.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_request.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_runner.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_slot_review.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_spawner.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_process_worker.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_request_auth.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_request_parsing.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_worker_native.py\",\n      \"src/codex_plugin_scanner/guard/daemon/hook_worker_responses.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_deadline.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler_contracts.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler_types.py\",\n      \"src/codex_plugin_scanner/guard/daemon/runtime_hook_work_item.py\",\n      \"src/codex_plugin_scanner/guard/native_hook_edge.py\",\n      \"src/codex_plugin_scanner/guard/native_mode.py\",\n      \"src/codex_plugin_scanner/guard/native_resident_client.py\",\n      \"src/codex_plugin_scanner/guard/native_response_decoder.py\",\n      \"src/codex_plugin_scanner/guard/native_route_receipt.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime_admission.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime_identity.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime_resident.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime_resident_transport.py\",\n      \"src/codex_plugin_scanner/guard/native_runtime_resilience.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_content_scanner.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_decision_cache.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_enrichment_queue.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_output_text.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_payload_reference.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_review_engine.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_review_types.py\",\n      \"src/codex_plugin_scanner/guard/runtime/hook_source_read.py\",\n      \"src/codex_plugin_scanner/guard/store_consumed_once_authority.py\",\n      \"src/codex_plugin_scanner/guard/store_event_receipts.py\"\n    ],\n    \"owner_paths\": [\n      {\n        \"id\": \"hook_control_and_transport\",\n        \"paths\": [\n          \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py\",\n          \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py\",\n          \"src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_failure.py\",\n          \"src/codex_plugin_scanner/guard/adapters/claude_daemon_hook_bridge.py\",\n          \"src/codex_plugin_scanner/guard/adapters/claude_daemon_hook_transport.py\",\n          \"src/codex_plugin_scanner/guard/adapters/claude_hook_argv.py\",\n          \"src/codex_plugin_scanner/guard/adapters/claude_hook_config.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cline_hook_payload.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cline_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py\",\n          \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_bridge.py\",\n          \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_bridge_flow.py\",\n          \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_resume.py\",\n          \"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_transport.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_config.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_guard_cli.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_payload.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_head.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_reason.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_tail.py\",\n          \"src/codex_plugin_scanner/guard/adapters/cursor_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/desktop_hook_proxy.py\",\n          \"src/codex_plugin_scanner/guard/adapters/grok_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/hermes_runtime_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/hook_payloads.py\",\n          \"src/codex_plugin_scanner/guard/adapters/hook_python.py\",\n          \"src/codex_plugin_scanner/guard/adapters/hook_python_probe_code.py\",\n          \"src/codex_plugin_scanner/guard/adapters/hook_python_subprocess.py\",\n          \"src/codex_plugin_scanner/guard/adapters/kimi_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/pi_hooks.py\",\n          \"src/codex_plugin_scanner/guard/adapters/zcode_hooks.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_github_workflow.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_local_cli.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_native_floor.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_payload_preparation.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_support_hook_payload.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_support_hook_payload_loader.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_support_hook_state.py\",\n          \"src/codex_plugin_scanner/guard/codex_live_decision.py\",\n          \"src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_availability_floor.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_availability_policy.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_native_review_continuation.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_native_review_fence.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_native_review_retry.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_capacity.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_creation.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_protocol.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_request.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_runner.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_slot_review.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_spawner.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_worker.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_request_auth.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_request_parsing.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_worker_native.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_worker_responses.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_deadline.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler_contracts.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler_types.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_work_item.py\",\n          \"src/codex_plugin_scanner/guard/native_hook_edge.py\",\n          \"src/codex_plugin_scanner/guard/native_mode.py\",\n          \"src/codex_plugin_scanner/guard/native_resident_client.py\",\n          \"src/codex_plugin_scanner/guard/native_response_decoder.py\",\n          \"src/codex_plugin_scanner/guard/native_route_receipt.py\",\n          \"src/codex_plugin_scanner/guard/native_runtime.py\",\n          \"src/codex_plugin_scanner/guard/native_runtime_admission.py\",\n          \"src/codex_plugin_scanner/guard/native_runtime_identity.py\",\n          \"src/codex_plugin_scanner/guard/native_runtime_resilience.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_review_types.py\",\n          \"src/codex_plugin_scanner/guard/store_consumed_once_authority.py\",\n          \"src/codex_plugin_scanner/guard/store_event_receipts.py\"\n        ]\n      },\n      {\n        \"id\": \"python_reference_oracle\",\n        \"paths\": [\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_claude.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_compat_bootstrap.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_compat_loader.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_compatibility.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_copilot.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_generic.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_eval.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_finish.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_review.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_runtime_state.py\",\n          \"src/codex_plugin_scanner/guard/cli/commands_hook_source_ref.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_content_scanner.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_decision_cache.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_output_text.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_payload_reference.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_review_engine.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_source_read.py\"\n        ]\n      },\n      {\n        \"id\": \"hook_evidence_persistence\",\n        \"paths\": [\n          \"src/codex_plugin_scanner/guard/daemon/hook_metrics.py\",\n          \"src/codex_plugin_scanner/guard/daemon/hook_process_metrics.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py\",\n          \"src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py\",\n          \"src/codex_plugin_scanner/guard/runtime/hook_enrichment_queue.py\"\n        ]\n      },\n      {\n        \"id\": \"legacy_python_resident_transport\",\n        \"paths\": [\n          \"src/codex_plugin_scanner/guard/native_runtime_resident.py\",\n          \"src/codex_plugin_scanner/guard/native_runtime_resident_transport.py\"\n        ]\n      }\n    ],\n    \"scope_files\": 108,\n    \"capabilities\": {\n      \"hook_control_and_transport\": 82,\n      \"python_reference_oracle\": 17,\n      \"hook_evidence_persistence\": 7,\n      \"legacy_python_resident_transport\": 2\n    },\n    \"exact_gate_source_sha256\": \"0cb4a8184f21f7b330b6c1a7ec7b06c6a99b4c7215afeeab226b2a6591aa1687\",\n    \"exact_contract_source_sha256\": \"9ecd65fc94ea4cb1af9ee4cf99bb500088fb5a68df01a1856bb166c2966ffcd2\",\n    \"method\": \"The actual gate's simple file glob patterns were independently expanded over the complete current tracked regular-file map. This is source-selected evidence, not execution of GATE.run.\"\n  },\n  \"independent_count_receipt\": {\n    \"git_blob\": \"7b64e17dc0e9a6110394928c61080aed53e682cd\",\n    \"sha256\": \"1246dd5d5a9a8e0b30ee74bb17680026d15d43078d267bd40c1aa330e7271a96\",\n    \"bytes\": 19344\n  },\n  \"case_effect\": {\n    \"existing_module_expected_cases\": 19,\n    \"one_existing_test_two_literal_updates\": \"test_cleanup_contract_covers_every_scoped_hook_capability\",\n    \"other_assertions_unchanged\": true,\n    \"total_expected_cases\": 169\n  },\n  \"execution\": {\n    \"python_parse\": false,\n    \"formatter_replay\": false,\n    \"gate_run\": false,\n    \"pytest_collection\": false,\n    \"pytest_bodies\": false\n  },\n  \"qualification_complete\": false,\n  \"refs_or_launches_changed\": false\n}\n"
+  }
+}

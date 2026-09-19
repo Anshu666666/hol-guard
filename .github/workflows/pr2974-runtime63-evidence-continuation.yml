@@ -1,0 +1,104 @@
+name: PR2974 retained runtime evidence continuation
+
+on:
+  push:
+    branches: [codex/pr2974-runtime63-evidence-continuation-20260919]
+    paths:
+      - '.github/workflows/pr2974-runtime63-evidence-continuation.yml'
+      - 'ci/pr2974_runtime63_evidence_continuation/**'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pr2974-runtime63-evidence-continuation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUDIT_HARNESS: ${{ github.workspace }}/harness
+  AUDIT_SOURCE: ${{ github.workspace }}/source
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  original-runtime63-artifacts:
+    name: Retain only selected original runtime evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Initialize retained audit result
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-runtime63-evidence-artifacts
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          output = Path(os.environ["AUDIT_OUTPUT"])
+          report = output / "audit"
+          report.mkdir(parents=True, exist_ok=True)
+          (report / "runtime63-evidence-transport.json").write_text(json.dumps({
+              "transport_passed": False, "status": "not_run", "qualification_complete": False,
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "harness_sha": os.environ["GITHUB_SHA"]}) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              stream.write("AUDIT_OUTPUT=" + str(output) + "\n")
+          PY
+      - name: Checkout separate observer harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact original source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact reader Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Retain original collection, opaque selected ZIPs and bounded logs
+        id: audit
+        env:
+          AUDIT_TOKEN: ${{ github.token }}
+        shell: bash
+        run: python3 -I -B "$AUDIT_HARNESS/ci/pr2974_runtime63_evidence_continuation/runtime63_readout.py"
+      - name: Retain all original ZIPs, logs and audit evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-runtime63-evidence-artifacts-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-runtime63-evidence-artifacts/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve transport status without new test credit
+        if: always()
+        env:
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["AUDIT_OUTPUT"]) / "audit/runtime63-evidence-transport.json"
+          result = json.loads(path.read_text()) if path.is_file() else {"transport_passed": False}
+          names = ("HARNESS_OUTCOME", "SOURCE_OUTCOME", "PYTHON_OUTCOME", "AUDIT_OUTCOME", "UPLOAD_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          passed = result.get("transport_passed") is True and all(value == "success" for value in outcomes.values())
+          print(json.dumps({"runtime63_evidence_transport": passed, "new_runtime_pass_credit": 0, "step_outcomes": outcomes,
+                            "qualification_complete": False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

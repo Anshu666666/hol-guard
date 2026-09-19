@@ -23,7 +23,7 @@ import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from datetime import datetime, timedelta, timezone
-from hashlib import pbkdf2_hmac, scrypt, sha256
+from hashlib import scrypt
 from pathlib import Path
 from typing import Any, Protocol, TypedDict, TypeVar, cast
 from urllib.parse import urlparse
@@ -313,7 +313,6 @@ _SLOW_STORE_WARNING_ENV = "HOL_GUARD_WARN_SLOW_STORE"
 _SQLITE_LOCK_RETRY_ATTEMPTS = 5
 _SQLITE_LOCK_RETRY_DELAY_SECONDS = 0.1
 _SECRET_FINGERPRINT_PREFIX = "scrypt$"
-_LEGACY_SECRET_FINGERPRINT_PREFIX = "pbkdf2-sha256$"
 _SECRET_FINGERPRINT_SALT = b"hol-guard-secret-fingerprint:v1"
 _SECRET_FINGERPRINT_N = 2**14
 _SECRET_FINGERPRINT_R = 8
@@ -338,12 +337,7 @@ from .store_base_values import _oauth_sync_url_from_issuer
 from .store_base_values import _allowed_origin_from_sync_url
 
 
-_SECRET_FINGERPRINT_ITERATIONS = 200_000
-
-
 from .store_base_values import _secret_fingerprint
-from .store_base_values import _legacy_secret_fingerprint
-from .store_base_values import _legacy_secret_sha256
 from .store_base_values import _secret_matches_hash
 from .store_base_secret_files import _acquire_advisory_file_lock
 from .store_base_secret_files import _release_advisory_file_lock

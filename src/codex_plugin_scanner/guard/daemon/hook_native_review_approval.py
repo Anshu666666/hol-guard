@@ -321,7 +321,12 @@ def _native_review_action_envelope(
     policy_binding: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     host = urlparse(launch_target).hostname if "://" in launch_target else None
-    action_type = "shell_command" if command is not None else "network_request" if host else "mcp_tool"
+    if command is not None:
+        action_type = "shell_command"
+    elif host:
+        action_type = "network_request"
+    else:
+        action_type = "mcp_tool"
     envelope: dict[str, object] = {
         "schema_version": 1,
         "action_id": request_id,

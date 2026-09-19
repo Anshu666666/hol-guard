@@ -31,6 +31,16 @@ def _bound_edge() -> dict:
     return edge
 
 
+def _unbound_edge() -> dict:
+    edge = _edge("cursor")
+    receipt = _receipt(None)
+    receipt["harness"] = "cursor"
+    edge["result"]["reason_code"] = receipt["reason_code"]
+    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+    edge["receipt"] = receipt
+    return edge
+
+
 def _bind_receipt(edge: dict) -> None:
     receipt = edge["receipt"]
     receipt["command_extensions"] = copy.deepcopy(edge["result"]["command_extensions"]["binding"])
@@ -155,17 +165,15 @@ def test_pending_dedup_does_not_replace_the_policy_a_user_is_reviewing(tmp_path,
         worker.close()
 
 
-@pytest.mark.parametrize("old_bound", [False, True])
-def test_bound_and_unbound_approval_domains_do_not_mix(tmp_path, monkeypatch, old_bound) -> None:
-    edge = _bound_edge() if old_bound else _edge("cursor")
+def test_unbound_native_review_fails_closed(tmp_path, monkeypatch) -> None:
+    edge = _unbound_edge()
     worker, store = _worker(tmp_path, monkeypatch, edge, publish_native_policy=False)
     try:
-        old_id = _resolve(store, _review(worker, tmp_path))
-        edge.clear()
-        edge.update(_edge("cursor") if old_bound else _bound_edge())
         response = _review(worker, tmp_path)
-        assert response["policy_action"] == "review"
-        assert response["approval_request_id"] != old_id
+        assert response["policy_action"] == "block"
+        assert response["reason_code"] == "native_review_policy_binding_invalid"
+        assert "approval_request_id" not in response
+        assert store.list_approval_requests(status="pending") == []
     finally:
         worker.close()
 

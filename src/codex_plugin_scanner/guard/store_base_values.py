@@ -58,32 +58,10 @@ def _secret_fingerprint(value: str) -> str:
 
 
 @_preserve_module
-def _legacy_secret_fingerprint(value: str) -> str:
-    digest = _base.pbkdf2_hmac(
-        "sha256",
-        value.encode("utf-8"),
-        _base._SECRET_FINGERPRINT_SALT,
-        _base._SECRET_FINGERPRINT_ITERATIONS,
-    ).hex()
-    return f"{_base._LEGACY_SECRET_FINGERPRINT_PREFIX}{digest}"
-
-
-@_preserve_module
-def _legacy_secret_sha256(value: str) -> str:
-    # Compatibility-only verification for legacy rows written before KDF fingerprints.
-    # New fingerprints use scrypt; this path does not create new SHA-256 credential records.
-    # codeql[py/weak-sensitive-data-hashing]
-    digest = _base.sha256(value.encode("utf-8")).hexdigest()
-    return digest
-
-
-@_preserve_module
 def _secret_matches_hash(value: str, expected_hash: str) -> bool:
-    if expected_hash.startswith(_base._SECRET_FINGERPRINT_PREFIX):
-        return _base._secret_fingerprint(value) == expected_hash
-    if expected_hash.startswith(_base._LEGACY_SECRET_FINGERPRINT_PREFIX):
-        return _base._legacy_secret_fingerprint(value) == expected_hash
-    return _base._legacy_secret_sha256(value) == expected_hash
+    if not expected_hash.startswith(_base._SECRET_FINGERPRINT_PREFIX):
+        return False
+    return _base._secret_fingerprint(value) == expected_hash
 
 
 @_preserve_module

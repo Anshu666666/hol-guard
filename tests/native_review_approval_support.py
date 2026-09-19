@@ -59,9 +59,13 @@ def _worker(
         assert isinstance(result, dict)
         if "receipt" in rendered or "command_extensions" in result:
             return rendered
+        from .test_native_command_observations import _observations
+
         harness = str(rendered["harness"])
         workspace = kwargs.get("cwd")
         digest = _test_request_digest(harness, kwargs.get("payload"), workspace)
+        observations = _observations()
+        result["command_extensions"] = observations
         receipt = {
             "schema": "guard-native-hook-decision-receipt.v1",
             "version": 1,
@@ -73,9 +77,9 @@ def _worker(
             "event_name": "PreToolUse",
             "payload_kind": "inline",
             "policy_generation": 1,
-            "policy_digest": None,
-            "rule_digest": None,
-            "runtime_identity": None,
+            "policy_digest": "a" * 64,
+            "rule_digest": "b" * 64,
+            "runtime_identity": "c" * 64,
             "decision": result["decision"],
             "model_output_action": "not_applicable",
             "policy_action": result["policy_action"],
@@ -86,6 +90,7 @@ def _worker(
             "reviewed_output_sha256": None,
             "observe_mode": False,
             "deadline_budget_ms": None,
+            "command_extensions": copy.deepcopy(observations["binding"]),
         }
         receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
         rendered["receipt"] = receipt

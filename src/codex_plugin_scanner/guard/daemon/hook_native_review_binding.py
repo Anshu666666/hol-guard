@@ -36,17 +36,15 @@ def native_codex_request_digest(native_result: Mapping[str, object], verified_re
 
 def native_review_policy_binding(
     *, harness: str, native_result: Mapping[str, object], verified_receipt: object
-) -> dict[str, object] | None:
-    """Capture only a typed native receipt; request payload metadata is not authority.
+) -> dict[str, object]:
+    """Capture the verified current native command-policy domain.
 
-    Absence on both native surfaces retains the legacy contract. A partially
-    present or inconsistent command domain cannot create an unbound approval.
-    Receipt persistence is asynchronous and does not participate in this check.
+    Review reuse requires a typed receipt and exact command-extension binding.
+    Missing or inconsistent binding evidence fails closed instead of creating
+    an unbound approval domain. Receipt persistence is asynchronous and does
+    not participate in this check.
     """
 
-    receipt_bound = isinstance(verified_receipt, Mapping) and "command_extensions" in verified_receipt
-    if "command_extensions" not in native_result and not receipt_bound:
-        return None
     receipt = validate_native_decision_receipt(verified_receipt)
     if receipt is None or not receipt_matches_edge(
         {
@@ -73,13 +71,11 @@ def native_review_policy_binding(
 
 
 def native_review_binding_matches(row: Mapping[str, object], current: Mapping[str, object] | None) -> bool:
+    if current is None:
+        return False
     envelope = row.get("action_envelope_json")
     if not isinstance(envelope, Mapping):
-        return current is None
-    if current is None:
-        # A J-bound approval cannot become a legacy approval by stripping the
-        # current request's binding. Preserve absence-only legacy behavior.
-        return NATIVE_REVIEW_BINDING_FIELD not in envelope
+        return False
     recorded = envelope.get(NATIVE_REVIEW_BINDING_FIELD)
     return isinstance(recorded, Mapping) and recorded == current
 

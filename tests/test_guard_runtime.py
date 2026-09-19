@@ -17,6 +17,7 @@ import threading
 import urllib.error
 import urllib.request
 from base64 import urlsafe_b64decode
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -23861,12 +23862,18 @@ def test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation(tmp_p
         refresh_token: str,
         dpop_key_material,
         credential_reloader=None,
+        request_validator: Callable[[], None] | None = None,
+        completion_validator: Callable[[], None] | None = None,
     ) -> dict[str, object]:
-        del token_endpoint, client_id, dpop_key_material, credential_reloader
+        del token_endpoint, client_id, dpop_key_material, credential_reloader, completion_validator
+        if request_validator is not None:
+            request_validator()
         observed_refresh_tokens.append(refresh_token)
         if refresh_token == "refresh-token-1":
             first_refresh_started.set()
             assert allow_first_refresh.wait(timeout=3)
+            if request_validator is not None:
+                request_validator()
             return {
                 "access_token": "access-token-1",
                 "refresh_token": "refresh-token-2",
@@ -23877,6 +23884,8 @@ def test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation(tmp_p
                 },
             }
         if refresh_token == "refresh-token-2":
+            if request_validator is not None:
+                request_validator()
             return {
                 "access_token": "access-token-2",
                 "refresh_token": "refresh-token-3",

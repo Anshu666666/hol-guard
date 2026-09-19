@@ -373,3 +373,59 @@ def test_query_only_capture_refuses_pending_outbox_finalizer_write_without_repai
     # not silently write, disable finalization, or change the event payload.
     monkeypatch.setattr(store, "hold_oauth_credential_lock", original)
     assert reader.read_native_policy_authority_inputs(store, now=_TIME).authority.managed is not None
+
+
+def test_unenrolled_capture_keeps_signed_authority_without_unused_catalog_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.runtime.extension_control_authority import ExtensionControlAuthorityError
+
+    store = _activated_store(tmp_path, action="block")
+    before = reader.read_native_policy_authority_inputs(store, now=_TIME)
+    assert before.authority.managed is None
+    assert before.authority.rows
+
+    def unavailable_catalog(_registry: object) -> dict[str, str]:
+        raise ExtensionControlAuthorityError("synthetic catalog unavailable")
+
+    monkeypatch.setattr(store, "_catalog_target_manifest", unavailable_catalog)
+    assert reader.read_native_policy_authority_inputs(store, now=_TIME) == before
+
+    bundle = store.get_sync_payload("policy_bundle")
+    assert isinstance(bundle, dict)
+    verifier = bundle["verifier"]
+    assert isinstance(verifier, dict)
+    verifier["signature"] = "invalid"
+    store.set_sync_payload("policy_bundle", bundle, _NOW)
+    with pytest.raises(NativePolicySnapshotError):
+        reader.read_native_policy_authority_inputs(store, now=_TIME)
+
+
+@pytest.mark.parametrize("phase", ["preparation", "capture"])
+def test_protected_authority_still_requires_catalog_in_each_phase(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
+) -> None:
+    from codex_plugin_scanner.guard.runtime.extension_control_authority import ExtensionControlAuthorityError
+
+    store = managed_store(tmp_path, monkeypatch, cloud=False)
+    assert reader.read_native_policy_authority_inputs(store, now=_TIME).authority.managed is not None
+    calls = []
+
+    def unavailable_catalog(_registry: object) -> dict[str, str]:
+        calls.append(True)
+        raise ExtensionControlAuthorityError("synthetic catalog unavailable")
+
+    if phase == "preparation":
+        monkeypatch.setattr(store, "_catalog_target_manifest", unavailable_catalog)
+    else:
+        original = reader._capture_native_policy_authority_inputs
+
+        def unavailable_after_preparation(*args, **kwargs):
+            monkeypatch.setattr(store, "_catalog_target_manifest", unavailable_catalog)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(reader, "_capture_native_policy_authority_inputs", unavailable_after_preparation)
+
+    with pytest.raises(NativePolicySnapshotError, match="managed_unavailable"):
+        reader.read_native_policy_authority_inputs(store, now=_TIME)
+    assert calls == [True]

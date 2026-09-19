@@ -24,6 +24,7 @@ ACTIVE_RUST_FILES: Final = (
     Path("rust/crates/guard-contracts/src/approval_v4_contracts.rs"),
     Path("rust/crates/guard-runtime/src/approval.rs"),
     Path("rust/crates/guard-runtime/src/approval_authority.rs"),
+    Path("rust/crates/guard-runtime/src/approval_authority_record.rs"),
     Path("rust/crates/guard-runtime/src/approval_authority_tests.rs"),
     Path("rust/crates/guard-runtime/src/approval_context.rs"),
     Path("rust/crates/guard-runtime/src/approval_context_scoped.rs"),

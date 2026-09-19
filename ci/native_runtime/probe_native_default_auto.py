@@ -460,7 +460,7 @@ def _run_native_smoke(root: Path) -> None:
 
 def _run_temporary_probe(identity: NativeRuntimeIdentity) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="hg-auto-", dir=_short_temp_parent()) as temporary:
-        root = Path(temporary)
+        root = Path(temporary).resolve()
         completed = False
         try:
             _run_native_smoke(root)

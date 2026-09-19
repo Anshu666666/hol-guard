@@ -52,6 +52,15 @@ fn installed(root: &Path, version: u8) -> (PolicySnapshotStore, [u8; 32], Value)
 }
 
 fn private_bytes(path: &Path, bytes: &[u8]) {
+    #[cfg(windows)]
+    {
+        // These cases deliberately replace an existing authenticated record.
+        // Match fs::write while retaining the private-file owner/ACL checks.
+        let mut file =
+            crate::resident_state::private_file(path, false, path.parent().unwrap()).unwrap();
+        file.write_all(bytes).unwrap();
+    }
+    #[cfg(not(windows))]
     fixture_file(path, bytes);
     #[cfg(unix)]
     fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();

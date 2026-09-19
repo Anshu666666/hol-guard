@@ -416,3 +416,57 @@ def test_stop_native_process_accepts_only_documented_idempotent_exit(
     )
 
     assert probe._stop_native_process(runtime, guard_home) is expected
+
+
+@pytest.mark.parametrize("aliased_parent", [False, True])
+def test_probe_preregisters_the_workspace_presented_by_the_hook(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, aliased_parent: bool
+) -> None:
+    from contextlib import closing
+
+    from ci.native_runtime import probe_native_default_auto as probe
+    from codex_plugin_scanner.guard.daemon.server import _GuardDaemonHandler
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    parent = tmp_path / "owned-parent"
+    parent.mkdir()
+    if aliased_parent:
+        alias = tmp_path / "parent-alias"
+        alias.symlink_to(parent, target_is_directory=True)
+        parent = alias
+    roots: list[Path] = []
+    stopped: list[Path] = []
+
+    def corpus(root: Path) -> dict[str, int]:
+        roots.append(root)
+        workspace = root / "hook-workspace"
+        workspace.mkdir()
+        store = GuardStore(root / "hook-home")
+        handler = object.__new__(_GuardDaemonHandler)
+        with closing(NativePolicySnapshotPublisher(store=store)) as publisher:
+            assert publisher.register_workspace(workspace)
+            epoch = publisher._epoch
+            presented = handler._validated_hook_directory_string("workspace", str(workspace), roots=(tmp_path,))
+            assert presented is not None
+            # The real path validator must not make the same fixture directory
+            # look like a newly discovered workspace and revoke publication.
+            assert not publisher.register_workspace(Path(presented))
+            assert publisher._epoch == epoch
+            assert Path(presented) == workspace
+        return {"route_count": 21}
+
+    health = SimpleNamespace(state="healthy", reason="native_ready", resident_failures=0, oneshot_failures=0)
+    monkeypatch.setattr(probe, "_short_temp_parent", lambda: str(parent))
+    monkeypatch.setattr(probe, "_run_native_smoke", lambda _root: None)
+    monkeypatch.setattr(probe, "native_runtime_health", lambda _home: health)
+    monkeypatch.setattr(probe, "_native_state_files", lambda _home: [tmp_path / "generation.json"])
+    monkeypatch.setattr(probe, "_installed_hook_corpus", corpus)
+    monkeypatch.setattr(probe, "_stop_native_runtime", lambda _runtime, home: stopped.append(home))
+    identity = probe.NativeRuntimeIdentity(path=tmp_path / "hol-guard-runtime", size=0, mtime_ns=0, sha256="0" * 64)
+
+    assert probe._run_temporary_probe(identity) == {"route_count": 21}
+    assert len(roots) == 1
+    assert stopped == [roots[0] / "guard-home", roots[0] / "hook-home"]
+    assert not roots[0].exists()
+    assert parent.is_dir()

@@ -115,7 +115,11 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                 if include_managed_controls:
                     composed = self._with_managed_controls_activation(
                         view,
-                        current_manifest=self._catalog_target_manifest(registry),
+                        current_manifest=(
+                            self._catalog_target_manifest(registry)
+                            if view.health is AuthorityHealth.PROTECTED
+                            else None
+                        ),
                         previous_manifest=stale_manifest,
                     )
                 else:
@@ -262,8 +266,9 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         if not connection.in_transaction:
             raise ExtensionControlAuthorityError("extension control capture requires a transaction")
         view = self._read_extension_control_authority_locked(registry.catalog_digest, connection=connection)
-        manifest = self._catalog_target_manifest(registry)
+        manifest = None
         if view.health is AuthorityHealth.PROTECTED:
+            manifest = self._catalog_target_manifest(registry)
             key = self._authority_key(required=True)
             assert key is not None
             if self._load_catalog_manifest(registry.catalog_digest, key=key, connection=connection) != manifest:

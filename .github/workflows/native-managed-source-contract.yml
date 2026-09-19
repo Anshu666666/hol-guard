@@ -221,6 +221,12 @@ on:
       - "tests/test_rust_pretool_authority_worker.py"
       - "tests/test_store_private_mode_compatibility.py"
       - "tests/test_store_private_mode_observation.py"
+      - "src/codex_plugin_scanner/guard/runtime/command_queue.py"
+      - "src/codex_plugin_scanner/guard/runtime/command_queue_auth.py"
+      - "tests/test_native_policy_snapshot_resident_retry.py"
+      - "tests/test_guard_command_queue.py"
+      - "tests/test_guard_runtime.py"
+      - "tests/test_paseo_adapter.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -247,7 +253,49 @@ jobs:
         with:
           version: "0.9.26"
           enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
+        run: |
+          python -I - <<'PY'
+          import pathlib
+          import venv
+
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
       - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Verify installation fixture interpreter provenance
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
+
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
       - name: Lint and typecheck the actual source closure
         run: |
           source_paths="$(uv run --no-sync python -c 'import json; print("\n".join(json.load(open("basedpyright.native-managed-source.json"))["include"]))')"
@@ -283,3 +331,5 @@ jobs:
         run: uv run --no-sync pytest -q tests/test_aibom_daemon_authority.py tests/test_inventory_daemon_consumers.py tests/test_inventory_daemon_scheduling.py tests/test_native_policy_control_runtime.py
       - name: Verify coherent capture and recovery safeguards
         run: uv run --no-sync pytest -q tests/test_guard_extension_control_api.py tests/test_guard_extension_control_recovery.py tests/test_guard_kubernetes_runtime.py tests/test_native_authority_fixture_lifecycle.py tests/test_native_policy_authority_coherent_capture.py tests/test_rust_pretool_authority.py tests/test_rust_pretool_authority_worker.py tests/test_store_private_mode_compatibility.py tests/test_store_private_mode_observation.py
+      - name: Verify resident retries and existing caller contracts
+        run: uv run --no-sync pytest -q tests/test_native_policy_snapshot_resident_retry.py tests/test_guard_command_queue.py::test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_state tests/test_guard_command_queue.py::test_poll_once_reuses_cached_access_token_across_oauth_polls tests/test_guard_runtime.py::test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation tests/test_paseo_adapter.py::test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_content

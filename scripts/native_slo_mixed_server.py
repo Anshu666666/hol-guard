@@ -11,17 +11,29 @@ import hashlib
 import time
 from collections.abc import Mapping
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scripts.native_slo_adapter import payload
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_mixed_witness import MAX_CONTROL_ACTIONS, ReceiptWitness, writer_drained
 
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_queue_observation import EvidenceQueueObservation
+    from scripts.native_slo_sqlite_vfs import SQLiteVFSObservation
+
 
 class MixedScenarioFixture:
-    def __init__(self, session: Any) -> None:
+    def __init__(
+        self,
+        session: Any,
+        *,
+        queue_observation: EvidenceQueueObservation | None = None,
+        sqlite_observer: SQLiteVFSObservation | None = None,
+    ) -> None:
         self.session = session
+        self.queue_observation = queue_observation
+        self.sqlite_observer = sqlite_observer
         self.witness: ReceiptWitness | None = None
         self.samples = 0
         self.peaks: dict[str, int | float] = {}
@@ -56,6 +68,8 @@ class MixedScenarioFixture:
                 self.session,
                 maximum=int(request["maximum"]),
                 receipt_profile=str(request.get("receipt_profile", "candidate")),
+                queue_observation=self.queue_observation,
+                sqlite_observer=self.sqlite_observer,
             ).__enter__()
             self.started = self.last_sample = time.monotonic()
             self.initial = self._stats()
@@ -82,9 +96,9 @@ class MixedScenarioFixture:
                     break
                 time.sleep(0.025)
             self.witness.reconcile(verify_all=True)
-            result["receipts"] = self.witness.report()
             self.finished = True
             self.close()
+            result["receipts"] = self.witness.report()
             return result
         self.actions += 1
         if self.actions > MAX_CONTROL_ACTIONS:

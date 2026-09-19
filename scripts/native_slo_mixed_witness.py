@@ -1,8 +1,8 @@
 """Private, bounded observation of real native receipts and journal I/O.
 
 Wrappers call production functions unchanged. They retain only correlation IDs
-and authenticated receipt fields, never hook text. SQLite VFS sync calls are
-explicitly outside this Python instrumentation's coverage.
+and authenticated receipt fields, never hook text. An explicitly supplied SQLite observer adds separate VFS-level counters; the
+Python journal counters never imply kernel or physical SQLite I/O coverage.
 """
 
 from __future__ import annotations
@@ -13,11 +13,15 @@ import threading
 import time
 from collections import Counter
 from collections.abc import Mapping
-from contextlib import ExitStack
-from typing import Any
+from contextlib import ExitStack, nullcontext
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from scripts.native_slo_mixed_receipt_reader import InstalledReceiptReader
+
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_queue_observation import EvidenceQueueObservation
+    from scripts.native_slo_sqlite_vfs import SQLiteVFSObservation
 
 MAX_ATTEMPTS = 100_000
 MAX_CONTROL_ACTIONS = 64
@@ -62,10 +66,20 @@ class _JournalOS:
 
 
 class ReceiptWitness:
-    def __init__(self, session: Any, *, maximum: int, receipt_profile: str = "candidate") -> None:
+    def __init__(
+        self,
+        session: Any,
+        *,
+        maximum: int,
+        receipt_profile: str = "candidate",
+        queue_observation: EvidenceQueueObservation | None = None,
+        sqlite_observer: SQLiteVFSObservation | None = None,
+    ) -> None:
         if not 1 <= maximum <= MAX_ATTEMPTS + MAX_CONTROL_ACTIONS:
             raise ValueError("mixed receipt bound invalid")
         self.session, self.maximum = session, maximum
+        self.queue_observation = queue_observation
+        self.sqlite_observer = sqlite_observer
         self.reader = InstalledReceiptReader(session.store, profile=receipt_profile)
         self.started = time.monotonic()
         self._stack = ExitStack()
@@ -146,6 +160,13 @@ class ReceiptWitness:
             return directory_sync(*args, **kwargs)
 
         try:
+            if self.sqlite_observer is not None:
+                self._stack.enter_context(self.sqlite_observer)
+                self.sqlite_observer.install(self.session.store, writer)
+            if self.queue_observation is not None:
+                if not self.queue_observation.attach(writer):
+                    raise RuntimeError("writer queue observation admission failed")
+                self._stack.callback(self.queue_observation.detach, writer)
             self._stack.enter_context(patch.object(worker, "_review_raw_hook_native", observed_review))
             self._stack.enter_context(patch.object(writer, "submit_native_decision_receipt", observed_submit))
             self._stack.enter_context(patch.object(journal, "os", _JournalOS(journal.os, self)))
@@ -162,35 +183,37 @@ class ReceiptWitness:
 
     def reconcile(self, *, verify_all: bool = False) -> None:
         """Verify exact observed identities and bindings in committed SQLite rows."""
-        with self._lock:
-            pending = [dict(row) for row in self._rows.values() if verify_all or not row["committed"]]
-        for offset in range(0, len(pending), 500):
-            batch = pending[offset : offset + 500]
-            marks = ",".join("?" for _ in batch)
-            with self.session.store._connect() as connection:
-                persisted = connection.execute(
-                    f"select {','.join(_RECEIPT_FIELDS)} from native_hook_decision_receipts "
-                    f"where decision_id in ({marks})",
-                    tuple(row["decision_id"] for row in batch),
-                ).fetchall()
-            # The public store getter reconstructs and validates the complete
-            # native identity, including its optional command-extension binding.
-            verified = {stored["decision_id"]: self.reader.read(stored["decision_id"]) for stored in persisted}
-            current = time.monotonic()
+        scope = self.sqlite_observer.readback() if self.sqlite_observer is not None else nullcontext()
+        with scope:
             with self._lock:
-                if verify_all:
-                    for expected in batch:
-                        self._rows[expected["attempt"]]["committed"] = False
-                for stored in persisted:
-                    row = self._rows[self._ids[stored["decision_id"]]]
-                    row["committed"] = True
-                    row["commit_binding_valid"] = verified[stored["decision_id"]] is not None and all(
-                        row[field] == stored[field] for field in _RECEIPT_FIELDS
-                    )
-                    row.setdefault("commit_observed_ms", (current - self.started) * 1000)
-                    self._max_commit_age_ms = max(
-                        self._max_commit_age_ms, row["commit_observed_ms"] - row["native_finished_ms"]
-                    )
+                pending = [dict(row) for row in self._rows.values() if verify_all or not row["committed"]]
+            for offset in range(0, len(pending), 500):
+                batch = pending[offset : offset + 500]
+                marks = ",".join("?" for _ in batch)
+                with self.session.store._connect() as connection:
+                    persisted = connection.execute(
+                        f"select {','.join(_RECEIPT_FIELDS)} from native_hook_decision_receipts "
+                        f"where decision_id in ({marks})",
+                        tuple(row["decision_id"] for row in batch),
+                    ).fetchall()
+                # The public store getter reconstructs and validates the complete
+                # native identity, including its optional command-extension binding.
+                verified = {stored["decision_id"]: self.reader.read(stored["decision_id"]) for stored in persisted}
+                current = time.monotonic()
+                with self._lock:
+                    if verify_all:
+                        for expected in batch:
+                            self._rows[expected["attempt"]]["committed"] = False
+                    for stored in persisted:
+                        row = self._rows[self._ids[stored["decision_id"]]]
+                        row["committed"] = True
+                        row["commit_binding_valid"] = verified[stored["decision_id"]] is not None and all(
+                            row[field] == stored[field] for field in _RECEIPT_FIELDS
+                        )
+                        row.setdefault("commit_observed_ms", (current - self.started) * 1000)
+                        self._max_commit_age_ms = max(
+                            self._max_commit_age_ms, row["commit_observed_ms"] - row["native_finished_ms"]
+                        )
 
     def row(self, attempt: str) -> dict[str, Any] | None:
         with self._lock:
@@ -218,6 +241,8 @@ class ReceiptWitness:
             return {"rows": [dict(row) for row in rows], "total": len(self._rows)}
 
     def report(self) -> dict[str, object]:
+        queue_report = self.queue_observation.report() if self.queue_observation is not None else None
+        sqlite_report = self.sqlite_observer.report() if self.sqlite_observer is not None else None
         with self._lock:
             rows = list(self._rows.values())
             ids = sorted(row["decision_id"] for row in rows if row["committed"])
@@ -265,13 +290,15 @@ class ReceiptWitness:
                     )
                 },
                 "journal_instrumentation_installed": self._instrumented,
+                "writer_queue_observation": queue_report,
+                "sqlite_vfs_observation": sqlite_report,
                 "sqlite_fsync_calls": None,
                 "sqlite_written_bytes": None,
                 "full_persistence_metric_coverage": False,
                 "unavailable": {
-                    "sqlite_fsync_calls": "sqlite_vfs_not_instrumented",
-                    "sqlite_written_bytes": "sqlite_vfs_not_instrumented",
+                    "sqlite_fsync_calls": "VFS_xSync_is_not_a_kernel_syscall_count" if sqlite_report else "sqlite_vfs_not_instrumented",
+                    "sqlite_written_bytes": "VFS_xWrite_status_is_not_a_kernel_byte_count" if sqlite_report else "sqlite_vfs_not_instrumented",
                     "directory_fsync_calls": "production_helper_can_skip_unsupported_directory_sync",
-                    "writer_queue_only_age_ms": "commit_age_includes_journal_sql_and_poll_delay",
+                    "writer_queue_only_age_ms": "see_separate_bounded_queue_observation" if queue_report else "commit_age_includes_journal_sql_and_poll_delay",
                 },
             }

@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import time
+from collections import OrderedDict, deque
 from collections.abc import Mapping
-from typing import TypedDict
+from pathlib import Path
+from threading import Condition
+from typing import TYPE_CHECKING, TypedDict
 
 from ..store import GuardStore
-from .runtime_hook_evidence_diagnostics import evidence_failure_code
+from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase, evidence_failure_code
 from .runtime_hook_evidence_journal import (
     _EvidenceRecord,
     _NativeDecisionReceiptRecord,
@@ -54,6 +57,32 @@ class RuntimeHookEvidenceWriterStats(TypedDict):
 
 class RuntimeHookEvidenceWriterJournalMixin:
     """Bounded queue and durable-journal operations shared by the writer."""
+
+    if TYPE_CHECKING:
+        _condition: Condition
+        _records: deque[_EvidenceRecord]
+        _durable: OrderedDict[str, _EvidenceRecord]
+        _receipt_seen: OrderedDict[str, None]
+        _checkpoint_pending: set[str]
+        _batch_wait_seconds: float
+        _stopping: bool
+        _max_batch: int
+        _queued_bytes: int
+        _drain_deadline: float | None
+        _journal_path: Path
+        _max_bytes: int
+        _degraded: bool
+        _failures: int
+        _max_records: int
+        _recovered: int
+
+        def _record_failure_diagnostics(
+            self,
+            phase: EvidenceFailurePhase,
+            code: str,
+            records: int,
+            receipts: int = 0,
+        ) -> None: ...
 
     def _next_batch(self) -> list[_EvidenceRecord]:
         with self._condition:

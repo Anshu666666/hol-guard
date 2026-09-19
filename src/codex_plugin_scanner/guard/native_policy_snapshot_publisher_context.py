@@ -17,9 +17,9 @@ from .native_policy_authority_blocked import command_controls_blocked
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_constants import _REQUIRED_PUBLISH_FEATURES, NativePolicySnapshotError
-from .policy_document_types import PolicyCompilationError
 from .native_policy_snapshot_publisher_scoped import SCOPED_PUBLISH_FEATURES, compiled_scoped_policy
 from .native_policy_snapshot_source_requirement import refresh_source_requirement
+from .policy_document_types import PolicyCompilationError
 
 if TYPE_CHECKING:
     from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher

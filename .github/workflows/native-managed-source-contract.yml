@@ -1,0 +1,367 @@
+name: Current policy formatting capture
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact reviewed source commit
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Exact diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Exact diagnostic tree
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: policy-format-77-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  formatting:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-policy-format-77-20260919' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12"]
+    env:
+      EXPECTED_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      EXPECTED_DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact source before formatting
+        id: source_guard
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import subprocess
+          
+          SOURCE = "77e2c027a4b5bd6f3c2369eec88ae4a68dc951bf"
+          SOURCE_TREE = "75ba05e40579e8bfddc6ed5f0fbb833017bd3075"
+          PARENT = "c63e7c6e85ec062a0ea617dccce7df3355a38711"
+          PARENT_TREE = "6096dc6d7ffc383110330b1843d529929add41a7"
+          WORKFLOW = ".github/workflows/native-managed-source-contract.yml"
+          PINS = [["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","2da19b0d66af030cec5bcb3f9af88c66cdc007d8"],["scripts/ci/native_managed_resident_evidence.py","100644","c353e213d84000d61b2192c7c9e6888107f52fbd"],["scripts/ci/native_origin_resident_evidence.py","100644","7c3e40fb44ca8170b64de766169fe9f90506c856"],["scripts/ci/native_retirement_resident_evidence.py","100644","c7add13807544b952856147c4929b7d5055dc4fd"],["scripts/ci/policy_source_contract.py","100644","1df9950e323f2fcfdc04f38ab99b33c84098f279"],["tests/test_native_policy_vector_source_parity.py","100644","7ec9407e784eb5ac93753e930457a777b2f94401"]]
+          OUTPUTS = ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","scripts/ci/native_managed_resident_evidence.py","scripts/ci/native_origin_resident_evidence.py","scripts/ci/native_retirement_resident_evidence.py","scripts/ci/policy_source_contract.py","tests/test_native_policy_vector_source_parity.py"]
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == SOURCE
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-policy-format-77-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", head).split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, PARENT]
+          assert git("rev-parse", source + "^{tree}") == SOURCE_TREE
+          assert git("rev-parse", PARENT + "^{tree}") == PARENT_TREE
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, head) == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git(
+              "show", "-s", identity, "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          )
+          assert git("diff", "--name-status", "--no-renames", source, head).splitlines() == ["A\t" + WORKFLOW]
+          assert git("ls-tree", source, "--", WORKFLOW) == ""
+          after = os.environ.get("FORMAT_OUTPUTS_ALLOWED") == "1"
+          allowed = set(OUTPUTS) if after else set()
+          records = {}
+          if after:
+              receipt = Path(os.environ["RUNNER_TEMP"]) / "policy-format-77.json"
+              metadata = receipt.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not receipt.is_symlink()
+              payload = json.loads(receipt.read_text(encoding="utf-8"))
+              assert payload["source"] == source and payload["diagnostic"] == head
+              records = payload["outputs"]
+              assert set(records) == allowed
+          for path, mode, sha in PINS:
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", head, "--", path) == expected
+              file = Path(path)
+              metadata = file.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not file.is_symlink()
+              assert bool(metadata.st_mode & 0o111) == (mode == "100755")
+              actual = git("hash-object", "--", path)
+              if path in allowed:
+                  assert records[path]["before"] == sha and records[path]["mode"] == mode
+                  assert actual == records[path]["after"]
+                  assert file.stat().st_size == records[path]["bytes"]
+                  assert hashlib.sha256(file.read_bytes()).hexdigest() == records[path]["sha256"]
+              else:
+                  assert actual == sha
+          subprocess.run(["git", "diff", "--cached", "--quiet"], check=True)
+          changes = git("diff", "--name-status", "--no-renames", head).splitlines()
+          assert set(changes).issubset({"M\t" + path for path in allowed}), changes
+          print(json.dumps({"sourceGuard": "passed", "pins": len(PINS), "formatChanges": len(changes)}))
+          PY
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
+        run: |
+          python -I - <<'PY'
+          import pathlib
+          import venv
+
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Verify installation fixture interpreter provenance
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
+
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
+      - name: Generate and check exact declared formatting
+        run: |
+          uv run --no-sync python -I - <<'PY'
+          import subprocess
+          
+          paths = ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","scripts/ci/native_managed_resident_evidence.py","scripts/ci/native_origin_resident_evidence.py","scripts/ci/native_retirement_resident_evidence.py","scripts/ci/policy_source_contract.py","tests/test_native_policy_vector_source_parity.py"]
+          version = subprocess.check_output(["uv", "run", "--no-sync", "ruff", "--version"], text=True).strip()
+          assert version == "ruff 0.15.17", version
+          subprocess.run([
+              "uv", "run", "--no-sync", "ruff", "check", "--select", "I001", "--fix",
+              "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+          ], check=True)
+          if paths:
+              subprocess.run(["uv", "run", "--no-sync", "ruff", "format", *paths], check=True)
+          subprocess.run(["uv", "run", "--no-sync", "ruff", "check", *["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","scripts/ci/native_managed_resident_evidence.py","scripts/ci/native_origin_resident_evidence.py","scripts/ci/native_retirement_resident_evidence.py","scripts/ci/policy_source_contract.py","tests/test_native_policy_vector_source_parity.py"]], check=True)
+          if paths:
+              subprocess.run(["uv", "run", "--no-sync", "ruff", "format", "--check", *paths], check=True)
+          PY
+      - name: Verify preservation and emit complete generated bytes
+        id: format_output
+        run: |
+          uv run --no-sync python -I - <<'PY'
+          import ast
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import stat
+          import subprocess
+          
+          SOURCE = "77e2c027a4b5bd6f3c2369eec88ae4a68dc951bf"
+          PUBLISHER = "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py"
+          EXPECTED = [["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","2da19b0d66af030cec5bcb3f9af88c66cdc007d8"],["scripts/ci/native_managed_resident_evidence.py","100644","c353e213d84000d61b2192c7c9e6888107f52fbd"],["scripts/ci/native_origin_resident_evidence.py","100644","7c3e40fb44ca8170b64de766169fe9f90506c856"],["scripts/ci/native_retirement_resident_evidence.py","100644","c7add13807544b952856147c4929b7d5055dc4fd"],["scripts/ci/policy_source_contract.py","100644","1df9950e323f2fcfdc04f38ab99b33c84098f279"],["tests/test_native_policy_vector_source_parity.py","100644","7ec9407e784eb5ac93753e930457a777b2f94401"]]
+          MAX_FILE_BYTES = 262144
+          MAX_TOTAL_BYTES = 1048576
+          
+          def git_bytes(*arguments):
+              return subprocess.check_output(["git", *arguments])
+          
+          def blob_sha(raw):
+              return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+          
+          def parse(raw, path):
+              tree = ast.parse(raw.decode("utf-8"), filename=path, type_comments=True, feature_version=(3, 10))
+              compile(tree, path, "exec")
+              return tree
+          
+          def publisher_structure(tree):
+              body = list(tree.body)
+              assert isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant)
+              assert isinstance(body[0].value.value, str)
+              stop = 1
+              while stop < len(body) and isinstance(body[stop], (ast.Import, ast.ImportFrom)):
+                  stop += 1
+              assert stop > 1
+              futures, imports = [], []
+              for node in body[1:stop]:
+                  if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+                      futures.append(ast.dump(node, include_attributes=False))
+                  elif isinstance(node, ast.Import):
+                      imports.extend(("import", "", 0, item.name, item.asname or "") for item in node.names)
+                  else:
+                      imports.extend(("from", node.module or "", node.level, item.name, item.asname or "") for item in node.names)
+              rest = ast.Module(body=[body[0], *body[stop:]], type_ignores=tree.type_ignores)
+              return futures, sorted(imports), ast.dump(rest, include_attributes=False)
+          
+          records = []
+          total = 0
+          for path, mode, before_sha in EXPECTED:
+              original = git_bytes("show", SOURCE + ":" + path)
+              assert blob_sha(original) == before_sha
+              file = Path(path)
+              metadata = file.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not file.is_symlink()
+              assert bool(metadata.st_mode & 0o111) == (mode == "100755")
+              generated = file.read_bytes()
+              assert 0 < len(original) <= MAX_FILE_BYTES and 0 < len(generated) <= MAX_FILE_BYTES
+              total += len(generated)
+              assert total <= MAX_TOTAL_BYTES
+              before, after = parse(original, path), parse(generated, path)
+              if path == PUBLISHER:
+                  assert publisher_structure(before) == publisher_structure(after)
+              else:
+                  assert ast.dump(before, include_attributes=False) == ast.dump(after, include_attributes=False)
+              encoded = base64.b64encode(generated).decode("ascii") if generated != original else ""
+              chunks = [encoded[index:index + 4096] for index in range(0, len(encoded), 4096)]
+              records.append({
+                  "path": path, "before": before_sha, "after": blob_sha(generated),
+                  "beforeSha256": hashlib.sha256(original).hexdigest(),
+                  "sha256": hashlib.sha256(generated).hexdigest(),
+                  "beforeBytes": len(original), "bytes": len(generated), "mode": mode,
+                  "changed": generated != original,
+                  "beforeNonblank": sum(bool(line.strip()) for line in original.decode("utf-8").splitlines()),
+                  "nonblank": sum(bool(line.strip()) for line in generated.decode("utf-8").splitlines()),
+                  "chunks": chunks,
+              })
+          changed = sorted("M\t" + record["path"] for record in records if record["changed"])
+          assert git_bytes("diff", "--name-status", "--no-renames", "HEAD").decode().splitlines() == changed
+          subprocess.run(["git", "diff", "--cached", "--quiet"], check=True)
+          metadata = {record["path"]: {key: value for key, value in record.items() if key != "chunks"} for record in records}
+          receipt = Path(os.environ["RUNNER_TEMP"]) / "policy-format-77.json"
+          with receipt.open("x", encoding="utf-8") as stream:
+              json.dump({"source": SOURCE, "diagnostic": os.environ["GITHUB_SHA"], "outputs": metadata}, stream, sort_keys=True)
+          for record in records:
+              chunks = record.pop("chunks")
+              print(json.dumps({"record": "formatted-file", **record, "chunkCount": len(chunks)}, sort_keys=True))
+              for index, chunk in enumerate(chunks):
+                  print(json.dumps({
+                      "record": "formatted-file-chunk", "path": record["path"], "after": record["after"],
+                      "index": index, "count": len(chunks), "base64": chunk,
+                  }, sort_keys=True))
+          print(json.dumps({
+              "record": "formatting-preservation", "source": SOURCE, "files": len(records),
+              "changedFiles": len(changed), "totalGeneratedBytes": total,
+              "formatterOnlyAstExact": True, "publisherNonImportAstExact": True,
+              "publisherFutureImportsExact": True, "publisherImportAliasesExact": True,
+              "allOtherTrackedBytesUnchanged": True,
+          }, sort_keys=True))
+          PY
+      - name: Verify exact source after formatting
+        if: ${{ always() && steps.source_guard.outcome == 'success' }}
+        env:
+          FORMAT_OUTPUTS_ALLOWED: "1"
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import subprocess
+          
+          SOURCE = "77e2c027a4b5bd6f3c2369eec88ae4a68dc951bf"
+          SOURCE_TREE = "75ba05e40579e8bfddc6ed5f0fbb833017bd3075"
+          PARENT = "c63e7c6e85ec062a0ea617dccce7df3355a38711"
+          PARENT_TREE = "6096dc6d7ffc383110330b1843d529929add41a7"
+          WORKFLOW = ".github/workflows/native-managed-source-contract.yml"
+          PINS = [["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","2da19b0d66af030cec5bcb3f9af88c66cdc007d8"],["scripts/ci/native_managed_resident_evidence.py","100644","c353e213d84000d61b2192c7c9e6888107f52fbd"],["scripts/ci/native_origin_resident_evidence.py","100644","7c3e40fb44ca8170b64de766169fe9f90506c856"],["scripts/ci/native_retirement_resident_evidence.py","100644","c7add13807544b952856147c4929b7d5055dc4fd"],["scripts/ci/policy_source_contract.py","100644","1df9950e323f2fcfdc04f38ab99b33c84098f279"],["tests/test_native_policy_vector_source_parity.py","100644","7ec9407e784eb5ac93753e930457a777b2f94401"]]
+          OUTPUTS = ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","scripts/ci/native_managed_resident_evidence.py","scripts/ci/native_origin_resident_evidence.py","scripts/ci/native_retirement_resident_evidence.py","scripts/ci/policy_source_contract.py","tests/test_native_policy_vector_source_parity.py"]
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == SOURCE
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-policy-format-77-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", head).split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, PARENT]
+          assert git("rev-parse", source + "^{tree}") == SOURCE_TREE
+          assert git("rev-parse", PARENT + "^{tree}") == PARENT_TREE
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, head) == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git(
+              "show", "-s", identity, "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          )
+          assert git("diff", "--name-status", "--no-renames", source, head).splitlines() == ["A\t" + WORKFLOW]
+          assert git("ls-tree", source, "--", WORKFLOW) == ""
+          after = os.environ.get("FORMAT_OUTPUTS_ALLOWED") == "1"
+          allowed = set(OUTPUTS) if after else set()
+          records = {}
+          if after:
+              receipt = Path(os.environ["RUNNER_TEMP"]) / "policy-format-77.json"
+              metadata = receipt.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not receipt.is_symlink()
+              payload = json.loads(receipt.read_text(encoding="utf-8"))
+              assert payload["source"] == source and payload["diagnostic"] == head
+              records = payload["outputs"]
+              assert set(records) == allowed
+          for path, mode, sha in PINS:
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", head, "--", path) == expected
+              file = Path(path)
+              metadata = file.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not file.is_symlink()
+              assert bool(metadata.st_mode & 0o111) == (mode == "100755")
+              actual = git("hash-object", "--", path)
+              if path in allowed:
+                  assert records[path]["before"] == sha and records[path]["mode"] == mode
+                  assert actual == records[path]["after"]
+                  assert file.stat().st_size == records[path]["bytes"]
+                  assert hashlib.sha256(file.read_bytes()).hexdigest() == records[path]["sha256"]
+              else:
+                  assert actual == sha
+          subprocess.run(["git", "diff", "--cached", "--quiet"], check=True)
+          changes = git("diff", "--name-status", "--no-renames", head).splitlines()
+          assert set(changes).issubset({"M\t" + path for path in allowed}), changes
+          print(json.dumps({"sourceGuard": "passed", "pins": len(PINS), "formatChanges": len(changes)}))
+          PY

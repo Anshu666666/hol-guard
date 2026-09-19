@@ -37,9 +37,12 @@ def source_identity() -> dict[str, Any]:
         raise ValueError("original source closure changed")
     names = manifest["added_paths"]
     if (
-        not isinstance(names, list) or len(names) != len(set(names)) or not 1 <= len(names) <= 32
+        not isinstance(names, list)
+        or len(names) != len(set(names))
+        or not 1 <= len(names) <= 32
         or any(not isinstance(name, str) or Path(name).is_absolute() or ".." in Path(name).parts for name in names)
-        or str(MANIFEST.relative_to(ROOT)) not in names or str(HISTORY.relative_to(ROOT)) not in names
+        or str(MANIFEST.relative_to(ROOT)) not in names
+        or str(HISTORY.relative_to(ROOT)) not in names
     ):
         raise ValueError("new source paths")
     new = {}
@@ -56,10 +59,23 @@ def historical_admission() -> dict[str, Any]:
     if file_sha(HISTORY, 256 * 1024) != HISTORY_SHA:
         raise ValueError("historical payload")
     payload = _json(HISTORY, 256 * 1024)
-    if payload["source_commit"] != OLD_COMMIT or payload["original_run_id"] != OLD_RUN or payload["original_run_attempt"] != 1:
+    if (
+        payload["source_commit"] != OLD_COMMIT
+        or payload["original_run_id"] != OLD_RUN
+        or payload["original_run_attempt"] != 1
+    ):
         raise ValueError("historical run")
-    labels = ("prepared", "resolver-path", "python-admission", "python-resolver-path", "dnssd-admission",
-              "dnssd-python-path", "phase-admission", "dnssd-phase-path", "job-outcome")
+    labels = (
+        "prepared",
+        "resolver-path",
+        "python-admission",
+        "python-resolver-path",
+        "dnssd-admission",
+        "dnssd-python-path",
+        "phase-admission",
+        "dnssd-phase-path",
+        "job-outcome",
+    )
     expected = {f"native/{architecture}/{label}.json" for architecture in ("arm64", "x86_64") for label in labels}
     if set(payload["files"]) != expected:
         raise ValueError("historical population")
@@ -71,12 +87,20 @@ def historical_admission() -> dict[str, Any]:
         reports[name] = json.loads(data, object_pairs_hook=_object)
     for architecture in ("arm64", "x86_64"):
         rows = []
-        for label, count in (("resolver-path", 5), ("python-resolver-path", 4), ("dnssd-python-path", 2), ("dnssd-phase-path", 4)):
+        for label, count in (
+            ("resolver-path", 5),
+            ("python-resolver-path", 4),
+            ("dnssd-python-path", 2),
+            ("dnssd-phase-path", 4),
+        ):
             report = reports[f"native/{architecture}/{label}.json"]
             if (
-                report["workflow_commit"] != OLD_COMMIT or str(report["workflow_run"]) != str(OLD_RUN)
-                or str(report["workflow_attempt"]) != "1" or len(report["rows"]) != count
-                or report["diagnostic_passed"] is not False or report["status"] != "experiment_finished"
+                report["workflow_commit"] != OLD_COMMIT
+                or str(report["workflow_run"]) != str(OLD_RUN)
+                or str(report["workflow_attempt"]) != "1"
+                or len(report["rows"]) != count
+                or report["diagnostic_passed"] is not False
+                or report["status"] != "experiment_finished"
                 or report["stage"] != "complete"
             ):
                 raise ValueError("historical outcome")
@@ -88,9 +112,14 @@ def historical_admission() -> dict[str, Any]:
         ):
             raise ValueError("historical children")
     return {
-        "source": OLD_COMMIT, "run": OLD_RUN, "attempt": 1, "payload_sha256": HISTORY_SHA,
+        "source": OLD_COMMIT,
+        "run": OLD_RUN,
+        "attempt": 1,
+        "payload_sha256": HISTORY_SHA,
         "files": {name: {"sha256": row["sha256"], "bytes": row["bytes"]} for name, row in payload["files"].items()},
-        "historical_only": True, "same_current_run_claimed": False, "original_failures_preserved": True,
+        "historical_only": True,
+        "same_current_run_claimed": False,
+        "original_failures_preserved": True,
         "source_to_installed_library_equivalence_claimed": False,
     }
 
@@ -102,5 +131,9 @@ def tool_identity() -> dict[str, Any]:
         name: file_sha(sdk / "usr/include" / name)
         for name in ("sys/socket.h", "sys/stat.h", "fcntl.h", "pthread.h", "signal.h", "dlfcn.h", "unistd.h")
     }
-    result["loader_flags"] = {"RTLD_NOW": os.RTLD_NOW, "RTLD_LOCAL": os.RTLD_LOCAL, "effective": os.RTLD_NOW | os.RTLD_LOCAL}
+    result["loader_flags"] = {
+        "RTLD_NOW": os.RTLD_NOW,
+        "RTLD_LOCAL": os.RTLD_LOCAL,
+        "effective": os.RTLD_NOW | os.RTLD_LOCAL,
+    }
     return result

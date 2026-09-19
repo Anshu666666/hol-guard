@@ -9,7 +9,9 @@ import pytest
 
 from scripts.ci import native_macos_dnssd_endpoint_child as child
 from scripts.ci.native_macos_dnssd_endpoint_evidence import parse_context
-from tests.test_native_macos_dnssd_phase import BINARY, BRIDGE, RUNTIME as OLD_RUNTIME, records as old_records
+from tests.test_native_macos_dnssd_phase import BINARY, BRIDGE
+from tests.test_native_macos_dnssd_phase import RUNTIME as OLD_RUNTIME
+from tests.test_native_macos_dnssd_phase import records as old_records
 from tests.test_native_macos_dnssd_python import IMAGES, wire
 
 RUNTIME = OLD_RUNTIME | {child.RUNTIME_KEY: "e" * 64}
@@ -23,14 +25,39 @@ def records(context="python", mode="dns_simple"):
     address = bytes((25, 1)) + b"/var/run/mDNSResponder\0"
     socket_stat = {"rc": 0, "errno": 0, "dev": "1", "ino": "2", "mode": 0o140777}
     snapshot = {
-        "kind": "endpoint_context", "sequence": 1, "context": ("standalone", "native_dlopen", "python").index(context),
-        "configured": True, "loader_flags": 0 if context == "standalone" else FLAGS, "fd": 7, "pid": 123, "ppid": 122,
-        "uid": 501, "euid": 501, "gid": 20, "egid": 20, "main_thread": 1, "thread_rc": 0, "thread_id": "7",
-        "mask_rc": 0, "blocked_signals": "0", "pipe_rc": 0, "pipe_errno": 0, "pipe_kind": 0, "images_ok": True,
-        "images": {"main": BINARY["uuid"], "observer": BRIDGE["uuid"], "query": native["dnssd_uuid"],
-                   "descriptor": "d" * 32, "process": "d" * 32, "poll": "f" * 32},
-        "stat_before": dict(socket_stat), "stat_after": dict(socket_stat),
-        "fd_flags": {"rc": 1, "errno": 0}, "status_flags": {"rc": 2, "errno": 0},
+        "kind": "endpoint_context",
+        "sequence": 1,
+        "context": ("standalone", "native_dlopen", "python").index(context),
+        "configured": True,
+        "loader_flags": 0 if context == "standalone" else FLAGS,
+        "fd": 7,
+        "pid": 123,
+        "ppid": 122,
+        "uid": 501,
+        "euid": 501,
+        "gid": 20,
+        "egid": 20,
+        "main_thread": 1,
+        "thread_rc": 0,
+        "thread_id": "7",
+        "mask_rc": 0,
+        "blocked_signals": "0",
+        "pipe_rc": 0,
+        "pipe_errno": 0,
+        "pipe_kind": 0,
+        "images_ok": True,
+        "images": {
+            "main": BINARY["uuid"],
+            "observer": BRIDGE["uuid"],
+            "query": native["dnssd_uuid"],
+            "descriptor": "d" * 32,
+            "process": "d" * 32,
+            "poll": "f" * 32,
+        },
+        "stat_before": dict(socket_stat),
+        "stat_after": dict(socket_stat),
+        "fd_flags": {"rc": 1, "errno": 0},
+        "status_flags": {"rc": 2, "errno": 0},
         "socket_type": {"rc": 0, "errno": 0, "length": 4, "value": 1},
         "local": {"rc": 0, "errno": 0, "length": 2, "captured": 2, "hex": "0201"},
         "peer": {"rc": 0, "errno": 0, "length": len(address), "captured": len(address), "hex": address.hex()},
@@ -39,17 +66,24 @@ def records(context="python", mode="dns_simple"):
     if context == "python":
         rows[0][child.RUNTIME_KEY] = rows[-1][child.RUNTIME_KEY] = RUNTIME[child.RUNTIME_KEY]
     if context == "native_dlopen":
-        images = {"bridge_uuid": BRIDGE["uuid"], "libinfo_uuid": native["libinfo_uuid"], "dnssd_uuid": native["dnssd_uuid"]}
+        images = {
+            "bridge_uuid": BRIDGE["uuid"],
+            "libinfo_uuid": native["libinfo_uuid"],
+            "dnssd_uuid": native["dnssd_uuid"],
+        }
         rows = [
             {"kind": "native_host", "phase": "load_enter", "pid": 123, "mode": mode, "loader_flags": FLAGS},
             {"kind": "native_host", "phase": "call_enter", **images},
-            *rows, {"kind": "native_host", "phase": "complete", "return_code": 0, **images},
+            *rows,
+            {"kind": "native_host", "phase": "complete", "return_code": 0, **images},
         ]
     return rows
 
 
 def parse(rows, context="python", mode="dns_simple"):
-    return parse_context(wire(rows), mode, 123, RUNTIME, context, BINARY, BINARY if context == "standalone" else BRIDGE, FLAGS)
+    return parse_context(
+        wire(rows), mode, 123, RUNTIME, context, BINARY, BINARY if context == "standalone" else BRIDGE, FLAGS
+    )
 
 
 def endpoint(rows):
@@ -65,7 +99,12 @@ def test_same_inner_protocol_is_required_and_raw_endpoint_is_not_exported(contex
     assert snapshot["observation_complete"] and snapshot["peer"]["unix_mdnsresponder_path"]
     assert "hex" not in snapshot["peer"] and "hex" not in snapshot["local"]
     assert all(row["kind"] != "endpoint_context" for row in observed["records"])
-    assert snapshot["same_OFD_claimed"] is snapshot["atomic_fd_snapshot_claimed"] is snapshot["daemon_acceptance_claimed"] is False
+    assert (
+        snapshot["same_OFD_claimed"]
+        is snapshot["atomic_fd_snapshot_claimed"]
+        is snapshot["daemon_acceptance_claimed"]
+        is False
+    )
 
 
 @pytest.mark.parametrize("context", ("standalone", "native_dlopen", "python"))
@@ -73,7 +112,7 @@ def test_same_inner_protocol_is_required_and_raw_endpoint_is_not_exported(contex
 def test_new_pending_poll_keeps_the_original_failure_boundary(context, mode):
     rows = records(context, mode)
     first = next(index for index, row in enumerate(rows) if row["kind"] == "call_trace")
-    observed = parse(rows[:first + 1], context, mode)
+    observed = parse(rows[: first + 1], context, mode)
     assert observed["valid"] and not observed["complete"] and not observed["loopback_label"]
     assert observed["pending_call"] == "poll" and observed["endpoint"]["observation_complete"]
 
@@ -95,18 +134,33 @@ def test_snapshot_cannot_float_between_other_call_boundaries(kind):
     assert not parse(rows)["valid"]
 
 
-@pytest.mark.parametrize("key,value", [
-    ("context", True), ("configured", 1), ("loader_flags", 0), ("pid", 124), ("fd", True),
-    ("uid", -1), ("thread_id", "01"), ("thread_id", str(2**64)), ("blocked_signals", []),
-    ("main_thread", True), ("pipe_kind", 3), ("images_ok", "true"), ("sequence", True),
-])
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("context", True),
+        ("configured", 1),
+        ("loader_flags", 0),
+        ("pid", 124),
+        ("fd", True),
+        ("uid", -1),
+        ("thread_id", "01"),
+        ("thread_id", str(2**64)),
+        ("blocked_signals", []),
+        ("main_thread", True),
+        ("pipe_kind", 3),
+        ("images_ok", "true"),
+        ("sequence", True),
+    ],
+)
 def test_malformed_snapshot_fields_cannot_earn_an_observation(key, value):
     rows = records()
     endpoint(rows)[key] = value
     assert not parse(rows)["valid"]
 
 
-@pytest.mark.parametrize("mutation", ("address_length", "address_hex", "observer_image", "new_runtime", "unknown_field"))
+@pytest.mark.parametrize(
+    "mutation", ("address_length", "address_hex", "observer_image", "new_runtime", "unknown_field")
+)
 def test_endpoint_bytes_loaded_image_and_runtime_source_are_bound(mutation):
     rows = records()
     snapshot = endpoint(rows)
@@ -160,14 +214,18 @@ def test_malformed_or_censored_raw_input_is_refused(raw):
 
 
 @pytest.mark.parametrize("mode,operation", (("dns_simple", 0), ("dns_shared", 1)))
-def test_python_child_preserves_actual_cdll_abi_loader_flags_and_single_query(mode, operation, tmp_path, monkeypatch, capsys):
+def test_python_child_preserves_actual_cdll_abi_loader_flags_and_single_query(
+    mode, operation, tmp_path, monkeypatch, capsys
+):
     class Function:
         def __init__(self, callback):
             self.callback = callback
+
         def __call__(self, *arguments):
             return self.callback(*arguments)
 
     calls, loads, configurations = [], [], []
+
     def identity(a, b, c, capacity):
         assert capacity == 33
         for buffer, value in zip((a, b, c), IMAGES.values(), strict=True):

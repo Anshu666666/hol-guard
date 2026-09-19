@@ -18,21 +18,30 @@ from scripts.ci.native_macos_dnssd_endpoint_binding import historical_admission,
 from scripts.ci.native_macos_dnssd_endpoint_child import RUNTIME_KEY, runtime_identity
 from scripts.ci.native_macos_dnssd_endpoint_evidence import parse_context
 from scripts.ci.native_macos_dnssd_phase_identity import CPU_TYPES, binary_identity
-from scripts.ci.native_macos_resolver_capture import clean_completion, run_lookup
-from scripts.ci.native_macos_python_resolver_path import read_report
 from scripts.ci.native_macos_python_resolver_child import file_sha
+from scripts.ci.native_macos_python_resolver_path import read_report
+from scripts.ci.native_macos_resolver_capture import clean_completion, run_lookup
 
 CHILD = Path(__file__).with_name("native_macos_dnssd_endpoint_child.py")
-CONTROLS = tuple((context, mode) for context in ("standalone", "native_dlopen", "python") for mode in ("dns_simple", "dns_shared"))
+CONTROLS = tuple(
+    (context, mode) for context in ("standalone", "native_dlopen", "python") for mode in ("dns_simple", "dns_shared")
+)
 
 
 def base() -> dict[str, Any]:
     return original._base() | {
-        "schema": "hol-guard.macos-dnssd-endpoint-context.v1", "status": "unavailable", "stage": "platform",
-        "scope": "six_new_read_only_direct_child_endpoint_and_loader_observations", "rows": [],
-        "observation_complete": False, "cause_proved": False, "same_OFD_claimed": False,
-        "daemon_acceptance_claimed": False, "internal_library_thread_census_claimed": False,
-        "prior_children_replayed": False, "current_runtime_equal_to_historical_claimed": False,
+        "schema": "hol-guard.macos-dnssd-endpoint-context.v1",
+        "status": "unavailable",
+        "stage": "platform",
+        "scope": "six_new_read_only_direct_child_endpoint_and_loader_observations",
+        "rows": [],
+        "observation_complete": False,
+        "cause_proved": False,
+        "same_OFD_claimed": False,
+        "daemon_acceptance_claimed": False,
+        "internal_library_thread_census_claimed": False,
+        "prior_children_replayed": False,
+        "current_runtime_equal_to_historical_claimed": False,
     }
 
 
@@ -58,17 +67,25 @@ def prepare() -> dict[str, Any]:
 
 
 def identities(binary: Path, host: Path, bridge: Path, machine: str) -> dict[str, Any]:
-    result = {"standalone": binary_identity(binary, 2), "native_dlopen": binary_identity(host, 2), "bridge": binary_identity(bridge, 6)}
+    result = {
+        "standalone": binary_identity(binary, 2),
+        "native_dlopen": binary_identity(host, 2),
+        "bridge": binary_identity(bridge, 6),
+    }
     cpu = CPU_TYPES.get(machine)
     if cpu is None or any(row["cpu_type"] != cpu for row in result.values()):
         raise ValueError("binary architecture")
     return result
 
 
-def collect(prepared: dict[str, Any], binary: Path, host: Path, bridge: Path, save: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
+def collect(
+    prepared: dict[str, Any], binary: Path, host: Path, bridge: Path, save: Callable[[dict[str, Any]], None]
+) -> dict[str, Any]:
     report = base()
-    if not original._eligible() or prepared.get("status") != "prepared" or any(
-        prepared.get(key) != report[key] for key in ("workflow_commit", "workflow_run", "workflow_attempt")
+    if (
+        not original._eligible()
+        or prepared.get("status") != "prepared"
+        or any(prepared.get(key) != report[key] for key in ("workflow_commit", "workflow_run", "workflow_attempt"))
     ):
         report.update(status="prepared_report_refused")
         return report
@@ -87,18 +104,45 @@ def collect(prepared: dict[str, Any], binary: Path, host: Path, bridge: Path, sa
             if identities(binary, host, bridge, machine) != before:
                 raise ValueError("image changed before child")
             arguments = (
-                (str(binary), mode) if context == "standalone"
-                else (str(host), str(bridge), mode) if context == "native_dlopen"
-                else (sys.executable, "-I", "-B", str(CHILD), "--mode", mode, "--bridge", str(bridge), "--bridge-sha256", before["bridge"]["sha256"])
+                (str(binary), mode)
+                if context == "standalone"
+                else (str(host), str(bridge), mode)
+                if context == "native_dlopen"
+                else (
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    str(CHILD),
+                    "--mode",
+                    mode,
+                    "--bridge",
+                    str(bridge),
+                    "--bridge-sha256",
+                    before["bridge"]["sha256"],
+                )
             )
             capture, data = run_lookup(arguments)
             executable = {} if context == "python" else before[context]
             observer = before["standalone" if context == "standalone" else "bridge"]
-            metadata = parse_context(data, mode, capture["pid"], report["runtime_before"], context, executable, observer, report["tools_before"]["loader_flags"]["effective"])
-            report["rows"].append({
-                "context": context, "mode": mode, "capture": capture, "metadata": metadata,
-                "lookup_passed": clean_completion(capture) and metadata["complete"] and metadata["loopback_label"],
-            })
+            metadata = parse_context(
+                data,
+                mode,
+                capture["pid"],
+                report["runtime_before"],
+                context,
+                executable,
+                observer,
+                report["tools_before"]["loader_flags"]["effective"],
+            )
+            report["rows"].append(
+                {
+                    "context": context,
+                    "mode": mode,
+                    "capture": capture,
+                    "metadata": metadata,
+                    "lookup_passed": clean_completion(capture) and metadata["complete"] and metadata["loopback_label"],
+                }
+            )
             save(report)
             if capture["pid"] is not None and not capture["direct_child_reaped"]:
                 report.update(status="direct_child_cleanup_unproved")
@@ -109,11 +153,16 @@ def collect(prepared: dict[str, Any], binary: Path, host: Path, bridge: Path, sa
         report["images_after"] = identities(binary, host, bridge, machine)
         for key in ("source", "tools", "runtime", "historical", "images"):
             report[key + "_unchanged"] = report[key + "_after"] == report[key + "_before"]
-        report["observation_complete"] = all(report[key + "_unchanged"] for key in ("source", "tools", "runtime", "historical", "images")) and all(
-            row["capture"]["direct_child_reaped"] and row["capture"].get("status") in ("completed", "deadline_exceeded")
+        report["observation_complete"] = all(
+            report[key + "_unchanged"] for key in ("source", "tools", "runtime", "historical", "images")
+        ) and all(
+            row["capture"]["direct_child_reaped"]
+            and row["capture"].get("status") in ("completed", "deadline_exceeded")
             and row["capture"].get("stderr_bytes") == 0
             and not any(key in row["capture"] for key in ("cleanup_error", "kill_errno", "output_limit", "error_type"))
-            and row["metadata"]["valid"] and not row["metadata"].get("partial_line") and not row["metadata"].get("trace_overflow")
+            and row["metadata"]["valid"]
+            and not row["metadata"].get("partial_line")
+            and not row["metadata"].get("trace_overflow")
             and (row["capture"]["status"] != "completed" or row["metadata"]["complete"])
             and row["metadata"]["endpoint"]["observation_complete"]
             for row in report["rows"]
@@ -122,15 +171,23 @@ def collect(prepared: dict[str, Any], binary: Path, host: Path, bridge: Path, sa
             {
                 "mode": mode,
                 "contexts": [
-                    {"context": row["context"], "capture_status": row["capture"]["status"],
-                     "last_observed_boundary": row["metadata"].get("last_observed_boundary"),
-                     "lookup_passed": row["lookup_passed"], "endpoint": row["metadata"].get("endpoint")}
-                    for row in report["rows"] if row["mode"] == mode
+                    {
+                        "context": row["context"],
+                        "capture_status": row["capture"]["status"],
+                        "last_observed_boundary": row["metadata"].get("last_observed_boundary"),
+                        "lookup_passed": row["lookup_passed"],
+                        "endpoint": row["metadata"].get("endpoint"),
+                    }
+                    for row in report["rows"]
+                    if row["mode"] == mode
                 ],
                 "causal_conclusion": "unproved",
-            } for mode in ("dns_simple", "dns_shared")
+            }
+            for mode in ("dns_simple", "dns_shared")
         ]
-        report["diagnostic_passed"] = report["observation_complete"] and all(row["lookup_passed"] for row in report["rows"])
+        report["diagnostic_passed"] = report["observation_complete"] and all(
+            row["lookup_passed"] for row in report["rows"]
+        )
         report.update(status="experiment_finished", stage="complete")
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         report.update(status="diagnostic_failed", error_type=type(error).__name__)

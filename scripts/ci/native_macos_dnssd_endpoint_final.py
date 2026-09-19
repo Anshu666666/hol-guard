@@ -19,7 +19,11 @@ from scripts.ci.native_macos_dnssd_endpoint_environment import identity as file_
 from scripts.ci.native_macos_dnssd_phase_identity import binary_identity
 from scripts.ci.native_macos_python_resolver_child import file_sha
 
-IMAGES = (("standalone", "endpoint-probe", 2), ("native_dlopen", "endpoint-host", 2), ("bridge", "endpoint-bridge.dylib", 6))
+IMAGES = (
+    ("standalone", "endpoint-probe", 2),
+    ("native_dlopen", "endpoint-host", 2),
+    ("bridge", "endpoint-bridge.dylib", 6),
+)
 
 
 def observe(callback: Callable[[], Any]) -> dict[str, Any]:
@@ -61,9 +65,17 @@ def compare(after: dict[str, Any], before: Any) -> dict[str, Any]:
 
 def collect(report_dir: Path, build_dir: Path, save: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
     result: dict[str, Any] = original._base() | {
-        "schema": "hol-guard.macos-endpoint-final-witness.v1", "status": "incomplete", "stage": "inputs",
-        "scope": "independent_final_file_observations", "qualification_pass": False, "cause_proved": False,
-        "diagnostic_outcome_replaced": False, "all_unchanged": False, "inputs": {}, "images": {}, "bindings": {},
+        "schema": "hol-guard.macos-endpoint-final-witness.v1",
+        "status": "incomplete",
+        "stage": "inputs",
+        "scope": "independent_final_file_observations",
+        "qualification_pass": False,
+        "cause_proved": False,
+        "diagnostic_outcome_replaced": False,
+        "all_unchanged": False,
+        "inputs": {},
+        "images": {},
+        "bindings": {},
     }
     save(result)
     for key, name in (("prepared", "prepared.json"), ("lookups", "endpoint-context.json")):
@@ -71,12 +83,15 @@ def collect(report_dir: Path, build_dir: Path, save: Callable[[dict[str, Any]], 
         save(result)
     prepared = input_value(result["inputs"]["prepared"])
     lookups = input_value(result["inputs"]["lookups"])
-    result["original_status"] = {key: report.get("status") for key, report in (("prepared", prepared), ("lookups", lookups))}
+    result["original_status"] = {
+        key: report.get("status") for key, report in (("prepared", prepared), ("lookups", lookups))
+    }
     result["original_diagnostic_passed"] = lookups.get("diagnostic_passed")
     prepared_pin = lookups.get("prepared_report_sha256")
     result["prepared_report_unchanged"] = (
         result["inputs"]["prepared"]["value"]["sha256"] == prepared_pin
-        if prepared and isinstance(prepared_pin, str) else None
+        if prepared and isinstance(prepared_pin, str)
+        else None
     )
     before_images = lookups.get("images_before")
     before_images = before_images if isinstance(before_images, dict) else {}
@@ -87,13 +102,20 @@ def collect(report_dir: Path, build_dir: Path, save: Callable[[dict[str, Any]], 
         macho = observe(lambda path=path, filetype=filetype: binary_identity(path, filetype))
         consistent = raw["observed"] and macho["observed"] and raw["value"]["sha256"] == macho["value"]["sha256"]
         result["images"][key] = {
-            "file": raw, "macho": macho, "file_and_macho_hashes_match": consistent,
+            "file": raw,
+            "macho": macho,
+            "file_and_macho_hashes_match": consistent,
             "comparison": compare(macho, before_images.get(key)),
             "separate_snapshot_race_exclusion_claimed": False,
         }
         save(result)
     result["stage"] = "final_inputs"
-    for key, observer in (("source", source_identity), ("historical", historical_admission), ("runtime", runtime_identity), ("tools", tool_identity)):
+    for key, observer in (
+        ("source", source_identity),
+        ("historical", historical_admission),
+        ("runtime", runtime_identity),
+        ("tools", tool_identity),
+    ):
         after = observe(observer)
         before = lookups.get(key + "_before", prepared.get(key))
         result["bindings"][key] = {"after": after, "comparison": compare(after, before)}
@@ -101,7 +123,10 @@ def collect(report_dir: Path, build_dir: Path, save: Callable[[dict[str, Any]], 
     result["all_unchanged"] = (
         result["prepared_report_unchanged"] is True
         and all(row["comparison"]["unchanged"] is True for row in result["bindings"].values())
-        and all(row["comparison"]["unchanged"] is True and row["file_and_macho_hashes_match"] for row in result["images"].values())
+        and all(
+            row["comparison"]["unchanged"] is True and row["file_and_macho_hashes_match"]
+            for row in result["images"].values()
+        )
     )
     result.update(status="witness_complete" if result["all_unchanged"] else "witness_incomplete", stage="complete")
     save(result)

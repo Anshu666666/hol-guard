@@ -122,7 +122,9 @@ def compile_c(directory: Path, arguments: list[str]) -> None:
     assert compiler is not None, "The owned finite C controls require a compiler"
     result = subprocess.run(
         [compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", *arguments],
-        cwd=directory, capture_output=True, timeout=15,
+        cwd=directory,
+        capture_output=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
 
@@ -136,12 +138,24 @@ def programs(tmp_path_factory):
     (directory / "native_macos_dnssd_phase_probe.c").write_text(PHASE_FIXTURE)
     (directory / "socket_fixture.c").write_text("#include <dlfcn.h>\n" + SOCKET_FIXTURE)
     (directory / "host_library.c").write_text(HOST_LIBRARY)
-    compile_c(directory, [
-        "-D_POSIX_C_SOURCE=200809L", "-D_DEFAULT_SOURCE", "-DHOL_GUARD_PHASE_LIBRARY",
-        "-Dpthread_threadid_np=fixture_thread_id", "-Dpthread_main_np=fixture_main_thread",
-        "-I", str(directory), "native_macos_dnssd_endpoint_probe.c", "socket_fixture.c", "-o", "socket_fixture",
-    ])
+    compile_c(
+        directory,
+        [
+            "-D_POSIX_C_SOURCE=200809L",
+            "-D_DEFAULT_SOURCE",
+            "-DHOL_GUARD_PHASE_LIBRARY",
+            "-Dpthread_threadid_np=fixture_thread_id",
+            "-Dpthread_main_np=fixture_main_thread",
+            "-I",
+            str(directory),
+            "native_macos_dnssd_endpoint_probe.c",
+            "socket_fixture.c",
+            "-o",
+            "socket_fixture",
+        ],
+    )
     import sys
+
     shared = ["-dynamiclib"] if sys.platform == "darwin" else ["-shared", "-fPIC"]
     compile_c(directory, [*shared, "host_library.c", "-o", "host_library.dylib"])
     extra = [] if sys.platform == "darwin" else ["-ldl"]
@@ -153,7 +167,10 @@ def programs(tmp_path_factory):
 @pytest.mark.parametrize("repeats", (1, 3))
 def test_actual_getter_arguments_errno_and_calls_survive_snapshot_failures(programs, scenario, repeats):
     result = subprocess.run(
-        [str(programs / "socket_fixture"), str(scenario), str(repeats)], capture_output=True, timeout=5, check=True,
+        [str(programs / "socket_fixture"), str(scenario), str(repeats)],
+        capture_output=True,
+        timeout=5,
+        check=True,
     )
     assert result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]
@@ -175,7 +192,8 @@ def test_actual_getter_arguments_errno_and_calls_survive_snapshot_failures(progr
 def test_actual_native_host_loader_abi_single_call_and_return(programs, mode, operation, code):
     result = subprocess.run(
         [str(programs / "native_host"), str(programs / "host_library.dylib"), mode],
-        capture_output=True, timeout=5,
+        capture_output=True,
+        timeout=5,
     )
     assert result.returncode == code and result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]
@@ -189,7 +207,8 @@ def test_actual_native_host_loader_abi_single_call_and_return(programs, mode, op
 def test_actual_native_host_refuses_missing_image_before_query(programs):
     result = subprocess.run(
         [str(programs / "native_host"), str(programs / "absent.dylib"), "dns_simple"],
-        capture_output=True, timeout=5,
+        capture_output=True,
+        timeout=5,
     )
     assert result.returncode == 3 and result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]

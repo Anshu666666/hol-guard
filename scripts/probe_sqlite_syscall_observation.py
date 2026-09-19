@@ -272,6 +272,7 @@ def run_probe() -> dict[str, object]:
             identity = actual["identity"]
             syntax = SyntaxDiagnostics()
             calls, parsed = parse_calls(trace, identity["pid"], syntax)
+            syntax.observe_framing(trace, strace, complete_stream=measured["streams_complete"])
             report["trace_syntax_diagnostic"] = syntax.summary()
             serial = descriptor_witness(calls, observed, actual)
             sqlite_keys = (

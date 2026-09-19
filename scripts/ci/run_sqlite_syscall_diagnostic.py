@@ -18,10 +18,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 FROZEN_HELPERS = {
-    "scripts/probe_sqlite_syscall_observation.py": "0c044d4755e8696d884bbe64876b933b88b28093248bf9e266529a0050f6da2f",
+    "scripts/probe_sqlite_syscall_observation.py": "c5d2767d9dc9daa24ddb19a41ef50eb4d137ba4161b0bc2fd8786893decb719e",
     "scripts/sqlite_syscall_probe_child.py": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
     "scripts/sqlite_syscall_probe_supervision.py": "640c72b86482f4b7564e9c2d87988f6f08655c274790a6bb05d8b4d17e896f37",
-    "scripts/sqlite_syscall_trace_diagnostics.py": "a25bcfca8853b82dbea27c1713edced0a885a2fe58c2b0f18b99380350088385",
+    "scripts/sqlite_syscall_trace_diagnostics.py": "ad6549984257dd637cdfb9219085d72a82508e4ab1482be814a3a7cb5025a042",
     "tests/test_sqlite_syscall_probe_parser.py": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
 }
 HOSTED_SOURCES = (

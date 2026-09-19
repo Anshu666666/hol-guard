@@ -7,11 +7,13 @@ These observations never decide whether a trace is accepted.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
 
 MAX_FAILURE_EVENTS = 256
 MAX_SIGNATURES = 16
+MAX_FRAMING_TRACE_BYTES = 256 * 1024
 REASONS = frozenset(
     {
         "invalid_prefix",
@@ -99,6 +101,43 @@ def _record_class(line: str) -> str:
     return "other"
 
 
+def _outside_data_regions(prefix: str) -> bool:
+    quoted = escaped = False
+    angle = 0
+    for character in prefix:
+        if escaped:
+            escaped = False
+            continue
+        if character == "\\" and (quoted or angle):
+            escaped = True
+        elif character == '"' and not angle:
+            quoted = not quoted
+        elif not quoted:
+            if character == "<":
+                angle += 1
+            elif character == ">":
+                if angle == 0:
+                    return False
+                angle -= 1
+    return not quoted and angle == 0 and not escaped
+
+
+def _framing_class(line: str, invocation_name: str) -> str:
+    # v6.8 error_msg uses the actual invocation name, including its path.
+    # Only whole banners or an exact suffix outside data regions are anchors.
+    status = re.search(
+        re.escape(invocation_name)
+        + r": Process [1-9][0-9]{0,9} (attached(?: with [1-9][0-9]{0,9} threads)?|detached)\Z",
+        line,
+    )
+    if status is not None and status.start() == 0:
+        return "whole_attach_banner" if status[1].startswith("attached") else "whole_detach_banner"
+    ordinary = _record_class(line)
+    if status is not None and ordinary == "syscall_entry_fragment" and _outside_data_regions(line[: status.start()]):
+        return "entry_then_attach_banner" if status[1].startswith("attached") else "entry_then_detach_banner"
+    return ordinary
+
+
 class SyntaxDiagnostics:
     def __init__(self) -> None:
         self.events_retained = 0
@@ -106,6 +145,63 @@ class SyntaxDiagnostics:
         self.signatures_truncated = False
         self.reasons: dict[str, int] = {}
         self.signatures: dict[tuple[str, str, str, str, str], int] = {}
+        self.framing: dict[str, object] | None = None
+
+    def observe_framing(self, trace: bytes, invocation_name: str, *, complete_stream: bool) -> None:
+        """Retain bounded adjacent LF-record classes; never join or accept them."""
+        windows: list[dict[str, object]] = []
+        previous: str | None = None
+        following: dict[str, object] | None = None
+        physical_records = 0
+        windows_truncated = unterminated = invalid_encoding = non_lf = False
+        oversized = len(trace) > MAX_FRAMING_TRACE_BYTES
+        if not oversized:
+            for physical_records, raw in enumerate(io.BytesIO(trace), start=1):
+                terminated = raw.endswith(b"\n")
+                unterminated |= not terminated
+                try:
+                    line = (raw[:-1] if terminated else raw).decode("utf-8")
+                    non_lf |= any(value in line for value in "\r\v\f\x1c\x1d\x1e\x85\u2028\u2029")
+                    current = _framing_class(line, invocation_name)
+                except UnicodeDecodeError:
+                    invalid_encoding = True
+                    current = "other"
+                if following is not None:
+                    following["following"] = current
+                    following = None
+                if current in {
+                    "whole_attach_banner",
+                    "whole_detach_banner",
+                    "entry_then_attach_banner",
+                    "entry_then_detach_banner",
+                }:
+                    if len(windows) < MAX_SIGNATURES:
+                        following = {
+                            "physical_record": physical_records,
+                            "previous": previous,
+                            "current": current,
+                            "following": None,
+                        }
+                        windows.append(following)
+                    else:
+                        windows_truncated = True
+                previous = current
+        self.framing = {
+            "schema": "guard.sqlite-trace-framing.v1",
+            "metadata_complete": not (
+                oversized or windows_truncated or unterminated or invalid_encoding or non_lf or not complete_stream
+            ),
+            "physical_records": None if oversized else physical_records,
+            "input_limit_exceeded": oversized,
+            "capture_incomplete": not complete_stream,
+            "windows_truncated": windows_truncated,
+            "unterminated_record": unterminated,
+            "invalid_encoding": invalid_encoding,
+            "non_lf_line_separator": non_lf,
+            "windows": windows,
+            "raw_text_retained": False,
+            "affects_parser_acceptance": False,
+        }
 
     def record(self, reason: str, line: str) -> None:
         if reason not in REASONS:
@@ -125,12 +221,14 @@ class SyntaxDiagnostics:
             self.signatures_truncated = True
 
     def summary(self) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "schema": "guard.sqlite-trace-syntax-failures.v1",
             "failure_events_retained": self.events_retained,
             "failure_events_truncated": self.events_truncated,
             "signature_entries_truncated": self.signatures_truncated,
-            "metadata_complete": not self.events_truncated and not self.signatures_truncated,
+            "metadata_complete": not self.events_truncated
+            and not self.signatures_truncated
+            and (self.framing is None or self.framing["metadata_complete"] is True),
             "reason_counts": dict(sorted(self.reasons.items())),
             "signatures": [
                 {
@@ -146,3 +244,6 @@ class SyntaxDiagnostics:
             "raw_text_retained": False,
             "affects_parser_acceptance": False,
         }
+        if self.framing is not None:
+            result["framing_context"] = self.framing
+        return result

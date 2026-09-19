@@ -9,6 +9,7 @@ from typing import TypedDict, cast
 
 import pytest
 
+import scripts.native_slo_session as native_slo_session
 from codex_plugin_scanner.guard.runtime.hook_review_engine import HOOK_ENGINE_NORMAL_BUDGET_MS
 from scripts.bench_guard_native_installed_slo import (
     _safe_failure_rate,
@@ -420,6 +421,37 @@ def test_rss_measurement_is_current_and_requires_ten_percent_bound() -> None:
         errors_64=0,
         python_fallback_decisions=0,
     )["rss"]
+
+
+def test_adapter_session_preregisters_workspace_before_readiness_timing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registered: list[Path] = []
+
+    class FakePublisher:
+        def register_workspace(self, workspace: Path | None) -> bool:
+            assert workspace is not None
+            registered.append(workspace)
+            return True
+
+    publisher = FakePublisher()
+    daemon = SimpleNamespace(
+        _server=SimpleNamespace(
+            hook_worker=SimpleNamespace(policy_snapshot_publisher=publisher),
+        ),
+    )
+    monkeypatch.setattr(native_slo_session, "GuardStore", lambda _path: object())
+    monkeypatch.setattr(
+        native_slo_session,
+        "GuardDaemonServer",
+        lambda _store, *, host, port: daemon,
+    )
+
+    session = native_slo_session.AdapterSession(Path("/synthetic/runtime"))
+    try:
+        assert registered == [session.workspace]
+    finally:
+        session.temporary.cleanup()
 
 
 def test_worker_stabilization_forces_and_verifies_ready_target() -> None:

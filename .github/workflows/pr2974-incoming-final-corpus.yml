@@ -1,0 +1,137 @@
+name: PR2974 incoming scheduler final corpus validation
+
+on:
+  push:
+    branches:
+      - codex/pr2974-incoming-final-corpus-2564d9a4
+    paths:
+      - .github/workflows/pr2974-incoming-final-corpus.yml
+      - ci/pr2974_incoming_final_corpus/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-incoming-final-corpus-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  corpus-harvest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONNOUSERSITE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - name: Initialize separate report and staging locations
+        id: initialize
+        env:
+          VALIDATION_HARNESS: ${{ github.workspace }}/harness
+          VALIDATION_SEED: ${{ github.workspace }}/seed
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-incoming-final-corpus-reports
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-incoming-final-corpus-scratch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$VALIDATION_REPORT" "$VALIDATION_SCRATCH"
+          export VALIDATION_SOURCE="$VALIDATION_SCRATCH/source"
+          for variable in VALIDATION_HARNESS VALIDATION_SEED VALIDATION_REPORT VALIDATION_SCRATCH VALIDATION_SOURCE; do
+            printf '%s=%s\n' "$variable" "${!variable}" >> "$GITHUB_ENV"
+          done
+          python3 -B -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          Path(os.environ["VALIDATION_REPORT"], "job-outcome.json").write_text(
+              json.dumps({"passed": False, "status": "not-started", "qualification_complete": False}) + "\n")
+          PY
+
+      - name: Check out the exact observer commit
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Check out the immutable combined repair source
+        id: seed
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 2564d9a4dda22ff73e53e6dfae793ef95cbeb259
+          path: seed
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Install the exact interpreter
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.13"
+
+      - name: Install the exact environment manager
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+
+      - name: Check the immutable combined report and eight pinned contracts
+        id: harvest
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -B -I "$VALIDATION_HARNESS/ci/pr2974_incoming_final_corpus/final_validation.py"
+
+      - name: Frame all actual report and failure bytes
+        id: projection
+        if: always() && steps.harness.outcome == 'success' && steps.python.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B -I "$VALIDATION_HARNESS/ci/pr2974_incoming_final_corpus/report_projection.py"
+
+      - name: Retain the committed report, complete test records and failures
+        id: artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-incoming-final-corpus-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-incoming-final-corpus-reports
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30
+
+      - name: Gate final source validation only after retaining evidence
+        if: always()
+        env:
+          INITIALIZE_OUTCOME: ${{ steps.initialize.outcome }}
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          SEED_OUTCOME: ${{ steps.seed.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          UV_OUTCOME: ${{ steps.uv.outcome }}
+          HARVEST_OUTCOME: ${{ steps.harvest.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          ARTIFACTS_OUTCOME: ${{ steps.artifacts.outcome }}
+          OUTCOME_PATH: ${{ runner.temp }}/pr2974-incoming-final-corpus-reports/job-outcome.json
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          names = ("INITIALIZE_OUTCOME", "HARNESS_OUTCOME", "SEED_OUTCOME", "PYTHON_OUTCOME",
+                   "UV_OUTCOME", "HARVEST_OUTCOME", "PROJECTION_OUTCOME", "ARTIFACTS_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          path = Path(os.environ["OUTCOME_PATH"])
+          result = json.loads(path.read_text()) if path.is_file() else {"passed": False}
+          print(json.dumps({"steps": outcomes, "harvest_passed": result.get("passed"),
+                            "immutable_final_source_validation": result.get("immutable_final_source_validation"), "qualification_complete": False},
+                           sort_keys=True))
+          assert result.get("passed") is True and all(value == "success" for value in outcomes.values())
+          PY

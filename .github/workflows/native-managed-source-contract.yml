@@ -1,279 +1,131 @@
-name: Native managed source contract
+name: Generate and validate current decision report
+
 on:
-  push:
-    branches: [fix/native-managed-source-validation, fix/native-policy-control-plane-union, fix/native-command-expression-source, fix/native-expression-sync-admission, fix/native-sensitive-origin-validation]
-  pull_request:
-    paths:
-      - "src/codex_plugin_scanner/guard/native_policy_authority_*.py"
-      - "tests/test_native_policy_authority*.py"
-      - "tests/native_managed_source_support.py"
-      - ".github/workflows/native-managed-source-contract.yml"
-      - "src/codex_plugin_scanner/guard/native_policy_test_support.py"
-      - "tests/test_native_policy_test_support.py"
-      - "ci/native_runtime/probe_installed_pi_output.py"
-      - "tests/test_installed_pi_output_probe.py"
-      - "ci/native_runtime/probe_native_default_auto.py"
-      - "tests/test_native_default_auto_probe.py"
-      - "scripts/native_slo_session.py"
-      - "scripts/native_publication_diagnostic.py"
-      - "tests/test_native_publication_diagnostic.py"
-      - "scripts/diagnose_guard_native_warm_phases.py"
-      - "scripts/bench_guard_native_release_gate.py"
-      - "tests/test_native_warm_phase_diagnostic.py"
-      - "tests/test_guard_native_release_gate_benchmark.py"
-      - "tests/guard_command_corpus_diagnostics.py"
-      - "tests/guard_command_corpus_runner.py"
-      - "tests/test_guard_command_corpus.py"
-      - "tests/test_guard_command_corpus_diagnostics.py"
-      - "basedpyright.native-managed-source.json"
-      - "src/codex_plugin_scanner/guard/store_inventory.py"
-      - "tests/test_policy_installation_rotation_authority.py"
-      - "tests/test_policy_installation_rotation_binding.py"
-      - "src/codex_plugin_scanner/guard/daemon/extension_control_api.py"
-      - "src/codex_plugin_scanner/guard/cli/extension_controls_commands.py"
-      - "tests/test_extension_control_recovery_composition.py"
-      - "src/codex_plugin_scanner/guard/store_extension_control_authority.py"
-      - "src/codex_plugin_scanner/guard/policy_bundle_generic_ack.py"
-      - "tests/support/native_policy_application.py"
-      - "tests/test_extension_control_first_run_authority.py"
-      - "tests/test_sensitive_read_unenrolled_controls.py"
-      - "tests/test_policy_bundle_generic_ack_contract.py"
-      - "docs/guard/contracts/hook-data-plane-ownership.v2.json"
-      - "src/codex_plugin_scanner/guard/native_runtime*.py"
-      - "src/codex_plugin_scanner/guard/native_approval_models.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py"
-      - "src/codex_plugin_scanner/guard/runtime/session_observation.py"
-      - "src/codex_plugin_scanner/guard/runtime/runner.py"
-      - "tests/test_native_managed_catalog_capability.py"
-      - "tests/test_runtime_lane_session_observation.py"
-      - "tests/native_policy_snapshot_test_fixtures.py"
-      - "tests/test_native_approval_envelope_identity.py"
-      - "tests/test_native_approval_session_detachment.py"
-      - "tests/test_native_approval_v4_transport.py"
-      - "tests/test_native_typed_artifact_sources.py"
-      - "tests/test_native_scoped_alias_sources.py"
-      - "tests/test_guard_native_runtime.py"
-      - "tests/test_native_policy_snapshot_v4_barrier.py"
-      - "src/codex_plugin_scanner/guard/native_command_expression.py"
-      - "src/codex_plugin_scanner/guard/native_command_row_association.py"
-      - "src/codex_plugin_scanner/guard/policy_command_projection.py"
-      - "tests/test_native_command_expression.py"
-      - "tests/test_native_command_row_association.py"
-      - "tests/test_policy_command_projection.py"
-      - "tests/test_native_policy_snapshot_v4_contract.py"
-      - "tests/test_native_policy_snapshot_v4_publication.py"
-      - "src/codex_plugin_scanner/guard/policy_bundle_materialization.py"
-      - "tests/test_policy_bundle_source_materialization.py"
-      - "tests/native_expression_resident_fixtures.py"
-      - "tests/test_native_expression_policy_resident.py"
-      - "tests/test_policy_bundle_materialization_publication.py"
-      - "src/codex_plugin_scanner/guard/config.py"
-      - "src/codex_plugin_scanner/guard/native_policy_bundle_acceptance.py"
-      - "src/codex_plugin_scanner/guard/native_policy_bundle_ack.py"
-      - "src/codex_plugin_scanner/guard/native_policy_bundle_sync.py"
-      - "src/codex_plugin_scanner/guard/native_policy_publication_lock.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py"
-      - "src/codex_plugin_scanner/guard/policy_bundle_row_authority.py"
-      - "src/codex_plugin_scanner/guard/policy_bundle_staging.py"
-      - "src/codex_plugin_scanner/guard/runtime/policy_bundle_selection.py"
-      - "src/codex_plugin_scanner/guard/store_policy.py"
-      - "tests/test_native_policy_authority_command_source.py"
-      - "tests/test_native_policy_bundle_ack.py"
-      - "tests/test_generic_policy_native_application.py"
-      - "tests/test_native_generic_sync_unstaged.py"
-      - "tests/test_policy_bundle_sync_outcomes.py"
-      - "tests/test_policy_bundle_v2_runtime_admission.py"
-      - "tests/test_native_policy_config_mutation.py"
-      - "tests/test_policy_bundle_staging.py"
-      - "tests/test_canonical_policy_row_authority.py"
-      - "tests/test_guard_settings_sync_preservation.py"
-      - "tests/test_policy_bundle_v2.py"
-      - "src/codex_plugin_scanner/guard/native_policy_row_sort.py"
-      - "tests/test_native_policy_row_sort.py"
-      - "tests/test_native_expression_sync.py"
-      - "tests/native_expression_sync_fixtures.py"
-      - "tests/test_native_expression_sync_resident.py"
-      - "ci/native_runtime/test_native_rule_contract.py"
-      - "contracts/native-policy-snapshot/v4/managed-configuration-vector.json"
-      - "rust/crates/guard-runtime/tests/fixtures/sensitive-read-mixed-origin-policy.json"
-      - "rust/crates/guard-runtime/tests/fixtures/sensitive-read-policy.json"
-      - "src/codex_plugin_scanner/guard/cli/commands_hook_runtime_review.py"
-      - "src/codex_plugin_scanner/guard/cli/commands_support_runtime_artifact_policy.py"
-      - "src/codex_plugin_scanner/guard/cli/commands_support_runtime_policy.py"
-      - "src/codex_plugin_scanner/guard/config_action_resolution.py"
-      - "src/codex_plugin_scanner/guard/config_approval_context.py"
-      - "src/codex_plugin_scanner/guard/config_payload.py"
-      - "src/codex_plugin_scanner/guard/mdm/policy.py"
-      - "src/codex_plugin_scanner/guard/mdm/policy_composition.py"
-      - "src/codex_plugin_scanner/guard/native_managed_capture.py"
-      - "src/codex_plugin_scanner/guard/native_managed_configuration.py"
-      - "src/codex_plugin_scanner/guard/native_policy_authority_contract.py"
-      - "src/codex_plugin_scanner/guard/native_policy_authority_decode.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_contract.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_v4.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_v4_generation.py"
-      - "src/codex_plugin_scanner/guard/runtime/secret_file_request_services/request_artifacts.py"
-      - "src/codex_plugin_scanner/guard/runtime/sensitive_read_controls.py"
-      - "tests/native_sensitive_read_mixed_origin_vectors.py"
-      - "tests/native_sensitive_read_policy_vectors.py"
-      - "tests/test_managed_action_origin.py"
-      - "tests/test_managed_action_representation.py"
-      - "tests/test_managed_local_origin.py"
-      - "tests/test_native_managed_capture.py"
-      - "tests/test_native_managed_configuration.py"
-      - "tests/test_native_managed_configuration_wire.py"
-      - "tests/test_native_sensitive_read_managed_floors.py"
-      - "tests/test_native_sensitive_read_mixed_origin_vectors.py"
-      - "tests/test_native_sensitive_read_policy_vectors.py"
-      - "tests/test_native_sensitive_read_runtime_policy.py"
-      - "tests/test_native_sensitive_read_sources.py"
-      - "src/codex_plugin_scanner/guard/native_scoped_result.py"
-      - "src/codex_plugin_scanner/guard/native_hook_edge.py"
-      - "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py"
-      - "src/codex_plugin_scanner/guard/daemon/hook_worker_responses.py"
-      - "tests/test_native_defaults_edge.py"
-      - "tests/test_native_scoped_worker_fence.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py"
-      - "tests/test_native_policy_source_selection.py"
-      - "src/codex_plugin_scanner/guard/native_policy_application.py"
-      - "src/codex_plugin_scanner/guard/policy_canonical_rollout.py"
-      - "src/codex_plugin_scanner/guard/runtime/policy_runtime_posture.py"
-      - "tests/test_current_native_policy_posture.py"
-      - "tests/test_native_managed_cache_publication.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_v3_renewal.py"
-      - "tests/test_native_source_free_renewal.py"
-      - "tests/test_native_policy_snapshot_v3_publisher.py"
-      - "tests/test_native_policy_snapshot_post_ack_retry.py"
-      - "tests/test_native_policy_snapshot_post_ack_retry_guards.py"
-      - "tests/test_native_policy_snapshot_post_ack_retry_commit.py"
-      - "tests/test_native_policy_snapshot_publisher.py"
-      - "tests/test_native_policy_snapshot_persistence.py"
-      - "tests/test_policy_sync_truth.py"
-      - "tests/test_policy_bundle_validity_and_rollout.py"
-      - "src/codex_plugin_scanner/guard/aibom_cli.py"
-      - "src/codex_plugin_scanner/guard/aibom_commands.py"
-      - "src/codex_plugin_scanner/guard/aibom_content_upload.py"
-      - "src/codex_plugin_scanner/guard/aibom_operation_authority.py"
-      - "src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py"
-      - "src/codex_plugin_scanner/guard/codex_hook_process_runtime.py"
-      - "src/codex_plugin_scanner/guard/native_policy_control_transport.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_control.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_retirement.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_v4_transport.py"
-      - "src/codex_plugin_scanner/guard/oauth_connection_authority.py"
-      - "src/codex_plugin_scanner/guard/store_cloud_events.py"
-      - "src/codex_plugin_scanner/guard/store_connection_schema.py"
-      - "src/codex_plugin_scanner/guard/store_oauth.py"
-      - "tests/fixtures/native_policy_control_vectors.json"
-      - "tests/guard_aibom_authority_support.py"
-      - "tests/test_aibom_operation_authority.py"
-      - "tests/test_aibom_sync_admission.py"
-      - "tests/test_guard_aibom_cli.py"
-      - "tests/test_guard_aibom_content_upload.py"
-      - "tests/test_guard_aibom_content_upload_batches.py"
-      - "tests/test_guard_oauth_reconnect.py"
-      - "tests/test_guard_oauth_refresh_resilience.py"
-      - "tests/test_guard_receipt_redaction_cursor.py"
-      - "tests/test_receipt_signed_redaction_default.py"
-      - "tests/test_receipt_redaction_local_floors.py"
-      - "tests/test_receipt_signed_redaction_commit.py"
-      - "tests/test_guard_skill_directory_identity_downstream.py"
-      - "tests/test_inventory_consumer_authority.py"
-      - "tests/test_inventory_oauth_completion_authority.py"
-      - "tests/test_inventory_request_authority.py"
-      - "tests/test_native_policy_control_transport.py"
-      - "tests/test_native_policy_snapshot_control.py"
-      - "tests/test_native_policy_snapshot_reservation_capture.py"
-      - "tests/test_native_policy_snapshot_retirement.py"
-      - "tests/test_oauth_connection_authority.py"
-      - "tests/test_oauth_refresh_connection_authority.py"
-      - "tests/test_guard_hook_process_runner.py"
-      - "tests/test_codex_hook_process_cleanup.py"
-      - "tests/test_codex_hook_fallback_isolation.py"
-      - "tests/test_aibom_chunking.py"
-      - "tests/test_cloud_review_oauth_refresh_bindings.py"
-      - "tests/test_guard_encrypted_secret_store_stability.py"
-      - "tests/test_guard_event_schema_v1.py"
-      - "tests/test_guard_exact_cloud_review.py"
-      - "tests/test_guard_exact_cloud_review_concurrency.py"
-      - "tests/test_guard_exact_cloud_review_oauth.py"
-      - "tests/test_guard_keyring_support.py"
-      - "tests/test_guard_oauth_cached_expiry_compatibility.py"
-      - "tests/test_guard_store_migrations.py"
-      - "tests/test_guard_supply_chain_daemon.py"
-      - "tests/test_guard_sync_http_error_message.py"
-      - "tests/test_guard_sync_retry_clock_isolation.py"
-      - "src/codex_plugin_scanner/guard/aibom_daemon_authority.py"
-      - "src/codex_plugin_scanner/guard/daemon/server.py"
-      - "src/codex_plugin_scanner/guard/native_policy_control_runtime.py"
-      - "src/codex_plugin_scanner/guard/native_runtime.py"
-      - "tests/test_aibom_daemon_authority.py"
-      - "tests/test_inventory_daemon_consumers.py"
-      - "tests/test_inventory_daemon_scheduling.py"
-      - "tests/test_native_policy_control_runtime.py"
-      - "src/codex_plugin_scanner/guard/store_base.py"
-      - "src/codex_plugin_scanner/guard/store_extension_control_authority_schema.py"
-      - "src/codex_plugin_scanner/guard/store_extension_control_authority_support.py"
-      - "src/codex_plugin_scanner/guard/store_extension_control_authority_transitions.py"
-      - "src/codex_plugin_scanner/guard/store_private_mode.py"
-      - "tests/test_guard_extension_control_api.py"
-      - "tests/test_guard_extension_control_recovery.py"
-      - "tests/test_guard_kubernetes_runtime.py"
-      - "tests/test_native_authority_fixture_lifecycle.py"
-      - "tests/test_native_policy_authority_coherent_capture.py"
-      - "tests/test_rust_pretool_authority.py"
-      - "tests/test_rust_pretool_authority_worker.py"
-      - "tests/test_store_private_mode_compatibility.py"
-      - "tests/test_store_private_mode_observation.py"
-      - "src/codex_plugin_scanner/guard/runtime/command_queue.py"
-      - "src/codex_plugin_scanner/guard/runtime/command_queue_auth.py"
-      - "tests/test_native_policy_snapshot_resident_retry.py"
-      - "tests/test_guard_command_queue.py"
-      - "tests/test_guard_runtime.py"
-      - "tests/test_paseo_adapter.py"
-      - "src/codex_plugin_scanner/guard/sqlite_deadline.py"
-      - "tests/test_sqlite_maintenance_deadline.py"
-      - "tests/test_sqlite_deadline_control_cursor.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_mutation.py"
-      - "tests/test_native_policy_snapshot_mutation_deadline.py"
-      - "tests/test_native_policy_control_owned_operations.py"
-      - "src/codex_plugin_scanner/guard/native_policy_publication_maintenance.py"
-      - "src/codex_plugin_scanner/guard/review_event_wake.py"
-      - "src/codex_plugin_scanner/guard/store_maintenance.py"
-      - "src/codex_plugin_scanner/guard/store_storage_lock.py"
-      - "tests/test_native_policy_publication_maintenance.py"
-      - "tests/test_store_maintenance_scope.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_rotation.py"
-      - "src/codex_plugin_scanner/guard/native_policy_snapshot_rotation_entry.py"
-      - "tests/test_native_policy_installation_retirement.py"
-      - "tests/native_policy_retirement_test_fixtures.py"
-      - ".github/workflows/native-sensitive-resident-contract.yml"
-      - "tests/test_native_installation_retirement_evidence.py"
-      - "tests/test_native_installation_retirement_resident.py"
-      - "src/codex_plugin_scanner/guard/sqlite_tuning.py"
   workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact final source commit
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Exact diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Exact diagnostic tree
+        required: true
+        type: string
+
 permissions:
   contents: read
+
 concurrency:
-  group: native-managed-source-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: native-decision-report-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  source-groups:
+  decision-report:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-decision-report-ac0dad5c-20260919' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         python: ["3.10", "3.12"]
-        partition: ["policy", "maintenance"]
+    env:
+      EXPECTED_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      EXPECTED_DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+      MATRIX_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        id: checkout
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Verify final source before report generation
+        id: source_guard
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "ac0dad5c0ca7b47ac7350f38b7291bb562094804"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-decision-report-ac0dad5c-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, "a591a0139b3a186b4bb7e5bba3fa32f1c1efbfaf"]
+          assert git("rev-parse", source + "^{tree}") == "53016bfd1a6356dc3c57c82f27a2b45a06caf3ec"
+          assert git("rev-parse", "a591a0139b3a186b4bb7e5bba3fa32f1c1efbfaf^{tree}") == "ac6618343a7c8c8ebf331bcdba63ec3bae242c20"
+          anchor = "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          assert re.fullmatch(r"[0-9a-f]{40}", anchor)
+          subprocess.run(["git", "merge-base", "--is-ancestor", anchor, source], check=True)
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, anchor)
+          assert git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines() == [
+              "M\t.github/workflows/native-managed-source-contract.yml"
+          ]
+          pins = [
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","8eb56d610ba8996d360eb7d1f2030824c9306096"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/fixtures/guard-command-corpus/known-gaps.json","100644","6c6d7a820fe795252bcfc6d227cbb9f3788b2cb9"],
+              ["tests/fixtures/guard-command-corpus/minimal-delta-pairs.json","100644","de808e793ee8f51eb5533850b4a9fbf221e6ba90"],
+              ["tests/fixtures/guard-command-corpus/seed-manifest.json","100644","f26cda4652a06f51b412486721e2a615f0abdb98"],
+              ["tests/guard_command_corpus.py","100644","ea46044f3d99c58bbdc51b95487b0464abc37a43"],
+              ["tests/guard_command_corpus_diagnostics.py","100644","35d6318d3e863e7f8ad33a090328c53a0297664d"],
+              ["tests/guard_command_corpus_oracle.py","100644","e3244452563a1a82ecd68aec0bc100ae91ac47ac"],
+              ["tests/guard_command_corpus_oracle_adversarial.py","100644","98682a83f649b6b555c3fb69abca01a7bf6d36f1"],
+              ["tests/guard_command_corpus_oracle_benign.py","100644","591a8e8f0e2a16c7f1f39f2f199c16a12dedd042"],
+              ["tests/guard_command_corpus_oracle_loader.py","100644","62bc1a5a371b3646315f18e0db335f303d74f8de"],
+              ["tests/guard_command_corpus_oracle_types.py","100644","b9c7ecb6d8f5ca06c50ac43c66dfb51a4b64b1a7"],
+              ["tests/guard_command_corpus_runner.py","100644","2dc19323ea3fd7e4539f12ce770a0218b3c781ed"],
+              ["tests/guard_command_decision_diff.py","100644","2150c9eb1da9371966b26cbfd1a8737fbf7e2e64"],
+              ["tests/guard_command_decision_diff_runner.py","100644","3ff1e896e0c0b8a32c57988b7f5914b320b66ba3"],
+              ["tests/test_guard_command_corpus.py","100644","21e8fec14255c5c367887b9e55d09570f452162e"],
+              ["tests/test_guard_command_decision_diff.py","100644","8d5fa7b75cb70bfb607075834adc97e1fd46a717"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          pins.extend([
+              [".github/workflows/ci.yml", "100644", "2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["tests/fixtures/guard-command-corpus/decision-diff-report.json", "100644", "618020cc5317524b6988717ccaf217599015bf5b"],
+          ])
+          allowed = {"tests/fixtures/guard-command-corpus/decision-diff-report.json"} if os.environ.get("GENERATED_REPORT_ALLOWED") == "1" else set()
+          for path, mode, sha in pins:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              if path not in allowed:
+                  assert git("hash-object", "--", path) == sha
+          assert git("ls-tree", source, "--", ".github/workflows/native-managed-source-contract.yml") == (
+              "100644 blob 2e15ad8f24d1497e055ac87b1a7726a5cc60f148\t.github/workflows/native-managed-source-contract.yml"
+          )
+          subprocess.run(["git", "diff", "--cached", "--exit-code"], check=True)
+          changes = git("diff", "--name-status", "--no-renames", "HEAD").splitlines()
+          assert set(changes).issubset({"M\t" + path for path in allowed}), changes
+          print(json.dumps({
+              "record": "decision-report-source-guard",
+              "source": source,
+              "pins": len(pins),
+              "ciUnchanged": True,
+              "allowedGeneratedChanges": len(changes),
+          }, sort_keys=True))
+          PY
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: ${{ matrix.python }}
@@ -324,71 +176,244 @@ jobs:
           assert version == list(sys.version_info[:3])
           print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
           PY
-      - name: Lint and typecheck the actual source closure
-        if: ${{ matrix.partition == 'policy' }}
+      - name: Generate report with the existing complete evaluator
+        id: generation
+        run: uv run --no-sync python tests/guard_command_decision_diff.py --write
+      - name: Check actual generated report with the existing evaluator
+        run: uv run --no-sync python tests/guard_command_decision_diff.py --check
+      - name: Run unchanged decision report contracts
+        id: report_tests
         run: |
-          source_paths="$(uv run --no-sync python -c 'import json; print("\n".join(json.load(open("basedpyright.native-managed-source.json"))["include"]))')"
-          mapfile -t source_roots <<< "$source_paths"
-          uv run --no-sync ruff check "${source_roots[@]}"
-          uv run --no-sync ruff format --check "${source_roots[@]}"
-          uv run --no-sync basedpyright --pythonpath .venv/bin/python --pythonversion ${{ matrix.python }} --project basedpyright.native-managed-source.json
-          uv run --no-sync python -c "from codex_plugin_scanner.guard import native_policy_authority_managed, native_policy_authority_read, native_policy_authority_sources"
-      - name: Verify signed and local source reconstruction
-        if: ${{ matrix.partition == 'policy' }}
+          uv run --no-sync python -m pytest -q --tb=short tests/test_guard_command_decision_diff.py \
+            --junitxml="$RUNNER_TEMP/decision-report-${{ matrix.python }}.xml"
+      - name: Report all six original report contract outcomes
+        if: ${{ always() && steps.report_tests.outcome != 'skipped' }}
         run: |
-          uv run --no-sync pytest -q tests/test_native_policy_authority_managed_read.py tests/test_native_policy_authority_compile.py tests/test_native_policy_authority_exact_sources.py tests/test_native_policy_authority_orphan_sources.py tests/test_native_policy_authority_read.py tests/test_native_policy_snapshot_v4_barrier.py tests/test_native_managed_catalog_capability.py tests/test_runtime_lane_session_observation.py tests/test_native_approval_envelope_identity.py tests/test_native_approval_session_detachment.py tests/test_native_approval_v4_transport.py tests/test_native_typed_artifact_sources.py tests/test_native_scoped_alias_sources.py tests/test_guard_native_runtime.py tests/test_native_policy_authority_expressions.py tests/test_native_policy_authority_command_source.py tests/test_native_command_row_association.py tests/test_policy_command_projection.py tests/test_native_command_expression.py tests/test_native_policy_snapshot_v4_contract.py tests/test_native_policy_snapshot_v4_publication.py tests/test_policy_bundle_materialization_publication.py tests/test_policy_bundle_source_materialization.py tests/test_native_expression_policy_resident.py::test_expression_resident_source_preflight_is_signed_complete_and_expiry_bound
-      - name: Verify ordinary staging and native acknowledgement fences
-        if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_bundle_ack.py tests/test_policy_installation_rotation_authority.py tests/test_policy_installation_rotation_binding.py tests/test_policy_bundle_generic_ack_contract.py tests/test_generic_policy_native_application.py tests/test_policy_bundle_sync_outcomes.py tests/test_policy_bundle_v2_runtime_admission.py tests/test_native_policy_config_mutation.py tests/test_policy_bundle_staging.py tests/test_policy_bundle_v2.py tests/test_canonical_policy_row_authority.py tests/test_guard_settings_sync_preservation.py tests/test_native_policy_row_sort.py tests/test_native_expression_sync.py tests/test_native_expression_policy_resident.py::test_expression_resident_baseline_config_is_explicit_and_retains_risk_floors tests/test_native_expression_sync_resident.py::test_signed_sync_fixture_leaves_target_policy_unstaged tests/test_native_generic_sync_unstaged.py
-      - name: Verify sensitive reads and independent configuration origins
-        if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_managed_action_origin.py tests/test_managed_action_representation.py tests/test_managed_local_origin.py tests/test_native_managed_capture.py tests/test_native_managed_configuration.py tests/test_native_managed_configuration_wire.py tests/test_native_sensitive_read_managed_floors.py tests/test_native_sensitive_read_mixed_origin_vectors.py tests/test_native_sensitive_read_policy_vectors.py tests/test_native_sensitive_read_runtime_policy.py tests/test_native_sensitive_read_sources.py tests/test_extension_control_first_run_authority.py tests/test_sensitive_read_unenrolled_controls.py tests/test_extension_control_recovery_composition.py tests/test_guard_mdm_policy.py tests/test_guard_protection_posture.py tests/test_guard_approval_context.py
-      - name: Verify complete source selection and hook response fences
-        if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_source_selection.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py
-      - name: Verify configured selection and current native application
-        if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_native_managed_cache_publication.py tests/test_current_native_policy_posture.py tests/test_policy_sync_truth.py tests/test_policy_bundle_validity_and_rollout.py
-      - name: Verify source-free lease renewal and resident transitions
-        if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_native_source_free_renewal.py tests/test_native_policy_snapshot_v3_publisher.py tests/test_native_policy_snapshot_post_ack_retry.py tests/test_native_policy_snapshot_post_ack_retry_guards.py tests/test_native_policy_snapshot_post_ack_retry_commit.py
-      - name: Preserve authority and I/O ownership
-        if: ${{ matrix.partition == 'policy' }}
+          uv run --no-sync python - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          
+          path = Path(os.environ["RUNNER_TEMP"]) / ("decision-report-" + os.environ["MATRIX_PYTHON"] + ".xml")
+          root = ET.parse(path).getroot()
+          cases = list(root.iter("testcase"))
+          expected = Counter(
+              ("tests.test_guard_command_decision_diff", name)
+              for name in ["test_decision_diff_import_does_not_shadow_scanner_package_exports","test_decision_diff_import_restores_preloaded_package_bindings","test_report_is_exactly_reproducible_and_source_bound","test_report_reconciles_every_case_without_lowering_or_widening_gaps","test_report_contains_only_privacy_safe_deterministic_evidence","test_fresh_process_report_is_environment_independent_and_bounded"]
+          )
+          actual = Counter((case.attrib.get("classname"), case.attrib.get("name")) for case in cases)
+          all_tags = []
+          for case in cases:
+              tags = [tag for tag in ("failure", "error", "skipped") if case.find(tag) is not None]
+              all_tags.extend(tags)
+              print(json.dumps({
+                  "record": "decision-report-test",
+                  "classname": case.attrib.get("classname"),
+                  "name": case.attrib.get("name"),
+                  "tags": tags,
+                  "pytestSeconds": case.attrib.get("time"),
+              }, sort_keys=True))
+          assert actual == expected, (actual, expected)
+          assert not all_tags
+          assert not list(root.iter("skipped"))
+          assert not list(root.iter("failure"))
+          assert not list(root.iter("error"))
+          print(json.dumps({"record": "decision-report-tests", "passed": len(cases)}, sort_keys=True))
+          PY
+      - name: Validate source-only differences and emit complete generated bytes
         run: |
-          uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root .
-          uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .
-      - name: Verify finite validation diagnostics and unchanged caller contracts
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_test_support.py tests/test_installed_pi_output_probe.py tests/test_native_default_auto_probe.py tests/test_native_publication_diagnostic.py tests/test_native_warm_phase_diagnostic.py tests/test_guard_native_release_gate_benchmark.py tests/test_guard_command_corpus.py tests/test_guard_command_corpus_diagnostics.py
-      - name: Verify bounded policy retirement and process ownership
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_snapshot_control.py tests/test_native_policy_control_transport.py tests/test_native_policy_snapshot_retirement.py tests/test_native_policy_snapshot_reservation_capture.py tests/test_guard_hook_process_runner.py tests/test_codex_hook_process_cleanup.py tests/test_codex_hook_fallback_isolation.py
-      - name: Verify inventory authority and authentication recovery
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_aibom_chunking.py tests/test_aibom_operation_authority.py tests/test_aibom_sync_admission.py tests/test_cloud_review_oauth_refresh_bindings.py tests/test_guard_aibom_cli.py tests/test_guard_aibom_content_upload.py tests/test_guard_aibom_content_upload_batches.py tests/test_guard_encrypted_secret_store_stability.py tests/test_guard_event_schema_v1.py tests/test_guard_exact_cloud_review.py tests/test_guard_exact_cloud_review_concurrency.py tests/test_guard_exact_cloud_review_oauth.py tests/test_guard_keyring_support.py tests/test_guard_oauth_cached_expiry_compatibility.py tests/test_guard_oauth_reconnect.py tests/test_guard_oauth_refresh_resilience.py tests/test_guard_receipt_redaction_cursor.py tests/test_guard_store_migrations.py tests/test_guard_supply_chain_daemon.py tests/test_oauth_connection_authority.py tests/test_oauth_refresh_connection_authority.py tests/test_inventory_request_authority.py tests/test_inventory_consumer_authority.py tests/test_guard_sync_http_error_message.py tests/test_guard_sync_retry_clock_isolation.py tests/test_inventory_oauth_completion_authority.py tests/test_guard_skill_directory_identity_downstream.py tests/test_receipt_signed_redaction_default.py tests/test_receipt_redaction_local_floors.py tests/test_receipt_signed_redaction_commit.py
-      - name: Verify current setup and independent inventory delivery
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_aibom_daemon_authority.py tests/test_inventory_daemon_consumers.py tests/test_inventory_daemon_scheduling.py tests/test_native_policy_control_runtime.py
-      - name: Verify coherent capture and recovery safeguards
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_guard_extension_control_api.py tests/test_guard_extension_control_recovery.py tests/test_guard_kubernetes_runtime.py tests/test_native_authority_fixture_lifecycle.py tests/test_native_policy_authority_coherent_capture.py tests/test_rust_pretool_authority.py tests/test_rust_pretool_authority_worker.py tests/test_store_private_mode_compatibility.py tests/test_store_private_mode_observation.py
-      - name: Verify resident retries and existing caller contracts
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_snapshot_resident_retry.py tests/test_guard_command_queue.py::test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_state tests/test_guard_command_queue.py::test_poll_once_reuses_cached_access_token_across_oauth_polls tests/test_guard_runtime.py::test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation tests/test_paseo_adapter.py::test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_content
-
-      - name: Verify installation retirement and bounded Store finalization
-        if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_sqlite_maintenance_deadline.py tests/test_native_policy_snapshot_mutation_deadline.py tests/test_native_policy_control_owned_operations.py tests/test_native_policy_publication_maintenance.py tests/test_store_maintenance_scope.py tests/test_native_policy_installation_retirement.py tests/test_native_installation_retirement_evidence.py tests/test_native_installation_retirement_resident.py tests/test_sqlite_deadline_control_cursor.py
-
-  source-contract:
-    needs: source-groups
-    if: ${{ always() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.10", "3.12"]
-    steps:
-      - name: Require every source validation partition
-        run: test "${{ needs.source-groups.result }}" = "success"
+          uv run --no-sync python - <<'PY'
+          import base64
+          import copy
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import stat
+          import subprocess
+          
+          from tests import guard_command_decision_diff as generator
+          
+          SOURCE = "ac0dad5c0ca7b47ac7350f38b7291bb562094804"
+          REPORT = "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+          EXPECTED_BEFORE = "618020cc5317524b6988717ccaf217599015bf5b"
+          
+          def git_bytes(*arguments):
+              return subprocess.check_output(["git", *arguments])
+          
+          def blob_sha(raw):
+              return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+          
+          before = git_bytes("show", SOURCE + ":" + REPORT)
+          assert blob_sha(before) == EXPECTED_BEFORE
+          metadata = Path(REPORT).lstat()
+          assert stat.S_ISREG(metadata.st_mode) and not Path(REPORT).is_symlink()
+          assert metadata.st_mode & 0o111 == 0
+          raw = Path(REPORT).read_bytes()
+          assert 0 < len(raw) <= 262144
+          report = json.loads(raw)
+          original = json.loads(before)
+          assert raw == generator.canonical_json_bytes(report)
+          def without_source_bindings(value):
+              result = copy.deepcopy(value)
+              assert isinstance(result["bindings"]["sources_sha256"], dict)
+              del result["bindings"]["sources_sha256"]
+              return result
+          assert without_source_bindings(report) == without_source_bindings(original)
+          bindings = report["bindings"]["sources_sha256"]
+          assert bindings == generator._source_bindings()
+          repository = generator.REPO_ROOT.resolve()
+          assert generator.REPORT_PATH.resolve() == (repository / REPORT).resolve()
+          tracked = {}
+          for record in git_bytes("ls-tree", "-r", "-z", SOURCE).split(b"\0"):
+              if record:
+                  attributes, name = record.split(b"\t", 1)
+                  mode, kind, sha = attributes.decode("ascii").split()
+                  tracked[name.decode("utf-8")] = (mode, kind, sha)
+          selected = sorted({path.resolve() for path in generator._EVIDENCE_SOURCE_PATHS})
+          selected_ids = set()
+          for path in selected:
+              relative = path.relative_to(repository).as_posix()
+              mode, kind, sha = tracked[relative]
+              assert mode == "100644" and kind == "blob"
+              source_bytes = path.read_bytes()
+              assert blob_sha(source_bytes) == sha
+              key = generator.source_binding_id(relative)
+              assert key not in selected_ids
+              selected_ids.add(key)
+              assert bindings[key] == hashlib.sha256(source_bytes).hexdigest()
+          assert set(bindings) == selected_ids
+          assert report["corpus"]["total_count"] == 51000
+          assert report["current_vs_proposed"]["lowered_count"] == 0
+          assert report["current_vs_proposed"]["disposition_changed_count"] == 0
+          assert report["legacy_to_current"]["lowered_count"] == 0
+          assert report["oracle_reconciliation"]["known_gap_equality"] is True
+          assert report["oracle_reconciliation"]["unreconciled_count"] == 0
+          assert report["privacy"] == {
+              "case_material": "opaque-case-identifiers-only",
+              "commands_included": False,
+              "local_paths_included": False,
+              "resource_measurements_included": False,
+          }
+          changes = git_bytes("diff", "--name-status", "--no-renames", "HEAD").decode().splitlines()
+          assert changes == (["M\t" + REPORT] if raw != before else [])
+          subprocess.run(["git", "diff", "--cached", "--exit-code"], check=True)
+          encoded = base64.b64encode(raw).decode("ascii")
+          chunks = [encoded[offset:offset + 4096] for offset in range(0, len(encoded), 4096)]
+          after = blob_sha(raw)
+          print(json.dumps({
+              "record": "generated-decision-report",
+              "source": SOURCE,
+              "python": os.environ["MATRIX_PYTHON"],
+              "path": REPORT,
+              "before": EXPECTED_BEFORE,
+              "after": after,
+              "sha256": hashlib.sha256(raw).hexdigest(),
+              "framedSha256": generator.report_framed_sha256(report),
+              "bytes": len(raw),
+              "mode": "100644",
+              "sourceBindings": len(bindings),
+              "corpusCases": report["corpus"]["total_count"],
+              "changed": raw != before,
+              "chunkCount": len(chunks),
+              "sourceBindingsOnly": True,
+              "allOtherTrackedFilesUnchanged": True,
+              "commitAttestationCreated": False,
+          }, sort_keys=True))
+          for index, chunk in enumerate(chunks):
+              print(json.dumps({
+                  "record": "generated-decision-report-chunk",
+                  "path": REPORT,
+                  "after": after,
+                  "index": index,
+                  "count": len(chunks),
+                  "base64": chunk,
+              }, sort_keys=True))
+          PY
+      - name: Verify final source after report validation
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        env:
+          GENERATED_REPORT_ALLOWED: "1"
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "ac0dad5c0ca7b47ac7350f38b7291bb562094804"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-decision-report-ac0dad5c-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, "a591a0139b3a186b4bb7e5bba3fa32f1c1efbfaf"]
+          assert git("rev-parse", source + "^{tree}") == "53016bfd1a6356dc3c57c82f27a2b45a06caf3ec"
+          assert git("rev-parse", "a591a0139b3a186b4bb7e5bba3fa32f1c1efbfaf^{tree}") == "ac6618343a7c8c8ebf331bcdba63ec3bae242c20"
+          anchor = "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          assert re.fullmatch(r"[0-9a-f]{40}", anchor)
+          subprocess.run(["git", "merge-base", "--is-ancestor", anchor, source], check=True)
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, anchor)
+          assert git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines() == [
+              "M\t.github/workflows/native-managed-source-contract.yml"
+          ]
+          pins = [
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","8eb56d610ba8996d360eb7d1f2030824c9306096"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/fixtures/guard-command-corpus/known-gaps.json","100644","6c6d7a820fe795252bcfc6d227cbb9f3788b2cb9"],
+              ["tests/fixtures/guard-command-corpus/minimal-delta-pairs.json","100644","de808e793ee8f51eb5533850b4a9fbf221e6ba90"],
+              ["tests/fixtures/guard-command-corpus/seed-manifest.json","100644","f26cda4652a06f51b412486721e2a615f0abdb98"],
+              ["tests/guard_command_corpus.py","100644","ea46044f3d99c58bbdc51b95487b0464abc37a43"],
+              ["tests/guard_command_corpus_diagnostics.py","100644","35d6318d3e863e7f8ad33a090328c53a0297664d"],
+              ["tests/guard_command_corpus_oracle.py","100644","e3244452563a1a82ecd68aec0bc100ae91ac47ac"],
+              ["tests/guard_command_corpus_oracle_adversarial.py","100644","98682a83f649b6b555c3fb69abca01a7bf6d36f1"],
+              ["tests/guard_command_corpus_oracle_benign.py","100644","591a8e8f0e2a16c7f1f39f2f199c16a12dedd042"],
+              ["tests/guard_command_corpus_oracle_loader.py","100644","62bc1a5a371b3646315f18e0db335f303d74f8de"],
+              ["tests/guard_command_corpus_oracle_types.py","100644","b9c7ecb6d8f5ca06c50ac43c66dfb51a4b64b1a7"],
+              ["tests/guard_command_corpus_runner.py","100644","2dc19323ea3fd7e4539f12ce770a0218b3c781ed"],
+              ["tests/guard_command_decision_diff.py","100644","2150c9eb1da9371966b26cbfd1a8737fbf7e2e64"],
+              ["tests/guard_command_decision_diff_runner.py","100644","3ff1e896e0c0b8a32c57988b7f5914b320b66ba3"],
+              ["tests/test_guard_command_corpus.py","100644","21e8fec14255c5c367887b9e55d09570f452162e"],
+              ["tests/test_guard_command_decision_diff.py","100644","8d5fa7b75cb70bfb607075834adc97e1fd46a717"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          pins.extend([
+              [".github/workflows/ci.yml", "100644", "2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["tests/fixtures/guard-command-corpus/decision-diff-report.json", "100644", "618020cc5317524b6988717ccaf217599015bf5b"],
+          ])
+          allowed = {"tests/fixtures/guard-command-corpus/decision-diff-report.json"} if os.environ.get("GENERATED_REPORT_ALLOWED") == "1" else set()
+          for path, mode, sha in pins:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              if path not in allowed:
+                  assert git("hash-object", "--", path) == sha
+          assert git("ls-tree", source, "--", ".github/workflows/native-managed-source-contract.yml") == (
+              "100644 blob 2e15ad8f24d1497e055ac87b1a7726a5cc60f148\t.github/workflows/native-managed-source-contract.yml"
+          )
+          subprocess.run(["git", "diff", "--cached", "--exit-code"], check=True)
+          changes = git("diff", "--name-status", "--no-renames", "HEAD").splitlines()
+          assert set(changes).issubset({"M\t" + path for path in allowed}), changes
+          print(json.dumps({
+              "record": "decision-report-source-guard",
+              "source": source,
+              "pins": len(pins),
+              "ciUnchanged": True,
+              "allowedGeneratedChanges": len(changes),
+          }, sort_keys=True))
+          PY

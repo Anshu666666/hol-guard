@@ -21,6 +21,7 @@ from .aibom_commands import build_aibom_status_payload as build_aibom_status_pay
 from .aibom_commands import build_inventory_json_payload as build_inventory_json_payload
 from .aibom_commands import sync_aibom_snapshots_if_due as sync_aibom_snapshots_if_due
 from .aibom_content_upload import GuardAibomPrimaryContentSource as GuardAibomPrimaryContentSource
+from .aibom_content_upload import _indexed_primary_content_sources as _indexed_primary_content_sources
 from .aibom_content_upload import empty_content_upload_summary as empty_content_upload_summary
 from .aibom_content_upload import merge_content_upload_summary as merge_content_upload_summary
 from .aibom_content_upload import primary_content_sources_from_artifacts as primary_content_sources_from_artifacts
@@ -201,11 +202,17 @@ def sync_aibom_snapshots(
         for snapshot in snapshots
     ]
     event_batches, oversized_events = _batch_inventory_events(events)
-    content_sources_by_snapshot: dict[str, tuple[GuardAibomPrimaryContentSource, ...]] = {}
-    for snapshot in snapshots:
-        content_sources_by_snapshot[snapshot.snapshot_id] = tuple(
-            source for source in primary_content_sources if source.snapshot_id == snapshot.snapshot_id
-        )
+    indexed_content_sources = _indexed_primary_content_sources(
+        snapshots, primary_content_sources, tuple_factory=tuple
+    )
+    if indexed_content_sources is None:
+        content_sources_by_snapshot: dict[str, tuple[GuardAibomPrimaryContentSource, ...]] = {}
+        for snapshot in snapshots:
+            content_sources_by_snapshot[snapshot.snapshot_id] = tuple(
+                source for source in primary_content_sources if source.snapshot_id == snapshot.snapshot_id
+            )
+    else:
+        content_sources_by_snapshot = indexed_content_sources
     content_upload_summary = empty_content_upload_summary()
     content_uploaded_snapshot_ids: set[str] = set()
     oversized_statuses: list[dict[str, object]] = [

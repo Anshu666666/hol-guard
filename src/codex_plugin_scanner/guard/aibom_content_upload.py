@@ -8,8 +8,10 @@ import json
 import re
 import urllib.error
 import urllib.parse
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from types import MemberDescriptorType
 from typing import Any, TypedDict
 
 from ..path_support import resolves_within_root
@@ -79,6 +81,68 @@ def merge_content_upload_summary(
     reason = source.get("reason")
     if isinstance(reason, str) and reason:
         target["reason"] = reason
+
+
+def _indexed_primary_content_sources(
+    snapshots: tuple[GuardAgentInventorySnapshot, ...],
+    sources: list[GuardAibomPrimaryContentSource],
+    *,
+    tuple_factory: Callable[
+        [Iterable[GuardAibomPrimaryContentSource]],
+        tuple[GuardAibomPrimaryContentSource, ...],
+    ],
+) -> dict[str, tuple[GuardAibomPrimaryContentSource, ...]] | None:
+    """Index current plain keys, or leave custom access to the original join."""
+    if tuple_factory is not ().__class__:
+        return None
+    if type(snapshots) is not tuple or type(sources) is not list:
+        return None
+    for record_class in (GuardAgentInventorySnapshot, GuardAibomPrimaryContentSource):
+        if type(record_class) is not type or record_class.__mro__ != (record_class, object):
+            return None
+        if record_class.__dict__.get("__getattribute__", object.__getattribute__) is not object.__getattribute__:
+            return None
+        if "__getattr__" in record_class.__dict__:
+            return None
+        descriptor = record_class.__dict__.get("snapshot_id")
+        if (
+            type(descriptor) is not MemberDescriptorType
+            or descriptor.__objclass__ is not record_class
+            or descriptor.__name__ != "snapshot_id"
+        ):
+            return None
+    if any(type(snapshot) is not GuardAgentInventorySnapshot for snapshot in snapshots):
+        return None
+    if any(type(source) is not GuardAibomPrimaryContentSource for source in sources):
+        return None
+
+    snapshot_ids: list[str] = []
+    source_ids: list[str] = []
+    try:
+        for snapshot in snapshots:
+            key = snapshot.snapshot_id
+            if type(key) is not str:
+                return None
+            snapshot_ids.append(key)
+        for source in sources:
+            key = source.snapshot_id
+            if type(key) is not str:
+                return None
+            source_ids.append(key)
+    except AttributeError:
+        return None
+
+    grouped: dict[str, list[GuardAibomPrimaryContentSource]] = {}
+    for source, key in zip(sources, source_ids, strict=True):
+        group = grouped.get(key)
+        if group is None:
+            group = []
+            grouped[key] = group
+        group.append(source)
+    result: dict[str, tuple[GuardAibomPrimaryContentSource, ...]] = {}
+    for key in snapshot_ids:
+        result[key] = tuple_factory(grouped.get(key, ()))
+    return result
 
 
 def primary_content_sources_from_artifacts(

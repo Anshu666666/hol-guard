@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -14,6 +16,7 @@ from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli import commands_hook
 from codex_plugin_scanner.guard.config import GuardConfig
 from codex_plugin_scanner.guard.daemon.hook_worker import HookWorker, HookWorkerUnsupported
+from codex_plugin_scanner.guard.native_decision_receipt import canonical_receipt_bytes
 from codex_plugin_scanner.guard.native_route_receipt import (
     native_hook_route,
     record_native_hook_route,
@@ -21,6 +24,8 @@ from codex_plugin_scanner.guard.native_route_receipt import (
 )
 from codex_plugin_scanner.guard.native_runtime import NativeRuntimeStatus
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.native_review_approval_support import _test_request_digest
+from tests.test_native_command_observations import _observations
 
 
 def _native_allow(command: str) -> dict[str, Any]:
@@ -110,9 +115,45 @@ def test_hook_worker_native_review_does_not_escape_to_python_semantics(
 ) -> None:
     native_review = _native_generic_review()
 
-    def review_with_resident_receipt(*_args: object, **_kwargs: object) -> dict[str, Any]:
+    def review_with_resident_receipt(*_args: object, **kwargs: object) -> dict[str, Any]:
         record_native_hook_route("native_resident")
-        return {"event_name": "PreToolUse", "harness": "codex", "result": native_review}
+        observations = _observations()
+        native_review["command_extensions"] = observations
+        digest = _test_request_digest("codex", kwargs.get("payload"), kwargs.get("cwd"))
+        receipt: dict[str, Any] = {
+            "schema": "guard-native-hook-decision-receipt.v1",
+            "version": 1,
+            "authority": "rust",
+            "decision_id": "0" * 64,
+            "request_id": f"sha256:{digest}",
+            "request_digest": digest,
+            "harness": "codex",
+            "event_name": "PreToolUse",
+            "payload_kind": "inline",
+            "policy_generation": 1,
+            "policy_digest": "a" * 64,
+            "rule_digest": "b" * 64,
+            "runtime_identity": "c" * 64,
+            "decision": native_review["decision"],
+            "model_output_action": "not_applicable",
+            "policy_action": native_review["policy_action"],
+            "observed_policy_action": None,
+            "reason_code": native_review["reason_code"],
+            "workspace_bound": kwargs.get("cwd") is not None,
+            "source_ref_external_allowed": False,
+            "reviewed_output_sha256": None,
+            "observe_mode": False,
+            "deadline_budget_ms": None,
+            "command_extensions": copy.deepcopy(observations["binding"]),
+        }
+        receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+        return {
+            "event_name": "PreToolUse",
+            "harness": "codex",
+            "payload_kind": "inline",
+            "result": native_review,
+            "receipt": receipt,
+        }
 
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.daemon.hook_worker.native_mode",

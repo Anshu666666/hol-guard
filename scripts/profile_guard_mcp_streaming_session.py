@@ -6,8 +6,13 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import sys
 from pathlib import Path
 from typing import Any
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
 
 from profile_guard_mcp_case import run_case_common
 from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments, summarize as _summary

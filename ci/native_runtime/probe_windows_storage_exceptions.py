@@ -135,7 +135,9 @@ def prior_controls(output: Path) -> dict[str, Any]:
     require(tuple(case["case"] for case in identity["cases"]) == IDENTITY_CASES, "identity_case_set")
     require(
         all(
-            case["result"] == ("replaced" if case["case"] == "live_replacement" else "passed")
+            case["result"] in ("replaced", "blocked_by_os")
+            if case["case"] == "live_replacement"
+            else case["result"] == "passed"
             for case in identity["cases"]
         ),
         "identity_outcome",

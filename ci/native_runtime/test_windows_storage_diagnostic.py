@@ -169,6 +169,7 @@ def test_transfer_timeout_keeps_partial_bytes_and_original_exception(
     assert report["gh_invocations_for_archive"] == 1 and report["workload_invocations"] == 0
 
 
+@pytest.mark.parametrize("live_replacement_outcome", ["replaced", "blocked_by_os"])
 @pytest.mark.parametrize(
     "mutation",
     [
@@ -176,6 +177,10 @@ def test_transfer_timeout_keeps_partial_bytes_and_original_exception(
         "identity_missing",
         "identity_duplicate",
         "identity_failed",
+        "identity_live_passed",
+        "identity_live_unknown",
+        "identity_other_blocked",
+        "identity_other_replaced",
         "lock_missing",
         "lock_duplicate",
         "lock_unreleased",
@@ -183,14 +188,16 @@ def test_transfer_timeout_keeps_partial_bytes_and_original_exception(
         "lock_non_boolean",
     ],
 )
-def test_original_control_cases_and_outcomes_cannot_be_substituted(tmp_path: Path, mutation: str) -> None:
+def test_original_control_cases_and_outcomes_cannot_be_substituted(
+    tmp_path: Path, mutation: str, live_replacement_outcome: str
+) -> None:
     identity: dict[str, Any] = {
         "schema": "hol-guard.installed-runtime-identity.v1",
         "build_sha": artifact.BUILD,
         "runtime_sha256": artifact.RUNTIME_SHA256,
         "manifest_sha256": artifact.MANIFEST_SHA256,
         "cases": [
-            {"case": name, "result": "replaced" if name == "live_replacement" else "passed"}
+            {"case": name, "result": live_replacement_outcome if name == "live_replacement" else "passed"}
             for name in driver.IDENTITY_CASES
         ],
     }
@@ -216,6 +223,14 @@ def test_original_control_cases_and_outcomes_cannot_be_substituted(tmp_path: Pat
         identity["cases"][-1] = dict(identity["cases"][0])
     elif mutation == "identity_failed":
         identity["cases"][0]["result"] = "failed"
+    elif mutation == "identity_live_passed":
+        identity["cases"][4]["result"] = "passed"
+    elif mutation == "identity_live_unknown":
+        identity["cases"][4]["result"] = "unknown"
+    elif mutation == "identity_other_blocked":
+        identity["cases"][0]["result"] = "blocked_by_os"
+    elif mutation == "identity_other_replaced":
+        identity["cases"][0]["result"] = "replaced"
     elif mutation == "lock_missing":
         locks["cases"].pop()
     elif mutation == "lock_duplicate":

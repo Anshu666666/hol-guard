@@ -20,11 +20,11 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 106
+    assert payload["scope_files"] == 108
     assert payload["capabilities"] == {
         "hook_control_and_transport": 82,
         "python_reference_oracle": 17,
-        "hook_evidence_persistence": 5,
+        "hook_evidence_persistence": 7,
         "legacy_python_resident_transport": 2,
     }
     assert payload["candidate_evidence"] == [

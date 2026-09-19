@@ -41,7 +41,7 @@ def main() -> int:
             "guard_module_already_loaded",
         )
         report["helper_binding"] = verify_helpers()
-        report["passed_controls"].append("all_63_helpers_equal_source_manifest")
+        report["passed_controls"].append("60_original_helpers_and_three_explicit_overrides_bound")
         scripts = types.ModuleType("scripts")
         scripts.__path__ = [str(ROOT / "helpers/scripts")]
         sys.modules["scripts"] = scripts
@@ -59,6 +59,9 @@ def main() -> int:
 
         class AdapterSession:
             def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+                pass
+
+            def _construct_workspace_daemon(self, *_args: Any, **_kwargs: Any) -> None:
                 pass
 
         class ReceiptWitness:

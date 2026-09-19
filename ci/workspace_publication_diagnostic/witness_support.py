@@ -20,13 +20,20 @@ WHEEL_SHA = "7b82fa210d88b2e4be3f21791101a9a0d378cd7df29205ee13fe024388c97bc8"
 RUNTIME_SHA = "679da56f12eca504da0e3bc65b9abb99b1109e4caab2deb6961283865db9b2ba"
 MANIFEST_SHA = "fa20cf9b73c6d7b695ab6f4c8888153f83f3451a6f0190c03fa5175a12c78b12"
 ARTIFACT_SHA = "857e3701e64130d078b4483a7d5b3dc8267a6ae9e348ef1322c28f6810f8f14c"
+DIAGNOSTIC_HELPER_OVERRIDES = frozenset(
+    {
+        "scripts/native_slo_session.py",
+        "scripts/native_slo_workspace_server.py",
+        "scripts/native_slo_daemon_fixture.py",
+    }
+)
 WHEEL = (
     ROOT.parent
     / "recovered-hosted/8156/extracted/10573761511/native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl"
 )
 
 
-class Failure(RuntimeError):
+class Failure(RuntimeError):  # noqa: N818 - preserve the existing fixed diagnostic category
     """A fixed privacy-safe witness failure reason."""
 
 
@@ -97,6 +104,26 @@ def verify_environment() -> None:
     )
 
 
+def helper_overrides(manifest: dict[str, Any]) -> dict[str, Any]:
+    overrides = manifest.get("diagnostic_overrides")
+    require(
+        isinstance(overrides, dict) and set(overrides) == DIAGNOSTIC_HELPER_OVERRIDES,
+        "helper_override_scope",
+    )
+    require(
+        manifest["helpers"].keys() >= DIAGNOSTIC_HELPER_OVERRIDES,
+        "helper_override_original_binding_missing",
+    )
+    for name, expected in overrides.items():
+        require(set(expected) == {"bytes", "sha256"}, "helper_override_binding_shape")
+        data = bounded(ROOT.parents[1] / name, 1024 * 1024)
+        require(
+            len(data) == expected["bytes"] and digest(data) == expected["sha256"],
+            "diagnostic_helper_source_changed",
+        )
+    return overrides
+
+
 def verify_helpers() -> dict[str, Any]:
     content = bounded(ROOT / "source-manifest.json", 1024 * 1024)
     manifest = json.loads(content)
@@ -104,15 +131,24 @@ def verify_helpers() -> dict[str, Any]:
         manifest["published_source_sha"] == SOURCE_SHA and manifest["source_tree"] == SOURCE_TREE,
         "helper_source_identity",
     )
-    for name, expected in {**manifest["helpers"], **manifest["resources"]}.items():
+    overrides = helper_overrides(manifest)
+    for name, expected in {
+        **manifest["helpers"],
+        **manifest["resources"],
+        **overrides,
+    }.items():
         data = bounded(ROOT / "helpers" / name, 1024 * 1024)
         require(len(data) == expected["bytes"] and digest(data) == expected["sha256"], "copied_helper_changed")
     return {
         "source_sha": SOURCE_SHA,
         "source_tree": SOURCE_TREE,
+        "source_scope": "original_base_before_explicit_diagnostic_overrides",
         "files": len(manifest["helpers"]),
         "resource_files": len(manifest["resources"]),
         "manifest_sha256": digest(content),
+        "unchanged_helper_files": len(manifest["helpers"]) - len(overrides),
+        "diagnostic_overrides": overrides,
+        "registration_timing": "all_declared_workspaces_before_original_publisher_start",
     }
 
 

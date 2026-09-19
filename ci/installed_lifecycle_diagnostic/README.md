@@ -64,10 +64,16 @@ list, including failed receipts. There is no recursive upload of private state.
 
 The independent workspace-publication job uses the same existing artifact and
 version-pinned dependency environment plus the explicit workspace observer
-dependency. It materializes 63 qualification helpers
-and two resources from exact 8156 Git source after checking every manifest
-binding. The original collector's definition hash covers the materialized helper
-closure; the separate manifest binds all 63 helper files and both resources.
+dependency. It verifies 63 qualification helpers and two resources against
+exact 8156 Git source before applying three explicitly declared diagnostic
+helper overrides. The manifest retains every original byte count and digest.
+The executed closure contains 60 unchanged helpers, two unchanged resources,
+and the diagnostic checkout's source-bound overrides for
+`native_slo_session.py`, `native_slo_workspace_server.py`, and
+`native_slo_daemon_fixture.py`. The original collector's definition hash covers
+the materialized helper closure, including those three overrides. It covers
+57 selected files in this closure, compared with 68 in the complete 8156
+checkout; the separate manifest binds all 63 helper files and both resources.
 Its matrix has 1, 10, and 100 workspaces, six phases per cell, at most
 18 scenario PreTool requests, a 400 ms readiness budget, five-second transport
 and writer-drain budgets, and a 180-second owned worker budget plus five seconds
@@ -76,3 +82,55 @@ and error-preservation controls. The worker runs under a fresh observational
 subreaper, so its cleanup does not qualify ordinary product-parent reaping.
 The receipt keeps its pending RSP-128/129 cases explicit and excludes headline
 performance and full requirement qualification claims.
+
+The separate `diagnostic/workspace-early-attachment-8156` branch runs the
+workspace job once on its natural first push attempt. It follows the preserved
+construction diagnostic at `0f636cf1763e44768053e444df44317b80ca27c6`, whose
+run `35417580862` failed in all three cells before `workspace_start` and every
+phase. Its bounded log identified `registration_after_publisher_start`:
+`GuardDaemonServer` constructs `HookWorker`, which starts its real publisher
+before the previous qualification wrapper and workspace observer attached.
+That result supplies no first enforcing receipt or workspace freshness proof.
+The owner also failed its drain check; signalled exits during observational
+cleanup do not identify a workspace restart phase or qualify product reaping.
+
+The explicit overrides move qualification setup to the real publisher factory
+return boundary. The original factory receives the same store and
+`config_capture` object and returns the same publisher object to `HookWorker`.
+The fixture records private-home ownership before constructing the daemon,
+rejects a publisher that has already started or holds a compiled workspace
+cache, registers all 1/10/100 declared workspaces, and installs the existing
+forwarding observer before the original `HookWorker` calls `start()`. It then
+checks that the completed worker holds the captured publisher and uses no
+test oracle. The ordinary later primary-workspace registration call remains;
+it now exercises the production API's duplicate no-op.
+
+Registering the full declared workspace set before the first publication is
+an intentional diagnostic workload change. The installed Guard wheel, native
+binary, factory/start/transport implementations, six phases, acceptance checks,
+request counts, and deadlines retain their original bindings. This run must
+be assessed as a separate diagnostic attempt, without retroactively changing
+the original failed runs or treating its instrumented timings as an ordinary
+startup or performance qualification.
+
+If workspace construction raises before the caller receives `AdapterSession`,
+the fixture closes the captured publisher with a one-second join bound, checks
+the actual thread liveness, and calls the production resident-close API for
+that exact private Guard home. When a daemon object exists it also invokes
+normal daemon stop and reads its service-containment flag. Each failure stays
+visible as a fixed boolean alongside the preserved original exception detail.
+An incomplete daemon constructor cannot supply that final flag, so its private
+home remains for the outer observational owner even when the captured
+publisher and resident cleanup succeed. Workspace temporary directories have
+explicit ownership, preventing an implicit finalizer from deleting failed
+state. Publisher retirement, native resident containment, and outer process
+reaping remain distinct observations.
+
+The added construction controls execute the exact qualification class and
+entrypoint bodies with explicit doubles. They exercise all three workspace
+counts, unchanged factory arguments and object identities, pre-start observer
+ordering, actual private-registry placement, normal and failing lifetime
+handoff, partial-construction cleanup failures, and original/override source
+binding rejection. They import no Guard code from disk and launch no native
+process, socket, thread, or timed workload. Actual installed acceptance remains
+dependent on the separately reviewed hosted execution.

@@ -352,7 +352,12 @@ def _native_samples(session: Any, count: int) -> dict[str, object]:
     return {"values": values, "benign_and_block_validated": True}
 
 
-def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_count: int | None = None) -> int:
+def _serve(
+    runtime: Path,
+    setup: str = "none",
+    policy: str = "none",
+    workspace_count: int | None = None,
+) -> int:
     from contextlib import ExitStack, nullcontext
 
     from scripts.native_slo_faults import FaultFixture
@@ -367,13 +372,18 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
         workspace_fixture = None
         with StartupDiagnostic(_emit) as diagnostic:
             diagnostic.progress("construct")
-            adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
+            adapter = AdapterSession(
+                runtime,
+                configuration=configuration,
+                progress=diagnostic.progress,
+                workspace_count=workspace_count,
+            )
             try:
                 if workspace_count is not None:
-                    from scripts.native_slo_workspace_server import WorkspaceScenarioFixture
-
-                    workspace_fixture = WorkspaceScenarioFixture(adapter, workspace_count)
-                    lifetime.enter_context(workspace_fixture.observer)
+                    workspace_fixture = adapter.workspace_fixture
+                    # Already attached before the actual HookWorker publisher
+                    # start; preserve the existing adapter/fixture/observer exit order.
+                    lifetime.callback(workspace_fixture.observer.close)
                     lifetime.callback(workspace_fixture.close)
             except BaseException:
                 adapter.close()

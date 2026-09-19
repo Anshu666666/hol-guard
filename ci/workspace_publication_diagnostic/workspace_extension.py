@@ -23,20 +23,15 @@ def install(config: dict[str, Any]) -> None:
     from scripts.native_slo_session import AdapterSession
     from scripts.native_slo_workspace_server import WORKSPACE_PHASES, WorkspaceScenarioFixture
 
-    original_init = AdapterSession.__init__
+    original_construct = AdapterSession._construct_workspace_daemon
     original_enter = ReceiptWitness.__enter__
     original_finish = WorkspaceScenarioFixture.finish
 
-    def initialize(self: Any, *args: Any, **kwargs: Any) -> None:
-        original_init(self, *args, **kwargs)
+    def construct(self: Any, *args: Any, **kwargs: Any) -> Any:
         root = Path(self.root).resolve()
         parent = Path(config["temporary_parent"]).resolve()
         require(root.parent == parent and root.name.startswith("hol-guard-slo-"), "unexpected_disposable_home")
         private_directory(root)
-        require(
-            self.daemon._server.hook_worker.policy_snapshot_publisher._thread is None,
-            "registration_after_publisher_start",
-        )
         compact = compact_directory(self.guard_home)
         require(not os.path.lexists(compact), "preexisting_compact_socket_directory")
         # Private cleanup coordination only; these paths never enter the report.
@@ -47,6 +42,10 @@ def install(config: dict[str, Any]) -> None:
             os.fsync(descriptor)
         finally:
             os.close(descriptor)
+        # Register private cleanup ownership before the original daemon factory
+        # can allocate a publisher/resident. The helper's early attachment still
+        # rejects any started publisher before installing its observer.
+        return original_construct(self, *args, **kwargs)
 
     def enter(self: Any) -> Any:
         result = original_enter(self)
@@ -178,6 +177,6 @@ def install(config: dict[str, Any]) -> None:
         return result
 
     # Only the disposable qualification helper classes receive these wrappers.
-    AdapterSession.__init__ = initialize
+    AdapterSession._construct_workspace_daemon = construct
     ReceiptWitness.__enter__ = enter
     WorkspaceScenarioFixture.finish = finish

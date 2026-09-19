@@ -99,6 +99,7 @@ def main() -> int:
         "full_rsp_128_129_qualification": False,
         "headline_timing_eligible": False,
         "ownership_scope": "fresh_observational_subreaper_not_product_parent_reaping_semantics",
+        "qualification_construction": "explicit_early_factory_attachment_and_partial_construction_cleanup",
         "pending": [
             "lost_metadata_hint",
             "key_rotation",

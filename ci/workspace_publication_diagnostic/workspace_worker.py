@@ -1,4 +1,4 @@
-"""Run the exact installed collector with local forwarding observations."""
+"""Run the bound collector with explicit construction helper overrides."""
 
 from __future__ import annotations
 
@@ -27,9 +27,10 @@ from witness_support import (  # noqa: E402
 
 
 def serve(config: dict[str, Any], arguments: list[str]) -> int:
+    from workspace_extension import install
+
     from scripts.native_slo_daemon_fixture import _emit, _serve
     from scripts.native_slo_failure import failure_evidence
-    from workspace_extension import install
 
     require(len(arguments) == 5 and arguments[0] == "--serve", "child_qualification_arguments")
     runtime = Path(arguments[1]).resolve(strict=True)

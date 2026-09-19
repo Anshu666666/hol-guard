@@ -1,24 +1,28 @@
-name: Installed Linux workspace construction diagnosis at 8156
+name: Installed Linux workspace early attachment diagnosis at 8156
 
 on:
   push:
     branches:
-      - diagnostic/workspace-construction-8156
+      - diagnostic/workspace-early-attachment-8156
     paths:
       - .github/workflows/installed-linux-workspace-ownership-diagnostic.yml
       - ci/installed_lifecycle_diagnostic/summarize_workspace_attempt.py
+      - ci/workspace_publication_diagnostic/**
+      - scripts/native_slo_session.py
+      - scripts/native_slo_workspace_server.py
+      - scripts/native_slo_daemon_fixture.py
 
 permissions:
   contents: read
   actions: read
 
 concurrency:
-  group: installed-linux-workspace-construction-diagnostic-8156
+  group: installed-linux-workspace-early-attachment-diagnostic-8156
   cancel-in-progress: false
 
 jobs:
   workspace_publication:
-    name: Installed workspace construction diagnosis (8156)
+    name: Installed workspace early attachment diagnosis (8156)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -61,7 +65,7 @@ jobs:
           --receipt "$RUNNER_TEMP/workspace-publication-evidence/artifact-binding.json" \
           --source-root "$GITHUB_WORKSPACE/source"
       id: artifact
-    - name: Materialize exact qualification helpers and run offline controls
+    - name: Verify original helpers, materialize explicit overrides, and run offline controls
       shell: bash
       run: |
         set -euo pipefail
@@ -69,6 +73,8 @@ jobs:
           --production-source source
         python -I -B diagnostic/ci/workspace_publication_diagnostic/offline_controls.py \
           --output "$RUNNER_TEMP/workspace-publication-evidence/offline-controls.json"
+        python -I -B diagnostic/ci/workspace_publication_diagnostic/construction_controls.py \
+          --output "$RUNNER_TEMP/workspace-publication-evidence/construction-controls.json"
     - name: Install pinned dependency versions and the bound wheel without builds
       shell: bash
       run: |
@@ -160,6 +166,7 @@ jobs:
         source_files += [root / "ci/installed_lifecycle_diagnostic/requirements-workspace-observer-8156.txt"]
         source_files += sorted((root / "ci/workspace_publication_diagnostic").glob("*.py"))
         source_files += [root / "ci/workspace_publication_diagnostic/source-manifest.json"]
+        source_files += [root / name for name in json.loads((root / "ci/workspace_publication_diagnostic/source-manifest.json").read_bytes())["diagnostic_overrides"]]
         names = ("GITHUB_REPOSITORY", "GITHUB_SHA", "GITHUB_REF", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB", "GITHUB_WORKFLOW_REF", "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion")
         receipt = {"schema": "workspace-hosted-context.v1", "context": {name: os.environ.get(name) for name in names}, "diagnostic_sources": [{"path": str(path.relative_to(root)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "bytes": path.stat().st_size} for path in source_files]}
         destination = Path(os.environ["RUNNER_TEMP"]) / "workspace-publication-evidence/hosted-context.json"
@@ -171,12 +178,13 @@ jobs:
       if: always() && steps.prepare.outcome == 'success'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: installed-workspace-construction-8156-${{ github.run_id }}-${{ github.run_attempt }}
+        name: installed-workspace-early-attachment-8156-${{ github.run_id }}-${{ github.run_attempt }}
         if-no-files-found: error
         retention-days: 90
         path: |
           ${{ runner.temp }}/workspace-publication-evidence/artifact-binding.json
           ${{ runner.temp }}/workspace-publication-evidence/offline-controls.json
+          ${{ runner.temp }}/workspace-publication-evidence/construction-controls.json
           ${{ runner.temp }}/workspace-publication-evidence/environment-before.json
           ${{ runner.temp }}/workspace-publication-evidence/environment-after.json
           ${{ runner.temp }}/workspace-publication-evidence/attempt-001/harness-source-inventory.json

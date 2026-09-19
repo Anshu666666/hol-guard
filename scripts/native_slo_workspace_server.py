@@ -28,17 +28,18 @@ BURST_WRITES = 32
 
 
 class WorkspaceScenarioFixture:
-    def __init__(self, session: Any, count: int) -> None:
+    def __init__(self, session: Any, count: int, *, publisher: Any = None) -> None:
         from codex_plugin_scanner.guard.native_runtime import native_runtime_status
 
         if type(count) is not int or count not in WORKSPACE_COUNTS:
             raise ValueError("workspace count outside declared matrix")
         self.session = session
-        self.worker = session.daemon._server.hook_worker
-        self.publisher = self.worker.policy_snapshot_publisher
+        early = publisher is not None
+        self.worker = None if early else session.daemon._server.hook_worker
+        self.publisher = publisher if early else self.worker.policy_snapshot_publisher
         status = native_runtime_status()
         if (
-            self.worker.test_oracle is not None
+            (self.worker is not None and self.worker.test_oracle is not None)
             or status.mode != "auto"
             or not status.available
             or not status.compatible
@@ -47,8 +48,10 @@ class WorkspaceScenarioFixture:
             or status.identity.path.resolve() != session.runtime.resolve()
         ):
             raise RuntimeError("workspace qualification requires exact installed native authority")
-        if self.publisher._thread is not None:
+        if self.publisher._thread is not None or (early and (self.publisher._started or self.publisher.closed)):
             raise RuntimeError("workspace observer must precede publisher startup")
+        if early and self.publisher._workspace_paths:
+            raise RuntimeError("workspace early registration requires an empty publisher")
         self.runtime_build_sha = getattr(status.capabilities, "build_sha", None)
         initial_cache = getattr(self.publisher, "_compiled_workspace_policies", {})
         if not isinstance(initial_cache, Mapping) or initial_cache:
@@ -62,13 +65,22 @@ class WorkspaceScenarioFixture:
         self.finished = False
         self.phases: list[dict[str, Any]] = []
         self.initial_started = time.monotonic()
-        for workspace in self.workspaces[1:]:
-            workspace.mkdir(mode=0o700)
+        for workspace in self.workspaces if early else self.workspaces[1:]:
+            if workspace != session.workspace:
+                workspace.mkdir(mode=0o700)
             if self.publisher.register_workspace(workspace) is not True:
                 raise RuntimeError("workspace registration was not accepted")
         if set(self.workspaces) != self.publisher._workspace_paths:
             raise RuntimeError("workspace registration count mismatch")
         self.registration_ms = (time.monotonic() - self.initial_started) * 1000
+
+    def bind_worker(self, worker: Any) -> None:
+        """Verify the fully constructed worker kept the captured real publisher."""
+        if self.worker is not None or worker.policy_snapshot_publisher is not self.publisher:
+            raise RuntimeError("workspace publisher worker identity mismatch")
+        if worker.test_oracle is not None:
+            raise RuntimeError("workspace qualification requires exact installed native authority")
+        self.worker = worker
 
     def close(self) -> None:
         if self.witness is not None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -18,13 +19,17 @@ from contextlib import suppress
 from dataclasses import dataclass
 from http.client import HTTPConnection, HTTPResponse
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
+from unittest.mock import patch
 
 from codex_plugin_scanner.guard.adapters.claude_daemon_hook_transport import authenticated_claude_hook_response
 from codex_plugin_scanner.guard.adapters.codex_daemon_hook_auth import _DaemonResponseError
 from codex_plugin_scanner.guard.adapters.codex_daemon_hook_transport import _daemon_response_once
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
-from codex_plugin_scanner.guard.native_resident_client import close_native_resident_clients
+from codex_plugin_scanner.guard.native_resident_client import (
+    close_native_resident_clients,
+    close_native_residents,
+)
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts, route_delta
@@ -306,39 +311,163 @@ class AdapterSession:
         *,
         configuration: str | None = None,
         progress: Callable[[str], None] | None = None,
+        workspace_count: int | None = None,
     ) -> None:
-        report = progress or (lambda _stage: None)
-        report("construct_workspace")
-        self.temporary = tempfile.TemporaryDirectory(prefix="hol-guard-slo-")
-        # Keep the synthetic paths canonical. macOS may expose ``/tmp`` as
-        # ``/private/tmp`` after the daemon validates a hook workspace; using
-        # one spelling avoids registering the same workspace twice and
-        # invalidating the ACKed native policy snapshot on the first request.
-        self.root = Path(self.temporary.name).resolve()
-        # Use the production home shape inside the disposable synthetic HOME.
-        # File-hook registrations such as Cline resolve this exact default.
-        self.guard_home = self.root / ".hol-guard"
-        self.workspace = self.root / "workspace"
-        self.guard_home.mkdir(mode=0o700)
-        self.workspace.mkdir(mode=0o700)
-        if configuration is not None:
-            (self.guard_home / "config.toml").write_text(configuration, encoding="utf-8")
-        report("construct_store")
-        self.store = GuardStore(self.guard_home)
-        self.command_authority_fixture = prepare_empty_command_authority(self.store)
-        report("construct_daemon")
-        self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
-        # Match the installed ownership probe: register the canonical workspace
-        # as fixture setup before timing the adapter readiness barrier. The
-        # isolated qualification fixture separately measures the full startup.
-        report("register_workspace")
-        self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)
         self.runtime = runtime
+        self.workspace_fixture: Any = None
+        self._construction_publisher: Any = None
+        self._daemon_construction_entered = False
+        self._workspace_home_removed = False
         self.readiness_ms = 0.0
         self._connection: HTTPConnection | None = None
         self._owner_thread_id = 0
         self.last_stop_diagnostic = _build_stop_diagnostic("not-run")
         self._stop_diagnostic_written = False
+        report = progress or (lambda _stage: None)
+        report("construct_workspace")
+        # The workspace diagnostic retains failed construction state until its
+        # outer owner has verified cleanup. Avoid an implicit finalizer deleting
+        # that state when __init__ raises before the caller receives this object.
+        self.temporary = tempfile.TemporaryDirectory(prefix="hol-guard-slo-") if workspace_count is None else None
+        temporary_name = (
+            self.temporary.name if self.temporary is not None else tempfile.mkdtemp(prefix="hol-guard-slo-")
+        )
+        # Keep the synthetic paths canonical. macOS may expose ``/tmp`` as
+        # ``/private/tmp`` after the daemon validates a hook workspace; using
+        # one spelling avoids registering the same workspace twice and
+        # invalidating the ACKed native policy snapshot on the first request.
+        self.root = Path(temporary_name).resolve()
+        # Use the production home shape inside the disposable synthetic HOME.
+        # File-hook registrations such as Cline resolve this exact default.
+        self.guard_home = self.root / ".hol-guard"
+        self.workspace = self.root / "workspace"
+        try:
+            self.guard_home.mkdir(mode=0o700)
+            self.workspace.mkdir(mode=0o700)
+            if configuration is not None:
+                (self.guard_home / "config.toml").write_text(configuration, encoding="utf-8")
+            report("construct_store")
+            self.store = GuardStore(self.guard_home)
+            self.command_authority_fixture = prepare_empty_command_authority(self.store)
+            report("construct_daemon")
+            if workspace_count is None:
+                self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
+            else:
+                self._construct_workspace_daemon(workspace_count)
+            # Keep the ordinary fixture call. In the workspace matrix the same
+            # primary path was already registered before publisher startup, so
+            # this is the production API's normal duplicate no-op.
+            report("register_workspace")
+            self.daemon._server.hook_worker.policy_snapshot_publisher.register_workspace(self.workspace)
+        except BaseException as error:
+            if workspace_count is not None:
+                cleanup = self._close_failed_workspace_construction()
+                if isinstance(error, Exception):
+                    from scripts.native_slo_failure import (
+                        FixtureFailureError,
+                        failure_evidence,
+                    )
+
+                    raise FixtureFailureError(
+                        {
+                            **failure_evidence(error),
+                            "workspace_construction_cleanup": cleanup,
+                        }
+                    ) from error
+            raise
+
+    def _construct_workspace_daemon(self, count: int) -> None:
+        """Attach to the original factory result before HookWorker starts it."""
+        from codex_plugin_scanner.guard.daemon import hook_worker
+        from scripts.native_slo_workspace_server import WorkspaceScenarioFixture
+
+        original = hook_worker.get_native_policy_snapshot_publisher
+
+        def capture(*args: Any, **kwargs: Any) -> Any:
+            store = args[0] if args else kwargs.get("store")
+            if store is self.store and self._construction_publisher is not None:
+                raise RuntimeError("workspace publisher factory repeated")
+            publisher = original(*args, **kwargs)
+            if store is self.store:
+                # Retain ownership before any observer/registration operation
+                # can raise, including before self.daemon can be assigned.
+                self._construction_publisher = publisher
+                self.workspace_fixture = WorkspaceScenarioFixture(self, count, publisher=publisher)
+                self.workspace_fixture.observer.__enter__()
+            return publisher
+
+        with patch.object(hook_worker, "get_native_policy_snapshot_publisher", capture):
+            self._daemon_construction_entered = True
+            self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
+        if self.workspace_fixture is None:
+            raise RuntimeError("workspace publisher factory was not observed")
+        self.workspace_fixture.bind_worker(self.daemon._server.hook_worker)
+
+    def _close_failed_workspace_construction(self) -> dict[str, object]:
+        """Keep each bounded cleanup outcome without masking the first failure."""
+        cleanup: dict[str, object] = {
+            "publisher_observed": self._construction_publisher is not None,
+            "publisher_closed": self._construction_publisher is None,
+            "publisher_thread_stopped": self._construction_publisher is None,
+            "daemon_constructed": hasattr(self, "daemon"),
+            "daemon_stop_completed": False,
+            "daemon_containment_confirmed": not self._daemon_construction_entered,
+            "resident_contained": not self._daemon_construction_entered,
+            "fixture_closed": self.workspace_fixture is None,
+            "observer_closed": self.workspace_fixture is None,
+            "private_state_removed": False,
+        }
+        publisher = self._construction_publisher
+        if publisher is not None:
+            try:
+                publisher.close(timeout_seconds=1.0)
+                cleanup["publisher_closed"] = publisher.closed is True
+                thread = publisher._thread
+                cleanup["publisher_thread_stopped"] = thread is None or not thread.is_alive()
+            except BaseException:
+                pass  # The fixed false fields retain this cleanup failure.
+        if hasattr(self, "daemon"):
+            try:
+                self.daemon.stop()
+                cleanup["daemon_stop_completed"] = True
+                cleanup["daemon_containment_confirmed"] = self.daemon._finish_service_completed is True
+            except BaseException:
+                pass
+        if self._daemon_construction_entered:
+            with suppress(BaseException):
+                cleanup["resident_contained"] = close_native_residents(self.guard_home) is True
+        if self.workspace_fixture is not None:
+            try:
+                self.workspace_fixture.close()
+                cleanup["fixture_closed"] = True
+            except BaseException:
+                pass
+            try:
+                self.workspace_fixture.observer.close()
+                cleanup["observer_closed"] = True
+            except BaseException:
+                pass
+        # A daemon whose constructor did not return cannot supply its final
+        # service-containment flag. Retain that private home for the outer
+        # observational owner, even if the captured publisher/native stop passed.
+        if all(
+            cleanup[field] is True
+            for field in (
+                "publisher_closed",
+                "publisher_thread_stopped",
+                "daemon_containment_confirmed",
+                "resident_contained",
+                "fixture_closed",
+                "observer_closed",
+            )
+        ):
+            try:
+                shutil.rmtree(self.root)
+                cleanup["private_state_removed"] = True
+                self._workspace_home_removed = True
+            except BaseException:
+                pass
+        return cleanup
 
     def __enter__(self) -> AdapterSession:
         try:
@@ -517,7 +646,12 @@ class AdapterSession:
                     _write_stop_diagnostic(diagnostic)
                     self._stop_diagnostic_written = True
                 self.last_stop_diagnostic = diagnostic
-                self.temporary.cleanup()
+                if self.temporary is None:
+                    if not self._workspace_home_removed:
+                        shutil.rmtree(self.root)
+                        self._workspace_home_removed = True
+                else:
+                    self.temporary.cleanup()
 
     def stop_resident(self) -> bool:
         """Stop the resident before closing serving-worker client streams."""

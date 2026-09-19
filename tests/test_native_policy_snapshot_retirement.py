@@ -245,6 +245,7 @@ def test_retirement_waits_only_within_original_deadline_without_mutating_state(
     held = threading.Event()
     release = threading.Event()
     errors: list[BaseException] = []
+    release_results: list[bool] = []
 
     def holder() -> None:
         try:
@@ -255,7 +256,7 @@ def test_retirement_waits_only_within_original_deadline_without_mutating_state(
             )
             with lock:
                 held.set()
-                assert release.wait(2)
+                release_results.append(release.wait(2))
         except BaseException as error:
             errors.append(error)
             held.set()
@@ -273,6 +274,7 @@ def test_retirement_waits_only_within_original_deadline_without_mutating_state(
         release.set()
         thread.join(timeout=2)
     assert not thread.is_alive() and not errors
+    assert release_results == [True]
     assert _reserve(home, observation) > (before[0] if before else 0)
 
 

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import ClassVar
 from uuid import uuid4
 
-from . import store_native_decision_receipts, store_review_event_outbox_schema
+from . import store_native_decision_receipts, store_review_event_outbox_schema, store_sync_locks
 from .mcp.policy_store import ensure_mcp_policy_request_schema
 from .sqlite_profile import (
     SQLiteMigrationGateReport,
@@ -29,6 +29,10 @@ from .sqlite_recovery import (
 
 # ruff: noqa: F403,F405
 from .store_base import *
+from .store_base import (
+    _CLOUD_SYNC_LOCK_POLL_SECONDS as _CLOUD_SYNC_LOCK_POLL_SECONDS,
+    _OAUTH_REFRESH_LOCK_POLL_SECONDS as _OAUTH_REFRESH_LOCK_POLL_SECONDS,
+)
 from .store_command_activity_api_schema import ensure_command_activity_api_schema
 from .store_command_activity_display_schema import (
     COMMAND_ACTIVITY_DISPLAY_SCHEMA_MIGRATION_VERSION,
@@ -426,13 +430,7 @@ class StoreConnectionSchemaMixin:
         *,
         timeout_seconds: float = _OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS,
     ) -> Iterator[None]:
-        with self._hold_advisory_file_lock(
-            path=self.guard_home / "oauth-refresh.lock",
-            timeout_seconds=timeout_seconds,
-            poll_seconds=_OAUTH_REFRESH_LOCK_POLL_SECONDS,
-            timeout_message="Timed out waiting for Guard OAuth refresh lock.",
-        ):
-            yield
+        yield from store_sync_locks.oauth_refresh(self, timeout_seconds)
 
     @contextmanager
     def hold_cloud_sync_lock(
@@ -440,13 +438,7 @@ class StoreConnectionSchemaMixin:
         *,
         timeout_seconds: float = _CLOUD_SYNC_LOCK_TIMEOUT_SECONDS,
     ) -> Iterator[None]:
-        with self._hold_advisory_file_lock(
-            path=self.guard_home / "cloud-sync.lock",
-            timeout_seconds=timeout_seconds,
-            poll_seconds=_CLOUD_SYNC_LOCK_POLL_SECONDS,
-            timeout_message="Timed out waiting for Guard Cloud sync lock.",
-        ):
-            yield
+        yield from store_sync_locks.cloud_sync(self, timeout_seconds)
 
     @contextmanager
     def hold_aibom_sync_lock(
@@ -455,13 +447,7 @@ class StoreConnectionSchemaMixin:
         timeout_seconds: float = _CLOUD_SYNC_LOCK_TIMEOUT_SECONDS,
     ) -> Iterator[None]:
         """Serialize inventory operations independently of receipt synchronization."""
-        with self._hold_advisory_file_lock(
-            path=self.guard_home / "aibom-sync.lock",
-            timeout_seconds=timeout_seconds,
-            poll_seconds=_CLOUD_SYNC_LOCK_POLL_SECONDS,
-            timeout_message="Timed out waiting for Guard inventory sync lock.",
-        ):
-            yield
+        yield from store_sync_locks.aibom_sync(self, timeout_seconds)
 
     @contextmanager
     def hold_oauth_credential_lock(

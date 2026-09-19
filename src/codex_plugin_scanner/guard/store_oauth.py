@@ -10,16 +10,21 @@ from typing import Concatenate, ParamSpec, TypeVar
 
 from .oauth_connection_authority import (
     OAuthConnectionSnapshot,
-    advance_connection_epoch,
-    capture_connection_epoch,
     connection_identity,
+)
+from .oauth_connection_authority import (
+    advance_connection_epoch as advance_connection_epoch,
+)
+from .oauth_connection_authority import (
+    capture_connection_epoch as capture_connection_epoch,
 )
 from .oauth_token_claims import oauth_binding_metadata
 from .package_firewall_defaults import build_guard_local_entitlement_defaults
-from .runtime.extension_control_authority import ExtensionControlAuthorityView
+from .runtime.extension_control_authority import ExtensionControlAuthorityView as ExtensionControlAuthorityView
 
 # ruff: noqa: F403,F405
 from .store_base import *
+from .store_oauth_connection_authority import StoreOAuthConnectionAuthorityMixin
 from .store_oauth_metadata import copy_oauth_binding_metadata
 
 _P = ParamSpec("_P")
@@ -44,7 +49,7 @@ def _with_oauth_credential_lock(
     return _locked
 
 
-class StoreOAuthConnectMixin:
+class StoreOAuthConnectMixin(StoreOAuthConnectionAuthorityMixin):
     def legacy_macos_oauth_secret_migration_required(self) -> bool:
         """Return whether authenticated OAuth metadata lacks its local vault copy."""
         if sys.platform != "darwin":
@@ -140,50 +145,6 @@ class StoreOAuthConnectMixin:
                 }
             )
         return sources
-
-    def clear_cloud_sync_state_for_reconnect(
-        self,
-        *,
-        now: str | None = None,
-        managed_controls_publish: (Callable[[ExtensionControlAuthorityView, Callable[[], None]], object] | None) = None,
-    ) -> None:
-        with self._hold_advisory_file_lock(
-            path=self.guard_home / "oauth-connection-reset.lock",
-            timeout_seconds=_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS,
-            poll_seconds=_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS,
-            timeout_message="Timed out waiting for the connection reset lock.",
-        ):
-            reset_token = uuid4().hex
-            with self.hold_oauth_credential_lock():
-                with self._connect() as connection:
-                    advance_connection_epoch(
-                        connection, self._oauth_local_credentials_state_key, now or _now(), reset_token=reset_token
-                    )
-                self.clear_review_policy_memory_state()
-            self.clear_policy_bundle_authority(
-                now or _now(),
-                policy_bundle_last_error={},
-                managed_controls_publish=managed_controls_publish,
-            )
-            self.delete_sync_payloads(
-                [
-                    state_key
-                    for state_key in _GUARD_CLOUD_RESET_STATE_KEYS
-                    if state_key
-                    not in {
-                        "managed_controls_active",
-                        "managed_controls_negotiated_capabilities",
-                    }
-                ]
-            )
-            # A failed/crashed reset remains unavailable until a later serialized reset completes.
-            with self.hold_oauth_credential_lock(), self._connect() as connection:
-                advance_connection_epoch(
-                    connection,
-                    self._oauth_local_credentials_state_key,
-                    now or _now(),
-                    complete_reset_token=reset_token,
-                )
 
     def _set_oauth_local_credentials_unlocked(
         self,
@@ -302,31 +263,6 @@ class StoreOAuthConnectMixin:
 
     set_oauth_local_credentials = _with_oauth_credential_lock(_set_oauth_local_credentials_unlocked)
 
-    def capture_oauth_connection(
-        self, *, allow_primary: bool = False, allow_recoverable: bool = False
-    ) -> OAuthConnectionSnapshot | None:
-        """Capture credentials and their durable authority under the credential lock."""
-        with self.hold_oauth_credential_lock():
-            return self._capture_oauth_connection_unlocked(
-                allow_primary=allow_primary, allow_recoverable=allow_recoverable
-            )
-
-    def _capture_oauth_connection_unlocked(
-        self, *, allow_primary: bool = False, allow_recoverable: bool = False
-    ) -> OAuthConnectionSnapshot | None:
-        credentials = self.get_oauth_local_credentials(allow_primary=allow_primary)
-        if credentials is None and allow_recoverable:
-            credentials = self.get_recoverable_oauth_local_credentials()
-        if credentials is None:
-            return None
-        with self._connect() as connection:
-            epoch = capture_connection_epoch(connection, self._oauth_local_credentials_state_key, _now())
-            if epoch is None:
-                return None
-        return OAuthConnectionSnapshot.capture(
-            self._oauth_local_credentials_state_key, epoch, str(self.path.resolve()), credentials
-        )
-
     def get_oauth_local_credentials(self, *, allow_primary: bool = False) -> dict[str, object] | None:
         payload = self.get_sync_payload(self._oauth_local_credentials_state_key)
         if not isinstance(payload, dict):
@@ -357,31 +293,6 @@ class StoreOAuthConnectMixin:
     def clear_oauth_local_credentials(self) -> None:
         with self.hold_oauth_refresh_lock():
             self._clear_oauth_local_credentials_locked()
-
-    def _clear_oauth_local_credentials_locked(
-        self, *, expected_connection: OAuthConnectionSnapshot | None = None
-    ) -> None:
-        with self.hold_oauth_credential_lock():
-            if (
-                expected_connection is not None
-                and self._capture_oauth_connection_unlocked(allow_recoverable=True) != expected_connection
-            ):
-                raise RuntimeError("The connection changed before credentials could be cleared.")
-            self._clear_oauth_secret_payload_cache()
-            payload = self.get_sync_payload(self._oauth_local_credentials_state_key)
-            if isinstance(payload, dict):
-                secret_ref = payload.get(_OAUTH_LOCAL_CREDENTIALS_REF_KEY)
-                if isinstance(secret_ref, str) and secret_ref:
-                    self._oauth_secret_store.delete_secret(secret_ref)
-                    if sys.platform == "darwin":
-                        legacy_fallback = EncryptedFileSecretStore(self.guard_home)
-                        legacy_path = legacy_fallback._path_for(secret_ref)
-                        with suppress(OSError):
-                            legacy_path.unlink()
-            self._delete_sync_payloads_unlocked([self._oauth_local_credentials_state_key])
-            self.clear_review_policy_memory_state()
-            # A capability bound to one OAuth grant must not survive disconnect for a later grant.
-            self.delete_sync_payloads(list(_GUARD_CLOUD_COMMAND_STATE_KEYS))
 
     def get_oauth_local_credential_health(self) -> dict[str, object]:
         payload = self.get_sync_payload(self._oauth_local_credentials_state_key)

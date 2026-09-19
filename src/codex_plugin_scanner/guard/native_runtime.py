@@ -34,6 +34,7 @@ from .native_runtime_resilience import (
     native_record_resident_success,
     native_runtime_health_snapshot,
 )
+from .native_runtime_selection import select_native_runtime
 from .runtime.hook_review_types import HookReviewRequest, HookReviewResponse
 
 NativeMode = Literal["off", "shadow", "auto", "force"]
@@ -371,98 +372,9 @@ def _native_runtime_status_with_setup(
     check_continuation: Callable[[], None] | None = None,
     capability_provider: Callable[[NativeRuntimeIdentity], NativeRuntimeCapabilities | None] | None = None,
 ) -> NativeRuntimeStatus:
-    if check_continuation is not None:
-        check_continuation()
-    mode = native_mode()
-    if mode == "off":
-        return NativeRuntimeStatus(
-            mode=mode,
-            available=False,
-            compatible=False,
-            reason="native_disabled",
-        )
-    for candidate in _runtime_candidates():
-        if check_continuation is not None:
-            check_continuation()
-        _restore_bundled_runtime_execute_bit(candidate)
-        identity = (
-            _validate_binary(candidate)
-            if check_continuation is None
-            else _validate_binary(candidate, check_continuation=check_continuation)
-        )
-        if check_continuation is not None:
-            check_continuation()
-        if identity is None:
-            continue
-        manifest: NativeRuntimeManifest | None = None
-        if _is_bundled_candidate(candidate):
-            manifest, manifest_error = _manifest_for_bundled_identity(identity)
-            if manifest_error is not None:
-                return NativeRuntimeStatus(
-                    mode=mode,
-                    available=True,
-                    compatible=False,
-                    reason=manifest_error,
-                    identity=identity,
-                )
-        if check_continuation is not None:
-            check_continuation()
-        capabilities = (
-            _capabilities_for_identity(str(identity.path), identity.size, identity.mtime_ns, identity.sha256)
-            if capability_provider is None
-            else capability_provider(identity)
-        )
-        if check_continuation is not None:
-            check_continuation()
-        if capabilities is None:
-            continue
-        if capabilities.protocol_version != _NATIVE_PROTOCOL_VERSION:
-            return NativeRuntimeStatus(
-                mode=mode,
-                available=True,
-                compatible=False,
-                reason="native_protocol_mismatch",
-                identity=identity,
-                capabilities=capabilities,
-            )
-        if manifest is not None:
-            if capabilities.protocol_version != manifest.protocol_version:
-                reason = "native_manifest_protocol_mismatch"
-            elif capabilities.runtime_version != manifest.package_version:
-                reason = "native_manifest_version_mismatch"
-            elif capabilities.rule_digest != manifest.rule_digest:
-                reason = "native_manifest_rule_mismatch"
-            elif capabilities.build_sha != manifest.source_sha:
-                reason = "native_manifest_build_mismatch"
-            else:
-                reason = None
-            if reason is not None:
-                return NativeRuntimeStatus(
-                    mode=mode,
-                    available=True,
-                    compatible=False,
-                    reason=reason,
-                    identity=identity,
-                    capabilities=capabilities,
-                )
-        if check_continuation is not None:
-            check_continuation()
-        expected_version = _python_package_version()
-        version_compatible = expected_version is None or capabilities.runtime_version == expected_version
-        compatible = version_compatible or mode in {"shadow", "force"}
-        return NativeRuntimeStatus(
-            mode=mode,
-            available=True,
-            compatible=compatible,
-            reason="native_ready" if compatible else "native_version_mismatch",
-            identity=identity,
-            capabilities=capabilities,
-        )
-    return NativeRuntimeStatus(
-        mode=mode,
-        available=False,
-        compatible=False,
-        reason="native_unavailable",
+    return select_native_runtime(
+        check_continuation=check_continuation,
+        capability_provider=capability_provider,
     )
 
 

@@ -22,6 +22,7 @@ from .managed_controls_policy_bundle import (
     MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
     MANAGED_CONTROLS_REVISION_STATE_KEY,
 )
+from .runtime.command_extensions import CommandSafetyExtensionRegistry
 from .runtime.extension_control_authority import (
     AuthorityAnchor,
     AuthorityHealth,
@@ -94,6 +95,66 @@ def preserve_managed_extension_control(
 
 
 class _ExtensionControlAuthoritySupportMixin:
+    def _read_captured_extension_control_authority(
+        self,
+        connection: sqlite3.Connection,
+        registry: CommandSafetyExtensionRegistry,
+    ) -> ExtensionControlAuthorityView:
+        """Verify prepared authority entirely within the caller's SQL snapshot.
+
+        Schema/catalog migration and event emission belong to the ordinary
+        reader before capture. A captured state needing that work refuses;
+        neither a secondary SQL view nor a repair may authorize this view.
+        """
+        from . import store_extension_control_authority as _authority_api
+
+        if not connection.in_transaction:
+            raise _authority_api.ExtensionControlAuthorityError("extension control capture requires a transaction")
+        view = self._read_extension_control_authority_locked(registry.catalog_digest, connection=connection)
+        manifest = None
+        if view.health is _authority_api.AuthorityHealth.PROTECTED:
+            manifest = self._catalog_target_manifest(registry)
+            key = self._authority_key(required=True)
+            assert key is not None
+            if self._load_catalog_manifest(registry.catalog_digest, key=key, connection=connection) != manifest:
+                raise _authority_api.ExtensionControlAuthorityError(
+                    "extension control captured catalog requires preparation"
+                )
+        return self._with_managed_controls_activation(view, current_manifest=manifest, connection=connection)
+
+    def _load_catalog_manifest(
+        self, catalog_digest: str, *, key: bytes, connection: sqlite3.Connection | None = None
+    ) -> dict[str, str] | None:
+        from . import store_extension_control_authority as _authority_api
+
+        with self._connect() if connection is None else _authority_api.nullcontext(connection) as current_connection:
+            row = current_connection.execute(
+                "select * from extension_control_catalog_manifest where catalog_digest = ?",
+                (catalog_digest,),
+            ).fetchone()
+        if row is None:
+            return None
+        payload = _authority_api.verify_authenticated_record(
+            str(row["record_json"]),
+            expected_digest=str(row["record_digest"]),
+            expected_mac=str(row["record_mac"]),
+            key=key,
+            purpose=self._catalog_manifest_purpose,
+        )
+        expected = {
+            "catalog_digest": catalog_digest,
+            "manifest_json": str(row["manifest_json"]),
+            "recorded_at": str(row["recorded_at"]),
+        }
+        if any(payload.get(name) != expected_value for name, expected_value in expected.items()):
+            raise _authority_api.ExtensionControlAuthorityError("extension control catalog manifest field mismatch")
+        value = _authority_api.json.loads(str(row["manifest_json"]))
+        if not isinstance(value, dict) or any(
+            not isinstance(k, str) or not isinstance(v, str) for k, v in value.items()
+        ):
+            raise _authority_api.ExtensionControlAuthorityError("invalid extension control catalog manifest")
+        return value
+
     def _require_compatible_extension_control_schema(self) -> None:
         with self._connect() as connection:
             ensure_extension_control_authority_schema(connection)

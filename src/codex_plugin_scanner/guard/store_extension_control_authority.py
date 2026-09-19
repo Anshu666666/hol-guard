@@ -252,29 +252,6 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         )
         return composed
 
-    def _read_captured_extension_control_authority(
-        self,
-        connection: sqlite3.Connection,
-        registry: CommandSafetyExtensionRegistry,
-    ) -> ExtensionControlAuthorityView:
-        """Verify prepared authority entirely within the caller's SQL snapshot.
-
-        Schema/catalog migration and event emission belong to the ordinary
-        reader before capture. A captured state needing that work refuses;
-        neither a secondary SQL view nor a repair may authorize this view.
-        """
-        if not connection.in_transaction:
-            raise ExtensionControlAuthorityError("extension control capture requires a transaction")
-        view = self._read_extension_control_authority_locked(registry.catalog_digest, connection=connection)
-        manifest = None
-        if view.health is AuthorityHealth.PROTECTED:
-            manifest = self._catalog_target_manifest(registry)
-            key = self._authority_key(required=True)
-            assert key is not None
-            if self._load_catalog_manifest(registry.catalog_digest, key=key, connection=connection) != manifest:
-                raise ExtensionControlAuthorityError("extension control captured catalog requires preparation")
-        return self._with_managed_controls_activation(view, current_manifest=manifest, connection=connection)
-
     def managed_controls_lkg_capabilities(
         self,
         policy_bundle: dict[str, object],
@@ -1044,37 +1021,6 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                 """,
                 (registry.catalog_digest, manifest_json, record_json, record_digest, record_mac, recorded_at),
             )
-
-    def _load_catalog_manifest(
-        self, catalog_digest: str, *, key: bytes, connection: sqlite3.Connection | None = None
-    ) -> dict[str, str] | None:
-        with self._connect() if connection is None else nullcontext(connection) as current_connection:
-            row = current_connection.execute(
-                "select * from extension_control_catalog_manifest where catalog_digest = ?",
-                (catalog_digest,),
-            ).fetchone()
-        if row is None:
-            return None
-        payload = verify_authenticated_record(
-            str(row["record_json"]),
-            expected_digest=str(row["record_digest"]),
-            expected_mac=str(row["record_mac"]),
-            key=key,
-            purpose=self._catalog_manifest_purpose,
-        )
-        expected = {
-            "catalog_digest": catalog_digest,
-            "manifest_json": str(row["manifest_json"]),
-            "recorded_at": str(row["recorded_at"]),
-        }
-        if any(payload.get(name) != expected_value for name, expected_value in expected.items()):
-            raise ExtensionControlAuthorityError("extension control catalog manifest field mismatch")
-        value = json.loads(str(row["manifest_json"]))
-        if not isinstance(value, dict) or any(
-            not isinstance(k, str) or not isinstance(v, str) for k, v in value.items()
-        ):
-            raise ExtensionControlAuthorityError("invalid extension control catalog manifest")
-        return value
 
     def _ensure_catalog_migrated_event(
         self,

@@ -16,6 +16,7 @@ import json
 import platform
 import socket
 import subprocess
+import symtable
 import sys
 import tempfile
 from dataclasses import asdict
@@ -78,18 +79,29 @@ def _bound_lookup_source_records(root: Path, evaluator: ModuleType) -> list[dict
         if len(definitions) != 1:
             raise AssertionError(f"Cannot bind one outer source function for {facade_name}")
         definition = definitions[0]
-        local_names = set(function.__code__.co_varnames + function.__code__.co_cellvars + function.__code__.co_freevars)
+        # Inlined comprehensions can add temporary names to co_varnames while
+        # leaving the outer binding global. Use the compiler's lexical scope.
+        symbol_tables = [
+            table
+            for table in symtable.symtable(source_bytes.decode("utf-8"), str(source_path), "exec").get_children()
+            if table.get_type() == "function"
+            and table.get_name() == definition.name
+            and table.get_lineno() == definition.lineno
+        ]
+        if len(symbol_tables) != 1:
+            raise AssertionError(f"Cannot bind one outer symbol table for {facade_name}")
+        global_names = {symbol.get_name() for symbol in symbol_tables[0].get_symbols() if symbol.is_global()}
         globals_map = function.__globals__
         sites = []
         for call in _outer_function_calls(definition):
             target = call.func
             matches = (
-                isinstance(target, ast.Name) and target.id not in local_names and globals_map.get(target.id) is lookup
+                isinstance(target, ast.Name) and target.id in global_names and globals_map.get(target.id) is lookup
             )
             if (
                 isinstance(target, ast.Attribute)
                 and isinstance(target.value, ast.Name)
-                and target.value.id not in local_names
+                and target.value.id in global_names
                 and target.attr == "evaluate_cached_supply_chain_bundle"
                 and globals_map.get(target.value.id) is evaluator
             ):

@@ -24,6 +24,7 @@ from .native_resident_client import native_resident_client_request
 from .native_response_decoder import native_error as _native_error
 from .native_response_decoder import response_from_payload as _response_from_payload
 from .native_route_receipt import record_native_hook_result
+from .native_runtime_binary import validate_native_binary
 from .native_runtime_capabilities import NativeRuntimeCapabilities
 from .native_runtime_capabilities import decode_native_runtime_capabilities as _decode_capabilities
 from .native_runtime_resilience import (
@@ -153,34 +154,8 @@ def _runtime_candidates() -> tuple[Path, ...]:
 
 
 def _validate_binary(path: Path) -> NativeRuntimeIdentity | None:
-    try:
-        lexical = path.expanduser()
-        metadata = lexical.lstat()
-        if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-            return None
-        if os.name != "nt":
-            if stat.S_IMODE(metadata.st_mode) & 0o022:
-                return None
-            current_uid = os.getuid() if hasattr(os, "getuid") else None
-            owner = getattr(metadata, "st_uid", current_uid)
-            if current_uid is not None and owner not in {0, current_uid}:
-                return None
-        resolved = lexical.resolve(strict=True)
-        resolved_metadata = resolved.stat()
-        if metadata.st_size != resolved_metadata.st_size:
-            return None
-        digest = hashlib.sha256()
-        with resolved.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        return NativeRuntimeIdentity(
-            path=resolved,
-            size=resolved_metadata.st_size,
-            mtime_ns=resolved_metadata.st_mtime_ns,
-            sha256=digest.hexdigest(),
-        )
-    except (OSError, RuntimeError, ValueError):
-        return None
+    values = validate_native_binary(path)
+    return NativeRuntimeIdentity(*values) if values is not None else None
 
 
 def _is_lower_hex(value: str, length: int) -> bool:

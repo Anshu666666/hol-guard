@@ -38,19 +38,26 @@ def test_gate_inventories_reachable_io_and_passes_current_sources() -> None:
     categories = {item["category"] for item in report["inventory"]}
     all_categories = set(report["inventory_by_category"])
     assert "transport_identity" in categories
+    assert any(
+        item["path"] == "src/codex_plugin_scanner/guard/native_runtime_binary.py"
+        and item["operation"] == "readinto"
+        and item["category"] == "transport_identity"
+        for item in report["inventory"]
+    )
     assert "asynchronous_policy" in categories
     assert "compatibility_only" in all_categories
     assert "unclassified_python_io" not in categories
     assert "unclassified_python_content_io" not in categories
 
 
-def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path) -> None:
+@pytest.mark.parametrize("read_call", ['open("source.rs")', "reader.readinto(bytearray(32))"])
+def test_gate_rejects_python_content_read_on_native_edge(tmp_path: Path, read_call: str) -> None:
     _copy_gate_sources(tmp_path)
     edge = tmp_path / "src/codex_plugin_scanner/guard/native_hook_edge.py"
     source = edge.read_text(encoding="utf-8")
     marker = "    status = native_runtime_status()\n"
     assert marker in source
-    edge.write_text(source.replace(marker, marker + '    open("source.rs")\n', 1), encoding="utf-8")
+    edge.write_text(source.replace(marker, marker + f"    {read_call}\n", 1), encoding="utf-8")
 
     with pytest.raises(RuntimeError, match=r"reachable unclassified Python I/O"):
         MODULE.validate(tmp_path)
@@ -100,8 +107,7 @@ def test_resolver_follows_qualified_repository_module_alias(tmp_path: Path) -> N
     caller_path = _write_guard_fixture(
         tmp_path,
         "qualified_caller",
-        "from . import qualified_helper\n\n"
-        "def call() -> str:\n    return qualified_helper.read_source()\n",
+        "from . import qualified_helper\n\ndef call() -> str:\n    return qualified_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]
@@ -152,8 +158,7 @@ def test_resolver_fails_closed_for_unknown_symbol_on_repository_module(tmp_path:
     caller_path = _write_guard_fixture(
         tmp_path,
         "unknown_symbol_caller",
-        "from . import known_helper\n\n"
-        "def call() -> str:\n    return known_helper.read_source()\n",
+        "from . import known_helper\n\ndef call() -> str:\n    return known_helper.read_source()\n",
     )
     records = MODULE._function_map(tmp_path)
     caller = records[(caller_path, "call")][0]

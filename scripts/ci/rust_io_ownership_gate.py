@@ -36,6 +36,7 @@ _FS_METHODS: Final = frozenset(
     {
         "open",
         "read",
+        "readinto",
         "read_bytes",
         "read_text",
         "stat",
@@ -71,6 +72,7 @@ _COMPATIBILITY_PATHS: Final = frozenset(
 _TRANSPORT_IDENTITY_PATHS: Final = frozenset(
     {
         "src/codex_plugin_scanner/guard/native_runtime.py",
+        "src/codex_plugin_scanner/guard/native_runtime_binary.py",
         "src/codex_plugin_scanner/guard/native_resident_client.py",
         "src/codex_plugin_scanner/guard/native_runtime_resident.py",
         "src/codex_plugin_scanner/guard/native_runtime_resilience.py",

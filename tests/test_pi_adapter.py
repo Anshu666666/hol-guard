@@ -12,10 +12,8 @@ from pathlib import Path
 from codex_plugin_scanner.guard.adapters import get_adapter, list_adapters
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.adapters.contracts import contract_for
-from codex_plugin_scanner.guard.adapters.pi_extension_source import (
-    legacy_managed_extension_source,
-    managed_extension_source,
-)
+from codex_plugin_scanner.guard.adapters.pi_extension_migration_source import legacy_managed_extension_source
+from codex_plugin_scanner.guard.adapters.pi_extension_source import managed_extension_source
 from codex_plugin_scanner.guard.adapters.pi_support import stable_suffix
 from codex_plugin_scanner.guard.approvals import queue_blocked_approvals
 from codex_plugin_scanner.guard.cli.commands_hook_generic import _run_hook_generic_payload
@@ -128,9 +126,7 @@ class TestPiDetect:
         assert result.installed is True
         assert result.command_available is True
 
-    def test_detect_finds_omp_in_user_local_bin_when_gui_path_omits_it(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_detect_finds_omp_in_user_local_bin_when_gui_path_omits_it(self, tmp_path: Path, monkeypatch) -> None:
         ctx = _ctx(tmp_path)
         executable = ctx.home_dir / ".local" / "bin" / "omp"
         executable.parent.mkdir(parents=True, exist_ok=True)
@@ -297,7 +293,9 @@ class TestPiInstall:
         assert 'pi.on("input"' in text
         assert 'hook_event_name: "PostToolUse"' in text
         assert "    if (originalOutputProof) return undefined;\n" in text
-        assert "return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);" in text
+        assert (
+            "return blockedToolResult(modelVisibleBlockedReason(reason, response.reason_code), event.details);" in text
+        )
         assert '    if (response.decision === "allow") return undefined;\n' in text
         assert "const GUARD_CLI_WRAPPER_COMMAND =" in text
         assert "const GUARD_CLI_WRAPPER_ARGS =" in text

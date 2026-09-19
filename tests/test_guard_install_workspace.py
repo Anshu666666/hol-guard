@@ -16,8 +16,8 @@ import pytest
 from codex_plugin_scanner.cli import main
 from codex_plugin_scanner.guard.adapters import pi_extension_source
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
+from codex_plugin_scanner.guard.adapters.pi_extension_migration_source import legacy_managed_extension_source
 from codex_plugin_scanner.guard.adapters.pi_extension_runtime_ownership import PiExtensionRuntimeOwnership
-from codex_plugin_scanner.guard.adapters.pi_extension_source import legacy_managed_extension_source
 from codex_plugin_scanner.guard.cli import update_commands
 from codex_plugin_scanner.guard.cli.commands import (
     _resolve_default_install_workspace,
@@ -185,7 +185,11 @@ def test_legacy_omp_source_matches_pre_response_contract_snapshot(monkeypatch: p
     assert _legacy_omp_base_source_sha256(source) == LEGACY_OMP_BASE_SOURCE_SHA256
 
 
-def test_update_migrates_verified_legacy_omp_extension_to_its_own_record(tmp_path: Path) -> None:
+@pytest.mark.parametrize("legacy_format", [False, True], ids=["current", "pre-response-contract"])
+def test_update_migrates_verified_legacy_omp_extension_to_its_own_record(
+    tmp_path: Path,
+    legacy_format: bool,
+) -> None:
     home_dir = tmp_path / "home"
     guard_home = tmp_path / "guard-home"
     context = HarnessContext(home_dir=home_dir, workspace_dir=None, guard_home=guard_home)
@@ -194,8 +198,11 @@ def test_update_migrates_verified_legacy_omp_extension_to_its_own_record(tmp_pat
     omp_settings_path = home_dir / ".omp" / "agent" / "settings.json"
     omp_extension_path = omp_settings_path.parent / "extensions" / "hol-guard.ts"
     omp_extension_path.parent.mkdir(parents=True)
+    source_generator = (
+        legacy_managed_extension_source if legacy_format else pi_extension_source.managed_extension_source
+    )
     omp_extension_path.write_text(
-        legacy_managed_extension_source(
+        source_generator(
             guard_home=guard_home,
             home_dir=home_dir,
             settings_path=omp_settings_path,

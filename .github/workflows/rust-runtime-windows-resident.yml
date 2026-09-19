@@ -31,6 +31,7 @@ on:
       - "scripts/ci/verify_installed_artifact_transitions.py"
       - "tests/test_installed_transition_windows*.py"
       - "tests/test_native_policy_snapshot_write_safety.py"
+      - "tests/test_windows_config_directory_access.py"
   push:
     branches: [main, release/3.2]
     paths:
@@ -62,6 +63,7 @@ on:
       - "scripts/ci/verify_installed_artifact_transitions.py"
       - "tests/test_installed_transition_windows*.py"
       - "tests/test_native_policy_snapshot_write_safety.py"
+      - "tests/test_windows_config_directory_access.py"
   workflow_dispatch:
 
 permissions:
@@ -94,6 +96,7 @@ jobs:
           tests/test_daemon_config_read_scope.py
           tests/test_native_slo_failure.py
           tests/test_native_policy_snapshot_write_safety.py
+          tests/test_windows_config_directory_access.py
           --tb=short
       - name: Exercise installed transition Windows ownership
         run: >-

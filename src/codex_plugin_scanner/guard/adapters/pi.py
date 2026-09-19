@@ -8,7 +8,7 @@ from ..aibom_detection import extend_detection_with_workspace_aibom
 from ..models import GuardArtifact, HarnessDetection
 from ..shims import install_guard_shim, remove_guard_shim
 from .base import HarnessAdapter, HarnessContext, _resolve_command
-from .pi_extension_source import legacy_managed_extension_source
+from .pi_extension_migration_source import legacy_managed_extension_source
 from .pi_support import (
     EXTENSION_SUFFIXES,
     OMP_AGENT_DIR,

@@ -236,13 +236,12 @@ def _windows_rename_releasing_barrier(
         restoration_error: BaseException | None = None
         try:
             if released and directory_handles is not None:
-                # Restore and verify the full-access barrier before closing
+                # Restore and verify the read/identity barrier before closing
                 # the rename barrier. Never return an unverified replacement.
                 restored_kernel32, restored_handle, restored = api._windows_open_handle(
                     parent_path,
                     directory=True,
                     lock=True,
-                    add_file=True,
                 )
                 if _windows_file_identity(restored) != parent_identity:
                     api._windows_close_handle(restored_kernel32, restored_handle)

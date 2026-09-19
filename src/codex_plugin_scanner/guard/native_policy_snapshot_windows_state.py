@@ -69,12 +69,14 @@ def _windows_bind_directory_component(
     private: bool,
 ) -> tuple[bool, tuple[Any, Any]]:
     created = _windows_create_directory(path, descriptor, api)
+    # Retained directory handles bind identity and ACLs; child writes use
+    # separate file handles. FILE_ADD_FILE would prevent the configuration
+    # reader's read-only sharing while an authority lease holds this binding.
     kernel32, handle, _information = api._windows_open_handle(
         path,
         directory=True,
         repair=False,
         lock=True,
-        add_file=private,
     )
     opened = True
     try:
@@ -91,7 +93,6 @@ def _windows_bind_directory_component(
                         directory=True,
                         repair=True,
                         lock=True,
-                        add_file=private,
                     )
                     opened = True
                     api._windows_verify_private_owner(handle, owner_sid=owner_sid)
@@ -104,7 +105,6 @@ def _windows_bind_directory_component(
                         directory=True,
                         repair=False,
                         lock=True,
-                        add_file=private,
                     )
                     opened = True
                     api._windows_verify_private_dacl(handle, owner_sid=owner_sid, directory=True)

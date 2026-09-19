@@ -36,7 +36,7 @@ The Intel smoke failed its existing concurrency gate: all 16 requests used the n
 
 GitHub reported 44 of 44 review threads resolved by others and 31 reviews, all COMMENTED. No APPROVED review is present in that observation. Kilo failed because the assistant request was rate limited. The current CodeQL check reported no new alerts, while a direct lookup of alert 386 was unsupported. Live check pagination changed from 182 to 186 entries, so this packet does not claim an atomic complete check census. Root launched no runs, changed no refs, posted no replies and resolved no threads in this observation.
 
-The canonical change adds `ci/__init__.py`, restores the publisher's missing `stat` import, and removes the obsolete Pi migration test path. A successor preparation must preserve those changes, carry the eight current Pi/OMP ownership controls under their current name, and fix the real journal facade failures before execution. The earlier bf8 preparation remains a historical source record.
+The canonical change adds `ci/__init__.py`, restores the publisher's missing `stat` import, and removes the obsolete Pi migration test path. A successor preparation must preserve those changes, carry the eight current Pi/OMP ownership controls in `tests/test_pi_omp_extension_ownership.py`, and fix the real journal facade failures before execution. The earlier bf8 preparation remains a historical source record.
 
 ## Current repair composition
 
@@ -44,7 +44,7 @@ The prepared contract repairs replace obsolete Pi migration tests with controls 
 
 The publisher input module regains its missing stat import, and the extracted resident metadata module keeps the asynchronous-policy ownership of its original six filesystem calls. A source peer caught a nonexistent class name in the new capture tests before execution; all three references are corrected to the actual class. The unexecuted f9 preparation is retained as [historical source preparation](source/ci-f9-preparation-with-known-unexecuted-test-import-error.json).
 
-The writer union preserves the incoming journal mixin and live facade globals. Exactly two queue-observation hooks move with the journal operations; six existing writer methods remain byte-identical. All 108 incoming capability owners remain intact, with only two persistence helpers added, giving 110 covered files and 83/17/8/2 ownership counts. [The writer merge peer](source/current-writer-union-peer.json), [dispatcher peer](source/current-dispatcher-source-peer.json), and [workspace closure peer](source/current-workspace-closure-peer.json) describe their separate source scopes.
+The writer union preserves the incoming journal mixin and the four delegated operations' live writer-module bindings. The three journal helper facade exports implicated in current CI failures are still missing in bf8, and their repair remains pending at this cutoff. Exactly two queue-observation hooks move with the journal operations; six existing writer methods remain byte-identical. All 108 incoming capability owners remain intact, with only two persistence helpers added, giving 110 covered files and 83/17/8/2 ownership counts. [The writer merge peer](source/current-writer-union-peer.json), [dispatcher peer](source/current-dispatcher-source-peer.json), and [workspace closure peer](source/current-workspace-closure-peer.json) describe their separate source scopes.
 
 ## Pending final evidence
 

@@ -1,4 +1,4 @@
-name: Policy fixture recovery diagnostic
+name: Owned interpreter fallback acceptance
 on:
   workflow_dispatch:
     inputs:
@@ -17,10 +17,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: policy-fixture-diagnostic-${{ github.ref }}
+  group: owned-python-fallback-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  fixture-recovery:
+  fallback-acceptance:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -54,34 +54,14 @@ jobs:
           import subprocess
           from pathlib import Path
           
-          PARENT = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
-          PARENT_TREE = "8ca9c2df12566dc340a59f37f6e14ece267622fe"
+          PARENT = "c6461f1145c20a2e2627ec5e717618ae81876050"
+          PARENT_TREE = "e452bfec7d8ec615843143643f65115b581c177a"
           WORKFLOW = ".github/workflows/ci.yml"
           REPLACEMENTS = {
-              "tests/test_guard_runtime.py": [
-                  "100644",
-                  "blob",
-                  "699f385b4de589deb0d3980464314dfcefc55a9d"
-              ],
-              "tests/test_guard_command_queue.py": [
-                  "100644",
-                  "blob",
-                  "0021778c8119fe28c346996cbb239381fa30b64c"
-              ],
-              "tests/test_paseo_adapter.py": [
-                  "100644",
-                  "blob",
-                  "88b34513adf145a7ce8c5e6fc51982c732de0694"
-              ],
-              "tests/oauth_refresh_fixture_support.py": [
-                  "100644",
-                  "blob",
-                  "dcab0efe509dd99d543942987db3ddccdc32d62a"
-              ],
               ".github/workflows/native-managed-source-contract.yml": [
                   "100644",
                   "blob",
-                  "26a5e0becb9d61e439583e70efc610760acfd288"
+                  "993cf7e1f0f3db0c9a1cd71bbecfd9a8e170dd4f"
               ]
           }
           values = {
@@ -116,6 +96,11 @@ jobs:
               raise RuntimeError("The diagnostic commit identity differs from the reviewed identity.")
           if git("rev-parse", PARENT + "^{tree}").decode().strip() != PARENT_TREE:
               raise RuntimeError("The parent source tree differs from the reviewed source.")
+          prior = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
+          if git("rev-list", "--parents", "-n", "1", PARENT).decode().split() != [PARENT, prior]:
+              raise RuntimeError("The reviewed fixture commit has an unexpected parent.")
+          if git("rev-parse", prior + "^{tree}").decode().strip() != "8ca9c2df12566dc340a59f37f6e14ece267622fe":
+              raise RuntimeError("The underlying source tree differs from the reviewed source.")
           expected = leaves(PARENT)
           expected.update(REPLACEMENTS)
           expected[WORKFLOW] = ["100644", "blob", values["EXPECTED_WORKFLOW_BLOB"]]
@@ -223,29 +208,9 @@ jobs:
               raise RuntimeError("The isolated project interpreter changed its environment or executable identity.")
           print(json.dumps({"isolated_interpreter": "verified", "version": expected["version"], "sha256": source_digest}))
           PY
-      - name: Check the repaired fixture source
-        if: ${{ !cancelled() && steps.source_before.outcome == 'success' && steps.dependencies.outcome == 'success' }}
-        run: |
-          uv run --no-sync ruff check tests/test_guard_runtime.py tests/test_guard_command_queue.py tests/test_paseo_adapter.py tests/oauth_refresh_fixture_support.py
-          uv run --no-sync ruff format --check tests/test_guard_runtime.py tests/test_guard_command_queue.py tests/test_paseo_adapter.py tests/oauth_refresh_fixture_support.py
-      - name: Verify the five original failing fixture cases
+      - name: Verify all original fallback isolation and installation cases
         if: ${{ !cancelled() && steps.source_before.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.owned_interpreter.outcome == 'success' }}
-        run: >-
-          uv run --no-sync pytest -q
-          tests/test_guard_runtime.py::test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation
-          tests/test_guard_command_queue.py::test_poll_once_reuses_cached_access_token_across_oauth_polls
-          tests/test_guard_command_queue.py::test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_state
-          tests/test_paseo_adapter.py::test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_content
-      - name: Verify original fallback isolation and installation assertions
-        if: ${{ !cancelled() && steps.source_before.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.owned_interpreter.outcome == 'success' }}
-        run: uv run --no-sync pytest -q tests/test_codex_hook_fallback_isolation.py
-      - name: Verify inventory source and completed request authority
-        if: ${{ !cancelled() && steps.source_before.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.owned_interpreter.outcome == 'success' }}
-        run: >-
-          uv run --no-sync pytest -q
-          tests/test_inventory_oauth_completion_authority.py
-          tests/test_inventory_request_authority.py
-          tests/test_inventory_consumer_authority.py
+        run: uv run --no-sync python -m pytest -q tests/test_codex_hook_fallback_isolation.py
       - name: Verify immutable source after execution
         if: ${{ !cancelled() && steps.source_before.outcome == 'success' }}
         run: |
@@ -258,34 +223,14 @@ jobs:
           import subprocess
           from pathlib import Path
           
-          PARENT = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
-          PARENT_TREE = "8ca9c2df12566dc340a59f37f6e14ece267622fe"
+          PARENT = "c6461f1145c20a2e2627ec5e717618ae81876050"
+          PARENT_TREE = "e452bfec7d8ec615843143643f65115b581c177a"
           WORKFLOW = ".github/workflows/ci.yml"
           REPLACEMENTS = {
-              "tests/test_guard_runtime.py": [
-                  "100644",
-                  "blob",
-                  "699f385b4de589deb0d3980464314dfcefc55a9d"
-              ],
-              "tests/test_guard_command_queue.py": [
-                  "100644",
-                  "blob",
-                  "0021778c8119fe28c346996cbb239381fa30b64c"
-              ],
-              "tests/test_paseo_adapter.py": [
-                  "100644",
-                  "blob",
-                  "88b34513adf145a7ce8c5e6fc51982c732de0694"
-              ],
-              "tests/oauth_refresh_fixture_support.py": [
-                  "100644",
-                  "blob",
-                  "dcab0efe509dd99d543942987db3ddccdc32d62a"
-              ],
               ".github/workflows/native-managed-source-contract.yml": [
                   "100644",
                   "blob",
-                  "26a5e0becb9d61e439583e70efc610760acfd288"
+                  "993cf7e1f0f3db0c9a1cd71bbecfd9a8e170dd4f"
               ]
           }
           values = {
@@ -320,6 +265,11 @@ jobs:
               raise RuntimeError("The diagnostic commit identity differs from the reviewed identity.")
           if git("rev-parse", PARENT + "^{tree}").decode().strip() != PARENT_TREE:
               raise RuntimeError("The parent source tree differs from the reviewed source.")
+          prior = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
+          if git("rev-list", "--parents", "-n", "1", PARENT).decode().split() != [PARENT, prior]:
+              raise RuntimeError("The reviewed fixture commit has an unexpected parent.")
+          if git("rev-parse", prior + "^{tree}").decode().strip() != "8ca9c2df12566dc340a59f37f6e14ece267622fe":
+              raise RuntimeError("The underlying source tree differs from the reviewed source.")
           expected = leaves(PARENT)
           expected.update(REPLACEMENTS)
           expected[WORKFLOW] = ["100644", "blob", values["EXPECTED_WORKFLOW_BLOB"]]

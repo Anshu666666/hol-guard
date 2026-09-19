@@ -52,7 +52,7 @@ def test_invalid_guard_event_response_is_recorded_without_aborting_applied_polic
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, body: bytes
 ) -> None:
     upload = runner.sync_guard_events
-    store, bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_guard_events", upload)
     event = _add_guard_event(store)
 
@@ -84,7 +84,7 @@ def test_permanent_telemetry_request_rejection_propagates(
 ) -> None:
     upload = getattr(runner, f"sync_{lane}")
     original_response = runner._urlopen_json_with_timeout_retry
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, f"sync_{lane}", upload)
     _add_signal(store, 1)
     _add_guard_event(store)
@@ -113,7 +113,7 @@ def test_accepted_pain_page_cursor_failure_propagates_completed_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error_class: type[Exception]
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     _add_signal(store, 1)
     accepted = []

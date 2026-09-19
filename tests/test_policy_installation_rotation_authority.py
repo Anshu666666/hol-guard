@@ -23,6 +23,7 @@ from codex_plugin_scanner.guard.policy_bundle_materialization import POLICY_BUND
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.managed_controls_activation_support import activate_managed_bundle, managed_bundle
+from tests.native_policy_retirement_test_fixtures import authenticated_retirement_peer
 from tests.native_policy_snapshot_test_fixtures import _ack as v3_ack
 from tests.native_policy_snapshot_test_fixtures import _status
 from tests.test_canonical_policy_row_authority import _NOW, _activated_store, _reapply_current
@@ -49,7 +50,20 @@ def test_rotation_drops_old_device_proof_and_preserves_signed_and_local_authorit
     assert isinstance(old_binding, dict) and old_binding["deviceId"] == old_id
     store.set_sync_payload("native_policy_bundle_ack_acceptance", {"oldDevice": old_id}, _NOW)
     notifications = []
-    monkeypatch.setattr(config_mutation, "notify_native_policy_mutation", lambda *a, **k: notifications.append((a, k)))
+    from codex_plugin_scanner.guard import native_policy_snapshot_rotation as rotation
+
+    notify = rotation.notify_native_policy_mutation_before_deadline
+
+    def observe_notification(lookup, *, guard_home, deadline_monotonic, require_source_authority=False):
+        notify(
+            lookup,
+            guard_home=guard_home,
+            deadline_monotonic=deadline_monotonic,
+            require_source_authority=require_source_authority,
+        )
+        notifications.append(((guard_home,), {"require_source_authority": require_source_authority}))
+
+    monkeypatch.setattr(rotation, "notify_native_policy_mutation_before_deadline", observe_notification)
 
     new_id = store.rotate_installation_id(_NOW)["installation_id"]
 
@@ -143,7 +157,7 @@ def test_rotation_preserves_existing_authenticated_managed_control_layers(tmp_pa
 @pytest.mark.parametrize("local_config", [False, True])
 @pytest.mark.parametrize("scoped_capability", [False, True])
 def test_empty_installation_rotation_does_not_invent_required_policy_source(
-    tmp_path: Path, local_config: bool, scoped_capability: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, local_config: bool, scoped_capability: bool
 ) -> None:
     store = GuardStore(tmp_path / "empty")
     if local_config:
@@ -174,7 +188,9 @@ def test_empty_installation_rotation_does_not_invent_required_policy_source(
         assert not publisher._source_authority_required
         assert not publisher._source_memory_required
 
+        retirement = authenticated_retirement_peer(store, monkeypatch)
         assert store.rotate_installation_id(_NOW)["installation_id"] != old_id
+        assert retirement == ["policy_snapshot_observe", "policy_snapshot_withdraw"]
         assert not publisher.is_ready()
         assert publisher._source_authority_required
 
@@ -208,7 +224,9 @@ def test_prior_native_acceptance_cannot_survive_installation_rotation(
         assert old is not None
         old_epoch = old.epoch
 
+        retirement = authenticated_retirement_peer(store, monkeypatch)
         new_id = store.rotate_installation_id(_NOW)["installation_id"]
+        assert retirement == ["policy_snapshot_observe", "policy_snapshot_withdraw"]
 
         assert new_id != old_id and publisher._epoch > old_epoch
         assert capture_accepted_policy_bundle(publisher, bundle=bundle, installation_id=old_id) is None

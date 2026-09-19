@@ -37,7 +37,7 @@ def test_real_pain_transport_failure_keeps_cursor_until_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int, reason: str
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     _add_signal(store, 1)
     failed = True
@@ -71,7 +71,7 @@ def test_later_page_failure_reports_completed_page_and_retries_only_pending_page
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     for index in range(501):
         _add_signal(store, index)
@@ -105,7 +105,7 @@ def test_real_guard_event_failure_records_current_progress_and_retries_pending_e
 ) -> None:
     upload = runner.sync_guard_events
     transport = runner._urlopen_json_with_timeout_retry
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_guard_events", upload)
     event = build_runtime_session_event(
         session_id="session-telemetry-test",

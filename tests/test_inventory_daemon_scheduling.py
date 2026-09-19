@@ -21,6 +21,11 @@ import pytest
 from codex_plugin_scanner.guard import aibom_cli, store_connection_schema
 from codex_plugin_scanner.guard.daemon import server
 from codex_plugin_scanner.guard.runtime import runner
+from tests.support.optional_uploads import (
+    OPTIONAL_UPLOAD_WORKSPACE,
+    confirm_legacy_optional_uploads,
+    enable_optional_upload_settings,
+)
 from tests.test_aibom_operation_authority import _selected
 from tests.test_guard_receipt_redaction_cursor import _store_blocked_command_receipt
 from tests.test_inventory_consumer_authority import _fixture
@@ -42,10 +47,22 @@ def denied(*args, **kwargs):
     raise AssertionError("Unexpected raw network")
 
 
-def _trial(boundary: str, deny_receipts: bool) -> dict[str, Any]:
+def _prepare_scheduling_uploads(store, inputs, monkeypatch: pytest.MonkeyPatch) -> None:
+    inputs["workspace_id"] = OPTIONAL_UPLOAD_WORKSPACE
+    store.set_oauth_local_credentials(**inputs)
+    monkeypatch.setattr(runner, "_test_sync_auth_context_override", None)
+    monkeypatch.delenv("HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON", raising=False)
+    enable_optional_upload_settings(store)
+    confirm_legacy_optional_uploads(store)
+
+
+def _trial(boundary: str, deny_receipts: bool, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="inventory-scheduling-") as temp:
-        store, _inputs, context = _fixture(Path(temp))
-        store.set_sync_payload("aibom_inventory_context", _selected(context), NOW)
+        store, inputs, context = _fixture(Path(temp))
+        _prepare_scheduling_uploads(store, inputs, monkeypatch)
+        store.set_sync_payload(
+            "aibom_inventory_context", {**_selected(context), "workspace_id": OPTIONAL_UPLOAD_WORKSPACE}, NOW
+        )
         _store_blocked_command_receipt(store, "synthetic-receipt")
         daemon = cast(Any, object.__new__(server.GuardDaemonServer))
         daemon._server = SimpleNamespace(store=store)
@@ -205,8 +222,10 @@ def _trial(boundary: str, deny_receipts: bool) -> dict[str, Any]:
 
 @pytest.mark.parametrize("boundary", ["runtime", "receipts"])
 @pytest.mark.parametrize("deny_receipts", [False, True])
-def test_inventory_finishes_while_actual_cloud_response_is_pending(boundary: str, deny_receipts: bool) -> None:
-    observed = _trial(boundary, deny_receipts)
+def test_inventory_finishes_while_actual_cloud_response_is_pending(
+    boundary: str, deny_receipts: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observed = _trial(boundary, deny_receipts, monkeypatch)
     assert observed["actualCollectionBeforeRelease"] is True
     assert observed["terminalBeforeRelease"] is True
     assert observed["actualAdvisoryWaitObserved"] is False
@@ -226,7 +245,10 @@ def test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_comm
     from tests.test_inventory_daemon_consumers import _daemon
 
     store, inputs, context = _fixture(tmp_path)
-    store.set_sync_payload("aibom_inventory_context", _selected(context), NOW)
+    _prepare_scheduling_uploads(store, inputs, monkeypatch)
+    store.set_sync_payload(
+        "aibom_inventory_context", {**_selected(context), "workspace_id": OPTIONAL_UPLOAD_WORKSPACE}, NOW
+    )
     _store_blocked_command_receipt(store, "synthetic-receipt")
     sentinel = {"status": "prior"}
     store.set_sync_payload("aibom_inventory_daemon", sentinel, NOW)

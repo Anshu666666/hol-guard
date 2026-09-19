@@ -180,6 +180,22 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             self._condition.notify_all()
         self._publish_event.set()
 
+    def request_publish_before_deadline(
+        self, *, deadline_monotonic: float, require_source_authority: bool = False
+    ) -> None:
+        """Bound off-hook admission to the existing reentrant condition."""
+        from .native_policy_snapshot_mutation import _mutation_wait_seconds, _require_mutation_time
+
+        if not self._condition.acquire(timeout=_mutation_wait_seconds(deadline_monotonic)):
+            raise NativePolicySnapshotError("native_policy_snapshot_control_deadline_exceeded")
+        try:
+            # The constructor owns a standard reentrant Condition. Reuse the
+            # unchanged invalidation operation while retaining that ownership.
+            self.request_publish(require_source_authority=require_source_authority)
+        finally:
+            self._condition.release()
+        _require_mutation_time(deadline_monotonic)
+
     notify_policy_changed = request_publish
 
     def register_workspace(self, workspace: Path | None) -> bool:

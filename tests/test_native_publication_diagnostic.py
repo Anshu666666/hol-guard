@@ -477,3 +477,259 @@ def test_publisher_description_uses_exact_existing_publisher_vocabulary():
     assert f"publisher={known};" in observation.describe(known)
     assert "publisher=other;" in observation.describe(known + ":private-suffix-canary")
     assert "private-suffix-canary" not in observation.describe(known + ":private-suffix-canary")
+
+
+@pytest.mark.parametrize(
+    "method,label,result,expected",
+    [
+        ("wait_until_ready", "readiness_wait", True, "ready"),
+        ("wait_until_ready", "readiness_wait", False, "not_ready"),
+        ("wait_until_ready", "readiness_wait", object(), "other"),
+        ("current_snapshot_binding", "current_binding", {"private": "binding-canary"}, "present"),
+        ("current_snapshot_binding", "current_binding", None, "missing"),
+        ("current_snapshot_binding", "current_binding", b"private-binding-canary", "other"),
+        ("current_snapshot", "fallback_snapshot", {"private": "snapshot-canary"}, "present"),
+        ("current_snapshot", "fallback_snapshot", None, "missing"),
+        ("_confirm_resident_fingerprint", "resident_confirmation", None, "missing"),
+        ("_confirm_resident_fingerprint", "resident_confirmation", object(), "present"),
+    ],
+)
+def test_readiness_observer_preserves_exact_call_and_result(method, label, result, expected):
+    marker = object()
+    calls = []
+
+    def original(*args, **kwargs):
+        calls.append((args, kwargs))
+        return result
+
+    publisher = SimpleNamespace(_client_request=None, **{method: original})
+    with diagnostic.observe_publication(publisher) as observation:
+        returned = getattr(publisher, method)(marker, deadline=0.4)
+        assert returned is result
+        assert calls == [((marker,), {"deadline": 0.4})]
+        description = observation.readiness.describe()
+        assert f"{label}={expected}" in description
+        assert "private" not in description and "canary" not in description
+    assert getattr(publisher, method) is original
+
+
+@pytest.mark.parametrize(
+    "acked,snapshot,closed,epoch,expected",
+    [
+        (True, {"private": "snapshot-canary"}, False, 7, ("yes", "present", "no", "yes")),
+        (False, None, False, 8, ("no", "missing", "no", "no")),
+        (True, {"private": "snapshot-canary"}, True, 7, ("yes", "present", "yes", "yes")),
+        ("private-acked", None, "private-closed", "private-epoch", ("unknown", "missing", "unknown", "unknown")),
+    ],
+)
+def test_completed_publication_records_only_finite_post_return_flags(acked, snapshot, closed, epoch, expected):
+    publisher = SimpleNamespace(_client_request=None, _epoch=7)
+    calls = []
+
+    def publish(*args, **kwargs):
+        calls.append((args, kwargs))
+        publisher._acked, publisher._snapshot, publisher._closed, publisher._epoch = acked, snapshot, closed, epoch
+        return None
+
+    publisher._publish_once = publish
+    with diagnostic.observe_publication(publisher) as observation:
+        assert publisher._publish_once(renew_after_generation=31) is None
+        assert calls == [((), {"renew_after_generation": 31})]
+        description = observation.readiness.describe()
+        assert "publication=returned; publication_calls=1/1" in description
+        for field, value in zip(("acked", "snapshot", "closed", "entry_epoch_unchanged"), expected, strict=True):
+            assert f"publication_{field}={value}" in description
+        assert "private" not in description and "31" not in description
+    assert publisher._publish_once is publish
+
+
+def test_readiness_observer_never_interprets_private_return_objects():
+    class Hostile:
+        def __bool__(self):
+            pytest.fail("Private value was coerced")
+
+        def __repr__(self):
+            pytest.fail("Private value was rendered")
+
+        def __eq__(self, other):
+            pytest.fail("Private value was compared")
+
+    value = Hostile()
+    publisher = SimpleNamespace(_client_request=None, wait_until_ready=lambda: value)
+    with diagnostic.observe_publication(publisher) as observation:
+        assert publisher.wait_until_ready() is value
+        assert "readiness_wait=other" in observation.readiness.describe()
+
+
+@pytest.mark.parametrize(
+    "failure", [RuntimeError("private-exception-canary"), KeyboardInterrupt("private-interrupt-canary")]
+)
+def test_readiness_observer_preserves_original_exception_identity(failure):
+    calls = []
+
+    def original(*args, **kwargs):
+        calls.append(1)
+        raise failure
+
+    publisher = SimpleNamespace(_client_request=None, _publish_once=original)
+    with diagnostic.observe_publication(publisher) as observation:
+        with pytest.raises(type(failure)) as caught:
+            publisher._publish_once()
+        assert caught.value is failure and calls == [1]
+        assert "publication=raised; publication_calls=1/1" in observation.readiness.describe()
+        assert "private" not in observation.readiness.describe()
+    assert publisher._publish_once is original
+
+
+def test_readiness_observer_restores_descriptors_and_preserves_concurrent_replacement():
+    class Publisher:
+        _client_request = None
+
+        def wait_until_ready(self):
+            return True
+
+        def current_snapshot_binding(self) -> dict[str, object] | None:
+            return None
+
+    publisher = Publisher()
+
+    def replacement() -> dict[str, object]:
+        return {"synthetic": True}
+
+    with diagnostic.observe_publication(publisher) as observation:
+        assert publisher.wait_until_ready() is True
+        publisher.current_snapshot_binding = replacement
+    assert "wait_until_ready" not in vars(publisher)
+    assert publisher.current_snapshot_binding is replacement
+    assert (
+        "current_binding=unobserved; fallback_snapshot=unobserved; resident_confirmation=unobserved"
+        in observation.readiness.describe()
+    )
+
+
+def test_readiness_observer_does_not_wait_for_a_captured_publication_on_detach():
+    started, release = threading.Event(), threading.Event()
+    calls = []
+
+    def publish():
+        calls.append(1)
+        started.set()
+        assert release.wait(2)
+
+    publisher = SimpleNamespace(
+        _client_request=None, _publish_once=publish, _epoch=1, _acked=False, _snapshot=None, _closed=False
+    )
+    with diagnostic.observe_publication(publisher) as observation:
+        captured = publisher._publish_once
+        worker = threading.Thread(target=captured)
+        worker.start()
+        assert started.wait(2)
+        assert "publication=running; publication_calls=1/0" in observation.readiness.describe()
+    assert publisher._publish_once is publish
+    release.set()
+    worker.join(2)
+    assert not worker.is_alive() and calls == [1]
+    assert "publication=returned; publication_calls=1/1" in observation.readiness.describe()
+
+
+def test_failed_readiness_observation_does_not_change_the_original_result(monkeypatch):
+    marker = object()
+    calls = []
+
+    def original(*args):
+        calls.append(args)
+        return marker
+
+    publisher = SimpleNamespace(_client_request=None, current_snapshot_binding=original)
+    with diagnostic.observe_publication(publisher) as observation:
+
+        def fail(*args):
+            raise RuntimeError("private-observer-canary")
+
+        monkeypatch.setattr(observation.readiness, "_finish", fail)
+        assert publisher.current_snapshot_binding(marker) is marker
+        assert calls == [(marker,)]
+        assert "private" not in observation.readiness.describe()
+
+
+def test_readiness_observer_counters_remain_bounded():
+    publisher = SimpleNamespace(_client_request=None, _publish_once=lambda: None)
+    with diagnostic.observe_publication(publisher) as observation:
+        for _ in range(1001):
+            publisher._publish_once()
+        assert "publication_calls=999/999" in observation.readiness.describe()
+
+
+def test_actual_slo_refusal_emits_one_finite_observation_without_extra_calls(monkeypatch, capsys):
+    from scripts import native_slo_session as session_module
+
+    events = []
+    publisher = SimpleNamespace(
+        _client_request=None, _epoch=1, _acked=False, _snapshot=None, _closed=False, last_error=None
+    )
+
+    def publish():
+        events.append("publish")
+        publisher._epoch = 2
+
+    def wait(deadline):
+        events.append(("wait", deadline))
+        return False
+
+    def binding():
+        events.append("binding")
+        return None
+
+    def fallback():
+        events.append("fallback")
+        return None
+
+    publisher._publish_once, publisher.wait_until_ready = publish, wait
+    publisher.current_snapshot_binding, publisher.current_snapshot = binding, fallback
+
+    def prepare(workspace, *, deadline):
+        events.append(("prepare", workspace, deadline))
+        publisher._publish_once()
+        assert publisher.wait_until_ready(deadline) is False
+        assert publisher.current_snapshot_binding() is None
+        return publisher.current_snapshot()
+
+    session = object.__new__(session_module.AdapterSession)
+    session.workspace = Path("synthetic-workspace")
+    session.daemon = cast(
+        Any,
+        SimpleNamespace(
+            start=lambda: events.append("start"),
+            port=1,
+            _server=SimpleNamespace(
+                hook_worker=SimpleNamespace(policy_snapshot_publisher=publisher, prepare_workspace_policy=prepare)
+            ),
+        ),
+    )
+    monotonic, perf = iter([100.0, 100.401]), iter([100.0, 100.401])
+    monkeypatch.setattr(session_module.time, "monotonic", lambda: next(monotonic))
+    monkeypatch.setattr(session_module.time, "perf_counter", lambda: next(perf))
+    monkeypatch.setattr(session_module, "HTTPConnection", lambda *args, **kwargs: object())
+    with pytest.raises(RuntimeError) as caught:
+        session.start()
+    assert str(caught.value) == (
+        "native_installed_slo_failed: native policy was not ready; "
+        "window=after_daemon_construction; attached=True; publisher=missing; transport=missing; started=0; completed=0"
+    )
+    assert events == ["start", ("prepare", session.workspace, 100.4), "publish", ("wait", 100.4), "binding", "fallback"]
+    assert session.readiness_ms == pytest.approx(401.0)
+    output = capsys.readouterr().err
+    assert output.count("native_publication_observation: ") == 1
+    assert "publication=returned; publication_calls=1/1" in output
+    expected_flags = "; ".join(
+        [
+            "publication_acked=no",
+            "publication_snapshot=missing",
+            "publication_closed=no",
+            "publication_entry_epoch_unchanged=no",
+        ]
+    )
+    assert expected_flags in output
+    assert "readiness_wait=not_ready; current_binding=missing; fallback_snapshot=missing" in output
+    assert publisher._publish_once is publish and publisher.wait_until_ready is wait
+    assert publisher.current_snapshot_binding is binding and publisher.current_snapshot is fallback

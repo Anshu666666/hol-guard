@@ -17,6 +17,7 @@ from codex_plugin_scanner.guard.runtime import runner as guard_runner_module
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.guard_cloud_local_sync_helpers import _artifact, _detection, _seed_guard_cloud
 from tests.support.network import stub_authenticated_urlopen
+from tests.support.optional_uploads import prepare_optional_uploads
 
 
 def test_sync_credentials_preserve_installation_id_when_cloud_workspace_changes(tmp_path: Path) -> None:
@@ -180,6 +181,7 @@ def test_sync_guard_events_records_failed_backoff_without_dropping_pending_event
 ) -> None:
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store, workspace_id="workspace-alpha")
+    prepare_optional_uploads(store, monkeypatch)
     store.add_guard_event_v1(
         build_runtime_session_event(
             session_id="session-1",
@@ -253,6 +255,7 @@ def test_sync_guard_events_preserves_pending_events_when_v1_endpoint_is_unavaila
 ) -> None:
     store = GuardStore(tmp_path / "guard-home", guard_event_queue_limit=400)
     _seed_guard_cloud(store, workspace_id="workspace-alpha")
+    prepare_optional_uploads(store, monkeypatch)
     for index in range(250):
         store.add_guard_event_v1(
             build_runtime_session_event(
@@ -289,9 +292,10 @@ def test_sync_guard_events_preserves_pending_events_when_v1_endpoint_is_unavaila
     assert store.count_guard_events_v1(uploaded=True) == 0
 
 
-def test_sync_guard_events_preserves_unavailable_summary_when_no_events_pending(tmp_path: Path) -> None:
+def test_sync_guard_events_preserves_unavailable_summary_when_no_events_pending(tmp_path: Path, monkeypatch) -> None:
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store, workspace_id="workspace-alpha")
+    prepare_optional_uploads(store, monkeypatch)
     store.set_sync_payload(
         "guard_events_v1_summary",
         {
@@ -317,6 +321,7 @@ def test_sync_guard_events_preserves_pending_events_when_rate_limited(
     """On HTTP 429, events must remain pending and the summary must report rate-limited state."""
     store = GuardStore(tmp_path / "guard-home", guard_event_queue_limit=400)
     _seed_guard_cloud(store, workspace_id="workspace-alpha")
+    prepare_optional_uploads(store, monkeypatch)
     store.add_guard_event_v1(
         build_runtime_session_event(
             session_id="session-rate-limited",

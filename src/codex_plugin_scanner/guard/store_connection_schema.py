@@ -210,6 +210,10 @@ class StoreConnectionSchemaMixin:
 
     @contextmanager
     def _hold_storage_gate(self, *, exclusive: bool) -> Iterator[None]:
+        # A reentrant gate does not wait, but cannot escape its caller deadline.
+        from .sqlite_deadline import sqlite_deadline_monotonic, sqlite_deadline_timeout
+
+        sqlite_deadline_timeout(0.0)
         local = self._storage_gate_local
         if getattr(local, "owner", None) == id(self) and getattr(local, "depth", 0) > 0:
             if exclusive and getattr(local, "exclusive", False) is False:
@@ -221,7 +225,15 @@ class StoreConnectionSchemaMixin:
                 local.depth -= 1
             return
         path = self.guard_home / "storage-access.lock"
-        with hold_storage_file_lock(path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds()):
+        deadline = sqlite_deadline_monotonic()
+        lock = (
+            hold_storage_file_lock(path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds())
+            if deadline is None
+            else hold_storage_file_lock(
+                path, exclusive=exclusive, timeout_seconds=sqlite_connect_timeout_seconds(), deadline_monotonic=deadline
+            )
+        )
+        with lock:
             local.owner = id(self)
             local.depth = 1
             local.exclusive = exclusive
@@ -365,11 +377,19 @@ class StoreConnectionSchemaMixin:
 
     @contextmanager
     def _connect_once(self) -> Iterator[sqlite3.Connection]:
+        from .store_maintenance import maintenance_lookup
+
+        bounded_lookup = maintenance_lookup(self.path)
         connect_timeout_seconds = sqlite_connect_timeout_seconds()
         profiler = self._sqlite_profiler()
         connect_started = time.monotonic()
         try:
-            connection = sqlite3.connect(self.path, timeout=connect_timeout_seconds)
+            from .sqlite_deadline import DeadlineConnection, sqlite_deadline_monotonic
+
+            if sqlite_deadline_monotonic() is None:
+                connection = sqlite3.connect(self.path, timeout=connect_timeout_seconds)
+            else:
+                connection = sqlite3.connect(self.path, timeout=connect_timeout_seconds, factory=DeadlineConnection)
         except sqlite3.OperationalError as error:
             profiler.record_connect((time.monotonic() - connect_started) * 1000)
             if sqlite_error_is_busy_locked(error):
@@ -381,7 +401,8 @@ class StoreConnectionSchemaMixin:
         notification: dict[str, object] | None = None
         database_failed = False
         try:
-            connection.execute(f"pragma busy_timeout={int(connect_timeout_seconds * 1000)}")
+            if not isinstance(connection, DeadlineConnection):
+                connection.execute(f"pragma busy_timeout={int(connect_timeout_seconds * 1000)}")
             # WAL can use synchronous=NORMAL; rollback-journal and schema-init stay FULL.
             journal_mode_row = connection.execute("pragma journal_mode").fetchone()
             if journal_mode_row is not None and str(journal_mode_row[0]).lower() == "wal":
@@ -391,6 +412,10 @@ class StoreConnectionSchemaMixin:
             connection.execute(f"pragma cache_size=-{SQLITE_CACHE_SIZE_KIB}")
             connection.execute(f"pragma mmap_size={SQLITE_MMAP_SIZE_BYTES}")
             initial_changes = connection.total_changes
+            if bounded_lookup is not None:
+                if not isinstance(connection, DeadlineConnection):
+                    raise RuntimeError("Store maintenance requires its deadline connection")
+                connection.begin_immediate()
             yield connection
             store_review_event_outbox_schema.finalize_review_event_payload_hashes(connection)
             outbox_generation = store_review_event_outbox_schema.commit_review_event_transaction(
@@ -418,7 +443,15 @@ class StoreConnectionSchemaMixin:
                     "Guard store slow transaction (%.0fms); consider indexing hot query paths.",
                     elapsed_ms,
                 )
-        store_review_event_outbox_schema.notify_review_event_wake(self.path, outbox_generation)
+        if bounded_lookup is None:
+            store_review_event_outbox_schema.notify_review_event_wake(self.path, outbox_generation)
+        else:
+            from .store_maintenance import notify_maintenance_outbox_wake
+
+            deadline = sqlite_deadline_monotonic()
+            if deadline is None:
+                raise RuntimeError("Store maintenance deadline is unavailable")
+            notify_maintenance_outbox_wake(self.path, outbox_generation, deadline_monotonic=deadline)
         if notification is not None:
             self._publish_policy_integrity_state_notification(notification)
 

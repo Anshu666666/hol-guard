@@ -52,3 +52,34 @@ def test_legacy_response_timestamp_does_not_block_current_preferences_or_signed_
     assert learned is not None and learned.revision == 2
     accepted = validated_synced_policy_bundle(store)
     assert accepted is not None and accepted["receiptRedactionLevel"] == "partial"
+
+
+@pytest.mark.parametrize(
+    "synced_at",
+    [
+        "2026-04-15T00:01:00Z",
+        "2026-04-15T02:01:00+02:00",
+        "2026-04-15T00:01:00.125Z",
+    ],
+)
+def test_valid_response_timestamp_spelling_is_retained_in_committed_progress(
+    tmp_path: Path, _local_runtime: Callable[[_Transport], None], synced_at: str
+) -> None:
+    store, _ = _ready(tmp_path)
+    rows = _rows(store, 1, commands=False)
+    transport = _Transport()
+    _local_runtime(transport)
+
+    def respond(body: dict[str, Any], number: int) -> _Response:
+        assert number == 1
+        assert len(body["receipts"]) == 1
+        return transport.reply(body, syncedAt=synced_at)
+
+    transport.receipt_handler = respond
+    _invoke(store)
+
+    assert len(transport.receipt_calls) == 1
+    assert store.get_sync_payload("receipt_sync_cursor") == {
+        "last_rowid": rows[0]["receipt_rowid"],
+        "synced_at": synced_at,
+    }

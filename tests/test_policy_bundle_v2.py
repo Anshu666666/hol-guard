@@ -58,6 +58,7 @@ def _signed_bundle(
     verification_key: PolicyBundleVerificationKey,
     *,
     bundle_version: int = 8,
+    workspace_id: str = "workspace-alpha",
     rollback: dict[str, object] | None = None,
     payload_base: dict[str, object] | None = None,
     payload_extensions: dict[str, object] | None = None,
@@ -81,7 +82,7 @@ def _signed_bundle(
         "payloadHash": "",
         "issuedAt": "2026-07-15T12:00:00Z",
         "expiresAt": "2030-07-15T12:00:00Z",
-        "workspaceId": "workspace-alpha",
+        "workspaceId": workspace_id,
         "canonicalization": POLICY_BUNDLE_V2_CANONICALIZATION,
         "verifier": {
             "algorithm": "rsa-pss-sha256",

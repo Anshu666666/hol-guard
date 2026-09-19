@@ -17,6 +17,8 @@ from typing import ClassVar
 import pytest
 from rich.console import Console
 
+from tests.support.optional_uploads import prepare_optional_uploads
+
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -5050,7 +5052,7 @@ args = ["-lc", "echo hi"]
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -7099,7 +7101,7 @@ url = http://127.0.0.1:8787/guard-canary
         assert rc == 2
         assert "Pass either a harness or --all, not both." in stderr
 
-    def test_guard_login_and_sync_posts_receipts(self, tmp_path, capsys):
+    def test_guard_login_and_sync_posts_receipts(self, tmp_path, capsys, monkeypatch):
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
         _build_stable_guard_fixture(home_dir, workspace_dir)
@@ -7119,6 +7121,12 @@ url = http://127.0.0.1:8787/guard-canary
                 home_dir,
                 f"http://127.0.0.1:{server.server_port}/receipts",
                 "demo-token",
+            )
+            prepare_optional_uploads(
+                GuardStore(home_dir),
+                monkeypatch,
+                sync_url=f"http://127.0.0.1:{server.server_port}/receipts",
+                access_token="demo-token",
             )
             login_rc = 0
 
@@ -7404,7 +7412,7 @@ url = http://127.0.0.1:8787/guard-canary
                 issuer="https://hol.org",
                 client_id="guard-local-daemon",
                 refresh_token="refresh-secret-value",
-                dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+                dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
                 dpop_public_jwk={
                     "kty": "EC",
                     "crv": "P-256",
@@ -7593,7 +7601,7 @@ url = http://127.0.0.1:8787/guard-canary
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -7633,7 +7641,7 @@ url = http://127.0.0.1:8787/guard-canary
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -7709,7 +7717,7 @@ url = http://127.0.0.1:8787/guard-canary
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",
@@ -7806,7 +7814,7 @@ url = http://127.0.0.1:8787/guard-canary
             issuer="https://hol.org",
             client_id="guard-local-daemon",
             refresh_token="refresh-secret-value",
-            dpop_private_key_pem="-----BEGIN" " PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
+            dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
             dpop_public_jwk={
                 "kty": "EC",
                 "crv": "P-256",

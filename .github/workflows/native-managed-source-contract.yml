@@ -227,6 +227,25 @@ on:
       - "tests/test_guard_command_queue.py"
       - "tests/test_guard_runtime.py"
       - "tests/test_paseo_adapter.py"
+      - "src/codex_plugin_scanner/guard/sqlite_deadline.py"
+      - "tests/test_sqlite_maintenance_deadline.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_mutation.py"
+      - "tests/test_native_policy_snapshot_mutation_deadline.py"
+      - "tests/test_native_policy_control_owned_operations.py"
+      - "src/codex_plugin_scanner/guard/native_policy_publication_maintenance.py"
+      - "src/codex_plugin_scanner/guard/review_event_wake.py"
+      - "src/codex_plugin_scanner/guard/store_maintenance.py"
+      - "src/codex_plugin_scanner/guard/store_storage_lock.py"
+      - "tests/test_native_policy_publication_maintenance.py"
+      - "tests/test_store_maintenance_scope.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_rotation.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_rotation_entry.py"
+      - "tests/test_native_policy_installation_retirement.py"
+      - "tests/native_policy_retirement_test_fixtures.py"
+      - ".github/workflows/native-sensitive-resident-contract.yml"
+      - "tests/test_native_installation_retirement_evidence.py"
+      - "tests/test_native_installation_retirement_resident.py"
+      - "src/codex_plugin_scanner/guard/sqlite_tuning.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -348,6 +367,10 @@ jobs:
       - name: Verify resident retries and existing caller contracts
         if: ${{ matrix.partition == 'maintenance' }}
         run: uv run --no-sync pytest -q tests/test_native_policy_snapshot_resident_retry.py tests/test_guard_command_queue.py::test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_state tests/test_guard_command_queue.py::test_poll_once_reuses_cached_access_token_across_oauth_polls tests/test_guard_runtime.py::test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation tests/test_paseo_adapter.py::test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_content
+
+      - name: Verify installation retirement and bounded Store finalization
+        if: ${{ matrix.partition == 'maintenance' }}
+        run: uv run --no-sync pytest -q tests/test_sqlite_maintenance_deadline.py tests/test_native_policy_snapshot_mutation_deadline.py tests/test_native_policy_control_owned_operations.py tests/test_native_policy_publication_maintenance.py tests/test_store_maintenance_scope.py tests/test_native_policy_installation_retirement.py tests/test_native_installation_retirement_evidence.py tests/test_native_installation_retirement_resident.py
 
   source-contract:
     needs: source-groups

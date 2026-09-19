@@ -19,7 +19,7 @@ import urllib.parse
 import urllib.request
 from base64 import urlsafe_b64encode
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager, nullcontext, suppress
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -192,6 +192,7 @@ from .supply_chain_bundle import (
 )
 from .supply_chain_bundle_models import SupplyChainVerificationKey
 from .supply_chain_support import ecosystem_support_matrix
+from .sync_auth_handoff import hold_sync_auth_handoff, selected_sync_auth_handoff
 from .sync_response import InvalidSyncResponseError, read_sync_object
 from .telemetry_upload_progress import persist_pain_signal_cursor, record_guard_events_sync_failure
 
@@ -2577,6 +2578,11 @@ def _resolve_optional_upload_auth_context(
     store: GuardStore,
     provided_context: dict[str, object] | None,
 ) -> tuple[dict[str, object], OAuthConnectionSnapshot | None]:
+    handed_connection = selected_sync_auth_handoff(store, provided_context)
+    if handed_connection is not None:
+        _require_guard_oauth_connection(store, handed_connection)
+        assert provided_context is not None
+        return provided_context, handed_connection
     observed: list[OAuthConnectionSnapshot] = []
     try:
         resolved = _resolve_guard_sync_auth_context(store, connection_observer=observed.append)
@@ -2592,12 +2598,21 @@ def _prepare_optional_receipt_selection(
     connection: OAuthConnectionSnapshot | None,
     *,
     synced_at: str,
+    required_capture: ReceiptSyncCapture | None = None,
+    required_policy_bundle: dict[str, object] | None = None,
 ) -> tuple[ReceiptSyncCapture | None, bool, str]:
     if connection is None:
         return None, False, "full"
     try:
-        with store.hold_oauth_credential_lock():
+        with (
+            store.hold_oauth_credential_lock(),
+            store._hold_storage_gate(exclusive=True) if required_policy_bundle is not None else nullcontext(),
+        ):
             captured = _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
+            if required_capture is not None and captured != required_capture:
+                return captured, False, "full"
+            if required_policy_bundle is not None and validated_synced_policy_bundle(store) != required_policy_bundle:
+                return captured, False, "full"
             allowed, level = optional_upload_settings(store, captured.preference_state)
             if not allowed:
                 return captured, False, level
@@ -2654,6 +2669,7 @@ def sync_receipts(
     advisories_payload: list[dict[str, object]] = []
     policy_bundle_payload: dict[str, object] | None = None
     policy_bundle_sync_payload: dict[str, object] | None = None
+    acknowledged_policy_response: tuple[ReceiptSyncCapture, str] | None = None
     policy_bundle_delivery_payload: object = None
     policy_bundle_delivery_field_provided = False
     policy_bundle_field_provided = False
@@ -2814,6 +2830,11 @@ def sync_receipts(
                 if policy_bundle or policy_bundle_payload is None:
                     policy_bundle_payload = policy_bundle
                     policy_bundle_sync_payload = payload
+                    acknowledged_policy_response = (
+                        (completion.capture, batch_synced_at)
+                        if completion is not None and completion.receipt_acknowledged
+                        else None
+                    )
                     policy_bundle_delivery_field_provided = "policyBundleDelivery" in payload
                     policy_bundle_delivery_payload = payload.get("policyBundleDelivery")
             else:
@@ -3231,6 +3252,21 @@ def sync_receipts(
     )
     if (
         policy_application_committed
+        and validated_policy_bundle is not None
+        and effective_policy_bundle == validated_policy_bundle
+        and acknowledged_policy_response is not None
+    ):
+        # Effective privacy follows the committed policy response, while receipt
+        # progress remains governed by the original prepared upload attempt.
+        _prepare_optional_receipt_selection(
+            store,
+            auth_connection,
+            synced_at=acknowledged_policy_response[1],
+            required_capture=acknowledged_policy_response[0],
+            required_policy_bundle=validated_policy_bundle,
+        )
+    if (
+        policy_application_committed
         and native_policy_required
         and canonical_enforcement
         and effective_policy_bundle is not None
@@ -3240,12 +3276,13 @@ def sync_receipts(
         )
         if not native_policy_applied and not activation_last_error:
             activation_last_error = {"reason": "native_policy_publication_pending"}
-    telemetry = sync_nonessential_telemetry(
-        store,
-        pain_signals=lambda: sync_pain_signals(store, auth_context=resolved_auth_context),
-        guard_events=lambda: sync_guard_events(store, auth_context=resolved_auth_context),
-        authorization_errors=(GuardSyncNotConfiguredError, GuardSyncNotAvailableError),
-    )
+    with hold_sync_auth_handoff(store, resolved_auth_context, auth_connection):
+        telemetry = sync_nonessential_telemetry(
+            store,
+            pain_signals=lambda: sync_pain_signals(store, auth_context=resolved_auth_context),
+            guard_events=lambda: sync_guard_events(store, auth_context=resolved_auth_context),
+            authorization_errors=(GuardSyncNotConfiguredError, GuardSyncNotAvailableError),
+        )
     value_metrics = _build_value_metrics(store)
     weekly_digest = _build_weekly_firewall_digest(metrics=value_metrics, now=now)
     summary: dict[str, object] = {
@@ -3634,6 +3671,7 @@ def sync_guard_events(
     """Push pending GuardEventV1 envelopes to Guard Cloud."""
 
     resolved_auth_context, auth_connection = _resolve_optional_upload_auth_context(store, auth_context)
+    sync_url = _guard_events_sync_url(_validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context)))
     try:
         require_optional_telemetry(store, auth_connection)
     except OptionalUploadPausedError:
@@ -3644,7 +3682,6 @@ def sync_guard_events(
             "sync_skipped": True,
             "sync_reason": "optional_upload_paused",
         }
-    sync_url = _guard_events_sync_url(_validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context)))
     previous_summary = store.get_sync_payload("guard_events_v1_summary")
     total_events = 0
     total_accepted = 0
@@ -3970,29 +4007,35 @@ def sync_local_guard_cloud_proof(
     resolved_now = now or _now()
     with store.hold_cloud_sync_lock():
         reconcile_connect_state_with_oauth_entitlement(store, now=resolved_now)
-        resolved_auth_context = auth_context if auth_context is not None else _resolve_guard_sync_auth_context(store)
+        resolved_sources: list[OAuthConnectionSnapshot] = []
+        resolved_auth_context = (
+            auth_context
+            if auth_context is not None
+            else _resolve_guard_sync_auth_context(store, connection_observer=resolved_sources.append)
+        )
         device_id = store.get_or_create_installation_id()
         workspace_id = store.get_cloud_workspace_id()
-        runtime_summary = sync_runtime_session(
-            store,
-            session=_local_guard_runtime_session(
-                device_id=device_id,
-                workspace_id=workspace_id,
-                store=store,
-            ),
-            auth_context=resolved_auth_context,
-        )
-        receipts_summary = sync_receipts(
-            store,
-            persist_sync_summary=False,
-            persist_connect_state=False,
-            auth_context=resolved_auth_context,
-            home_dir=home_dir,
-            workspace_dir=workspace_dir,
-            include_aibom=include_aibom,
-            force_aibom=force_aibom,
-            managed_controls_publish=managed_controls_publish,
-        )
+        with hold_sync_auth_handoff(store, resolved_auth_context, resolved_sources[-1] if resolved_sources else None):
+            runtime_summary = sync_runtime_session(
+                store,
+                session=_local_guard_runtime_session(
+                    device_id=device_id,
+                    workspace_id=workspace_id,
+                    store=store,
+                ),
+                auth_context=resolved_auth_context,
+            )
+            receipts_summary = sync_receipts(
+                store,
+                persist_sync_summary=False,
+                persist_connect_state=False,
+                auth_context=resolved_auth_context,
+                home_dir=home_dir,
+                workspace_dir=workspace_dir,
+                include_aibom=include_aibom,
+                force_aibom=force_aibom,
+                managed_controls_publish=managed_controls_publish,
+            )
         summary = dict(receipts_summary)
         summary.update(
             {
@@ -4026,13 +4069,13 @@ def sync_pain_signals(
         raise
     except GuardSyncNotConfiguredError:
         return 0
+    normalized_sync_url = _normalized_receipts_sync_url(
+        _validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context))
+    )
     try:
         require_optional_telemetry(store, auth_connection)
     except OptionalUploadPausedError:
         return 0
-    normalized_sync_url = _normalized_receipts_sync_url(
-        _validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context))
-    )
     cursor_payload = store.get_sync_payload("pain_signal_cursor")
     last_event_id = _last_uploaded_event_id(cursor_payload)
     uploaded_count = 0
@@ -6513,7 +6556,14 @@ def _record_synced_alert_events(
 
 
 def _receipt_progress_timestamp(payload: dict[str, object]) -> str:
-    parsed = _parse_iso_timestamp(_sync_timestamp(payload))
+    timestamp = _sync_timestamp(payload)
+    try:
+        ReceiptProgressCandidate(None, None, timestamp)
+    except ValueError:
+        pass
+    else:
+        return timestamp
+    parsed = _parse_iso_timestamp(timestamp)
     if parsed is not None:
         try:
             return parsed.astimezone(timezone.utc).isoformat()

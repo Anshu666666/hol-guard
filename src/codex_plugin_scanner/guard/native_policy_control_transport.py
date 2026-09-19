@@ -35,7 +35,48 @@ def native_policy_control_request(
     deadline_monotonic: float,
 ) -> bytes | None:
     """Return only an on-time, contained one-shot result, without retrying."""
+    operation = _control_request_operation(
+        executable=executable,
+        guard_home=guard_home,
+        environment=environment,
+        payload=payload,
+        deadline_monotonic=deadline_monotonic,
+    )
+    if operation is None:
+        return None
+    return run_native_control_worker(operation, deadline_monotonic=deadline_monotonic)
 
+
+def _native_policy_control_request_owned(
+    *,
+    executable: Path,
+    guard_home: Path,
+    environment: Mapping[str, str],
+    payload: bytes,
+    deadline_monotonic: float,
+    cancelled: threading.Event,
+) -> bytes | None:
+    """Use the caller's existing bounded owner; never acquire a second slot."""
+    if cancelled.is_set() or time.monotonic() >= deadline_monotonic:
+        return None
+    operation = _control_request_operation(
+        executable=executable,
+        guard_home=guard_home,
+        environment=environment,
+        payload=payload,
+        deadline_monotonic=deadline_monotonic,
+    )
+    return None if operation is None else operation(cancelled)
+
+
+def _control_request_operation(
+    *,
+    executable: Path,
+    guard_home: Path,
+    environment: Mapping[str, str],
+    payload: bytes,
+    deadline_monotonic: float,
+) -> Callable[[threading.Event], bytes | None] | None:
     if (
         type(deadline_monotonic) not in (int, float)
         or type(payload) is not bytes
@@ -82,7 +123,7 @@ def native_policy_control_request(
                 return framed[:-1]
         return None
 
-    return run_native_control_worker(exchange, deadline_monotonic=deadline_monotonic)
+    return exchange
 
 
 def run_native_control_worker(

@@ -32,6 +32,12 @@ jobs:
           uv run --no-sync pytest -q tests/test_native_sensitive_resident_evidence.py tests/test_native_source_bundle.py tests/test_native_scoped_result.py tests/test_native_hook_edge.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py tests/test_native_policy_source_selection.py
           uv run --no-sync pytest -q tests/test_native_sensitive_policy_resident.py::test_sensitive_resident_fixture_uses_actual_loaded_origins tests/test_native_generic_policy_resident.py::test_generic_resident_fixture_preserves_all_actual_origin_projections tests/test_native_generic_sync_resident.py::test_generic_sync_source_is_signed_and_target_authority_is_unstaged
           uv run --no-sync pytest -q tests/test_generic_managed_origin_outer.py tests/test_generic_managed_benign_outer.py tests/test_generic_rule_observe_outer.py tests/test_native_generic_policy_vectors.py
+      - name: Validate installation retirement fixture and evidence contract
+        run: |
+          uv run --no-sync ruff check tests/test_native_installation_retirement_resident.py tests/test_native_installation_retirement_evidence.py
+          uv run --no-sync ruff format --check tests/test_native_installation_retirement_resident.py tests/test_native_installation_retirement_evidence.py
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/test_native_installation_retirement_resident.py tests/test_native_installation_retirement_evidence.py
+          uv run --no-sync pytest -q tests/test_native_installation_retirement_resident.py::test_rotation_probe_calls_actual_store_in_a_new_process tests/test_native_installation_retirement_evidence.py
       - name: Build runtime from exact source
         env:
           HOL_GUARD_BUILD_SHA: ${{ github.sha }}
@@ -135,6 +141,73 @@ jobs:
           print(json.dumps(report))
           assert passed, "All eight origin and signed-sync resident cases must execute and pass against exact clean source."
           PY
+      - name: Require actual cross-process installation retirement
+        env:
+          HOL_GUARD_NATIVE: auto
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+        run: |
+          mkdir -p artifacts/native-installation-retirement
+          uv run --no-sync pytest -q -m slow tests/test_native_installation_retirement_resident.py --junitxml=artifacts/native-installation-retirement/results.xml
+      - name: Verify exact completed installation retirement cases
+        if: always()
+        run: |
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          directory = Path("artifacts/native-installation-retirement")
+          directory.mkdir(parents=True, exist_ok=True)
+          result = directory / "results.xml"
+          root = ET.parse(result).getroot() if result.is_file() else None
+          cases = list(root.iter("testcase")) if root is not None else []
+          expected = {
+              "test_installation_retirement_fences_actual_resident_across_processes[commit-v3]",
+              "test_installation_retirement_fences_actual_resident_across_processes[commit-v4]",
+              "test_installation_retirement_fences_actual_resident_across_processes[sql-refusal-v3]",
+              "test_installation_retirement_fences_actual_resident_across_processes[sql-refusal-v4]",
+          }
+          passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
+              all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
+          )
+          if root is not None:
+              passed = passed and not any(node.tag in {"skipped", "failure", "error"} for node in root.iter())
+              passed = passed and all(
+                  suite.get(field, "0") == "0"
+                  for suite in root.iter() if suite.tag in {"testsuite", "testsuites"}
+                  for field in ("errors", "failures", "skipped")
+              )
+          clean = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip() == ""
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          binary = Path("rust/target/release/hol-guard-runtime")
+          passed = passed and clean and source == os.environ["GITHUB_SHA"] and binary.is_file()
+          report = {
+              "schema": "native-installation-retirement-proof.v1",
+              "sourceSha": source,
+              "exactCleanSourceVerified": clean and source == os.environ["GITHUB_SHA"],
+              "runtimeBinarySha256": hashlib.sha256(binary.read_bytes()).hexdigest() if binary.is_file() else None,
+              "assertionCount": len(cases),
+              "allAssertionsPassed": passed,
+              "separateRotationProcess": True,
+              "nativeAutoRequired": True,
+              "stagedFeatureNegotiation": True,
+              "canonicalEnforcement": "explicit-test-only",
+              "publicationShapes": ["v3", "v4"],
+              "mutationOutcomes": ["commit", "sql-refusal"],
+              "hookEvents": ["PreToolUse", "PostToolUse"],
+              "originalOriginProofDenominator": 8,
+              "productionAdvertisement": "not-evaluated",
+              "installedWheel": "not-evaluated",
+              "status": "pass" if passed else "fail",
+          }
+          (directory / "proof.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report))
+          assert passed, "All four installation retirement cases must execute and pass against exact clean source."
+          PY
       - name: Retain origin resident assertions
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -143,5 +216,7 @@ jobs:
           path: |
             artifacts/native-sensitive-resident/proof.json
             artifacts/native-sensitive-resident/results.xml
+            artifacts/native-installation-retirement/proof.json
+            artifacts/native-installation-retirement/results.xml
           if-no-files-found: error
           retention-days: 30

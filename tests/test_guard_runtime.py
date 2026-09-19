@@ -97,6 +97,12 @@ from tests.policy_bundle_signing_helpers import (
     sign_policy_bundle,
 )
 from tests.support.network import stub_authenticated_urlopen
+from tests.support.optional_uploads import (
+    OPTIONAL_UPLOAD_WORKSPACE,
+    confirm_legacy_optional_uploads,
+    enable_optional_upload_settings,
+    prepare_optional_uploads,
+)
 
 COPILOT_NATIVE_DENY_COMMANDS = (
     """node -e "require('fs').unlinkSync('dangerous-marker.json')" """,
@@ -20592,6 +20598,7 @@ def test_sync_pain_signals_rejects_untrusted_sync_host_before_network(tmp_path, 
 def test_sync_receipts_batches_large_local_history(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store)
+    prepare_optional_uploads(store, monkeypatch)
     for index in range(65):
         store.add_receipt(
             GuardReceipt(
@@ -20652,6 +20659,7 @@ def test_sync_receipts_batches_large_local_history(tmp_path, monkeypatch):
 def test_sync_receipts_uses_rowid_cursor_and_sync_context(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store)
+    prepare_optional_uploads(store, monkeypatch)
     for index in range(3):
         store.add_receipt(
             GuardReceipt(
@@ -20742,6 +20750,7 @@ def test_sync_receipts_uses_rowid_cursor_and_sync_context(tmp_path, monkeypatch)
 def test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store)
+    prepare_optional_uploads(store, monkeypatch)
     for index in range(2):
         store.add_receipt(
             GuardReceipt(
@@ -20810,6 +20819,7 @@ def test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows(tmp_path, mo
 def test_sync_receipts_marks_latest_connect_first_sync_succeeded(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store)
+    prepare_optional_uploads(store, monkeypatch)
     request_id = "connect-imported-state"
     with store._connect() as connection:
         connection.execute(
@@ -20940,7 +20950,12 @@ def test_sync_receipts_marks_latest_connect_first_sync_succeeded(tmp_path, monke
 def test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     _seed_guard_cloud(store, workspace_id="workspace-1")
-    store.set_sync_payload("policy_bundle_keyring", policy_bundle_test_keyring(), "2026-04-19T00:00:00Z")
+    prepare_optional_uploads(store, monkeypatch)
+    store.set_sync_payload(
+        "policy_bundle_keyring",
+        policy_bundle_test_keyring(workspace_id=OPTIONAL_UPLOAD_WORKSPACE),
+        "2026-04-19T00:00:00Z",
+    )
     for index in range(65):
         store.add_receipt(
             GuardReceipt(
@@ -21065,7 +21080,7 @@ def test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata(tmp_p
     sync_payloads_list = list(sync_payloads)
     first_bundle = sync_payloads_list[0]["policyBundle"]
     if isinstance(first_bundle, dict):
-        first_bundle = sign_policy_bundle(first_bundle)
+        first_bundle = sign_policy_bundle(first_bundle, workspace_id=OPTIONAL_UPLOAD_WORKSPACE)
         sync_payloads_list[0]["policyBundle"] = first_bundle
     sync_payloads = iter(sync_payloads_list)
 
@@ -23948,17 +23963,28 @@ def test_sign_guard_dpop_proof_sets_access_token_hash_claim() -> None:
 def test_sync_receipts_uses_distinct_dpop_proofs_per_batch(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     dpop_key_material = generate_dpop_key_pair()
+    initial_credentials = {
+        "issuer": "https://hol.org",
+        "client_id": "guard-local-daemon",
+        "refresh_token": "refresh-token-1",
+        "dpop_private_key_pem": dpop_key_material.private_key_pem,
+        "dpop_public_jwk": dpop_key_material.public_jwk,
+        "dpop_public_jwk_thumbprint": dpop_key_material.public_jwk_thumbprint,
+        "grant_id": "grant-1",
+        "machine_id": "machine-1",
+        "workspace_id": OPTIONAL_UPLOAD_WORKSPACE,
+        "now": "2026-06-01T00:00:00+00:00",
+        "access_token": "oauth-access-token-1",
+        "access_token_expires_at": "2099-01-01T00:00:00+00:00",
+    }
+    store.set_oauth_local_credentials(**initial_credentials)
+    monkeypatch.setattr(guard_runner_module, "_test_sync_auth_context_override", None)
+    monkeypatch.delenv("HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON", raising=False)
+    enable_optional_upload_settings(store)
+    confirm_legacy_optional_uploads(store)
     store.set_oauth_local_credentials(
-        issuer="https://hol.org",
-        client_id="guard-local-daemon",
-        refresh_token="refresh-token-1",
-        dpop_private_key_pem=dpop_key_material.private_key_pem,
-        dpop_public_jwk=dpop_key_material.public_jwk,
-        dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
-        grant_id="grant-1",
-        machine_id="machine-1",
-        workspace_id="workspace-1",
-        now="2026-06-01T00:00:00+00:00",
+        **{**initial_credentials, "access_token_expires_at": "2000-01-01T00:00:00+00:00"},
+        expected_connection=store.capture_oauth_connection(),
     )
     for index in range(51):
         store.add_receipt(
@@ -24042,17 +24068,28 @@ def test_sync_receipts_uses_distinct_dpop_proofs_per_batch(tmp_path, monkeypatch
 def test_sync_local_guard_cloud_proof_refreshes_oauth_once(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
     dpop_key_material = generate_dpop_key_pair()
+    initial_credentials = {
+        "issuer": "https://hol.org",
+        "client_id": "guard-local-daemon",
+        "refresh_token": "refresh-token-1",
+        "dpop_private_key_pem": dpop_key_material.private_key_pem,
+        "dpop_public_jwk": dpop_key_material.public_jwk,
+        "dpop_public_jwk_thumbprint": dpop_key_material.public_jwk_thumbprint,
+        "grant_id": "grant-1",
+        "machine_id": "machine-1",
+        "workspace_id": OPTIONAL_UPLOAD_WORKSPACE,
+        "now": "2026-06-01T00:00:00+00:00",
+        "access_token": "oauth-access-token-1",
+        "access_token_expires_at": "2099-01-01T00:00:00+00:00",
+    }
+    store.set_oauth_local_credentials(**initial_credentials)
+    monkeypatch.setattr(guard_runner_module, "_test_sync_auth_context_override", None)
+    monkeypatch.delenv("HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON", raising=False)
+    enable_optional_upload_settings(store)
+    confirm_legacy_optional_uploads(store)
     store.set_oauth_local_credentials(
-        issuer="https://hol.org",
-        client_id="guard-local-daemon",
-        refresh_token="refresh-token-1",
-        dpop_private_key_pem=dpop_key_material.private_key_pem,
-        dpop_public_jwk=dpop_key_material.public_jwk,
-        dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
-        grant_id="grant-1",
-        machine_id="machine-1",
-        workspace_id="workspace-1",
-        now="2026-06-01T00:00:00+00:00",
+        **{**initial_credentials, "access_token_expires_at": "2000-01-01T00:00:00+00:00"},
+        expected_connection=store.capture_oauth_connection(),
     )
     token_requests: list[urllib.request.Request] = []
     sync_requests: list[urllib.request.Request] = []

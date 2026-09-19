@@ -83,13 +83,21 @@ def _windows_lock(descriptor: int) -> _WindowsStorageLock:
 
 
 @contextmanager
-def hold_storage_file_lock(path: Path, *, exclusive: bool, timeout_seconds: float) -> Iterator[None]:
+def hold_storage_file_lock(
+    path: Path, *, exclusive: bool, timeout_seconds: float, deadline_monotonic: float | None = None
+) -> Iterator[None]:
     deadline = time.monotonic() + timeout_seconds
+    if deadline_monotonic is not None:
+        deadline = min(deadline, deadline_monotonic)
+        if time.monotonic() >= deadline:
+            raise StorageAccessTimeoutError("Timed out waiting for Guard storage access.")
     with path.open("a+b") as handle:
         windows_lock = _windows_lock(handle.fileno()) if os.name == "nt" else None
         # Locking beyond EOF is supported. Do not initialize a byte through a
         # second handle: on Windows that write conflicts with existing readers.
         while True:
+            if deadline_monotonic is not None and time.monotonic() >= deadline:
+                raise StorageAccessTimeoutError("Timed out waiting for Guard storage access.")
             try:
                 if windows_lock is not None:
                     windows_lock.acquire(exclusive=exclusive)

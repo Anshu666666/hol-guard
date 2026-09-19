@@ -1,0 +1,77 @@
+name: Corpus contract diagnosis
+
+on:
+  push:
+    branches: [codex/rsp-corpus-profile-a37a5df]
+    paths: [.github/workflows/rsp-corpus-profile.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: a37a5df6e62d41dd99c25f3046752cf3db4eaef4
+          persist-credentials: false
+      - name: Bind source archive
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = a37a5df6e62d41dd99c25f3046752cf3db4eaef4
+          mkdir -p diagnostic-output
+          git rev-parse HEAD HEAD^{tree} > diagnostic-output/source-binding.txt
+          git archive --format=tar.gz --output=diagnostic-output/source.tar.gz HEAD
+          sha256sum diagnostic-output/source.tar.gz > diagnostic-output/source.sha256
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: corpus-source-a37a5df
+          path: diagnostic-output/source*
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Run original corpus and navigation contracts
+        run: >-
+          uv run --no-sync pytest -q
+          tests/test_guard_command_decision_diff.py
+          tests/test_managed_controls_contract_docs.py
+          --tb=short --junitxml=diagnostic-output/contracts.xml
+      - name: Profile one complete existing corpus partition
+        if: always()
+        shell: bash
+        run: |
+          uv run --no-sync python - <<'PY' | tee diagnostic-output/profile.txt
+          import cProfile
+          import json
+          import os
+          import pstats
+          import sys
+          from tests.guard_command_decision_diff_runner import _evaluate_shard
+          print(json.dumps({'python': sys.version, 'cpu_count': os.cpu_count(), 'tracing': sys.gettrace() is not None}))
+          profiler = cProfile.Profile()
+          result = profiler.runcall(_evaluate_shard, 0)
+          print(json.dumps({'partition': 0, 'evaluated': result.total, 'lowered_count': result.lowered_count, 'rss_mib': result.rss_mib}))
+          pstats.Stats(profiler).strip_dirs().sort_stats('cumulative').print_stats(50)
+          PY
+      - name: Check tracked source remains unchanged
+        if: always()
+        run: git diff --exit-code HEAD -- .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: corpus-diagnosis-a37a5df
+          path: |
+            diagnostic-output/contracts.xml
+            diagnostic-output/profile.txt
+            diagnostic-output/source-binding.txt
+          retention-days: 7
+          if-no-files-found: error

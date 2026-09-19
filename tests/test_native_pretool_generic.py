@@ -25,6 +25,8 @@ from codex_plugin_scanner.guard.native_pretool import _decode_pre_tool
 from codex_plugin_scanner.guard.runtime import hook_payload_reference as payload_reference_module
 from codex_plugin_scanner.guard.store import GuardStore
 
+from .native_review_approval_support import _bound_review_evidence
+
 
 def _edge(harness: str, event: str, action_type: str = "unknown") -> dict[str, object]:
     edge: dict[str, object] = {
@@ -249,7 +251,18 @@ def test_native_review_queues_approval_without_escaping_to_cli(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    payload = {"hook_event_name": "PreToolUse", "tool_input": {"url": "https://example.test"}}
     edge = _edge("codex", "PreToolUse", "network")
+    result = edge["result"]
+    assert isinstance(result, dict)
+    bound_result, receipt = _bound_review_evidence(
+        harness="codex",
+        payload=payload,
+        workspace=tmp_path / "workspace",
+        native_result=result,
+    )
+    edge["result"] = bound_result
+    edge["receipt"] = receipt
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.daemon.hook_worker.native_mode",
         lambda: "auto",
@@ -272,7 +285,7 @@ def test_native_review_queues_approval_without_escaping_to_cli(
     )
     worker = HookWorker(store=store)
     response = worker.review_http_payload(
-        payload={"hook_event_name": "PreToolUse", "tool_input": {"url": "https://example.test"}},
+        payload=payload,
         params={},
         default_harness="codex",
         home_dir=tmp_path / "home",

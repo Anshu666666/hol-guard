@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-import hashlib
+import hashlib  # noqa: F401
 import importlib
-import json
+import json  # noqa: F401
 import re
 import sys
-import time
+import time  # noqa: F401
 import urllib.error
 import urllib.parse
-import urllib.request
-from collections.abc import Callable, Mapping
+import urllib.request  # noqa: F401
+from collections.abc import Callable, Mapping  # noqa: F401
 from contextvars import ContextVar
-from dataclasses import dataclass, replace
-from datetime import datetime, timezone
-from pathlib import Path
+from dataclasses import dataclass, replace  # noqa: F401
+from datetime import datetime, timezone  # noqa: F401
+from pathlib import Path  # noqa: F401
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,96 +23,96 @@ if TYPE_CHECKING:
 else:  # pragma: no cover - runtime compatibility
     tomllib = importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli")
 
-from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.version import InvalidVersion, Version
+from packaging.specifiers import InvalidSpecifier, SpecifierSet  # noqa: F401
+from packaging.version import InvalidVersion, Version  # noqa: F401
 
 from ..action_lattice import normalize_guard_action_result
-from ..config import load_guard_config, resolve_risk_action
-from ..models import GuardAction, GuardArtifact
-from ..package_firewall_entitlement import resolve_package_firewall_entitlement
+from ..config import load_guard_config, resolve_risk_action  # noqa: F401
+from ..models import GuardAction, GuardArtifact  # noqa: F401
+from ..package_firewall_entitlement import resolve_package_firewall_entitlement  # noqa: F401
 from ..stable_digest import stable_digest_hex
-from ..store import GuardStore
-from ..store_evidence import EvidenceRecord
-from ..text import ensure_terminal_punctuation as _ensure_terminal_punctuation
-from .js_semver import highest_js_version_for_selector, version_matches_js_selector
+from ..store import GuardStore  # noqa: F401
+from ..store_evidence import EvidenceRecord  # noqa: F401
+from ..text import ensure_terminal_punctuation as _ensure_terminal_punctuation  # noqa: F401
+from .js_semver import highest_js_version_for_selector, version_matches_js_selector  # noqa: F401
 from .lockfile_evaluation_support import (
-    collect_lockfile_parse_results,
-    incomplete_lockfile_fallback_target,
-    incomplete_lockfile_metadata,
-    package_has_incomplete_lockfile,
-    parse_lockfile_with_budget,
+    collect_lockfile_parse_results,  # noqa: F401
+    incomplete_lockfile_fallback_target,  # noqa: F401
+    incomplete_lockfile_metadata,  # noqa: F401
+    package_has_incomplete_lockfile,  # noqa: F401
+    parse_lockfile_with_budget,  # noqa: F401
 )
 from .lockfile_parse_result import (
-    LOCKFILE_PARSER_VERSION,
+    LOCKFILE_PARSER_VERSION,  # noqa: F401
     LockfileParseResult,
-    incomplete_lockfile_result,
-    parse_lockfile_text,
+    incomplete_lockfile_result,  # noqa: F401
+    parse_lockfile_text,  # noqa: F401
 )
-from .manifest_dependency_targets import evaluation_targets as _manifest_evaluation_targets
+from .manifest_dependency_targets import evaluation_targets as _manifest_evaluation_targets  # noqa: F401
 from .npm_policy_range import (
-    bind_resolved_npm_policy_result,
-    policy_selector_matches_target,
-    target_for_resolved_npm_policy_match,
+    bind_resolved_npm_policy_result,  # noqa: F401
+    policy_selector_matches_target,  # noqa: F401
+    target_for_resolved_npm_policy_match,  # noqa: F401
 )
-from .npm_source_spec import NpmSourceSpec, parse_npm_source_spec
-from .offline_archive_inspection import inspect_archive_offline
-from .package_intent_common import split_python_extras
-from .package_lock_versions import direct_lockfile_version as _direct_lockfile_version
-from .package_lock_versions import exact_lockfile_version as _exact_version
+from .npm_source_spec import NpmSourceSpec, parse_npm_source_spec  # noqa: F401
+from .offline_archive_inspection import inspect_archive_offline  # noqa: F401
+from .package_intent_common import split_python_extras  # noqa: F401
+from .package_lock_versions import direct_lockfile_version as _direct_lockfile_version  # noqa: F401
+from .package_lock_versions import exact_lockfile_version as _exact_version  # noqa: F401
 from .package_manifest_diff import (
-    _DeadlineExceededError,
-    _dependency_map_for_path,
-    parse_manifest_dependencies,
+    _DeadlineExceededError,  # noqa: F401
+    _dependency_map_for_path,  # noqa: F401
+    parse_manifest_dependencies,  # noqa: F401
 )
 from .restricted_archive_download import (
     RestrictedArchiveDownload,
     RestrictedArchiveDownloadResult,
-    RestrictedArchiveFailure,
-    canonical_external_https_archive_source,
+    RestrictedArchiveFailure,  # noqa: F401
+    canonical_external_https_archive_source,  # noqa: F401
     download_restricted_archive,
-    is_external_https_archive_source,
+    is_external_https_archive_source,  # noqa: F401
 )
 from .runner import (
-    GuardSyncAuthorizationExpiredError,
-    GuardSyncEndpointUntrustedError,
-    GuardSyncNotConfiguredError,
-    _guard_sync_request,
-    _is_timeout_error,
-    _normalized_receipts_sync_url,
-    _resolve_guard_sync_auth_context,
-    _urlopen_json_with_timeout_retry,
-    _validate_guard_sync_url,
+    GuardSyncAuthorizationExpiredError,  # noqa: F401
+    GuardSyncEndpointUntrustedError,  # noqa: F401
+    GuardSyncNotConfiguredError,  # noqa: F401
+    _guard_sync_request,  # noqa: F401
+    _is_timeout_error,  # noqa: F401
+    _normalized_receipts_sync_url,  # noqa: F401
+    _resolve_guard_sync_auth_context,  # noqa: F401
+    _urlopen_json_with_timeout_retry,  # noqa: F401
+    _validate_guard_sync_url,  # noqa: F401
 )
-from .supply_chain import detect_supply_chain_risk
+from .supply_chain import detect_supply_chain_risk  # noqa: F401
 from .supply_chain_bundle import (
-    SupplyChainBundleExpiredError,
-    SupplyChainBundleMalformedError,
-    check_supply_chain_bundle_freshness,
-    evaluate_cached_supply_chain_bundle,
-    load_supply_chain_bundle_response,
+    SupplyChainBundleExpiredError,  # noqa: F401
+    SupplyChainBundleMalformedError,  # noqa: F401
+    check_supply_chain_bundle_freshness,  # noqa: F401
+    evaluate_cached_supply_chain_bundle,  # noqa: F401
+    load_supply_chain_bundle_response,  # noqa: F401
 )
 from .supply_chain_bundle_models import (
-    SupplyChainBundlePackage,
-    SupplyChainBundlePolicyRule,
-    SupplyChainBundleResponse,
+    SupplyChainBundlePackage,  # noqa: F401
+    SupplyChainBundlePolicyRule,  # noqa: F401
+    SupplyChainBundleResponse,  # noqa: F401
 )
-from .supply_chain_bundle_runtime import _is_high_confidence_block
+from .supply_chain_bundle_runtime import _is_high_confidence_block  # noqa: F401
 from .supply_chain_package_identity import (
-    CanonicalPackageIdentity,
-    PackageIdentityError,
-    canonical_package_identity,
-    normalize_ecosystem,
-    normalize_qualified_package_name,
-    parse_package_identity,
+    CanonicalPackageIdentity,  # noqa: F401
+    PackageIdentityError,  # noqa: F401
+    canonical_package_identity,  # noqa: F401
+    normalize_ecosystem,  # noqa: F401
+    normalize_qualified_package_name,  # noqa: F401
+    parse_package_identity,  # noqa: F401
 )
-from .supply_chain_support import ecosystem_support_metadata
+from .supply_chain_support import ecosystem_support_metadata  # noqa: F401
 from .workspace_path_guard import (
-    WorkspaceInputSnapshotError,
-    path_exists_within_workspace,
-    read_bytes_within_workspace,
-    read_text_within_workspace,
-    resolve_path_within_workspace,
-    workspace_input_snapshot,
+    WorkspaceInputSnapshotError,  # noqa: F401
+    path_exists_within_workspace,  # noqa: F401
+    read_bytes_within_workspace,  # noqa: F401
+    read_text_within_workspace,  # noqa: F401
+    resolve_path_within_workspace,  # noqa: F401
+    workspace_input_snapshot,  # noqa: F401
 )
 
 _DECISION_RANK = {"allow": 0, "monitor": 1, "warn": 2, "ask": 3, "block": 4}

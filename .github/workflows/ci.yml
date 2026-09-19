@@ -1,4 +1,4 @@
-name: Corpus terminal diagnostic
+name: Corpus original shard diagnostic
 
 on:
   workflow_dispatch:
@@ -18,10 +18,11 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   corpus-terminal:
-    if: github.ref == 'refs/heads/hgp/diagnostic-corpus-terminal-20260919'
+    if: github.ref == 'refs/heads/hgp/diagnostic-corpus-shard-20260919'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -51,24 +52,28 @@ jobs:
           assert git("rev-parse", "HEAD") == os.environ["EXPECTED_COMMIT"]
           assert git("rev-parse", "HEAD") == os.environ["GITHUB_SHA"]
           assert git("rev-parse", "HEAD^{tree}") == os.environ["EXPECTED_TREE"]
-          assert git("show", "-s", "--format=%P", "HEAD") == "1ca2f9662da160623545e5a11501d9f3234a9170"
+          assert git("show", "-s", "--format=%P", "HEAD") == "09b5ff145f4a4f0732d666e4a597e49454b01a34"
           expected = {
               ".github/workflows/ci.yml": os.environ["EXPECTED_WORKFLOW"],
               "tests/guard_command_corpus_runner.py": "bd0721c3bd3c63ad5b02f68c5000f4f49a23bf5b",
               "tests/guard_corpus_failure_diagnostic.py": "b702f88fad8add6b6169b12182d9bc96594cde3b",
-              "tests/guard_corpus_diagnostic_plugin.py": "3059e73f584691dfce4c9511a641134cefb3ee0f",
+              "tests/guard_corpus_diagnostic_plugin.py": "397fdcc95368c69cf7a8499b2532b1795c6674c4",
               "tests/test_guard_corpus_failure_diagnostic.py": "71b680af1138c48ee0866291d6286d08ea54f0ba",
           }
-          assert set(git("diff", "--name-only", "HEAD^", "HEAD").splitlines()) == set(expected)
+          assert set(git("diff", "--name-only", "HEAD^", "HEAD").splitlines()) == {
+              ".github/workflows/ci.yml", "tests/guard_corpus_diagnostic_plugin.py"
+          }
           for path, sha in expected.items():
               entry = git("ls-tree", "HEAD", "--", path).split()
               assert entry[:3] == ["100644", "blob", sha], path
               assert git("hash-object", path) == sha, path
           assert git("hash-object", "tests/test_guard_command_corpus.py") == "4cb11d135a09527e3d477dd60118b57ee59ecf8b"
+          assert git("hash-object", "tests/conftest.py") == "61e6d98609309fac99c9baae50fab5f47229fcde"
+          assert git("hash-object", "scripts/ci/pytest_duration_report.py") == "4af1fcbc39138d87c2f53692b365ac7bd33cf2f0"
           assert git("hash-object", "pyproject.toml") == "dd7ea7046ebb399bde94d1532dce9149437cab43"
           assert git("hash-object", "uv.lock") == "87a7e665302f34c6ae1100387425572bab6e7c51"
           assert not git("status", "--porcelain", "--untracked-files=no")
-          print("Exact source, modes and five-path boundary verified")
+          print("Exact source, modes and two-path child boundary verified")
           PY
           python "$RUNNER_TEMP/verify-corpus-terminal-source.py"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
@@ -110,14 +115,72 @@ jobs:
             tests/test_guard_corpus_failure_diagnostic.py
       - name: Prove terminal containment and privacy controls
         run: uv run --no-sync pytest -q tests/test_guard_corpus_failure_diagnostic.py --tb=short
-      - name: Run the unchanged original corpus node once
+      - name: Recover the exact original shard selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            ulimit -f 2048
+            gh api /repos/hashgraph-online/hol-guard/actions/artifacts/10575275991 > "$RUNNER_TEMP/original-shard-metadata.json"
+            gh api /repos/hashgraph-online/hol-guard/actions/artifacts/10575275991/zip > "$RUNNER_TEMP/original-shard-plan.zip"
+          )
+          python - <<'PY'
+          import hashlib
+          import io
+          import json
+          import os
+          import stat
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          temporary = Path(os.environ["RUNNER_TEMP"])
+          metadata = json.loads((temporary / "original-shard-metadata.json").read_text(encoding="utf-8"))
+          assert metadata["id"] == 10575275991
+          assert metadata["name"] == "pytest-shard-plan"
+          assert metadata["size_in_bytes"] == 503198
+          assert metadata["digest"] == "sha256:6debd317fb2cc181e3d465a5f49d444df96819e9d492ad1346b93d52495f8f1e"
+          assert metadata["expired"] is False
+          assert metadata["workflow_run"]["id"] == 35413273389
+          assert metadata["workflow_run"]["head_sha"] == "1ca2f9662da160623545e5a11501d9f3234a9170"
+          archive_path = temporary / "original-shard-plan.zip"
+          assert archive_path.stat().st_size == 503198
+          archive = archive_path.read_bytes()
+          assert hashlib.sha256(archive).hexdigest() == "6debd317fb2cc181e3d465a5f49d444df96819e9d492ad1346b93d52495f8f1e"
+          with zipfile.ZipFile(io.BytesIO(archive)) as zipped:
+              members = zipped.infolist()
+              assert len(members) == 97
+              assert len({member.filename for member in members}) == 97
+              assert sum(member.file_size for member in members) <= 16 * 1024 * 1024
+              for member in members:
+                  path = PurePosixPath(member.filename)
+                  assert not path.is_absolute() and ".." not in path.parts
+                  assert not member.flag_bits & 1
+                  assert not stat.S_ISLNK(member.external_attr >> 16)
+              member = zipped.getinfo("shard-12.txt")
+              assert member.file_size == 24971
+              with zipped.open(member) as stream:
+                  selection = stream.read(24972)
+          assert len(selection) == 24971
+          assert hashlib.sha256(selection).hexdigest() == "5cd96dc341c00fac413a78eb710eb2b21137d72e3a98e27e950481bbc8fd6786"
+          nodes = selection.decode("utf-8").splitlines()
+          assert len(nodes) == len(set(nodes)) == 211
+          assert nodes[56] == "tests/test_guard_command_corpus.py::test_full_guard_evaluation_matches_exact_non_widening_known_gap_baseline"
+          target = Path("pytest-shards")
+          target.mkdir(exist_ok=True)
+          (target / "shard-12.txt").write_bytes(selection)
+          print("Immutable original shard selection verified: 211 ordered nodes, target ordinal 57")
+          PY
+      - name: Run the unchanged original 211-case shard once
         env:
           HOL_GUARD_CORPUS_TERMINAL_PROOF: "1"
         run: |
           PYTHONPATH=scripts/ci GUARD_PYTEST_DURATION_OUTPUT=pytest-durations.json GUARD_PYTEST_UNDER_COVERAGE=1 \
             uv run --no-sync pytest -p pytest_duration_report -p tests.guard_corpus_diagnostic_plugin \
-            tests/test_guard_command_corpus.py::test_full_guard_evaluation_matches_exact_non_widening_known_gap_baseline \
-            --tb=short --cov --cov-branch --cov-report=
+            "@pytest-shards/shard-12.txt" --tb=short \
+            --deselect tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial \
+            --cov --cov-branch --cov-report=
       - name: Retain finite terminal result
         if: ${{ always() && !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

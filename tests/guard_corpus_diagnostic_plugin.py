@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from contextlib import suppress
@@ -17,8 +18,17 @@ _summary: dict[str, object] = {"schema": 1, "observed": False, "passed": False, 
 
 
 def pytest_collection_finish(session):
-    if [item.nodeid for item in session.items] != [NODE]:
-        raise pytest.UsageError("corpus diagnostic requires exactly the original node")
+    nodes = [item.nodeid for item in session.items]
+    digest = hashlib.sha256(("\n".join(nodes) + "\n").encode("utf-8")).hexdigest()
+    if (
+        len(nodes) != 211
+        or nodes[56] != NODE
+        or nodes.count(NODE) != 1
+        or digest != "5cd96dc341c00fac413a78eb710eb2b21137d72e3a98e27e950481bbc8fd6786"
+    ):
+        raise pytest.UsageError("corpus diagnostic requires the exact original ordered shard")
+    _summary["collected"] = 211
+    _summary["targetOrdinal"] = 57
 
 
 @pytest.hookimpl(hookwrapper=True)

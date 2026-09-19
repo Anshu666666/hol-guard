@@ -22,6 +22,11 @@ def generic_policy_bundle_acknowledgement(
 ) -> dict[str, object]:
     """Bind a generic revision/device ack without fabricating extension proofs."""
 
+    payload = policy_bundle.get("payload")
+    if isinstance(payload, dict) and "x-hol-custom-extension-continuity" in payload:
+        # Continuity is consumed through its own authority, never a generic ACK.
+        return {}
+
     bundle_version = policy_bundle.get("bundleVersion")
     bundle_hash = policy_bundle.get("bundleHash")
     workspace_id = policy_bundle.get("workspaceId")

@@ -6,7 +6,6 @@ tests. Native execution and installed default readiness are separate proofs.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -15,12 +14,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from codex_plugin_scanner.guard import native_policy_bundle_sync
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
-from codex_plugin_scanner.guard.native_policy_snapshot_publisher_scoped import SCOPED_PUBLISH_FEATURES
 from codex_plugin_scanner.guard.policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.store import GuardStore
-from tests.native_policy_snapshot_test_fixtures import _status
-from tests.test_native_policy_snapshot_v4_publication import _ack
+from tests.support.native_policy_application import controlled_policy_publisher
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
 from tests.test_policy_bundle_v2_runtime_admission import (
     _generic_v2_payload,
@@ -57,24 +54,7 @@ def _source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, shape: str) -> t
 def _publisher(
     store: GuardStore, monkeypatch: pytest.MonkeyPatch, *, reply: str = "accepted"
 ) -> NativePolicySnapshotPublisher:
-    status = _status()
-    status.capabilities.features += tuple(SCOPED_PUBLISH_FEATURES)
-
-    def client(**kwargs: Any) -> bytes:
-        snapshot = json.loads(kwargs["payload"])["request"]["snapshot"]
-        directory = store.guard_home / "native-runtime" / "resident-v3-synthetic"
-        directory.mkdir(parents=True, exist_ok=True)
-        generation = directory / "generation-00000000000000000003.json"
-        if not generation.exists():
-            generation.write_text("{}")
-        if reply == "timeout":
-            raise TimeoutError("synthetic resident timeout")
-        acknowledgement = _ack(snapshot)
-        if reply == "different-source":
-            acknowledgement["source_input_digest"] = "c" * 64
-        return json.dumps(acknowledgement).encode()
-
-    publisher = NativePolicySnapshotPublisher(store=store, status_provider=lambda: status, client_request=client)
+    publisher = controlled_policy_publisher(store, reply=reply)
     monkeypatch.setattr(native_policy_bundle_sync, "get_native_policy_snapshot_publisher", lambda _store: publisher)
     return publisher
 

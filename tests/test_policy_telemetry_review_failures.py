@@ -12,10 +12,14 @@ import pytest
 from codex_plugin_scanner.guard.daemon import server
 from codex_plugin_scanner.guard.edge_events import build_runtime_session_event
 from codex_plugin_scanner.guard.runtime import runner
+from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen
 from tests.test_policy_bundle_v2_runtime_admission import _SyncResponse
 from tests.test_policy_telemetry_isolation import _AUTH, _connected_policy
 from tests.test_policy_telemetry_transport import _add_signal
+
+
+pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 
 class _RawResponse:

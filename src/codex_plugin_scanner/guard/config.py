@@ -15,12 +15,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import tomllib
-else:  # pragma: no cover - runtime compatibility
-    tomllib = importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli")
 
 from .action_lattice import coerce_guard_action, normalize_guard_action
 from .approval_gate import ApprovalGateGrant, public_config, require_settings_write
@@ -50,6 +44,8 @@ from .protection_posture import (
     resolve_posture_defaults,
 )
 from .workspace_config_io import WORKSPACE_CONFIG_FILENAMES, read_workspace_toml
+
+tomllib = importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli")
 
 DEFAULT_GUARD_DIRNAME = ".hol-guard"
 VALID_UPDATE_CHANNELS = frozenset({"stable", "alpha"})

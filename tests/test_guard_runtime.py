@@ -23209,7 +23209,9 @@ def test_sync_receipts_rolls_back_to_last_good_bundle_on_canonical_compile_failu
     assert store.get_sync_payload("policy_bundle") == last_good
     assert store.get_sync_payload("policy_bundle_last_good") == last_good
     assert store.get_sync_payload("policy_bundle_last_error") == {
-        "reason": "canonical_compile_unsupported_policy_match"
+        "reason": "canonical_compile_unsupported_policy_match",
+        "ruleId": "rule.unsupported-operation",
+        "remediation": "Remove the unsupported rule clause or choose a supported target consumer.",
     }
     assert [decision["owner"] for decision in store.list_policy_decisions()] == ["legacy-last-good"]
     rollback_events = store.list_events(event_name="policy_bundle/rollback")

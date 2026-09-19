@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from codex_plugin_scanner.guard.cli.render import emit_guard_payload
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
 from tests.test_policy_bundle_v2_runtime_admission import (
@@ -25,6 +26,8 @@ _AUTH: dict[str, object] = {
     "access_token": "test-token",
     "dpop_key_material": None,
 }
+
+pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 
 def _connected_policy(

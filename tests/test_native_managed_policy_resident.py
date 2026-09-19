@@ -95,8 +95,10 @@ def test_signed_managed_lockdown_is_consumed_by_actual_resident(
         assert blocked["policy_binding"]["selected_decision_id"] is None
         assert publisher.result_binding_is_current(blocked["policy_binding"])
         assert blocked["receipt"]["rule_digest"] == actual.capabilities.rule_digest
-        if mode == "observe":
-            assert blocked["observed_policy_action"] == "block"
+        # Lockdown stays terminal in Observe; no policy-only action was projected.
+        assert blocked["observed_policy_action"] is None
+        assert blocked["receipt"]["observed_policy_action"] is None
+        assert blocked["receipt"]["observe_mode"] is (mode == "observe")
         # The admitted managed subset cannot silently drop observations for an unrelated tool.
         assert evaluate({"tool_name": "mcp__synthetic__inspect", "tool_input": {}}) is None
 

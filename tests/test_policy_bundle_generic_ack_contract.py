@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from codex_plugin_scanner.guard.policy_bundle_delivery import policy_bundle_acknowledgement_payload
+from codex_plugin_scanner.guard.policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from codex_plugin_scanner.guard.policy_bundle_v2 import validated_policy_bundle_v2_acknowledgement
 from tests.test_policy_bundle_generic_acknowledgement import _generic_v2_bundle
+from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
 
 _GENERIC_KEYS = {
     "contractVersion",
@@ -78,3 +81,30 @@ def test_generic_generator_rejects_invalid_bound_identity(field: str, value: obj
     validated, reason = validated_policy_bundle_v2_acknowledgement(ack)
     assert validated is None
     assert reason is not None
+
+
+@pytest.mark.parametrize("applied", [False, True])
+def test_continuity_source_never_mints_a_generic_ack(applied: bool) -> None:
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key = _verification_key(private_key)
+    bundle = _signed_bundle(
+        private_key,
+        key,
+        payload_extensions={
+            "x-hol-custom-extension-continuity": {
+                "schemaVersion": "guard.custom-extension-continuity.v1",
+                "revision": 1,
+                "observedAt": "2026-07-15T12:00:00Z",
+                "expiresAt": "2030-07-15T12:00:00Z",
+                "items": [],
+            }
+        },
+    )
+    direct = generic_policy_bundle_acknowledgement(
+        device_id="device-alpha",
+        policy_bundle=bundle,
+        synced_at="2026-07-15T12:02:00Z",
+        applied=applied,
+    )
+    assert direct == {}
+    assert _ack(bundle, applied=applied) == {}

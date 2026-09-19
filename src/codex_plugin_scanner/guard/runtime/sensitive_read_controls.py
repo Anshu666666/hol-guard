@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from .command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
+from .extension_control_authority import AuthorityHealth
 from .extension_control_contract import ControlSurface
 from .extension_control_resolver import resolve_extension_controls
 from .extension_control_runtime import current_extension_control_snapshot
@@ -13,7 +14,8 @@ from .extension_control_runtime import current_extension_control_snapshot
 def sensitive_read_control_metadata() -> dict[str, object]:
     """A classified Read has no command observations, but Lockdown still applies."""
     snapshot = current_extension_control_snapshot()
-    if snapshot is None:
+    if snapshot is None or snapshot.health is AuthorityHealth.UNENROLLED:
+        # No protected authority exists yet; retain the ordinary Read policy.
         return {}
     resolution = resolve_extension_controls(
         snapshot.layers,

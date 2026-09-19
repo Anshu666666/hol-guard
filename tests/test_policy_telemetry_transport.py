@@ -9,7 +9,10 @@ import pytest
 
 from codex_plugin_scanner.guard.edge_events import build_runtime_session_event
 from codex_plugin_scanner.guard.runtime import runner
+from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.test_policy_telemetry_isolation import _AUTH, _connected_policy
+
+pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 
 def _add_signal(store, index: int) -> None:

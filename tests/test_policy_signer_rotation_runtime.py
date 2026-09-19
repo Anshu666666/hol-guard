@@ -47,6 +47,7 @@ from codex_plugin_scanner.guard.policy_bundle_v2 import (
     validated_policy_bundle_v2_payload,
 )
 from tests.managed_controls_activation_support import parse_managed_bundle
+from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen
 from tests.test_policy_bundle_activation_atomicity import _signed_bundle as _v1_template
 from tests.test_policy_bundle_delivery_daemon import _enable, _fixture
@@ -62,6 +63,8 @@ _AUTH: dict[str, object] = {
     "access_token": "disposable-test-token",
     "dpop_key_material": None,
 }
+
+pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 
 def _signer(key_id: str) -> tuple[rsa.RSAPrivateKey, PolicyBundleVerificationKey]:

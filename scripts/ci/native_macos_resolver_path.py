@@ -19,7 +19,7 @@ if __package__ in {None, ""}:
 
 from scripts.ci.native_macos_resolver_capture import clean_completion, run_lookup
 from scripts.ci.native_macos_resolver_evidence import MODES, parse_metadata
-from scripts.ci.native_macos_service_identity import _capture
+from scripts.ci.native_macos_resolver_tool_capture import _capture
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
@@ -27,10 +27,12 @@ SOURCES = (
     "scripts/ci/native_macos_resolver_path.py",
     "scripts/ci/native_macos_resolver_capture.py",
     "scripts/ci/native_macos_resolver_evidence.py",
+    "scripts/ci/native_macos_resolver_tool_capture.py",
     "scripts/ci/native_macos_service_identity.py",
     "tests/test_native_macos_resolver_capture.py",
     "tests/test_native_macos_resolver_evidence.py",
     "tests/test_native_macos_resolver_path.py",
+    "tests/test_native_macos_resolver_tool_capture.py",
     ".github/workflows/native-macos-resolver-path.yml",
 )
 COMPILE_FLAGS = ("-std=c11", "-O0", "-Wall", "-Wextra", "-Werror")

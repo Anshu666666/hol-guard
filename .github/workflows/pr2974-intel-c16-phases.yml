@@ -1,0 +1,84 @@
+name: PR2974 Intel c16 name admission diagnosis
+
+on:
+  push:
+    branches:
+      - codex/pr2974-intel-c16-name-admission-2564d9a4
+    paths:
+      - .github/workflows/pr2974-intel-c16-phases.yml
+      - ci/pr2974_intel_wave_diagnostic/**
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  observe-original-schedule:
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    env:
+      VALIDATION_SOURCE: ${{ github.workspace }}/source
+      VALIDATION_REPORT: ${{ github.workspace }}/intel-phase-reports
+      VALIDATION_SCRATCH: ${{ github.workspace }}/intel-phase-scratch
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
+      PLATFORM_TAG: macosx_13_0_x86_64
+    steps:
+      - name: Checkout diagnostic harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout exact original source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 2564d9a4dda22ff73e53e6dfae793ef95cbeb259
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22.23.2"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Parse all diagnostic Python source
+        shell: bash
+        run: |
+          python -I -B - <<'PY'
+          import ast, json, os
+          from pathlib import Path
+          root = Path("harness/ci/pr2974_intel_wave_diagnostic")
+          files = sorted(root.glob("*.py"))
+          assert len(files) == 9
+          for path in files:
+              ast.parse(path.read_text(), filename=str(path), type_comments=True)
+          report = Path(os.environ["VALIDATION_REPORT"])
+          report.mkdir(parents=True, exist_ok=True)
+          (report / "syntax.json").write_text(json.dumps({"parsed": [p.name for p in files], "product_imports": 0}))
+          PY
+      - name: Observe the original schedule once
+        id: observe
+        continue-on-error: true
+        env:
+          AUDIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          export VALIDATION_UV="$(command -v uv)"
+          python -I -B harness/ci/pr2974_intel_wave_diagnostic/run.py
+      - name: Retain original inputs and every diagnostic report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-intel-c16-name-admission-2564d9a4
+          path: ${{ env.VALIDATION_REPORT }}
+          if-no-files-found: warn
+      - name: Preserve actual diagnostic failure
+        if: always()
+        shell: bash
+        run: test "${{ steps.observe.outcome }}" = success

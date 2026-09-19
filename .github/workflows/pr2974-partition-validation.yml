@@ -1,0 +1,139 @@
+name: PR2974 Codex owned temporary-root validation
+
+on:
+  push:
+    branches: [codex/pr2974-codex-tmp-validation-20260919]
+    paths:
+      - '.github/workflows/pr2974-partition-validation.yml'
+      - 'ci/pr2974_partition_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-codex-tmp-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_BASELINE: ${{ github.workspace }}/baseline
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source-validation:
+    name: Actual ${{ matrix.lane }} validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [codex]
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-partition-${{ matrix.lane }}/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-partition-${{ matrix.lane }}/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '1578e609636cf0460b23dfbe083759097a635be0',
+                     'source_tree': '4a7ea105c53d0eb68ed8a037e3e38288b32ff407',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout the immutable additive harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the exact immutable corrected source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '1578e609636cf0460b23dfbe083759097a635be0'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the original unchanged comparison source
+        id: baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: baseline
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up the exact fresh validation Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up the exact frozen-lock installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Run the exact original 21 Codex cases and nine separate seam controls
+        id: validation
+        env:
+          VALIDATION_LANE: ${{ matrix.lane }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_partition_validation/finite.py" --lane "$VALIDATION_LANE"
+      - name: Preserve the terminal workflow result
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          BASELINE_CHECKOUT: ${{ steps.baseline.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          names = ['HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME']
+          names.append('BASELINE_CHECKOUT')
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in names}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['workflow_gate_passed'] = passed
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'workflow_gate_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          raise SystemExit(0 if passed else 1)
+          PY
+      - name: Emit the bounded checksum-framed result projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_partition_validation/report_projection.py"
+      - name: Retain complete original snapshots, JUnit, reports and failure logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-partition-${{ matrix.lane }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-partition-${{ matrix.lane }}/report/
+          if-no-files-found: error
+          retention-days: 30

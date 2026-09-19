@@ -6,6 +6,7 @@ import hashlib
 import os
 import platform
 import sqlite3
+import stat
 from collections import OrderedDict
 from contextlib import closing
 from dataclasses import dataclass

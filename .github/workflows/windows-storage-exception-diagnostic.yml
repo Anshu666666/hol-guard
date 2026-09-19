@@ -1,0 +1,93 @@
+name: Windows installed storage exception diagnostic
+run-name: Finite installed Windows storage observation - 60bdeab2
+
+on:
+  push:
+    branches: [codex/windows-store-gate-60bd]
+    paths:
+      - '.github/workflows/windows-storage-exception-diagnostic.yml'
+      - 'ci/native_runtime/*windows_storage*.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: windows-storage-exception-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-wheel-observation:
+    if: github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - name: Preserve exact committed bytes
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-src
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 60bdeab2ac04ff6ba6e13778be7d6d1fc8e67773
+          path: candidate-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.10'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Install exact frozen dependencies without rebuilding the project
+        shell: pwsh
+        run: uv sync --frozen --extra dev --no-install-project --project candidate-src --python 3.12.10
+      - name: Retain and verify original source-bound Windows artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -I diagnostic-src/ci/native_runtime/windows_storage_artifact.py `
+            --source candidate-src --driver-source diagnostic-src --driver-commit $env:GITHUB_SHA `
+            --output diagnostic-evidence --download original-artifact
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install original native wheel without dependency resolution
+        shell: pwsh
+        run: |
+          uv pip install --python candidate-src/.venv/Scripts/python.exe --no-deps --force-reinstall `
+            original-artifact/hol_guard-3.0.1-py3-none-win_amd64.whl
+      - name: Check finite observer and driver controls
+        shell: pwsh
+        run: |
+          candidate-src/.venv/Scripts/python.exe -I -m pytest --noconftest `
+            diagnostic-src/ci/native_runtime/test_windows_storage_exception_observer.py `
+            diagnostic-src/ci/native_runtime/test_windows_storage_diagnostic.py -q --tb=short
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Retain original installed identity and Win32 lease controls
+        shell: pwsh
+        run: |
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          candidate-src/.venv/Scripts/python.exe -I candidate-src/ci/native_runtime/probe_installed_runtime_identity.py `
+            --json diagnostic-evidence/native-installed-identity.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          candidate-src/.venv/Scripts/python.exe -I candidate-src/ci/native_runtime/probe_installed_command_control_lock.py `
+            --json diagnostic-evidence/native-installed-control-lock.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Observe one unchanged default-auto corpus
+        shell: pwsh
+        run: |
+          candidate-src/.venv/Scripts/python.exe -I diagnostic-src/ci/native_runtime/probe_windows_storage_exceptions.py `
+            --source candidate-src --driver-source diagnostic-src --driver-commit $env:GITHUB_SHA `
+            --archive original-artifact/10576711059.zip --output diagnostic-evidence
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve diagnostic evidence without duplicating the original wheel
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-storage-exceptions-60bd-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: diagnostic-evidence/*.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,198 @@
+{
+  "schema": "pr2974.combined-source.read-only-integration-plan.v1",
+  "source_sha": "a83d1e5b05716bbd623c717bab28c048986d199a",
+  "source_tree": "436d6388de72ebbb7ebc257b4acb4b5a53b0ab28",
+  "parent_sha": "44353b20262f1ca56b56204f4c764b047710454f",
+  "actual_readbacks_complete": true,
+  "full_actual_tree_equals_independently_composed_tree": true,
+  "all4622_actual_leaf_paths_modes_types_blobs_equal": true,
+  "original_report_retained": true,
+  "original_generated_reports_not_spliced": true,
+  "source_proof": {
+    "baseline": {
+      "tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+      "files": 4546,
+      "subtrees": 276
+    },
+    "components": [
+      {
+        "lane": "four_partitions",
+        "tree": "4a7ea105c53d0eb68ed8a037e3e38288b32ff407",
+        "subtrees": 276,
+        "files": 4575,
+        "exact_cumulative_changed_paths": 34,
+        "entire_other_source_map_equal": true
+      },
+      {
+        "lane": "store",
+        "tree": "9bbfbe495a6df53db97b5d6886763c50e5eb5b27",
+        "subtrees": 276,
+        "files": 4554,
+        "exact_cumulative_changed_paths": 9,
+        "entire_other_source_map_equal": true
+      },
+      {
+        "lane": "lsc",
+        "tree": "3847a4f82da7c15cf0a13152e347e5e110132140",
+        "subtrees": 276,
+        "files": 4564,
+        "exact_cumulative_changed_paths": 19,
+        "entire_other_source_map_equal": true
+      },
+      {
+        "lane": "package",
+        "tree": "b7aa790cf411aceeff53a69aa2be16f409c5a2dd",
+        "subtrees": 276,
+        "files": 4567,
+        "exact_cumulative_changed_paths": 23,
+        "entire_other_source_map_equal": true
+      },
+      {
+        "lane": "ci",
+        "tree": "421a0f5bfa1481c36cf7099431dd4eea99ca74b1",
+        "subtrees": 276,
+        "files": 4546,
+        "exact_cumulative_changed_paths": 3,
+        "entire_other_source_map_equal": true
+      }
+    ],
+    "source_union": {
+      "paths": 88,
+      "python_paths": 87,
+      "files": 4622,
+      "tree": "6c65d55e5c47686c1c07245d96fd1a29f053da17",
+      "scope": "Pure JavaScript prospective union of exact current source bytes only. It still contains pre-format navigation test9f and old baseline generated report. No Git objects or runtime result are created or claimed.",
+      "maximum_python_lines": 500,
+      "over_500": [],
+      "near_limit": [
+        {
+          "path": "tests/test_guard_surface_server.py",
+          "physical_lines": 500
+        },
+        {
+          "path": "tests/test_guard_surface_server_05_hook_capacity.py",
+          "physical_lines": 481
+        },
+        {
+          "path": "tests/test_guard_surface_server_11_surface_operations.py",
+          "physical_lines": 488
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/store_base_keyring.py",
+          "physical_lines": 483
+        },
+        {
+          "path": "src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+          "physical_lines": 471
+        }
+      ]
+    }
+  },
+  "actual_navigation": {
+    "blob": "80878b3279306c680abf65abc1eca4ac6dd684c9",
+    "sha256": "9d7fe23488742aadea9c8285ff492610c4c6f6c2fc8a8a733f5d3f731e173de3",
+    "bytes": 14853
+  },
+  "components": [
+    {
+      "lane": "four_partitions",
+      "commit": "1578e609636cf0460b23dfbe083759097a635be0",
+      "paths": 34
+    },
+    {
+      "lane": "store",
+      "commit": "32c26e3c4ce9adc341745c5912637f15bf0cefcb",
+      "paths": 9
+    },
+    {
+      "lane": "lsc",
+      "commit": "82c78d0b609b380781528498a9c81c987e868a3e",
+      "paths": 19
+    },
+    {
+      "lane": "package",
+      "commit": "06a193267c949d9409089465d432bc2b68fc112b",
+      "production_source_commit": "5fbd95387842b79279dfdad530aa5a7b9763892d",
+      "source_paths": 23,
+      "component_report_excluded": true
+    },
+    {
+      "lane": "ci",
+      "commit": "a77defd1a029bc9b9a44781307c55e4e9d8e2b39",
+      "source_paths": 3,
+      "component_report_excluded": true
+    }
+  ],
+  "interactions": [
+    {
+      "paths": [
+        "protect_execution.py",
+        "local_supply_chain_protect_authority.py",
+        "local_supply_chain_protect_execution.py"
+      ],
+      "boundary": "Protect calls the LSC package protection facade. Run combined existing approval/reuse/current-config/advisory/receipt controls and new cold-owner/live-facade seams; disjoint source files alone do not prove this behavior."
+    },
+    {
+      "paths": [
+        "local_supply_chain_posture.py",
+        "supply_chain_package_eval.py",
+        "package_eval_dispatch.py",
+        "local_supply_chain_stored_policy.py",
+        "store_base.py"
+      ],
+      "boundary": "LSC lazily imports the evaluator, and the evaluator's cached-cloud-policy path lazily imports LSC before using GuardStore policy lookup. Preserve import timing, class identity, live callback authority, approval and evidence state together."
+    },
+    {
+      "paths": [
+        "tests/test_guard_surface_server.py",
+        "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+        "store_base.py",
+        "store.py"
+      ],
+      "boundary": "Surface facade/child tests use the actual GuardStore class. Use the corrected exact owned temporary workspace fixture, original permissions, and owned pytest TMPDIR outside both real homes; no assertion edits."
+    },
+    {
+      "paths": [
+        "store_base_keyring.py",
+        "package_eval_cloud.py",
+        "package_eval_bundle.py",
+        "package_eval_archives.py"
+      ],
+      "boundary": "Current credentials, bundle/workspace cache bindings, policy overrides and external-archive approval/source integrity cross component boundaries. Run affected existing controls together; require ContextVar restoration, captured defaults and current parser/callback seams."
+    },
+    {
+      "paths": [
+        "shell_structure.py",
+        "tests/guard_command_decision_diff_runner.py",
+        "runtime/package_eval_*.py"
+      ],
+      "boundary": "The generator binds the runtime glob plus its fixed paths. All452 expected input bindings must match the actual complete union. Execute actual51000 write/check plus six original contracts, including both environment metrics with elapsed<60s and RSS<512MiB. Component reports/metrics do not validate this source."
+    },
+    {
+      "paths": [
+        "tests/test_managed_controls_contract_docs.py",
+        "dashboard/src/app-routing.ts",
+        "guard/daemon/static"
+      ],
+      "boundary": "Navigation correction reads the current app-routing source; actual formatting is314lines and strictly preserved. Dashboard/compiled assets are not modified by this union. Run existing navigation/docs/packaged-vocabulary assertions and verify the same source assets in rebuilt wheel/sdist; a JS rebuild is not justified by this file set."
+    }
+  ],
+  "smallest_next_validation": [
+    "Parent-owned isolated fresh combined corpus harvest on exact a83, using unchanged a8ca/e399 checks, complete metrics/error retention and original owned-group cleanup. This can proceed while installed-only LSC observer and package29 controls finish.",
+    "Bind all88 files and re-run fresh mechanical inverses for the combined source, full original inventory/protected invariants/duplicate census, Ruff/full-src format/dead-code and basedpyright with the owned interpreter explicitly selected. Keep project Python target3.10, diagnostics and all budgets unchanged.",
+    "Deduplicate and execute the existing affected component and cross-component cohorts against the same source with exact collected node/marker/parameter/fixture/origin records. Retain every declared skip and failure; source25 and installed25 are separate controls. Do not conflate the original component receipts with this combined execution.",
+    "Use actual combined generator output as a report-only descendant after independently auditing all expected inputs, report outcomes, actual metrics and original failure receipts. No manual report synthesis or edited source hashes.",
+    "Build real wheel/sdist from the final source/report tree, verify all members/RECORD/source/assets and capability exclusions, then clean installed cold-import/live-facade tests with explicit installed test root and before/after dependency/source identity.",
+    "Scan actual final commit/range with unchanged Gitleaks ignores; parent reviews final source/report before canonical update, then original full96-shard CI plan and normal workflow cohort run naturally."
+  ],
+  "limits": {
+    "python_parse_or_import_by_this_agent": false,
+    "tests_executed_by_this_agent": false,
+    "combined_corpus_executed": false,
+    "source_checkpoint_unreferenced": true,
+    "refs_changed": 0,
+    "original144_statuses_unchanged": true,
+    "budgets_changed": false,
+    "qualification_complete": false
+  }
+}

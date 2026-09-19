@@ -1,0 +1,347 @@
+{
+  "schema": "pr2974-source-integration-readiness-v5",
+  "date": "2026-09-19",
+  "canonical_source_at_cutoff": "44353b20262f1ca56b56204f4c764b047710454f",
+  "canonical_is_not_any_diagnostic_harness": true,
+  "no_task_status_changes": true,
+  "qualification_complete": false,
+  "rows": [
+    {
+      "lane": "CI repair",
+      "owner": "ci_repair; root integrates immutable report descendant",
+      "source": "9f2c8524981ad245d9b54b6b505f8e79223d4224",
+      "harness": "a8ca96e399c972ed3184060aaa3b4acefecd2b8d",
+      "state": "FORMAT_REPAIRED_IMMUTABLE_REPORT_DESCENDANT_STAGED_FINAL_VALIDATION_PENDING",
+      "run": 35440662264,
+      "job": 105890757210,
+      "outcome": "failure",
+      "actual_passes": {
+        "corpus_write": true,
+        "corpus_check": true,
+        "original_corpus_contracts": 6,
+        "managed_controls": 9,
+        "existing_heredoc": 167,
+        "seams": 27,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "budget_observations": [
+        {
+          "seconds": 58.99366980899998,
+          "MiB": 312.93359375
+        },
+        {
+          "seconds": 59.432648410999946,
+          "MiB": 313.87890625
+        }
+      ],
+      "budgets_unchanged": {
+        "seconds": 60,
+        "MiB": 512,
+        "outer_seconds": 75
+      },
+      "blocking_failure": "Ruff format --check for tests/test_managed_controls_contract_docs.py",
+      "generated_report": {
+        "blob": "ff97fe60a0aa577f044dc5ab9a57593f7e48ae37",
+        "sha256": "45861f0dee5a3435b95137ebaac3892fc097842f9b8e6c7c40b72f3d68593943",
+        "bytes": 54669,
+        "immutable_final_descendant": true
+      },
+      "terminal_receipt": {
+        "blob": "a5b77932853b296965682144acaaecbc987d135b",
+        "sha256": "ed4cdcafcfbd8065914d57f3a53083866cd67a68dca90ee5811e09f5a337109e"
+      },
+      "next": "The formatter/report source is immutable; use the verified a83 combined source for new actual corpus generation and original metric/contracts, then preserve an exact report descendant and final checks. The earlier a8 run remains failed.",
+      "integration_ready": false,
+      "formatted_report_source": {
+        "commit": "a77defd1a029bc9b9a44781307c55e4e9d8e2b39",
+        "tree": "7b37e8827f1f77827792a49950765b5f0e078920",
+        "sole_parent": "9f2c8524981ad245d9b54b6b505f8e79223d4224"
+      },
+      "formatter": {
+        "run": 35442510659,
+        "job": 105895678449,
+        "harness": "4020bb79c329ebb39a5003b562827f0c73db03e3",
+        "outcome": "success",
+        "source_only": true,
+        "full_ast_literal_token_anchored_comment_bridge": true,
+        "receipt": {
+          "blob": "41fc48ec91fe84fed252336f61e482f483b62779",
+          "sha256": "b05a31702538faba279aaf952525d0bc838439930fc0cb2000a4d5f32fe0c59d",
+          "path": "evidence/navigation-format.json"
+        }
+      }
+    },
+    {
+      "lane": "Protect / Codex / command tests / surface tests",
+      "owner": "acceptance_audit evidence; root final integration",
+      "source": "1578e609636cf0460b23dfbe083759097a635be0",
+      "source_tree": "4a7ea105c53d0eb68ed8a037e3e38288b32ff407",
+      "changed_paths": 34,
+      "source_python_paths": 33,
+      "state": "READY_FOR_COMBINED_SOURCE_CANDIDATE_AT_BOUNDED_SCOPE",
+      "prior_run": 35439228147,
+      "prior_harness": "9058f9eed9d49ab0493fe7ab8710752b38d858ae",
+      "prior_run_outcome": "failure retained",
+      "prior_results": {
+        "protect_pass": 32,
+        "command_pass": 75,
+        "surface_pass": 114,
+        "surface_declared_Darwin_skip": 1,
+        "codex_pass": 20,
+        "codex_fail": 1,
+        "source_gates": "pass",
+        "default_full_release_range_gitleaks": "pass; zero findings; unchanged 152 ignore entries"
+      },
+      "fresh_codex": {
+        "harness": "49005756455def6983fcad9409d25e27c3cb80d7",
+        "run": 35440934952,
+        "job": 105891475845,
+        "outcome": "success",
+        "existing_pass": 21,
+        "separate_seam_controls_pass": 9,
+        "phase_rows_verified": 63,
+        "product_origins_verified": 163
+      },
+      "source_gates_scope": "Ruff/format, 13 production files error-level types, source ownership/dead-code/AST and explicit fixture bridges, line limits, unchanged 433-path corpus closure, wheel/sdist artifact gates.",
+      "terminal_receipts": [
+        {
+          "blob": "f9203766a76435e7274a49bfeb0a4371ba60c98e",
+          "sha256": "b9b63d93d85779d683163fe25f3c08ed756f944e38a7a42a450365b8a06964ae"
+        },
+        {
+          "blob": "f191795c76e139bb7176ec88d6b04a2fff367f9e",
+          "sha256": "687dba99f498b34adecf148a079ec6e681bcfb63e0142bdeb4723e68233b5065"
+        }
+      ],
+      "limits": "The original Codex JUnit/node gate passed and complete phases/projection were independently checked; the downloaded original ZIP/XML bytes were not independently reopened. No extra reader is required for this bounded disposition. Prior failed runs remain failed. No full combined CI, installed, native or performance qualification.",
+      "next": "Root may combine these exact 34 source paths with independently ready batches, retain explicit inverses, recompute corpus closure and full default release-range scan, then bind appropriate integration checks and actual final-head CI.",
+      "integration_ready": true
+    },
+    {
+      "lane": "StoreBase",
+      "owner": "recover_handoff; source_partition source inverse peer; acceptance_audit orchestration peer",
+      "source": "32c26e3c4ce9adc341745c5912637f15bf0cefcb",
+      "source_tree": "9bbfbe495a6df53db97b5d6886763c50e5eb5b27",
+      "harness": "65e184fb2125283c4415c673aa382d395816460e",
+      "state": "READY_FOR_COMBINED_SOURCE_CANDIDATE_AT_BOUNDED_SCOPE",
+      "prior_source": "76116b985ed4985084b883c3b36be25c8b09a1ca",
+      "prior_harness": "c0baa65caedfb0b32ac647af950f2f8decafa1e0",
+      "prior_run": 35440429280,
+      "prior_job": 105890164858,
+      "prior_outcome": "failure before collection",
+      "actual_prior_passes": "57/201/117 original inverse, nine strict bridges, format/dead-code and six existing source gates; source/baseline/69 dependencies unchanged.",
+      "actual_prior_failures": [
+        "Ruff SIM103 on moved keyring platform guard",
+        "Ruff I001 on new seam-test imports",
+        "three analyzer errors for cryptography.fernet, keyring.backends.macOS and Fernet alias; original search-path cause unproved"
+      ],
+      "correction": "Line-specific SIM103 annotation and new-test import grouping only; analyzer explicitly uses owned primary and records installed provider-file identities.",
+      "planned_existing_function_selectors": 23,
+      "planned_new_seam_cases": 13,
+      "actual_case_expansion": 23,
+      "terminal_receipt": {
+        "blob": "1427d07d3fd68b7a4930861dd75f35fdf6627fef",
+        "sha256": "bfb1cb5782cc12e2dd4134dbba86e1640a618d4718b429f01aaa0f503075e513",
+        "bytes": 57505,
+        "path": "evidence/store-base-corrected-run.json"
+      },
+      "new_orchestration_peer": {
+        "blob": "018eb6cfbbbd2a204e32cac572946904612c9d9e",
+        "sha256": "bf2bef0aed6fcf4fd6d3a85976a19af7f36f2618495693e4e5d9ca4ccb87a47a"
+      },
+      "next": "Include exact32c in the reviewed combined source candidate; preserve the failed c0baa attempt and fresh36-case scope. Apply only source-dependent combined checks; no unchanged-component rerun solely for backup.",
+      "integration_ready": true,
+      "fresh_run": 35442131469,
+      "fresh_job": 105894655054,
+      "fresh_outcome": "success",
+      "fresh_actual": {
+        "commands_passed": 23,
+        "scoped_Ruff_format_files": 9,
+        "type_files": 8,
+        "source_gates": 6,
+        "existing_cases": 23,
+        "new_seams": 13,
+        "total_cases_passed": 36,
+        "phase_records": 108,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "ordered_collections_equal": true,
+        "source_baseline_environment_unchanged": true
+      },
+      "fresh_evidence_attribution": "Complete owner disposition fetched and SHA256-verified; the owner independently bound all 36 ordered cases/108 phases/collection rows and source/environment pins. Original driver checked ordered XML bijection; this audit did not reopen the original ZIP/XML.",
+      "prior_terminal_receipt": {
+        "blob": "f798ca4b619d0dd3ada1e6c5266997f8ada17730",
+        "sha256": "539179d1f69391c56e4315df3abec1fdd75923fb3143bfa988d4e60c4233b605"
+      }
+    },
+    {
+      "lane": "Local supply chain",
+      "owner": "review_integration; ci_repair package/installed controls peer; root final harness review",
+      "source": "82c78d0b609b380781528498a9c81c987e868a3e",
+      "harness": "6a13fc0dd6374d918fbf7afe118e24eb3e8dfc37",
+      "harness_tree": "64ad7f34ec4fccac3e557157414d529ab8524d6e",
+      "state": "SOURCE_COMPONENT_PASSED_INSTALLED_RECONCILIATION_FAILED",
+      "run": 35441981146,
+      "actual_existing_case_expansion": 613,
+      "planned_existing_seed_files": 24,
+      "planned_existing_top_level_functions_before_parameterization": 364,
+      "planned_new_source_seams": 25,
+      "planned_clean_installed_wheel_seams": 25,
+      "peer_scope": "Complete-file collection/fixture/marker/parameter identity, before-first-fixture equality, ordered per-node JUnit/phase reconciliation, owned /tmp, unchanged no-skips policy for new seams. Explicit analyzer interpreter and separately reviewed package-failure retention.",
+      "final_readback_receipt_blob": "ce66281c4b79ab5a7d29bf318baf64a43f950faf",
+      "next": "Read the original installed snapshot/XML and exact wheel from the original artifact. Prepare a separately reviewed installed-only25-case successor with explicit owned --rootdir and finally-retained installed identity; keep generic JUnit mapping/test assertions exact. Do not repeat613 existing or25 source cases. Final installed qualification remains pending.",
+      "integration_ready": false,
+      "run_attempt": 1,
+      "fresh_GitHub_status": "completed",
+      "outcome": "failure",
+      "job": 105894249841,
+      "source_tree": "3847a4f82da7c15cf0a13152e347e5e110132140",
+      "actual_source_results": {
+        "existing_cases": 613,
+        "source_seams": 25,
+        "total_passed": 638,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "ordered_baseline_candidate_collection_equal": true,
+        "per_node_phase_junit_identity_equal": true,
+        "source_inverse": "143 moved functions, 17 owners, 832 live facade references; exact original ordered AST and lexical bindings",
+        "ruff_format_paths": 19,
+        "owned_interpreter_types": "both passed",
+        "wheel_sdist_and_both_capability_gates": "passed",
+        "source_environment_unchanged": true,
+        "owned_groups_retired": true
+      },
+      "actual_installed_results": {
+        "command_returncode": 0,
+        "planned_cases": 25,
+        "raw_snapshot_and_junit_audited": false,
+        "cases_reconciled": false,
+        "after_identity_reached": false,
+        "qualified": false,
+        "failure": "Generic JUnit mapper rejected the original ::test_name node prefix; pinned pytest9.0.3 root selection with -c/dev/null explains the identity."
+      },
+      "terminal_receipt": {
+        "blob": "526ccd9fa328977402f71d45a4fc540c237ca1ce",
+        "sha256": "2a408283063836e48a22212082a72ad4e2496ac1b102fd29b86db0fae0ab0de3",
+        "bytes": 18031,
+        "path": "evidence/lsc-first-run.json"
+      },
+      "ready_for_source_union": true
+    },
+    {
+      "lane": "Package evaluator",
+      "owner": "source_partition; root preserves immutable actual corpus report descendant",
+      "source": "5fbd95387842b79279dfdad530aa5a7b9763892d",
+      "harness": "e399247f4d2ce23918764c1d83004385db79754f",
+      "state": "LINT_AND_REPORT_PASSED_METRIC_FAILED_COMPONENT_29_PENDING",
+      "prior_formatted_source_prefix": "78634b0b",
+      "prior_corpus_run": 35438870116,
+      "prior_corpus_outcome": "failure",
+      "prior_corpus_results": {
+        "write_seconds": 47.156,
+        "write": "pass",
+        "check_seconds": 46.602,
+        "check": "pass",
+        "contracts_pass": 4,
+        "contracts_fail": 2,
+        "cause": "confirmed spawned-child observer re-entry/snapshot race; original contaminated timeout retained"
+      },
+      "prior_lint_run": 35440128214,
+      "prior_lint_job": 105889382891,
+      "prior_lint_result": "79 F401 diagnostics on 72 facade import lines; all 23 format checks passed",
+      "correction": "72 precise F401 comment annotations, no production body/binding change; guarded main entry and owned /tmp in harness.",
+      "historical_report_is_not_final": true,
+      "report_binding_files": 452,
+      "planned_final_existing_cases": 17,
+      "planned_final_boundary_cases": 7,
+      "planned_final_witness_cases": 5,
+      "planned_separate_source_routes": 3,
+      "owner_inverse_blob": "8ee72bff4b44a77d0884cb6cf2996f67ef04afa3",
+      "next": "Preserve this exact failed attempt and actual report-only descendant for root-authorized component-only 29-case validation with performance_status=failed and qualification=false. Do not rerun unchanged package metrics. On the future exact combined source that includes the separate CI repairs, regenerate the report and pass the unchanged final original metrics/contracts before integration acceptance.",
+      "integration_ready": false,
+      "fresh_run": 35441322798,
+      "fresh_job": 105892486411,
+      "fresh_outcome": "failure",
+      "fresh_results": {
+        "scoped_lint_format_paths": 23,
+        "diagnostics": 0,
+        "report_write": "pass",
+        "report_write_seconds": 64.8665,
+        "report_check": "pass",
+        "report_check_seconds": 64.5477,
+        "original_contracts_pass": 5,
+        "original_contracts_fail": 1,
+        "first_reported_completed_metric_seconds": 62.579645662,
+        "failed_threshold_seconds": 60,
+        "second_metric_seconds": null,
+        "second_rss_MiB": null,
+        "both_metric_children_returned": true,
+        "report_digests_match": true,
+        "spawn_reentry": false,
+        "timeout": false,
+        "source_and_environment_unchanged": true,
+        "owned_groups_retired": true,
+        "unprinted_metric_values": "Original pytest output shortened these fields; no value inferred."
+      },
+      "current_report_prefix": "403d785d",
+      "current_report_bytes": 56740,
+      "current_report_is_accepted_performance_evidence": false,
+      "actual_report_descendant": {
+        "commit": "06a193267c949d9409089465d432bc2b68fc112b",
+        "tree_prefix": "f40350c7",
+        "sole_parent": "5fbd95387842b79279dfdad530aa5a7b9763892d",
+        "qualification": false,
+        "performance_status": "failed"
+      },
+      "actual_report": {
+        "blob": "5202b8c004ed746ce0c0cdf6fd312d7a29e16d61",
+        "sha256": "403d785d4bd4cb923534fa65c3e8fe11fe8e7d17efa51996d98913e08a0fff8a",
+        "bytes": 56740
+      },
+      "terminal_receipt": {
+        "blob": "2db966a9ac1d3a58d306a05f7a7dcd93f5d18849",
+        "sha256": "ee5ccc6e98b0e02795cb7da7557d80e7483f1fd5ed0b651d90c30a4e48130f81",
+        "bytes": 7127,
+        "path": "evidence/package-corrected-run.json"
+      }
+    }
+  ],
+  "integration_rule": "Component readiness permits only constructing a reviewable immutable combined source candidate. Final source/tree/closure, selected checks, actual required CI and review remain independent. Original historical 144 task statuses and all failures are unchanged.",
+  "supersedes_evidence_cutoff_only": {
+    "blob": "3b8e251a1186c2a40dc14443ed42d455a29c515a",
+    "sha256": "c872d5d950094bbe6ae8b0708ac70cf933ff82d9643ec7a45ccfced1b067dfb5",
+    "bytes": 12529
+  },
+  "canonical_PR_readback": {
+    "head_sha": "44353b20262f1ca56b56204f4c764b047710454f",
+    "branch": "chore/resolve-2797-conflicts",
+    "base": "release/3.2",
+    "base_sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "workflow_runs": 31,
+    "success": 30,
+    "failure": 1,
+    "failed_run": 35433592816,
+    "source": "fresh GitHub GET in this audit"
+  },
+  "cutoff_basis": "All first natural component attempts known at this snapshot; later formatter, installed-only and package29 successors remain pending.",
+  "staged_combined_source": {
+    "commit": "a83d1e5b05716bbd623c717bab28c048986d199a",
+    "tree": "436d6388de72ebbb7ebc257b4acb4b5a53b0ab28",
+    "sole_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+    "changed_paths": 88,
+    "leaves": 4622,
+    "original_report_unchanged": true,
+    "expected_corpus_inputs": 452,
+    "changed_corpus_input_paths": 22,
+    "actual_combined_generation_or_validation": false,
+    "composition_receipt": {
+      "blob": "91d948e19a3a4f99bb3df1585b8737a294fb6190",
+      "sha256": "ffb958ef79cd0c43ecb112b1f62ee423d835e0644f9acb71769ee10c9eac8938",
+      "path": "evidence/combined-source-composition.json"
+    }
+  }
+}

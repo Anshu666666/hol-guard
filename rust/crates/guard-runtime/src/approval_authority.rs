@@ -431,44 +431,7 @@ fn test_record(
 }
 
 #[cfg(test)]
-pub(super) fn canonical_record_for_enrollment(
-    public_key: &[u8; 32],
-    enrollment_generation: u64,
-    enrollment_signature: &str,
-) -> Result<Vec<u8>, String> {
-    let record = test_record(
-        public_key,
-        enrollment_generation,
-        None,
-        "active",
-        enrollment_signature.to_owned(),
-    );
-    let value =
-        serde_json::to_value(record).map_err(|_| "native_approval_authority_invalid".to_owned())?;
-    canonical_json_bytes(&value).map_err(|_| "native_approval_authority_invalid".to_owned())
-}
-
-#[cfg(test)]
-pub(super) fn enrollment_signature_for_tests(
-    public_key: &[u8; 32],
-    enrollment_generation: u64,
-    signing_seed: &[u8; 32],
-) -> Result<String, String> {
-    let record = test_record(
-        public_key,
-        enrollment_generation,
-        None,
-        "active",
-        String::new(),
-    );
-    let signing_bytes = enrollment_signing_bytes(&record)?;
-    let key_pair = ring::signature::Ed25519KeyPair::from_seed_unchecked(signing_seed)
-        .map_err(|_| "native_approval_authority_invalid".to_owned())?;
-    let mut message = Vec::with_capacity(APPROVAL_ENROLLMENT_DOMAIN.len() + signing_bytes.len());
-    message.extend_from_slice(APPROVAL_ENROLLMENT_DOMAIN);
-    message.extend_from_slice(&signing_bytes);
-    Ok(hex::encode(key_pair.sign(&message).as_ref()))
-}
+pub(super) use tests::{canonical_record_for_enrollment, enrollment_signature_for_tests};
 
 #[cfg(test)]
 pub(super) fn test_enrollment_root_seed() -> [u8; 32] {

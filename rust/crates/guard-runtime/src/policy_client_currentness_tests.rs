@@ -52,7 +52,9 @@ fn installed(root: &Path, version: u8) -> (PolicySnapshotStore, [u8; 32], Value)
 }
 
 fn private_bytes(path: &Path, bytes: &[u8]) {
-    fixture_file(path, bytes);
+    let private_root = path.parent().unwrap();
+    let mut file = crate::resident_state::private_file(path, false, private_root).unwrap();
+    file.write_all(bytes).unwrap();
     #[cfg(unix)]
     fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
 }

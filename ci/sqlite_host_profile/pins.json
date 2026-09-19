@@ -1,0 +1,151 @@
+{
+  "archive": {
+    "bytes": 13365053,
+    "sha256": "2b3d8ab17c3aba187f7c20171d50b76cff208bb8d8701358412f489e1b866a6a"
+  },
+  "inventory_source_parent": "eb71791aab5daf7244bdbb18424c6d59a90a5b60",
+  "merge_build_ref": "abf73b82beb6d2acc59b9ab9c37f9f1bb768d8c6",
+  "original_artifact": 10574998488,
+  "original_identity_report": {
+    "bytes": 3072,
+    "name": "native-installed-identity.json",
+    "sha256": "7f58b543159ea7d750db21914681dfb3555c919125a3643cea94a2c868eb3a31"
+  },
+  "original_job": 105816829953,
+  "original_run": 35413241936,
+  "reader_sources": {
+    "ci/sqlite_kernel_observer/btf_profile.py": "8d99bca5be6a231a6cd56f6e2756fb822d454235e1fbf0ddf6b63a787eb45e81",
+    "ci/sqlite_observer/bind_loaded_sqlite.py": "96aa8786f9fe45fd186a1d1650a1acbe18f1038d66b284458a476871ef38f48a"
+  },
+  "reference_abi": {
+    "config": [
+      "CONFIG_BPF",
+      "CONFIG_BPF_SYSCALL",
+      "CONFIG_BPF_JIT",
+      "CONFIG_DEBUG_INFO_BTF",
+      "CONFIG_FTRACE",
+      "CONFIG_FUNCTION_TRACER",
+      "CONFIG_BPF_EVENTS",
+      "CONFIG_PERF_EVENTS",
+      "CONFIG_HAVE_SYSCALL_TRACEPOINTS",
+      "CONFIG_UPROBES",
+      "CONFIG_UPROBE_EVENTS",
+      "CONFIG_SECURITY"
+    ],
+    "fields": {
+      "dentry.d_inode": "ptr(struct:inode)",
+      "fdtable.close_on_exec": "ptr(unsigned:64)",
+      "fdtable.fd": "ptr(ptr(struct:file))",
+      "fdtable.max_fds": "unsigned:32",
+      "fdtable.open_fds": "ptr(unsigned:64)",
+      "file.f_flags": "unsigned:32",
+      "file.f_inode": "ptr(struct:inode)",
+      "file.f_mode": "unsigned:32",
+      "files_struct.count.counter": "signed:32",
+      "files_struct.fdt": "ptr(struct:fdtable)",
+      "inode.i_ino": "unsigned:64",
+      "inode.i_mode": "unsigned:16",
+      "inode.i_sb": "ptr(struct:super_block)",
+      "pt_regs.cs": "unsigned:64",
+      "pt_regs.di": "unsigned:64",
+      "pt_regs.dx": "unsigned:64",
+      "pt_regs.orig_ax": "unsigned:64",
+      "pt_regs.r10": "unsigned:64",
+      "pt_regs.r8": "unsigned:64",
+      "pt_regs.r9": "unsigned:64",
+      "pt_regs.si": "unsigned:64",
+      "renamedata.flags": "unsigned:32",
+      "renamedata.new_dentry": "ptr(struct:dentry)",
+      "renamedata.old_dentry": "ptr(struct:dentry)",
+      "super_block.s_dev": "unsigned:32",
+      "task_struct.files": "ptr(struct:files_struct)",
+      "task_struct.mm": "ptr(struct:mm_struct)",
+      "task_struct.tgid": "signed:32",
+      "vm_area_struct.vm_end": "unsigned:64",
+      "vm_area_struct.vm_file": "ptr(struct:file)",
+      "vm_area_struct.vm_flags": "unsigned:64",
+      "vm_area_struct.vm_mm": "ptr(struct:mm_struct)",
+      "vm_area_struct.vm_start": "unsigned:64"
+    },
+    "functions": {
+      "__close_range": "signed:32(unsigned:32,unsigned:32,unsigned:32)",
+      "__destroy_inode": "void(ptr(struct:inode))",
+      "__fput": "void(ptr(struct:file))",
+      "__mmdrop": "void(ptr(struct:mm_struct))",
+      "__put_task_struct": "void(ptr(struct:task_struct))",
+      "alloc_empty_backing_file": "ptr(struct:file)(signed:32,ptr(struct:cred))",
+      "alloc_empty_file": "ptr(struct:file)(signed:32,ptr(struct:cred))",
+      "alloc_empty_file_noaccount": "ptr(struct:file)(signed:32,ptr(struct:cred))",
+      "alloc_fd": "signed:32(unsigned:32,unsigned:32,unsigned:32)",
+      "close_files": "ptr(struct:fdtable)(ptr(struct:files_struct))",
+      "do_close_on_exec": "void(ptr(struct:files_struct))",
+      "do_dentry_open": "signed:32(ptr(struct:file),ptr(struct:inode),ptr(signed:32(ptr(struct:inode),ptr(struct:file))))",
+      "do_dup2": "signed:32(ptr(struct:files_struct),ptr(struct:file),unsigned:32,unsigned:32)",
+      "do_mmap": "unsigned:64(ptr(struct:file),unsigned:64,unsigned:64,unsigned:64,unsigned:64,unsigned:64,unsigned:64,ptr(unsigned:64),ptr(struct:list_head))",
+      "do_truncate": "signed:32(ptr(struct:mnt_idmap),ptr(struct:dentry),signed:64,unsigned:32,ptr(struct:file))",
+      "dup_fd": "ptr(struct:files_struct)(ptr(struct:files_struct),unsigned:32,ptr(signed:32))",
+      "exit_files": "void(ptr(struct:task_struct))",
+      "expand_fdtable": "signed:32(ptr(struct:files_struct),unsigned:32)",
+      "fd_install": "void(unsigned:32,ptr(struct:file))",
+      "file_close_fd_locked": "ptr(struct:file)(ptr(struct:files_struct),unsigned:32)",
+      "mprotect_fixup": "signed:32(ptr(struct:vma_iterator),ptr(struct:mmu_gather),ptr(struct:vm_area_struct),ptr(ptr(struct:vm_area_struct)),unsigned:64,unsigned:64,unsigned:64)",
+      "put_unused_fd": "void(unsigned:32)",
+      "security_file_alloc": "signed:32(ptr(struct:file))",
+      "security_file_free": "void(ptr(struct:file))",
+      "set_close_on_exec": "void(unsigned:32,signed:32)",
+      "unshare_files": "signed:32()",
+      "uprobe_mmap": "signed:32(ptr(struct:vm_area_struct))",
+      "vfs_fsync_range": "signed:32(ptr(struct:file),signed:64,signed:64,signed:32)",
+      "vfs_rename": "signed:32(ptr(struct:renamedata))",
+      "vfs_unlink": "signed:32(ptr(struct:mnt_idmap),ptr(struct:inode),ptr(struct:dentry),ptr(ptr(struct:inode)))",
+      "vfs_write": "signed:64(ptr(struct:file),ptr(signed:8),unsigned:64,ptr(signed:64))",
+      "vfs_writev": "signed:64(ptr(struct:file),ptr(struct:iovec),unsigned:64,ptr(signed:64),signed:32)"
+    },
+    "source_commit": "e8f897f4afef0031fe618a8e94127a0934896aba",
+    "target_layout": {
+      "base_page_bytes": 4096,
+      "byte_order": "little",
+      "machine": "x86_64",
+      "pointer_bits": 64
+    },
+    "tracepoints": {
+      "btf_trace_sched_process_exec": "ptr(void(ptr(void),ptr(struct:task_struct),signed:32,ptr(struct:linux_binprm)))",
+      "btf_trace_sched_process_exit": "ptr(void(ptr(void),ptr(struct:task_struct)))",
+      "btf_trace_sched_process_fork": "ptr(void(ptr(void),ptr(struct:task_struct),ptr(struct:task_struct)))",
+      "btf_trace_sys_enter": "ptr(void(ptr(void),ptr(struct:pt_regs),signed:64))",
+      "btf_trace_sys_exit": "ptr(void(ptr(void),ptr(struct:pt_regs),signed:64))"
+    }
+  },
+  "repository": "hashgraph-online/hol-guard",
+  "runtime": {
+    "bytes": 12400392,
+    "installed_package_digest": "f2964cace54a706d2cf1d8ec3a302039eaf4243aed9b60f4ad6dfc899b3968b3",
+    "manifest_sha256": "e58f5010e5ff8ecddeb443d4f86ac468d16a119954bf81510eeecdc6c5364d9b",
+    "sha256": "42c282e6af643813969788a5f0fec31d6312cbc60a75efcdb0b5aa4347e71f1c"
+  },
+  "schema": "hol_sqlite_host_inventory_pins_v1",
+  "source": "1cd7842c1da4f327b568065dd159c67e7bd0c92b",
+  "source_files": {
+    ".github/workflows/native-wheel-ci.yml": {
+      "bytes": 23306,
+      "git_blob_sha1": "396716400a0360ac123986505a0b0c35e823ba27",
+      "sha256": "0bd708e1aec09b534eb160f6def24c661e8cbd58752b3624cd3a404af85e16cf"
+    },
+    "pyproject.toml": {
+      "bytes": 8626,
+      "git_blob_sha1": "9b7b297cd060ff808a43743c873847bb9ae2855b",
+      "sha256": "5d25cbca36b0ebcd2d174e449aff00426d5ffc017bd2cbb2b10341a58eef7c41"
+    },
+    "uv.lock": {
+      "bytes": 960988,
+      "git_blob_sha1": "afd00d9bb1a698cd53dba0e3b7909d5440157aa4",
+      "sha256": "2f8be0348737c110ca995f0767eb3cfce1cac47178788c20fea1eef79e91d54e"
+    }
+  },
+  "source_tree": "5250218ff36acbb35a2fba0fde483db02a724f63",
+  "wheel": {
+    "bytes": 8730195,
+    "name": "native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+    "sha256": "8e866e4750080a83b0f0f8af216b2d00a5e85684f80346ba34b005453251aef8"
+  }
+}

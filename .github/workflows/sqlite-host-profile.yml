@@ -1,0 +1,78 @@
+name: SQLite read-only host profile
+
+on:
+  push:
+    branches: [codex/rsp-sqlite-host-profile-eb717]
+    paths:
+      - .github/workflows/sqlite-host-profile.yml
+      - ci/sqlite_host_profile/**
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original-wheel-new-host-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout this inventory source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+          path: observer
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ci/sqlite_host_profile/
+            /ci/sqlite_observer/bind_loaded_sqlite.py
+            /ci/sqlite_kernel_observer/btf_profile.py
+      - name: Checkout the immutable original lock environment
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 1cd7842c1da4f327b568065dd159c67e7bd0c92b
+          persist-credentials: false
+          path: workload-source
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /pyproject.toml
+            /uv.lock
+            /.github/workflows/native-wheel-ci.yml
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Download the exact original artifact once
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          mkdir profile-output original-wheel
+          python -I -B observer/ci/sqlite_host_profile/inventory.py download \
+            --archive original-artifact.zip --source workload-source \
+            --output profile-output/download-receipt.json
+      - name: Verify original source, archive, wheel and runtime bytes
+        run: |
+          python -I -B observer/ci/sqlite_host_profile/inventory.py prepare \
+            --archive original-artifact.zip --source workload-source \
+            --wheel-directory original-wheel --output profile-output/preparation-receipt.json
+      - name: Recreate only locked dependencies and install the original wheel
+        working-directory: workload-source
+        run: |
+          uv sync --frozen --extra dev --python 3.12 --no-install-project
+          uv pip install --python .venv/bin/python --no-deps --force-reinstall \
+            ../original-wheel/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl
+      - name: Collect static host identities without a connection or workload
+        run: |
+          workload-source/.venv/bin/python -I -B observer/ci/sqlite_host_profile/inventory.py capture \
+            --archive original-artifact.zip --source workload-source \
+            --output profile-output/host-inventory.json
+      - name: Retain only bounded inventory reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sqlite-read-only-host-profile-${{ github.sha }}
+          path: profile-output/*.json
+          if-no-files-found: error
+          retention-days: 14

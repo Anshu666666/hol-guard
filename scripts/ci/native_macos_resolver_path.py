@@ -23,6 +23,8 @@ from scripts.ci.native_macos_resolver_tool_capture import _capture
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
+    "scripts/__init__.py",
+    "scripts/ci/__init__.py",
     "scripts/ci/native_macos_resolver_probe.c",
     "scripts/ci/native_macos_resolver_path.py",
     "scripts/ci/native_macos_resolver_capture.py",
@@ -35,6 +37,14 @@ SOURCES = (
     "scripts/ci/native_macos_python_resolver_path.py",
     "tests/test_native_macos_python_resolver.py",
     "tests/test_native_macos_python_resolver_binding.py",
+    "scripts/ci/native_macos_dnssd_python_bridge.c",
+    "scripts/ci/native_macos_dnssd_python_child.py",
+    "scripts/ci/native_macos_dnssd_python_evidence.py",
+    "scripts/ci/native_macos_dnssd_python_path.py",
+    "tests/test_native_macos_dnssd_python.py",
+    "tests/test_native_macos_dnssd_python_path.py",
+    "scripts/ci/native_macos_xcode_selection.py",
+    "tests/test_native_macos_xcode_selection.py",
     "tests/test_native_macos_resolver_capture.py",
     "tests/test_native_macos_resolver_evidence.py",
     "tests/test_native_macos_resolver_path.py",

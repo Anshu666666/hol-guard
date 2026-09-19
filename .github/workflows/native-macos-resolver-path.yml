@@ -5,12 +5,18 @@ on:
     branches: [codex/rsp-macos-resolver-path-diagnostic]
     paths:
       - '.github/workflows/native-macos-resolver-path.yml'
+      - 'scripts/__init__.py'
+      - 'scripts/ci/__init__.py'
       - 'scripts/ci/native_macos_resolver_*'
       - 'scripts/ci/native_macos_python_resolver_*'
+      - 'scripts/ci/native_macos_dnssd_python_*'
+      - 'scripts/ci/native_macos_xcode_selection.py'
       - 'scripts/ci/native_macos_service_identity.py'
       - 'tests/test_native_macos_resolver_*'
       - 'tests/test_native_macos_python_resolver.py'
       - 'tests/test_native_macos_python_resolver_binding.py'
+      - 'tests/test_native_macos_dnssd_python*'
+      - 'tests/test_native_macos_xcode_selection.py'
 
 permissions:
   contents: read
@@ -65,7 +71,11 @@ jobs:
           tests/test_native_macos_resolver_tool_capture.py
           tests/test_native_macos_python_resolver.py
           tests/test_native_macos_python_resolver_binding.py
+          tests/test_native_macos_dnssd_python.py
+          tests/test_native_macos_dnssd_python_path.py
+          tests/test_native_macos_xcode_selection.py
       - name: Bind actual source, SDK, compiler and Python runtime
+        id: prepare
         run: >-
           python -I scripts/ci/native_macos_resolver_path.py --prepare
           --output "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
@@ -114,6 +124,44 @@ jobs:
           --original-report "$RUNNER_TEMP/macos-resolver-path-report/resolver-path.json"
           --bridge "$RUNNER_TEMP/macos-resolver-path-build/resolver-bridge.dylib"
           --output "$RUNNER_TEMP/macos-resolver-path-report/python-resolver-path.json"
+      - name: Require both preceding reports and all nine lookup children to finish
+        id: dnssd_admission
+        if: ${{ always() && steps.bridge.outcome == 'success' }}
+        run: >-
+          python -I scripts/ci/native_macos_dnssd_python_path.py --admit-previous
+          --prepared "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
+          --original-report "$RUNNER_TEMP/macos-resolver-path-report/resolver-path.json"
+          --python-report "$RUNNER_TEMP/macos-resolver-path-report/python-resolver-path.json"
+          --output "$RUNNER_TEMP/macos-resolver-path-report/dnssd-admission.json"
+      - name: Compile the unchanged DNS-SD queries as a separate Python-loadable library
+        id: dnssd_bridge
+        if: ${{ always() && steps.dnssd_admission.outcome == 'success' }}
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror -dynamiclib \
+            scripts/ci/native_macos_dnssd_python_bridge.c \
+            -o "$RUNNER_TEMP/macos-resolver-path-build/dnssd-bridge.dylib" \
+            > "$RUNNER_TEMP/macos-resolver-path-build/dnssd-bridge.stdout" \
+            2> "$RUNNER_TEMP/macos-resolver-path-build/dnssd-bridge.stderr"
+      - name: Compare the same simple and shared DNS-SD queries within Python
+        id: dnssd_lookups
+        if: ${{ always() && steps.dnssd_bridge.outcome == 'success' }}
+        run: >-
+          python -I scripts/ci/native_macos_dnssd_python_path.py
+          --prepared "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
+          --original-report "$RUNNER_TEMP/macos-resolver-path-report/resolver-path.json"
+          --python-report "$RUNNER_TEMP/macos-resolver-path-report/python-resolver-path.json"
+          --bridge "$RUNNER_TEMP/macos-resolver-path-build/dnssd-bridge.dylib"
+          --output "$RUNNER_TEMP/macos-resolver-path-report/dnssd-python-path.json"
+      - name: Observe Intel developer selection after the original SDK discovery failure
+        id: xcode_selection
+        if: ${{ always() && matrix.architecture == 'x86_64' && steps.prepare.outcome == 'failure' }}
+        timeout-minutes: 1
+        run: >-
+          python -I scripts/ci/native_macos_xcode_selection.py
+          --prepared "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
+          --output "$RUNNER_TEMP/macos-resolver-path-report/xcode-selection.json"
       - name: Retain normalized job outcome after failure
         if: always()
         env:
@@ -122,6 +170,10 @@ jobs:
           BRIDGE_OUTCOME: ${{ steps.bridge.outcome }}
           PYTHON_ADMISSION_OUTCOME: ${{ steps.python_admission.outcome }}
           PYTHON_LOOKUP_OUTCOME: ${{ steps.python_lookups.outcome }}
+          DNSSD_ADMISSION_OUTCOME: ${{ steps.dnssd_admission.outcome }}
+          DNSSD_BRIDGE_OUTCOME: ${{ steps.dnssd_bridge.outcome }}
+          DNSSD_LOOKUP_OUTCOME: ${{ steps.dnssd_lookups.outcome }}
+          XCODE_SELECTION_OUTCOME: ${{ steps.xcode_selection.outcome }}
         shell: bash
         run: |
           python3 -I - <<'PY'
@@ -135,8 +187,14 @@ jobs:
                         bridge_outcome=os.environ['BRIDGE_OUTCOME'],
                         python_admission_outcome=os.environ['PYTHON_ADMISSION_OUTCOME'],
                         python_lookup_outcome=os.environ['PYTHON_LOOKUP_OUTCOME'],
+                        dnssd_admission_outcome=os.environ['DNSSD_ADMISSION_OUTCOME'],
+                        dnssd_bridge_outcome=os.environ['DNSSD_BRIDGE_OUTCOME'],
+                        dnssd_lookup_outcome=os.environ['DNSSD_LOOKUP_OUTCOME'],
+                        xcode_selection_outcome=os.environ['XCODE_SELECTION_OUTCOME'],
+                        xcode_selection_boundary='post_failure_one_minute_workflow_step_five_second_direct_command',
                         compiler_boundary='one_minute_workflow_step_no_descendant_certificate',
                         bridge_boundary='one_minute_workflow_step_no_descendant_certificate',
+                        dnssd_bridge_boundary='one_minute_workflow_step_no_descendant_certificate',
                         raw_compiler_output_exported=False)
           for channel in ('stdout', 'stderr'):
               source = root / ('macos-resolver-path-build/compiler.' + channel)
@@ -159,6 +217,17 @@ jobs:
                       report['bridge_source_diagnostics'] = [
                           {'line': int(m[1]), 'column': int(m[2]), 'kind': m[3]}
                           for m in re.finditer(r'native_macos_(?:python_resolver_bridge|resolver_probe)\.c:(\d+):(\d+): (error|warning):', data.decode('utf-8', errors='replace'))
+                      ][:32]
+          for channel in ('stdout', 'stderr'):
+              source = root / ('macos-resolver-path-build/dnssd-bridge.' + channel)
+              if source.is_file():
+                  data = source.read_bytes()
+                  report['dnssd_bridge_' + channel + '_bytes'] = len(data)
+                  report['dnssd_bridge_' + channel + '_sha256'] = hashlib.sha256(data).hexdigest()
+                  if channel == 'stderr':
+                      report['dnssd_bridge_source_diagnostics'] = [
+                          {'line': int(m[1]), 'column': int(m[2]), 'kind': m[3]}
+                          for m in re.finditer(r'native_macos_(?:dnssd_python_bridge|python_resolver_bridge|resolver_probe)\.c:(\d+):(\d+): (error|warning):', data.decode('utf-8', errors='replace'))
                       ][:32]
           output.write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
           PY

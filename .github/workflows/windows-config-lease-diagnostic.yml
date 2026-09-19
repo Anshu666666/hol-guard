@@ -1,0 +1,86 @@
+name: Windows configuration authority lease diagnostic
+run-name: Finite Windows configuration lease control - 8156ba5e
+
+on:
+  push:
+    branches: [codex/windows-open-cause-8156]
+    paths:
+      - '.github/workflows/windows-config-lease-diagnostic.yml'
+      - 'scripts/ci/windows_config_lease_*.py'
+      - 'tests/test_windows_config_lease_diagnostic.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-config-lease-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finite-windows-control:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Preserve exact committed bytes
+        shell: bash
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-src
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 8156ba5ec1e69908290d481bad421ba5f9bd93b2
+          path: candidate-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.10'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Install frozen dependencies in a fresh environment
+        shell: pwsh
+        run: uv sync --frozen --extra dev --no-install-project --project candidate-src --python 3.12.10
+      - name: Build unchanged Python package wheel
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path diagnostic-evidence | Out-Null
+          candidate-src/.venv/Scripts/python.exe -I diagnostic-src/scripts/ci/windows_config_lease_evidence.py `
+            --build-source candidate-src --out-dir "$env:GITHUB_WORKSPACE/diagnostic-dist" `
+            --output diagnostic-evidence/wheel-build.json 2>&1 | Tee-Object -FilePath diagnostic-evidence/wheel-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install exact diagnostic wheel
+        shell: pwsh
+        run: |
+          $wheels = @(Get-ChildItem diagnostic-dist/*.whl)
+          if ($wheels.Count -ne 1) { throw 'Expected exactly one wheel' }
+          uv pip install --python candidate-src/.venv/Scripts/python.exe --no-deps $wheels[0].FullName
+      - name: Verify finite diagnostic controls
+        shell: pwsh
+        run: |
+          candidate-src/.venv/Scripts/python.exe -I -m pytest --noconftest diagnostic-src/tests/test_windows_config_lease_diagnostic.py -q --tb=short
+      - name: Capture one finite installed Windows sharing control
+        shell: pwsh
+        env:
+          DIAGNOSTIC_DRIVER_SHA: ${{ github.sha }}
+        run: |
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          $wheels = @(Get-ChildItem diagnostic-dist/*.whl)
+          if ($wheels.Count -ne 1) { throw 'Expected exactly one wheel' }
+          candidate-src/.venv/Scripts/python.exe -I diagnostic-src/scripts/ci/windows_config_lease_diagnostic.py `
+            --source candidate-src --driver-commit $env:DIAGNOSTIC_DRIVER_SHA `
+            --wheel $wheels[0].FullName --output diagnostic-evidence/windows-config-lease.json
+      - name: Preserve finite control and wheel
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-config-lease-8156-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            diagnostic-evidence/*.json
+            diagnostic-evidence/*.log
+            diagnostic-dist/*.whl
+          if-no-files-found: error
+          retention-days: 30

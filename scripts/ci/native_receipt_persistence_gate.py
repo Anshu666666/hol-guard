@@ -125,8 +125,61 @@ def _validate_hook_routes(root: Path) -> None:
     probe = _read(root, "ci/native_runtime/probe_native_default_auto.py")
     _contains_all(
         probe,
-        ("receipt_metrics", "mode_invariants", '"invalid"', 'for mode in ("off", "shadow")'),
+        ("receipt_metrics", "mode_invariants", '"invalid"'),
         "installed no-environment receipt proof",
+    )
+    _validate_installed_mode_proof(root, probe)
+
+
+def _validate_installed_mode_proof(root: Path, probe: str) -> None:
+    tree = ast.parse(probe)
+    helper_name = "_exercise_mode_invariants"
+    imported = any(
+        isinstance(node, ast.ImportFrom)
+        and node.module == "ci.native_runtime.default_auto_routes"
+        and any(alias.name == helper_name and alias.asname in (None, helper_name) for alias in node.names)
+        for node in tree.body
+    )
+    corpus = next(
+        (node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_installed_hook_corpus"),
+        None,
+    )
+    called = corpus is not None and any(
+        isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "mode_invariants" for target in node.targets)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Name)
+        and node.value.func.id == helper_name
+        for statement in corpus.body
+        if isinstance(statement, ast.Try)
+        for node in statement.body
+    )
+    if not imported or not called:
+        raise RuntimeError("installed mode invariant helper is disconnected from the receipt probe")
+    routes = _read(root, "ci/native_runtime/default_auto_routes.py")
+    helper = next(
+        (node for node in ast.parse(routes).body if isinstance(node, ast.FunctionDef) and node.name == helper_name),
+        None,
+    )
+    mode_loop = helper is not None and any(
+        isinstance(node, ast.For)
+        and isinstance(node.target, ast.Name)
+        and node.target.id == "mode"
+        and isinstance(node.iter, ast.Tuple)
+        and len(node.iter.elts) == 2
+        and all(isinstance(value, ast.Constant) for value in node.iter.elts)
+        and [value.value for value in node.iter.elts if isinstance(value, ast.Constant)] == ["off", "shadow"]
+        for statement in helper.body
+        if isinstance(statement, ast.Try)
+        for node in statement.body
+    )
+    if not mode_loop:
+        raise RuntimeError("installed off/shadow mode proof is missing its two-mode loop")
+    body = ast.get_source_segment(routes, helper) if helper is not None else ""
+    _contains_all(
+        body or "",
+        ("native_hook_disabled", "native_shadow_diagnostic_disabled"),
+        "installed off/shadow mode proof",
     )
 
 

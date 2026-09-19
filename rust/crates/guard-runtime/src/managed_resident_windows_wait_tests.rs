@@ -230,6 +230,11 @@ fn managed_timeout_child_probe() {
     wait_for_file(&directory.join("descendant")).unwrap();
     fs::write(directory.join("started"), b"ready").unwrap();
     if env::var(TIMEOUT_MODE_ENV).as_deref() == Ok("normal-root") {
+        // Keep an explicit waiter without joining it: this root must return
+        // successfully while its live descendant still needs outer Job cleanup.
+        drop(thread::spawn(move || {
+            let _ = descendant.wait();
+        }));
         return;
     }
     thread::sleep(Duration::from_secs(30));

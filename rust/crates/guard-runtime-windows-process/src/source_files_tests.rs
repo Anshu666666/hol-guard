@@ -132,16 +132,26 @@ fn source_read_obeys_denied_read_acl_without_repairing_it() {
             .parse()
             .unwrap();
     set_dacl(&mut handle, &denied);
+    // Compare copies of the stored descriptor on both sides of the read, not
+    // the requested SDDL with the result of applying it to a filesystem object.
+    let before = GetSecurityInfo(
+        &handle,
+        SeObjectType::SE_FILE_OBJECT,
+        SecurityInformation::Owner | SecurityInformation::Group | SecurityInformation::Dacl,
+    )
+    .unwrap();
+    let ordinary_read = File::open(fixture.source());
     let result = SourceFile::open(&fixture.source());
     let after = GetSecurityInfo(
         &handle,
         SeObjectType::SE_FILE_OBJECT,
-        SecurityInformation::Dacl,
+        SecurityInformation::Owner | SecurityInformation::Group | SecurityInformation::Dacl,
     )
     .unwrap();
     let unchanged =
-        denied.as_sddl().unwrap().to_string_lossy() == after.as_sddl().unwrap().to_string_lossy();
+        before.as_sddl().unwrap().to_string_lossy() == after.as_sddl().unwrap().to_string_lossy();
     set_dacl(&mut handle, &original);
+    assert!(matches!(ordinary_read, Err(error) if error.kind() == io::ErrorKind::PermissionDenied));
     assert!(matches!(result, Err(error) if error.kind() == io::ErrorKind::PermissionDenied));
     assert!(unchanged);
 }

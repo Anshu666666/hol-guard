@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import Protocol, cast
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+if sys.path and Path(sys.path[0]).resolve() == _REPO_ROOT / "scripts":
+    # Direct script entry exposes scripts/ci as top-level ci, shadowing the
+    # probe's repository ci namespace. Keep installed package resolution intact.
+    sys.path[0] = str(_REPO_ROOT)
 if str(_REPO_ROOT) not in sys.path:
     sys.path.append(str(_REPO_ROOT))
 

@@ -14,25 +14,14 @@ from collections.abc import Mapping
 from contextvars import ContextVar
 from pathlib import Path
 
-from .codex_hook_launch_runtime import (
-    BoundedHookProcessResult,
-)
-from .codex_hook_launch_runtime import (
-    run_isolated_hook_process as _legacy_run_isolated_hook_process,
-)
-from .native_approval_errors import NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
+from .codex_hook_launch_runtime import run_isolated_hook_process
 from .native_resident_stream import _PersistentNativeClient, _StreamFailure
 from .native_runtime_identity import runtime_pool_generation_hint
-
-# Retain the old runner name as a test seam. Production always leaves this
-# binding untouched and uses the persistent Rust client below.
-run_isolated_hook_process = _legacy_run_isolated_hook_process
 
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 _MAX_REQUEST_BYTES = 6 * 1024 * 1024
 _MAX_PERSISTENT_CLIENTS = 16
 _MAX_PERSISTENT_POOLS = 16
-_MAX_FAILURE_CODE_LENGTH = 128
 _LAST_FAILURE_CODE: ContextVar[str | None] = ContextVar(
     "native_resident_client_failure_code",
     default=None,
@@ -49,33 +38,6 @@ def native_resident_client_failure_code() -> str | None:
 def record_native_resident_client_failure_code(code: str) -> None:
     """Record a privacy-safe failure code for the current native client request."""
     _LAST_FAILURE_CODE.set(code)
-
-
-def _allowlisted_failure_code(stderr: str) -> str | None:
-    for line in stderr.splitlines():
-        if len(line) <= _MAX_FAILURE_CODE_LENGTH and line in NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES:
-            return line
-    return None
-
-
-def _classify_failure(result: BoundedHookProcessResult) -> str:
-    if result.containment_failed:
-        return "native_client_containment_failed"
-    if result.timed_out:
-        return "native_client_timed_out"
-    if result.output_limit_exceeded:
-        return "native_client_output_limit_exceeded"
-    if result.returncode is None:
-        return "native_client_status_missing"
-    if result.returncode != 0:
-        return "native_client_exit_nonzero"
-    if not result.stdout:
-        return "native_client_output_missing"
-    return "native_client_process_failed"
-
-
-def _record_failure_code(result: BoundedHookProcessResult) -> None:
-    _LAST_FAILURE_CODE.set(_allowlisted_failure_code(result.stderr) or _classify_failure(result))
 
 
 class _PersistentNativeClientPool:
@@ -291,63 +253,6 @@ def close_native_residents(guard_home: Path | None = None) -> bool:
     return all_contained
 
 
-def _legacy_native_resident_client_request(
-    *,
-    executable: Path,
-    guard_home: Path,
-    environment: Mapping[str, str],
-    payload: bytes,
-    timeout_seconds: float | None,
-    raw_hook_envelope: bool,
-    deadline_monotonic: float | None,
-) -> bytes | None:
-    """Exercise the former one-shot seam for isolated unit-test fakes only."""
-    try:
-        input_text = payload.decode("utf-8")
-    except UnicodeDecodeError:
-        _LAST_FAILURE_CODE.set("native_client_request_invalid")
-        return None
-    state_dir = guard_home / "native-runtime"
-    command = "hook-client" if raw_hook_envelope else "resident-client"
-    try:
-        if deadline_monotonic is not None:
-            result = run_isolated_hook_process(
-                (str(executable), command, "--stdin", str(state_dir)),
-                input_text=input_text,
-                cwd=executable.parent,
-                environment=dict(environment),
-                timeout_seconds=None,
-                deadline_monotonic=deadline_monotonic,
-                output_limit=_MAX_RESPONSE_BYTES,
-                windows_kill_on_job_close=False,
-            )
-        else:
-            assert timeout_seconds is not None
-            result = run_isolated_hook_process(
-                (str(executable), command, "--stdin", str(state_dir)),
-                input_text=input_text,
-                cwd=executable.parent,
-                environment=dict(environment),
-                timeout_seconds=timeout_seconds,
-                output_limit=_MAX_RESPONSE_BYTES,
-                windows_kill_on_job_close=False,
-            )
-    except (OSError, RuntimeError, ValueError):
-        _LAST_FAILURE_CODE.set("native_client_launcher_failed")
-        return None
-    if (
-        result.returncode != 0
-        or result.timed_out
-        or result.output_limit_exceeded
-        or result.containment_failed
-        or not result.stdout
-    ):
-        _record_failure_code(result)
-        return None
-    _track_resident(executable=executable, state_dir=state_dir, environment=environment)
-    return result.stdout.encode("utf-8")
-
-
 def native_resident_client_request(
     *,
     executable: Path,
@@ -366,16 +271,6 @@ def native_resident_client_request(
     if len(payload) > _MAX_REQUEST_BYTES:
         _LAST_FAILURE_CODE.set("native_client_request_invalid")
         return None
-    if run_isolated_hook_process is not _legacy_run_isolated_hook_process:
-        return _legacy_native_resident_client_request(
-            executable=executable,
-            guard_home=guard_home,
-            environment=environment,
-            payload=payload,
-            timeout_seconds=timeout_seconds,
-            raw_hook_envelope=raw_hook_envelope,
-            deadline_monotonic=deadline_monotonic,
-        )
     try:
         payload.decode("utf-8")
     except UnicodeDecodeError:

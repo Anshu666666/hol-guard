@@ -15,10 +15,15 @@ from typing import cast, final
 from uuid import uuid4
 
 from ..action_lattice import is_guard_action
-from ..cli.commands_support_command_activity import persist_deferred_post_hook_command_activity
+from ..cli.commands_support_command_activity import (
+    persist_deferred_post_hook_command_activity,
+)
 from ..models import GuardAction
 from ..native_decision_receipt import validate_native_decision_receipt
-from ..runtime.command_activity_contract import ActivityApprovalReuseStatus, CorrelationHandle
+from ..runtime.command_activity_contract import (
+    ActivityApprovalReuseStatus,
+    CorrelationHandle,
+)
 from ..runtime.command_activity_correlation import (
     derive_proven_request_correlation,
     load_or_create_installation_correlation_key,
@@ -28,7 +33,10 @@ from ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence
 from ..runtime.command_activity_privacy import InstallationCorrelationKey
 from ..sqlite_tuning import sqlite_connect_timeout_override
 from ..store import GuardStore
-from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase, evidence_failure_code
+from .runtime_hook_evidence_diagnostics import (
+    EvidenceFailurePhase,
+    evidence_failure_code,
+)
 from .runtime_hook_evidence_journal import (
     _CommandActivityRecord,
     _EvidenceRecord,
@@ -93,10 +101,12 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         self._stopping = False
         self._drain_deadline: float | None = None
         self._sqlite_timeout_seconds = 0.05
-        self._journal_path = journal_path or self._guard_home / "runtime-hook-evidence.jsonl"
+        self._journal_path = (
+            journal_path or self._guard_home / "runtime-hook-evidence.jsonl"
+        )
         try:
-            self._correlation_key: InstallationCorrelationKey | None = load_or_create_installation_correlation_key(
-                self._guard_home
+            self._correlation_key: InstallationCorrelationKey | None = (
+                load_or_create_installation_correlation_key(self._guard_home)
             )
         except (OSError, ValueError):
             self._correlation_key = None
@@ -126,12 +136,18 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         # compact immutable facts survive this call; output/metadata trees are
         # neither copied nor serialized on the response path.
         with self._condition:
-            if self._stopping or len(self._records) >= self._max_records or self._queued_bytes >= self._max_bytes:
+            if (
+                self._stopping
+                or len(self._records) >= self._max_records
+                or self._queued_bytes >= self._max_bytes
+            ):
                 self._dropped += 1
                 self._degraded = True
                 return False
         try:
-            correlation = self._derive_correlation(harness=harness, event=event, payload=payload)
+            correlation = self._derive_correlation(
+                harness=harness, event=event, payload=payload
+            )
             invocation_preview = build_invocation_preview_from_payload(payload)
             has_command = _payload_has_command(payload)
         except Exception:
@@ -160,7 +176,8 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         # record, including multibyte Unicode. The original payload is absent.
         record = replace(
             record,
-            payload_bytes=len(serialized) + len((invocation_preview or "").encode("utf-8")),
+            payload_bytes=len(serialized)
+            + len((invocation_preview or "").encode("utf-8")),
         )
         with self._condition:
             if (
@@ -188,7 +205,9 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 self._degraded = True
             return False
         record = _NativeDecisionReceiptRecord(receipt=validated, payload_bytes=0)
-        record = _NativeDecisionReceiptRecord(receipt=validated, payload_bytes=len(record.serialized()))
+        record = _NativeDecisionReceiptRecord(
+            receipt=validated, payload_bytes=len(record.serialized())
+        )
         receipt_id = record.record_id
         with self._condition:
             if receipt_id in self._receipt_seen:
@@ -225,11 +244,15 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
             key = load_or_create_installation_correlation_key(self._guard_home)
             self._correlation_key = key
         try:
-            return derive_proven_request_correlation(harness=harness, event=event, payload=payload, key=key)
+            return derive_proven_request_correlation(
+                harness=harness, event=event, payload=payload, key=key
+            )
         except (OSError, ValueError):
             key = load_or_create_installation_correlation_key(self._guard_home)
             self._correlation_key = key
-            return derive_proven_request_correlation(harness=harness, event=event, payload=payload, key=key)
+            return derive_proven_request_correlation(
+                harness=harness, event=event, payload=payload, key=key
+            )
 
     def stats(self) -> RuntimeHookEvidenceWriterStats:
         with self._condition:
@@ -246,7 +269,8 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 "failures": self._failures,
                 "recovered": self._recovered,
                 "durable_pending": len(self._durable),
-                "degraded": self._degraded or bool(self._durable and not self._records and not self._in_flight),
+                "degraded": self._degraded
+                or bool(self._durable and not self._records and not self._in_flight),
                 "running": self._thread.is_alive() and not self._stopping,
                 "receipt_accepted": self._receipt_accepted,
                 "receipt_processed": self._receipt_processed,
@@ -256,7 +280,8 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 "failure_diagnostics": dict(self._failure_diagnostics),
                 "receipt_failure_diagnostics": dict(self._receipt_failure_diagnostics),
                 "receipt_durable_pending": sum(
-                    isinstance(record, _NativeDecisionReceiptRecord) for record in self._durable.values()
+                    isinstance(record, _NativeDecisionReceiptRecord)
+                    for record in self._durable.values()
                 ),
             }
 
@@ -282,29 +307,43 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 continue
             with self._condition:
                 self._in_flight = True
-                fresh = [record for record in batch if record.record_id not in self._durable]
+                fresh = [
+                    record for record in batch if record.record_id not in self._durable
+                ]
             if fresh:
                 try:
-                    append_journal_batch(self._journal_path, fresh, max_bytes=self._max_bytes)
+                    append_journal_batch(
+                        self._journal_path, fresh, max_bytes=self._max_bytes
+                    )
                 except OSError as error:
                     with self._condition:
                         self._dropped += len(fresh)
                         self._failures += len(fresh)
-                        receipts_dropped = sum(isinstance(record, _NativeDecisionReceiptRecord) for record in fresh)
+                        receipts_dropped = sum(
+                            isinstance(record, _NativeDecisionReceiptRecord)
+                            for record in fresh
+                        )
                         self._receipt_dropped += receipts_dropped
                         self._receipt_failures += receipts_dropped
                         self._record_failure_diagnostics(
-                            "journal_append", evidence_failure_code(error), len(fresh), receipts_dropped
+                            "journal_append",
+                            evidence_failure_code(error),
+                            len(fresh),
+                            receipts_dropped,
                         )
                         for record in fresh:
                             if isinstance(record, _NativeDecisionReceiptRecord):
                                 self._receipt_seen.pop(record.record_id, None)
                         self._degraded = True
                     fresh_ids = {record.record_id for record in fresh}
-                    batch = [record for record in batch if record.record_id not in fresh_ids]
+                    batch = [
+                        record for record in batch if record.record_id not in fresh_ids
+                    ]
                 else:
                     with self._condition:
-                        self._durable.update((record.record_id, record) for record in fresh)
+                        self._durable.update(
+                            (record.record_id, record) for record in fresh
+                        )
                         self._journal_durable += len(fresh)
             # Submission only accepts memory. Even when shutdown expires during
             # append, finish the durability boundary before abandoning DB work.
@@ -313,28 +352,42 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                     self._degraded = bool(self._durable) or self._degraded
                     self._in_flight = False
                     return
-            receipts = [record for record in batch if isinstance(record, _NativeDecisionReceiptRecord)]
+            receipts = [
+                record
+                for record in batch
+                if isinstance(record, _NativeDecisionReceiptRecord)
+            ]
             retry_delay = 0.0
             if receipts:
                 failure_code: str | None = None
                 try:
                     with sqlite_connect_timeout_override(self._sqlite_timeout_seconds):
                         if len(receipts) == 1:
-                            if not persist_native_decision_receipt(store=self._store, receipt=receipts[0].receipt):
+                            if not persist_native_decision_receipt(
+                                store=self._store, receipt=receipts[0].receipt
+                            ):
                                 failure_code = "unacknowledged"
-                                raise RuntimeError("native receipt persistence was not acknowledged")
+                                raise RuntimeError(
+                                    "native receipt persistence was not acknowledged"
+                                )
                         else:
                             acknowledged = self._store.record_native_decision_receipts(
                                 tuple(record.receipt for record in receipts)
                             )
-                            if acknowledged != tuple(record.record_id for record in receipts):
+                            if acknowledged != tuple(
+                                record.record_id for record in receipts
+                            ):
                                 failure_code = "unacknowledged"
-                                raise RuntimeError("native receipt batch persistence was not acknowledged")
+                                raise RuntimeError(
+                                    "native receipt batch persistence was not acknowledged"
+                                )
                     with self._condition:
                         self._receipt_transactions += 1
                 except Exception as error:
                     retry_delay = self._record_persistence_failure(
-                        receipts, phase="receipt_persistence", code=failure_code or evidence_failure_code(error)
+                        receipts,
+                        phase="receipt_persistence",
+                        code=failure_code or evidence_failure_code(error),
                     )
                 else:
                     self._record_committed(receipts)
@@ -348,7 +401,9 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                     retry_delay = max(
                         retry_delay,
                         self._record_persistence_failure(
-                            [record], phase="command_activity_persistence", code=evidence_failure_code(error)
+                            [record],
+                            phase="command_activity_persistence",
+                            code=evidence_failure_code(error),
                         ),
                     )
                 else:
@@ -367,17 +422,31 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         key = f"{phase}/{code}"
         self._failure_diagnostics[key] = self._failure_diagnostics.get(key, 0) + records
         if receipts:
-            self._receipt_failure_diagnostics[key] = self._receipt_failure_diagnostics.get(key, 0) + receipts
+            self._receipt_failure_diagnostics[key] = (
+                self._receipt_failure_diagnostics.get(key, 0) + receipts
+            )
 
     def _record_persistence_failure(
-        self, records: Sequence[_EvidenceRecord], *, phase: EvidenceFailurePhase, code: str
+        self,
+        records: Sequence[_EvidenceRecord],
+        *,
+        phase: EvidenceFailurePhase,
+        code: str,
     ) -> float:
         retry_delay = 0.0
         with self._condition:
             self._failures += len(records)
-            self._receipt_failures += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)
+            self._receipt_failures += sum(
+                isinstance(record, _NativeDecisionReceiptRecord) for record in records
+            )
             self._record_failure_diagnostics(
-                phase, code, len(records), sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)
+                phase,
+                code,
+                len(records),
+                sum(
+                    isinstance(record, _NativeDecisionReceiptRecord)
+                    for record in records
+                ),
             )
             self._degraded = True
             for record in records:
@@ -388,13 +457,17 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                     # Do not convert a SQLite outage into silent evidence loss.
                     self._records.append(record)
                     self._queued_bytes += record.payload_bytes
-                    retry_delay = max(retry_delay, min(1.0, 0.05 * (2 ** min(attempt - 1, 5))))
+                    retry_delay = max(
+                        retry_delay, min(1.0, 0.05 * (2 ** min(attempt - 1, 5)))
+                    )
         return retry_delay
 
     def _record_committed(self, records: Sequence[_EvidenceRecord]) -> None:
         with self._condition:
             self._processed += len(records)
-            self._receipt_processed += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)
+            self._receipt_processed += sum(
+                isinstance(record, _NativeDecisionReceiptRecord) for record in records
+            )
             for record in records:
                 self._retry_attempts.pop(record.record_id, None)
                 self._checkpoint_pending.add(record.record_id)
@@ -406,19 +479,25 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
             return
         try:
             invalid_records = checkpoint_journal(
-                self._journal_path, remove_record_ids=completed, max_bytes=self._max_bytes
+                self._journal_path,
+                remove_record_ids=completed,
+                max_bytes=self._max_bytes,
             )
         except OSError as error:
             with self._condition:
                 self._failures += 1
-                self._record_failure_diagnostics("journal_checkpoint", evidence_failure_code(error), 1)
+                self._record_failure_diagnostics(
+                    "journal_checkpoint", evidence_failure_code(error), 1
+                )
                 self._degraded = True
         else:
             with self._condition:
                 self._journal_checkpoints += 1
                 if invalid_records:
                     self._failures += invalid_records
-                    self._record_failure_diagnostics("journal_checkpoint", "invalid_record", invalid_records)
+                    self._record_failure_diagnostics(
+                        "journal_checkpoint", "invalid_record", invalid_records
+                    )
                     self._degraded = True
                 self._checkpoint_pending.difference_update(completed)
                 for record_id in completed:
@@ -433,11 +512,19 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 has_command=record.has_command,
                 succeeded=record.succeeded,
                 invocation_preview=record.invocation_preview,
-                activity_id=record.record_id if record.occurred_at is not None else None,
-                occurred_at=datetime.fromisoformat(record.occurred_at) if record.occurred_at is not None else None,
+                activity_id=record.record_id
+                if record.occurred_at is not None
+                else None,
+                occurred_at=datetime.fromisoformat(record.occurred_at)
+                if record.occurred_at is not None
+                else None,
             )
             return
-        if not record.has_command or record.policy_action is None or record.occurred_at is None:
+        if (
+            not record.has_command
+            or record.policy_action is None
+            or record.occurred_at is None
+        ):
             return
         correlation = record.correlation
         # A prevented attempt cannot produce a post event. Keep its evidence
@@ -464,11 +551,14 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
             request_correlation=correlation,
             receipt_id=record.receipt_id,
             prompted=record.prompted,
-            approval_reuse_status=ActivityApprovalReuseStatus(record.approval_reuse_status),
+            approval_reuse_status=ActivityApprovalReuseStatus(
+                record.approval_reuse_status
+            ),
         )
         if not self._store.is_exact_command_activity_pre_replay(evidence):
-            self._store.record_command_activity(evidence, invocation_preview=record.invocation_preview)
-
+            self._store.record_command_activity(
+                evidence, invocation_preview=record.invocation_preview
+            )
 
 
 __all__ = [

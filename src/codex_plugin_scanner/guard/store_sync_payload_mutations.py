@@ -1,11 +1,10 @@
 """Sync-state mutations shared by the existing cloud event store mixin."""
 
-# pyright: reportAttributeAccessIssue=false
-
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
+# pyright: reportAttributeAccessIssue=false
 from .workspace_preference_authority import reject_private_preference_key
 
 

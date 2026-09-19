@@ -53,8 +53,11 @@ from tests.guard_command_corpus_oracle import iter_adversarial_oracle, iter_beni
 from tests.guard_command_corpus_oracle_types import OracleRecord
 from tests.guard_command_corpus_runner import peak_rss_mib
 
-EVALUATION_SHARD_COUNT: Final = 4
-MAX_CONCURRENT_WORKERS: Final = EVALUATION_SHARD_COUNT
+# Keep process concurrency bounded while scheduling smaller deterministic
+# partitions. Equal case counts do not imply equal evaluator costs; one
+# coarse partition must not leave the other workers idle at the tail.
+MAX_CONCURRENT_WORKERS: Final = 4
+EVALUATION_SHARD_COUNT: Final = MAX_CONCURRENT_WORKERS * 4
 SYNTHETIC_CWD: Final = REPO_ROOT / "workspace"
 SYNTHETIC_HOME: Final = REPO_ROOT / "home"
 

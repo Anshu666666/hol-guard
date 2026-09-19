@@ -1,0 +1,63 @@
+{
+  "actual_credential_identified": false,
+  "actual_scan_exit_code": 1,
+  "actual_scan_findings": 1,
+  "archive": {
+    "bytes": 39781,
+    "commit": "7e2c4989a1b799e7921795e7d77cd7b54b0603cd",
+    "path": "review-evidence/2026-09-18/hosted-diagnostics/10559159486.zip",
+    "same_at_parent_and_candidate": true,
+    "sha256": "fdeecff5b9f633dc797451692e736b530237273e9d348572f449a6ec5c155ea1"
+  },
+  "audit_changed_ignore_or_original_bytes": false,
+  "candidate": "2787be7f680f0d0b34991ed7ac18072ca30fa290",
+  "classification": "source-sha256-false-positive",
+  "control_files_changed_by_candidate": false,
+  "finding": {
+    "Commit": "f6dc83e57578625876a51c796518242501e703fc",
+    "EndLine": 280,
+    "File": "review-evidence/2026-09-18/hosted-diagnostics/intel-cache-only-35371285417-receipt.json",
+    "Fingerprint": "f6dc83e57578625876a51c796518242501e703fc:review-evidence/2026-09-18/hosted-diagnostics/intel-cache-only-35371285417-receipt.json:generic-api-key:280",
+    "RuleID": "generic-api-key",
+    "StartLine": 280
+  },
+  "history_scan_completeness": {
+    "after": {
+      "missing_objects": 0,
+      "reachable_objects": 52101,
+      "shallow": false
+    },
+    "before": {
+      "missing_objects": 0,
+      "reachable_objects": 52101,
+      "shallow": false
+    }
+  },
+  "ignore_sha256": "f1f352a23769c95af77cec265f97034bbf451a02a5eb1ce7da6ee124240d19f7",
+  "member": {
+    "bytes": 17965,
+    "digest_matches_receipt": true,
+    "parsed_json": true,
+    "path": "aggregate/installed-offline-secrets.json",
+    "sha256": "eb954fe985e936e0ee6821c5de4d1a53583c89594a63dc04b3bd172e5a2582c0",
+    "unique_archive_member": true
+  },
+  "reason": "The matched value is the SHA-256 of the exact original JSON member in the immutable diagnostic ZIP, stored under source_files_sha256. It is metadata binding evidence content, not an authentication credential. The receipt and ZIP bytes are unchanged from the evidence parent.",
+  "receipt": {
+    "bytes": 16414,
+    "field": "source_files_sha256",
+    "member_key": "aggregate/installed-offline-secrets.json",
+    "path": "review-evidence/2026-09-18/hosted-diagnostics/intel-cache-only-35371285417-receipt.json",
+    "same_at_finding_commit_parent_and_candidate": true,
+    "sha256": "41346148a9475e3a9df86671afc5198804ca0107a0d3ca9438ae00e68a2d9332"
+  },
+  "recommendation": "Publish the archive with this independently audited inherited false-positive classification while retaining the actual scan exit 1. Do not alter controls to manufacture a zero-findings result.",
+  "scan_findings_sha256": "d27ab6123aa16b5fd9eebfaae4bf1703364d062f67a434ffe64b6b2d0e2b8202",
+  "scan_log_sha256": "a9ea1bcc59c5f6b47aaf3fc08ed2fe10c6a6d135f63a2ec92c9b610ee27a2d8c",
+  "scan_receipt_sha256": "72fc12a69a10fd7ef010633f3607bbf4a6c6c9224b5ed6f34ad97dbae8a5f34e",
+  "schema": "hol-guard.inherited-evidence-gitleaks-finding-independent-audit.v1",
+  "scope": "Independent byte/digest and inherited-path verification for the sole reported history finding; does not claim general absence of secrets or decode other historical archives.",
+  "sole_parent": "7e2c4989a1b799e7921795e7d77cd7b54b0603cd",
+  "tree": "2aca3cd102c111e2cc103b86e366eaa7c2e8a7a1",
+  "unclassified_reported_findings": 0
+}

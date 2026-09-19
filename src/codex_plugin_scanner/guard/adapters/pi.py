@@ -8,7 +8,6 @@ from ..aibom_detection import extend_detection_with_workspace_aibom
 from ..models import GuardArtifact, HarnessDetection
 from ..shims import install_guard_shim, remove_guard_shim
 from .base import HarnessAdapter, HarnessContext, _resolve_command
-from .pi_extension_migration_source import legacy_managed_extension_source
 from .pi_support import (
     EXTENSION_SUFFIXES,
     OMP_AGENT_DIR,
@@ -603,15 +602,6 @@ class PiHarnessAdapter(_PiFamilyHarnessAdapter):
     )
     fallback_hint = "Pi keeps the blocked request in Guard and shows the reason inline before you retry."
 
-    def uninstall(self, context: HarnessContext) -> dict[str, object]:
-        """Remove the verified combined-install OMP extension during legacy cleanup."""
-
-        manifest = super().uninstall(context)
-        if remove_legacy_omp_managed_extension(context):
-            notes = manifest.get("notes")
-            if isinstance(notes, list):
-                notes.append("Guard also removed the verified legacy Oh My Pi extension from the combined Pi install.")
-        return manifest
 
 
 class OmpHarnessAdapter(_PiFamilyHarnessAdapter):
@@ -631,84 +621,8 @@ class OmpHarnessAdapter(_PiFamilyHarnessAdapter):
     fallback_hint = "Oh My Pi keeps the blocked request in Guard and shows the reason inline before you retry."
 
 
-def legacy_omp_managed_extension_is_verified(
-    context: HarnessContext,
-    pi_managed_install: dict[str, object],
-) -> bool:
-    """Identify only the exact OMP extension written by the former combined Pi install."""
-
-    if not bool(pi_managed_install.get("active")):
-        return False
-    manifest = pi_managed_install.get("manifest")
-    if not isinstance(manifest, dict):
-        return False
-    pi_path = context.home_dir / PI_AGENT_DIR / "extensions" / PI_MANAGED_EXTENSION_NAME
-    if manifest.get("config_path") != str(pi_path):
-        return False
-    omp_settings_path = context.home_dir / OMP_AGENT_DIR / PI_SETTINGS_FILE
-    omp_extension_path = omp_settings_path.parent / "extensions" / PI_MANAGED_EXTENSION_NAME
-    settings = json_payload(omp_settings_path)
-    extensions = settings.get("extensions")
-    if not isinstance(extensions, list) or str(omp_extension_path) not in extensions:
-        return False
-    try:
-        source = omp_extension_path.read_text(encoding="utf-8")
-    except OSError:
-        return False
-    expected_sources = (
-        managed_extension_source(
-            guard_home=context.guard_home,
-            home_dir=context.home_dir,
-            settings_path=omp_settings_path,
-            harness="pi",
-            display_name="Pi",
-        ),
-        legacy_managed_extension_source(
-            guard_home=context.guard_home,
-            home_dir=context.home_dir,
-            settings_path=omp_settings_path,
-            harness="pi",
-            display_name="Pi",
-        ),
-    )
-    return source in expected_sources
-
-
-def remove_legacy_omp_managed_extension(context: HarnessContext) -> bool:
-    """Remove only a byte-for-byte legacy OMP extension after Pi disconnects."""
-
-    omp_settings_path = context.home_dir / OMP_AGENT_DIR / PI_SETTINGS_FILE
-    omp_extension_path = omp_settings_path.parent / "extensions" / PI_MANAGED_EXTENSION_NAME
-    try:
-        source = omp_extension_path.read_text(encoding="utf-8")
-    except OSError:
-        return False
-    expected_sources = (
-        managed_extension_source(
-            guard_home=context.guard_home,
-            home_dir=context.home_dir,
-            settings_path=omp_settings_path,
-            harness="pi",
-            display_name="Pi",
-        ),
-        legacy_managed_extension_source(
-            guard_home=context.guard_home,
-            home_dir=context.home_dir,
-            settings_path=omp_settings_path,
-            harness="pi",
-            display_name="Pi",
-        ),
-    )
-    if source not in expected_sources:
-        return False
-    disable_managed_extension(settings_path=omp_settings_path, extension_path=omp_extension_path)
-    omp_extension_path.unlink()
-    return True
-
 
 __all__ = [
     "OmpHarnessAdapter",
     "PiHarnessAdapter",
-    "legacy_omp_managed_extension_is_verified",
-    "remove_legacy_omp_managed_extension",
 ]

@@ -12,7 +12,6 @@ from pathlib import Path
 from codex_plugin_scanner.guard.adapters import get_adapter, list_adapters
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.adapters.contracts import contract_for
-from codex_plugin_scanner.guard.adapters.pi_extension_migration_source import legacy_managed_extension_source
 from codex_plugin_scanner.guard.adapters.pi_extension_source import managed_extension_source
 from codex_plugin_scanner.guard.adapters.pi_support import stable_suffix
 from codex_plugin_scanner.guard.approvals import queue_blocked_approvals
@@ -609,89 +608,6 @@ class TestPiInstall:
         assert json.loads(settings_path.read_text(encoding="utf-8"))["extensions"] == []
         assert json.loads(omp_settings_path.read_text(encoding="utf-8"))["extensions"] == [str(omp_extension_path)]
 
-    def test_uninstall_removes_verified_legacy_omp_extension(self, tmp_path: Path, monkeypatch) -> None:
-        ctx = _ctx(tmp_path)
-        monkeypatch.setattr(
-            "codex_plugin_scanner.guard.adapters.pi.remove_guard_shim",
-            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-pi"), "notes": []},
-        )
-        omp_settings_path = ctx.home_dir / ".omp" / "agent" / "settings.json"
-        omp_extension_path = omp_settings_path.parent / "extensions" / "hol-guard.ts"
-        omp_extension_path.parent.mkdir(parents=True, exist_ok=True)
-        omp_extension_path.write_text(
-            managed_extension_source(
-                guard_home=ctx.guard_home,
-                home_dir=ctx.home_dir,
-                settings_path=omp_settings_path,
-                harness="pi",
-            ),
-            encoding="utf-8",
-        )
-        _write_json(omp_settings_path, {"extensions": [str(omp_extension_path)]})
-
-        get_adapter("pi").uninstall(ctx)
-
-        assert not omp_extension_path.exists()
-        assert json.loads(omp_settings_path.read_text(encoding="utf-8"))["extensions"] == []
-
-    def test_uninstall_removes_pre_response_contract_legacy_omp_extension(
-        self,
-        tmp_path: Path,
-        monkeypatch,
-    ) -> None:
-        ctx = _ctx(tmp_path)
-        monkeypatch.setattr(
-            "codex_plugin_scanner.guard.adapters.pi.remove_guard_shim",
-            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-pi"), "notes": []},
-        )
-        omp_settings_path = ctx.home_dir / ".omp" / "agent" / "settings.json"
-        omp_extension_path = omp_settings_path.parent / "extensions" / "hol-guard.ts"
-        omp_extension_path.parent.mkdir(parents=True, exist_ok=True)
-        omp_extension_path.write_text(
-            legacy_managed_extension_source(
-                guard_home=ctx.guard_home,
-                home_dir=ctx.home_dir,
-                settings_path=omp_settings_path,
-                harness="pi",
-            ),
-            encoding="utf-8",
-        )
-        _write_json(omp_settings_path, {"extensions": [str(omp_extension_path)]})
-
-        get_adapter("pi").uninstall(ctx)
-
-        assert not omp_extension_path.exists()
-        assert json.loads(omp_settings_path.read_text(encoding="utf-8"))["extensions"] == []
-
-    def test_uninstall_preserves_modified_pre_response_contract_legacy_omp_extension(
-        self,
-        tmp_path: Path,
-        monkeypatch,
-    ) -> None:
-        ctx = _ctx(tmp_path)
-        monkeypatch.setattr(
-            "codex_plugin_scanner.guard.adapters.pi.remove_guard_shim",
-            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-pi"), "notes": []},
-        )
-        omp_settings_path = ctx.home_dir / ".omp" / "agent" / "settings.json"
-        omp_extension_path = omp_settings_path.parent / "extensions" / "hol-guard.ts"
-        omp_extension_path.parent.mkdir(parents=True, exist_ok=True)
-        modified_source = (
-            legacy_managed_extension_source(
-                guard_home=ctx.guard_home,
-                home_dir=ctx.home_dir,
-                settings_path=omp_settings_path,
-                harness="pi",
-            )
-            + "\n// user edit\n"
-        )
-        omp_extension_path.write_text(modified_source, encoding="utf-8")
-        _write_json(omp_settings_path, {"extensions": [str(omp_extension_path)]})
-
-        get_adapter("pi").uninstall(ctx)
-
-        assert omp_extension_path.read_text(encoding="utf-8") == modified_source
-        assert json.loads(omp_settings_path.read_text(encoding="utf-8"))["extensions"] == [str(omp_extension_path)]
 
 
 class TestPiRuntime:

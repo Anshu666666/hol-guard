@@ -25,12 +25,18 @@ use std::path::{Path, PathBuf};
 #[cfg(windows)]
 use super::normalize_scope_text;
 
+#[path = "policy_client_currentness_tests.rs"]
+mod client_currentness_tests;
+#[path = "policy_store_control_tests.rs"]
+mod control_tests;
 #[path = "policy_store_fault_tests.rs"]
 mod fault_tests;
 #[path = "policy_store_migration_tests.rs"]
 mod migration_tests;
 #[path = "policy_store_v4_tests.rs"]
 mod v4_tests;
+#[path = "policy_store_withdrawal_tests.rs"]
+mod withdrawal_tests;
 
 fn policy() -> EffectiveNativePolicyV3 {
     EffectiveNativePolicyV3 {

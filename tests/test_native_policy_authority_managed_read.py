@@ -168,13 +168,14 @@ def test_managed_signed_source_expiry_refuses_the_whole_capture(
         read_native_policy_authority_inputs(store, now=before.expires_at_ms / 1000 + 1)
 
 
-def test_separate_database_observer_detects_a_real_commit_and_revert_during_capture(
+def test_unrelated_commit_and_revert_does_not_invalidate_coherent_authority_capture(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from codex_plugin_scanner.guard import native_policy_authority_read as reader
 
     store = managed_store(tmp_path, monkeypatch)
+    before = reader.read_native_policy_authority_inputs(store, now=_TIME)
     original = reader._capture_native_policy_authority_inputs
 
     def changed_and_restored(*args, **kwargs):
@@ -184,8 +185,8 @@ def test_separate_database_observer_detects_a_real_commit_and_revert_during_capt
         return original(*args, **kwargs)
 
     monkeypatch.setattr(reader, "_capture_native_policy_authority_inputs", changed_and_restored)
-    with pytest.raises(NativePolicySnapshotError, match="capture_changed"):
-        reader.read_native_policy_authority_inputs(store, now=_TIME)
+    after = reader.read_native_policy_authority_inputs(store, now=_TIME)
+    assert after == before
     assert store.get_sync_payload("synthetic_capture_marker") is None
 
 

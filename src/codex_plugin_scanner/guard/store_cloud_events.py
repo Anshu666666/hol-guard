@@ -7,6 +7,18 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import cast
 
+from .aibom_operation_authority import (
+    INVENTORY_CONTEXT_KEY,
+    record_inventory_context_mutation,
+    reject_private_inventory_key,
+)
+from .oauth_connection_authority import (
+    CONNECTION_AUTHORITY_VERSION_KEY,
+    advance_connection_epoch,
+    is_oauth_credential_key,
+    read_connection_authority,
+)
+
 # ruff: noqa: F403,F405
 from .store_base import *
 from .store_receipt_rollups import reconcile_dirty_receipt_rollups, reconcile_pending_receipt_events
@@ -195,6 +207,9 @@ class StoreCloudEventsMixin:
         *,
         floor: int = 0,
     ) -> int:
+        reject_private_inventory_key(state_key)
+        if state_key == INVENTORY_CONTEXT_KEY:
+            raise ValueError("Inventory selection is not a sequence counter.")
         with self._connect() as connection:
             connection.execute("begin immediate")
             row = connection.execute(
@@ -223,12 +238,58 @@ class StoreCloudEventsMixin:
             return sequence
 
     def set_sync_payload(self, state_key: str, payload: Mapping[str, object] | Sequence[object], now: str) -> None:
-        oauth_changed = state_key == _OAUTH_LOCAL_CREDENTIALS_STATE_KEY or state_key.startswith(
-            _OAUTH_LOCAL_CREDENTIALS_STATE_KEY + ":"
-        )
+        reject_private_inventory_key(state_key)
+        if state_key == INVENTORY_CONTEXT_KEY:
+            with self.hold_oauth_credential_lock():
+                self._set_sync_payload_unlocked(state_key, payload, now)
+            return
+        if is_oauth_credential_key(state_key):
+            with self.hold_oauth_credential_lock():
+                self._set_oauth_sync_payload_unlocked(state_key, payload, now)
+            return
+        self._set_sync_payload_unlocked(state_key, payload, now)
+
+    def _set_oauth_sync_payload_unlocked(
+        self,
+        state_key: str,
+        payload: Mapping[str, object] | Sequence[object],
+        now: str,
+        *,
+        preserve_epoch: str | None = None,
+    ) -> None:
+        if not is_oauth_credential_key(state_key):
+            raise ValueError("Invalid credential state key.")
+        self._set_sync_payload_unlocked(state_key, payload, now, preserve_epoch=preserve_epoch)
+
+    def _set_sync_payload_unlocked(
+        self,
+        state_key: str,
+        payload: Mapping[str, object] | Sequence[object],
+        now: str,
+        *,
+        preserve_epoch: str | None = None,
+    ) -> None:
+        reject_private_inventory_key(state_key)
+        if state_key == INVENTORY_CONTEXT_KEY:
+            # Metadata and the public row must consume the same immutable copy,
+            # even if the caller mutates its dictionary while this write runs.
+            payload = json.loads(json.dumps(payload))
+        oauth_changed = is_oauth_credential_key(state_key)
         if oauth_changed:
             self._clear_oauth_secret_payload_cache()
         with self._connect() as connection:
+            if state_key == INVENTORY_CONTEXT_KEY:
+                connection.execute("begin immediate")
+                record_inventory_context_mutation(connection, payload, now)
+            if oauth_changed:
+                if preserve_epoch is not None:
+                    authority = read_connection_authority(connection, state_key)
+                    if authority.state != "ready" or authority.epoch != preserve_epoch:
+                        raise RuntimeError("The connection changed before credentials could be refreshed.")
+                else:
+                    advance_connection_epoch(connection, state_key, now)
+                if isinstance(payload, Mapping):
+                    payload = {**payload, CONNECTION_AUTHORITY_VERSION_KEY: 1}
             connection.execute(
                 """
                 insert into sync_state (state_key, payload_json, updated_at)
@@ -287,19 +348,33 @@ class StoreCloudEventsMixin:
         return [cloud_exception_to_dict(item) for item in active_items]
 
     def delete_sync_payload(self, state_key: str) -> None:
-        if state_key == _OAUTH_LOCAL_CREDENTIALS_STATE_KEY:
-            self._clear_oauth_secret_payload_cache()
-        with self._connect() as connection:
-            connection.execute(
-                "delete from sync_state where state_key = ?",
-                (state_key,),
-            )
+        self.delete_sync_payloads([state_key])
 
     def delete_sync_payloads(self, state_keys: list[str]) -> int:
+        state_keys = list(state_keys)
+        for key in state_keys:
+            reject_private_inventory_key(key)
+        if any(is_oauth_credential_key(key) or key == INVENTORY_CONTEXT_KEY for key in state_keys):
+            with self.hold_oauth_credential_lock():
+                return self._delete_sync_payloads_unlocked(state_keys)
+        return self._delete_sync_payloads_unlocked(state_keys)
+
+    def _delete_sync_payloads_unlocked(self, state_keys: list[str]) -> int:
+        state_keys = list(state_keys)
+        for key in state_keys:
+            reject_private_inventory_key(key)
         if not state_keys:
             return 0
+        credential_keys = {key for key in state_keys if is_oauth_credential_key(key)}
+        if credential_keys:
+            self._clear_oauth_secret_payload_cache()
         placeholders = ",".join("?" for _ in state_keys)
         with self._connect() as connection:
+            if INVENTORY_CONTEXT_KEY in state_keys:
+                connection.execute("begin immediate")
+                record_inventory_context_mutation(connection, None, _now())
+            for key in sorted(credential_keys):
+                advance_connection_epoch(connection, key, _now())
             cursor = connection.execute(
                 f"delete from sync_state where state_key in ({placeholders})",
                 tuple(state_keys),

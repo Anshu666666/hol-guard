@@ -8,7 +8,9 @@ import base64
 import hashlib
 import json
 import secrets
+import sqlite3
 from collections.abc import Mapping
+from contextlib import nullcontext
 from dataclasses import replace
 from typing import cast
 
@@ -52,7 +54,9 @@ from .runtime.extension_control_proof import (
     validate_extension_control_proof,
 )
 from .store_base import SecretStore
-from .store_extension_control_authority_schema import ensure_extension_control_authority_schema
+from .store_extension_control_authority_schema import (
+    ensure_extension_control_authority_schema,
+)
 from .store_extension_control_authority_support import (
     _now,
     _private_hash,
@@ -137,9 +141,10 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         *,
         current_manifest: Mapping[str, str] | None = None,
         previous_manifest: Mapping[str, str] | None = None,
+        connection: sqlite3.Connection | None = None,
     ) -> ExtensionControlAuthorityView:
-        with self._connect() as connection:
-            rows = connection.execute(
+        with self._connect() if connection is None else nullcontext(connection) as current_connection:
+            rows = current_connection.execute(
                 "select state_key, payload_json from sync_state where state_key in (?, ?)",
                 (
                     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
@@ -205,7 +210,9 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                     raise ExtensionControlAuthorityError("managed controls current catalog manifest is missing")
                 prior_manifest: Mapping[str, str] = previous_manifest
             else:
-                prior_manifest = self._load_catalog_manifest(active_catalog_digest, key=key) or {}
+                prior_manifest = (
+                    self._load_catalog_manifest(active_catalog_digest, key=key, connection=connection) or {}
+                )
             managed_layers = tuple(
                 replace(
                     layer,
@@ -240,6 +247,28 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             managed_revision,
         )
         return composed
+
+    def _read_captured_extension_control_authority(
+        self,
+        connection: sqlite3.Connection,
+        registry: CommandSafetyExtensionRegistry,
+    ) -> ExtensionControlAuthorityView:
+        """Verify prepared authority entirely within the caller's SQL snapshot.
+
+        Schema/catalog migration and event emission belong to the ordinary
+        reader before capture. A captured state needing that work refuses;
+        neither a secondary SQL view nor a repair may authorize this view.
+        """
+        if not connection.in_transaction:
+            raise ExtensionControlAuthorityError("extension control capture requires a transaction")
+        view = self._read_extension_control_authority_locked(registry.catalog_digest, connection=connection)
+        manifest = self._catalog_target_manifest(registry)
+        if view.health is AuthorityHealth.PROTECTED:
+            key = self._authority_key(required=True)
+            assert key is not None
+            if self._load_catalog_manifest(registry.catalog_digest, key=key, connection=connection) != manifest:
+                raise ExtensionControlAuthorityError("extension control captured catalog requires preparation")
+        return self._with_managed_controls_activation(view, current_manifest=manifest, connection=connection)
 
     def managed_controls_lkg_capabilities(
         self,
@@ -746,8 +775,10 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         catalog_digest: str,
         *,
         migration_registry: CommandSafetyExtensionRegistry | None = None,
+        connection: sqlite3.Connection | None = None,
     ) -> ExtensionControlAuthorityView:
-        records = self._read_extension_control_authority_records()
+        captured = connection is not None
+        records = self._read_extension_control_authority_records(connection=connection)
         if records is None:
             return self._degraded_view(catalog_digest)
         row, prior_authority = records
@@ -765,13 +796,17 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             revision = int(row["revision"])
             stored_catalog_digest = str(row["catalog_digest"])
             if stored_catalog_digest != catalog_digest:
+                if captured:
+                    return ExtensionControlAuthorityView(
+                        AuthorityHealth.RECOVERY_REQUIRED, revision, catalog_digest, ()
+                    )
                 if migration_registry is None or migration_registry.catalog_digest != catalog_digest:
                     raise ExtensionControlAuthorityError("extension control catalog digest changed")
-                pending = self._pending_transition(revision + 1)
+                pending = self._pending_transition(revision + 1, connection=connection)
                 if pending is not None and _row_str(pending, "catalog_digest") == catalog_digest:
-                    with self._connect() as connection:
+                    with self._connect() as recovery_connection:
                         resumed = self._resume_idempotent_transition(
-                            connection,
+                            recovery_connection,
                             pending,
                             current=ExtensionControlAuthorityView(
                                 AuthorityHealth.RECOVERY_REQUIRED,
@@ -813,7 +848,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             layers = layers_from_json(str(row["layers_json"]))
             self._validate_layers(layers, catalog_digest)
             if anchor.revision != revision or anchor.snapshot_digest != str(row["snapshot_digest"]):
-                pending = self._pending_transition(revision + 1)
+                pending = self._pending_transition(revision + 1, connection=connection)
                 if not (
                     pending is not None
                     and anchor.phase is AuthorityPhase.ANCHORED
@@ -822,7 +857,7 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                 ):
                     raise ExtensionControlAuthorityError("extension control authority rollback detected")
                 return ExtensionControlAuthorityView(AuthorityHealth.RECOVERY_REQUIRED, revision, catalog_digest, ())
-            if self._pending_transition(revision + 1) is not None:
+            if self._pending_transition(revision + 1, connection=connection) is not None:
                 return ExtensionControlAuthorityView(
                     AuthorityHealth.RECOVERY_REQUIRED,
                     revision,
@@ -835,12 +870,14 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                 revision,
                 current_snapshot_digest=_row_str(row, "snapshot_digest"),
                 key=key,
+                connection=connection,
             )
-            self._ensure_catalog_migrated_event(
-                revision=revision,
-                catalog_digest=catalog_digest,
-                layers=layers,
-            )
+            if not captured:
+                self._ensure_catalog_migrated_event(
+                    revision=revision,
+                    catalog_digest=catalog_digest,
+                    layers=layers,
+                )
             return ExtensionControlAuthorityView(AuthorityHealth.PROTECTED, revision, catalog_digest, layers)
         except ExtensionControlAuthorityError:
             return self._tampered_view(catalog_digest)
@@ -1003,9 +1040,11 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
                 (registry.catalog_digest, manifest_json, record_json, record_digest, record_mac, recorded_at),
             )
 
-    def _load_catalog_manifest(self, catalog_digest: str, *, key: bytes) -> dict[str, str] | None:
-        with self._connect() as connection:
-            row = connection.execute(
+    def _load_catalog_manifest(
+        self, catalog_digest: str, *, key: bytes, connection: sqlite3.Connection | None = None
+    ) -> dict[str, str] | None:
+        with self._connect() if connection is None else nullcontext(connection) as current_connection:
+            row = current_connection.execute(
                 "select * from extension_control_catalog_manifest where catalog_digest = ?",
                 (catalog_digest,),
             ).fetchone()

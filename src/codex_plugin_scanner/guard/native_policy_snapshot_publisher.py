@@ -455,33 +455,28 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             context = self._publication_context()
             if context is None:
                 return
-            identity, capabilities, master_key, config, client, cloud_inputs = context
+            cloud_inputs = context[5]
             v3_capture_active = isinstance(cloud_inputs, CapturedV3PublicationInputs)
             if isinstance(cloud_inputs, NativeVerifiedPolicyInputs):
                 try:
                     publish_scoped(self, context, publish_epoch, renew_after_generation)
                 finally:
-                    master_key = None
                     context = None
                 return
             resident_fingerprint_before = self._current_input_fingerprint()[1]
             try:
                 v3_transport_active = True
-                snapshot, resident_generation = _publish_snapshot_v3(
+                snapshot, resident_generation, cloud_inputs = _publish_snapshot_v3(
                     publisher=self,
-                    identity=identity,
-                    capabilities=capabilities,
-                    config=config,
-                    master_key=master_key,
-                    client=client,
+                    context=context,
+                    publish_epoch=publish_epoch,
                     renew_after_generation=renew_after_generation,
-                    authority_expires_at_ms=cloud_inputs.expires_at_ms,
                 )
                 v3_transport_active = False
             finally:
                 # The master is only an ephemeral input to derivation/signing;
                 # never retain it in publisher state or an exception context.
-                master_key = None
+                context = None
             resident_fingerprint = self._current_input_fingerprint()[1]
             resident_directory_fingerprint = self._resident_directory_fingerprint()
             with managed_policy_cache_read_only(), ExitStack() as capture:

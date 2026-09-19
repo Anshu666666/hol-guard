@@ -25,8 +25,11 @@ pub(crate) mod approval_v4_authority;
 pub(crate) mod approval_v4_enrollment;
 #[path = "approval_v4_secure_state.rs"]
 pub(crate) mod approval_v4_secure_state;
+#[path = "policy_client_currentness.rs"]
+mod policy_client_currentness;
 #[path = "policy_store_approval.rs"]
 mod policy_store_approval;
+pub(crate) use policy_client_currentness::ClientAuthorityObservation;
 #[path = "policy_store_authority.rs"]
 mod policy_store_authority;
 #[path = "policy_store_migration.rs"]
@@ -37,7 +40,10 @@ mod policy_store_mutation;
 mod policy_store_persistence;
 #[path = "policy_store_versioned.rs"]
 mod policy_store_versioned;
+#[path = "policy_store_withdrawal.rs"]
+mod policy_store_withdrawal;
 pub(crate) use policy_store_versioned::AuthenticatedPolicySnapshot;
+pub(crate) use policy_store_withdrawal::is_control_error;
 #[path = "policy_store_validation.rs"]
 mod policy_store_validation;
 

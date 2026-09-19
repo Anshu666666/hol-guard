@@ -87,12 +87,21 @@ pub(super) fn acquire_writer_with_hook<F: FnOnce(&Path)>(
     })
 }
 
+pub(super) struct DurableAuthority {
+    pub(super) fingerprint: Option<String>,
+    pub(super) floor: u64,
+    pub(super) policy_digest: Option<String>,
+    /// Existing snapshot validation succeeded at the observation. False also
+    /// covers an expired embedded snapshot; it does not assert withdrawal.
+    pub(super) usable_snapshot: bool,
+}
+
 /// Preserve durable revocations without importing another resident's policy.
 /// The caller holds the writer lock and the store state mutex, in that order.
 pub(super) fn refresh_floor(
     store: &PolicySnapshotStore,
     state: &mut PolicyState,
-) -> Result<(), String> {
+) -> Result<DurableAuthority, String> {
     let before = authority_fingerprint(&store.authority_path);
     let loaded = load_current_authority(
         &store.authority_path,
@@ -112,6 +121,12 @@ pub(super) fn refresh_floor(
         store.authority_changed.store(true, Ordering::SeqCst);
         return Err("native_policy_snapshot_durable_authority_changed".to_owned());
     }
+    let current = DurableAuthority {
+        fingerprint: before,
+        floor: loaded.generation_floor,
+        policy_digest: loaded.policy_digest.clone(),
+        usable_snapshot: loaded.snapshot.is_some(),
+    };
     if loaded.generation_floor != state.generation_floor
         || loaded.policy_digest != state.policy_digest
         || loaded.canonical_bytes != state.canonical_bytes
@@ -123,5 +138,5 @@ pub(super) fn refresh_floor(
         state.canonical_bytes.clear();
         store.authority_changed.store(true, Ordering::SeqCst);
     }
-    Ok(())
+    Ok(current)
 }

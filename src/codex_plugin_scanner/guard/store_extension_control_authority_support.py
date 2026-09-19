@@ -10,7 +10,7 @@ import hmac
 import sqlite3
 import sys
 from collections.abc import Generator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
@@ -44,7 +44,10 @@ from .store_base import (
     SecretStore,
     SystemKeyringSecretStore,
 )
-from .store_extension_control_authority_schema import ensure_extension_control_authority_schema
+from .store_extension_control_authority_schema import (
+    captured_extension_control_schema_is_current,
+    ensure_extension_control_authority_schema,
+)
 
 _KEY_REF_SUFFIX = ":authentication-key"
 _ANCHOR_REF_SUFFIX = ":anchor"
@@ -114,18 +117,25 @@ class _ExtensionControlAuthoritySupportMixin:
         except Exception:
             return self._degraded_view(catalog_digest)
 
-    def _read_extension_control_authority_records(self) -> tuple[sqlite3.Row | None, sqlite3.Row | None] | None:
-        with self._connect() as connection:
-            if not ensure_extension_control_authority_schema(connection, require_compatible=False):
+    def _read_extension_control_authority_records(
+        self, *, connection: sqlite3.Connection | None = None
+    ) -> tuple[sqlite3.Row | None, sqlite3.Row | None] | None:
+        with self._connect() if connection is None else nullcontext(connection) as current_connection:
+            schema_current = (
+                captured_extension_control_schema_is_current(current_connection)
+                if connection is not None
+                else ensure_extension_control_authority_schema(current_connection, require_compatible=False)
+            )
+            if not schema_current:
                 return None
-            row = connection.execute(
+            row = current_connection.execute(
                 "select * from extension_control_authority_snapshot where singleton = 1"
             ).fetchone()
             prior_authority = None
             if row is None:
                 # Residue cannot authenticate a replacement snapshot, but it
                 # disqualifies the ordinary never-enrolled policy path.
-                prior_authority = connection.execute(
+                prior_authority = current_connection.execute(
                     """
                     select 1 from extension_control_authority_transition
                     union all select 1 from extension_control_authority_proof

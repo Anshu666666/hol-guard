@@ -427,6 +427,37 @@ def test_canonical_digests_are_stable_across_process_roots_hash_seed_timezone_an
     assert outputs[0] == outputs[1]
 
 
+def _contains_hashed_marker(text: str, *, marker_size: int, marker_digest: str) -> bool:
+    """Match an exact substring without putting the excluded marker in source."""
+    if marker_size < 1:
+        raise ValueError("marker size must be positive")
+    encoded = text.encode("utf-8")
+    return any(
+        hashlib.sha256(encoded[index : index + marker_size]).hexdigest() == marker_digest
+        for index in range(len(encoded) - marker_size + 1)
+    )
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    (
+        ("sensitive-marker", True),
+        ("prefix-sensitive-marker-suffix", True),
+        ("é-sensitive-marker-λ", True),
+        ("Sensitive-marker", False),
+        ("sensitive_markers", False),
+        ("", False),
+        ("sensitive", False),
+    ),
+)
+def test_hashed_corpus_marker_retains_exact_substring_matching(text: str, expected: bool) -> None:
+    marker = b"sensitive-marker"
+    assert (
+        _contains_hashed_marker(text, marker_size=len(marker), marker_digest=hashlib.sha256(marker).hexdigest())
+        is expected
+    )
+
+
 def test_all_corpus_artifacts_and_generated_records_are_secret_and_pii_free() -> None:
     forbidden = (
         "/" + "Users/",
@@ -448,5 +479,11 @@ def test_all_corpus_artifacts_and_generated_records_are_secret_and_pii_free() ->
     texts.extend(case.command for case in chain(iter_benign_corpus(), iter_adversarial_corpus()))
     texts.extend(repr(record) for record in chain(iter_benign_oracle(), iter_adversarial_oracle()))
     for text in texts:
+        if _contains_hashed_marker(
+            text,
+            marker_size=30,
+            marker_digest="971586d1aa04a8a2828cf9dc6f02660abd890cddd48ff4c1be8af81e47e3c1aa",
+        ):
+            pytest.fail("Corpus contains an excluded project marker.", pytrace=False)
         assert all(value not in text for value in forbidden)
         assert all(pattern.search(text) is None for pattern in patterns)

@@ -114,6 +114,7 @@ def publish_snapshot_v4(
     monotonic_clock: Callable[[], float] = time.monotonic,
     minimum_generation: int | None = None,
     expected_resident_generation: int | None = None,
+    candidate_factory: Callable[[int | None, float], NativeV4Candidate] | None = None,
 ) -> NativeV4Publication:
     """Push fresh signed bytes with at most one explicit recovery attempt.
 
@@ -127,18 +128,22 @@ def publish_snapshot_v4(
         raise NativePolicySnapshotError("native_policy_snapshot_ack_mismatch")
     try:
         for attempt in range(2):
-            candidate = reserve_snapshot_v4(
-                config=config,
-                guard_home=guard_home,
-                runtime_identity=runtime_identity,
-                rule_digest=rule_digest,
-                master_key=master_key,
-                inputs=inputs,
-                capabilities=capabilities,
-                issued_at_ms=int(wall_clock() * 1_000),
-                minimum_generation=minimum_generation,
-                deadline_monotonic=monotonic_clock() + _PUBLISH_TIMEOUT_SECONDS,
-            )
+            reservation_deadline = monotonic_clock() + _PUBLISH_TIMEOUT_SECONDS
+            if candidate_factory is not None:
+                candidate = candidate_factory(minimum_generation, reservation_deadline)
+            else:
+                candidate = reserve_snapshot_v4(
+                    config=config,
+                    guard_home=guard_home,
+                    runtime_identity=runtime_identity,
+                    rule_digest=rule_digest,
+                    master_key=master_key,
+                    inputs=inputs,
+                    capabilities=capabilities,
+                    issued_at_ms=int(wall_clock() * 1_000),
+                    minimum_generation=minimum_generation,
+                    deadline_monotonic=reservation_deadline,
+                )
             output = client(
                 executable=executable,
                 guard_home=guard_home,

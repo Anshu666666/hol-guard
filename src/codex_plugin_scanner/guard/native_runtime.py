@@ -14,7 +14,7 @@ import math
 import os
 import stat
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
@@ -152,8 +152,12 @@ def _runtime_candidates() -> tuple[Path, ...]:
     return tuple(unique)
 
 
-def _validate_binary(path: Path) -> NativeRuntimeIdentity | None:
+def _validate_binary(
+    path: Path, *, check_continuation: Callable[[], None] | None = None
+) -> NativeRuntimeIdentity | None:
     try:
+        if check_continuation is not None:
+            check_continuation()
         lexical = path.expanduser()
         metadata = lexical.lstat()
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
@@ -172,6 +176,8 @@ def _validate_binary(path: Path) -> NativeRuntimeIdentity | None:
         digest = hashlib.sha256()
         with resolved.open("rb") as handle:
             for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                if check_continuation is not None:
+                    check_continuation()
                 digest.update(chunk)
         return NativeRuntimeIdentity(
             path=resolved,
@@ -357,6 +363,16 @@ def _python_package_version() -> str | None:
 
 
 def native_runtime_status() -> NativeRuntimeStatus:
+    return _native_runtime_status_with_setup()
+
+
+def _native_runtime_status_with_setup(
+    *,
+    check_continuation: Callable[[], None] | None = None,
+    capability_provider: Callable[[NativeRuntimeIdentity], NativeRuntimeCapabilities | None] | None = None,
+) -> NativeRuntimeStatus:
+    if check_continuation is not None:
+        check_continuation()
     mode = native_mode()
     if mode == "off":
         return NativeRuntimeStatus(
@@ -366,8 +382,16 @@ def native_runtime_status() -> NativeRuntimeStatus:
             reason="native_disabled",
         )
     for candidate in _runtime_candidates():
+        if check_continuation is not None:
+            check_continuation()
         _restore_bundled_runtime_execute_bit(candidate)
-        identity = _validate_binary(candidate)
+        identity = (
+            _validate_binary(candidate)
+            if check_continuation is None
+            else _validate_binary(candidate, check_continuation=check_continuation)
+        )
+        if check_continuation is not None:
+            check_continuation()
         if identity is None:
             continue
         manifest: NativeRuntimeManifest | None = None
@@ -381,12 +405,15 @@ def native_runtime_status() -> NativeRuntimeStatus:
                     reason=manifest_error,
                     identity=identity,
                 )
-        capabilities = _capabilities_for_identity(
-            str(identity.path),
-            identity.size,
-            identity.mtime_ns,
-            identity.sha256,
+        if check_continuation is not None:
+            check_continuation()
+        capabilities = (
+            _capabilities_for_identity(str(identity.path), identity.size, identity.mtime_ns, identity.sha256)
+            if capability_provider is None
+            else capability_provider(identity)
         )
+        if check_continuation is not None:
+            check_continuation()
         if capabilities is None:
             continue
         if capabilities.protocol_version != _NATIVE_PROTOCOL_VERSION:
@@ -418,6 +445,8 @@ def native_runtime_status() -> NativeRuntimeStatus:
                     identity=identity,
                     capabilities=capabilities,
                 )
+        if check_continuation is not None:
+            check_continuation()
         expected_version = _python_package_version()
         version_compatible = expected_version is None or capabilities.runtime_version == expected_version
         compatible = version_compatible or mode in {"shadow", "force"}

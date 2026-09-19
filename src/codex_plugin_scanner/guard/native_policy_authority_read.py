@@ -12,7 +12,11 @@ from typing import TYPE_CHECKING, cast
 from .managed_controls_policy_bundle import MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY
 from .native_policy_authority_compile import compile_native_policy_authority, compile_native_policy_row
 from .native_policy_authority_contract import NATIVE_AUTHORITY_MAX_ROWS, NativePolicyAuthorityDraft
-from .native_policy_authority_managed import FrozenNativeManagedAuthority, read_frozen_native_managed_authority
+from .native_policy_authority_managed import (
+    FrozenNativeManagedAuthority,
+    read_frozen_native_managed_authority,
+    require_unenrolled_secrets,
+)
 from .native_policy_authority_sources import (
     FrozenNativePolicySources,
     signed_bundle_native_rows,
@@ -113,18 +117,20 @@ def _credentials_for_capture(
 
 
 def read_native_policy_authority_inputs(store: GuardStore, *, now: float) -> NativeVerifiedPolicyInputs:
-    """Fence the existing authenticated control reader and the captured policy view."""
-    with store._connect() as observer:
-        # This connection stays outside the captured transaction. A PRAGMA in
-        # that transaction would not observe a concurrent commit until it ended.
-        version = observer.execute("pragma data_version").fetchone()[0]
-        managed = read_frozen_native_managed_authority(store)
-        result = _capture_native_policy_authority_inputs(store, now=now, managed=managed)
-        if managed is not None:
-            managed.require_current_secrets(store)
-        if observer.in_transaction or observer.execute("pragma data_version").fetchone()[0] != version:
-            raise NativePolicySnapshotError("native_policy_authority_capture_changed")
-        return result
+    """Authenticate one SQL snapshot after existing off-hook preparation.
+
+    The first SQL read in the captured transaction is its linearization point.
+    Unrelated commits do not invalidate that coherent view. This is not a claim
+    of current resident application: the publication/reservation/ACK callers
+    retain their separate source, epoch, metadata and data_version fences.
+    """
+    managed = read_frozen_native_managed_authority(store)
+    result = _capture_native_policy_authority_inputs(store, now=now, managed=managed)
+    if managed is not None:
+        managed.require_current_secrets(store)
+    else:
+        require_unenrolled_secrets(store)
+    return result
 
 
 def _capture_native_policy_authority_inputs(
@@ -150,11 +156,18 @@ def _capture_native_policy_authority_inputs(
     state_keys = (*_STATE_KEYS, store._oauth_local_credentials_state_key)
     with store.hold_oauth_credential_lock(), store._connect() as connection:
         connection.execute("begin")
+        connection.execute("pragma query_only=on")
         placeholders = ",".join("?" for _ in state_keys)
         state_rows = connection.execute(
             f"select state_key, payload_json from sync_state where state_key in ({placeholders})",
             state_keys,
         ).fetchall()
+        captured_managed = read_frozen_native_managed_authority(store, connection=connection)
+        if managed is None and captured_managed is not None:
+            raise NativePolicySnapshotError("native_policy_authority_managed_consumer_required")
+        if captured_managed != managed:
+            raise NativePolicySnapshotError("native_policy_authority_managed_unavailable")
+        managed = captured_managed
         if sum(len(str(row["payload_json"]).encode("utf-8")) for row in state_rows) > _MAX_CAPTURE_BYTES:
             raise NativePolicySnapshotError("native_policy_authority_capture_limit")
         payloads: dict[str, dict[str, object] | list[object] | None] = {}

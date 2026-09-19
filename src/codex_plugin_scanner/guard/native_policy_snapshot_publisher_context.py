@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Callable, Mapping
+import time
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from .mdm.policy import managed_policy_cache_read_only
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
 from .native_managed_capture import bind_configuration_origin
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
+from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_constants import _REQUIRED_PUBLISH_FEATURES, NativePolicySnapshotError
 from .native_policy_snapshot_publisher_scoped import SCOPED_PUBLISH_FEATURES, compiled_scoped_policy
 from .native_policy_snapshot_source_requirement import refresh_source_requirement
@@ -200,3 +204,61 @@ def _context_error(publisher: NativePolicySnapshotPublisher, reason: str) -> Non
         with publisher._condition:
             publisher._acked = False
     publisher._record_error(reason)
+
+
+@contextmanager
+def capture_for_reservation(
+    publisher: NativePolicySnapshotPublisher,
+    *,
+    expected: PublicationContext,
+    publish_epoch: int,
+    deadline_monotonic: float,
+) -> Iterator[PublicationContext]:
+    """Capture each attempt while rotation cannot retire and replace its source.
+
+    The caller reserves signed bytes inside this scope and releases it before
+    transport. A native retirement then fences any older prepared request.
+    """
+    from .native_policy_snapshot_publisher_scoped import _capture_metadata_equal
+
+    remaining = deadline_monotonic - time.monotonic()
+    if remaining <= 0:
+        raise NativePolicySnapshotError("native_policy_snapshot_deadline_exceeded")
+    with hold_policy_publication_mutation(publisher.guard_home, timeout_seconds=min(5.0, remaining)):
+        with publisher._condition:
+            if publisher._closed or publisher._epoch != publish_epoch:
+                raise NativePolicySnapshotError("native_policy_authority_source_changed")
+        with managed_policy_cache_read_only(), publisher.store._connect() as connection:
+            version = connection.execute("pragma data_version").fetchone()[0]
+            before = publisher._current_input_fingerprint()[0]
+            current = publisher._publication_context()
+            after = publisher._current_input_fingerprint()[0]
+            if current is None:
+                raise NativePolicySnapshotError("native_policy_snapshot_runtime_unavailable")
+            try:
+                identity, capabilities, _, _, _, inputs = current
+                old_identity, old_capabilities, _, _, _, old_inputs = expected
+                if (
+                    identity.path != old_identity.path
+                    or identity.sha256 != old_identity.sha256
+                    or capabilities.rule_digest != old_capabilities.rule_digest
+                    or frozenset(capabilities.features) != frozenset(old_capabilities.features)
+                    or getattr(capabilities, "extension_catalog_digest", None)
+                    != getattr(old_capabilities, "extension_catalog_digest", None)
+                    or isinstance(inputs, NativeVerifiedPolicyInputs)
+                    != isinstance(old_inputs, NativeVerifiedPolicyInputs)
+                ):
+                    raise NativePolicySnapshotError("native_policy_snapshot_inputs_changed")
+                with publisher._condition:
+                    if publisher._closed or publisher._epoch != publish_epoch:
+                        raise NativePolicySnapshotError("native_policy_authority_source_changed")
+                if (
+                    not _capture_metadata_equal(before, after, str(publisher.guard_home / "guard.db"))
+                    or connection.execute("pragma data_version").fetchone()[0] != version
+                ):
+                    raise NativePolicySnapshotError("native_policy_authority_capture_changed")
+                if time.monotonic() >= deadline_monotonic:
+                    raise NativePolicySnapshotError("native_policy_snapshot_deadline_exceeded")
+                yield current
+            finally:
+                current = None

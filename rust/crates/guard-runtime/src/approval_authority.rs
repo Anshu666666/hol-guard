@@ -166,6 +166,16 @@ fn authority_record_digest(bytes: &[u8]) -> String {
     guard_policy_snapshot::digest_bytes(bytes)
 }
 
+// Read only the public record. The resident retains secure-store provenance checks.
+pub(super) fn public_record_fingerprint(state_base: &Path) -> Result<Option<String>, String> {
+    let private_root = crate::resident_state::private_root_for_state_base(state_base)?;
+    Ok(read_authority_record(
+        &state_base.join(APPROVAL_AUTHORITY_FILE_NAME),
+        &private_root,
+    )?
+    .map(|(_, _, fingerprint)| fingerprint))
+}
+
 pub(super) fn load(state_base: &Path) -> Result<Option<ApprovalAuthority>, String> {
     super::approval_enrollment::with_transition_lock(state_base, || load_locked(state_base))
 }

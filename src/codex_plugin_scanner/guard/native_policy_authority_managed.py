@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
@@ -35,6 +36,18 @@ _REGISTRY = BUILT_IN_COMMAND_EXTENSION_REGISTRY
 
 def _unavailable() -> NativePolicySnapshotError:
     return NativePolicySnapshotError("native_policy_authority_managed_unavailable")
+
+
+def require_unenrolled_secrets(store: GuardStore) -> None:
+    """Absence is a captured state too; a newly present key/anchor revokes it."""
+    try:
+        if (
+            store._authority_key(required=False) is not None
+            or store._secret_store().get_secret(store._anchor_ref()) is not None
+        ):
+            raise _unavailable()
+    except ExtensionControlAuthorityError as error:
+        raise _unavailable() from error
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -148,13 +161,20 @@ class FrozenNativeManagedAuthority:
         }
 
 
-def read_frozen_native_managed_authority(store: GuardStore) -> FrozenNativeManagedAuthority | None:
+def read_frozen_native_managed_authority(
+    store: GuardStore, *, connection: sqlite3.Connection | None = None
+) -> FrozenNativeManagedAuthority | None:
     """Use existing MAC, anchor, transition, catalog and composition checks off-hook."""
     try:
         key = store._authority_key(required=False)
         anchor = store._read_anchor(key=key) if key is not None else None
-        view = store.read_extension_control_authority_for_registry(_REGISTRY)
+        view = (
+            store.read_extension_control_authority_for_registry(_REGISTRY)
+            if connection is None
+            else store._read_captured_extension_control_authority(connection, _REGISTRY)
+        )
         if view.health is AuthorityHealth.UNENROLLED and anchor is None:
+            require_unenrolled_secrets(store)
             return None
         if (
             view.health is not AuthorityHealth.PROTECTED

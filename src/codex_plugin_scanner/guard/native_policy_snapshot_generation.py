@@ -194,6 +194,7 @@ def _cached_snapshot_v3(
     scope_digest: str,
     renew_after_generation: int | None,
     requested_expires_at_ms: int | None,
+    allow_superseded_cache: bool = False,
 ) -> tuple[dict[str, object] | None, int | None]:
     cached = api._read_v3_snapshot_cache(guard_home, verifier_key=verifier_key)
     if cached is None:
@@ -209,6 +210,19 @@ def _cached_snapshot_v3(
         scope_digest=scope_digest,
     )
     cache_generation = cached_snapshot.get("generation")
+    if allow_superseded_cache:
+        if (
+            not isinstance(cache_generation, int)
+            or current is None
+            or current[0] < cache_generation
+            or (current[0] == cache_generation and current[1] != cached_snapshot.get("policy_digest"))
+        ):
+            raise NativePolicySnapshotError("native_policy_snapshot_generation_state_invalid")
+        if current[0] > cache_generation:
+            # The caller has just authenticated its complete current inputs under
+            # the publication lock. Keep the old authenticated bytes as evidence,
+            # but allocate strictly beyond the reservation that superseded them.
+            return None, max(renew_after_generation or 0, current[0])
     if not matches or not isinstance(cache_generation, int):
         return None, renew_after_generation
     if current is None or current != (cache_generation, policy_digest):
@@ -303,6 +317,7 @@ def native_policy_snapshot_v3(
     expires_at_ms: int | None = None,
     deadline_monotonic: float | None = None,
     renew_after_generation: int | None = None,
+    allow_superseded_cache: bool = False,
 ) -> dict[str, object]:
     """Build or reuse one generation-bound snapshot and provision its key.
 
@@ -347,6 +362,7 @@ def native_policy_snapshot_v3(
                 scope_digest=scope_digest,
                 renew_after_generation=renew_after_generation,
                 requested_expires_at_ms=expires_at_ms,
+                allow_superseded_cache=allow_superseded_cache,
             )
             if cached_snapshot is not None:
                 return cached_snapshot

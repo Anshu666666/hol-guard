@@ -103,7 +103,9 @@ def bind_staged_policy_rows(
             device_id=str(device["installation_id"]),
             device_name=str(device["device_label"]),
         )
-        if Counter(decisions) != Counter(staged.decisions):
+        decision_counts: Counter[PolicyDecision] = Counter(decisions)
+        staged_counts: Counter[PolicyDecision] = Counter(staged.decisions)
+        if decision_counts != staged_counts:
             raise PolicyCompilationError("command_source_generic_rows_mismatch", "policy-bundle")
         require_source_binding = True
     rebound, materialization = bind_policy_bundle_materialization(

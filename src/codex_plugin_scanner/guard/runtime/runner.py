@@ -50,6 +50,7 @@ from ..mdm.network import managed_urlopen
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
 from ..native_policy_authority_command_source import has_canonical_command_expressions
 from ..native_policy_bundle_sync import publish_received_canonical_policy
+from ..oauth_connection_authority import OAuthConnectionSnapshot
 from ..oauth_token_claims import decode_oauth_access_token_claims as _decode_oauth_access_token_claims
 from ..oauth_token_claims import oauth_binding_from_credentials, oauth_binding_metadata, oauth_refresh_binding
 from ..package_firewall_defaults import extract_cloud_user_profile
@@ -4275,11 +4276,14 @@ def clear_revoked_guard_oauth_sign_in(store: GuardStore) -> bool:
             credentials = store.get_oauth_local_credentials(allow_primary=True)
             if credentials is None:
                 return False
+            captured = _guard_oauth_connection_for_credentials(store, credentials)
             try:
-                _resolve_guard_sync_auth_context_from_oauth_credentials(store, credentials)
+                _resolve_guard_sync_auth_context_from_oauth_credentials(
+                    store, credentials, expected_connection=captured, required_connection=captured
+                )
             except GuardSyncAuthorizationExpiredError as error:
                 if _oauth_authorization_error_requires_fresh_sign_in(error):
-                    store._clear_oauth_local_credentials_locked()
+                    store._clear_oauth_local_credentials_locked(expected_connection=captured)
                     return True
                 return False
     except (RuntimeError, OSError, TimeoutError):
@@ -4342,6 +4346,8 @@ def _refresh_guard_oauth_access_token_once(
     client_id: str,
     refresh_token: str,
     dpop_key_material: GuardDpopKeyMaterial,
+    request_validator: Callable[[], None] | None = None,
+    completion_validator: Callable[[], None] | None = None,
 ) -> dict[str, object]:
     if _guard_runtime_was_upgraded():
         raise GuardSyncNotAvailableError(_guard_runtime_upgrade_restart_message(), retryable=True)
@@ -4375,27 +4381,47 @@ def _refresh_guard_oauth_access_token_once(
                 "DPoP": dpop_proof,
             },
         )
+        if request_validator is not None:
+            request_validator()
         try:
             with managed_urlopen(request, timeout=_SYNC_HTTP_TIMEOUT_SECONDS) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
-            payload = _http_error_payload(error) if error.code in {400, 401, 403} else None
-            challenge_nonce = _dpop_nonce_from_http_error(error, payload)
-            if challenge_nonce is not None and challenge_nonce != dpop_nonce and nonce_retry_count < 3:
-                dpop_nonce = challenge_nonce
-                nonce_retry_count += 1
-                continue
-            if error.code in {400, 401, 403}:
-                if _invalid_grant_oauth_payload(payload):
-                    raise GuardSyncAuthorizationExpiredError(_guard_oauth_reconnect_after_revoked_message()) from error
+            if completion_validator is not None:
+                completion_validator()
+            try:
+                payload = _http_error_payload(error) if error.code in {400, 401, 403} else None
+                challenge_nonce = _dpop_nonce_from_http_error(error, payload)
+                if challenge_nonce is not None and challenge_nonce != dpop_nonce and nonce_retry_count < 3:
+                    dpop_nonce = challenge_nonce
+                    nonce_retry_count += 1
+                    continue
+                if error.code in {400, 401, 403}:
+                    if _invalid_grant_oauth_payload(payload):
+                        raise GuardSyncAuthorizationExpiredError(
+                            _guard_oauth_reconnect_after_revoked_message()
+                        ) from error
+                    refresh_error_message = _oauth_refresh_error_message(error)
+                    raise GuardSyncAuthorizationExpiredError(
+                        f"{_guard_oauth_reauthorization_message()} {refresh_error_message}"
+                    ) from error
                 refresh_error_message = _oauth_refresh_error_message(error)
-                raise GuardSyncAuthorizationExpiredError(
-                    f"{_guard_oauth_reauthorization_message()} {refresh_error_message}"
-                ) from error
-            refresh_error_message = _oauth_refresh_error_message(error)
-            raise RuntimeError(f"Guard OAuth token refresh failed: {refresh_error_message}") from error
+                raise RuntimeError(f"Guard OAuth token refresh failed: {refresh_error_message}") from error
+            finally:
+                # Error bodies are part of the completed provider attempt.
+                # Run this outside the transport catches, including on nonce retry.
+                if completion_validator is not None:
+                    completion_validator()
         except OSError as error:
+            if completion_validator is not None:
+                completion_validator()
             raise RuntimeError(_sync_url_error_message(error)) from error
+        except Exception:
+            if completion_validator is not None:
+                completion_validator()
+            raise
+        if request_validator is not None:
+            request_validator()
         if not isinstance(payload, dict):
             raise GuardSyncAuthorizationExpiredError(_guard_oauth_reauthorization_message())
         access_token = _optional_string(payload.get("access_token"))
@@ -4445,13 +4471,45 @@ _OAUTH_INVALID_GRANT_RETRY_DELAY_SECONDS = 0.75
 _oauth_binding_metadata_from_access_token = oauth_binding_from_credentials
 
 
+@dataclass(frozen=True, repr=False)
+class _OAuthRefreshRequest:
+    token_endpoint: str
+    client_id: str
+    refresh_token: str
+    dpop_key_material: GuardDpopKeyMaterial
+
+
+def _guard_oauth_connection_for_credentials(
+    store: GuardStore,
+    credentials: dict[str, object],
+    *,
+    required_connection: OAuthConnectionSnapshot | None = None,
+) -> OAuthConnectionSnapshot:
+    current = store.capture_oauth_connection(allow_recoverable=True)
+    if (
+        current is None
+        or current.credentials() != credentials
+        or (required_connection is not None and not required_connection.same_authority(current))
+    ):
+        raise RuntimeError("The connection changed before authentication could complete.")
+    return current
+
+
+def _require_guard_oauth_connection(store: GuardStore, expected: OAuthConnectionSnapshot) -> None:
+    current = store.capture_oauth_connection(allow_recoverable=True)
+    if current != expected:
+        raise RuntimeError("The connection changed before authentication could complete.")
+
+
 def _refresh_guard_oauth_access_token(
     *,
     token_endpoint: str,
     client_id: str,
     refresh_token: str,
     dpop_key_material: GuardDpopKeyMaterial,
-    credential_reloader: Callable[[], tuple[str, GuardDpopKeyMaterial] | None] | None = None,
+    credential_reloader: Callable[[], tuple[str, GuardDpopKeyMaterial] | _OAuthRefreshRequest | None] | None = None,
+    request_validator: Callable[[], None] | None = None,
+    completion_validator: Callable[[], None] | None = None,
 ) -> dict[str, object]:
     """Refresh with bounded invalid_grant tolerance.
 
@@ -4469,15 +4527,19 @@ def _refresh_guard_oauth_access_token(
     stale inputs.
     """
     last_error: GuardSyncAuthorizationExpiredError | None = None
+    attempt_token_endpoint = token_endpoint
+    attempt_client_id = client_id
     attempt_refresh_token = refresh_token
     attempt_dpop_key_material = dpop_key_material
     for attempt in range(_OAUTH_INVALID_GRANT_MAX_ATTEMPTS):
         try:
             result = _refresh_guard_oauth_access_token_once(
-                token_endpoint=token_endpoint,
-                client_id=client_id,
+                token_endpoint=attempt_token_endpoint,
+                client_id=attempt_client_id,
                 refresh_token=attempt_refresh_token,
                 dpop_key_material=attempt_dpop_key_material,
+                request_validator=request_validator,
+                completion_validator=completion_validator,
             )
         except GuardSyncAuthorizationExpiredError as error:
             if str(error) != _guard_oauth_reconnect_after_revoked_message():
@@ -4491,7 +4553,13 @@ def _refresh_guard_oauth_access_token(
             reloaded = credential_reloader()
             if reloaded is None:
                 continue
-            attempt_refresh_token, attempt_dpop_key_material = reloaded
+            if isinstance(reloaded, _OAuthRefreshRequest):
+                attempt_token_endpoint = reloaded.token_endpoint
+                attempt_client_id = reloaded.client_id
+                attempt_refresh_token = reloaded.refresh_token
+                attempt_dpop_key_material = reloaded.dpop_key_material
+            else:
+                attempt_refresh_token, attempt_dpop_key_material = reloaded
             continue
         result["_effective_refresh_token"] = attempt_refresh_token
         result["_effective_dpop_key_material"] = attempt_dpop_key_material
@@ -4508,8 +4576,10 @@ def _persist_recovered_oauth_binding(store: GuardStore, credentials: dict[str, o
     refresh_token = _optional_string(credentials.get("refresh_token"))
     if refresh_token is None:
         return False
+    captured = _guard_oauth_connection_for_credentials(store, credentials)
     _persist_rotated_oauth_refresh_token(
         store=store,
+        expected_connection=captured,
         credentials={
             **credentials,
             **{key: _optional_string(credentials.get(key)) or value for key, value in recovered.items()},
@@ -4571,7 +4641,9 @@ def _persist_rotated_oauth_refresh_token(
     access_token: str | None = None,
     access_token_expires_at: str | None = None,
     force_primary_secret_rewrite: bool = False,
-) -> None:
+    expected_connection: OAuthConnectionSnapshot | None = None,
+) -> OAuthConnectionSnapshot:
+    captured = expected_connection or _guard_oauth_connection_for_credentials(store, credentials)
     issuer = _optional_string(credentials.get("issuer"))
     client_id = _optional_string(credentials.get("client_id"))
     dpop_private_key_pem = _optional_string(credentials.get("dpop_private_key_pem"))
@@ -4605,7 +4677,7 @@ def _persist_rotated_oauth_refresh_token(
         recovered_binding,
         refreshed=access_token is not None,
     )
-    store.set_oauth_local_credentials(
+    committed = store.set_oauth_local_credentials(
         issuer=issuer,
         client_id=client_id,
         refresh_token=refresh_token,
@@ -4634,7 +4706,11 @@ def _persist_rotated_oauth_refresh_token(
         access_token_expires_at=access_token_expires_at,
         now=_now(),
         force_primary_secret_rewrite=force_primary_secret_rewrite,
+        expected_connection=captured,
     )
+    if committed is None:
+        raise RuntimeError("The refreshed connection authority is unavailable.")
+    return committed
 
 
 def _resolve_guard_sync_auth_context_from_oauth_credentials(
@@ -4643,7 +4719,20 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
     *,
     persist_recovered_secret: bool = False,
     force_refresh: bool = False,
+    expected_connection: OAuthConnectionSnapshot | None = None,
+    required_connection: OAuthConnectionSnapshot | None = None,
+    validate_request: Callable[[], None] | None = None,
 ) -> dict[str, object]:
+    captured = expected_connection or _guard_oauth_connection_for_credentials(
+        store, oauth_credentials, required_connection=required_connection
+    )
+    if captured.credentials() != oauth_credentials or (
+        required_connection is not None and not required_connection.same_authority(captured)
+    ):
+        raise RuntimeError("The connection changed before authentication could complete.")
+    _require_guard_oauth_connection(store, captured)
+    if validate_request is not None:
+        validate_request()
     issuer = _optional_string(oauth_credentials.get("issuer"))
     client_id = _optional_string(oauth_credentials.get("client_id"))
     refresh_token = _optional_string(oauth_credentials.get("refresh_token"))
@@ -4662,23 +4751,41 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
             _oauth_sync_url_from_issuer(oauth_client.issuer),
             issuer=oauth_client.issuer,
         )
+        _require_guard_oauth_connection(store, captured)
+        if validate_request is not None:
+            validate_request()
         return {
             "sync_url": sync_url,
             "access_token": cached_access_token,
             "dpop_key_material": dpop_key_material,
         }
 
-    effective_credentials_ref: dict[str, dict[str, object]] = {"value": oauth_credentials}
+    effective_credentials_ref = {"value": oauth_credentials}
+    effective_connection_ref = {"value": captured}
 
-    def _reload_current_oauth_credentials() -> tuple[str, GuardDpopKeyMaterial] | None:
-        reloaded_credentials = store.get_oauth_local_credentials(allow_primary=True)
-        if not isinstance(reloaded_credentials, dict):
-            return None
-        reloaded_refresh_token = _optional_string(reloaded_credentials.get("refresh_token"))
-        if reloaded_refresh_token is None:
-            return None
+    def _validate_attempt() -> None:
+        _require_guard_oauth_connection(store, effective_connection_ref["value"])
+        if validate_request is not None:
+            validate_request()
+
+    def _reload_current_oauth_credentials() -> _OAuthRefreshRequest:
+        current = store.capture_oauth_connection(allow_recoverable=True)
+        if current is None or (required_connection is not None and not required_connection.same_authority(current)):
+            raise RuntimeError("The connection changed before authentication could complete.")
+        reloaded_credentials = current.credentials()
+        next_issuer = _optional_string(reloaded_credentials.get("issuer"))
+        next_client = _optional_string(reloaded_credentials.get("client_id"))
+        next_refresh_token = _optional_string(reloaded_credentials.get("refresh_token"))
+        if next_issuer is None or next_client is None or next_refresh_token is None:
+            raise GuardSyncAuthorizationExpiredError(_guard_oauth_reauthorization_message())
+        try:
+            next_config = resolve_guard_oauth_client_config(next_issuer)
+        except ValueError as error:
+            raise GuardSyncEndpointUntrustedError(f"{_guard_sync_reconnect_message()} {error}") from error
+        next_key = _oauth_dpop_key_material(reloaded_credentials)
         effective_credentials_ref["value"] = reloaded_credentials
-        return reloaded_refresh_token, _oauth_dpop_key_material(reloaded_credentials)
+        effective_connection_ref["value"] = current
+        return _OAuthRefreshRequest(next_config.token_endpoint, next_client, next_refresh_token, next_key)
 
     refreshed = _refresh_guard_oauth_access_token(
         token_endpoint=oauth_client.token_endpoint,
@@ -4686,9 +4793,12 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
         refresh_token=refresh_token,
         dpop_key_material=dpop_key_material,
         credential_reloader=_reload_current_oauth_credentials,
+        request_validator=_validate_attempt,
+        completion_validator=validate_request,
     )
     effective_credentials = effective_credentials_ref["value"]
-    effective_dpop_key_material = _apply_refreshed_oauth_credentials(
+    _validate_attempt()
+    effective_dpop_key_material, committed_connection = _apply_refreshed_oauth_credentials(
         store=store,
         effective_credentials=effective_credentials,
         refreshed=refreshed,
@@ -4696,11 +4806,18 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
         dpop_key_material=dpop_key_material,
         persist_recovered_secret=persist_recovered_secret,
         force_refresh=force_refresh,
+        expected_connection=effective_connection_ref["value"],
     )
+    effective_issuer = str(effective_credentials["issuer"])
     sync_url = _validate_guard_sync_url(
-        _oauth_sync_url_from_issuer(oauth_client.issuer),
-        issuer=oauth_client.issuer,
+        _oauth_sync_url_from_issuer(effective_issuer),
+        issuer=effective_issuer,
     )
+    if required_connection is not None and not required_connection.same_authority(committed_connection):
+        raise RuntimeError("The connection changed before authentication could complete.")
+    _require_guard_oauth_connection(store, committed_connection)
+    if validate_request is not None:
+        validate_request()
     return {
         "sync_url": sync_url,
         "access_token": str(refreshed["access_token"]),
@@ -4717,7 +4834,8 @@ def _apply_refreshed_oauth_credentials(
     dpop_key_material: GuardDpopKeyMaterial,
     persist_recovered_secret: bool,
     force_refresh: bool,
-) -> GuardDpopKeyMaterial:
+    expected_connection: OAuthConnectionSnapshot,
+) -> tuple[GuardDpopKeyMaterial, OAuthConnectionSnapshot]:
     """Project the refresh result onto the credential store and return context.
 
     Removes the wrapper's internal `_effective_*` markers from `refreshed`,
@@ -4756,6 +4874,7 @@ def _apply_refreshed_oauth_credentials(
         )
     stored_cloud_user_profile = _extract_dict_field(effective_credentials, "cloud_user_profile")
     profile_changed = effective_cloud_user_profile != stored_cloud_user_profile
+    committed_connection = expected_connection
     if (
         force_refresh
         or rotated_refresh_token != refresh_token
@@ -4763,7 +4882,7 @@ def _apply_refreshed_oauth_credentials(
         or profile_changed
         or persist_recovered_secret
     ):
-        _persist_rotated_oauth_refresh_token(
+        committed_connection = _persist_rotated_oauth_refresh_token(
             store=store,
             credentials=effective_credentials,
             package_firewall_entitlement=package_firewall_entitlement,
@@ -4772,8 +4891,9 @@ def _apply_refreshed_oauth_credentials(
             access_token=_optional_string(refreshed.get("access_token")),
             access_token_expires_at=_optional_string(refreshed.get("access_token_expires_at")),
             force_primary_secret_rewrite=force_refresh,
+            expected_connection=expected_connection,
         )
-    return effective_dpop_key_material
+    return effective_dpop_key_material, committed_connection
 
 
 # Test-only override: when set, _resolve_guard_sync_auth_context returns this dict
@@ -4812,12 +4932,14 @@ def _resolve_guard_sync_auth_context(
     *,
     allow_primary_repair: bool = True,
     force_refresh: bool = False,
+    required_connection: OAuthConnectionSnapshot | None = None,
+    validate_request: Callable[[], None] | None = None,
 ) -> dict[str, object]:
-    if _test_sync_auth_context_override is not None:
+    if _test_sync_auth_context_override is not None and required_connection is None:
         override = dict(_test_sync_auth_context_override)
         override["sync_url"] = _validate_guard_sync_url(_auth_context_sync_url(override))
         return override
-    env_override = _test_sync_auth_context_from_env()
+    env_override = _test_sync_auth_context_from_env() if required_connection is None else None
     if env_override is not None:
         return env_override
     with _guard_sync_auth_lock(store):
@@ -4829,6 +4951,8 @@ def _resolve_guard_sync_auth_context(
                     store,
                     oauth_credentials,
                     force_refresh=force_refresh,
+                    required_connection=required_connection,
+                    validate_request=validate_request,
                 )
             except GuardSyncAuthorizationExpiredError as error:
                 if not _oauth_authorization_error_requires_fresh_sign_in(error):
@@ -4843,6 +4967,8 @@ def _resolve_guard_sync_auth_context(
                     store,
                     refreshed_credentials,
                     force_refresh=force_refresh,
+                    required_connection=required_connection,
+                    validate_request=validate_request,
                 )
         if bool(oauth_health.get("configured")):
             recoverable_credentials = store.get_recoverable_oauth_local_credentials()
@@ -4852,6 +4978,8 @@ def _resolve_guard_sync_auth_context(
                     recoverable_credentials,
                     persist_recovered_secret=allow_primary_repair,
                     force_refresh=force_refresh,
+                    required_connection=required_connection,
+                    validate_request=validate_request,
                 )
             raise GuardSyncAuthorizationExpiredError(_guard_oauth_reauthorization_message())
         raise GuardSyncNotConfiguredError("Guard is not logged in.")
@@ -5090,6 +5218,7 @@ def _urlopen_with_sync_retries(
     retry_timeout_seconds: int,
     parse_json_response: bool,
     nonce_fast_path: bool,
+    validate_request: Callable[[], None] | None = None,
 ) -> object:
     """Drive one Guard Cloud request through the shared sync retry policies.
 
@@ -5099,6 +5228,12 @@ def _urlopen_with_sync_retries(
     challenge retry, and finally one timeout retry at the longer budget.
     """
 
+    def error_payload(error: urllib.error.HTTPError) -> object:
+        payload = _http_error_payload(error)
+        if validate_request is not None:
+            validate_request()
+        return payload
+
     current_request = request
     current_timeout_seconds = timeout_seconds
     retried_timeout = False
@@ -5106,15 +5241,19 @@ def _urlopen_with_sync_retries(
     rate_limit_retry_count = 0
     gateway_retry_count = 0
     while True:
+        # The validator is outside the transport try/except: a failed local
+        # authority check must never be mistaken for a retryable network error.
+        if validate_request is not None:
+            validate_request()
         try:
             with managed_urlopen(current_request, timeout=current_timeout_seconds) as response:
-                if parse_json_response:
-                    return json.loads(response.read().decode("utf-8"))
-                return None
+                payload = json.loads(response.read().decode("utf-8")) if parse_json_response else None
         except urllib.error.HTTPError as error:
+            if validate_request is not None:
+                validate_request()
             if nonce_fast_path and error.code == 401:
-                error_payload = _http_error_payload(error)
-                dpop_nonce = _dpop_nonce_from_http_error(error, error_payload)
+                parsed_error = error_payload(error)
+                dpop_nonce = _dpop_nonce_from_http_error(error, parsed_error)
                 if dpop_nonce is not None and nonce_retry_count < 3:
                     nonce_retry_count += 1
                     retry_request = _guard_sync_request_with_nonce(current_request, dpop_nonce)
@@ -5142,8 +5281,8 @@ def _urlopen_with_sync_retries(
                 current_timeout_seconds = timeout_seconds
                 retried_timeout = False
                 continue
-            error_payload = _http_error_payload(error) if error.code in {400, 401} else None
-            dpop_nonce = _dpop_nonce_from_http_error(error, error_payload)
+            parsed_error = error_payload(error) if error.code in {400, 401} else None
+            dpop_nonce = _dpop_nonce_from_http_error(error, parsed_error)
             retry_request = (
                 None
                 if dpop_nonce is None or nonce_retry_count >= 3
@@ -5157,6 +5296,8 @@ def _urlopen_with_sync_retries(
                 continue
             raise
         except OSError as error:
+            if validate_request is not None:
+                validate_request()
             if not retried_timeout and _is_timeout_error(error):
                 refreshed_request = _refresh_guard_sync_request(current_request)
                 if refreshed_request is None:
@@ -5166,6 +5307,14 @@ def _urlopen_with_sync_retries(
                 retried_timeout = True
                 continue
             raise
+        except Exception:
+            # Parsing and response cleanup also complete a transport attempt.
+            if validate_request is not None:
+                validate_request()
+            raise
+        if validate_request is not None:
+            validate_request()
+        return payload
 
 
 def _urlopen_json_with_timeout_retry(
@@ -5173,6 +5322,7 @@ def _urlopen_json_with_timeout_retry(
     request: urllib.request.Request,
     timeout_seconds: int,
     retry_timeout_seconds: int,
+    validate_request: Callable[[], None] | None = None,
 ) -> dict[str, object]:
     return read_sync_object(
         lambda: _urlopen_with_sync_retries(
@@ -5181,6 +5331,7 @@ def _urlopen_json_with_timeout_retry(
             retry_timeout_seconds=retry_timeout_seconds,
             parse_json_response=True,
             nonce_fast_path=False,
+            validate_request=validate_request,
         )
     )
 
@@ -5190,6 +5341,7 @@ def _urlopen_with_timeout_retry(
     request: urllib.request.Request,
     timeout_seconds: int,
     retry_timeout_seconds: int,
+    validate_request: Callable[[], None] | None = None,
 ) -> None:
     _urlopen_with_sync_retries(
         request=request,
@@ -5197,6 +5349,7 @@ def _urlopen_with_timeout_retry(
         retry_timeout_seconds=retry_timeout_seconds,
         parse_json_response=False,
         nonce_fast_path=True,
+        validate_request=validate_request,
     )
 
 

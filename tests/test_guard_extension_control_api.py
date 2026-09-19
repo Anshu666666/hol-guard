@@ -444,11 +444,11 @@ def test_apply_requires_matching_server_held_proof_and_refreshes_runtime(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     store = _ApplyingStore(tmp_path / "guard-home")
-    service = _service(cast(GuardStore, store))
+    service = _service(cast(GuardStore, cast(object, store)))
     monkeypatch.setattr(
         extension_control_api_module,
         "issue_extension_control_proof",
-        lambda *_args, **_kwargs: cast(ExtensionControlProof, _FakeProof()),
+        lambda *_args, **_kwargs: cast(ExtensionControlProof, cast(object, _FakeProof())),
     )
     payload = _mutation_payload()
     payload.update(
@@ -487,7 +487,7 @@ def test_local_apply_does_not_persist_composed_managed_layer(
         (),
     )
     service = ExtensionControlApiService(
-        store=cast(GuardStore, store),
+        store=cast(GuardStore, cast(object, store)),
         registry=BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         runtime=ExtensionControlRuntime(
             ExtensionControlAuthorityView(
@@ -504,7 +504,7 @@ def test_local_apply_does_not_persist_composed_managed_layer(
     monkeypatch.setattr(
         extension_control_api_module,
         "issue_extension_control_proof",
-        lambda *_args, **_kwargs: cast(ExtensionControlProof, _FakeProof()),
+        lambda *_args, **_kwargs: cast(ExtensionControlProof, cast(object, _FakeProof())),
     )
     payload = _mutation_payload()
     payload["layers"] = json.loads(layers_to_json((managed_layer,)))
@@ -535,14 +535,14 @@ def test_local_apply_preserves_signed_layer_from_raw_base(
         (signed_layer,),
     )
     service = ExtensionControlApiService(
-        store=cast(GuardStore, store),
+        store=cast(GuardStore, cast(object, store)),
         registry=BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         runtime=ExtensionControlRuntime(store.current_view),
     )
     monkeypatch.setattr(
         extension_control_api_module,
         "issue_extension_control_proof",
-        lambda *_args, **_kwargs: cast(ExtensionControlProof, _FakeProof()),
+        lambda *_args, **_kwargs: cast(ExtensionControlProof, cast(object, _FakeProof())),
     )
     payload = _mutation_payload()
     payload["layers"] = json.loads(layers_to_json((signed_layer,)))
@@ -583,7 +583,7 @@ def test_local_apply_persists_raw_signed_but_previews_active_managed_layer(
     store.managed_layers = (managed_signed,)
     store.managed_revision = 1
     service = ExtensionControlApiService(
-        store=cast(GuardStore, store),
+        store=cast(GuardStore, cast(object, store)),
         registry=BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         runtime=ExtensionControlRuntime(
             ExtensionControlAuthorityView(
@@ -598,7 +598,7 @@ def test_local_apply_persists_raw_signed_but_previews_active_managed_layer(
     monkeypatch.setattr(
         extension_control_api_module,
         "issue_extension_control_proof",
-        lambda *_args, **_kwargs: cast(ExtensionControlProof, _FakeProof()),
+        lambda *_args, **_kwargs: cast(ExtensionControlProof, cast(object, _FakeProof())),
     )
     payload = _mutation_payload()
     payload["layers"] = json.loads(layers_to_json((managed_signed,)))

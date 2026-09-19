@@ -7,7 +7,7 @@ import io
 import json
 from contextlib import closing
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -240,7 +240,10 @@ def test_hook_worker_returns_native_allow(
         guard_home=tmp_path / "guard-home",
         workspace=tmp_path / "workspace",
     )
-    assert result["policy_action"] == "allow" and result["hookSpecificOutput"]["permissionDecision"] == "allow"
+    assert (
+        result["policy_action"] == "allow"
+        and cast(dict[str, object], result["hookSpecificOutput"])["permissionDecision"] == "allow"
+    )
 
 
 def test_hook_worker_clears_native_route_before_python_review_continuation(

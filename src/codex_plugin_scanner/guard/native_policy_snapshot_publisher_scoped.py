@@ -15,6 +15,7 @@ from .native_policy_decision_context import NativePolicyDecisionContext, capture
 from .native_policy_snapshot_codec import _digest_v3
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .native_policy_snapshot_policy import effective_native_policy_v3
+from .native_policy_snapshot_v4_generation import NativeV4Candidate, reserve_snapshot_v4
 from .native_policy_snapshot_v4_transport import publish_snapshot_v4
 
 if TYPE_CHECKING:
@@ -99,7 +100,38 @@ def publish_scoped(
 ) -> None:
     """An ACK alone never opens readiness or supplies canonical provenance."""
     identity, capabilities, master_key, config, client, inputs = context
-    del context
+    from .native_policy_snapshot_publisher_context import capture_for_reservation
+
+    def fresh_candidate(minimum: int | None, deadline: float) -> NativeV4Candidate:
+        with capture_for_reservation(
+            publisher,
+            expected=context,
+            publish_epoch=publish_epoch,
+            deadline_monotonic=deadline,
+        ) as captured:
+            fresh_identity, fresh_capabilities, fresh_key, fresh_config, _, fresh_inputs = captured
+            if not isinstance(fresh_inputs, NativeVerifiedPolicyInputs):
+                raise NativePolicySnapshotError("native_policy_snapshot_inputs_changed")
+            try:
+                return reserve_snapshot_v4(
+                    config=fresh_config,
+                    guard_home=publisher.guard_home,
+                    runtime_identity=fresh_identity.sha256,
+                    rule_digest=fresh_capabilities.rule_digest,
+                    master_key=fresh_key,
+                    inputs=fresh_inputs,
+                    capabilities=NativePolicyAuthorityCapabilities(
+                        4,
+                        frozenset(fresh_capabilities.features),
+                        fresh_capabilities.extension_catalog_digest,
+                    ),
+                    issued_at_ms=int(publisher._wall_clock() * 1_000),
+                    minimum_generation=minimum,
+                    deadline_monotonic=deadline,
+                )
+            finally:
+                fresh_key = b""
+
     if not isinstance(inputs, NativeVerifiedPolicyInputs):
         raise NativePolicySnapshotError("native_policy_authority_input_invalid")
     before_resident = publisher._current_resident_fingerprint()
@@ -119,9 +151,11 @@ def publish_scoped(
             wall_clock=publisher._wall_clock,
             monotonic_clock=publisher._monotonic_clock,
             minimum_generation=renew_after_generation,
+            candidate_factory=fresh_candidate,
         )
     finally:
         master_key = b""
+    inputs = publication.candidate.inputs
     snapshot = publication.candidate.snapshot
     observed_resident = publisher._current_resident_fingerprint()
     observed_directory = publisher._resident_directory_fingerprint()

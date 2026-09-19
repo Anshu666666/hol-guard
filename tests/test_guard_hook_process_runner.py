@@ -458,7 +458,9 @@ def test_prewarmed_runner_does_not_hide_a_second_worker_queue(tmp_path: Path) ->
     assert elapsed < 1.0 * timing_scale
 
 
-def _transient_not_ready_test_runner(tmp_path: Path, responses: list[object]) -> tuple[HookProcessRunner, MagicMock]:
+def _transient_not_ready_test_runner(
+    tmp_path: Path, responses: Sequence[object]
+) -> tuple[HookProcessRunner, MagicMock]:
     runner = HookProcessRunner(guard_home=tmp_path, process_limit=1, timeout_seconds=1)
     runner._started = True  # pyright: ignore[reportPrivateUsage]
     process = MagicMock()

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import urllib.error
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
+from email.message import Message
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
 import codex_plugin_scanner.guard.runtime.runner as runner
 from codex_plugin_scanner.guard import policy_bundle_trusted_keys as trusted_keys_module
+from codex_plugin_scanner.guard.cli.oauth_client import generate_dpop_key_pair
 from codex_plugin_scanner.guard.config import update_guard_settings
 from codex_plugin_scanner.guard.models import GuardReceipt
 from codex_plugin_scanner.guard.policy_bundle_parser import (
@@ -89,7 +93,7 @@ def _sync_unauthorized_error() -> urllib.error.HTTPError:
         "https://hol.org/api/guard/receipts/sync",
         401,
         "Unauthorized",
-        {},
+        cast(Message, cast(object, {})),
         None,
     )
 
@@ -286,7 +290,7 @@ def test_signed_receipt_redaction_authority_can_clear_and_relax_again(
         "sync_guard_events",
         lambda _store, auth_context=None: {"accepted": 0, "statuses": []},
     )
-    auth_context = {
+    auth_context: dict[str, object] = {
         "sync_url": "https://hol.org/api/guard/receipts/sync",
         "access_token": "test-access-token",
         "dpop_key_material": None,
@@ -349,10 +353,10 @@ def test_signed_receipt_redaction_authority_can_clear_and_relax_again(
 
 def test_cloud_receipt_redaction_relaxation_resets_receipt_cursor_before_storing_level(tmp_path) -> None:
     store = GuardStore(tmp_path)
-    writes: list[tuple[str, dict[str, object], str]] = []
+    writes: list[tuple[str, Mapping[str, object] | Sequence[object], str]] = []
     original_set_sync_payload = store.set_sync_payload
 
-    def record_set_sync_payload(state_key: str, payload: dict[str, object], now: str) -> None:
+    def record_set_sync_payload(state_key: str, payload: Mapping[str, object] | Sequence[object], now: str) -> None:
         writes.append((state_key, payload, now))
         original_set_sync_payload(state_key, payload, now)
 
@@ -505,12 +509,24 @@ def test_forced_oauth_refresh_persists_same_refresh_token_access_token(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    store = GuardStore(tmp_path)
+    store = GuardStore(tmp_path, allow_system_keyring=False)
+    key = generate_dpop_key_pair()
+    credentials: dict[str, Any] = {
+        "issuer": "https://hol.org",
+        "client_id": "guard-local-daemon",
+        "refresh_token": "same-refresh-token",
+        "access_token": "stale-access-token",
+        "access_token_expires_at": "2099-04-15T00:30:00+00:00",
+        "dpop_private_key_pem": key.private_key_pem,
+        "dpop_public_jwk": key.public_jwk,
+        "dpop_public_jwk_thumbprint": key.public_jwk_thumbprint,
+    }
+    store.set_oauth_local_credentials(**credentials, now="2026-04-15T00:00:00+00:00")
     persisted: list[dict[str, object]] = []
 
     class OAuthClient:
-        issuer = "http://127.0.0.1:3000"
-        token_endpoint = "http://127.0.0.1:3000/oauth/token"
+        issuer = "https://hol.org"
+        token_endpoint = "https://hol.org/api/guard/oauth/token"
 
     def fake_refresh(**_kwargs: object) -> dict[str, object]:
         return {
@@ -520,22 +536,18 @@ def test_forced_oauth_refresh_persists_same_refresh_token_access_token(
         }
 
     monkeypatch.setattr(runner, "resolve_guard_oauth_client_config", lambda _issuer: OAuthClient())
-    monkeypatch.setattr(runner, "_oauth_dpop_key_material", lambda _credentials: None)
     monkeypatch.setattr(runner, "_refresh_guard_oauth_access_token", fake_refresh)
-    monkeypatch.setattr(store, "set_oauth_local_credentials", lambda **kwargs: persisted.append(kwargs))
+    actual_set = store.set_oauth_local_credentials
+
+    def recording_set(**kwargs: Any):
+        persisted.append(kwargs)
+        return actual_set(**kwargs)
+
+    monkeypatch.setattr(store, "set_oauth_local_credentials", recording_set)
 
     auth_context = runner._resolve_guard_sync_auth_context_from_oauth_credentials(
         store,
-        {
-            "issuer": "http://127.0.0.1:3000",
-            "client_id": "guard-local-daemon",
-            "refresh_token": "same-refresh-token",
-            "access_token": "stale-access-token",
-            "access_token_expires_at": "2099-04-15T00:30:00+00:00",
-            "dpop_private_key_pem": "private-key",
-            "dpop_public_jwk": {"kty": "EC", "crv": "P-256"},
-            "dpop_public_jwk_thumbprint": "thumbprint",
-        },
+        credentials,
         force_refresh=True,
     )
 

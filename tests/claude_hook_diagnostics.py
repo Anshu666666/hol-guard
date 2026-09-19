@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import math
 import re
+import subprocess
 from typing import cast
+
+import pytest
 
 _DEGRADED_PREFIX = "HOL Guard could not reach the local daemon ("
 _DEGRADED_SUFFIX = ") and continued this action without native review."
@@ -135,3 +139,22 @@ def claude_prompt_diagnostics(payload: object) -> dict[str, str]:
     if "additionalContext" in output:
         result["additional_context"] = "text" if type(output["additionalContext"]) is str else "invalid"
     return result
+
+
+def assert_claude_hook_asks_for_permission(
+    result: subprocess.CompletedProcess[str], *, elapsed_seconds: float
+) -> None:
+    """Preserve the generated hook regression assertions with finite diagnostics."""
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        pytest.fail("Claude hook returned invalid JSON", pytrace=False)
+    diagnostic = claude_hook_diagnostics(payload, returncode=result.returncode, elapsed_seconds=elapsed_seconds)
+    returned_successfully = result.returncode == 0
+    assert returned_successfully, diagnostic
+    stderr_is_empty = result.stderr == ""
+    assert stderr_is_empty, diagnostic
+    expected_event = payload["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
+    assert expected_event, diagnostic
+    asks_for_permission = payload["hookSpecificOutput"]["permissionDecision"] == "ask"
+    assert asks_for_permission, diagnostic

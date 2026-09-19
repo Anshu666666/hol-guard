@@ -1,0 +1,240 @@
+{
+  "schema": "pr2974.combined-current-writer-dispatch.source-peer.v1",
+  "reviewed_at_utc": "2026-09-19 20:26:01 UTC",
+  "reviewer": "independent acceptance_audit agent",
+  "owner_packet": {
+    "git_blob": "64402879edee45eea285d775d3d6e45395fba3ff",
+    "bytes": 1945587,
+    "sha256": "d307f44b80dd59a9ffba713591787fcd7e2eda7fb77fcf751c033433a9115dba"
+  },
+  "source": {
+    "commit": "720980369d88cb7974da50c51420d29e3f5c3723",
+    "tree": "5676fdb38be539c4c1b9460fb5de6bd63f9b5448",
+    "sole_parent": "78e58968bfe08066d3a76a3a799ec1563695445b",
+    "source_only": true,
+    "unreferenced": true
+  },
+  "review_scope": "Actual daemon mixed dispatch, six selected pre-existing combined controls, current journal-mixin integration, and compatibility of the new ReceiptWitness provider with the pending RSP129 explicit-enter/close controls. Hash/inverse verification of every supplied component does not constitute a new runtime or installed-qualification result.",
+  "independent_identity_checks": {
+    "actual_commit_parent_and_tree_fetched": true,
+    "actual_recursive_incoming_and_candidate_trees_fetched": true,
+    "full_git_merkle_trees_and_every_directory_recomputed": true,
+    "incoming_leaves": 4629,
+    "incoming_directories_including_root": 277,
+    "candidate_leaves": 4662,
+    "candidate_directories_including_root": 278,
+    "changed_paths": 45,
+    "added_paths": 33,
+    "modified_paths": 12,
+    "deleted_paths": 0,
+    "unchanged_incoming_leaves": 4617,
+    "component_bodies_hashed_and_bound_to_actual_tree": 45,
+    "provider_records_hashed_and_bound_to_actual_tree": 29,
+    "actual_new_test_blob_independently_fetched": true,
+    "actual_ack_reader_blob_independently_fetched": true,
+    "incoming_two_sided_hunks_reconstructed": 71,
+    "historical_two_sided_hunks_reconstructed": 14,
+    "selected_existing_complete_definitions_verified": 6
+  },
+  "focused_source_pins": [
+    {
+      "path": "tests/test_native_slo_daemon_mixed_dispatch.py",
+      "git_blob": "51cf806ca48b0eb66e3d04446df3b7969a47942e",
+      "bytes": 7293,
+      "sha256": "d0ed6f1719d139e49480cef99ca14db19ecb2274abda5b3357655698a249ead9"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "git_blob": "2cac24fa18b2cb371777bc7b80701d3d40a3e3fd",
+      "bytes": 21743,
+      "sha256": "4eeb0f10c8893fc6e5bed9f538c9457cba35ad779dad730798550693c995d08c"
+    },
+    {
+      "path": "scripts/native_slo_mixed_server.py",
+      "git_blob": "71579f0583216f0c7eac71da0ca3f7e87fc22282",
+      "bytes": 14024,
+      "sha256": "484519e484d62d050d3b7ca235d4f30b2a2ecdac58d1859bddbeca300f339899"
+    },
+    {
+      "path": "scripts/native_slo_mixed_witness.py",
+      "git_blob": "9c77e2237cd09876ed941c1118a3003f6deb5537",
+      "bytes": 14796,
+      "sha256": "1d182a8b26a8284e3f107d85a4ddf442c919d3f136ecc14fe21c1146218a2dc8"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "git_blob": "5ce6ce9e3ea9e2acd003f161cca296e52a0da4db",
+      "bytes": 17518,
+      "sha256": "6a94fdb40e7bf1cf17a515fef7c8b6eec6d18699ce52b0899a62e2f4ebc8d3bc"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "git_blob": "10548fc48d871a82a890c73eaa9ddf0d6052946a",
+      "bytes": 4869,
+      "sha256": "baf5b1a85a13d63c00d6ba62da2b9eb52364345b65da32d90cce8d0ff42cfecd"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+      "git_blob": "7870a0edbd2119feb695a941ee91abae0cdf64c5",
+      "bytes": 7571,
+      "sha256": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_acked.py",
+      "git_blob": "e920549a292066f00a21026b04fbcc81804fac7d",
+      "bytes": 2642,
+      "sha256": "7df24e80631db37ef7d151bab897a5ee32e554c182e91b8afd401cab05883915"
+    },
+    {
+      "path": "tests/test_guard_runtime_hook_evidence_operations.py",
+      "git_blob": "d8b0b4c3fc7fa24e87098bf9f3b028b9f4554d26",
+      "bytes": 9210,
+      "sha256": "06325cee91999bb5c76dcd614d85bd922ac27a85040feee4fa43bd6f407b9a3d"
+    }
+  ],
+  "actual_dispatch_test": {
+    "file": "tests/test_native_slo_daemon_mixed_dispatch.py",
+    "physical_lines": 173,
+    "cases": 2,
+    "parameter_values": [
+      "mixed_finish",
+      "unsupported"
+    ],
+    "actual_calls": [
+      "native_slo_daemon_fixture._serve_session",
+      "MixedScenarioFixture constructor/dispatch/close",
+      "ReceiptWitness actual __enter__/close/reconcile/report/page",
+      "RuntimeHookEvidenceWriter admission/journal/SQL/stop",
+      "GuardStore validated get_native_decision_receipt"
+    ],
+    "finite_providers": [
+      "SimpleNamespace session/worker/scheduler envelope",
+      "synthetic native PostToolUse receipt edge",
+      "prepare/current-snapshot/ACK binding controls",
+      "bounded stdin and captured _emit"
+    ],
+    "unchanged_real_classes_not_replaced": [
+      "MixedScenarioFixture",
+      "ReceiptWitness",
+      "RuntimeHookEvidenceWriter",
+      "GuardStore",
+      "LauncherReviewFixture",
+      "LauncherApprovalControl"
+    ],
+    "readline_bound": 4097,
+    "each_control_message_maximum_bytes": 4096,
+    "receipt_maximum": 1,
+    "normal_control_reads": 4,
+    "unsupported_control_reads": 2,
+    "dispatch_runs_inline_on_caller_thread": true,
+    "new_dispatch_thread_created": false,
+    "writer_stop_seconds": 3,
+    "mixed_finish_original_deadline_seconds": 5,
+    "actual_root_tests_not_executed": true,
+    "reviewed_assertions": [
+      "mixed_start returns completed before the synthetic edge is offered, and the actual witness has wrapped the worker and real writer.",
+      "The original synthetic native edge object is returned, the real writer returns True for admission, and separate post-stop assertions require accepted/processed receipt counts of one and an exact validated SQLite row.",
+      "The writer's owned thread is explicitly joined and observed dead before finish and after the dispatcher finally path; this does not claim arbitrary descendant or host-wide retirement.",
+      "The normal path invokes actual mixed_finish, mixed_page and close; it checks receipt admission, committed identity, missing/binding mismatch counts, real journal write/fsync observations, and the page's exact decision identity.",
+      "The unsupported operation must raise the actual dispatcher RuntimeError and still execute its nested finally cleanup; the recorded output has exactly ready/start/cleanup in that path.",
+      "Worker function identity, writer bound-method provider equality, queue-observation None, journal.os identity and sqlite3.connect identity are restored after either path.",
+      "No explicit queue or named VFS observer is requested by these two tests; report fields stay None and full_persistence_metric_coverage stays False."
+    ],
+    "interpretation_limits": [
+      "The synthetic receipt is PostToolUse and has its own valid default identity. The finite ACK binding admits mixed_start; the test does not cross-bind that receipt to a real publisher generation or prove a first enforcing request.",
+      "The control does not run installed launchers, authenticated real HTTP traffic, Rust authority, a native runtime restart, or an OS process-tree resource measurement.",
+      "Writer admission is not treated as commit: the test separately stops/drains the writer and reads the validated persisted receipt. Journal observations remain separate from VFS, kernel and physical I/O.",
+      "The pre-existing ACK control monkeypatches the authoritative reader return. Its name must not be used as evidence that the test exercises disk MAC verification."
+    ]
+  },
+  "six_existing_controls": [
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_dequeued_batch_is_not_mistaken_for_drained_evidence",
+      "sha256": "e473843b3b6ded8f9e561b4ae208ce49c45d4c9b42a7c28d62e2e29839e9ddaa"
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_witness_requires_exact_committed_ids_and_full_command_binding",
+      "sha256": "ae57e261c03a5c95855a24c01153dd2101a07c63a9037a40f56dfaf1ddcb042a"
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifying_result",
+      "sha256": "0afb34284fa58bda47a3683e61641d3c25b93cbd947899a67e367a537ea28297"
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_controls.py::test_ack_requires_disk_mac_verified_binding_generation_and_effective_action",
+      "sha256": "97fc23a18afbe51cd7098cfdc249fb7a307368c39b5b62846625e4232ec0d488"
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_controls.py::test_failed_ack_retains_successful_public_mutation_without_approval_override",
+      "sha256": "adba0c61be444cfc22b69be1cda873102e8e3c1a2ed1b2585612e9cdd79fc4c1"
+    },
+    {
+      "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distinct",
+      "sha256": "b37dccab8822923ce6cf54b0f049f298b6eaba52713caca8c42805ac965cbc97"
+    }
+  ],
+  "current_journal_mixin": {
+    "class": "RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin)",
+    "incoming_mixin_preserved": true,
+    "journal_modifications_only_two_optional_observer_hooks": true,
+    "dequeue_hook": "After the actual popleft under the writer condition, before decrementing queued bytes/appending the batch.",
+    "recovery_hook": "After accepting the recovered record into durable/queued storage, before incrementing queued bytes/recovered.",
+    "default_behavior": "Both sites first check _queue_observation is not None; the constructor initializes that field before recovery. The shared _observe_queue helper contains diagnostic BaseException failures so queue admission/persistence retain their own results.",
+    "facade_methods": [
+      "submit_command_activity",
+      "submit_native_decision_receipt",
+      "_derive_correlation",
+      "_persist_command_activity"
+    ],
+    "facade_review": "The methods remain class-owned with their signatures; delegation uses the live writer module. The minimum current test scope also selects four ownership/signature cases and three fresh-process import orders; these require actual execution."
+  },
+  "ack_boundary": {
+    "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_acked.py",
+    "git_blob": "e920549a292066f00a21026b04fbcc81804fac7d",
+    "unchanged": true,
+    "source_review": "The real reader loads policy-snapshot-v3.json using a derived verifier key and a bounded MAC-verified snapshot read, validates generation/expiry and binding value types, and emits a compact accepted binding. It reads the nested accepted snapshot rather than treating the publisher cache as resident acceptance.",
+    "new_dispatch_test_patches_reader": true,
+    "real_reader_executed_by_new_dispatch_test": false
+  },
+  "rsp129_composition_review": {
+    "prior_source_peer": {
+      "git_blob": "fa34e7268ffefbff5e23586bf3a2f0180c33d737",
+      "bytes": 38411,
+      "sha256": "593722b1ff82c201c37b4c1d384c03270ff19fb1ef5dbe69e0eebf27b2f78ca5"
+    },
+    "prior_provider": "cafa311314dc31fc3c4bb0e65504cacca7a4d95d",
+    "current_provider": "9c77e2237cd09876ed941c1118a3003f6deb5537",
+    "explicit_entry_close_compatible": true,
+    "current_provider_returns_self": true,
+    "current_provider_cleans_partial_baseexception_entry": true,
+    "current_provider_has_no_exit": true,
+    "optional_observers_default_none": true,
+    "readback_control_review": "The RSP129 readback-scope control installs its finite sqlite_observer after ReceiptWitness entry, so it invokes no fake install/entry/close protocol. Its two pre-reconciliation scope assertions remain outside native execution and receipt submission. The new ReceiptWitness.reconcile adds a readback scope before the test records before_join; join then adds one further scope as asserted. The report callback is present, and exit only closes contexts actually installed during entry.",
+    "required_validation": "Admit all seven RSP129 component bodies and the actual 9c77 provider in the combined source closure, then run all88 cases afresh. Original64 passes and24 call failures remain historical. An unrun standalone24 harness may be superseded without implying a new result.",
+    "no_combined_runtime_result_yet": true
+  },
+  "prospective_validation": {
+    "source_enumerated_combined_cases": 15,
+    "case_breakdown": {
+      "six_existing": 6,
+      "new_dispatch": 2,
+      "facade_signatures": 4,
+      "cold_import_orders": 3
+    },
+    "expected_linux_skips": 0,
+    "full_current_collection_once_via_ci_owner": true,
+    "complete_selected_fixture_and_dependency_admission_required": true,
+    "fresh_default_and_diagnostic_rust_builds_required": true,
+    "current_native_backpressure_case_required": true,
+    "full_prior169_and75_body_replay_required": false
+  },
+  "disposition": {
+    "source_peer": "PASS",
+    "combined_candidate_composition_still_pending": true,
+    "runtime_validation": "UNEXECUTED",
+    "original_prd_complete": false,
+    "qualification_complete": false,
+    "current_canonical_checks_complete": false,
+    "refs_changed": false
+  }
+}

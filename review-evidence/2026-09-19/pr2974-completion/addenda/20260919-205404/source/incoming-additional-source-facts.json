@@ -1,0 +1,238 @@
+{
+  "schema": "hol-guard.pr2974.incoming-repair-additional-source-facts.v1",
+  "status": "source_facts_only_successor_peer_pending",
+  "reviewer": "recover_handoff",
+  "source_commit": "78e58968bfe08066d3a76a3a799ec1563695445b",
+  "source_tree": "3f89d7c28b53ea53ec81f21ef1dd244125bc6c09",
+  "prior_candidate_commit": "b6f24e7a782316e61100cf553b691366256b5d1f",
+  "prior_candidate_tree": "68daf061ddea75bb0935d3e3f806f4e278352d34",
+  "prior_packet": {
+    "bytes": 148807,
+    "sha256": "5adfed9400d9f40a019ba25cd6b86eb3a1818304d7913b907ac755bd8300bbea",
+    "blob": "9ea4baa18d9f676aad8a4e4f2b27858f9e3561d0"
+  },
+  "independent_tree_review": {
+    "source_leaves": 4629,
+    "candidate_leaves": 4629,
+    "source_directories": 277,
+    "candidate_directories": 277,
+    "root_and_every_directory_hash_verified": true,
+    "changed_paths": [
+      "scripts/profile_guard_mcp_streaming_session.py",
+      "tests/test_guard_store_base_partition.py",
+      "tests/test_pi_extension_migration_ownership.py",
+      "tests/test_mcp_streaming_preparation_collector.py",
+      "docs/guard/rust-performance/mcp-streaming-preparation-plan.json"
+    ]
+  },
+  "current_source_bindings": [
+    {
+      "path": "tests/test_store_native_review_approvals_security.py",
+      "blob": "34eb0296cae08637b760211ca79a04f3f16d02ec",
+      "bytes": 8060,
+      "sha256": "3712478c8f7e39b6800535b4d698cc02186670bbc808c735c15e13ce112a93ca"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+      "blob": "9b4ff904a8d5de4747493be935daef931d10c540",
+      "bytes": 21266,
+      "sha256": "5395851dc9e571f7e4466927f3565c8c6443ef6b6507cc45f29aaabea4b01488"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+      "blob": "5ab8a7a2c7c7ba1e1331cdc8595a0d1c2b848cf3",
+      "bytes": 5072,
+      "sha256": "92c17649177132dd8d76064aeba42a425b2d62fbed34f6570d62569ef2adbeca"
+    },
+    {
+      "path": "scripts/ci/rust_io_ownership_gate.py",
+      "blob": "c3fe6536279086aa64fdcdeb88f0b8275354c0ba",
+      "bytes": 20268,
+      "sha256": "ca94e9bda8c980ca0ef79dc541bfeca7a065b4f568a1260bb93b651833ec988b"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py",
+      "blob": "404af602ca2bd5941d326e808bdb70658f6b2a9b",
+      "bytes": 3797,
+      "sha256": "9b9d208d35b530295a57d3c5e92d95c56049a10068a0e47a69375bc624302e22"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_native_review_approvals.py",
+      "blob": "bf5525d7cff0d0a4d77b925a625ed14abfa17fb0",
+      "bytes": 4880,
+      "sha256": "3e6bf037ee5ddef0f8841a2916e62b9af85b91168ee23a7ded78546f4d7d6a54"
+    },
+    {
+      "path": "tests/test_native_review_approval_atomic_consumption.py",
+      "blob": "f1435adf3fd3de99c8f463d25c85da09b7ff783d",
+      "bytes": 1990,
+      "sha256": "e58f2b17ed5ca2c718b81c4e5c593b8610cdf9fcab3bb544767499f2e98a11e7"
+    },
+    {
+      "path": "tests/native_review_approval_support.py",
+      "blob": "97c0e1bf60ee276e70d4c052496287f689f40468",
+      "bytes": 3939,
+      "sha256": "2eb19c108409183397b61410f48201ad4951668ddc5652edfee90892259b2e5d"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+      "blob": "61d09b75a07fde9ff5c907cd79a1c5f7f07e6e4b",
+      "bytes": 22828,
+      "sha256": "f4e224b8c5dedf50ea56a58aaac00214a134e2601aebedd64f4fde2cd76b290a"
+    }
+  ],
+  "receipt_test_repairs": {
+    "stale_positive_cases": [
+      "tests/test_store_native_review_approvals_security.py::test_latest_matching_allow_is_one_use_after_utc_normalization",
+      "tests/test_store_native_review_approvals_security.py::test_duplicate_same_timestamp_allows_are_one_logical_capability",
+      "tests/test_native_review_approval_atomic_consumption.py::test_native_review_retry_is_atomic_between_two_consumers"
+    ],
+    "findings": [
+      "The first two source fixtures leave recorded action_envelope_json NULL and current policy_binding None. Incoming native_review_binding_matches now rejects current None before examining the envelope.",
+      "The concurrent-consumer test uses a shared worker that now records a typed native receipt and policy binding, but each direct store consumption omits policy_binding.",
+      "A complete current policy/rule/runtime/command domain on both recorded/current sides preserves the positive timestamp-normalization and logical one-use assertions.",
+      "Existing invalid timestamp, denial ordering, equal-time conflict, malformed metadata, suspended-response and legacy artifact-hash negatives need valid binding baselines so the incoming absence guard cannot mask their intended failure cause.",
+      "The legacy artifact-hash negative bypasses both shared helpers and therefore needs explicit recorded/current binding in its direct insert/API call.",
+      "The policy-mismatch test should vary only the policy digest of an otherwise complete equal domain, retain zero effects after mismatch, then matching success and one-use refusal.",
+      "Three distinct missing-side cases must cover missing recorded only, missing current only, and both missing, each asserting refusal and zero continuation effects.",
+      "The concurrent-consumer test must extract the actual request envelope binding, retain the two-thread barrier, and preserve sorted(results) == [False, True]."
+    ],
+    "direct_consumer_scan": {
+      "scope": "All seven current tests/ paths whose filenames contain native_review; this is not a whole-repository content scan.",
+      "files": [
+        {
+          "path": "tests/native_review_approval_support.py",
+          "blob": "97c0e1bf60ee276e70d4c052496287f689f40468"
+        },
+        {
+          "path": "tests/test_native_review_approval_atomic_consumption.py",
+          "blob": "f1435adf3fd3de99c8f463d25c85da09b7ff783d"
+        },
+        {
+          "path": "tests/test_native_review_approval_coordination.py",
+          "blob": "f31f2279f0f027e3fc6aa666900fa371ef2267b5"
+        },
+        {
+          "path": "tests/test_native_review_mutation_fence.py",
+          "blob": "75dafa3c03cc5a758e1b86e4d3fd18d309f655d2"
+        },
+        {
+          "path": "tests/test_native_review_policy_binding.py",
+          "blob": "7f7f56a96d895962c85c21857c39b3931aa94d10"
+        },
+        {
+          "path": "tests/test_native_review_reuse_command_shape.py",
+          "blob": "2a0647cb44dd3584e28374db503762fb403ec40d"
+        },
+        {
+          "path": "tests/test_store_native_review_approvals_security.py",
+          "blob": "34eb0296cae08637b760211ca79a04f3f16d02ec"
+        }
+      ],
+      "call_sites": [
+        {
+          "path": "tests/test_native_review_approval_atomic_consumption.py",
+          "line": 48
+        },
+        {
+          "path": "tests/test_store_native_review_approvals_security.py",
+          "line": 73
+        },
+        {
+          "path": "tests/test_store_native_review_approvals_security.py",
+          "line": 163
+        }
+      ]
+    },
+    "actual_test_executions": 0
+  },
+  "resident_extraction": {
+    "original_source_commit": "2564d9a4dda22ff73e53e6dfae793ef95cbeb259",
+    "original_publisher_inputs": {
+      "blob": "c5a9047538403a7718c1fd306172380bf5b9bb88",
+      "bytes": 25782,
+      "sha256": "3ec7452c0d0b7201c0fa523ec025c425ea1c29fd4b9c148aff08e1d279e6c086"
+    },
+    "moved_methods": [
+      {
+        "name": "_current_resident_fingerprint",
+        "equal": true,
+        "oldBytes": 1436,
+        "newBytes": 1436
+      },
+      {
+        "name": "_resident_directory_fingerprint",
+        "equal": true,
+        "oldBytes": 424,
+        "newBytes": 424
+      },
+      {
+        "name": "_resident_paths_match",
+        "equal": true,
+        "oldBytes": 665,
+        "newBytes": 665
+      },
+      {
+        "name": "_confirm_resident_fingerprint",
+        "equal": true,
+        "oldBytes": 1050,
+        "newBytes": 1050
+      },
+      {
+        "name": "_resident_fingerprint_matches_generation",
+        "equal": true,
+        "oldBytes": 1052,
+        "newBytes": 1052
+      }
+    ],
+    "comparison_scope": "Every method definition/decorator/body line, excluding trailing blank separators; no Python parser was executed.",
+    "inheritance": [
+      "NativePolicySnapshotPublisher",
+      "NativePolicySnapshotPublisherInputs",
+      "NativePolicySnapshotResidentInputsMixin",
+      "object"
+    ],
+    "duplicate_names_in_descendant_classes": [],
+    "moved_super_calls": 0,
+    "filesystem_calls": [
+      "state_dir.iterdir",
+      "directory.stat",
+      "directory.iterdir",
+      "entry.stat",
+      "runtime_state_directory.lstat",
+      "sampled_resident_path.lstat"
+    ],
+    "classification": {
+      "owner": "scripts/ci/rust_io_ownership_gate.py",
+      "owner_blob": "c3fe6536279086aa64fdcdeb88f0b8275354c0ba",
+      "missing_path": "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+      "proposed_category": "asynchronous_policy",
+      "reason": "These six unchanged calls moved from publisher_inputs, an existing exact member of _ASYNC_POLICY_PATHS. Adding the new module preserves their prior category without changing category logic."
+    }
+  },
+  "publisher_stat_import": {
+    "current_publisher_inputs_blob": "9b4ff904a8d5de4747493be935daef931d10c540",
+    "missing_import": "stat",
+    "remaining_uses": [
+      "NativePolicySnapshotPublisherInputs._capture_policy_input: stat.S_ISREG(target.st_mode) before os.open",
+      "NativePolicySnapshotPublisherInputs._capture_policy_input: stat.S_ISREG(target.st_mode) after os.fstat"
+    ],
+    "original_had_import": true,
+    "proposed_change": "Restore only import stat in publisher_inputs. The resident module having its own stat import does not bind the publisher module global.",
+    "observed_runtime_or_linter_failure": false
+  },
+  "journal_union_followup": {
+    "source_owner": "source_partition",
+    "facts": [
+      "Incoming journal helper and Stats declarations match their original source text.",
+      "All five moved journal method bodies match the original after excluding the unchanged original module __all__ block.",
+      "New standalone mixin references seventeen self attributes/methods without declarations; include the actual journal module in the necessary type check. No measured type failure is claimed."
+    ],
+    "no_journal_edit_by_this_reviewer": true
+  },
+  "limits": [
+    "No Python parser, formatter, linter, typechecker, pytest, source gate, installation, benchmark, or performance qualification ran in this review.",
+    "The CI successor was not yet available when this facts packet was authored; this is not clearance of that successor.",
+    "No refs, PR comments, review requests, alert dispositions, branch protections, or acceptance statuses changed."
+  ]
+}

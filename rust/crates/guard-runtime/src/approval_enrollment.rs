@@ -477,3 +477,7 @@ mod tests {
         with_transition_lock(&root, || Ok::<(), String>(())).unwrap();
     }
 }
+
+#[cfg(all(test, unix))]
+#[path = "approval_enrollment_lock_tests.rs"]
+mod descriptor_tests;

@@ -87,6 +87,11 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
 
 
+def _database_identity(store: GuardStore) -> tuple[int, int]:
+    metadata = store.path.stat()
+    return metadata.st_dev, metadata.st_ino
+
+
 def _credentials_for_capture(
     store: GuardStore,
     payload: object,
@@ -159,20 +164,22 @@ def _capture_native_policy_authority_inputs(
     complete result, fence a fresh read after push, and verify the resident
     generation. No method here marks the runtime ready or reports application.
     """
-    # Reuse connection setup, never a prior capture or cache marker. These
-    # two autocommit reads remain fresh and the independent read after the
-    # captured SQL view below still fences secret/control replacement.
-    with store._connect() as integrity_connection:
-        key_material = store._policy_integrity_secret_material(create=False, connection=integrity_connection)
-        control = store._load_policy_integrity_control_state(create=False, connection=integrity_connection)
-    if key_material[0] is None or key_material[1] is None or store._policy_integrity_path_warnings():
-        raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
-    generation = control.get("generation") if control is not None else None
-    if control is not None and (type(generation) is not int or control.get("pending_generation") is not None):
-        raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
-    now_text = datetime.fromtimestamp(now, timezone.utc).isoformat()
-    state_keys = (*_STATE_KEYS, store._oauth_local_credentials_state_key)
+    # Reuse setup only: integrity observations remain in autocommit before
+    # BEGIN establishes the complete captured view. The independently opened
+    # connection after this view still fences secret/control replacement.
+    database_identity = _database_identity(store)
     with store.hold_oauth_credential_lock(), store._connect() as connection:
+        key_material = store._policy_integrity_secret_material(create=False, connection=connection)
+        control = store._load_policy_integrity_control_state(create=False, connection=connection)
+        if key_material[0] is None or key_material[1] is None or store._policy_integrity_path_warnings():
+            raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
+        generation = control.get("generation") if control is not None else None
+        if control is not None and (type(generation) is not int or control.get("pending_generation") is not None):
+            raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
+        now_text = datetime.fromtimestamp(now, timezone.utc).isoformat()
+        state_keys = (*_STATE_KEYS, store._oauth_local_credentials_state_key)
+        if _database_identity(store) != database_identity:
+            raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
         connection.execute("begin")
         connection.execute("pragma query_only=on")
         placeholders = ",".join("?" for _ in state_keys)
@@ -323,11 +330,15 @@ def _capture_native_policy_authority_inputs(
                 }
             ).encode("utf-8")
         ).hexdigest()
+    if _database_identity(store) != database_identity:
+        raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
     with store._connect() as integrity_connection:
         if store._policy_integrity_secret_material(create=False, connection=integrity_connection) != key_material or (
             store._load_policy_integrity_control_state(create=False, connection=integrity_connection) != control
         ):
             raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
+    if _database_identity(store) != database_identity:
+        raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
     return NativeVerifiedPolicyInputs(
         authority,
         _canonical(defaults) if defaults is not None else None,

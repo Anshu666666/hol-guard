@@ -431,21 +431,16 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         v3_transport_active = False
         v3_postack_database_race = False
         try:
-            # A first verified read may migrate authenticated catalog state.
-            # Recapture once only when that operation changes the epoch; an old
-            # capture never inherits the newer mutation barrier.
-            for _ in range(2):
-                with self._condition:
-                    publish_epoch = self._epoch
-                context = self._publication_context(publish_epoch=publish_epoch)
+            # Prepare initial authenticated catalog state before choosing the
+            # attempt's epoch. Subsequent mutations invalidate this attempt;
+            # they never authorize it to restart under a newer barrier.
+            if self._command_control_runtime is None:
+                self._compiled_command_extensions()
                 with self._condition:
                     if self._closed:
                         return
-                    if self._epoch == publish_epoch:
-                        break
-                context = None
-            else:
-                return
+                    publish_epoch = self._epoch
+            context = self._publication_context(publish_epoch=publish_epoch)
             if context is None:
                 return
             cloud_inputs = context[5]

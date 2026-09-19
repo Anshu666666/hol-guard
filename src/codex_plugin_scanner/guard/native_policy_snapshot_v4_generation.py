@@ -62,6 +62,10 @@ def reserve_snapshot_v4(
     """
     if type(inputs) is not NativeVerifiedPolicyInputs or type(issued_at_ms) is not int or issued_at_ms < 0:
         raise NativePolicySnapshotError("native_policy_snapshot_inputs_invalid")
+    # This local source is enforced by the separately authenticated V3
+    # command program. Its delegated semantics are not a scoped V4 claim.
+    if any(source.get("requires_native_command_binding") is True for source in inputs.sources):
+        raise NativePolicySnapshotError("native_policy_authority_bundle_semantics_unsupported")
     expiry = issued_at_ms + POLICY_SNAPSHOT_MAX_EXPIRY_MS
     if inputs.expires_at_ms is not None:
         if type(inputs.expires_at_ms) is not int:

@@ -298,10 +298,18 @@ def test_withdrawn_canonical_lane_cannot_be_promoted(accepted, monkeypatch, cano
     assert store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
 
 
-def test_same_source_republication_retains_wire_ack_but_requires_fresh_native_token(accepted):
+@pytest.mark.parametrize("legacy_historical_binding", [False, True])
+def test_same_source_republication_retains_wire_ack_but_requires_fresh_native_token(
+    accepted, legacy_historical_binding
+):
     store, publisher, token, bundle, _ = accepted
     first = commit_native_policy_bundle_acknowledgement(publisher, token)
     assert first is not None
+    if legacy_historical_binding:
+        retained = store.get_sync_payload("native_policy_bundle_ack_acceptance")
+        assert isinstance(retained, dict) and isinstance(retained["binding"], dict)
+        retained["binding"].pop("command_extensions_bound")
+        store.set_sync_payload("native_policy_bundle_ack_acceptance", retained, "2026-09-18T00:00:00Z")
     materialization = store.get_sync_payload("policy_bundle_materialization")
     publisher.request_publish()
     publisher._publish_once()
@@ -318,7 +326,20 @@ def test_same_source_republication_retains_wire_ack_but_requires_fresh_native_to
 
 
 @pytest.mark.parametrize(
-    "mutation", ["missing", "source", "ack", "binding", "epoch", "generation_bool", "digest_null", "mode_invalid"]
+    "mutation",
+    [
+        "missing",
+        "source",
+        "ack",
+        "binding",
+        "epoch",
+        "generation_bool",
+        "digest_null",
+        "mode_invalid",
+        "command_binding_false",
+        "command_binding_number",
+        "binding_unknown_field",
+    ],
 )
 def test_fresh_publication_does_not_reuse_unbound_or_mismatched_historical_ack(accepted, mutation):
     store, publisher, token, bundle, _ = accepted
@@ -345,6 +366,9 @@ def test_fresh_publication_does_not_reuse_unbound_or_mismatched_historical_ack(a
                 "generation_bool": ("generation", True),
                 "digest_null": ("policy_digest", None),
                 "mode_invalid": ("mode", "unknown"),
+                "command_binding_false": ("command_extensions_bound", False),
+                "command_binding_number": ("command_extensions_bound", 1),
+                "binding_unknown_field": ("unknown", True),
             }[mutation]
             retained_binding = record["binding"]
             assert isinstance(retained_binding, dict)

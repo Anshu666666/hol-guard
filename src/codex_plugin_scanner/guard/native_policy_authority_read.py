@@ -134,9 +134,11 @@ def read_native_policy_authority_inputs(
     managed = (
         read_frozen_native_blocked_command_authority(store, command_extensions)
         if command_extensions is not None and command_controls_blocked(command_extensions)
-        else read_frozen_native_managed_authority(store)
+        else read_frozen_native_managed_authority(store, command_extensions=command_extensions)
     )
-    result = _capture_native_policy_authority_inputs(store, now=now, managed=managed)
+    result = _capture_native_policy_authority_inputs(
+        store, now=now, managed=managed, command_extensions=command_extensions
+    )
     if managed is not None:
         managed.require_current_secrets(store)
     else:
@@ -149,6 +151,7 @@ def _capture_native_policy_authority_inputs(
     *,
     now: float,
     managed: FrozenNativeManagedAuthority | FrozenNativeBlockedCommandAuthority | None,
+    command_extensions: Mapping[str, object] | None = None,
 ) -> NativeVerifiedPolicyInputs:
     """Reconstruct signed authority and verify local rows from one database view.
 
@@ -176,7 +179,9 @@ def _capture_native_policy_authority_inputs(
         captured_managed = (
             managed.recapture(store, connection)
             if isinstance(managed, FrozenNativeBlockedCommandAuthority)
-            else read_frozen_native_managed_authority(store, connection=connection)
+            else read_frozen_native_managed_authority(
+                store, connection=connection, command_extensions=command_extensions
+            )
         )
         if managed is None and captured_managed is not None:
             raise NativePolicySnapshotError("native_policy_authority_managed_consumer_required")

@@ -28,7 +28,7 @@ def test_late_failure_preserves_newer_or_closed_publication(
     master = b"e" * 32
     clock = _DeterministicClock()
     original_capture = publisher_context.compiled_scoped_policy
-    armed = True
+    armed = False
     handoffs: list[int] = []
     snapshots: list[dict[str, object]] = []
     accepted: dict[str, object] | None = None
@@ -67,8 +67,8 @@ def test_late_failure_preserves_newer_or_closed_publication(
             return None, None
         return master, "master-id"
 
-    def capture_then_fail(capture_publisher: NativePolicySnapshotPublisher):
-        captured = original_capture(capture_publisher)
+    def capture_then_fail(capture_publisher: NativePolicySnapshotPublisher, *, command_extensions=None):
+        captured = original_capture(capture_publisher, command_extensions=command_extensions)
         if armed and failure == "context-capture":
             complete_handoff()
             raise NativePolicySnapshotError("native_policy_authority_capture_changed")
@@ -99,6 +99,10 @@ def test_late_failure_preserves_newer_or_closed_publication(
         monotonic_clock=clock.monotonic_time,
     )
     try:
+        # Catalog authority is a publication prerequisite. Inject the late
+        # failure only after it is prepared, at the named context/IPC boundary.
+        publisher._compiled_command_extensions()
+        armed = True
         publisher.request_publish()
         attempt_epoch = publisher._epoch
         publisher._publish_event.clear()

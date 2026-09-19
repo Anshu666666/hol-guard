@@ -107,7 +107,7 @@ def _v3_sources_with_command_binding(
     The effective digest binds both original layers, their health, catalog and
     independent revisions. Equality also preserves local opt-in origins that
     a composed list alone cannot express. The source reader has already
-    rejected targeted rules, delegated targets and unsupported extensions.
+    rejected targeted rules, signed delegated targets and unsupported extensions.
     """
     validate_native_command_control_binding(binding)
     controls = [
@@ -249,11 +249,7 @@ def publication_context(
             )
         # Capabilities describe what a runtime can consume, not the authority
         # selected for this publication. Authenticate the complete input first.
-        config, inputs = (
-            compiled_scoped_policy(self, command_extensions=command_extensions)
-            if command_controls_blocked(command_extensions)
-            else compiled_scoped_policy(self)
-        )
+        config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
         # Both publication contracts carry the same command binding. A
         # concurrent writer must not pair an earlier command projection with
         # a later complete managed capture, even before the post-ACK fence.

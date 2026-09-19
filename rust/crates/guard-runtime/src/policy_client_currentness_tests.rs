@@ -478,6 +478,7 @@ fn continuity_never_substitutes_for_resident_authentication() {
 #[test]
 fn unchanged_authority_expiring_during_response_return_is_refused() {
     for version in [3, 4] {
+        let clock = super::super::policy_store_authority::TestClock::at(now_ms().unwrap());
         let root = test_root(&format!("client-expiring-{version}"));
         let (store, key, mut snapshot) = installed(&root, version);
         snapshot["generation"] = 2.into();
@@ -506,10 +507,10 @@ fn unchanged_authority_expiring_during_response_return_is_refused() {
         let result = request(&root, &payload, deadline(), |_| {
             let response = evaluate_resident_bytes(&payload, Some(&store)).unwrap();
             evaluated = true;
-            std::thread::sleep(Duration::from_millis(
-                expiry.saturating_sub(now_ms().unwrap()) + 2,
-            ));
-            assert!(now_ms().unwrap() >= expiry);
+            // Advance only after actual evaluation, with identical authority
+            // bytes and the original monotonic request deadline unchanged.
+            clock.set(expiry);
+            assert_eq!(now_ms().unwrap(), expiry);
             assert_eq!(
                 authority_fingerprint(&root.join(SNAPSHOT_FILE_NAME)).unwrap(),
                 fingerprint

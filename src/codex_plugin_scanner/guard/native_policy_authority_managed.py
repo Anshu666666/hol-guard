@@ -15,6 +15,7 @@ from .managed_controls_policy_bundle import (
     parsed_managed_controls_from_validated_policy_bundle,
 )
 from .native_command_control_authority_io import NativeCommandControlMutationRequiredError
+from .native_command_control_binding import validate_native_command_control_binding
 from .native_policy_authority_compile import compile_native_managed_authority
 from .native_policy_authority_contract import NativeManagedPolicyAuthority
 from .native_policy_snapshot_constants import NativePolicySnapshotError
@@ -59,6 +60,7 @@ class FrozenNativeManagedAuthority:
     snapshot: ExtensionControlRuntimeSnapshot
     _key: bytes
     _anchor: AuthorityAnchor
+    requires_native_command_binding: bool = False
 
     def require_current_secrets(self, store: GuardStore) -> None:
         try:
@@ -159,11 +161,15 @@ class FrozenNativeManagedAuthority:
             "catalog_digest": self.authority.catalog_digest,
             "effective_digest": self.snapshot.effective_digest,
             "local_snapshot_digest": self._anchor.snapshot_digest,
+            **({"requires_native_command_binding": True} if self.requires_native_command_binding else {}),
         }
 
 
 def read_frozen_native_managed_authority(
-    store: GuardStore, *, connection: sqlite3.Connection | None = None
+    store: GuardStore,
+    *,
+    connection: sqlite3.Connection | None = None,
+    command_extensions: Mapping[str, object] | None = None,
 ) -> FrozenNativeManagedAuthority | None:
     """Use existing MAC, anchor, transition, catalog and composition checks off-hook."""
     try:
@@ -207,6 +213,7 @@ def read_frozen_native_managed_authority(
         ):
             raise _unavailable()
         authority = compile_native_managed_authority(view, _REGISTRY)
+        requires_command_binding = False
         for control in authority.controls:
             permission = (
                 _REGISTRY.permission(control.target_id)
@@ -214,13 +221,42 @@ def read_frozen_native_managed_authority(
                 else None
             )
             extension = _REGISTRY.get(permission.extension_id if permission is not None else control.target_id)
-            if extension is None or extension.source != "built-in" or extension.delegated_protection is not None:
+            if extension is None or extension.source != "built-in":
                 raise NativePolicySnapshotError("native_policy_authority_bundle_semantics_unsupported")
+            if extension.delegated_protection is not None:
+                remote_target = any(
+                    layer.kind is not ControlLayerKind.LOCAL_ADMIN
+                    and any(
+                        candidate.target.kind.value == control.target_kind
+                        and candidate.target.target_id == control.target_id
+                        for candidate in layer.controls
+                    )
+                    for layer in view.layers
+                )
+                if extension.delegated_protection != "package-firewall" or remote_target or command_extensions is None:
+                    raise NativePolicySnapshotError("native_policy_authority_bundle_semantics_unsupported")
+                requires_command_binding = True
+        snapshot = ExtensionControlRuntimeSnapshot.from_authority_view(view)
+        if requires_command_binding:
+            assert command_extensions is not None
+            validate_native_command_control_binding(command_extensions)
+            if "authority" not in command_extensions or any(
+                command_extensions.get(field) != value
+                for field, value in (
+                    ("health", snapshot.health.value),
+                    ("revision", snapshot.revision),
+                    ("managed_revision", snapshot.managed_revision),
+                    ("catalog_digest", snapshot.catalog_digest),
+                    ("effective_digest", snapshot.effective_digest),
+                )
+            ):
+                raise NativePolicySnapshotError("native_command_control_binding_changed")
         result = FrozenNativeManagedAuthority(
             authority,
-            ExtensionControlRuntimeSnapshot.from_authority_view(view),
+            snapshot,
             key,
             anchor,
+            requires_command_binding,
         )
         result.require_current_secrets(store)
         return result

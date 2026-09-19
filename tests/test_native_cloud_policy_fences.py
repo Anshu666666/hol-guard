@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -12,24 +13,35 @@ import pytest
 
 from codex_plugin_scanner.guard.config import load_guard_config
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
+from codex_plugin_scanner.guard.store import GuardStore
 from codex_plugin_scanner.guard.synced_policy import synced_policy_payload
 from tests.native_policy_snapshot_test_fixtures import _ack, _status
 from tests.policy_bundle_signing_helpers import sign_policy_bundle
 from tests.test_native_cloud_policy_activation import _activate_defaults, _signed_defaults_bundle
 
 
-def _publisher(store: object, **kwargs: object) -> NativePolicySnapshotPublisher:
+def _record(value: object) -> dict[str, object]:
+    assert isinstance(value, dict)
+    return value
+
+
+def _integer(value: object) -> int:
+    assert type(value) is int
+    return value
+
+
+def _publisher(store: GuardStore, *, wall_clock: Callable[[], float] | None = None) -> NativePolicySnapshotPublisher:
     def client_request(**request: object) -> bytes:
         payload = request["payload"]
         assert isinstance(payload, bytes)
         return _ack(payload)
 
-    return NativePolicySnapshotPublisher(store=store, status_provider=_status, client_request=client_request, **kwargs)
+    return NativePolicySnapshotPublisher(
+        store=store, status_provider=_status, client_request=client_request, wall_clock=wall_clock
+    )
 
 
 def test_canonical_defaults_preserve_integer_revision(tmp_path: Path) -> None:
-    from codex_plugin_scanner.guard.store import GuardStore
-
     store = GuardStore(tmp_path / "guard-home")
     bundle, keyring = _signed_defaults_bundle(2, "block")
     _activate_defaults(store, bundle, keyring)
@@ -42,8 +54,6 @@ def test_canonical_defaults_preserve_integer_revision(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("mutation", ["signature", "workspace", "revoked_key"])
 def test_untrusted_current_source_cannot_keep_a_ready_snapshot(tmp_path: Path, mutation: str) -> None:
-    from codex_plugin_scanner.guard.store import GuardStore
-
     store = GuardStore(tmp_path / "guard-home")
     bundle, keyring = _signed_defaults_bundle(1, "block")
     _activate_defaults(store, bundle, keyring)
@@ -53,7 +63,7 @@ def test_untrusted_current_source_cannot_keep_a_ready_snapshot(tmp_path: Path, m
         assert publisher.is_ready()
         if mutation == "signature":
             tampered = copy.deepcopy(bundle)
-            tampered["verifier"]["signature"] = "AA=="
+            _record(tampered["verifier"])["signature"] = "AA=="
             store.set_sync_payload("policy_bundle", tampered, "2026-09-17T00:00:01Z")
         elif mutation == "workspace":
             store.set_sync_payload(
@@ -61,7 +71,9 @@ def test_untrusted_current_source_cannot_keep_a_ready_snapshot(tmp_path: Path, m
             )
         else:
             revoked = copy.deepcopy(keyring)
-            revoked["keys"][0]["state"] = "revoked"
+            keys = revoked["keys"]
+            assert isinstance(keys, list) and keys
+            _record(keys[0])["state"] = "revoked"
             store.set_sync_payload("policy_bundle_keyring", revoked, "2026-09-17T00:00:01Z")
         publisher._publish_once()
         assert not publisher.is_ready()
@@ -75,8 +87,7 @@ def test_untrusted_current_source_cannot_keep_a_ready_snapshot(tmp_path: Path, m
 def test_replacement_during_publication_does_not_accept_the_previous_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, notify_publisher: bool
 ) -> None:
-    from codex_plugin_scanner.guard import store_policy
-    from codex_plugin_scanner.guard.store import GuardStore
+    from codex_plugin_scanner.guard import native_policy_snapshot as snapshot_api
 
     store = GuardStore(tmp_path / "guard-home")
     bundle, keyring = _signed_defaults_bundle(1, "block")
@@ -87,7 +98,7 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
     replacement = sign_policy_bundle(replacement)
     requests: list[bytes] = []
     notifications: list[tuple[Path, bool]] = []
-    notify = store_policy.notify_native_policy_mutation
+    notify = snapshot_api.notify_native_policy_mutation
 
     def observe_notification(guard_home: Path, *, require_source_authority: bool = False) -> None:
         notifications.append((guard_home, require_source_authority))
@@ -102,7 +113,7 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
         if len(requests) == 1:
             # Isolate notification delivery while retaining the real signed transaction.
             with monkeypatch.context() as notification:
-                notification.setattr(store_policy, "notify_native_policy_mutation", observe_notification)
+                notification.setattr(snapshot_api, "notify_native_policy_mutation", observe_notification)
                 _activate_defaults(store, replacement, keyring)
         # Neither the stale receipt nor an unsent replacement receipt may open the barrier.
         assert not publisher.is_ready()
@@ -118,8 +129,8 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
     try:
         publisher._publish_once()
         assert len(requests) == 1
-        assert notifications == [(store.guard_home, True)]
-        assert publisher._epoch == initial_epoch + int(notify_publisher)
+        assert notifications == [(store.guard_home, False), (store.guard_home, True)]
+        assert publisher._epoch == initial_epoch + len(notifications) * int(notify_publisher)
         assert publisher._publish_event.is_set() is notify_publisher
         assert not publisher.is_ready()
         assert publisher.current_snapshot() is None
@@ -131,10 +142,12 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
             assert publisher._failure_count == 0
             assert publisher._retry_not_before_monotonic is None
         else:
-            assert publisher.last_error == "native_cloud_policy_changed_during_publish"
+            # The independent command fence observes activation before the
+            # later signed-source comparison; either source still cannot ACK.
+            assert publisher.last_error == "native_command_control_binding_changed"
             assert publisher._failure_count == 1
             assert publisher._retry_not_before_monotonic is not None
-        assert store.get_sync_payload("policy_bundle")["bundleHash"] == replacement["bundleHash"]
+        assert _record(store.get_sync_payload("policy_bundle"))["bundleHash"] == replacement["bundleHash"]
 
         publisher._publish_once()
         assert len(requests) == 2
@@ -156,8 +169,6 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
 
 
 def test_cloud_expiry_shortens_an_identical_cached_policy_and_closes_readiness(tmp_path: Path) -> None:
-    from codex_plugin_scanner.guard.store import GuardStore
-
     store = GuardStore(tmp_path / "guard-home")
     clock = [time.time()]
     publisher = _publisher(store, wall_clock=lambda: clock[0])
@@ -185,8 +196,15 @@ def test_cloud_expiry_shortens_an_identical_cached_policy_and_closes_readiness(t
         publisher._publish_once()
         after = publisher.current_snapshot()
         assert after is not None, publisher.last_error
-        assert after["policy_digest"] == before["policy_digest"]
-        assert after["generation"] > before["generation"]
+        assert after["effective_policy"] == before["effective_policy"]
+        assert after["config_digest"] == before["config_digest"]
+        # Activation advances the independent command authority fence even
+        # when the projected defaults are identical. The policy binds it.
+        before_authority = _record(_record(before["command_extensions"])["authority"])
+        after_authority = _record(_record(after["command_extensions"])["authority"])
+        assert _integer(after_authority["mutation_revision"]) > _integer(before_authority["mutation_revision"])
+        assert after["policy_digest"] != before["policy_digest"]
+        assert _integer(after["generation"]) > _integer(before["generation"])
         assert after["expires_at_ms"] == expires_at * 1_000
         clock[0] = expires_at + 1
         assert not publisher.is_ready()
@@ -198,8 +216,6 @@ def test_cloud_expiry_shortens_an_identical_cached_policy_and_closes_readiness(t
 
 
 def test_clear_withdraws_readiness_before_returning(tmp_path: Path) -> None:
-    from codex_plugin_scanner.guard.store import GuardStore
-
     store = GuardStore(tmp_path / "guard-home")
     bundle, keyring = _signed_defaults_bundle(1, "block")
     _activate_defaults(store, bundle, keyring)
@@ -212,6 +228,6 @@ def test_clear_withdraws_readiness_before_returning(tmp_path: Path) -> None:
         publisher._publish_once()
         snapshot = publisher.current_snapshot()
         assert snapshot is not None
-        assert snapshot["effective_policy"]["default_action"] != "block"
+        assert _record(snapshot["effective_policy"])["default_action"] != "block"
     finally:
         publisher.close()

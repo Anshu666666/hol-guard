@@ -669,6 +669,9 @@ def test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denia
 
     try:
         runner.start()
+        # start() can return before startup completes. Measure the bounded
+        # steady-capacity burst only after every intended worker is ready.
+        assert runner.wait_for_capacity(minimum_workers=8, timeout_seconds=15 * timing_scale), runner.stats()
         with ThreadPoolExecutor(max_workers=48) as executor:
             results = list(executor.map(review, range(48)))
     finally:

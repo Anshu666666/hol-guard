@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, cast
 
 from .mdm.policy import managed_policy_cache_read_only
 from .native_managed_capture import bind_configuration_origin
-from .native_policy_authority_blocked import command_controls_blocked
 from .native_policy_authority_contract import NativePolicyAuthorityCapabilities
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_decision_context import NativePolicyDecisionContext, capture_native_policy_decision
@@ -78,11 +77,7 @@ def scoped_policy_input_changed(
 ) -> bool:
     """Observe semantic changes off-path; receipt-only writes do not revoke readiness."""
     try:
-        config, inputs = (
-            compiled_scoped_policy(publisher, command_extensions=command_extensions)
-            if command_extensions is not None and command_controls_blocked(command_extensions)
-            else compiled_scoped_policy(publisher)
-        )
+        config, inputs = compiled_scoped_policy(publisher, command_extensions=command_extensions)
         fingerprint = _policy_fingerprint(config)
         source_digest = inputs.input_digest
     except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError, sqlite3.Error):
@@ -190,11 +185,7 @@ def publish_scoped(
         current_extensions = publisher._compiled_command_extensions()
         if current_extensions != snapshot.get("command_extensions", {}):
             raise NativePolicySnapshotError("native_command_control_binding_changed")
-        current_config, current_inputs = (
-            compiled_scoped_policy(publisher, command_extensions=current_extensions)
-            if command_controls_blocked(current_extensions)
-            else compiled_scoped_policy(publisher)
-        )
+        current_config, current_inputs = compiled_scoped_policy(publisher, command_extensions=current_extensions)
         after_inputs = publisher._current_input_fingerprint()[0]
         fingerprint = _policy_fingerprint(current_config)
         if (

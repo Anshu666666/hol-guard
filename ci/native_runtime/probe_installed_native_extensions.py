@@ -22,6 +22,7 @@ from codex_plugin_scanner.guard.config import update_guard_settings
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_command_control_authority import AUTHORITY_FILE_NAME
 from codex_plugin_scanner.guard.native_hook_edge import review_raw_hook_native
+from codex_plugin_scanner.guard.native_policy_test_support import _finite_publisher_failure
 from codex_plugin_scanner.guard.native_resident_client import (
     close_native_residents,
     native_resident_client_failure_code,
@@ -128,6 +129,18 @@ def control(kind: ControlTargetKind, target: str, state: ControlState) -> Extens
 def ready(daemon: GuardDaemonServer, workspace: Path, revision: int) -> dict[str, object]:
     worker = daemon._server.hook_worker
     binding = worker.prepare_workspace_policy(workspace, deadline=time.monotonic() + 5)
+    if binding is None:
+        print(
+            json.dumps(
+                {
+                    "schema": "guard.installed-native-extension-readiness-failure.v1",
+                    "control_revision": revision,
+                    "publisher_error": _finite_publisher_failure(worker.policy_snapshot_publisher.last_error),
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
     require(binding is not None, "policy_not_ready")
     snapshot = worker.policy_snapshot_publisher.current_snapshot()
     require(snapshot is not None, "snapshot_missing")

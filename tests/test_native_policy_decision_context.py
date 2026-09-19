@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import FrozenInstanceError
+from typing import Any, cast
 
 import pytest
 
@@ -19,7 +20,7 @@ from tests.test_native_policy_snapshot_v4_barrier import barrier as _barrier_fix
 
 @pytest.fixture(name="barrier")
 def native_barrier(tmp_path, monkeypatch):
-    yield from _barrier_fixture.__wrapped__(tmp_path, monkeypatch)
+    yield from cast(Any, _barrier_fixture).__wrapped__(tmp_path, monkeypatch)
 
 
 def _captured(*, observe=False):
@@ -55,6 +56,7 @@ def test_native_context_preserves_actual_outcome_and_original_time_without_mutat
     original = copy.deepcopy(receipt)
     encoded = context.to_dict()
     restored = NativePolicyDecisionContext.from_mapping(encoded)
+    assert restored is not None
     assert restored == context and restored.matches_receipt(receipt)
     assert restored.recorded_at == context.recorded_at
     assert encoded["policyAction"] == "allow"
@@ -62,7 +64,7 @@ def test_native_context_preserves_actual_outcome_and_original_time_without_mutat
     assert "policyExecutionOutcome" not in encoded
     assert receipt == original and safe_native_policy_decision(encoded) == encoded
     with pytest.raises(FrozenInstanceError):
-        context.policy_generation = 99
+        cast(Any, context).policy_generation = 99
 
 
 @pytest.mark.parametrize(
@@ -139,7 +141,7 @@ def test_unselected_native_default_does_not_invent_canonical_identity(barrier):
 
 @pytest.mark.parametrize("changed_epoch", [False, True])
 def test_actual_worker_captures_frozen_identity_under_same_barrier(barrier, tmp_path, monkeypatch, changed_epoch):
-    from types import SimpleNamespace
+    from types import MethodType, SimpleNamespace
 
     from codex_plugin_scanner.guard.daemon.hook_worker import HookWorker
     from tests.test_native_scoped_result import _bound_result
@@ -165,7 +167,7 @@ def test_actual_worker_captures_frozen_identity_under_same_barrier(barrier, tmp_
         return result
 
     monkeypatch.setattr(publisher, "result_binding_is_current", check_then_change)
-    host = SimpleNamespace(
+    host: Any = SimpleNamespace(
         policy_snapshot_publisher=publisher,
         _native_policy_snapshot=lambda *args, **kwargs: publisher.current_snapshot_binding(),
         _review_raw_hook_native=lambda **kwargs: edge,
@@ -173,7 +175,8 @@ def test_actual_worker_captures_frozen_identity_under_same_barrier(barrier, tmp_
         metrics=SimpleNamespace(record_route=lambda value: None),
         activity_writer=None,
     )
-    result = HookWorker._review_native_edge(
+    host._review_native_edge_with_snapshot = MethodType(HookWorker._review_native_edge_with_snapshot, host)
+    result: dict[str, Any] = HookWorker._review_native_edge(
         host,
         payload={"tool_name": "Bash", "tool_input": {"command": "printf safe"}},
         harness="claude-code",

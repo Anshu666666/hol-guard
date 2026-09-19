@@ -1,0 +1,90 @@
+{
+  "schema": "pr2974-store-base-finite-design.v2",
+  "base_commit": "44353b20262f1ca56b56204f4c764b047710454f",
+  "candidate_commit": "14252412cb131593b98e6f1fd951ff2c47b903b6",
+  "source_only": true,
+  "executed": false,
+  "existing_selectors": [
+    "tests/test_guard_store_migrations.py::test_load_keyring_module_returns_none_when_dependency_missing",
+    "tests/test_guard_store_migrations.py::test_load_keyring_module_propagates_broken_installed_keyring",
+    "tests/test_guard_store_migrations.py::test_load_keyring_module_or_none_logs_and_degrades_for_broken_keyring",
+    "tests/test_guard_store_migrations.py::test_windows_keyring_read_session_failure_is_retryable",
+    "tests/test_guard_store_migrations.py::test_windows_keyring_non_session_error_is_not_swallowed",
+    "tests/test_guard_store_migrations.py::test_system_keyring_native_macos_read_uses_cfstr_decoder",
+    "tests/test_guard_store_migrations.py::test_system_keyring_native_macos_read_does_not_disable_keychain_interaction_globally",
+    "tests/test_guard_store_migrations.py::test_system_keyring_macos_read_runs_behind_killable_timeout",
+    "tests/test_guard_store_migrations.py::test_system_keyring_macos_read_fails_closed_on_native_timeout",
+    "tests/test_guard_store_migrations.py::test_system_keyring_timeout_routes_native_macos_reads_to_isolated_process",
+    "tests/test_guard_store_migrations.py::test_system_keyring_supports_native_macos_reads_with_nonstandard_keyring_module",
+    "tests/test_guard_store_migrations.py::test_policy_integrity_store_uses_encrypted_local_backend_on_macos_without_keychain_probe",
+    "tests/test_guard_store_migrations.py::test_oauth_secret_store_uses_cached_macos_availability_when_healthy",
+    "tests/test_guard_store_migrations.py::test_oauth_secret_store_rechecks_stale_macos_health_cache_for_login",
+    "tests/test_guard_store_migrations.py::test_passive_macos_oauth_store_never_probes_keychain",
+    "tests/test_guard_store_migrations.py::test_unavailable_oauth_secret_store_deletes_legacy_encrypted_secret",
+    "tests/test_guard_store_migrations.py::test_fallback_secret_store_uses_secondary_backend_when_primary_fails",
+    "tests/test_guard_store_migrations.py::test_fallback_secret_store_promotes_secret_to_primary",
+    "tests/test_guard_store_migrations.py::test_fallback_secret_store_logs_delete_failures",
+    "tests/test_guard_store_migrations.py::test_encrypted_file_secret_store_secures_secret_directory_permissions",
+    "tests/test_guard_store_migrations.py::test_encrypted_file_secret_store_writes_key_and_payload_atomically",
+    "tests/test_guard_encrypted_secret_store_stability.py::test_concurrent_process_first_use_creates_one_key_and_preserves_both_writes",
+    "tests/test_guard_encrypted_secret_store_stability.py::test_invalid_existing_vault_key_fails_closed_without_rotation"
+  ],
+  "added_selectors": [
+    "tests/test_guard_store_base_partition.py::test_secret_store_exports_keep_single_class_and_pickle_identity",
+    "tests/test_guard_store_base_partition.py::test_chunks_keep_the_late_type_variable_and_annotation_spelling",
+    "tests/test_guard_store_base_partition.py::test_nested_keyring_classes_keep_path_closures_and_metadata",
+    "tests/test_guard_store_base_partition.py::test_native_reader_cache_tracks_both_original_loader_objects",
+    "tests/test_guard_store_base_partition.py::test_no_ui_migration_observes_current_facade_primary_class",
+    "tests/test_guard_store_base_partition.py::test_isolated_worker_keeps_facade_import_and_live_process_dependency",
+    "tests/test_guard_store_base_partition.py::test_encrypted_initialization_keeps_shared_lock_owner_and_finally_release",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_chunks]",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_keyring]",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_policy_matching]",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_secret_backends]",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_secret_files]",
+    "tests/test_guard_store_base_partition.py::test_each_store_owner_can_be_imported_before_the_facade[store_base_values]"
+  ],
+  "existing_source_bindings": [
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "blob": "08d39bcd1cd226ee03689034c911fcb8bd03311c",
+      "sha256": "d8391bbdd074026ad9c798232012fe4efa3381308b12efbeed2396da21c584e4"
+    },
+    {
+      "path": "tests/test_guard_encrypted_secret_store_stability.py",
+      "blob": "d074d2c2c81f9c267a7dce2be675a2d71abcb0be",
+      "sha256": "445ae897fc9c769664fdf506c42c2f1dff0c5d7ea3f7dc247225175a32219aa5"
+    }
+  ],
+  "collection_contract": "Collect the 23 existing function selectors separately at the full immutable baseline and candidate. Require actual ordered cases/params/marks/scopes/fixture/autouse identities and raw product origins. Function selectors are not a claim about expanded parametrized case counts. Collect the candidate-only 13 explicit seam case selectors separately and require exactly13 unique cases. Seven prior seam bodies remain exact; six new owner-first subprocess cases cover the actual six helper modules.",
+  "controls": [
+    "Complete-file source proof executes before project imports.",
+    "Use exact frozen interpreter/dependencies and full tracked source fixture/resource closure; -m '' is explicit.",
+    "One owned process group under root's shared validation queue; real child process status and bounded cleanup are retained.",
+    "Keep class source location and annotation alias namespace caveats visible; compare original namespace exports including future `annotations`.",
+    "Actual failures/skips and timeout state remain recorded; no baseline pass, new-source runtime, native, installed, or PRD acceptance claim is inferred from this design."
+  ],
+  "gate_commands": [
+    "python assert_store_base_partition.py --baseline BASELINE_STORE_BASE --candidate-root CANDIDATE_ROOT --manifest store-base-source-manifest.json --output store-base-source-proof.json",
+    "ruff check EIGHT_PRODUCTION_PATHS tests/test_guard_store_base_partition.py",
+    "ruff format --check EIGHT_PRODUCTION_PATHS tests/test_guard_store_base_partition.py",
+    "basedpyright EIGHT_PRODUCTION_PATHS"
+  ],
+  "formatting": "If formatting mutates source, preserve all changed bytes and full AST/literal/token bridge before assigning new immutable hashes or runtime credit.",
+  "candidate_tree": "7cfa09b72e614a544250541cd972cb1590f6164b",
+  "cold_helper_first_contract": {
+    "cases": 6,
+    "owners": [
+      "store_base_chunks",
+      "store_base_keyring",
+      "store_base_policy_matching",
+      "store_base_secret_backends",
+      "store_base_secret_files",
+      "store_base_values"
+    ],
+    "parent_imports": "Actual package imports; no package shell or sys.modules deletion",
+    "precondition": "Both facade and selected helper absent from sys.modules immediately before selected helper import",
+    "execution": false
+  },
+  "retained_prior_source": "728ae9dc1c1e96477f3fcf6c16f555dbd22ebec8"
+}

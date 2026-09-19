@@ -1,0 +1,133 @@
+name: PR2974 immutable StoreBase source and finite validation
+
+on:
+  push:
+    branches: [codex/pr2974-store-base-validation-fix-20260919]
+    paths:
+      - '.github/workflows/pr2974-store-base-validation.yml'
+      - 'ci/pr2974_store_base_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-store-base-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_BASELINE: ${{ github.workspace }}/baseline
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  store-base:
+    name: Actual StoreBase source and finite validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-store-base-validation/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-store-base-validation/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '32c26e3c4ce9adc341745c5912637f15bf0cefcb',
+                     'source_tree': '9bbfbe495a6df53db97b5d6886763c50e5eb5b27',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout the immutable additive harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the exact immutable corrected source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '32c26e3c4ce9adc341745c5912637f15bf0cefcb'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the original unchanged comparison source
+        id: baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: baseline
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up the exact fresh validation Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up the exact frozen-lock installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Run exact correction inverse, original source proofs, source gates and finite bodies
+        id: validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_store_base_validation/validate.py"
+      - name: Preserve the terminal workflow result
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          BASELINE_CHECKOUT: ${{ steps.baseline.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          names = ['HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME']
+          names.append('BASELINE_CHECKOUT')
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in names}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['workflow_gate_passed'] = passed
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'workflow_gate_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          raise SystemExit(0 if passed else 1)
+          PY
+      - name: Emit the bounded checksum-framed result projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_store_base_validation/report_projection.py"
+      - name: Retain complete original snapshots, JUnit, reports and failure logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-store-base-validation-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-store-base-validation/report/
+          if-no-files-found: error
+          retention-days: 30

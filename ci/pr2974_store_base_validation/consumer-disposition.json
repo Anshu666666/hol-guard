@@ -1,0 +1,1288 @@
+{
+  "schema": "pr2974-store-base-whole-tree-consumer-disposition.v1",
+  "author": "recover_handoff",
+  "scope": "Actual source-only review of the complete recovered 44353 tracked-Python census and the nine exact formatted StoreBase source payloads. This author prepared StoreBase; this receipt is not an independent source peer.",
+  "baseline": {
+    "commit": "44353b20262f1ca56b56204f4c764b047710454f",
+    "tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+    "tracked_python_files": 3110,
+    "matched_files": 63,
+    "metadata_files": 12,
+    "store_files": 52,
+    "overlap": 1,
+    "alias_records": 36
+  },
+  "census": {
+    "blob": "7f283d78d9df92e0727eb5d5d3c20e8520842916",
+    "sha256": "c0717269a697a02fde0ec6562a5d4a3d55eb249fa7113a5dfdc853e3ae4e4692",
+    "bytes": 2607777,
+    "terminal_receipt_blob": "565562e36bfd194015f9af6fb2120a5857ed7054",
+    "terminal_receipt_sha256": "cbe0b51a4db787bf02f98baba63842303e35c6458d0534f7490d45c482ca81fb",
+    "independently_verified_all_scanned_paths": true,
+    "independently_verified_all63_complete_source_sha256_git_blobs_against_baseline_tree": true,
+    "patterns": {
+      "metadata": "get_type_hints|__annotations__|get_annotations|annotationlib|(?:inspect\\.)?(?:getsource|getsourcefile|getsourcelines|findsource|getfile|getmodule)|__module__|__qualname__|copyreg|cloudpickle|\\bpickle\\b|\\bdill\\b|__reduce__",
+      "oversize": "Bound packets; fail and retain if exceeded; do not truncate-and-claim-complete.",
+      "review_questions": [
+        "class-oriented inspect.getsource with restored facade __module__",
+        "mutation of facade annotation-only aliases before annotation resolution"
+      ],
+      "scope": "Every tracked .py in exact44353; separate from LSC source/hash recovery; no imports/execution.",
+      "semantics": "Case-sensitive; retain full matched-file bytes, source hash, exact line text. Record alias assignment/patch uses only in store-related files; full text permits renamed-import/getattr/setattr review; matching alone cannot prove alias absence.",
+      "storeAnnotationAliases": [
+        "Iterator",
+        "Sequence",
+        "_ChunkT",
+        "Path",
+        "subprocess",
+        "Mapping",
+        "SecretStore",
+        "Fernet",
+        "TransportKind",
+        "datetime",
+        "sqlite3"
+      ],
+      "stores": "store_base|SystemKeyringSecretStore|EncryptedFileSecretStore|FallbackSecretStore|guard_store_module"
+    },
+    "errors": []
+  },
+  "source_bindings": [
+    {
+      "path": "scripts/archive_worker_profile.py",
+      "git_blob": "65b7483d69797c07612864eb0c6d0d1c40995f9b",
+      "sha256": "eb90d1eaf4197c5b4d6c000042949cfac0625a8249dfff3830b448f312418b64",
+      "bytes": 2430
+    },
+    {
+      "path": "scripts/ci/finish_extension_authority_stability.py",
+      "git_blob": "1b8b48e27f3089546bb678247e35e8a7e02a9705",
+      "sha256": "d075e7f8d660e0e17ca13d794681e70ac3bb3b5b461d9e92cdb579b9772ce6a0",
+      "bytes": 12949
+    },
+    {
+      "path": "scripts/ci/installed_artifact_transition_probe.py",
+      "git_blob": "104f8a5365a555e1cc2cad8c1af935560da594c3",
+      "sha256": "34594026959d1c1fcbca7f3fe507bdedba76453bd20e080f4626936a14e666bf",
+      "bytes": 25368
+    },
+    {
+      "path": "scripts/ci/installed_extension_control_center_server.py",
+      "git_blob": "b9d3f3ff6232d3ef7ded76bc7eb670eadb51c385",
+      "sha256": "ecf79ff452a1390f54f1e47078953071920e6f71c39c1d04baafd6f7f6e4b414",
+      "bytes": 6599
+    },
+    {
+      "path": "scripts/ci/installed_extension_control_probe.py",
+      "git_blob": "d59af987372ba1b54ab07a021eae97b57e41f64f",
+      "sha256": "839cc5e576d7f7ab35ba99d16526756ae35d34262f1450d4ff13b878abf9e39e",
+      "bytes": 3725
+    },
+    {
+      "path": "scripts/guard_mcp_owned_preparation_pilot.py",
+      "git_blob": "fd6740e2ad2f0befe9f2f358613e2158ff43a752",
+      "sha256": "2dd0cd0bd2ecf7cd6b9c4bdd5993443918f7a2af18ae46634cb460c828f814f9",
+      "bytes": 11712
+    },
+    {
+      "path": "scripts/guard_mcp_streaming_preparation_pilot.py",
+      "git_blob": "a5d01977b844aa0c03aab7f0f9c6aefd66ca0e10",
+      "sha256": "9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2",
+      "bytes": 14249
+    },
+    {
+      "path": "scripts/mdm/cloud-lab/lab_store.py",
+      "git_blob": "e94cc36253ae38c304b2d33b9a5018a696506297",
+      "sha256": "17cae57b4bff0a2c9001ea8a990d234ff87836ee3c87f75755ef8a286d0e032a",
+      "bytes": 292
+    },
+    {
+      "path": "scripts/native_slo_command_fixture.py",
+      "git_blob": "f0a812db41380ce712a5356b7e1dae412d908861",
+      "sha256": "08cd7660e8a8329745fe480c406f535c519fdc518313f4d840563935d4d0b54e",
+      "bytes": 2236
+    },
+    {
+      "path": "scripts/native_slo_workspace_observer.py",
+      "git_blob": "ea382d142d37e9de784c590e5130b332f0133202",
+      "sha256": "ebce4c05e0ef84d445ccb991e0b1a6464c53998cef5477dd470ab0da26c7046d",
+      "bytes": 13161
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/cli/commands.py",
+      "git_blob": "043103410d421ce87ee7bf4d0767850eb5445176",
+      "sha256": "ce0f143c7b666440c4539feb87e82b8772bfbf6da1df4caa33b04aca1b3de43f",
+      "bytes": 6935
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/local_trust_contract.py",
+      "git_blob": "b95c0f48c701928eb0e09e0999d2f20b62bd1913",
+      "sha256": "62109ac5bbbf259486fb2201fb32740e26fe39328c8f9a32328d1339f8cb746b",
+      "bytes": 15144
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/local_trust_controller.py",
+      "git_blob": "e25458a3913e34fda000b8f36f8ebe85c9ed857c",
+      "sha256": "e8063e91ff90d4e8cf13adc5e0b6b9b97e9442a19c5a16172a4cb0db78d2c225",
+      "bytes": 10853
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/runtime/command_matcher_contracts.py",
+      "git_blob": "82e5669b1f67f72e85833895f81fe59e8c465ea7",
+      "sha256": "282c3284ae3cec6a373c11f8b19694a7fad809bd59aa2fd633f0e4c3b41f5218",
+      "bytes": 3030
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store.py",
+      "git_blob": "4edf1f65655e01fea4f634252d4242819ef92f52",
+      "sha256": "1fe49b82841db80046092badcb72c7422c1d14d883b5d5b9f2b02584e1c09d4b",
+      "bytes": 4709
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_approval_facade.py",
+      "git_blob": "6be53ed5e781f58c1f6b8b180ffa53f7247579c1",
+      "sha256": "3dc402c60ac3c287fdb049fb47e653ae5255836cf8fbbfcb2368400c82f3242e",
+      "bytes": 16599
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_approval_queries.py",
+      "git_blob": "23d59d4b59239b87895d9e85ed16e18fb9cb708d",
+      "sha256": "6256dcc5cf79087e097c34aa93e5e5a235c03ad78ba3f943292f956401fb1291",
+      "bytes": 8862
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base.py",
+      "git_blob": "fc32c5f936d9fb63b3e3086d4751b2c77a8f5d58",
+      "sha256": "b9e65beb32cb567bbd8ff11582648e2c4d6dc63770f99cb28f61751359ff088f",
+      "bytes": 62798
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_cloud_events.py",
+      "git_blob": "d3a39f411d431c99549c251f237b7f9f00feb73e",
+      "sha256": "5950c4b55544a5debcde9825484b1e9cb187c7a8bc38258ad9f35840d2f60903",
+      "bytes": 19920
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "git_blob": "bf4e6d772219b731b5fe4c81bfc4b987820f4cbf",
+      "sha256": "1fa357edd734f75d85d1f29a3cf825cad630ca82ac0023a4d2b499f4a2b74a8a",
+      "bytes": 63429
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_consumed_once_authority.py",
+      "git_blob": "03694e86a2089f0df032fac266239b2217df0ce0",
+      "sha256": "2fe2840247e27291c52e66a8a2cee716743c235ff99e6ec5d2ff4fe5fcb830c2",
+      "bytes": 2832
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_continuation.py",
+      "git_blob": "492c74722cba339d52fe5062aef7ca365dedb482",
+      "sha256": "67a7b845e49d7e5e72f7b07be05416c0ec48cc3a750a1274e9c16f19a3384e90",
+      "bytes": 14284
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_event_receipts.py",
+      "git_blob": "c3acbba53e9f082d7b6a01dea3742fda73eb9dc2",
+      "sha256": "0cf618dac2567da6cc18b23da38818397418c3cbd03163dbe15e0d5e9a704c3b",
+      "bytes": 17808
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_evidence_facade.py",
+      "git_blob": "5edf7db2abf84c30c6752d7978aa4013e4de860b",
+      "sha256": "0d1e00a87588a11d3e9e0ea47f33ee60a927c452c0c45880019a43fd66fe776c",
+      "bytes": 2553
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_extension_control_authority.py",
+      "git_blob": "432188f77c4dcf67b4e28c99c4724354dfb39fe6",
+      "sha256": "1ce3772c8fc2d83464992168e06eff4d20826da05d2d474e25c461b6e5329dbc",
+      "bytes": 62062
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_extension_control_authority_support.py",
+      "git_blob": "d578f23c8879abe6e0df84777eeb0baa10be01ec",
+      "sha256": "4192976caf0c97949b379c04a27ca1016c504a46a02e074b3f24de2553c76499",
+      "bytes": 14867
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_inventory.py",
+      "git_blob": "92ae62af573458b427256b0be796a1d70dec03a3",
+      "sha256": "7e4ecc9a97167420d6e76aa2e910efe7182526cd6fc6b9bc54b701c4fe3979f3",
+      "bytes": 19621
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_local_once_authority.py",
+      "git_blob": "625091c985fe23fe491a09b459a95bc1e2718cab",
+      "sha256": "b722e6023ca04bfee5da7ad83f3e79209db788af53b0dd5cb98e7b43c46c5001",
+      "bytes": 2806
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_oauth.py",
+      "git_blob": "0c835a35e85f311164df465c93f4981b7af5d908",
+      "sha256": "4af57b69e0b003be5ee8df4179b4098004d8495b078eb57d6ad2e78910579743",
+      "bytes": 53415
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_policy.py",
+      "git_blob": "09ba24394a5d3d94eff0d336cf144cebf5bc9f67",
+      "sha256": "c522e0596700655cbba1e9d6af7a30ff40c80cf5fd412a9bcd42abfc52f463cd",
+      "bytes": 111116
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_policy_document.py",
+      "git_blob": "df25cc93f503ca4a996f5c5d2e0a853f182cf027",
+      "sha256": "b064afe552a7766b9993f5aab14c3ec4a0084230689da8c98ad5e909c16fbf82",
+      "bytes": 12798
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_policy_integrity_backend.py",
+      "git_blob": "6de33b4d03e485648ccb8919045adbbd8c456a07",
+      "sha256": "2a2aaa332e2821c6f09354a0422824165b8099eb043298e694ba142d211ff773",
+      "bytes": 1314
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_policy_integrity_runtime.py",
+      "git_blob": "c9a9382677e1f19ebdf9fa8368d3070b7d300194",
+      "sha256": "0aba9cc4aa8608b8dce163b600675e7b2fffe922ea6c688123d910613cccabd8",
+      "bytes": 33078
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_portable_project_memory.py",
+      "git_blob": "fc760a96d0a22a6c5656a627138d6d30434fed5f",
+      "sha256": "026afda013256aa715ef09e33d132462ffd4986a9af5ca7573cc99c6a5edad7c",
+      "bytes": 8769
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_receipts.py",
+      "git_blob": "452c389cb0e02b2748ce4048e9d0d8e1600cdc03",
+      "sha256": "a65dac01dea8641a2fcd8af4127b706605a4c5ce95a0d1401fab8c7609d1ad60",
+      "bytes": 38975
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_secret_policy_integrity.py",
+      "git_blob": "9f6d0ee713acdfa354e05928581c8db60bc2b582",
+      "sha256": "53697eb55b82df36a5a1ffa5a9adb8cd56fe11d2a9ab1340ee7545c9f6ef0e20",
+      "bytes": 50201
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_sessions.py",
+      "git_blob": "73113fb4704a3af5c4ad7a6e9405723ee8380b6a",
+      "sha256": "655c04124e62c14321686cc282a37271f25625ca8864ad5d6d45e30ca2fe6cab",
+      "bytes": 19950
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_temporary_mcp.py",
+      "git_blob": "74e3bf152e7f129610c44d2ffce53e13daf07d09",
+      "sha256": "24bb2426dfc9cda065f740641aa52b7c7e2b121e700b895c5815ed256671323f",
+      "bytes": 4388
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_workflow_capability_secret_control.py",
+      "git_blob": "53952d1b2ad850ae7e49d6144bba15fa9ba205f3",
+      "sha256": "f8769172b42e41f1ccb9bfe8fbb6755c010b90f7e808c0091d1c00175b017031",
+      "bytes": 1728
+    },
+    {
+      "path": "tests/conftest.py",
+      "git_blob": "ce60ec01602157774a84000aff35cc07331211eb",
+      "sha256": "ad53c2c93e24e27d284ce02461f5d1badd22b2a7c75a413bd0fb7b6f21858c92",
+      "bytes": 13829
+    },
+    {
+      "path": "tests/guard_approval_gate_support.py",
+      "git_blob": "8d28231305603a6173e73e151418e94b386ab657",
+      "sha256": "ae623c3668879cd2655f178847da8953ae7738ba8fc98a6dcb800e84c187611e",
+      "bytes": 7069
+    },
+    {
+      "path": "tests/test_guard_cli_commands_facade.py",
+      "git_blob": "1a37c2ac97fefe78908baec6f8f142f4105bf4fb",
+      "sha256": "de438ad0081a67295d8ca8b88035ddcf5381ca5fae08ca31c78ec6b63f16e1a0",
+      "bytes": 5104
+    },
+    {
+      "path": "tests/test_guard_command_queue.py",
+      "git_blob": "eeb4b0308d46a59ed3183a699f87e43440e8190a",
+      "sha256": "5ee78092281f31d8e7874958c4a8cfe1adaed9bd98938810346379815550f2ec",
+      "bytes": 62786
+    },
+    {
+      "path": "tests/test_guard_connect_flow.py",
+      "git_blob": "6e90a4a164b2dd604295cc4a02837e55ef1169d9",
+      "sha256": "3b47857fbfb7d9418913b3594a142553c2dd4e42b310ca6a988537b78c36e655",
+      "bytes": 40211
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "git_blob": "7ab3b2719d4873067c16e7bfa533b07750959409",
+      "sha256": "c629a36ab0ebfcdc3d9dada79c8375e65809d6b61a6eac5108f8ceb52e5c5246",
+      "bytes": 130325
+    },
+    {
+      "path": "tests/test_guard_desktop_dashboard_session.py",
+      "git_blob": "6c3e653120b13b8b04018b6ac3f442d9107b3e8d",
+      "sha256": "82aea6de42ee72f57d0943110861e2ab485c5e2850e94977105dec8efb625492",
+      "bytes": 15853
+    },
+    {
+      "path": "tests/test_guard_encrypted_secret_store_stability.py",
+      "git_blob": "d074d2c2c81f9c267a7dce2be675a2d71abcb0be",
+      "sha256": "445ae897fc9c769664fdf506c42c2f1dff0c5d7ea3f7dc247225175a32219aa5",
+      "bytes": 4304
+    },
+    {
+      "path": "tests/test_guard_extension_control_authority.py",
+      "git_blob": "dd62103f2d9267cc29fa32fb44929a031a701092",
+      "sha256": "6bc9646551581208d7290ff3af826e8717c431339129ab95ebe810a5eb94918e",
+      "bytes": 61282
+    },
+    {
+      "path": "tests/test_guard_headless_daemon_api.py",
+      "git_blob": "91c62d5aec37d1688d503aaea29965a7d939902d",
+      "sha256": "4dba197381ff3efed8782a087a4f071b240946761d3dbd05ec2b42954ad26a77",
+      "bytes": 115768
+    },
+    {
+      "path": "tests/test_guard_hook_process_runner.py",
+      "git_blob": "935c3652c7d43dd4fa766979d25acaa77e8a05d2",
+      "sha256": "b6017a1dd546544ecce3b67f73298f6cf300d74ff08c5aabfe96ae26d345d5a7",
+      "bytes": 54589
+    },
+    {
+      "path": "tests/test_guard_local_authority_integrity.py",
+      "git_blob": "cdeccfc76a59911cac5d881d9cbdd86d83e78fc7",
+      "sha256": "373d50d301fb812fac1d1feea3d9a98fc66a391c26b36ba1037d10cfbe46efef",
+      "bytes": 11764
+    },
+    {
+      "path": "tests/test_guard_oauth_device_connect.py",
+      "git_blob": "01cf0d934b4b929a2905d57de586ac672f89a06f",
+      "sha256": "249c97bdfdd8c76613ccb0b517f200720b540327794184ba91150328b0e1512b",
+      "bytes": 77174
+    },
+    {
+      "path": "tests/test_guard_package_shims.py",
+      "git_blob": "52e88357f7cbf910e3b4678d7200ec04215ca46d",
+      "sha256": "f1b44141020f381992ce2c43ad89db55cc9982c21d29e1417b29025e94c96274",
+      "bytes": 113989
+    },
+    {
+      "path": "tests/test_guard_policy_integrity.py",
+      "git_blob": "bfc58c690c8ca1597e911cce14b1d283d97bb682",
+      "sha256": "08d5865e52e9b260b89e47b796216d99e7a65c28d09bd5b508c8a4d9dd29cb6c",
+      "bytes": 149058
+    },
+    {
+      "path": "tests/test_guard_policy_integrity_local_vault.py",
+      "git_blob": "e110a4dde2a11d24e9b8a621ba527141e72121b6",
+      "sha256": "a352987b716327eb1777716134533712d2e9a49ebba15823d89ce0248bfa5cb3",
+      "bytes": 4290
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "git_blob": "08d39bcd1cd226ee03689034c911fcb8bd03311c",
+      "sha256": "d8391bbdd074026ad9c798232012fe4efa3381308b12efbeed2396da21c584e4",
+      "bytes": 104828
+    },
+    {
+      "path": "tests/test_guard_trust_cli_passive_backend.py",
+      "git_blob": "9b6be9243a2d4ed7e7dd36861eb464496ff59e72",
+      "sha256": "397c727f658d1b72f6994e7d98c119aa7e1ab9177ed9b3e9f7efbf8b171d6d65",
+      "bytes": 12095
+    },
+    {
+      "path": "tests/test_hook_security_regressions.py",
+      "git_blob": "c1210235c04d60911e262d4ca22b99ea8cdc80a7",
+      "sha256": "e5ec68acc4afa49a4ed225682fde31237f9921affa340c90332202eddf8e31aa",
+      "bytes": 17721
+    },
+    {
+      "path": "tests/test_mcp_security.py",
+      "git_blob": "e75d6b2eae97f9c34b1aacbe179c4985bedc94d0",
+      "sha256": "d280d1f7f4d0eaffa915ce295e6cb1c918fe7698df96011651d8324b495cd540",
+      "bytes": 26428
+    },
+    {
+      "path": "tests/test_multi_source_connect.py",
+      "git_blob": "d8ac1fcebe26275c06b2fad96a750bf3925cae84",
+      "sha256": "525d25b3af5a7c9d57abd1fecf6db50fa964c9e0030890d7d4d7595496817384",
+      "bytes": 6531
+    },
+    {
+      "path": "tests/test_native_default_auto_command_fixture.py",
+      "git_blob": "0feb578f09f3a198a0f913d02750728cd102a872",
+      "sha256": "720ad7767c64d8e47a0ab97d721343efa4806f1181d36917bd7b741c470eb115",
+      "bytes": 3395
+    },
+    {
+      "path": "tests/test_native_policy_snapshot_windows.py",
+      "git_blob": "f91bfce82f90da4e98c7d2a9686715af9e19600d",
+      "sha256": "2496efc1ee8b8f89ffbd607d8a1d034cb56d9b865bd0aabf925e7e04904c61a0",
+      "bytes": 18867
+    },
+    {
+      "path": "tests/test_native_slo_command_fixture.py",
+      "git_blob": "29b2e77a6725ae8ef62c5d69365a1b19537eb93a",
+      "sha256": "673591cc0817d779f5c2169ffb6d17618959a6d3a2c039e39f044113ecb0da4e",
+      "bytes": 2169
+    }
+  ],
+  "metadata_dispositions": [
+    {
+      "path": "scripts/archive_worker_profile.py",
+      "git_blob": "65b7483d69797c07612864eb0c6d0d1c40995f9b",
+      "sha256": "eb90d1eaf4197c5b4d6c000042949cfac0625a8249dfff3830b448f312418b64",
+      "matches": [
+        {
+          "line": 20,
+          "text": "    worker = sys.modules[inspector._inspect_archive.__module__]"
+        }
+      ],
+      "disposition": "Looks up an archive inspector worker module through the supplied _inspect_archive function; no StoreBase object, annotation evaluation or source extraction."
+    },
+    {
+      "path": "scripts/guard_mcp_owned_preparation_pilot.py",
+      "git_blob": "fd6740e2ad2f0befe9f2f358613e2158ff43a752",
+      "sha256": "2dd0cd0bd2ecf7cd6b9c4bdd5993443918f7a2af18ae46634cb460c828f814f9",
+      "matches": [
+        {
+          "line": 3,
+          "text": "The binding codec only SERIALIZES. No pickle decoder is present or used. Its"
+        },
+        {
+          "line": 13,
+          "text": "import pickle"
+        },
+        {
+          "line": 33,
+          "text": "class _ExactPickler(pickle.Pickler):"
+        }
+      ],
+      "disposition": "Serialize-only experiment. _ExactPickler rejects all custom reductions; bound JSON/artifact field primitives are unrelated to StoreBase class source lookup or annotation namespace evaluation."
+    },
+    {
+      "path": "scripts/guard_mcp_streaming_preparation_pilot.py",
+      "git_blob": "a5d01977b844aa0c03aab7f0f9c6aefd66ca0e10",
+      "sha256": "9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2",
+      "matches": [
+        {
+          "line": 3,
+          "text": "The binding codec only SERIALIZES. No pickle decoder is present or used. Its"
+        },
+        {
+          "line": 15,
+          "text": "import pickle"
+        },
+        {
+          "line": 35,
+          "text": "class _ExactPickler(pickle.Pickler):"
+        }
+      ],
+      "disposition": "Same restricted serialize-only codec plus a byte-comparison sink; no decoder or StoreBase metadata/source/annotation lookup."
+    },
+    {
+      "path": "scripts/native_slo_workspace_observer.py",
+      "git_blob": "ea382d142d37e9de784c590e5130b332f0133202",
+      "sha256": "ebce4c05e0ef84d445ccb991e0b1a6464c53998cef5477dd470ab0da26c7046d",
+      "matches": [
+        {
+          "line": 36,
+          "text": "    generation, policy_digest, runtime_identity = (value.get(key) for key in PolicyBinding.__annotations__)"
+        }
+      ],
+      "disposition": "Only annotation lookup in this immutable census: keys of the locally declared PolicyBinding TypedDict. It neither reads nor mutates StoreBase annotations."
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/cli/commands.py",
+      "git_blob": "043103410d421ce87ee7bf4d0767850eb5445176",
+      "sha256": "ce0f143c7b666440c4539feb87e82b8772bfbf6da1df4caa33b04aca1b3de43f",
+      "matches": [
+        {
+          "line": 188,
+          "text": "        _wrapped.__qualname__ = name"
+        },
+        {
+          "line": 190,
+          "text": "        _wrapped.__module__ = __name__"
+        }
+      ],
+      "disposition": "Writes metadata on its own __getattr__ wrapper and returns that wrapper; no StoreBase target."
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/local_trust_contract.py",
+      "git_blob": "b95c0f48c701928eb0e09e0999d2f20b62bd1913",
+      "sha256": "62109ac5bbbf259486fb2201fb32740e26fe39328c8f9a32328d1339f8cb746b",
+      "matches": [
+        {
+          "line": 7,
+          "text": "import pickle"
+        },
+        {
+          "line": 153,
+          "text": "        operation = pickle.load(handle)"
+        },
+        {
+          "line": 171,
+          "text": "        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)"
+        },
+        {
+          "line": 193,
+          "text": "            payload = pickle.load(handle)"
+        },
+        {
+          "line": 240,
+          "text": "        operation_path = str(Path(temp_dir) / \"operation.pickle\")"
+        },
+        {
+          "line": 242,
+          "text": "        result_path = str(Path(temp_dir) / \"result.pickle\")"
+        },
+        {
+          "line": 245,
+          "text": "                pickle.dump(operation, handle, protocol=pickle.HIGHEST_PROTOCOL)"
+        }
+      ],
+      "disposition": "Generic pickle transport for a callable and its (bool, value/error) result. It does not inspect class source or resolve annotations. No claim that it can never carry a StoreBase object is needed: original exported class/function pickle module identity is deliberately preserved and covered by the pending new seam tests. Built-in StoreBase-dependent trust backends take the direct cached-status path in local_trust_controller."
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/runtime/command_matcher_contracts.py",
+      "git_blob": "82e5669b1f67f72e85833895f81fe59e8c465ea7",
+      "sha256": "282c3284ae3cec6a373c11f8b19694a7fad809bd59aa2fd633f0e4c3b41f5218",
+      "matches": [
+        {
+          "line": 58,
+          "text": "            \"type\": type(value).__qualname__,"
+        },
+        {
+          "line": 72,
+          "text": "    raise MatcherContractError(f\"unsupported catalog contract value: {type(value).__qualname__}\")"
+        }
+      ],
+      "disposition": "Uses type(value).__qualname__ for dataclass canonicalization and error messages. Original definition qualnames remain unchanged; there is no module/source or annotation lookup."
+    },
+    {
+      "path": "tests/test_guard_cli_commands_facade.py",
+      "git_blob": "1a37c2ac97fefe78908baec6f8f142f4105bf4fb",
+      "sha256": "de438ad0081a67295d8ca8b88035ddcf5381ca5fae08ca31c78ec6b63f16e1a0",
+      "matches": [
+        {
+          "line": 52,
+          "text": "    assert guard_commands_module.add_guard_parser.__module__ == guard_commands_module.__name__"
+        },
+        {
+          "line": 53,
+          "text": "    assert guard_commands_module.run_guard_command.__module__ == guard_commands_module.__name__"
+        },
+        {
+          "line": 54,
+          "text": "    assert guard_commands_module._finalize_guard_connect_payload.__module__ == guard_commands_module.__name__"
+        },
+        {
+          "line": 55,
+          "text": "    assert guard_commands_module._headless_approval_resolver.__module__ == guard_commands_module.__name__"
+        }
+      ],
+      "disposition": "Asserts the unrelated CLI wrapper module identities."
+    },
+    {
+      "path": "tests/test_guard_desktop_dashboard_session.py",
+      "git_blob": "6c3e653120b13b8b04018b6ac3f442d9107b3e8d",
+      "sha256": "82aea6de42ee72f57d0943110861e2ab485c5e2850e94977105dec8efb625492",
+      "matches": [
+        {
+          "line": 50,
+          "text": "    source = __import__(\"inspect\").getsource(commands_dispatch_desktop._run_guard_desktop_command)"
+        }
+      ],
+      "disposition": "inspect.getsource targets commands_dispatch_desktop._run_guard_desktop_command, a function outside StoreBase."
+    },
+    {
+      "path": "tests/test_guard_policy_integrity.py",
+      "git_blob": "bfc58c690c8ca1597e911cce14b1d283d97bb682",
+      "sha256": "08d5865e52e9b260b89e47b796216d99e7a65c28d09bd5b508c8a4d9dd29cb6c",
+      "matches": [
+        {
+          "line": 11,
+          "text": "import pickle"
+        },
+        {
+          "line": 271,
+          "text": "    Path(result_path).write_bytes(b\"not a pickle\")"
+        },
+        {
+          "line": 277,
+          "text": "    Path(result_path).write_bytes(pickle.dumps({\"ok\": True}))"
+        },
+        {
+          "line": 283,
+          "text": "    Path(result_path).write_bytes(pickle.dumps([True, {\"mode\": \"protected\"}]))"
+        },
+        {
+          "line": 599,
+          "text": "        process.result_path.write_bytes(pickle.dumps((True, {\"mode\": \"protected\"})))"
+        }
+      ],
+      "disposition": "Four explicit pickle dumps write deliberately malformed scalar/container trust-worker payloads or a (True, {'mode':'protected'}) fixture. No StoreBase class serialization, class source inspection or annotation evaluation occurs in these calls."
+    },
+    {
+      "path": "tests/test_mcp_security.py",
+      "git_blob": "e75d6b2eae97f9c34b1aacbe179c4985bedc94d0",
+      "sha256": "d280d1f7f4d0eaffa915ce295e6cb1c918fe7698df96011651d8324b495cd540",
+      "matches": [
+        {
+          "line": 428,
+          "text": "    assert components[\"YaraAnalyzer\"].__module__ == \"mcpscanner\""
+        }
+      ],
+      "disposition": "Checks the module attribution of a YaraAnalyzer loaded from the mcpscanner provider, unrelated to StoreBase."
+    },
+    {
+      "path": "tests/test_native_policy_snapshot_windows.py",
+      "git_blob": "f91bfce82f90da4e98c7d2a9686715af9e19600d",
+      "sha256": "2496efc1ee8b8f89ffbd607d8a1d034cb56d9b865bd0aabf925e7e04904c61a0",
+      "matches": [
+        {
+          "line": 431,
+          "text": "    source = inspect.getsource(storage_module._write_v3_snapshot_file)"
+        }
+      ],
+      "disposition": "inspect.getsource targets storage_module._write_v3_snapshot_file, a function outside StoreBase."
+    }
+  ],
+  "alias_record_dispositions": [
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base.py",
+      "aliases": [
+        "_ChunkT"
+      ],
+      "category": "assignment_target",
+      "end_line": 1660,
+      "line": 1660,
+      "source": "_ChunkT = TypeVar(\"_ChunkT\")",
+      "category_disposition": "original_late_TypeVar",
+      "disposition": "The original single _ChunkT declaration is preserved at the same facade phase; this is not a later reassignment."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 273,
+      "line": 269,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **kwargs: spawned.append((list(command), dict(kwargs))) or SimpleNamespace(pid=123),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 315,
+      "line": 311,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: pytest.fail(\"reserved wake must not spawn another helper\"),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 343,
+      "line": 339,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError(\"spawn failed\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 387,
+      "line": 383,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError(\"spawn failed\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 428,
+      "line": 424,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: pytest.fail(\"preflight must not spawn a daemon\"),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1074,
+      "line": 1070,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError(\"should not spawn a new daemon\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1097,
+      "line": 1093,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError(\"should not spawn a new daemon\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1187,
+      "line": 1187,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", fake_popen)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1257,
+      "line": 1257,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", fake_popen)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1309,
+      "line": 1309,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", fake_popen)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1366,
+      "line": 1362,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "Path"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1445,
+      "line": 1445,
+      "source": "monkeypatch.setattr(Path, \"open\", counting_open)",
+      "category_disposition": "shared_Path_member_patch",
+      "disposition": "Mutates home/open/read_text on the same imported Path class object; no replacement of the facade or helper Path binding."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1535,
+      "line": 1535,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", fake_popen)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1796,
+      "line": 1792,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1871,
+      "line": 1867,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1916,
+      "line": 1912,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1974,
+      "line": 1970,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "datetime"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2004,
+      "line": 2004,
+      "source": "monkeypatch.setattr(daemon_manager_module, \"datetime\", FixedDateTime)",
+      "category_disposition": "unrelated_daemon_alias_replacement",
+      "disposition": "Replaces datetime only on daemon.manager, not store_base or a moved helper."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2059,
+      "line": 2055,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2112,
+      "line": 2108,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2171,
+      "line": 2167,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda command, **_kwargs: launched_commands.append(list(command)) or SimpleNamespace(),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2660,
+      "line": 2660,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", fake_popen)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2763,
+      "line": 2763,
+      "source": "monkeypatch.setattr(daemon_manager_module.subprocess, \"Popen\", lambda *_args, **_kwargs: process)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_daemon_manager.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2821,
+      "line": 2817,
+      "source": "monkeypatch.setattr(\n        daemon_manager_module.subprocess,\n        \"Popen\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError(\"must not overwrite a live pending launch\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_headless_daemon_api.py",
+      "aliases": [
+        "Path"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 2249,
+      "line": 2249,
+      "source": "monkeypatch.setattr(Path, \"home\", lambda: home)",
+      "category_disposition": "shared_Path_member_patch",
+      "disposition": "Mutates home/open/read_text on the same imported Path class object; no replacement of the facade or helper Path binding."
+    },
+    {
+      "path": "tests/test_guard_headless_daemon_api.py",
+      "aliases": [
+        "Path"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 3118,
+      "line": 3118,
+      "source": "monkeypatch.setattr(Path, \"home\", lambda: home)",
+      "category_disposition": "shared_Path_member_patch",
+      "disposition": "Mutates home/open/read_text on the same imported Path class object; no replacement of the facade or helper Path binding."
+    },
+    {
+      "path": "tests/test_guard_headless_daemon_api.py",
+      "aliases": [
+        "Path"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 3126,
+      "line": 3126,
+      "source": "monkeypatch.setattr(Path, \"read_text\", guarded_read_text)",
+      "category_disposition": "shared_Path_member_patch",
+      "disposition": "Mutates home/open/read_text on the same imported Path class object; no replacement of the facade or helper Path binding."
+    },
+    {
+      "path": "tests/test_guard_hook_process_runner.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 203,
+      "line": 203,
+      "source": "monkeypatch.setattr(subprocess, \"run\", fake_run)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_hook_process_runner.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 324,
+      "line": 324,
+      "source": "monkeypatch.setattr(subprocess, \"run\", failed_taskkill)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_oauth_device_connect.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1053,
+      "line": 1053,
+      "source": "monkeypatch.setattr(subprocess, \"run\", fail_on_keychain)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 431,
+      "line": 427,
+      "source": "monkeypatch.setattr(\n        guard_store_module.subprocess,\n        \"run\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError(\"security cli should not run\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 540,
+      "line": 540,
+      "source": "monkeypatch.setattr(guard_store_module.subprocess, \"run\", run_worker)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 559,
+      "line": 559,
+      "source": "monkeypatch.setattr(guard_store_module.subprocess, \"run\", time_out)",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "aliases": [
+        "subprocess"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 1064,
+      "line": 1060,
+      "source": "monkeypatch.setattr(\n        subprocess,\n        \"run\",\n        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError(\"builder invoked security\")),\n    )",
+      "category_disposition": "shared_subprocess_member_patch",
+      "disposition": "Mutates Popen/run on the same imported subprocess module object; no replacement of the facade or helper subprocess binding. Live runtime global access remains via the facade."
+    },
+    {
+      "path": "tests/test_guard_trust_cli_passive_backend.py",
+      "aliases": [
+        "datetime"
+      ],
+      "category": "patch_or_attribute_call",
+      "end_line": 273,
+      "line": 269,
+      "source": "monkeypatch.setattr(\n        GuardStore,\n        \"get_runtime_state\",\n        lambda self: {\"last_heartbeat_at\": datetime.now(timezone.utc).isoformat()},\n    )",
+      "category_disposition": "datetime_value_in_lambda",
+      "disposition": "Scanner sees datetime in the replacement lambda; the assigned attribute is GuardStore.get_runtime_state, not an annotation alias."
+    }
+  ],
+  "alias_categories": {
+    "original_late_TypeVar": 1,
+    "shared_subprocess_member_patch": 29,
+    "shared_Path_member_patch": 4,
+    "unrelated_daemon_alias_replacement": 1,
+    "datetime_value_in_lambda": 1
+  },
+  "supplemental_complete_matched_source_scan": [
+    {
+      "path": "scripts/ci/installed_extension_control_center_server.py",
+      "hits": [
+        {
+          "line": 31,
+          "text": "    package_file = Path(sys.modules[\"codex_plugin_scanner\"].__file__ or \"\").resolve(strict=True)"
+        }
+      ]
+    },
+    {
+      "path": "scripts/ci/installed_extension_control_probe.py",
+      "hits": [
+        {
+          "line": 27,
+          "text": "    package_file = Path(sys.modules[\"codex_plugin_scanner\"].__file__ or \"\").resolve(strict=True)"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store.py",
+      "hits": [
+        {
+          "line": 108,
+          "text": "__all__ = tuple(name for name in globals() if not (name.startswith(\"__\") and name.endswith(\"__\")))"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base.py",
+      "hits": [
+        {
+          "line": 476,
+          "text": "            return importlib.import_module(\"keyring\")"
+        },
+        {
+          "line": 1660,
+          "text": "_ChunkT = TypeVar(\"_ChunkT\")"
+        },
+        {
+          "line": 1717,
+          "text": "__all__ = tuple(name for name in globals() if not (name.startswith(\"__\") and name.endswith(\"__\")))"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "hits": [
+        {
+          "line": 59,
+          "text": "    store_module = sys.modules.get(\"codex_plugin_scanner.guard.store\")"
+        },
+        {
+          "line": 342,
+          "text": "        profiler = self.__dict__.get(\"_guard_sqlite_profiler\")"
+        },
+        {
+          "line": 345,
+          "text": "                profiler = self.__dict__.get(\"_guard_sqlite_profiler\")"
+        },
+        {
+          "line": 348,
+          "text": "                    self.__dict__[\"_guard_sqlite_profiler\"] = profiler"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_policy_integrity_runtime.py",
+      "hits": [
+        {
+          "line": 12,
+          "text": "    store_module = sys.modules.get(\"codex_plugin_scanner.guard.store\")"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_secret_policy_integrity.py",
+      "hits": [
+        {
+          "line": 17,
+          "text": "    store_module = sys.modules.get(\"codex_plugin_scanner.guard.store\")"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_extension_control_authority.py",
+      "hits": [
+        {
+          "line": 1110,
+          "text": "    checksum_v1 = cast(str, vars(authority_schema)[\"_SCHEMA_CHECKSUM_V1\"])"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_store_migrations.py",
+      "hits": [
+        {
+          "line": 177,
+          "text": "    error.__dict__[\"winerror\"] = 1312"
+        },
+        {
+          "line": 190,
+          "text": "        return real_import_module(name, *args, **kwargs)"
+        },
+        {
+          "line": 193,
+          "text": "    monkeypatch.delitem(sys.modules, \"keyring\", raising=False)"
+        },
+        {
+          "line": 238,
+          "text": "    error.__dict__[\"winerror\"] = 5"
+        },
+        {
+          "line": 383,
+          "text": "        return real_import_module(name, *args, **kwargs)"
+        },
+        {
+          "line": 386,
+          "text": "    monkeypatch.delitem(sys.modules, \"keyring\", raising=False)"
+        },
+        {
+          "line": 1493,
+          "text": "    monkeypatch.setitem(sys.modules, \"msvcrt\", fake_msvcrt)"
+        }
+      ]
+    }
+  ],
+  "supplemental_review": "The three store sys.modules compatibility helpers retrieve current store facade values and call them; they do not assign annotation names or perform class-oriented source extraction. Existing exports use globals only to compute __all__. The two installed-probe sys.modules references inspect the top-level package file. Remaining source hits are keyring import/test injection, instance dictionaries or unrelated checksum lookup.",
+  "formatted_source": {
+    "tree": "2d31cf00882a32114f608e050f6bfba0706b804f",
+    "files": [
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_chunks.py",
+        "git_blob": "22670f4ed82ab68970296e27fc4c8c5a6bf34763",
+        "sha256": "4b5d7e775bf7874b36175f38845898a44bce9abd1b5d0151e6ca7b361352182e"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_keyring.py",
+        "git_blob": "ee7b9a4a101ca79b32ee0c4f5bbd6bbad234cb9b",
+        "sha256": "32d729cfd418aea9566f73eb01507af8dc6181692b65c70cd491456f3cc05ffc"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_policy_matching.py",
+        "git_blob": "ec192164c6d42db63932c9c847e9e14c0253ad02",
+        "sha256": "1a948cd31fbac1887145182a621220232c0342d7977317d7c83c6834bf50cfec"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_secret_backends.py",
+        "git_blob": "27aff4beb937011a7059a59a1a197e3d3c92e65a",
+        "sha256": "5f6ec52d69b92268a378bc6921691b1415688d221d72b1e3a0d8647606cba224"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_secret_files.py",
+        "git_blob": "c1ae8da96b4b58b0e428a9303e4ae1b3596f7d73",
+        "sha256": "55a76208316f3ace3637acbd84f15b55589896323cc4c29db31f9a65cf0ef91e"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_values.py",
+        "git_blob": "b89899812eb2a33a90a0c122c540ccf7da4058e2",
+        "sha256": "6128a0fe1a5f2f9adc4da075a4df6b5bd708bc74cbc3384561c71199cdc7254f"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base.py",
+        "git_blob": "0be1b2c045220345cdc0b30b155392a81e5f6d25",
+        "sha256": "6a51f252001a7ba251457cc57ab4cd5db0d3e0b66ebbcf85484150aa3840aa0e"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/store_base_definition.py",
+        "git_blob": "3cfd8893b4302109bc1475f10563dc998fdbbc59",
+        "sha256": "99d044627d3b420a9efa3bd8f0681591086d6727704e158b12a777de67dd37db"
+      },
+      {
+        "path": "tests/test_guard_store_base_partition.py",
+        "git_blob": "8f13eb083fa3df58a25bfeefd0bed02faf686489",
+        "sha256": "14aad9de632579419324b4d8162017f8523a9e45b2bc0b5246c414044a2b2699"
+      }
+    ],
+    "packet_blob": "81969827c63f402f6b9e9139d2f5534a12615733",
+    "packet_sha256": "5d4df726423675d8086eacf02b7de5d2d24426c4e950a56c929e30837d36e425",
+    "inspection": "Metadata additions are only the identity-returning decorator's __module__ assignment and the new seam tests' explicit pickle/module/qualname/annotation witnesses, including fresh subprocess owner-first imports. There is no added class-oriented inspect.getsource call."
+  },
+  "bounded_conclusions": {
+    "class_source_inspection": "No direct class-oriented source-inspection consumer of a moved StoreBase class was found in the complete baseline tracked-Python census. The only two getsource calls both target unrelated functions. This resolves the prior missing whole-repository static witness for this snapshot.",
+    "annotation_alias_reassignment": "No get_type_hints/get_annotations/annotationlib consumer occurs in the baseline census. Its sole __annotations__ use is local PolicyBinding. All36 identified assignment/patch records were classified; none is a later store_base annotation alias replacement. This resolves the prior missing repository-consumer witness for this snapshot.",
+    "pickle": "The source partition retains original public module names without replacing function/class objects; original body, qualname, descriptor and closure proofs plus the actual generic pickle consumer remain relevant. New finite pickle/type-hint/loader-ID/lock/cold-import witnesses still require execution."
+  },
+  "remaining_limits": [
+    "Preserving a moved class __module__ does not preserve inspect.getsource(Class) lookup against its original facade file; this source-location consequence still exists for a new dynamic or external consumer.",
+    "Imported helper annotation aliases initially bind original objects. A later external rebind of an annotation-only facade name is not automatically forwarded into a helper globals dictionary; no such required consumer was found in the reviewed immutable source.",
+    "This is a complete tracked-Python source census at44353, not proof about untracked files, installed third-party code, constructed dynamic name strings, arbitrary monkeypatches, non-Python external consumers or future changes.",
+    "The nine proposed formatted files are checked separately; another combined final tree needs its own identity bridge for any additional consumer changes.",
+    "No Python runtime, source inverse checker, linter, type checker or finite test execution is claimed by this disposition. Prior formatting evidence is separately source-bound."
+  ],
+  "source_review_ready_for_fresh_validation": true,
+  "runtime_qualification_complete": false,
+  "refs_changed": false
+}

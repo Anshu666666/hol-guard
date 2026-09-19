@@ -1,0 +1,256 @@
+{
+  "schema": "pr2974-store-base-source-candidate.v2",
+  "status": "unexecuted source-only candidate",
+  "base_commit": "44353b20262f1ca56b56204f4c764b047710454f",
+  "base_tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+  "expected_tree": "7cfa09b72e614a544250541cd972cb1590f6164b",
+  "original_path": "src/codex_plugin_scanner/guard/store_base.py",
+  "original_blob": "fc32c5f936d9fb63b3e3086d4751b2c77a8f5d58",
+  "original_sha256": "b9e65beb32cb567bbd8ff11582648e2c4d6dc63770f99cb28f61751359ff088f",
+  "groups": [
+    {
+      "module": "store_base_chunks",
+      "members": [
+        "_chunks"
+      ],
+      "annotation_aliases": [
+        "Iterator",
+        "Sequence",
+        "_ChunkT"
+      ]
+    },
+    {
+      "module": "store_base_keyring",
+      "members": [
+        "SystemKeyringSecretStore"
+      ],
+      "annotation_aliases": [
+        "Path",
+        "subprocess"
+      ]
+    },
+    {
+      "module": "store_base_policy_matching",
+      "members": [
+        "_path_within_workspace",
+        "_normalized_workspace_path",
+        "_workspace_policy_key",
+        "_stored_workspace_policy_key",
+        "_validate_scoped_policy_artifact_target",
+        "_runtime_scoped_exact_match_key",
+        "_global_runtime_scoped_exact_match_key",
+        "runtime_tool_action_policy_artifact_id",
+        "runtime_tool_action_exact_match_context",
+        "runtime_tool_action_portable_match_context",
+        "browser_mcp_exact_match_context",
+        "_is_runtime_scoped_exact_match_key",
+        "_is_approval_context_token",
+        "_scoped_runtime_row_requires_exact_match",
+        "_warn_only_policy_integrity_status",
+        "_policy_integrity_ready_for_local_write",
+        "_policy_integrity_setup_safe_for_local_write",
+        "_family_key_value"
+      ],
+      "annotation_aliases": [
+        "Mapping",
+        "Sequence"
+      ]
+    },
+    {
+      "module": "store_base_secret_backends",
+      "members": [
+        "FallbackSecretStore",
+        "MigratingFallbackSecretStore",
+        "_system_keyring_availability_cache_path",
+        "_read_system_keyring_availability_cache",
+        "_write_system_keyring_availability_cache",
+        "_system_keyring_is_available",
+        "_build_oauth_secret_store",
+        "_build_policy_integrity_secret_store",
+        "_secret_store_backend_name",
+        "_secret_store_fallback_backend_name"
+      ],
+      "annotation_aliases": [
+        "Path",
+        "SecretStore"
+      ]
+    },
+    {
+      "module": "store_base_secret_files",
+      "members": [
+        "_acquire_advisory_file_lock",
+        "_release_advisory_file_lock",
+        "EncryptedFileSecretStore",
+        "UnavailableSecretStore",
+        "_expand_keystream",
+        "_set_private_mode"
+      ],
+      "annotation_aliases": [
+        "Fernet",
+        "Path"
+      ]
+    },
+    {
+      "module": "store_base_values",
+      "members": [
+        "_is_approval_gate_one_shot_policy",
+        "_normalize_source_name",
+        "_oauth_sync_url_from_issuer",
+        "_allowed_origin_from_sync_url",
+        "_secret_fingerprint",
+        "_legacy_secret_fingerprint",
+        "_legacy_secret_sha256",
+        "_secret_matches_hash",
+        "_should_warn_on_slow_store_transactions",
+        "receipt_index_statements",
+        "_row_mapping",
+        "_string_value",
+        "_int_value",
+        "_mapping_int",
+        "_parse_utc_timestamp",
+        "_canonical_utc_timestamp",
+        "_timestamp_has_expired",
+        "_now",
+        "_lease_expiry",
+        "_string_list",
+        "_transport_value"
+      ],
+      "annotation_aliases": [
+        "Mapping",
+        "TransportKind",
+        "datetime",
+        "sqlite3"
+      ]
+    }
+  ],
+  "files": {
+    "src/codex_plugin_scanner/guard/store_base_chunks.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 525,
+      "physical_lines": 15,
+      "sha256": "4b5d7e775bf7874b36175f38845898a44bce9abd1b5d0151e6ca7b361352182e",
+      "sha": "22670f4ed82ab68970296e27fc4c8c5a6bf34763"
+    },
+    "src/codex_plugin_scanner/guard/store_base_keyring.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 18907,
+      "physical_lines": 481,
+      "sha256": "d9272acdae7c39e91f54add3d4a78d54bcf8f6a216707e9ad4c788e0bfd776f8",
+      "sha": "33acb6dc89315d4fd1a0b2da63b94635802fc436"
+    },
+    "src/codex_plugin_scanner/guard/store_base_policy_matching.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 11695,
+      "physical_lines": 312,
+      "sha256": "1a948cd31fbac1887145182a621220232c0342d7977317d7c83c6834bf50cfec",
+      "sha": "ec192164c6d42db63932c9c847e9e14c0253ad02"
+    },
+    "src/codex_plugin_scanner/guard/store_base_secret_backends.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 8840,
+      "physical_lines": 243,
+      "sha256": "5f6ec52d69b92268a378bc6921691b1415688d221d72b1e3a0d8647606cba224",
+      "sha": "27aff4beb937011a7059a59a1a197e3d3c92e65a"
+    },
+    "src/codex_plugin_scanner/guard/store_base_secret_files.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 10350,
+      "physical_lines": 282,
+      "sha256": "55a76208316f3ace3637acbd84f15b55589896323cc4c29db31f9a65cf0ef91e",
+      "sha": "c1ae8da96b4b58b0e428a9303e4ae1b3596f7d73"
+    },
+    "src/codex_plugin_scanner/guard/store_base_values.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 6479,
+      "physical_lines": 192,
+      "sha256": "6128a0fe1a5f2f9adc4da075a4df6b5bd708bc74cbc3384561c71199cdc7254f",
+      "sha": "b89899812eb2a33a90a0c122c540ccf7da4058e2"
+    },
+    "src/codex_plugin_scanner/guard/store_base.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 15447,
+      "physical_lines": 441,
+      "sha256": "6a51f252001a7ba251457cc57ab4cd5db0d3e0b66ebbcf85484150aa3840aa0e",
+      "sha": "0be1b2c045220345cdc0b30b155392a81e5f6d25"
+    },
+    "src/codex_plugin_scanner/guard/store_base_definition.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 523,
+      "physical_lines": 18,
+      "sha256": "99d044627d3b420a9efa3bd8f0681591086d6727704e158b12a777de67dd37db",
+      "sha": "3cfd8893b4302109bc1475f10563dc998fdbbc59"
+    },
+    "tests/test_guard_store_base_partition.py": {
+      "mode": "100644",
+      "type": "blob",
+      "bytes": 14160,
+      "physical_lines": 335,
+      "sha256": "3a51c1ba675bb1c0998729bfe359f6503cbe31e19e1bfa5765843843d299ddc6",
+      "sha": "1cd676e38e90f5fa9e803209caabce3b53a17ebe"
+    }
+  },
+  "actual_source_preparation": {
+    "baseline_AST_dumps_and_symbols": "Actual CPython3.13 source-only inventory SHA25696c476d3916375e1e0558a1474a6fe2e50b9a0e56b2d1bc6d262286f897489fb",
+    "script_runtime": "JavaScript functions execution only",
+    "exact_edit_inverse_verified_for_all57_original_top_definitions": true,
+    "AST_global_load_inventory_matches201_source_prefix_edits": true,
+    "metadata_decorators117": true,
+    "eager_aliases_available_at_each_original_facade_import_slot": true,
+    "metadata_body_changes_only_original_object_module": true,
+    "nonfuture_static_exports": 256,
+    "future_annotations_binding_also_retained": true,
+    "helper_definition_bytes_exact_to_728": true,
+    "helper_definitions_precede_facade_and_annotation_imports": true,
+    "exact_import_movement_inverse_verified_in_javascript": true,
+    "cold_import_case_design": {
+      "cases": 6,
+      "owners": [
+        "store_base_chunks",
+        "store_base_keyring",
+        "store_base_policy_matching",
+        "store_base_secret_backends",
+        "store_base_secret_files",
+        "store_base_values"
+      ],
+      "parent_imports": "Actual package imports; no package shell or sys.modules deletion",
+      "precondition": "Both facade and selected helper absent from sys.modules immediately before selected helper import",
+      "execution": false
+    }
+  },
+  "pending": [
+    "Python syntax/AST source-checker execution",
+    "Ruff formatting/lint and changed-source retention",
+    "Types",
+    "Fresh baseline/candidate import, metadata, descriptor, pickle, type-hint and namespace witnesses",
+    "Thirteen source-derived candidate-only seam cases (seven original plus six cold-helper cases) and scoped existing tests",
+    "Independent peer of this exact source freeze"
+  ],
+  "material_introspection_limits": [
+    "Moved code objects retain their names, qualnames, docs, raw annotations and closures; their source filenames and line positions relocate.",
+    "Class-oriented inspect.getsource can resolve the old facade file through preserved __module__ and may fail for moved class bodies. No exact immutable full-tree consumer search proves absence; this remains an explicit compatibility review point.",
+    "Annotation-only aliases preserve original spelling and initially identical objects. A later reassignment of a facade annotation-only alias would not automatically rebind the helper annotation namespace; no such actual consumer has been established.",
+    "Some later helper definitions are created on the first staged import; all required eager aliases/defaults/bases are separately checked and no later export becomes visible in the facade early."
+  ],
+  "retained_prior_draft_commit": "2edb150a190fb8241efcbf63172cfd6e73c362dc",
+  "source_refinement": "Keep only the identity decorator import before helper declarations; move each existing facade and annotation import block below every definition. Function/class/default/decorator/annotation bodies are byte-exact to728. Add six cold-helper cases while preserving the original seven seam test bodies.",
+  "candidate_commit": "14252412cb131593b98e6f1fd951ff2c47b903b6",
+  "retained_prior_draft_commits": [
+    "2edb150a190fb8241efcbf63172cfd6e73c362dc",
+    "728ae9dc1c1e96477f3fcf6c16f555dbd22ebec8"
+  ],
+  "retained_unrun_formatter_commit": "bfe87edfc430d222e6504a160ad1f86722f13165",
+  "source_peer_binding": {
+    "prior_source_commit": "728ae9dc1c1e96477f3fcf6c16f555dbd22ebec8",
+    "receipt_blob": "5cc1e9fe6192e8d651be93aacc1604ac46c019bf",
+    "receipt_sha256": "9f21db9555e480283fc443414a3e3fab3d453b06633c8d3b73b1a3b75e0351a8",
+    "scope": "All57 reconstructed definition bodies cleared; prior source held for helper-first cycle. This successor import/test/checker delta awaits independent refresh."
+  }
+}

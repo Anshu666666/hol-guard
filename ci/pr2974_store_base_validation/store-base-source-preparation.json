@@ -1,0 +1,5197 @@
+{
+  "schema": "pr2974-store-base-source-preparation.v2",
+  "commit": "14252412cb131593b98e6f1fd951ff2c47b903b6",
+  "parent": "44353b20262f1ca56b56204f4c764b047710454f",
+  "tree": "7cfa09b72e614a544250541cd972cb1590f6164b",
+  "files_exact": true,
+  "all_leaves_exact": true,
+  "ref_changed": false,
+  "executed": false,
+  "source_runtime": "JavaScript only; baseline source inventory was independently executed earlier under CPython3.13",
+  "original_binding": {
+    "blob": "fc32c5f936d9fb63b3e3086d4751b2c77a8f5d58",
+    "sha256": "b9e65beb32cb567bbd8ff11582648e2c4d6dc63770f99cb28f61751359ff088f",
+    "physical_lines": 1717,
+    "base_commit": "cb18d4dfd1c76049357bed127f2b4895a5335bfa",
+    "base_tree": "7c8fefc82a974e274c21da05bbbccdeb21e521c0",
+    "root_blob_binding": "Root independently reconstructed all public tree entries and five overlays; exact mode100644/blob bound in message."
+  },
+  "ast_global_counts": {
+    "original_ast_source": "cached actual Python3.13 full AST dumps and scope symbols",
+    "expected_counts": {
+      "top.SystemKeyringSecretStore._load_keyring_module|SystemKeyringSecretStore": 1,
+      "top.SystemKeyringSecretStore._load_keyring_module|importlib": 1,
+      "top.SystemKeyringSecretStore._load_keyring_module_or_none|_store_logger": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module|os": 2,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._store_path|Path": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._load|json": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._persist|json": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_path|SystemKeyringSecretStore": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_path|Path": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|sys": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|Path": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|subprocess": 1,
+      "top.SystemKeyringSecretStore._macos_user_keychain_paths|Path": 1,
+      "top.SystemKeyringSecretStore._normalized_macos_keychain_path|os": 2,
+      "top.SystemKeyringSecretStore._macos_default_keychain_is_usable|sys": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_is_usable|time": 1,
+      "top.SystemKeyringSecretStore._is_available|sys": 1,
+      "top.SystemKeyringSecretStore._is_windows_keyring_session_unavailable|sys": 1,
+      "top.SystemKeyringSecretStore._mark_windows_keyring_unavailable|_store_logger": 1,
+      "top.SystemKeyringSecretStore._supports_native_macos_security_reads|sys": 1,
+      "top.SystemKeyringSecretStore._get_secret_without_macos_ui|suppress": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|os": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|subprocess": 3,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|sys": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|json": 2,
+      "top.SystemKeyringSecretStore.get_secret_with_timeout|sys": 2,
+      "top.SystemKeyringSecretStore.get_secret_with_timeout|_POLICY_INTEGRITY_SERVICE_NAME": 1,
+      "top._path_within_workspace|_normalized_workspace_path": 2,
+      "top._workspace_policy_key|_normalized_workspace_path": 1,
+      "top._workspace_policy_key|sha256": 1,
+      "top._workspace_policy_key|_WORKSPACE_POLICY_KEY_PREFIX": 1,
+      "top._stored_workspace_policy_key|_WORKSPACE_POLICY_KEY_PREFIX": 1,
+      "top._stored_workspace_policy_key|_workspace_policy_key": 1,
+      "top._validate_scoped_policy_artifact_target|_SCOPED_HARNESS_FAMILIES": 1,
+      "top._runtime_scoped_exact_match_key|_artifact_family_key": 1,
+      "top._runtime_scoped_exact_match_key|_family_key_value": 1,
+      "top._runtime_scoped_exact_match_key|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._runtime_scoped_exact_match_key|sha256": 2,
+      "top._runtime_scoped_exact_match_key|json": 1,
+      "top._runtime_scoped_exact_match_key|_RUNTIME_SCOPED_EXACT_MATCH_PREFIX": 1,
+      "top._global_runtime_scoped_exact_match_key|_artifact_family_key": 1,
+      "top._global_runtime_scoped_exact_match_key|_family_key_value": 2,
+      "top._global_runtime_scoped_exact_match_key|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._global_runtime_scoped_exact_match_key|_runtime_scoped_exact_match_key": 1,
+      "top.runtime_tool_action_policy_artifact_id|_artifact_family_key": 1,
+      "top.runtime_tool_action_policy_artifact_id|_family_key_value": 1,
+      "top.runtime_tool_action_policy_artifact_id|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top.runtime_tool_action_policy_artifact_id|sha256": 1,
+      "top.runtime_tool_action_exact_match_context|Path": 1,
+      "top.runtime_tool_action_exact_match_context|json": 1,
+      "top.runtime_tool_action_portable_match_context|json": 1,
+      "top.runtime_tool_action_portable_match_context|Mapping": 1,
+      "top.runtime_tool_action_portable_match_context|Sequence": 1,
+      "top.runtime_tool_action_portable_match_context|runtime_tool_action_exact_match_context": 1,
+      "top.browser_mcp_exact_match_context|json": 1,
+      "top._is_runtime_scoped_exact_match_key|_RUNTIME_SCOPED_EXACT_MATCH_PREFIX": 1,
+      "top._is_approval_context_token|parse_approval_context_token": 1,
+      "top._scoped_runtime_row_requires_exact_match|REMOTE_POLICY_SOURCES": 1,
+      "top._scoped_runtime_row_requires_exact_match|_artifact_family_key": 1,
+      "top._scoped_runtime_row_requires_exact_match|_family_key_value": 1,
+      "top._scoped_runtime_row_requires_exact_match|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._scoped_runtime_row_requires_exact_match|_is_approval_context_token": 1,
+      "top._scoped_runtime_row_requires_exact_match|_runtime_scoped_exact_match_key": 1,
+      "top._policy_integrity_ready_for_local_write|Mapping": 2,
+      "top._policy_integrity_ready_for_local_write|_POLICY_INTEGRITY_STATUSES": 1,
+      "top._policy_integrity_setup_safe_for_local_write|Mapping": 1,
+      "top._policy_integrity_setup_safe_for_local_write|_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES": 1,
+      "top.FallbackSecretStore.delete_secret|_store_logger": 1,
+      "top.MigratingFallbackSecretStore.set_secret|suppress": 1,
+      "top.MigratingFallbackSecretStore._get_secret_and_migrate|SystemKeyringSecretStore": 1,
+      "top._system_keyring_availability_cache_path|_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE": 1,
+      "top._read_system_keyring_availability_cache|sys": 1,
+      "top._read_system_keyring_availability_cache|_system_keyring_availability_cache_path": 1,
+      "top._read_system_keyring_availability_cache|json": 2,
+      "top._read_system_keyring_availability_cache|time": 1,
+      "top._read_system_keyring_availability_cache|_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS": 1,
+      "top._write_system_keyring_availability_cache|sys": 1,
+      "top._write_system_keyring_availability_cache|_system_keyring_availability_cache_path": 1,
+      "top._write_system_keyring_availability_cache|uuid4": 1,
+      "top._write_system_keyring_availability_cache|time": 1,
+      "top._write_system_keyring_availability_cache|json": 1,
+      "top._write_system_keyring_availability_cache|_set_private_mode": 1,
+      "top._write_system_keyring_availability_cache|_GUARD_STORE_PRIVATE_FILE_MODE": 1,
+      "top._write_system_keyring_availability_cache|suppress": 1,
+      "top._system_keyring_is_available|_read_system_keyring_availability_cache": 1,
+      "top._system_keyring_is_available|sys": 1,
+      "top._system_keyring_is_available|SystemKeyringSecretStore": 2,
+      "top._system_keyring_is_available|_write_system_keyring_availability_cache": 1,
+      "top._build_oauth_secret_store|EncryptedFileSecretStore": 1,
+      "top._build_oauth_secret_store|sys": 1,
+      "top._build_oauth_secret_store|MigratingFallbackSecretStore": 1,
+      "top._build_oauth_secret_store|SystemKeyringSecretStore": 2,
+      "top._build_oauth_secret_store|_system_keyring_is_available": 1,
+      "top._build_oauth_secret_store|FallbackSecretStore": 1,
+      "top._build_policy_integrity_secret_store|sys": 1,
+      "top._build_policy_integrity_secret_store|EncryptedFileSecretStore": 1,
+      "top._build_policy_integrity_secret_store|SystemKeyringSecretStore": 7,
+      "top._build_policy_integrity_secret_store|MigratingFallbackSecretStore": 2,
+      "top._build_policy_integrity_secret_store|_POLICY_INTEGRITY_SERVICE_NAME": 3,
+      "top._secret_store_backend_name|SystemKeyringSecretStore": 1,
+      "top._secret_store_backend_name|EncryptedFileSecretStore": 1,
+      "top._secret_store_backend_name|UnavailableSecretStore": 1,
+      "top._secret_store_backend_name|FallbackSecretStore": 1,
+      "top._secret_store_backend_name|_secret_store_backend_name": 1,
+      "top._secret_store_fallback_backend_name|FallbackSecretStore": 1,
+      "top._secret_store_fallback_backend_name|_secret_store_backend_name": 1,
+      "top._acquire_advisory_file_lock|os": 1,
+      "top._release_advisory_file_lock|os": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|os": 5,
+      "top.EncryptedFileSecretStore._ensure_ready|_ENCRYPTED_SECRET_INIT_LOCKS_GUARD": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|_ENCRYPTED_SECRET_INIT_LOCKS": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|threading": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|time": 3,
+      "top.EncryptedFileSecretStore._ensure_ready|_acquire_advisory_file_lock": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|Fernet": 2,
+      "top.EncryptedFileSecretStore._ensure_ready|_release_advisory_file_lock": 1,
+      "top.EncryptedFileSecretStore.set_secret|json": 1,
+      "top.EncryptedFileSecretStore.get_secret|json": 2,
+      "top.EncryptedFileSecretStore._load_fernet_key|base64": 3,
+      "top.EncryptedFileSecretStore._atomic_write_bytes|uuid4": 1,
+      "top.EncryptedFileSecretStore._atomic_write_bytes|os": 3,
+      "top.EncryptedFileSecretStore._decrypt_fernet|InvalidToken": 1,
+      "top.EncryptedFileSecretStore._decrypt_legacy_payload|base64": 3,
+      "top.EncryptedFileSecretStore._decrypt_legacy_payload|_expand_keystream": 1,
+      "top.UnavailableSecretStore.__init__|EncryptedFileSecretStore": 1,
+      "top.UnavailableSecretStore.delete_secret|suppress": 1,
+      "top._expand_keystream|sha256": 1,
+      "top._set_private_mode|os": 2,
+      "top._set_private_mode|_store_logger": 1,
+      "top._is_approval_gate_one_shot_policy|_APPROVAL_GATE_POLICY_SOURCE": 1,
+      "top._normalize_source_name|_SOURCE_NAME_PATTERN": 1,
+      "top._oauth_sync_url_from_issuer|resolve_guard_oauth_client_config": 1,
+      "top._allowed_origin_from_sync_url|urlparse": 1,
+      "top._secret_fingerprint|scrypt": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_SALT": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_N": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_R": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_P": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_DKLEN": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._legacy_secret_fingerprint|pbkdf2_hmac": 1,
+      "top._legacy_secret_fingerprint|_SECRET_FINGERPRINT_SALT": 1,
+      "top._legacy_secret_fingerprint|_SECRET_FINGERPRINT_ITERATIONS": 1,
+      "top._legacy_secret_fingerprint|_LEGACY_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._legacy_secret_sha256|sha256": 1,
+      "top._secret_matches_hash|_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._secret_matches_hash|_secret_fingerprint": 1,
+      "top._secret_matches_hash|_LEGACY_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._secret_matches_hash|_legacy_secret_fingerprint": 1,
+      "top._secret_matches_hash|_legacy_secret_sha256": 1,
+      "top._should_warn_on_slow_store_transactions|os": 1,
+      "top._should_warn_on_slow_store_transactions|_SLOW_STORE_WARNING_ENV": 1,
+      "top._mapping_int|_int_value": 1,
+      "top._parse_utc_timestamp|datetime": 1,
+      "top._parse_utc_timestamp|timezone": 2,
+      "top._canonical_utc_timestamp|_parse_utc_timestamp": 1,
+      "top._timestamp_has_expired|_parse_utc_timestamp": 2,
+      "top._now|_canonical_utc_timestamp": 1,
+      "top._now|datetime": 1,
+      "top._now|timezone": 1,
+      "top._lease_expiry|datetime": 1,
+      "top._lease_expiry|timedelta": 1
+    },
+    "actual_source_edit_counts": {
+      "top._is_approval_gate_one_shot_policy|_APPROVAL_GATE_POLICY_SOURCE": 1,
+      "top._normalize_source_name|_SOURCE_NAME_PATTERN": 1,
+      "top._oauth_sync_url_from_issuer|resolve_guard_oauth_client_config": 1,
+      "top._allowed_origin_from_sync_url|urlparse": 1,
+      "top._secret_fingerprint|scrypt": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_SALT": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_N": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_R": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_P": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_DKLEN": 1,
+      "top._secret_fingerprint|_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._legacy_secret_fingerprint|pbkdf2_hmac": 1,
+      "top._legacy_secret_fingerprint|_SECRET_FINGERPRINT_SALT": 1,
+      "top._legacy_secret_fingerprint|_SECRET_FINGERPRINT_ITERATIONS": 1,
+      "top._legacy_secret_fingerprint|_LEGACY_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._legacy_secret_sha256|sha256": 1,
+      "top._secret_matches_hash|_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._secret_matches_hash|_secret_fingerprint": 1,
+      "top._secret_matches_hash|_LEGACY_SECRET_FINGERPRINT_PREFIX": 1,
+      "top._secret_matches_hash|_legacy_secret_fingerprint": 1,
+      "top._secret_matches_hash|_legacy_secret_sha256": 1,
+      "top._acquire_advisory_file_lock|os": 1,
+      "top._release_advisory_file_lock|os": 1,
+      "top.SystemKeyringSecretStore._load_keyring_module|SystemKeyringSecretStore": 1,
+      "top.SystemKeyringSecretStore._load_keyring_module|importlib": 1,
+      "top.SystemKeyringSecretStore._load_keyring_module_or_none|_store_logger": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module|os": 2,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._store_path|Path": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._load|json": 1,
+      "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._persist|json": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_path|SystemKeyringSecretStore": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_path|Path": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|sys": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|Path": 1,
+      "top.SystemKeyringSecretStore._run_macos_security_command|subprocess": 1,
+      "top.SystemKeyringSecretStore._macos_user_keychain_paths|Path": 1,
+      "top.SystemKeyringSecretStore._normalized_macos_keychain_path|os": 2,
+      "top.SystemKeyringSecretStore._macos_default_keychain_is_usable|sys": 1,
+      "top.SystemKeyringSecretStore._macos_default_keychain_is_usable|time": 1,
+      "top.SystemKeyringSecretStore._is_available|sys": 1,
+      "top.SystemKeyringSecretStore._is_windows_keyring_session_unavailable|sys": 1,
+      "top.SystemKeyringSecretStore._mark_windows_keyring_unavailable|_store_logger": 1,
+      "top.SystemKeyringSecretStore._supports_native_macos_security_reads|sys": 1,
+      "top.SystemKeyringSecretStore._get_secret_without_macos_ui|suppress": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|os": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|subprocess": 3,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|sys": 1,
+      "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process|json": 2,
+      "top.SystemKeyringSecretStore.get_secret_with_timeout|sys": 2,
+      "top.SystemKeyringSecretStore.get_secret_with_timeout|_POLICY_INTEGRITY_SERVICE_NAME": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|os": 5,
+      "top.EncryptedFileSecretStore._ensure_ready|_ENCRYPTED_SECRET_INIT_LOCKS_GUARD": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|_ENCRYPTED_SECRET_INIT_LOCKS": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|threading": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|time": 3,
+      "top.EncryptedFileSecretStore._ensure_ready|_acquire_advisory_file_lock": 1,
+      "top.EncryptedFileSecretStore._ensure_ready|Fernet": 2,
+      "top.EncryptedFileSecretStore._ensure_ready|_release_advisory_file_lock": 1,
+      "top.EncryptedFileSecretStore.set_secret|json": 1,
+      "top.EncryptedFileSecretStore.get_secret|json": 2,
+      "top.EncryptedFileSecretStore._load_fernet_key|base64": 3,
+      "top.EncryptedFileSecretStore._atomic_write_bytes|uuid4": 1,
+      "top.EncryptedFileSecretStore._atomic_write_bytes|os": 3,
+      "top.EncryptedFileSecretStore._decrypt_fernet|InvalidToken": 1,
+      "top.EncryptedFileSecretStore._decrypt_legacy_payload|base64": 3,
+      "top.EncryptedFileSecretStore._decrypt_legacy_payload|_expand_keystream": 1,
+      "top.UnavailableSecretStore.__init__|EncryptedFileSecretStore": 1,
+      "top.UnavailableSecretStore.delete_secret|suppress": 1,
+      "top.FallbackSecretStore.delete_secret|_store_logger": 1,
+      "top.MigratingFallbackSecretStore.set_secret|suppress": 1,
+      "top.MigratingFallbackSecretStore._get_secret_and_migrate|SystemKeyringSecretStore": 1,
+      "top._expand_keystream|sha256": 1,
+      "top._set_private_mode|os": 2,
+      "top._set_private_mode|_store_logger": 1,
+      "top._system_keyring_availability_cache_path|_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE": 1,
+      "top._read_system_keyring_availability_cache|sys": 1,
+      "top._read_system_keyring_availability_cache|_system_keyring_availability_cache_path": 1,
+      "top._read_system_keyring_availability_cache|json": 2,
+      "top._read_system_keyring_availability_cache|time": 1,
+      "top._read_system_keyring_availability_cache|_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS": 1,
+      "top._write_system_keyring_availability_cache|sys": 1,
+      "top._write_system_keyring_availability_cache|_system_keyring_availability_cache_path": 1,
+      "top._write_system_keyring_availability_cache|uuid4": 1,
+      "top._write_system_keyring_availability_cache|time": 1,
+      "top._write_system_keyring_availability_cache|json": 1,
+      "top._write_system_keyring_availability_cache|_set_private_mode": 1,
+      "top._write_system_keyring_availability_cache|_GUARD_STORE_PRIVATE_FILE_MODE": 1,
+      "top._write_system_keyring_availability_cache|suppress": 1,
+      "top._system_keyring_is_available|_read_system_keyring_availability_cache": 1,
+      "top._system_keyring_is_available|sys": 1,
+      "top._system_keyring_is_available|SystemKeyringSecretStore": 2,
+      "top._system_keyring_is_available|_write_system_keyring_availability_cache": 1,
+      "top._build_oauth_secret_store|EncryptedFileSecretStore": 1,
+      "top._build_oauth_secret_store|sys": 1,
+      "top._build_oauth_secret_store|MigratingFallbackSecretStore": 1,
+      "top._build_oauth_secret_store|SystemKeyringSecretStore": 2,
+      "top._build_oauth_secret_store|_system_keyring_is_available": 1,
+      "top._build_oauth_secret_store|FallbackSecretStore": 1,
+      "top._build_policy_integrity_secret_store|sys": 1,
+      "top._build_policy_integrity_secret_store|EncryptedFileSecretStore": 1,
+      "top._build_policy_integrity_secret_store|SystemKeyringSecretStore": 7,
+      "top._build_policy_integrity_secret_store|MigratingFallbackSecretStore": 2,
+      "top._build_policy_integrity_secret_store|_POLICY_INTEGRITY_SERVICE_NAME": 3,
+      "top._secret_store_backend_name|SystemKeyringSecretStore": 1,
+      "top._secret_store_backend_name|EncryptedFileSecretStore": 1,
+      "top._secret_store_backend_name|UnavailableSecretStore": 1,
+      "top._secret_store_backend_name|FallbackSecretStore": 1,
+      "top._secret_store_backend_name|_secret_store_backend_name": 1,
+      "top._secret_store_fallback_backend_name|FallbackSecretStore": 1,
+      "top._secret_store_fallback_backend_name|_secret_store_backend_name": 1,
+      "top._should_warn_on_slow_store_transactions|os": 1,
+      "top._should_warn_on_slow_store_transactions|_SLOW_STORE_WARNING_ENV": 1,
+      "top._path_within_workspace|_normalized_workspace_path": 2,
+      "top._workspace_policy_key|_normalized_workspace_path": 1,
+      "top._workspace_policy_key|sha256": 1,
+      "top._workspace_policy_key|_WORKSPACE_POLICY_KEY_PREFIX": 1,
+      "top._stored_workspace_policy_key|_WORKSPACE_POLICY_KEY_PREFIX": 1,
+      "top._stored_workspace_policy_key|_workspace_policy_key": 1,
+      "top._validate_scoped_policy_artifact_target|_SCOPED_HARNESS_FAMILIES": 1,
+      "top._runtime_scoped_exact_match_key|_artifact_family_key": 1,
+      "top._runtime_scoped_exact_match_key|_family_key_value": 1,
+      "top._runtime_scoped_exact_match_key|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._runtime_scoped_exact_match_key|sha256": 2,
+      "top._runtime_scoped_exact_match_key|json": 1,
+      "top._runtime_scoped_exact_match_key|_RUNTIME_SCOPED_EXACT_MATCH_PREFIX": 1,
+      "top._global_runtime_scoped_exact_match_key|_artifact_family_key": 1,
+      "top._global_runtime_scoped_exact_match_key|_family_key_value": 2,
+      "top._global_runtime_scoped_exact_match_key|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._global_runtime_scoped_exact_match_key|_runtime_scoped_exact_match_key": 1,
+      "top.runtime_tool_action_policy_artifact_id|_artifact_family_key": 1,
+      "top.runtime_tool_action_policy_artifact_id|_family_key_value": 1,
+      "top.runtime_tool_action_policy_artifact_id|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top.runtime_tool_action_policy_artifact_id|sha256": 1,
+      "top.runtime_tool_action_exact_match_context|Path": 1,
+      "top.runtime_tool_action_exact_match_context|json": 1,
+      "top.runtime_tool_action_portable_match_context|json": 1,
+      "top.runtime_tool_action_portable_match_context|Mapping": 1,
+      "top.runtime_tool_action_portable_match_context|Sequence": 1,
+      "top.runtime_tool_action_portable_match_context|runtime_tool_action_exact_match_context": 1,
+      "top.browser_mcp_exact_match_context|json": 1,
+      "top._is_runtime_scoped_exact_match_key|_RUNTIME_SCOPED_EXACT_MATCH_PREFIX": 1,
+      "top._is_approval_context_token|parse_approval_context_token": 1,
+      "top._scoped_runtime_row_requires_exact_match|REMOTE_POLICY_SOURCES": 1,
+      "top._scoped_runtime_row_requires_exact_match|_artifact_family_key": 1,
+      "top._scoped_runtime_row_requires_exact_match|_family_key_value": 1,
+      "top._scoped_runtime_row_requires_exact_match|_SCOPED_RUNTIME_EXACT_FAMILIES": 1,
+      "top._scoped_runtime_row_requires_exact_match|_is_approval_context_token": 1,
+      "top._scoped_runtime_row_requires_exact_match|_runtime_scoped_exact_match_key": 1,
+      "top._policy_integrity_ready_for_local_write|Mapping": 2,
+      "top._policy_integrity_ready_for_local_write|_POLICY_INTEGRITY_STATUSES": 1,
+      "top._policy_integrity_setup_safe_for_local_write|Mapping": 1,
+      "top._policy_integrity_setup_safe_for_local_write|_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES": 1,
+      "top._mapping_int|_int_value": 1,
+      "top._parse_utc_timestamp|datetime": 1,
+      "top._parse_utc_timestamp|timezone": 2,
+      "top._canonical_utc_timestamp|_parse_utc_timestamp": 1,
+      "top._timestamp_has_expired|_parse_utc_timestamp": 2,
+      "top._now|_canonical_utc_timestamp": 1,
+      "top._now|datetime": 1,
+      "top._now|timezone": 1,
+      "top._lease_expiry|datetime": 1,
+      "top._lease_expiry|timedelta": 1
+    },
+    "differences": [],
+    "expected_total": 201,
+    "actual_total": 201
+  },
+  "eager_checks": {
+    "source": "actual baseline AST dumps, ordered binding inventory and candidate alias map",
+    "eager": [
+      {
+        "module": "store_base_chunks",
+        "aliases": [
+          "Iterator",
+          "Sequence",
+          "_ChunkT"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [],
+        "literal_defaults": [],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS",
+          "_is_approval_gate_one_shot_policy",
+          "_DEVICE_ROW_KEY",
+          "_MAX_RESOLVED_SCOPE_IDS",
+          "_SQLITE_ID_BATCH_SIZE",
+          "_WORKSPACE_POLICY_KEY_PREFIX",
+          "_POLICY_INTEGRITY_STATE_KEY",
+          "_POLICY_INTEGRITY_CONTROL_VERSION",
+          "_SOURCE_NAME_PATTERN",
+          "_normalize_source_name",
+          "_POLICY_INTEGRITY_ENFORCEMENTS",
+          "_POLICY_INTEGRITY_STATUSES",
+          "_SCOPED_HARNESS_FAMILIES",
+          "_SCOPED_RUNTIME_EXACT_FAMILIES",
+          "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+          "_REMOTE_POLICY_SOURCE_PARAMS",
+          "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+          "_POLICY_SCOPES",
+          "_SLOW_STORE_WARNING_ENV",
+          "_SQLITE_LOCK_RETRY_ATTEMPTS",
+          "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+          "_SECRET_FINGERPRINT_PREFIX",
+          "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+          "_SECRET_FINGERPRINT_SALT",
+          "_SECRET_FINGERPRINT_N",
+          "_SECRET_FINGERPRINT_R",
+          "_SECRET_FINGERPRINT_P",
+          "_SECRET_FINGERPRINT_DKLEN",
+          "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+          "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+          "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+          "_GUARD_STORE_PRIVATE_DIR_MODE",
+          "_GUARD_STORE_PRIVATE_FILE_MODE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+          "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+          "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+          "_ENCRYPTED_SECRET_INIT_LOCKS",
+          "_oauth_sync_url_from_issuer",
+          "_allowed_origin_from_sync_url",
+          "_SECRET_FINGERPRINT_ITERATIONS",
+          "_secret_fingerprint",
+          "_legacy_secret_fingerprint",
+          "_legacy_secret_sha256",
+          "_secret_matches_hash",
+          "_acquire_advisory_file_lock",
+          "_release_advisory_file_lock",
+          "SecretStore",
+          "SystemKeyringSecretStore",
+          "EncryptedFileSecretStore",
+          "UnavailableSecretStore",
+          "FallbackSecretStore",
+          "MigratingFallbackSecretStore",
+          "_expand_keystream",
+          "_set_private_mode",
+          "_system_keyring_availability_cache_path",
+          "_read_system_keyring_availability_cache",
+          "_write_system_keyring_availability_cache",
+          "_system_keyring_is_available",
+          "_build_oauth_secret_store",
+          "_build_policy_integrity_secret_store",
+          "_secret_store_backend_name",
+          "_secret_store_fallback_backend_name",
+          "_should_warn_on_slow_store_transactions",
+          "_SLOW_QUERY_THRESHOLD_MS",
+          "_OAUTH_HEALTH_CACHE_TTL_SECONDS",
+          "_OAUTH_HEALTH_DEGRADED_CACHE_TTL_SECONDS",
+          "_OAUTH_STORAGE_REPAIR_MIN_INTERVAL_SECONDS",
+          "_OAUTH_KEYCHAIN_ACCESS_STATE_FILE",
+          "_POLICY_INTEGRITY_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_POLICY_INTEGRITY_CACHE_TTL_SECONDS",
+          "_store_logger",
+          "_OAUTH_SECRET_PAYLOAD_PROCESS_CACHE",
+          "_OAUTH_HEALTH_RESULT_PROCESS_CACHE",
+          "receipt_index_statements",
+          "_path_within_workspace",
+          "_normalized_workspace_path",
+          "_workspace_policy_key",
+          "_stored_workspace_policy_key",
+          "_validate_scoped_policy_artifact_target",
+          "_artifact_family_key",
+          "_runtime_scoped_exact_match_key",
+          "_global_runtime_scoped_exact_match_key",
+          "runtime_tool_action_policy_artifact_id",
+          "runtime_tool_action_exact_match_context",
+          "runtime_tool_action_portable_match_context",
+          "browser_mcp_exact_match_context",
+          "_is_runtime_scoped_exact_match_key",
+          "_is_approval_context_token",
+          "_scoped_runtime_row_requires_exact_match",
+          "_warn_only_policy_integrity_status",
+          "_policy_integrity_ready_for_local_write",
+          "_policy_integrity_setup_safe_for_local_write",
+          "_family_key_value",
+          "_row_mapping",
+          "_string_value",
+          "_int_value",
+          "_mapping_int",
+          "_ChunkT"
+        ]
+      },
+      {
+        "module": "store_base_keyring",
+        "aliases": [
+          "Path",
+          "subprocess"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [
+          {
+            "name": "SystemKeyringSecretStore",
+            "bases": []
+          },
+          {
+            "name": "_TestKeyringModule",
+            "bases": []
+          },
+          {
+            "name": "_Backend",
+            "bases": []
+          }
+        ],
+        "literal_defaults": [
+          {
+            "name": "get_secret_with_timeout",
+            "value": 0
+          }
+        ],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS",
+          "_is_approval_gate_one_shot_policy",
+          "_DEVICE_ROW_KEY",
+          "_MAX_RESOLVED_SCOPE_IDS",
+          "_SQLITE_ID_BATCH_SIZE",
+          "_WORKSPACE_POLICY_KEY_PREFIX",
+          "_POLICY_INTEGRITY_STATE_KEY",
+          "_POLICY_INTEGRITY_CONTROL_VERSION",
+          "_SOURCE_NAME_PATTERN",
+          "_normalize_source_name",
+          "_POLICY_INTEGRITY_ENFORCEMENTS",
+          "_POLICY_INTEGRITY_STATUSES",
+          "_SCOPED_HARNESS_FAMILIES",
+          "_SCOPED_RUNTIME_EXACT_FAMILIES",
+          "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+          "_REMOTE_POLICY_SOURCE_PARAMS",
+          "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+          "_POLICY_SCOPES",
+          "_SLOW_STORE_WARNING_ENV",
+          "_SQLITE_LOCK_RETRY_ATTEMPTS",
+          "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+          "_SECRET_FINGERPRINT_PREFIX",
+          "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+          "_SECRET_FINGERPRINT_SALT",
+          "_SECRET_FINGERPRINT_N",
+          "_SECRET_FINGERPRINT_R",
+          "_SECRET_FINGERPRINT_P",
+          "_SECRET_FINGERPRINT_DKLEN",
+          "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+          "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+          "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+          "_GUARD_STORE_PRIVATE_DIR_MODE",
+          "_GUARD_STORE_PRIVATE_FILE_MODE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+          "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+          "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+          "_ENCRYPTED_SECRET_INIT_LOCKS",
+          "_oauth_sync_url_from_issuer",
+          "_allowed_origin_from_sync_url",
+          "_SECRET_FINGERPRINT_ITERATIONS",
+          "_secret_fingerprint",
+          "_legacy_secret_fingerprint",
+          "_legacy_secret_sha256",
+          "_secret_matches_hash",
+          "_acquire_advisory_file_lock",
+          "_release_advisory_file_lock",
+          "SecretStore"
+        ]
+      },
+      {
+        "module": "store_base_policy_matching",
+        "aliases": [
+          "Mapping",
+          "Sequence"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [],
+        "literal_defaults": [
+          {
+            "name": "_runtime_scoped_exact_match_key",
+            "value": null
+          },
+          {
+            "name": "_global_runtime_scoped_exact_match_key",
+            "value": null
+          },
+          {
+            "name": "runtime_tool_action_exact_match_context",
+            "value": null
+          },
+          {
+            "name": "runtime_tool_action_exact_match_context",
+            "value": null
+          },
+          {
+            "name": "runtime_tool_action_exact_match_context",
+            "value": null
+          },
+          {
+            "name": "browser_mcp_exact_match_context",
+            "value": null
+          },
+          {
+            "name": "_scoped_runtime_row_requires_exact_match",
+            "value": null
+          },
+          {
+            "name": "_scoped_runtime_row_requires_exact_match",
+            "value": null
+          },
+          {
+            "name": "_scoped_runtime_row_requires_exact_match",
+            "value": null
+          },
+          {
+            "name": "_scoped_runtime_row_requires_exact_match",
+            "value": null
+          },
+          {
+            "name": "_warn_only_policy_integrity_status",
+            "value": "local"
+          }
+        ],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS",
+          "_is_approval_gate_one_shot_policy",
+          "_DEVICE_ROW_KEY",
+          "_MAX_RESOLVED_SCOPE_IDS",
+          "_SQLITE_ID_BATCH_SIZE",
+          "_WORKSPACE_POLICY_KEY_PREFIX",
+          "_POLICY_INTEGRITY_STATE_KEY",
+          "_POLICY_INTEGRITY_CONTROL_VERSION",
+          "_SOURCE_NAME_PATTERN",
+          "_normalize_source_name",
+          "_POLICY_INTEGRITY_ENFORCEMENTS",
+          "_POLICY_INTEGRITY_STATUSES",
+          "_SCOPED_HARNESS_FAMILIES",
+          "_SCOPED_RUNTIME_EXACT_FAMILIES",
+          "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+          "_REMOTE_POLICY_SOURCE_PARAMS",
+          "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+          "_POLICY_SCOPES",
+          "_SLOW_STORE_WARNING_ENV",
+          "_SQLITE_LOCK_RETRY_ATTEMPTS",
+          "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+          "_SECRET_FINGERPRINT_PREFIX",
+          "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+          "_SECRET_FINGERPRINT_SALT",
+          "_SECRET_FINGERPRINT_N",
+          "_SECRET_FINGERPRINT_R",
+          "_SECRET_FINGERPRINT_P",
+          "_SECRET_FINGERPRINT_DKLEN",
+          "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+          "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+          "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+          "_GUARD_STORE_PRIVATE_DIR_MODE",
+          "_GUARD_STORE_PRIVATE_FILE_MODE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+          "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+          "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+          "_ENCRYPTED_SECRET_INIT_LOCKS",
+          "_oauth_sync_url_from_issuer",
+          "_allowed_origin_from_sync_url",
+          "_SECRET_FINGERPRINT_ITERATIONS",
+          "_secret_fingerprint",
+          "_legacy_secret_fingerprint",
+          "_legacy_secret_sha256",
+          "_secret_matches_hash",
+          "_acquire_advisory_file_lock",
+          "_release_advisory_file_lock",
+          "SecretStore",
+          "SystemKeyringSecretStore",
+          "EncryptedFileSecretStore",
+          "UnavailableSecretStore",
+          "FallbackSecretStore",
+          "MigratingFallbackSecretStore",
+          "_expand_keystream",
+          "_set_private_mode",
+          "_system_keyring_availability_cache_path",
+          "_read_system_keyring_availability_cache",
+          "_write_system_keyring_availability_cache",
+          "_system_keyring_is_available",
+          "_build_oauth_secret_store",
+          "_build_policy_integrity_secret_store",
+          "_secret_store_backend_name",
+          "_secret_store_fallback_backend_name",
+          "_should_warn_on_slow_store_transactions",
+          "_SLOW_QUERY_THRESHOLD_MS",
+          "_OAUTH_HEALTH_CACHE_TTL_SECONDS",
+          "_OAUTH_HEALTH_DEGRADED_CACHE_TTL_SECONDS",
+          "_OAUTH_STORAGE_REPAIR_MIN_INTERVAL_SECONDS",
+          "_OAUTH_KEYCHAIN_ACCESS_STATE_FILE",
+          "_POLICY_INTEGRITY_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_POLICY_INTEGRITY_CACHE_TTL_SECONDS",
+          "_store_logger",
+          "_OAUTH_SECRET_PAYLOAD_PROCESS_CACHE",
+          "_OAUTH_HEALTH_RESULT_PROCESS_CACHE",
+          "receipt_index_statements"
+        ]
+      },
+      {
+        "module": "store_base_secret_backends",
+        "aliases": [
+          "Path",
+          "SecretStore"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [
+          {
+            "name": "FallbackSecretStore",
+            "bases": []
+          },
+          {
+            "name": "MigratingFallbackSecretStore",
+            "bases": [
+              "FallbackSecretStore"
+            ]
+          }
+        ],
+        "literal_defaults": [
+          {
+            "name": "_system_keyring_is_available",
+            "value": true
+          },
+          {
+            "name": "_build_oauth_secret_store",
+            "value": false
+          },
+          {
+            "name": "_build_policy_integrity_secret_store",
+            "value": false
+          }
+        ],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS",
+          "_is_approval_gate_one_shot_policy",
+          "_DEVICE_ROW_KEY",
+          "_MAX_RESOLVED_SCOPE_IDS",
+          "_SQLITE_ID_BATCH_SIZE",
+          "_WORKSPACE_POLICY_KEY_PREFIX",
+          "_POLICY_INTEGRITY_STATE_KEY",
+          "_POLICY_INTEGRITY_CONTROL_VERSION",
+          "_SOURCE_NAME_PATTERN",
+          "_normalize_source_name",
+          "_POLICY_INTEGRITY_ENFORCEMENTS",
+          "_POLICY_INTEGRITY_STATUSES",
+          "_SCOPED_HARNESS_FAMILIES",
+          "_SCOPED_RUNTIME_EXACT_FAMILIES",
+          "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+          "_REMOTE_POLICY_SOURCE_PARAMS",
+          "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+          "_POLICY_SCOPES",
+          "_SLOW_STORE_WARNING_ENV",
+          "_SQLITE_LOCK_RETRY_ATTEMPTS",
+          "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+          "_SECRET_FINGERPRINT_PREFIX",
+          "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+          "_SECRET_FINGERPRINT_SALT",
+          "_SECRET_FINGERPRINT_N",
+          "_SECRET_FINGERPRINT_R",
+          "_SECRET_FINGERPRINT_P",
+          "_SECRET_FINGERPRINT_DKLEN",
+          "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+          "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+          "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+          "_GUARD_STORE_PRIVATE_DIR_MODE",
+          "_GUARD_STORE_PRIVATE_FILE_MODE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+          "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+          "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+          "_ENCRYPTED_SECRET_INIT_LOCKS",
+          "_oauth_sync_url_from_issuer",
+          "_allowed_origin_from_sync_url",
+          "_SECRET_FINGERPRINT_ITERATIONS",
+          "_secret_fingerprint",
+          "_legacy_secret_fingerprint",
+          "_legacy_secret_sha256",
+          "_secret_matches_hash",
+          "_acquire_advisory_file_lock",
+          "_release_advisory_file_lock",
+          "SecretStore",
+          "SystemKeyringSecretStore",
+          "EncryptedFileSecretStore",
+          "UnavailableSecretStore"
+        ]
+      },
+      {
+        "module": "store_base_secret_files",
+        "aliases": [
+          "Fernet",
+          "Path"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [
+          {
+            "name": "EncryptedFileSecretStore",
+            "bases": []
+          },
+          {
+            "name": "UnavailableSecretStore",
+            "bases": []
+          }
+        ],
+        "literal_defaults": [
+          {
+            "name": "__init__",
+            "value": null
+          }
+        ],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS",
+          "_is_approval_gate_one_shot_policy",
+          "_DEVICE_ROW_KEY",
+          "_MAX_RESOLVED_SCOPE_IDS",
+          "_SQLITE_ID_BATCH_SIZE",
+          "_WORKSPACE_POLICY_KEY_PREFIX",
+          "_POLICY_INTEGRITY_STATE_KEY",
+          "_POLICY_INTEGRITY_CONTROL_VERSION",
+          "_SOURCE_NAME_PATTERN",
+          "_normalize_source_name",
+          "_POLICY_INTEGRITY_ENFORCEMENTS",
+          "_POLICY_INTEGRITY_STATUSES",
+          "_SCOPED_HARNESS_FAMILIES",
+          "_SCOPED_RUNTIME_EXACT_FAMILIES",
+          "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+          "_REMOTE_POLICY_SOURCE_PARAMS",
+          "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+          "_POLICY_SCOPES",
+          "_SLOW_STORE_WARNING_ENV",
+          "_SQLITE_LOCK_RETRY_ATTEMPTS",
+          "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+          "_SECRET_FINGERPRINT_PREFIX",
+          "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+          "_SECRET_FINGERPRINT_SALT",
+          "_SECRET_FINGERPRINT_N",
+          "_SECRET_FINGERPRINT_R",
+          "_SECRET_FINGERPRINT_P",
+          "_SECRET_FINGERPRINT_DKLEN",
+          "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+          "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+          "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+          "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+          "_GUARD_STORE_PRIVATE_DIR_MODE",
+          "_GUARD_STORE_PRIVATE_FILE_MODE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+          "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+          "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+          "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+          "_ENCRYPTED_SECRET_INIT_LOCKS",
+          "_oauth_sync_url_from_issuer",
+          "_allowed_origin_from_sync_url",
+          "_SECRET_FINGERPRINT_ITERATIONS",
+          "_secret_fingerprint",
+          "_legacy_secret_fingerprint",
+          "_legacy_secret_sha256",
+          "_secret_matches_hash"
+        ]
+      },
+      {
+        "module": "store_base_values",
+        "aliases": [
+          "Mapping",
+          "TransportKind",
+          "datetime",
+          "sqlite3"
+        ],
+        "aliases_available_before_first_facade_import": true,
+        "classes": [],
+        "literal_defaults": [],
+        "first_import_after_names": [
+          "annotations",
+          "partial",
+          "artifact_family_key",
+          "base64",
+          "ctypes",
+          "importlib",
+          "json",
+          "logging",
+          "os",
+          "re",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "threading",
+          "time",
+          "Iterator",
+          "Mapping",
+          "Sequence",
+          "contextmanager",
+          "suppress",
+          "datetime",
+          "timedelta",
+          "timezone",
+          "pbkdf2_hmac",
+          "scrypt",
+          "sha256",
+          "Path",
+          "Any",
+          "Protocol",
+          "TypedDict",
+          "TypeVar",
+          "cast",
+          "urlparse",
+          "uuid4",
+          "Fernet",
+          "InvalidToken",
+          "ApprovalGateGrant",
+          "require_policy_clear",
+          "require_policy_write",
+          "require_request_resolution",
+          "require_resolvable_approval_request",
+          "resolve_guard_oauth_client_config",
+          "build_receipt_event",
+          "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+          "POLICY_INTEGRITY_MODE_DEGRADED",
+          "POLICY_INTEGRITY_MODE_PROTECTED",
+          "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+          "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+          "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+          "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+          "TrustStatus",
+          "GuardApprovalRequest",
+          "GuardArtifact",
+          "GuardReceipt",
+          "GuardRuntimeState",
+          "PolicyDecision",
+          "validate_policy_write_authority",
+          "REMOTE_POLICY_SOURCES",
+          "PolicyIntegrityVerificationResult",
+          "is_remote_policy_source",
+          "sign_local_policy_row",
+          "verify_local_policy_row",
+          "GuardActionEnvelope",
+          "parse_approval_context_token",
+          "scanner_cache_key",
+          "GuardEventV1",
+          "SQLITE_BUSY_TIMEOUT_MS",
+          "SQLITE_CACHE_SIZE_KIB",
+          "SQLITE_MMAP_SIZE_BYTES",
+          "SQLITE_WAL_BUSY_TIMEOUT_MS",
+          "sqlite_connect_timeout_seconds",
+          "_json_object",
+          "_json_object_list",
+          "approval_request_surfaces_are_resolvable",
+          "approval_index_statements",
+          "approval_schema_statement",
+          "backfill_approval_queue_columns",
+          "persist_approval_request",
+          "persist_bulk_resolution",
+          "count_pending_approval_requests",
+          "load_approval_request",
+          "load_next_pending_request",
+          "load_approval_request_page",
+          "load_approval_requests",
+          "load_pending_approval_summaries",
+          "persist_approval_resolution",
+          "persist_duplicate_resolutions",
+          "persist_one_resolution",
+          "persist_queue_resolution",
+          "build_connect_state_response",
+          "connect_request_schema_statement",
+          "connect_state_schema_statement",
+          "load_connect_state",
+          "load_latest_connect_state",
+          "persist_connect_result",
+          "bind_review_events_for_request",
+          "EvidenceRecord",
+          "ensure_evidence_schema",
+          "_list_evidence_impl",
+          "_store_evidence_impl",
+          "PolicySourceContextIndex",
+          "build_policy_source_context_index",
+          "lookup_policy_source_context",
+          "backfill_receipt_rollups",
+          "count_receipts_from_rollups",
+          "load_receipt_analytics",
+          "receipt_rollup_index_statements",
+          "receipt_rollup_schema_statements",
+          "receipt_rollups_initialized",
+          "receipt_rollups_need_backfill",
+          "record_receipt_insert",
+          "record_receipt_policy_decision_change",
+          "purge_request_resumes",
+          "load_latest_request_resume",
+          "load_request_resume",
+          "resume_schema_statement",
+          "persist_request_resume_seed",
+          "persist_request_resume_update",
+          "load_supply_chain_bundle",
+          "load_supply_chain_evaluation",
+          "supply_chain_bundle_schema_statement",
+          "supply_chain_eval_cache_schema_statement",
+          "supply_chain_index_statements",
+          "persist_supply_chain_bundle",
+          "persist_supply_chain_evaluation",
+          "threat_intel_bundle_schema_statement",
+          "threat_intel_index_statements",
+          "threat_intel_matches_schema_statement",
+          "CapabilitySet",
+          "TransportKind",
+          "_RecoveredOAuthLocalCredentialInputs",
+          "PolicyDecisionLookupResult",
+          "_POLICY_INTEGRITY_KEY_REF",
+          "_POLICY_INTEGRITY_CONTROL_REF",
+          "_POLICY_INTEGRITY_SERVICE_NAME",
+          "_OAUTH_LOCAL_CREDENTIALS_REF",
+          "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+          "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+          "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+          "_APPROVAL_GATE_POLICY_SOURCE",
+          "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+          "_GUARD_CLOUD_RESET_STATE_KEYS"
+        ]
+      }
+    ],
+    "late_chunk_creation_count": 1,
+    "late_chunk_alias_at_original_slot": true,
+    "nonfuture_static_exports": 256,
+    "future_annotations_binding_preserved": true,
+    "static_export_names_with_future": [
+      "annotations",
+      "partial",
+      "artifact_family_key",
+      "base64",
+      "ctypes",
+      "importlib",
+      "json",
+      "logging",
+      "os",
+      "re",
+      "sqlite3",
+      "subprocess",
+      "sys",
+      "threading",
+      "time",
+      "Iterator",
+      "Mapping",
+      "Sequence",
+      "contextmanager",
+      "suppress",
+      "datetime",
+      "timedelta",
+      "timezone",
+      "pbkdf2_hmac",
+      "scrypt",
+      "sha256",
+      "Path",
+      "Any",
+      "Protocol",
+      "TypedDict",
+      "TypeVar",
+      "cast",
+      "urlparse",
+      "uuid4",
+      "Fernet",
+      "InvalidToken",
+      "ApprovalGateGrant",
+      "require_policy_clear",
+      "require_policy_write",
+      "require_request_resolution",
+      "require_resolvable_approval_request",
+      "resolve_guard_oauth_client_config",
+      "build_receipt_event",
+      "POLICY_INTEGRITY_ENFORCEMENT_ENFORCE",
+      "POLICY_INTEGRITY_MODE_DEGRADED",
+      "POLICY_INTEGRITY_MODE_PROTECTED",
+      "POLICY_INTEGRITY_REASON_CONTROL_UNAVAILABLE",
+      "POLICY_INTEGRITY_REASON_GUARD_DB_INACCESSIBLE",
+      "POLICY_INTEGRITY_REASON_GUARD_DB_PERMISSIONS",
+      "POLICY_INTEGRITY_REASON_GUARD_DB_SYMLINK",
+      "POLICY_INTEGRITY_REASON_GUARD_HOME_INACCESSIBLE",
+      "POLICY_INTEGRITY_REASON_GUARD_HOME_PERMISSIONS",
+      "POLICY_INTEGRITY_REASON_GUARD_HOME_SYMLINK",
+      "POLICY_INTEGRITY_REASON_KEY_UNAVAILABLE",
+      "POLICY_INTEGRITY_REASON_SYSTEM_KEYRING_UNAVAILABLE",
+      "TrustStatus",
+      "GuardApprovalRequest",
+      "GuardArtifact",
+      "GuardReceipt",
+      "GuardRuntimeState",
+      "PolicyDecision",
+      "validate_policy_write_authority",
+      "REMOTE_POLICY_SOURCES",
+      "PolicyIntegrityVerificationResult",
+      "is_remote_policy_source",
+      "sign_local_policy_row",
+      "verify_local_policy_row",
+      "GuardActionEnvelope",
+      "parse_approval_context_token",
+      "scanner_cache_key",
+      "GuardEventV1",
+      "SQLITE_BUSY_TIMEOUT_MS",
+      "SQLITE_CACHE_SIZE_KIB",
+      "SQLITE_MMAP_SIZE_BYTES",
+      "SQLITE_WAL_BUSY_TIMEOUT_MS",
+      "sqlite_connect_timeout_seconds",
+      "_json_object",
+      "_json_object_list",
+      "approval_request_surfaces_are_resolvable",
+      "approval_index_statements",
+      "approval_schema_statement",
+      "backfill_approval_queue_columns",
+      "persist_approval_request",
+      "persist_bulk_resolution",
+      "count_pending_approval_requests",
+      "load_approval_request",
+      "load_next_pending_request",
+      "load_approval_request_page",
+      "load_approval_requests",
+      "load_pending_approval_summaries",
+      "persist_approval_resolution",
+      "persist_duplicate_resolutions",
+      "persist_one_resolution",
+      "persist_queue_resolution",
+      "build_connect_state_response",
+      "connect_request_schema_statement",
+      "connect_state_schema_statement",
+      "load_connect_state",
+      "load_latest_connect_state",
+      "persist_connect_result",
+      "bind_review_events_for_request",
+      "EvidenceRecord",
+      "ensure_evidence_schema",
+      "_list_evidence_impl",
+      "_store_evidence_impl",
+      "PolicySourceContextIndex",
+      "build_policy_source_context_index",
+      "lookup_policy_source_context",
+      "backfill_receipt_rollups",
+      "count_receipts_from_rollups",
+      "load_receipt_analytics",
+      "receipt_rollup_index_statements",
+      "receipt_rollup_schema_statements",
+      "receipt_rollups_initialized",
+      "receipt_rollups_need_backfill",
+      "record_receipt_insert",
+      "record_receipt_policy_decision_change",
+      "purge_request_resumes",
+      "load_latest_request_resume",
+      "load_request_resume",
+      "resume_schema_statement",
+      "persist_request_resume_seed",
+      "persist_request_resume_update",
+      "load_supply_chain_bundle",
+      "load_supply_chain_evaluation",
+      "supply_chain_bundle_schema_statement",
+      "supply_chain_eval_cache_schema_statement",
+      "supply_chain_index_statements",
+      "persist_supply_chain_bundle",
+      "persist_supply_chain_evaluation",
+      "threat_intel_bundle_schema_statement",
+      "threat_intel_index_statements",
+      "threat_intel_matches_schema_statement",
+      "CapabilitySet",
+      "TransportKind",
+      "_RecoveredOAuthLocalCredentialInputs",
+      "PolicyDecisionLookupResult",
+      "_POLICY_INTEGRITY_KEY_REF",
+      "_POLICY_INTEGRITY_CONTROL_REF",
+      "_POLICY_INTEGRITY_SERVICE_NAME",
+      "_OAUTH_LOCAL_CREDENTIALS_REF",
+      "_OAUTH_LOCAL_CREDENTIALS_STATE_KEY",
+      "_OAUTH_LOCAL_CREDENTIALS_HASH_KEY",
+      "_OAUTH_LOCAL_CREDENTIALS_REF_KEY",
+      "_OAUTH_PRIMARY_SECRET_TIMEOUT_SECONDS",
+      "_APPROVAL_GATE_POLICY_SOURCE",
+      "_GUARD_CLOUD_COMMAND_STATE_KEYS",
+      "_GUARD_CLOUD_RESET_STATE_KEYS",
+      "_is_approval_gate_one_shot_policy",
+      "_DEVICE_ROW_KEY",
+      "_MAX_RESOLVED_SCOPE_IDS",
+      "_SQLITE_ID_BATCH_SIZE",
+      "_WORKSPACE_POLICY_KEY_PREFIX",
+      "_POLICY_INTEGRITY_STATE_KEY",
+      "_POLICY_INTEGRITY_CONTROL_VERSION",
+      "_SOURCE_NAME_PATTERN",
+      "_normalize_source_name",
+      "_POLICY_INTEGRITY_ENFORCEMENTS",
+      "_POLICY_INTEGRITY_STATUSES",
+      "_SCOPED_HARNESS_FAMILIES",
+      "_SCOPED_RUNTIME_EXACT_FAMILIES",
+      "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+      "_REMOTE_POLICY_SOURCE_PARAMS",
+      "_REMOTE_POLICY_SOURCE_PLACEHOLDERS",
+      "_POLICY_SCOPES",
+      "_SLOW_STORE_WARNING_ENV",
+      "_SQLITE_LOCK_RETRY_ATTEMPTS",
+      "_SQLITE_LOCK_RETRY_DELAY_SECONDS",
+      "_SECRET_FINGERPRINT_PREFIX",
+      "_LEGACY_SECRET_FINGERPRINT_PREFIX",
+      "_SECRET_FINGERPRINT_SALT",
+      "_SECRET_FINGERPRINT_N",
+      "_SECRET_FINGERPRINT_R",
+      "_SECRET_FINGERPRINT_P",
+      "_SECRET_FINGERPRINT_DKLEN",
+      "_OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS",
+      "_OAUTH_REFRESH_LOCK_POLL_SECONDS",
+      "_OAUTH_CREDENTIAL_LOCK_TIMEOUT_SECONDS",
+      "_OAUTH_CREDENTIAL_LOCK_POLL_SECONDS",
+      "_CLOUD_SYNC_LOCK_TIMEOUT_SECONDS",
+      "_CLOUD_SYNC_LOCK_POLL_SECONDS",
+      "_GUARD_STORE_PRIVATE_DIR_MODE",
+      "_GUARD_STORE_PRIVATE_FILE_MODE",
+      "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+      "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+      "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+      "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+      "_ENCRYPTED_SECRET_INIT_LOCKS",
+      "_oauth_sync_url_from_issuer",
+      "_allowed_origin_from_sync_url",
+      "_SECRET_FINGERPRINT_ITERATIONS",
+      "_secret_fingerprint",
+      "_legacy_secret_fingerprint",
+      "_legacy_secret_sha256",
+      "_secret_matches_hash",
+      "_acquire_advisory_file_lock",
+      "_release_advisory_file_lock",
+      "SecretStore",
+      "SystemKeyringSecretStore",
+      "EncryptedFileSecretStore",
+      "UnavailableSecretStore",
+      "FallbackSecretStore",
+      "MigratingFallbackSecretStore",
+      "_expand_keystream",
+      "_set_private_mode",
+      "_system_keyring_availability_cache_path",
+      "_read_system_keyring_availability_cache",
+      "_write_system_keyring_availability_cache",
+      "_system_keyring_is_available",
+      "_build_oauth_secret_store",
+      "_build_policy_integrity_secret_store",
+      "_secret_store_backend_name",
+      "_secret_store_fallback_backend_name",
+      "_should_warn_on_slow_store_transactions",
+      "_SLOW_QUERY_THRESHOLD_MS",
+      "_OAUTH_HEALTH_CACHE_TTL_SECONDS",
+      "_OAUTH_HEALTH_DEGRADED_CACHE_TTL_SECONDS",
+      "_OAUTH_STORAGE_REPAIR_MIN_INTERVAL_SECONDS",
+      "_OAUTH_KEYCHAIN_ACCESS_STATE_FILE",
+      "_POLICY_INTEGRITY_PRIMARY_SECRET_TIMEOUT_SECONDS",
+      "_POLICY_INTEGRITY_CACHE_TTL_SECONDS",
+      "_store_logger",
+      "_OAUTH_SECRET_PAYLOAD_PROCESS_CACHE",
+      "_OAUTH_HEALTH_RESULT_PROCESS_CACHE",
+      "receipt_index_statements",
+      "_path_within_workspace",
+      "_normalized_workspace_path",
+      "_workspace_policy_key",
+      "_stored_workspace_policy_key",
+      "_validate_scoped_policy_artifact_target",
+      "_artifact_family_key",
+      "_runtime_scoped_exact_match_key",
+      "_global_runtime_scoped_exact_match_key",
+      "runtime_tool_action_policy_artifact_id",
+      "runtime_tool_action_exact_match_context",
+      "runtime_tool_action_portable_match_context",
+      "browser_mcp_exact_match_context",
+      "_is_runtime_scoped_exact_match_key",
+      "_is_approval_context_token",
+      "_scoped_runtime_row_requires_exact_match",
+      "_warn_only_policy_integrity_status",
+      "_policy_integrity_ready_for_local_write",
+      "_policy_integrity_setup_safe_for_local_write",
+      "_family_key_value",
+      "_row_mapping",
+      "_string_value",
+      "_int_value",
+      "_mapping_int",
+      "_ChunkT",
+      "_chunks",
+      "_parse_utc_timestamp",
+      "_canonical_utc_timestamp",
+      "_timestamp_has_expired",
+      "_now",
+      "_lease_expiry",
+      "_string_list",
+      "_transport_value"
+    ],
+    "project_execution": false
+  },
+  "exact_source_edits": [
+    {
+      "start": 8392,
+      "end": 8420,
+      "text": "_base._APPROVAL_GATE_POLICY_SOURCE",
+      "kind": "runtime-global",
+      "scope": "top._is_approval_gate_one_shot_policy",
+      "name": "_APPROVAL_GATE_POLICY_SOURCE"
+    },
+    {
+      "start": 9192,
+      "end": 9212,
+      "text": "_base._SOURCE_NAME_PATTERN",
+      "kind": "runtime-global",
+      "scope": "top._normalize_source_name",
+      "name": "_SOURCE_NAME_PATTERN"
+    },
+    {
+      "start": 11562,
+      "end": 11595,
+      "text": "_base.resolve_guard_oauth_client_config",
+      "kind": "runtime-global",
+      "scope": "top._oauth_sync_url_from_issuer",
+      "name": "resolve_guard_oauth_client_config"
+    },
+    {
+      "start": 11743,
+      "end": 11751,
+      "text": "_base.urlparse",
+      "kind": "runtime-global",
+      "scope": "top._allowed_origin_from_sync_url",
+      "name": "urlparse"
+    },
+    {
+      "start": 11979,
+      "end": 11985,
+      "text": "_base.scrypt",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "scrypt"
+    },
+    {
+      "start": 12031,
+      "end": 12055,
+      "text": "_base._SECRET_FINGERPRINT_SALT",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_SALT"
+    },
+    {
+      "start": 12067,
+      "end": 12088,
+      "text": "_base._SECRET_FINGERPRINT_N",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_N"
+    },
+    {
+      "start": 12100,
+      "end": 12121,
+      "text": "_base._SECRET_FINGERPRINT_R",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_R"
+    },
+    {
+      "start": 12133,
+      "end": 12154,
+      "text": "_base._SECRET_FINGERPRINT_P",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_P"
+    },
+    {
+      "start": 12170,
+      "end": 12195,
+      "text": "_base._SECRET_FINGERPRINT_DKLEN",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_DKLEN"
+    },
+    {
+      "start": 12223,
+      "end": 12249,
+      "text": "_base._SECRET_FINGERPRINT_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_PREFIX"
+    },
+    {
+      "start": 12326,
+      "end": 12337,
+      "text": "_base.pbkdf2_hmac",
+      "kind": "runtime-global",
+      "scope": "top._legacy_secret_fingerprint",
+      "name": "pbkdf2_hmac"
+    },
+    {
+      "start": 12396,
+      "end": 12420,
+      "text": "_base._SECRET_FINGERPRINT_SALT",
+      "kind": "runtime-global",
+      "scope": "top._legacy_secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_SALT"
+    },
+    {
+      "start": 12430,
+      "end": 12460,
+      "text": "_base._SECRET_FINGERPRINT_ITERATIONS",
+      "kind": "runtime-global",
+      "scope": "top._legacy_secret_fingerprint",
+      "name": "_SECRET_FINGERPRINT_ITERATIONS"
+    },
+    {
+      "start": 12488,
+      "end": 12521,
+      "text": "_base._LEGACY_SECRET_FINGERPRINT_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._legacy_secret_fingerprint",
+      "name": "_LEGACY_SECRET_FINGERPRINT_PREFIX"
+    },
+    {
+      "start": 12591,
+      "end": 12597,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top._legacy_secret_sha256",
+      "name": "sha256"
+    },
+    {
+      "start": 12775,
+      "end": 12801,
+      "text": "_base._SECRET_FINGERPRINT_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._secret_matches_hash",
+      "name": "_SECRET_FINGERPRINT_PREFIX"
+    },
+    {
+      "start": 12819,
+      "end": 12838,
+      "text": "_base._secret_fingerprint",
+      "kind": "runtime-global",
+      "scope": "top._secret_matches_hash",
+      "name": "_secret_fingerprint"
+    },
+    {
+      "start": 12895,
+      "end": 12928,
+      "text": "_base._LEGACY_SECRET_FINGERPRINT_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._secret_matches_hash",
+      "name": "_LEGACY_SECRET_FINGERPRINT_PREFIX"
+    },
+    {
+      "start": 12946,
+      "end": 12972,
+      "text": "_base._legacy_secret_fingerprint",
+      "kind": "runtime-global",
+      "scope": "top._secret_matches_hash",
+      "name": "_legacy_secret_fingerprint"
+    },
+    {
+      "start": 13008,
+      "end": 13029,
+      "text": "_base._legacy_secret_sha256",
+      "kind": "runtime-global",
+      "scope": "top._secret_matches_hash",
+      "name": "_legacy_secret_sha256"
+    },
+    {
+      "start": 13112,
+      "end": 13114,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top._acquire_advisory_file_lock",
+      "name": "os"
+    },
+    {
+      "start": 13701,
+      "end": 13703,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top._release_advisory_file_lock",
+      "name": "os"
+    },
+    {
+      "start": 15117,
+      "end": 15141,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._load_keyring_module",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 15266,
+      "end": 15275,
+      "text": "_base.importlib",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._load_keyring_module",
+      "name": "importlib"
+    },
+    {
+      "start": 15959,
+      "end": 15972,
+      "text": "_base._store_logger",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._load_keyring_module_or_none",
+      "name": "_store_logger"
+    },
+    {
+      "start": 16222,
+      "end": 16224,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module",
+      "name": "os"
+    },
+    {
+      "start": 16310,
+      "end": 16312,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module",
+      "name": "os"
+    },
+    {
+      "start": 16546,
+      "end": 16550,
+      "text": "_base.Path",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._store_path",
+      "name": "Path"
+    },
+    {
+      "start": 16799,
+      "end": 16803,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._load",
+      "name": "json"
+    },
+    {
+      "start": 17742,
+      "end": 17746,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._persist",
+      "name": "json"
+    },
+    {
+      "start": 18938,
+      "end": 18962,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_path",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 19203,
+      "end": 19207,
+      "text": "_base.Path",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_path",
+      "name": "Path"
+    },
+    {
+      "start": 19353,
+      "end": 19356,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._run_macos_security_command",
+      "name": "sys"
+    },
+    {
+      "start": 19427,
+      "end": 19431,
+      "text": "_base.Path",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._run_macos_security_command",
+      "name": "Path"
+    },
+    {
+      "start": 19550,
+      "end": 19560,
+      "text": "_base.subprocess",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._run_macos_security_command",
+      "name": "subprocess"
+    },
+    {
+      "start": 20253,
+      "end": 20257,
+      "text": "_base.Path",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._macos_user_keychain_paths",
+      "name": "Path"
+    },
+    {
+      "start": 20736,
+      "end": 20738,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._normalized_macos_keychain_path",
+      "name": "os"
+    },
+    {
+      "start": 20753,
+      "end": 20755,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._normalized_macos_keychain_path",
+      "name": "os"
+    },
+    {
+      "start": 21745,
+      "end": 21748,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable",
+      "name": "sys"
+    },
+    {
+      "start": 21860,
+      "end": 21864,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable",
+      "name": "time"
+    },
+    {
+      "start": 22906,
+      "end": 22909,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._is_available",
+      "name": "sys"
+    },
+    {
+      "start": 23138,
+      "end": 23141,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._is_windows_keyring_session_unavailable",
+      "name": "sys"
+    },
+    {
+      "start": 23522,
+      "end": 23535,
+      "text": "_base._store_logger",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._mark_windows_keyring_unavailable",
+      "name": "_store_logger"
+    },
+    {
+      "start": 25157,
+      "end": 25160,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._supports_native_macos_security_reads",
+      "name": "sys"
+    },
+    {
+      "start": 27692,
+      "end": 27700,
+      "text": "_base.suppress",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_secret_without_macos_ui",
+      "name": "suppress"
+    },
+    {
+      "start": 29250,
+      "end": 29252,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "os"
+    },
+    {
+      "start": 29427,
+      "end": 29437,
+      "text": "_base.subprocess",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "subprocess"
+    },
+    {
+      "start": 29460,
+      "end": 29463,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "sys"
+    },
+    {
+      "start": 29648,
+      "end": 29658,
+      "text": "_base.subprocess",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "subprocess"
+    },
+    {
+      "start": 29758,
+      "end": 29768,
+      "text": "_base.subprocess",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "subprocess"
+    },
+    {
+      "start": 29907,
+      "end": 29911,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "json"
+    },
+    {
+      "start": 29988,
+      "end": 29992,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+      "name": "json"
+    },
+    {
+      "start": 30292,
+      "end": 30295,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore.get_secret_with_timeout",
+      "name": "sys"
+    },
+    {
+      "start": 30419,
+      "end": 30422,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore.get_secret_with_timeout",
+      "name": "sys"
+    },
+    {
+      "start": 31108,
+      "end": 31138,
+      "text": "_base._POLICY_INTEGRITY_SERVICE_NAME",
+      "kind": "runtime-global",
+      "scope": "top.SystemKeyringSecretStore.get_secret_with_timeout",
+      "name": "_POLICY_INTEGRITY_SERVICE_NAME"
+    },
+    {
+      "start": 32621,
+      "end": 32623,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "os"
+    },
+    {
+      "start": 32671,
+      "end": 32673,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "os"
+    },
+    {
+      "start": 32688,
+      "end": 32690,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "os"
+    },
+    {
+      "start": 32727,
+      "end": 32761,
+      "text": "_base._ENCRYPTED_SECRET_INIT_LOCKS_GUARD",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "_ENCRYPTED_SECRET_INIT_LOCKS_GUARD"
+    },
+    {
+      "start": 32789,
+      "end": 32817,
+      "text": "_base._ENCRYPTED_SECRET_INIT_LOCKS",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "_ENCRYPTED_SECRET_INIT_LOCKS"
+    },
+    {
+      "start": 32839,
+      "end": 32848,
+      "text": "_base.threading",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "threading"
+    },
+    {
+      "start": 33075,
+      "end": 33077,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "os"
+    },
+    {
+      "start": 33129,
+      "end": 33133,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "time"
+    },
+    {
+      "start": 33230,
+      "end": 33257,
+      "text": "_base._acquire_advisory_file_lock",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "_acquire_advisory_file_lock"
+    },
+    {
+      "start": 33372,
+      "end": 33376,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "time"
+    },
+    {
+      "start": 33533,
+      "end": 33537,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "time"
+    },
+    {
+      "start": 33686,
+      "end": 33692,
+      "text": "_base.Fernet",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "Fernet"
+    },
+    {
+      "start": 33786,
+      "end": 33788,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "os"
+    },
+    {
+      "start": 33852,
+      "end": 33858,
+      "text": "_base.Fernet",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "Fernet"
+    },
+    {
+      "start": 33909,
+      "end": 33936,
+      "text": "_base._release_advisory_file_lock",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready",
+      "name": "_release_advisory_file_lock"
+    },
+    {
+      "start": 34167,
+      "end": 34171,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore.set_secret",
+      "name": "json"
+    },
+    {
+      "start": 34411,
+      "end": 34415,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore.get_secret",
+      "name": "json"
+    },
+    {
+      "start": 34471,
+      "end": 34475,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore.get_secret",
+      "name": "json"
+    },
+    {
+      "start": 35449,
+      "end": 35455,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._load_fernet_key",
+      "name": "base64"
+    },
+    {
+      "start": 35644,
+      "end": 35650,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._load_fernet_key",
+      "name": "base64"
+    },
+    {
+      "start": 35867,
+      "end": 35873,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._load_fernet_key",
+      "name": "base64"
+    },
+    {
+      "start": 36255,
+      "end": 36260,
+      "text": "_base.uuid4",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_bytes",
+      "name": "uuid4"
+    },
+    {
+      "start": 36420,
+      "end": 36422,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_bytes",
+      "name": "os"
+    },
+    {
+      "start": 36458,
+      "end": 36460,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_bytes",
+      "name": "os"
+    },
+    {
+      "start": 36495,
+      "end": 36497,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_bytes",
+      "name": "os"
+    },
+    {
+      "start": 37559,
+      "end": 37571,
+      "text": "_base.InvalidToken",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._decrypt_fernet",
+      "name": "InvalidToken"
+    },
+    {
+      "start": 38059,
+      "end": 38065,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload",
+      "name": "base64"
+    },
+    {
+      "start": 38138,
+      "end": 38144,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload",
+      "name": "base64"
+    },
+    {
+      "start": 38215,
+      "end": 38221,
+      "text": "_base.base64",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload",
+      "name": "base64"
+    },
+    {
+      "start": 38349,
+      "end": 38366,
+      "text": "_base._expand_keystream",
+      "kind": "runtime-global",
+      "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload",
+      "name": "_expand_keystream"
+    },
+    {
+      "start": 38838,
+      "end": 38862,
+      "text": "_base.EncryptedFileSecretStore",
+      "kind": "runtime-global",
+      "scope": "top.UnavailableSecretStore.__init__",
+      "name": "EncryptedFileSecretStore"
+    },
+    {
+      "start": 39483,
+      "end": 39491,
+      "text": "_base.suppress",
+      "kind": "runtime-global",
+      "scope": "top.UnavailableSecretStore.delete_secret",
+      "name": "suppress"
+    },
+    {
+      "start": 40963,
+      "end": 40976,
+      "text": "_base._store_logger",
+      "kind": "runtime-global",
+      "scope": "top.FallbackSecretStore.delete_secret",
+      "name": "_store_logger"
+    },
+    {
+      "start": 41344,
+      "end": 41352,
+      "text": "_base.suppress",
+      "kind": "runtime-global",
+      "scope": "top.MigratingFallbackSecretStore.set_secret",
+      "name": "suppress"
+    },
+    {
+      "start": 42220,
+      "end": 42244,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top.MigratingFallbackSecretStore._get_secret_and_migrate",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 42957,
+      "end": 42963,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top._expand_keystream",
+      "name": "sha256"
+    },
+    {
+      "start": 43186,
+      "end": 43188,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top._set_private_mode",
+      "name": "os"
+    },
+    {
+      "start": 43235,
+      "end": 43237,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top._set_private_mode",
+      "name": "os"
+    },
+    {
+      "start": 43291,
+      "end": 43304,
+      "text": "_base._store_logger",
+      "kind": "runtime-global",
+      "scope": "top._set_private_mode",
+      "name": "_store_logger"
+    },
+    {
+      "start": 43483,
+      "end": 43522,
+      "text": "_base._SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_availability_cache_path",
+      "name": "_SYSTEM_KEYRING_AVAILABILITY_CACHE_FILE"
+    },
+    {
+      "start": 43610,
+      "end": 43613,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "sys"
+    },
+    {
+      "start": 43667,
+      "end": 43706,
+      "text": "_base._system_keyring_availability_cache_path",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "_system_keyring_availability_cache_path"
+    },
+    {
+      "start": 43746,
+      "end": 43750,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "json"
+    },
+    {
+      "start": 43812,
+      "end": 43816,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "json"
+    },
+    {
+      "start": 44166,
+      "end": 44170,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "time"
+    },
+    {
+      "start": 44202,
+      "end": 44248,
+      "text": "_base._SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS",
+      "kind": "runtime-global",
+      "scope": "top._read_system_keyring_availability_cache",
+      "name": "_SYSTEM_KEYRING_AVAILABILITY_CACHE_TTL_SECONDS"
+    },
+    {
+      "start": 44392,
+      "end": 44395,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "sys"
+    },
+    {
+      "start": 44444,
+      "end": 44483,
+      "text": "_base._system_keyring_availability_cache_path",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "_system_keyring_availability_cache_path"
+    },
+    {
+      "start": 44542,
+      "end": 44547,
+      "text": "_base.uuid4",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "uuid4"
+    },
+    {
+      "start": 44631,
+      "end": 44635,
+      "text": "_base.time",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "time"
+    },
+    {
+      "start": 44755,
+      "end": 44759,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "json"
+    },
+    {
+      "start": 44863,
+      "end": 44880,
+      "text": "_base._set_private_mode",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "_set_private_mode"
+    },
+    {
+      "start": 44891,
+      "end": 44921,
+      "text": "_base._GUARD_STORE_PRIVATE_FILE_MODE",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "_GUARD_STORE_PRIVATE_FILE_MODE"
+    },
+    {
+      "start": 45015,
+      "end": 45023,
+      "text": "_base.suppress",
+      "kind": "runtime-global",
+      "scope": "top._write_system_keyring_availability_cache",
+      "name": "suppress"
+    },
+    {
+      "start": 45166,
+      "end": 45205,
+      "text": "_base._read_system_keyring_availability_cache",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_is_available",
+      "name": "_read_system_keyring_availability_cache"
+    },
+    {
+      "start": 45315,
+      "end": 45318,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_is_available",
+      "name": "sys"
+    },
+    {
+      "start": 45349,
+      "end": 45373,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_is_available",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 45427,
+      "end": 45451,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_is_available",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 45472,
+      "end": 45512,
+      "text": "_base._write_system_keyring_availability_cache",
+      "kind": "runtime-global",
+      "scope": "top._system_keyring_is_available",
+      "name": "_write_system_keyring_availability_cache"
+    },
+    {
+      "start": 45708,
+      "end": 45732,
+      "text": "_base.EncryptedFileSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "EncryptedFileSecretStore"
+    },
+    {
+      "start": 45752,
+      "end": 45755,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "sys"
+    },
+    {
+      "start": 45864,
+      "end": 45892,
+      "text": "_base.MigratingFallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "MigratingFallbackSecretStore"
+    },
+    {
+      "start": 45906,
+      "end": 45930,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 46009,
+      "end": 46037,
+      "text": "_base._system_keyring_is_available",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "_system_keyring_is_available"
+    },
+    {
+      "start": 46066,
+      "end": 46085,
+      "text": "_base.FallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "FallbackSecretStore"
+    },
+    {
+      "start": 46099,
+      "end": 46123,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_oauth_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 46366,
+      "end": 46369,
+      "text": "_base.sys",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "sys"
+    },
+    {
+      "start": 46417,
+      "end": 46441,
+      "text": "_base.EncryptedFileSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "EncryptedFileSecretStore"
+    },
+    {
+      "start": 46536,
+      "end": 46560,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 46616,
+      "end": 46644,
+      "text": "_base.MigratingFallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "MigratingFallbackSecretStore"
+    },
+    {
+      "start": 46662,
+      "end": 46686,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 46700,
+      "end": 46730,
+      "text": "_base._POLICY_INTEGRITY_SERVICE_NAME",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "_POLICY_INTEGRITY_SERVICE_NAME"
+    },
+    {
+      "start": 46794,
+      "end": 46818,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 46893,
+      "end": 46917,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 47008,
+      "end": 47036,
+      "text": "_base.MigratingFallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "MigratingFallbackSecretStore"
+    },
+    {
+      "start": 47050,
+      "end": 47074,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 47088,
+      "end": 47118,
+      "text": "_base._POLICY_INTEGRITY_SERVICE_NAME",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "_POLICY_INTEGRITY_SERVICE_NAME"
+    },
+    {
+      "start": 47166,
+      "end": 47190,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 47231,
+      "end": 47255,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 47269,
+      "end": 47299,
+      "text": "_base._POLICY_INTEGRITY_SERVICE_NAME",
+      "kind": "runtime-global",
+      "scope": "top._build_policy_integrity_secret_store",
+      "name": "_POLICY_INTEGRITY_SERVICE_NAME"
+    },
+    {
+      "start": 47417,
+      "end": 47441,
+      "text": "_base.SystemKeyringSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_backend_name",
+      "name": "SystemKeyringSecretStore"
+    },
+    {
+      "start": 47508,
+      "end": 47532,
+      "text": "_base.EncryptedFileSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_backend_name",
+      "name": "EncryptedFileSecretStore"
+    },
+    {
+      "start": 47599,
+      "end": 47621,
+      "text": "_base.UnavailableSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_backend_name",
+      "name": "UnavailableSecretStore"
+    },
+    {
+      "start": 47685,
+      "end": 47704,
+      "text": "_base.FallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_backend_name",
+      "name": "FallbackSecretStore"
+    },
+    {
+      "start": 47722,
+      "end": 47748,
+      "text": "_base._secret_store_backend_name",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_backend_name",
+      "name": "_secret_store_backend_name"
+    },
+    {
+      "start": 47908,
+      "end": 47927,
+      "text": "_base.FallbackSecretStore",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_fallback_backend_name",
+      "name": "FallbackSecretStore"
+    },
+    {
+      "start": 47945,
+      "end": 47971,
+      "text": "_base._secret_store_backend_name",
+      "kind": "runtime-global",
+      "scope": "top._secret_store_fallback_backend_name",
+      "name": "_secret_store_backend_name"
+    },
+    {
+      "start": 48080,
+      "end": 48082,
+      "text": "_base.os",
+      "kind": "runtime-global",
+      "scope": "top._should_warn_on_slow_store_transactions",
+      "name": "os"
+    },
+    {
+      "start": 48095,
+      "end": 48118,
+      "text": "_base._SLOW_STORE_WARNING_ENV",
+      "kind": "runtime-global",
+      "scope": "top._should_warn_on_slow_store_transactions",
+      "name": "_SLOW_STORE_WARNING_ENV"
+    },
+    {
+      "start": 49731,
+      "end": 49757,
+      "text": "_base._normalized_workspace_path",
+      "kind": "runtime-global",
+      "scope": "top._path_within_workspace",
+      "name": "_normalized_workspace_path"
+    },
+    {
+      "start": 49798,
+      "end": 49824,
+      "text": "_base._normalized_workspace_path",
+      "kind": "runtime-global",
+      "scope": "top._path_within_workspace",
+      "name": "_normalized_workspace_path"
+    },
+    {
+      "start": 50583,
+      "end": 50609,
+      "text": "_base._normalized_workspace_path",
+      "kind": "runtime-global",
+      "scope": "top._workspace_policy_key",
+      "name": "_normalized_workspace_path"
+    },
+    {
+      "start": 50634,
+      "end": 50640,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top._workspace_policy_key",
+      "name": "sha256"
+    },
+    {
+      "start": 50695,
+      "end": 50723,
+      "text": "_base._WORKSPACE_POLICY_KEY_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._workspace_policy_key",
+      "name": "_WORKSPACE_POLICY_KEY_PREFIX"
+    },
+    {
+      "start": 50821,
+      "end": 50849,
+      "text": "_base._WORKSPACE_POLICY_KEY_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._stored_workspace_policy_key",
+      "name": "_WORKSPACE_POLICY_KEY_PREFIX"
+    },
+    {
+      "start": 50894,
+      "end": 50915,
+      "text": "_base._workspace_policy_key",
+      "kind": "runtime-global",
+      "scope": "top._stored_workspace_policy_key",
+      "name": "_workspace_policy_key"
+    },
+    {
+      "start": 51426,
+      "end": 51450,
+      "text": "_base._SCOPED_HARNESS_FAMILIES",
+      "kind": "runtime-global",
+      "scope": "top._validate_scoped_policy_artifact_target",
+      "name": "_SCOPED_HARNESS_FAMILIES"
+    },
+    {
+      "start": 51905,
+      "end": 51925,
+      "text": "_base._artifact_family_key",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "_artifact_family_key"
+    },
+    {
+      "start": 51968,
+      "end": 51985,
+      "text": "_base._family_key_value",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "_family_key_value"
+    },
+    {
+      "start": 52005,
+      "end": 52035,
+      "text": "_base._SCOPED_RUNTIME_EXACT_FAMILIES",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "_SCOPED_RUNTIME_EXACT_FAMILIES"
+    },
+    {
+      "start": 52118,
+      "end": 52124,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "sha256"
+    },
+    {
+      "start": 52193,
+      "end": 52199,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "sha256"
+    },
+    {
+      "start": 52213,
+      "end": 52217,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "json"
+    },
+    {
+      "start": 52541,
+      "end": 52575,
+      "text": "_base._RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._runtime_scoped_exact_match_key",
+      "name": "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX"
+    },
+    {
+      "start": 52747,
+      "end": 52767,
+      "text": "_base._artifact_family_key",
+      "kind": "runtime-global",
+      "scope": "top._global_runtime_scoped_exact_match_key",
+      "name": "_artifact_family_key"
+    },
+    {
+      "start": 52810,
+      "end": 52827,
+      "text": "_base._family_key_value",
+      "kind": "runtime-global",
+      "scope": "top._global_runtime_scoped_exact_match_key",
+      "name": "_family_key_value"
+    },
+    {
+      "start": 52847,
+      "end": 52877,
+      "text": "_base._SCOPED_RUNTIME_EXACT_FAMILIES",
+      "kind": "runtime-global",
+      "scope": "top._global_runtime_scoped_exact_match_key",
+      "name": "_SCOPED_RUNTIME_EXACT_FAMILIES"
+    },
+    {
+      "start": 52946,
+      "end": 52963,
+      "text": "_base._family_key_value",
+      "kind": "runtime-global",
+      "scope": "top._global_runtime_scoped_exact_match_key",
+      "name": "_family_key_value"
+    },
+    {
+      "start": 52989,
+      "end": 53020,
+      "text": "_base._runtime_scoped_exact_match_key",
+      "kind": "runtime-global",
+      "scope": "top._global_runtime_scoped_exact_match_key",
+      "name": "_runtime_scoped_exact_match_key"
+    },
+    {
+      "start": 53328,
+      "end": 53348,
+      "text": "_base._artifact_family_key",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_policy_artifact_id",
+      "name": "_artifact_family_key"
+    },
+    {
+      "start": 53396,
+      "end": 53413,
+      "text": "_base._family_key_value",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_policy_artifact_id",
+      "name": "_family_key_value"
+    },
+    {
+      "start": 53429,
+      "end": 53459,
+      "text": "_base._SCOPED_RUNTIME_EXACT_FAMILIES",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_policy_artifact_id",
+      "name": "_SCOPED_RUNTIME_EXACT_FAMILIES"
+    },
+    {
+      "start": 53501,
+      "end": 53507,
+      "text": "_base.sha256",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_policy_artifact_id",
+      "name": "sha256"
+    },
+    {
+      "start": 54066,
+      "end": 54070,
+      "text": "_base.Path",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_exact_match_context",
+      "name": "Path"
+    },
+    {
+      "start": 54368,
+      "end": 54372,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_exact_match_context",
+      "name": "json"
+    },
+    {
+      "start": 54703,
+      "end": 54707,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_portable_match_context",
+      "name": "json"
+    },
+    {
+      "start": 54830,
+      "end": 54837,
+      "text": "_base.Mapping",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_portable_match_context",
+      "name": "Mapping"
+    },
+    {
+      "start": 55191,
+      "end": 55199,
+      "text": "_base.Sequence",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_portable_match_context",
+      "name": "Sequence"
+    },
+    {
+      "start": 55267,
+      "end": 55306,
+      "text": "_base.runtime_tool_action_exact_match_context",
+      "kind": "runtime-global",
+      "scope": "top.runtime_tool_action_portable_match_context",
+      "name": "runtime_tool_action_exact_match_context"
+    },
+    {
+      "start": 56895,
+      "end": 56899,
+      "text": "_base.json",
+      "kind": "runtime-global",
+      "scope": "top.browser_mcp_exact_match_context",
+      "name": "json"
+    },
+    {
+      "start": 57078,
+      "end": 57112,
+      "text": "_base._RUNTIME_SCOPED_EXACT_MATCH_PREFIX",
+      "kind": "runtime-global",
+      "scope": "top._is_runtime_scoped_exact_match_key",
+      "name": "_RUNTIME_SCOPED_EXACT_MATCH_PREFIX"
+    },
+    {
+      "start": 57182,
+      "end": 57210,
+      "text": "_base.parse_approval_context_token",
+      "kind": "runtime-global",
+      "scope": "top._is_approval_context_token",
+      "name": "parse_approval_context_token"
+    },
+    {
+      "start": 57745,
+      "end": 57766,
+      "text": "_base.REMOTE_POLICY_SOURCES",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "REMOTE_POLICY_SOURCES"
+    },
+    {
+      "start": 57806,
+      "end": 57826,
+      "text": "_base._artifact_family_key",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "_artifact_family_key"
+    },
+    {
+      "start": 57876,
+      "end": 57893,
+      "text": "_base._family_key_value",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "_family_key_value"
+    },
+    {
+      "start": 57913,
+      "end": 57943,
+      "text": "_base._SCOPED_RUNTIME_EXACT_FAMILIES",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "_SCOPED_RUNTIME_EXACT_FAMILIES"
+    },
+    {
+      "start": 58066,
+      "end": 58092,
+      "text": "_base._is_approval_context_token",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "_is_approval_context_token"
+    },
+    {
+      "start": 58141,
+      "end": 58172,
+      "text": "_base._runtime_scoped_exact_match_key",
+      "kind": "runtime-global",
+      "scope": "top._scoped_runtime_row_requires_exact_match",
+      "name": "_runtime_scoped_exact_match_key"
+    },
+    {
+      "start": 59393,
+      "end": 59400,
+      "text": "_base.Mapping",
+      "kind": "runtime-global",
+      "scope": "top._policy_integrity_ready_for_local_write",
+      "name": "Mapping"
+    },
+    {
+      "start": 59489,
+      "end": 59496,
+      "text": "_base.Mapping",
+      "kind": "runtime-global",
+      "scope": "top._policy_integrity_ready_for_local_write",
+      "name": "Mapping"
+    },
+    {
+      "start": 59559,
+      "end": 59585,
+      "text": "_base._POLICY_INTEGRITY_STATUSES",
+      "kind": "runtime-global",
+      "scope": "top._policy_integrity_ready_for_local_write",
+      "name": "_POLICY_INTEGRITY_STATUSES"
+    },
+    {
+      "start": 60028,
+      "end": 60035,
+      "text": "_base.Mapping",
+      "kind": "runtime-global",
+      "scope": "top._policy_integrity_setup_safe_for_local_write",
+      "name": "Mapping"
+    },
+    {
+      "start": 60107,
+      "end": 60152,
+      "text": "_base._POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES",
+      "kind": "runtime-global",
+      "scope": "top._policy_integrity_setup_safe_for_local_write",
+      "name": "_POLICY_INTEGRITY_MIGRATION_ELIGIBLE_STATUSES"
+    },
+    {
+      "start": 60965,
+      "end": 60975,
+      "text": "_base._int_value",
+      "kind": "runtime-global",
+      "scope": "top._mapping_int",
+      "name": "_int_value"
+    },
+    {
+      "start": 61373,
+      "end": 61381,
+      "text": "_base.datetime",
+      "kind": "runtime-global",
+      "scope": "top._parse_utc_timestamp",
+      "name": "datetime"
+    },
+    {
+      "start": 61499,
+      "end": 61507,
+      "text": "_base.timezone",
+      "kind": "runtime-global",
+      "scope": "top._parse_utc_timestamp",
+      "name": "timezone"
+    },
+    {
+      "start": 61542,
+      "end": 61550,
+      "text": "_base.timezone",
+      "kind": "runtime-global",
+      "scope": "top._parse_utc_timestamp",
+      "name": "timezone"
+    },
+    {
+      "start": 61694,
+      "end": 61714,
+      "text": "_base._parse_utc_timestamp",
+      "kind": "runtime-global",
+      "scope": "top._canonical_utc_timestamp",
+      "name": "_parse_utc_timestamp"
+    },
+    {
+      "start": 61928,
+      "end": 61948,
+      "text": "_base._parse_utc_timestamp",
+      "kind": "runtime-global",
+      "scope": "top._timestamp_has_expired",
+      "name": "_parse_utc_timestamp"
+    },
+    {
+      "start": 61964,
+      "end": 61984,
+      "text": "_base._parse_utc_timestamp",
+      "kind": "runtime-global",
+      "scope": "top._timestamp_has_expired",
+      "name": "_parse_utc_timestamp"
+    },
+    {
+      "start": 62078,
+      "end": 62102,
+      "text": "_base._canonical_utc_timestamp",
+      "kind": "runtime-global",
+      "scope": "top._now",
+      "name": "_canonical_utc_timestamp"
+    },
+    {
+      "start": 62103,
+      "end": 62111,
+      "text": "_base.datetime",
+      "kind": "runtime-global",
+      "scope": "top._now",
+      "name": "datetime"
+    },
+    {
+      "start": 62116,
+      "end": 62124,
+      "text": "_base.timezone",
+      "kind": "runtime-global",
+      "scope": "top._now",
+      "name": "timezone"
+    },
+    {
+      "start": 62213,
+      "end": 62221,
+      "text": "_base.datetime",
+      "kind": "runtime-global",
+      "scope": "top._lease_expiry",
+      "name": "datetime"
+    },
+    {
+      "start": 62243,
+      "end": 62252,
+      "text": "_base.timedelta",
+      "kind": "runtime-global",
+      "scope": "top._lease_expiry",
+      "name": "timedelta"
+    },
+    {
+      "start": 8294,
+      "end": 8294,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._is_approval_gate_one_shot_policy"
+    },
+    {
+      "start": 8748,
+      "end": 8748,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._normalize_source_name"
+    },
+    {
+      "start": 11490,
+      "end": 11490,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._oauth_sync_url_from_issuer"
+    },
+    {
+      "start": 11666,
+      "end": 11666,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._allowed_origin_from_sync_url"
+    },
+    {
+      "start": 11922,
+      "end": 11922,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._secret_fingerprint"
+    },
+    {
+      "start": 12262,
+      "end": 12262,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._legacy_secret_fingerprint"
+    },
+    {
+      "start": 12534,
+      "end": 12534,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._legacy_secret_sha256"
+    },
+    {
+      "start": 12677,
+      "end": 12677,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._secret_matches_hash"
+    },
+    {
+      "start": 13056,
+      "end": 13056,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._acquire_advisory_file_lock"
+    },
+    {
+      "start": 13645,
+      "end": 13645,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._release_advisory_file_lock"
+    },
+    {
+      "start": 14662,
+      "end": 14662,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore.__init__"
+    },
+    {
+      "start": 14823,
+      "end": 14823,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._load_keyring_module"
+    },
+    {
+      "start": 15446,
+      "end": 15446,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._load_keyring_module_or_none"
+    },
+    {
+      "start": 16175,
+      "end": 16175,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module"
+    },
+    {
+      "start": 16484,
+      "end": 16484,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._store_path"
+    },
+    {
+      "start": 16593,
+      "end": 16593,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._load"
+    },
+    {
+      "start": 17293,
+      "end": 17293,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._persist"
+    },
+    {
+      "start": 17847,
+      "end": 17847,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_keyring"
+    },
+    {
+      "start": 18004,
+      "end": 18004,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.set_password"
+    },
+    {
+      "start": 18255,
+      "end": 18255,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_password"
+    },
+    {
+      "start": 18431,
+      "end": 18431,
+      "text": "            @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.delete_password"
+    },
+    {
+      "start": 18703,
+      "end": 18703,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._load_macos_keyring_api_module"
+    },
+    {
+      "start": 18866,
+      "end": 18866,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_path"
+    },
+    {
+      "start": 19250,
+      "end": 19250,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._run_macos_security_command"
+    },
+    {
+      "start": 19871,
+      "end": 19871,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._macos_user_keychain_paths"
+    },
+    {
+      "start": 20328,
+      "end": 20328,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._macos_keychain_path_is_usable"
+    },
+    {
+      "start": 20661,
+      "end": 20661,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._normalized_macos_keychain_path"
+    },
+    {
+      "start": 20801,
+      "end": 20801,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._clear_macos_keychain_health_cache"
+    },
+    {
+      "start": 20924,
+      "end": 20924,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable_uncached"
+    },
+    {
+      "start": 21678,
+      "end": 21678,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable"
+    },
+    {
+      "start": 22169,
+      "end": 22169,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._backend_is_available"
+    },
+    {
+      "start": 22715,
+      "end": 22715,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._is_available"
+    },
+    {
+      "start": 23043,
+      "end": 23043,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._is_windows_keyring_session_unavailable"
+    },
+    {
+      "start": 23343,
+      "end": 23343,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._mark_windows_keyring_unavailable"
+    },
+    {
+      "start": 23669,
+      "end": 23669,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._clear_windows_keyring_unavailable"
+    },
+    {
+      "start": 23778,
+      "end": 23778,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._is_unavailable"
+    },
+    {
+      "start": 23867,
+      "end": 23867,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore.set_secret"
+    },
+    {
+      "start": 24581,
+      "end": 24581,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore.get_secret"
+    },
+    {
+      "start": 25086,
+      "end": 25086,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._supports_native_macos_security_reads"
+    },
+    {
+      "start": 26000,
+      "end": 26000,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._get_secret_without_macos_ui"
+    },
+    {
+      "start": 28273,
+      "end": 28273,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process"
+    },
+    {
+      "start": 30179,
+      "end": 30179,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore.get_secret_with_timeout"
+    },
+    {
+      "start": 31481,
+      "end": 31481,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore.delete_secret"
+    },
+    {
+      "start": 32091,
+      "end": 32091,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore.__init__"
+    },
+    {
+      "start": 32282,
+      "end": 32282,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._ensure_ready"
+    },
+    {
+      "start": 33951,
+      "end": 33951,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore.set_secret"
+    },
+    {
+      "start": 34196,
+      "end": 34196,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore.get_secret"
+    },
+    {
+      "start": 34880,
+      "end": 34880,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore.delete_secret"
+    },
+    {
+      "start": 35056,
+      "end": 35056,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._path_for"
+    },
+    {
+      "start": 35224,
+      "end": 35224,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._load_fernet_key"
+    },
+    {
+      "start": 36068,
+      "end": 36068,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_bytes"
+    },
+    {
+      "start": 36608,
+      "end": 36608,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._atomic_write_text"
+    },
+    {
+      "start": 36758,
+      "end": 36758,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._encrypt_fernet"
+    },
+    {
+      "start": 37109,
+      "end": 37109,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._decrypt_fernet"
+    },
+    {
+      "start": 37739,
+      "end": 37739,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload"
+    },
+    {
+      "start": 38742,
+      "end": 38742,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.UnavailableSecretStore.__init__"
+    },
+    {
+      "start": 38912,
+      "end": 38912,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.UnavailableSecretStore.set_secret"
+    },
+    {
+      "start": 39192,
+      "end": 39192,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.UnavailableSecretStore.get_secret"
+    },
+    {
+      "start": 39291,
+      "end": 39291,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.UnavailableSecretStore.delete_secret"
+    },
+    {
+      "start": 39646,
+      "end": 39646,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore.__init__"
+    },
+    {
+      "start": 39788,
+      "end": 39788,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore.set_secret"
+    },
+    {
+      "start": 39999,
+      "end": 39999,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore.get_secret"
+    },
+    {
+      "start": 40380,
+      "end": 40380,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore.promote_secret"
+    },
+    {
+      "start": 40748,
+      "end": 40748,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore.delete_secret"
+    },
+    {
+      "start": 41269,
+      "end": 41269,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.MigratingFallbackSecretStore.set_secret"
+    },
+    {
+      "start": 41471,
+      "end": 41471,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.MigratingFallbackSecretStore.get_secret"
+    },
+    {
+      "start": 41607,
+      "end": 41607,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.MigratingFallbackSecretStore.get_secret_no_ui"
+    },
+    {
+      "start": 41833,
+      "end": 41833,
+      "text": "    @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.MigratingFallbackSecretStore._get_secret_and_migrate"
+    },
+    {
+      "start": 42698,
+      "end": 42698,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._expand_keystream"
+    },
+    {
+      "start": 43125,
+      "end": 43125,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._set_private_mode"
+    },
+    {
+      "start": 43388,
+      "end": 43388,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._system_keyring_availability_cache_path"
+    },
+    {
+      "start": 43525,
+      "end": 43525,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._read_system_keyring_availability_cache"
+    },
+    {
+      "start": 44293,
+      "end": 44293,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._write_system_keyring_availability_cache"
+    },
+    {
+      "start": 45066,
+      "end": 45066,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._system_keyring_is_available"
+    },
+    {
+      "start": 45569,
+      "end": 45569,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._build_oauth_secret_store"
+    },
+    {
+      "start": 46223,
+      "end": 46223,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._build_policy_integrity_secret_store"
+    },
+    {
+      "start": 47319,
+      "end": 47319,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._secret_store_backend_name"
+    },
+    {
+      "start": 47794,
+      "end": 47794,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._secret_store_fallback_backend_name"
+    },
+    {
+      "start": 48013,
+      "end": 48013,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._should_warn_on_slow_store_transactions"
+    },
+    {
+      "start": 48769,
+      "end": 48769,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.receipt_index_statements"
+    },
+    {
+      "start": 49637,
+      "end": 49637,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._path_within_workspace"
+    },
+    {
+      "start": 50115,
+      "end": 50115,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._normalized_workspace_path"
+    },
+    {
+      "start": 50431,
+      "end": 50431,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._workspace_policy_key"
+    },
+    {
+      "start": 50736,
+      "end": 50736,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._stored_workspace_policy_key"
+    },
+    {
+      "start": 51061,
+      "end": 51061,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._validate_scoped_policy_artifact_target"
+    },
+    {
+      "start": 51641,
+      "end": 51641,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._runtime_scoped_exact_match_key"
+    },
+    {
+      "start": 52588,
+      "end": 52588,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._global_runtime_scoped_exact_match_key"
+    },
+    {
+      "start": 53075,
+      "end": 53075,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.runtime_tool_action_policy_artifact_id"
+    },
+    {
+      "start": 53608,
+      "end": 53608,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.runtime_tool_action_exact_match_context"
+    },
+    {
+      "start": 54429,
+      "end": 54429,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.runtime_tool_action_portable_match_context"
+    },
+    {
+      "start": 55567,
+      "end": 55567,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.browser_mcp_exact_match_context"
+    },
+    {
+      "start": 56956,
+      "end": 56956,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._is_runtime_scoped_exact_match_key"
+    },
+    {
+      "start": 57116,
+      "end": 57116,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._is_approval_context_token"
+    },
+    {
+      "start": 57232,
+      "end": 57232,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._scoped_runtime_row_requires_exact_match"
+    },
+    {
+      "start": 58494,
+      "end": 58494,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._warn_only_policy_integrity_status"
+    },
+    {
+      "start": 59240,
+      "end": 59240,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._policy_integrity_ready_for_local_write"
+    },
+    {
+      "start": 59874,
+      "end": 59874,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._policy_integrity_setup_safe_for_local_write"
+    },
+    {
+      "start": 60320,
+      "end": 60320,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._family_key_value"
+    },
+    {
+      "start": 60482,
+      "end": 60482,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._row_mapping"
+    },
+    {
+      "start": 60606,
+      "end": 60606,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._string_value"
+    },
+    {
+      "start": 60734,
+      "end": 60734,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._int_value"
+    },
+    {
+      "start": 60881,
+      "end": 60881,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._mapping_int"
+    },
+    {
+      "start": 61027,
+      "end": 61027,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._chunks"
+    },
+    {
+      "start": 61202,
+      "end": 61202,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._parse_utc_timestamp"
+    },
+    {
+      "start": 61558,
+      "end": 61558,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._canonical_utc_timestamp"
+    },
+    {
+      "start": 61759,
+      "end": 61759,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._timestamp_has_expired"
+    },
+    {
+      "start": 62048,
+      "end": 62048,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._now"
+    },
+    {
+      "start": 62145,
+      "end": 62145,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._lease_expiry"
+    },
+    {
+      "start": 62299,
+      "end": 62299,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._string_list"
+    },
+    {
+      "start": 62476,
+      "end": 62476,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top._transport_value"
+    },
+    {
+      "start": 14302,
+      "end": 14302,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore"
+    },
+    {
+      "start": 16424,
+      "end": 16424,
+      "text": "        @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule"
+    },
+    {
+      "start": 17878,
+      "end": 17878,
+      "text": "                @_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_keyring._Backend"
+    },
+    {
+      "start": 31782,
+      "end": 31782,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.EncryptedFileSecretStore"
+    },
+    {
+      "start": 38629,
+      "end": 38629,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.UnavailableSecretStore"
+    },
+    {
+      "start": 39537,
+      "end": 39537,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.FallbackSecretStore"
+    },
+    {
+      "start": 41134,
+      "end": 41134,
+      "text": "@_preserve_module\n",
+      "kind": "identity-module-decorator",
+      "scope": "top.MigratingFallbackSecretStore"
+    }
+  ],
+  "groups": [
+    {
+      "module": "store_base_chunks",
+      "members": [
+        "_chunks"
+      ],
+      "annotation_aliases": [
+        "Iterator",
+        "Sequence",
+        "_ChunkT"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 15,
+      "metadata_decorators": [
+        {
+          "scope": "top._chunks",
+          "original_def_line": 1663
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base import Iterator, Sequence, _ChunkT\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom .store_base import Iterator, Sequence, _ChunkT  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    },
+    {
+      "module": "store_base_keyring",
+      "members": [
+        "SystemKeyringSecretStore"
+      ],
+      "annotation_aliases": [
+        "Path",
+        "subprocess"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 481,
+      "metadata_decorators": [
+        {
+          "scope": "top.SystemKeyringSecretStore.__init__",
+          "original_def_line": 460
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._load_keyring_module",
+          "original_def_line": 465
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._load_keyring_module_or_none",
+          "original_def_line": 483
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module",
+          "original_def_line": 501
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._store_path",
+          "original_def_line": 510
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._load",
+          "original_def_line": 514
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule._persist",
+          "original_def_line": 528
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_keyring",
+          "original_def_line": 537
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.set_password",
+          "original_def_line": 544
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_password",
+          "original_def_line": 550
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.delete_password",
+          "original_def_line": 554
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._load_macos_keyring_api_module",
+          "original_def_line": 562
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._macos_default_keychain_path",
+          "original_def_line": 568
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._run_macos_security_command",
+          "original_def_line": 578
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._macos_user_keychain_paths",
+          "original_def_line": 597
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._macos_keychain_path_is_usable",
+          "original_def_line": 609
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._normalized_macos_keychain_path",
+          "original_def_line": 618
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._clear_macos_keychain_health_cache",
+          "original_def_line": 622
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable_uncached",
+          "original_def_line": 626
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._macos_default_keychain_is_usable",
+          "original_def_line": 642
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._backend_is_available",
+          "original_def_line": 654
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._is_available",
+          "original_def_line": 669
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._is_windows_keyring_session_unavailable",
+          "original_def_line": 679
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._mark_windows_keyring_unavailable",
+          "original_def_line": 687
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._clear_windows_keyring_unavailable",
+          "original_def_line": 695
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._is_unavailable",
+          "original_def_line": 698
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore.set_secret",
+          "original_def_line": 701
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore.get_secret",
+          "original_def_line": 717
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._supports_native_macos_security_reads",
+          "original_def_line": 730
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._get_secret_without_macos_ui",
+          "original_def_line": 755
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._get_macos_secret_in_isolated_process",
+          "original_def_line": 804
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore.get_secret_with_timeout",
+          "original_def_line": 851
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore.delete_secret",
+          "original_def_line": 877
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore",
+          "original_def_line": 452
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule",
+          "original_def_line": 508
+        },
+        {
+          "scope": "top.SystemKeyringSecretStore._test_keyring_module._TestKeyringModule.get_keyring._Backend",
+          "original_def_line": 538
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom . import store_base as _base\nfrom .store_base import Path, subprocess\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom . import store_base as _base  # noqa: E402\nfrom .store_base import Path, subprocess  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    },
+    {
+      "module": "store_base_policy_matching",
+      "members": [
+        "_path_within_workspace",
+        "_normalized_workspace_path",
+        "_workspace_policy_key",
+        "_stored_workspace_policy_key",
+        "_validate_scoped_policy_artifact_target",
+        "_runtime_scoped_exact_match_key",
+        "_global_runtime_scoped_exact_match_key",
+        "runtime_tool_action_policy_artifact_id",
+        "runtime_tool_action_exact_match_context",
+        "runtime_tool_action_portable_match_context",
+        "browser_mcp_exact_match_context",
+        "_is_runtime_scoped_exact_match_key",
+        "_is_approval_context_token",
+        "_scoped_runtime_row_requires_exact_match",
+        "_warn_only_policy_integrity_status",
+        "_policy_integrity_ready_for_local_write",
+        "_policy_integrity_setup_safe_for_local_write",
+        "_family_key_value"
+      ],
+      "annotation_aliases": [
+        "Mapping",
+        "Sequence"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 312,
+      "metadata_decorators": [
+        {
+          "scope": "top._path_within_workspace",
+          "original_def_line": 1349
+        },
+        {
+          "scope": "top._normalized_workspace_path",
+          "original_def_line": 1359
+        },
+        {
+          "scope": "top._workspace_policy_key",
+          "original_def_line": 1368
+        },
+        {
+          "scope": "top._stored_workspace_policy_key",
+          "original_def_line": 1376
+        },
+        {
+          "scope": "top._validate_scoped_policy_artifact_target",
+          "original_def_line": 1386
+        },
+        {
+          "scope": "top._runtime_scoped_exact_match_key",
+          "original_def_line": 1405
+        },
+        {
+          "scope": "top._global_runtime_scoped_exact_match_key",
+          "original_def_line": 1431
+        },
+        {
+          "scope": "top.runtime_tool_action_policy_artifact_id",
+          "original_def_line": 1442
+        },
+        {
+          "scope": "top.runtime_tool_action_exact_match_context",
+          "original_def_line": 1454
+        },
+        {
+          "scope": "top.runtime_tool_action_portable_match_context",
+          "original_def_line": 1474
+        },
+        {
+          "scope": "top.browser_mcp_exact_match_context",
+          "original_def_line": 1502
+        },
+        {
+          "scope": "top._is_runtime_scoped_exact_match_key",
+          "original_def_line": 1539
+        },
+        {
+          "scope": "top._is_approval_context_token",
+          "original_def_line": 1543
+        },
+        {
+          "scope": "top._scoped_runtime_row_requires_exact_match",
+          "original_def_line": 1547
+        },
+        {
+          "scope": "top._warn_only_policy_integrity_status",
+          "original_def_line": 1582
+        },
+        {
+          "scope": "top._policy_integrity_ready_for_local_write",
+          "original_def_line": 1604
+        },
+        {
+          "scope": "top._policy_integrity_setup_safe_for_local_write",
+          "original_def_line": 1621
+        },
+        {
+          "scope": "top._family_key_value",
+          "original_def_line": 1633
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom . import store_base as _base\nfrom .store_base import Mapping, Sequence\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom . import store_base as _base  # noqa: E402\nfrom .store_base import Mapping, Sequence  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    },
+    {
+      "module": "store_base_secret_backends",
+      "members": [
+        "FallbackSecretStore",
+        "MigratingFallbackSecretStore",
+        "_system_keyring_availability_cache_path",
+        "_read_system_keyring_availability_cache",
+        "_write_system_keyring_availability_cache",
+        "_system_keyring_is_available",
+        "_build_oauth_secret_store",
+        "_build_policy_integrity_secret_store",
+        "_secret_store_backend_name",
+        "_secret_store_fallback_backend_name"
+      ],
+      "annotation_aliases": [
+        "Path",
+        "SecretStore"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 243,
+      "metadata_decorators": [
+        {
+          "scope": "top.FallbackSecretStore.__init__",
+          "original_def_line": 1081
+        },
+        {
+          "scope": "top.FallbackSecretStore.set_secret",
+          "original_def_line": 1085
+        },
+        {
+          "scope": "top.FallbackSecretStore.get_secret",
+          "original_def_line": 1091
+        },
+        {
+          "scope": "top.FallbackSecretStore.promote_secret",
+          "original_def_line": 1103
+        },
+        {
+          "scope": "top.FallbackSecretStore.delete_secret",
+          "original_def_line": 1115
+        },
+        {
+          "scope": "top.MigratingFallbackSecretStore.set_secret",
+          "original_def_line": 1130
+        },
+        {
+          "scope": "top.MigratingFallbackSecretStore.get_secret",
+          "original_def_line": 1135
+        },
+        {
+          "scope": "top.MigratingFallbackSecretStore.get_secret_no_ui",
+          "original_def_line": 1138
+        },
+        {
+          "scope": "top.MigratingFallbackSecretStore._get_secret_and_migrate",
+          "original_def_line": 1143
+        },
+        {
+          "scope": "top._system_keyring_availability_cache_path",
+          "original_def_line": 1189
+        },
+        {
+          "scope": "top._read_system_keyring_availability_cache",
+          "original_def_line": 1193
+        },
+        {
+          "scope": "top._write_system_keyring_availability_cache",
+          "original_def_line": 1214
+        },
+        {
+          "scope": "top._system_keyring_is_available",
+          "original_def_line": 1238
+        },
+        {
+          "scope": "top._build_oauth_secret_store",
+          "original_def_line": 1249
+        },
+        {
+          "scope": "top._build_policy_integrity_secret_store",
+          "original_def_line": 1270
+        },
+        {
+          "scope": "top._secret_store_backend_name",
+          "original_def_line": 1297
+        },
+        {
+          "scope": "top._secret_store_fallback_backend_name",
+          "original_def_line": 1309
+        },
+        {
+          "scope": "top.FallbackSecretStore",
+          "original_def_line": 1078
+        },
+        {
+          "scope": "top.MigratingFallbackSecretStore",
+          "original_def_line": 1127
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom . import store_base as _base\nfrom .store_base import Path, SecretStore\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom . import store_base as _base  # noqa: E402\nfrom .store_base import Path, SecretStore  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    },
+    {
+      "module": "store_base_secret_files",
+      "members": [
+        "_acquire_advisory_file_lock",
+        "_release_advisory_file_lock",
+        "EncryptedFileSecretStore",
+        "UnavailableSecretStore",
+        "_expand_keystream",
+        "_set_private_mode"
+      ],
+      "annotation_aliases": [
+        "Fernet",
+        "Path"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 282,
+      "metadata_decorators": [
+        {
+          "scope": "top._acquire_advisory_file_lock",
+          "original_def_line": 403
+        },
+        {
+          "scope": "top._release_advisory_file_lock",
+          "original_def_line": 426
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore.__init__",
+          "original_def_line": 895
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._ensure_ready",
+          "original_def_line": 900
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore.set_secret",
+          "original_def_line": 934
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore.get_secret",
+          "original_def_line": 940
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore.delete_secret",
+          "original_def_line": 960
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._path_for",
+          "original_def_line": 966
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._load_fernet_key",
+          "original_def_line": 970
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._atomic_write_bytes",
+          "original_def_line": 990
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._atomic_write_text",
+          "original_def_line": 1004
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._encrypt_fernet",
+          "original_def_line": 1007
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._decrypt_fernet",
+          "original_def_line": 1017
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore._decrypt_legacy_payload",
+          "original_def_line": 1034
+        },
+        {
+          "scope": "top.UnavailableSecretStore.__init__",
+          "original_def_line": 1056
+        },
+        {
+          "scope": "top.UnavailableSecretStore.set_secret",
+          "original_def_line": 1059
+        },
+        {
+          "scope": "top.UnavailableSecretStore.get_secret",
+          "original_def_line": 1066
+        },
+        {
+          "scope": "top.UnavailableSecretStore.delete_secret",
+          "original_def_line": 1070
+        },
+        {
+          "scope": "top._expand_keystream",
+          "original_def_line": 1166
+        },
+        {
+          "scope": "top._set_private_mode",
+          "original_def_line": 1179
+        },
+        {
+          "scope": "top.EncryptedFileSecretStore",
+          "original_def_line": 887
+        },
+        {
+          "scope": "top.UnavailableSecretStore",
+          "original_def_line": 1053
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom . import store_base as _base\nfrom .store_base import Fernet, Path\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom . import store_base as _base  # noqa: E402\nfrom .store_base import Fernet, Path  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    },
+    {
+      "module": "store_base_values",
+      "members": [
+        "_is_approval_gate_one_shot_policy",
+        "_normalize_source_name",
+        "_oauth_sync_url_from_issuer",
+        "_allowed_origin_from_sync_url",
+        "_secret_fingerprint",
+        "_legacy_secret_fingerprint",
+        "_legacy_secret_sha256",
+        "_secret_matches_hash",
+        "_should_warn_on_slow_store_transactions",
+        "receipt_index_statements",
+        "_row_mapping",
+        "_string_value",
+        "_int_value",
+        "_mapping_int",
+        "_parse_utc_timestamp",
+        "_canonical_utc_timestamp",
+        "_timestamp_has_expired",
+        "_now",
+        "_lease_expiry",
+        "_string_list",
+        "_transport_value"
+      ],
+      "annotation_aliases": [
+        "Mapping",
+        "TransportKind",
+        "datetime",
+        "sqlite3"
+      ],
+      "header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "physical_lines": 192,
+      "metadata_decorators": [
+        {
+          "scope": "top._is_approval_gate_one_shot_policy",
+          "original_def_line": 262
+        },
+        {
+          "scope": "top._normalize_source_name",
+          "original_def_line": 276
+        },
+        {
+          "scope": "top._oauth_sync_url_from_issuer",
+          "original_def_line": 354
+        },
+        {
+          "scope": "top._allowed_origin_from_sync_url",
+          "original_def_line": 359
+        },
+        {
+          "scope": "top._secret_fingerprint",
+          "original_def_line": 369
+        },
+        {
+          "scope": "top._legacy_secret_fingerprint",
+          "original_def_line": 381
+        },
+        {
+          "scope": "top._legacy_secret_sha256",
+          "original_def_line": 391
+        },
+        {
+          "scope": "top._secret_matches_hash",
+          "original_def_line": 395
+        },
+        {
+          "scope": "top._should_warn_on_slow_store_transactions",
+          "original_def_line": 1315
+        },
+        {
+          "scope": "top.receipt_index_statements",
+          "original_def_line": 1332
+        },
+        {
+          "scope": "top._row_mapping",
+          "original_def_line": 1639
+        },
+        {
+          "scope": "top._string_value",
+          "original_def_line": 1644
+        },
+        {
+          "scope": "top._int_value",
+          "original_def_line": 1650
+        },
+        {
+          "scope": "top._mapping_int",
+          "original_def_line": 1656
+        },
+        {
+          "scope": "top._parse_utc_timestamp",
+          "original_def_line": 1668
+        },
+        {
+          "scope": "top._canonical_utc_timestamp",
+          "original_def_line": 1678
+        },
+        {
+          "scope": "top._timestamp_has_expired",
+          "original_def_line": 1684
+        },
+        {
+          "scope": "top._now",
+          "original_def_line": 1693
+        },
+        {
+          "scope": "top._lease_expiry",
+          "original_def_line": 1697
+        },
+        {
+          "scope": "top._string_list",
+          "original_def_line": 1701
+        },
+        {
+          "scope": "top._transport_value",
+          "original_def_line": 1707
+        }
+      ],
+      "exact_edit_inverse_verified": true,
+      "previous_header": "\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\n\nfrom __future__ import annotations\n\nfrom . import store_base as _base\nfrom .store_base import Mapping, TransportKind, datetime, sqlite3\nfrom .store_base_definition import preserve_store_base_module as _preserve_module\n\n\n",
+      "footer": "\n\n# Bind dependencies after declarations so each owner can be imported first.\nfrom . import store_base as _base  # noqa: E402\nfrom .store_base import Mapping, TransportKind, datetime, sqlite3  # noqa: E402\n",
+      "definition_bytes_exact_to_728": true
+    }
+  ],
+  "source_checker_executed": false,
+  "source_checker_syntax_checked": false,
+  "ruff_types_tests_executed": false,
+  "pending": [
+    "Python syntax/AST source-checker execution",
+    "Ruff formatting/lint and changed-source retention",
+    "Types",
+    "Fresh baseline/candidate import, metadata, descriptor, pickle, type-hint and namespace witnesses",
+    "Thirteen source-derived candidate-only seam cases (seven original plus six cold-helper cases) and scoped existing tests",
+    "Independent peer of this exact source freeze"
+  ],
+  "limits": [
+    "Moved code objects retain their names, qualnames, docs, raw annotations and closures; their source filenames and line positions relocate.",
+    "Class-oriented inspect.getsource can resolve the old facade file through preserved __module__ and may fail for moved class bodies. No exact immutable full-tree consumer search proves absence; this remains an explicit compatibility review point.",
+    "Annotation-only aliases preserve original spelling and initially identical objects. A later reassignment of a facade annotation-only alias would not automatically rebind the helper annotation namespace; no such actual consumer has been established.",
+    "Some later helper definitions are created on the first staged import; all required eager aliases/defaults/bases are separately checked and no later export becomes visible in the facade early."
+  ],
+  "all4554_leaves_exact": true,
+  "previous_draft_retained": [
+    "2edb150a190fb8241efcbf63172cfd6e73c362dc",
+    "728ae9dc1c1e96477f3fcf6c16f555dbd22ebec8"
+  ],
+  "source_refinement": "Keep only the identity decorator import before helper declarations; move each existing facade and annotation import block below every definition. Function/class/default/decorator/annotation bodies are byte-exact to728. Add six cold-helper cases while preserving the original seven seam test bodies.",
+  "previous_formatter_retained_unrun": "bfe87edfc430d222e6504a160ad1f86722f13165",
+  "readback": {
+    "commit": "14252412cb131593b98e6f1fd951ff2c47b903b6",
+    "tree": "7cfa09b72e614a544250541cd972cb1590f6164b",
+    "leaves": 4554,
+    "sha": "7cfa09b72e614a544250541cd972cb1590f6164b",
+    "directory_hashes_verified": 275,
+    "complete9files_exact": true,
+    "sole_parent": "44353b20262f1ca56b56204f4c764b047710454f"
+  },
+  "source_peer_binding": {
+    "prior_source_commit": "728ae9dc1c1e96477f3fcf6c16f555dbd22ebec8",
+    "receipt_blob": "5cc1e9fe6192e8d651be93aacc1604ac46c019bf",
+    "receipt_sha256": "9f21db9555e480283fc443414a3e3fab3d453b06633c8d3b73b1a3b75e0351a8",
+    "scope": "All57 reconstructed definition bodies cleared; prior source held for helper-first cycle. This successor import/test/checker delta awaits independent refresh."
+  },
+  "import_placement_delta": [
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_chunks.py",
+      "imports_moved": [
+        "from .store_base import Iterator, Sequence, _ChunkT"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_keyring.py",
+      "imports_moved": [
+        "from . import store_base as _base",
+        "from .store_base import Path, subprocess"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_policy_matching.py",
+      "imports_moved": [
+        "from . import store_base as _base",
+        "from .store_base import Mapping, Sequence"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_secret_backends.py",
+      "imports_moved": [
+        "from . import store_base as _base",
+        "from .store_base import Path, SecretStore"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_secret_files.py",
+      "imports_moved": [
+        "from . import store_base as _base",
+        "from .store_base import Fernet, Path"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_base_values.py",
+      "imports_moved": [
+        "from . import store_base as _base",
+        "from .store_base import Mapping, TransportKind, datetime, sqlite3"
+      ],
+      "definition_bytes_unchanged": true,
+      "exact_inverse_matches_728": true
+    }
+  ],
+  "checker_delta": {
+    "old": "        header = (\n            '\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\\n'\n            'from __future__ import annotations\\n'\n            + (\"from . import store_base as _base\\n\" if rewriter.globals else \"\")\n            + (\"from .store_base import \" + \", \".join(aliases) + \"\\n\" if aliases else \"\")\n            + \"from .store_base_definition import preserve_store_base_module as _preserve_module\\n\"\n        )\n        expected = ast.parse(header, type_comments=True)\n        expected.body.extend(transformed)\n",
+    "replacement": "        header = (\n            '\"\"\"Implementation definitions reexported by the StoreBase facade.\"\"\"\\n'\n            'from __future__ import annotations\\n'\n            'from .store_base_definition import preserve_store_base_module as _preserve_module\\n'\n        )\n        footer = (\n            (\"from . import store_base as _base\\n\" if rewriter.globals else \"\")\n            + (\"from .store_base import \" + \", \".join(aliases) + \"\\n\" if aliases else \"\")\n        )\n        expected = ast.parse(header, type_comments=True)\n        expected.body.extend(transformed)\n        expected.body.extend(ast.parse(footer, type_comments=True).body)\n",
+    "output_assertion": "helper_definitions_precede_live_facade_and_annotation_imports"
+  },
+  "previous_checker_blob": "8680bc88f8468498085f796ab3cd8d22bd8c210b",
+  "previous_preparation_blob": "81fcfbd96b1a70cd0a3bc37a5b8f5c99b933950b",
+  "cold_import_witness": {
+    "original7_test_bodies_exact": true,
+    "added_source_derived_cases": 6,
+    "planned_total_candidate_only_cases": 13,
+    "actual_case_collection": false,
+    "complete_source_addition": "\n\n_OWNER_EXPORTS = {\n    \"store_base_chunks\": (\n        \"_chunks\",\n    ),\n    \"store_base_keyring\": (\n        \"SystemKeyringSecretStore\",\n    ),\n    \"store_base_policy_matching\": (\n        \"_path_within_workspace\",\n        \"_normalized_workspace_path\",\n        \"_workspace_policy_key\",\n        \"_stored_workspace_policy_key\",\n        \"_validate_scoped_policy_artifact_target\",\n        \"_runtime_scoped_exact_match_key\",\n        \"_global_runtime_scoped_exact_match_key\",\n        \"runtime_tool_action_policy_artifact_id\",\n        \"runtime_tool_action_exact_match_context\",\n        \"runtime_tool_action_portable_match_context\",\n        \"browser_mcp_exact_match_context\",\n        \"_is_runtime_scoped_exact_match_key\",\n        \"_is_approval_context_token\",\n        \"_scoped_runtime_row_requires_exact_match\",\n        \"_warn_only_policy_integrity_status\",\n        \"_policy_integrity_ready_for_local_write\",\n        \"_policy_integrity_setup_safe_for_local_write\",\n        \"_family_key_value\",\n    ),\n    \"store_base_secret_backends\": (\n        \"FallbackSecretStore\",\n        \"MigratingFallbackSecretStore\",\n        \"_system_keyring_availability_cache_path\",\n        \"_read_system_keyring_availability_cache\",\n        \"_write_system_keyring_availability_cache\",\n        \"_system_keyring_is_available\",\n        \"_build_oauth_secret_store\",\n        \"_build_policy_integrity_secret_store\",\n        \"_secret_store_backend_name\",\n        \"_secret_store_fallback_backend_name\",\n    ),\n    \"store_base_secret_files\": (\n        \"_acquire_advisory_file_lock\",\n        \"_release_advisory_file_lock\",\n        \"EncryptedFileSecretStore\",\n        \"UnavailableSecretStore\",\n        \"_expand_keystream\",\n        \"_set_private_mode\",\n    ),\n    \"store_base_values\": (\n        \"_is_approval_gate_one_shot_policy\",\n        \"_normalize_source_name\",\n        \"_oauth_sync_url_from_issuer\",\n        \"_allowed_origin_from_sync_url\",\n        \"_secret_fingerprint\",\n        \"_legacy_secret_fingerprint\",\n        \"_legacy_secret_sha256\",\n        \"_secret_matches_hash\",\n        \"_should_warn_on_slow_store_transactions\",\n        \"receipt_index_statements\",\n        \"_row_mapping\",\n        \"_string_value\",\n        \"_int_value\",\n        \"_mapping_int\",\n        \"_parse_utc_timestamp\",\n        \"_canonical_utc_timestamp\",\n        \"_timestamp_has_expired\",\n        \"_now\",\n        \"_lease_expiry\",\n        \"_string_list\",\n        \"_transport_value\",\n    ),\n}\n\n\n@pytest.mark.parametrize(\"owner\", tuple(_OWNER_EXPORTS))\ndef test_each_store_owner_can_be_imported_before_the_facade(owner: str) -> None:\n    source_root = Path(base.__file__).resolve().parents[2]\n    script = \"\"\"\nimport importlib\nimport json\nimport sys\nimport typing\nfrom pathlib import Path\n\nsource_root = Path(sys.argv[1]).resolve()\nsys.path.insert(0, str(source_root))\nfacade_name = \"codex_plugin_scanner.guard.store_base\"\nowner_name = \"codex_plugin_scanner.guard.\" + sys.argv[2]\nimportlib.import_module(\"codex_plugin_scanner.guard\")\nassert facade_name not in sys.modules\nassert owner_name not in sys.modules\nowner = importlib.import_module(owner_name)\nfacade = importlib.import_module(facade_name)\nassert Path(owner.__file__).resolve().is_relative_to(source_root)\nassert Path(facade.__file__).resolve().is_relative_to(source_root)\nfor name in json.loads(sys.argv[3]):\n    value = getattr(owner, name)\n    assert getattr(facade, name) is value\n    assert value.__module__ == facade_name\n    typing.get_type_hints(value)\nassert facade.MigratingFallbackSecretStore.__bases__ == (facade.FallbackSecretStore,)\nassert facade._chunks.__globals__[\"_ChunkT\"] is facade._ChunkT\nassert typing.get_args(typing.get_type_hints(facade._chunks)[\"values\"]) == (facade._ChunkT,)\n\"\"\"\n    result = subprocess.run(\n        [sys.executable, \"-I\", \"-B\", \"-c\", script, str(source_root), owner, json.dumps(_OWNER_EXPORTS[owner])],\n        capture_output=True,\n        text=True,\n        check=False,\n        timeout=30,\n    )\n    assert result.returncode == 0, result.stdout + result.stderr\n",
+    "parent_package_inputs": [
+      {
+        "path": "src/codex_plugin_scanner/__init__.py",
+        "git_blob": "1bde9899a1379c44d9bbccfd8651608e1e013101",
+        "sha256": "6b5de932d88c1721d4523fee729b89e7d9c6412390eed9c3d6eff2c41576f46d",
+        "complete_text": "\"\"\"Plugin Scanner package exports.\"\"\"\n\nfrom .models import (\n    GRADE_LABELS,\n    CategoryResult,\n    CheckResult,\n    Finding,\n    PackageSummary,\n    ScanOptions,\n    ScanResult,\n    Severity,\n    get_grade,\n)\nfrom .scanner import scan_plugin\nfrom .version import __version__\n\n__all__ = [\n    \"GRADE_LABELS\",\n    \"CategoryResult\",\n    \"CheckResult\",\n    \"Finding\",\n    \"PackageSummary\",\n    \"ScanOptions\",\n    \"ScanResult\",\n    \"Severity\",\n    \"__version__\",\n    \"get_grade\",\n    \"scan_plugin\",\n]\n"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/__init__.py",
+        "git_blob": "4a85303da8860d127c5e2d6ed29cd76598d12264",
+        "sha256": "e807e5b6179e2b2fc1c142ed7b732caa6b0491f54a0832d760c6dc6e35beab2d",
+        "complete_text": "\"\"\"Guard runtime embedded inside the plugin scanner package.\"\"\"\n\nfrom typing import TYPE_CHECKING, Any\n\nif TYPE_CHECKING:\n    from .cli.commands import run_guard_command\n\n\ndef __getattr__(name: str) -> Any:\n    \"\"\"Resolve the public CLI export without importing the CLI at package load.\"\"\"\n\n    if name == \"run_guard_command\":\n        from .cli.commands import run_guard_command\n\n        globals()[name] = run_guard_command\n        return run_guard_command\n    raise AttributeError(f\"module {__name__!r} has no attribute {name!r}\")\n\n\ndef __dir__() -> list[str]:\n    \"\"\"Advertise the public CLI export before its lazy resolution.\"\"\"\n\n    return sorted(set(globals()) | set(__all__))\n\n\n__all__ = [\"run_guard_command\"]\n"
+      }
+    ]
+  }
+}

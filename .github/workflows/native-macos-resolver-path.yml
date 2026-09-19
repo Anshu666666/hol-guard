@@ -1,0 +1,120 @@
+name: Read-only macOS resolver path diagnostic
+
+on:
+  push:
+    branches: [codex/rsp-macos-resolver-path-diagnostic]
+    paths:
+      - '.github/workflows/native-macos-resolver-path.yml'
+      - 'scripts/ci/native_macos_resolver_*'
+      - 'scripts/ci/native_macos_service_identity.py'
+      - 'tests/test_native_macos_resolver_*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-macos-resolver-path-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolver-path:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            architecture: x86_64
+          - runner: macos-15
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 8
+    steps:
+      - name: Initialize retained outcome
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          for name in ('macos-resolver-path-report', 'macos-resolver-path-build'):
+              (Path(os.environ['RUNNER_TEMP']) / name).mkdir(mode=0o700)
+          report = {'workflow_commit': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
+                    'attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run', 'qualification_pass': False}
+          output = Path(os.environ['RUNNER_TEMP']) / 'macos-resolver-path-report/job-outcome.json'
+          output.write_text(json.dumps(report, sort_keys=True) + '\n')
+          PY
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - name: Install finite test runner
+        run: python -m pip install --disable-pip-version-check pytest==9.0.3
+      - name: Validate finite parser and direct-child controls
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: >-
+          python -m pytest --noconftest -c /dev/null -q
+          tests/test_native_macos_resolver_evidence.py
+          tests/test_native_macos_resolver_capture.py
+          tests/test_native_macos_resolver_path.py
+      - name: Bind actual source, SDK, compiler and Python runtime
+        run: >-
+          python -I scripts/ci/native_macos_resolver_path.py --prepare
+          --output "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
+      - name: Compile fixed no-fork helper within workflow build boundary
+        id: build
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror \
+            scripts/ci/native_macos_resolver_probe.c -ldns_sd \
+            -o "$RUNNER_TEMP/macos-resolver-path-build/resolver-probe" \
+            > "$RUNNER_TEMP/macos-resolver-path-build/compiler.stdout" \
+            2> "$RUNNER_TEMP/macos-resolver-path-build/compiler.stderr"
+      - name: Compare independently bounded lookup controls
+        id: lookups
+        run: >-
+          python -I scripts/ci/native_macos_resolver_path.py
+          --prepared "$RUNNER_TEMP/macos-resolver-path-report/prepared.json"
+          --binary "$RUNNER_TEMP/macos-resolver-path-build/resolver-probe"
+          --output "$RUNNER_TEMP/macos-resolver-path-report/resolver-path.json"
+      - name: Retain normalized job outcome after failure
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          LOOKUP_OUTCOME: ${{ steps.lookups.outcome }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import hashlib, json, os, re
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          output = root / 'macos-resolver-path-report/job-outcome.json'
+          report = json.loads(output.read_text())
+          report.update(status='finished', build_outcome=os.environ['BUILD_OUTCOME'],
+                        lookup_outcome=os.environ['LOOKUP_OUTCOME'],
+                        compiler_boundary='one_minute_workflow_step_no_descendant_certificate',
+                        raw_compiler_output_exported=False)
+          for channel in ('stdout', 'stderr'):
+              source = root / ('macos-resolver-path-build/compiler.' + channel)
+              if source.is_file():
+                  data = source.read_bytes()
+                  report['compiler_' + channel + '_bytes'] = len(data)
+                  report['compiler_' + channel + '_sha256'] = hashlib.sha256(data).hexdigest()
+                  if channel == 'stderr':
+                      report['compiler_source_diagnostics'] = [
+                          {'line': int(m[1]), 'column': int(m[2]), 'kind': m[3]}
+                          for m in re.finditer(r'native_macos_resolver_probe\.c:(\d+):(\d+): (error|warning):', data.decode('utf-8', errors='replace'))
+                      ][:32]
+          output.write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
+          PY
+      - name: Upload normalized reports only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macos-resolver-path-${{ matrix.architecture }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/macos-resolver-path-report/*.json
+          if-no-files-found: error
+          retention-days: 30

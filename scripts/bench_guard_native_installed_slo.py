@@ -298,7 +298,7 @@ def _measure_slo(
         with progress.phase("sizes"):
             sizes = _run_sizes(session, routes, unsupported_evidence=source_denials)
             progress.counts["sizes"] = len(sizes) + len(source_denials)
-        with progress.phase("recovery"):
+        with progress.phase("recovery", stop_diagnostic=lambda: getattr(session, "last_stop_diagnostic", None)):
             recovery = _run_recovery(session, recovery_iterations)
             progress.counts["recovery"] = len(recovery)
         with progress.phase("pool_warmup"):

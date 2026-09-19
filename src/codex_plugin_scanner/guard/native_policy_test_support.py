@@ -43,6 +43,22 @@ _PHASES = {
         "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs",
         "_confirm_resident_fingerprint",
     ): "resident_confirmation",
+    (
+        "codex_plugin_scanner.guard.native_policy_snapshot_source_requirement",
+        "refresh_source_requirement",
+    ): "source_presence",
+    (
+        "codex_plugin_scanner.guard.store_secret_policy_integrity",
+        "_policy_integrity_secret_material",
+    ): "integrity_key",
+    (
+        "codex_plugin_scanner.guard.native_policy_authority_read",
+        "read_native_policy_authority_inputs",
+    ): "authority_capture",
+    (
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_context",
+        "_v3_inputs_from_capture",
+    ): "v3_projection",
 }
 
 

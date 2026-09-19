@@ -10,10 +10,13 @@ from types import CodeType, SimpleNamespace
 
 import pytest
 
+import codex_plugin_scanner.guard.native_policy_authority_read as authority_read
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_context as context
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs as inputs
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_transport as transport
+import codex_plugin_scanner.guard.native_policy_snapshot_source_requirement as source_requirement
 import codex_plugin_scanner.guard.native_policy_test_support as support
+import codex_plugin_scanner.guard.store_secret_policy_integrity as secret_integrity
 
 
 class PublisherDouble:
@@ -306,6 +309,58 @@ def test_diagnostic_output_failure_cannot_mask_original_failure(monkeypatch: pyt
     ],
 )
 def test_publication_subphases_remain_finite_and_stop_at_the_known_frame(
+    monkeypatch: pytest.MonkeyPatch, module: str, code: CodeType, phase: str
+) -> None:
+    worker = threading.current_thread()
+    worker_ident = worker.ident
+    assert worker_ident is not None
+    frame = FrameProbe(module, code, ForbiddenOtherThreadFrame())
+    captures: list[str] = []
+
+    def current_frames() -> dict[int, object]:
+        captures.append("capture")
+        return {worker_ident: frame}
+
+    output = io.StringIO()
+    monkeypatch.setattr(support, "sys", SimpleNamespace(_current_frames=current_frames, stderr=output))
+    support._emit_publication_failure_observation(SimpleNamespace(_thread=worker))
+    result = read_observation(output)
+    assert result["phase"] == phase
+    assert result["worker_frame_present"] is True
+    assert result["frame_limit_reached"] is False
+    assert result["observation_failed"] is False
+    assert captures == ["capture"]
+    assert frame.parent_reads == 0
+    assert "private-" not in output.getvalue()
+    assert str(worker_ident) not in output.getvalue()
+
+
+@pytest.mark.parametrize(
+    ("module", "code", "phase"),
+    [
+        (
+            source_requirement.__name__,
+            source_requirement.refresh_source_requirement.__code__,
+            "source_presence",
+        ),
+        (
+            secret_integrity.__name__,
+            secret_integrity.StoreSecretPolicyIntegrityMixin._policy_integrity_secret_material.__code__,
+            "integrity_key",
+        ),
+        (
+            authority_read.__name__,
+            authority_read.read_native_policy_authority_inputs.__code__,
+            "authority_capture",
+        ),
+        (
+            context.__name__,
+            context._v3_inputs_from_capture.__code__,
+            "v3_projection",
+        ),
+    ],
+)
+def test_v3_recapture_calls_remain_finite_and_stop_at_the_known_frame(
     monkeypatch: pytest.MonkeyPatch, module: str, code: CodeType, phase: str
 ) -> None:
     worker = threading.current_thread()

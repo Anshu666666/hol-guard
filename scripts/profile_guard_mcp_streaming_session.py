@@ -61,7 +61,7 @@ def run_case(
         payload_kind=payload_kind,
         native_text_helper=native_text_helper,
         native_minimum_characters=native_minimum_characters,
-        preparation_variant="owned",
+        preparation_variant="streaming",
         preparation_pilot=streaming_preparation_pilot,
     )
 
@@ -87,7 +87,8 @@ def main() -> int:
     parser.add_argument("--payload-bytes", type=int, default=1024)
     parser.add_argument("--samples", type=int, default=100)
     parser.add_argument("--profile", action="store_true")
-    parser.add_argument("--streaming-preparation-pilot", action="store_true")\n    parser.add_argument("--uncached", action="store_true")
+    parser.add_argument("--streaming-preparation-pilot", action="store_true")
+    parser.add_argument("--uncached", action="store_true")
     parser.add_argument("--child-delay-ms", type=float, default=0)
     parser.add_argument("--approval", choices=("none", "accept", "cancel", "invalidate"), default="none")
     parser.add_argument("--approval-delay-ms", type=float, default=30)

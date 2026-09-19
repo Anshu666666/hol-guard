@@ -259,28 +259,20 @@ def publication_context(
         v3_only = not self._scoped_publication_enabled and not features.intersection(SCOPED_PUBLISH_FEATURES)
         if v3_only and not _REQUIRED_PUBLISH_FEATURES.issubset(features):
             raise NativePolicySnapshotError("native_policy_snapshot_protocol_unsupported")
-        # Capabilities describe what a runtime can consume, not the authority
-        # selected for this publication. Authenticate the complete input first.
-        try:
-            config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
-        except NativePolicySnapshotError:
-            if v3_only:
-                # Preserve established V3 Cloud refusal diagnostics without
-                # repeating the source-free read on successful full captures.
-                _ = read_native_cloud_policy_inputs(
-                    self.store,
-                    now=self._wall_clock(),
-                    command_controls_bound=command_extensions.get("health") == "protected",
-                )
-            raise
-        if v3_only and (inputs.sources or inputs.defaults is not None):
-            # Signed and managed sources keep the original V3 representability
-            # check before choosing their publication contract.
+        if v3_only:
+            # Refuse signed Cloud semantics through the established V3
+            # representability contract before the general scoped compiler can
+            # collapse that refusal into an unrelated compilation error. This
+            # preflight never authorizes publication; the complete capture and
+            # reservation fences below still authenticate the selected source.
             _ = read_native_cloud_policy_inputs(
                 self.store,
                 now=self._wall_clock(),
                 command_controls_bound=command_extensions.get("health") == "protected",
             )
+        # Capabilities describe what a runtime can consume, not the authority
+        # selected for this publication. Authenticate the complete input next.
+        config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
         # Both publication contracts carry the same command binding. A
         # concurrent writer must not pair an earlier command projection with
         # a later complete managed capture, even before the post-ACK fence.

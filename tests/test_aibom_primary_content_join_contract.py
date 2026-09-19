@@ -21,11 +21,16 @@ def _snapshot(key: str) -> GuardAgentInventorySnapshot:
 
 def _source(key: str, ordinal: int) -> GuardAibomPrimaryContentSource:
     return GuardAibomPrimaryContentSource(
-        agent_id="codex:local", allowed_root=Path("/tmp/rsp130-public-fixture"),
-        content_hash="sha256:" + "0" * 64, harness_id="codex", item_id=f"item-{ordinal}",
-        item_kind="skill", mime_type="text/markdown",
+        agent_id="codex:local",
+        allowed_root=Path("/tmp/rsp130-public-fixture"),
+        content_hash="sha256:" + "0" * 64,
+        harness_id="codex",
+        item_id=f"item-{ordinal}",
+        item_kind="skill",
+        mime_type="text/markdown",
         path=Path("/tmp/rsp130-public-fixture") / f"item-{ordinal}.md",
-        snapshot_id=key, version_id=f"version-{ordinal}",
+        snapshot_id=key,
+        version_id=f"version-{ordinal}",
     )
 
 
@@ -39,9 +44,7 @@ def _original_join(snapshots, primary_content_sources):
 
 
 def _candidate_join(snapshots, primary_content_sources):
-    indexed = upload._indexed_primary_content_sources(
-        snapshots, primary_content_sources, tuple_factory=tuple
-    )
+    indexed = upload._indexed_primary_content_sources(snapshots, primary_content_sources, tuple_factory=tuple)
     if indexed is not None:
         return indexed
     content_sources_by_snapshot: dict[str, tuple[GuardAibomPrimaryContentSource, ...]] = {}
@@ -314,8 +317,7 @@ def test_sync_reads_keys_after_live_callbacks_and_preserves_the_ack_gate(
 
     summary = aibom_cli.sync_aibom_snapshots(
         store,
-        HarnessContext(home_dir=tmp_path / "home", workspace_dir=tmp_path / "workspace",
-                       guard_home=tmp_path / "guard"),
+        HarnessContext(home_dir=tmp_path / "home", workspace_dir=tmp_path / "workspace", guard_home=tmp_path / "guard"),
         generated_at="2026-09-19T00:00:00+00:00",
         auth_context={"sync_url": "https://hol.test/api/v1/guard/events"},
     )

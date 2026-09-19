@@ -202,9 +202,7 @@ def sync_aibom_snapshots(
         for snapshot in snapshots
     ]
     event_batches, oversized_events = _batch_inventory_events(events)
-    indexed_content_sources = _indexed_primary_content_sources(
-        snapshots, primary_content_sources, tuple_factory=tuple
-    )
+    indexed_content_sources = _indexed_primary_content_sources(snapshots, primary_content_sources, tuple_factory=tuple)
     if indexed_content_sources is None:
         content_sources_by_snapshot: dict[str, tuple[GuardAibomPrimaryContentSource, ...]] = {}
         for snapshot in snapshots:

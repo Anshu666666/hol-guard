@@ -179,7 +179,8 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
         if change == "unsigned-source":
             assert not observed_ready and observed_snapshot is None and observed_binding is None
             assert len(calls) == 1
-            assert observed_error == "native_policy_authority_local_unavailable"
+            # A fresh request clears the transient diagnostic while the barrier remains closed.
+            assert observed_error is None
             assert observed_epoch >= initial_epoch + 2 and requests
         else:
             assert observed_ready and observed_snapshot == calls[-1] and observed_binding is not None

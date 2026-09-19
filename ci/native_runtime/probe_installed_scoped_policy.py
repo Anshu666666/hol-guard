@@ -171,7 +171,11 @@ def exercise(root: Path, runtime: Path) -> dict[str, object]:
         cases.append("cold-source-free-ready")
         accepted(1)
         for outcome in COMMANDS:
-            action(outcome)
+            # Decision provenance names only a rule that changes the effective
+            # action. An exact review rule equal to the existing review floor
+            # remains authenticated authority but does not claim ownership of
+            # the already-required review decision.
+            action(outcome, selected=outcome != "review")
             cases.append(f"signed-{outcome}")
         action("review", command=COMMANDS["allow"] + " ", selected=False)
         cases.append("exact-bytes-preserved")

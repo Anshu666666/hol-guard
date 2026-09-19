@@ -114,3 +114,125 @@ def test_cli_passes_only_feasible_and_always_retains_original_outcome(tmp_path, 
     )
     assert hosted.main() == exit_code
     assert json.loads(target.read_text()) == report and target.stat().st_mode & 0o777 == 0o600
+
+
+def _capture_child_command(monkeypatch, root, tracer):
+    from scripts import sqlite_syscall_probe_supervision as supervision
+
+    captured = []
+
+    class CapturedBeforeLaunchError(Exception):
+        pass
+
+    def capture(command, **options):
+        captured.append((command, options))
+        raise CapturedBeforeLaunchError
+
+    monkeypatch.setattr(supervision.subprocess, "Popen", capture)
+    with pytest.raises(CapturedBeforeLaunchError):
+        supervision._run_child(root, tracer)
+    assert len(captured) == 1
+    return captured[0]
+
+
+def _assert_scoped_trace_command(command, options, baseline):
+    """Independent finite contract for identity, privacy and observation scope."""
+    from scripts import sqlite_syscall_probe_supervision as supervision
+
+    assert command[0] == "/synthetic/bin/strace" and command[-3:] == baseline
+    assert options == {
+        "stdin": supervision.subprocess.DEVNULL,
+        "stdout": supervision.subprocess.PIPE,
+        "stderr": supervision.subprocess.PIPE,
+        "start_new_session": True,
+    }
+    flags = set()
+    qualifiers = {}
+    remaining = iter(command[1:-3])
+    for argument in remaining:
+        if argument in {"-D", "-f", "-yy"}:
+            assert argument not in flags
+            flags.add(argument)
+        else:
+            assert argument == "-e"
+            key, separator, value = next(remaining, "").partition("=")
+            assert separator and key not in qualifiers
+            qualifiers[key] = value
+    assert flags == {"-D", "-f", "-yy"}
+    assert qualifiers == {
+        "quiet": "attach",
+        "trace": "open,openat,close,dup,dup2,dup3,fcntl,write,pwrite64,writev,pwritev,pwritev2,fsync,fdatasync",
+        "raw": "write,pwrite64,writev,pwritev,pwritev2",
+    }
+
+
+def test_observed_launch_suppresses_only_attach_status_and_preserves_baseline(monkeypatch, tmp_path):
+    from scripts import sqlite_syscall_probe_supervision as supervision
+
+    baseline, baseline_options = _capture_child_command(monkeypatch, tmp_path, None)
+    assert baseline == [
+        supervision.sys.executable,
+        str(Path(supervision.__file__).with_name("sqlite_syscall_probe_child.py")),
+        str(tmp_path),
+    ]
+    command, options = _capture_child_command(monkeypatch, tmp_path, "/synthetic/bin/strace")
+    assert options == baseline_options
+    _assert_scoped_trace_command(command, options, baseline)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "remove-D",
+        "remove-f",
+        "remove-yy",
+        "separate-process-group",
+        "missing-quiet",
+        "quiet-all",
+        "quiet-exit",
+        "quiet-mixed",
+        "missing-trace",
+        "trace-all",
+        "trace-missing-sync",
+        "missing-raw",
+        "raw-missing-writev",
+        "output-file",
+        "broad-quiet-flag",
+        "unowned-session",
+        "discard-stderr",
+    ],
+)
+def test_scope_contract_rejects_identity_filter_privacy_and_quiet_mutations(monkeypatch, tmp_path, mutation):
+    baseline, _ = _capture_child_command(monkeypatch, tmp_path, None)
+    original, original_options = _capture_child_command(monkeypatch, tmp_path, "/synthetic/bin/strace")
+    command, options = list(original), dict(original_options)
+    if mutation.startswith("remove-"):
+        command.remove("-" + mutation.removeprefix("remove-"))
+    elif mutation == "separate-process-group":
+        command[command.index("-D")] = "-DD"
+    elif mutation.startswith("missing-"):
+        qualifier = mutation.removeprefix("missing-")
+        index = next(i for i, value in enumerate(command) if value.startswith(qualifier + "="))
+        del command[index - 1 : index + 1]
+    elif mutation.startswith("quiet-"):
+        replacement = {"quiet-all": "quiet=all", "quiet-exit": "quiet=exit", "quiet-mixed": "quiet=attach,exit"}[
+            mutation
+        ]
+        command[command.index("quiet=attach")] = replacement
+    elif mutation.startswith("trace-"):
+        index = next(i for i, value in enumerate(command) if value.startswith("trace="))
+        command[index] = "trace=all" if mutation == "trace-all" else command[index].replace(",fsync", "")
+    elif mutation == "raw-missing-writev":
+        index = next(i for i, value in enumerate(command) if value.startswith("raw="))
+        command[index] = command[index].replace(",writev", "")
+    elif mutation == "output-file":
+        command[1:1] = ["-o", "/synthetic-output"]
+    elif mutation == "broad-quiet-flag":
+        command.insert(1, "-qq")
+    elif mutation == "unowned-session":
+        options["start_new_session"] = False
+    else:
+        assert mutation == "discard-stderr"
+        options["stderr"] = options["stdin"]
+    with pytest.raises(AssertionError):
+        _assert_scoped_trace_command(command, options, baseline)

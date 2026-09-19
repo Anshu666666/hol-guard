@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FROZEN_HELPERS = {
     "scripts/probe_sqlite_syscall_observation.py": "c5d2767d9dc9daa24ddb19a41ef50eb4d137ba4161b0bc2fd8786893decb719e",
     "scripts/sqlite_syscall_probe_child.py": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
-    "scripts/sqlite_syscall_probe_supervision.py": "640c72b86482f4b7564e9c2d87988f6f08655c274790a6bb05d8b4d17e896f37",
+    "scripts/sqlite_syscall_probe_supervision.py": "3686af06d61fcc4d44f54150f8c4d59840cdcaf273383d0cf94740e9c733a478",
     "scripts/sqlite_syscall_trace_diagnostics.py": "ad6549984257dd637cdfb9219085d72a82508e4ab1482be814a3a7cb5025a042",
     "tests/test_sqlite_syscall_probe_parser.py": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
 }

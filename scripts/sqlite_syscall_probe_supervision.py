@@ -123,7 +123,19 @@ def _run_child(root: Path, strace: str | None) -> tuple[dict[str, Any], bytes]:
     child = Path(__file__).with_name("sqlite_syscall_probe_child.py")
     command = [sys.executable, str(child), str(root)]
     if strace is not None:
-        command = [strace, "-D", "-f", "-yy", "-e", f"trace={TRACE_CALLS}", "-e", f"raw={RAW_CALLS}", *command]
+        command = [
+            strace,
+            "-D",
+            "-f",
+            "-yy",
+            "-e",
+            "quiet=attach",
+            "-e",
+            f"trace={TRACE_CALLS}",
+            "-e",
+            f"raw={RAW_CALLS}",
+            *command,
+        ]
     started = time.monotonic()
     process = subprocess.Popen(
         command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True

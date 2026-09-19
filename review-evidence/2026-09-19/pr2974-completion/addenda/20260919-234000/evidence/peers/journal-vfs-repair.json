@@ -1,0 +1,1219 @@
+{
+  "schema": "pr2974-journal-vfs-measured-repair-independent-peer.v1",
+  "status": "source-only PASS; current basedpyright, Ruff, actual normal tests and C/VFS runtime validation still required",
+  "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+  "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+  "original_failed_run": {
+    "run_id": 35470159481,
+    "attempt": 1,
+    "job_id": 105969529650,
+    "harness_sha": "0509cec6c827aad30954df8649eb065938606ee7",
+    "job_log_blob": "9f3d9cdc0dcc88692fcbf739d94c5d8270f7b133",
+    "job_log_sha256": "e7874b106016a89c10246a600991566d8b7b631bf958c40c63b9e53b65fbb2f2",
+    "types_member": "903323c8851186e0f254dfd4194fcadf9e9342972e28f0b11c3b29cc55d31349",
+    "original_type_errors": 197,
+    "owned_errors": 43,
+    "normal_collection_actual": 265,
+    "normal_collection_declared": 276,
+    "normal_bodies_executed": false,
+    "c_builds_observed": 0
+  },
+  "reviewed_owner": {
+    "git_blob": "4c0c02675b35bc2fa9ebdf68a114b6f61fd30815",
+    "bytes": 126574,
+    "sha256": "bc84cb7d6c8f335d98c1179da284d83f3dd67a138e8e70e3448a80e2a8b1cd52"
+  },
+  "original_unexecuted_owner": {
+    "git_blob": "428a5a617f34b575e36e83666947f7549dc4990d",
+    "bytes": 126141,
+    "sha256": "2f92550b99cb1e5b7813b678397a3fe721c3ca341dd8f8c2d6ea561d9363e8fc"
+  },
+  "complete_before_after": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "before": "\"\"\"Journal and stats helpers for runtime hook evidence persistence.\"\"\"\n\nfrom __future__ import annotations\n\nimport time\nfrom collections.abc import Mapping\nfrom typing import TypedDict\n\nfrom ..store import GuardStore\nfrom .runtime_hook_evidence_diagnostics import evidence_failure_code\nfrom .runtime_hook_evidence_journal import (\n    _EvidenceRecord,\n    _NativeDecisionReceiptRecord,\n)\n\n\ndef persist_native_decision_receipt(*, store: GuardStore, receipt: Mapping[str, object]) -> bool:\n    \"\"\"Persist a validated receipt through the control-plane store only.\"\"\"\n\n    recorder = getattr(store, \"record_native_decision_receipt\", None)\n    if not callable(recorder):\n        raise RuntimeError(\"native receipt persistence is unavailable\")\n    result = recorder(receipt)\n    return result is not False\n\n\nclass RuntimeHookEvidenceWriterStats(TypedDict):\n    queued: int\n    queued_bytes: int\n    accepted: int\n    processed: int\n    dropped: int\n    failures: int\n    recovered: int\n    durable_pending: int\n    degraded: bool\n    running: bool\n    receipt_accepted: int\n    receipt_processed: int\n    receipt_deduped: int\n    receipt_dropped: int\n    receipt_failures: int\n    failure_diagnostics: dict[str, int]\n    receipt_failure_diagnostics: dict[str, int]\n    receipt_durable_pending: int\n    journal_durable: int\n    journal_checkpoints: int\n    receipt_transactions: int\n    checkpoint_pending: int\n\n\nclass RuntimeHookEvidenceWriterJournalMixin:\n    \"\"\"Bounded queue and durable-journal operations shared by the writer.\"\"\"\n\n    def _next_batch(self) -> list[_EvidenceRecord]:\n        with self._condition:\n            while not self._records and not self._stopping:\n                if self._checkpoint_pending:\n                    self._condition.wait(timeout=0.1)\n                    break\n                self._condition.wait()\n            if not self._records:\n                return []\n            if not self._stopping and self._batch_wait_seconds:\n                _ = self._condition.wait(timeout=self._batch_wait_seconds)\n            batch: list[_EvidenceRecord] = []\n            while self._records and len(batch) < self._max_batch:\n                record = self._records.popleft()\n                if self._queue_observation is not None:\n                    self._observe_queue(record)\n                self._queued_bytes -= record.payload_bytes\n                batch.append(record)\n            return batch\n\n    def _drain_expired(self) -> bool:\n        return self._stopping and self._drain_deadline is not None and time.monotonic() >= self._drain_deadline\n\n    def _recover_journal(self) -> None:\n        try:\n            records, invalid_records = _writer.recover_journal_records(self._journal_path, max_bytes=self._max_bytes)\n        except FileNotFoundError:\n            return\n        except OSError as error:\n            self._degraded = True\n            self._failures += 1\n            self._record_failure_diagnostics(\"journal_recovery\", evidence_failure_code(error), 1)\n            return\n        if invalid_records:\n            self._degraded = True\n            self._failures += invalid_records\n            self._record_failure_diagnostics(\"journal_recovery\", \"invalid_record\", invalid_records)\n        for record in records:\n            if len(self._records) >= self._max_records or self._queued_bytes + record.payload_bytes > self._max_bytes:\n                self._degraded = True\n                self._failures += 1\n                self._record_failure_diagnostics(\"journal_recovery\", \"recovery_capacity\", 1)\n                continue\n            if isinstance(record, _NativeDecisionReceiptRecord):\n                if record.record_id in self._receipt_seen:\n                    self._degraded = True\n                    self._failures += 1\n                    self._record_failure_diagnostics(\"journal_recovery\", \"recovery_duplicate\", 1)\n                    continue\n                self._receipt_seen[record.record_id] = None\n            self._durable[record.record_id] = record\n            self._records.append(record)\n            if self._queue_observation is not None:\n                self._observe_queue(record, \"recovery\")\n            self._queued_bytes += record.payload_bytes\n            self._recovered += 1\n\n    def _append_journal(self, record: _EvidenceRecord) -> None:\n        _writer.append_journal(self._journal_path, record)\n\n    def _rewrite_journal(self, *, remove_record_id: str) -> None:\n        invalid_records = _writer.rewrite_journal(\n            self._journal_path,\n            remove_record_id=remove_record_id,\n            max_bytes=self._max_bytes,\n        )\n        if invalid_records:\n            self._degraded = True\n            self._failures += invalid_records\n            self._record_failure_diagnostics(\"journal_rewrite\", \"invalid_record\", invalid_records)\n\n\n# Bind after every declaration so either module can be imported first.\nfrom . import runtime_hook_evidence_writer as _writer  # noqa: E402\n",
+      "after": "\"\"\"Journal and stats helpers for runtime hook evidence persistence.\"\"\"\n\nfrom __future__ import annotations\n\nimport time\nfrom collections.abc import Mapping\nfrom typing import TYPE_CHECKING, TypedDict\n\nfrom ..store import GuardStore\nfrom .runtime_hook_evidence_diagnostics import evidence_failure_code\nfrom .runtime_hook_evidence_journal import (\n    _EvidenceRecord,\n    _NativeDecisionReceiptRecord,\n)\n\nif TYPE_CHECKING:\n    import threading\n    from abc import ABC as _WriterJournalHost\n    from abc import abstractmethod\n    from collections import OrderedDict, deque\n    from pathlib import Path\n\n    from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase\n    from .runtime_hook_evidence_queue_observation import EvidenceQueueObservation\nelse:\n    _WriterJournalHost = object\n\n\ndef persist_native_decision_receipt(*, store: GuardStore, receipt: Mapping[str, object]) -> bool:\n    \"\"\"Persist a validated receipt through the control-plane store only.\"\"\"\n\n    recorder = getattr(store, \"record_native_decision_receipt\", None)\n    if not callable(recorder):\n        raise RuntimeError(\"native receipt persistence is unavailable\")\n    result = recorder(receipt)\n    return result is not False\n\n\nclass RuntimeHookEvidenceWriterStats(TypedDict):\n    queued: int\n    queued_bytes: int\n    accepted: int\n    processed: int\n    dropped: int\n    failures: int\n    recovered: int\n    durable_pending: int\n    degraded: bool\n    running: bool\n    receipt_accepted: int\n    receipt_processed: int\n    receipt_deduped: int\n    receipt_dropped: int\n    receipt_failures: int\n    failure_diagnostics: dict[str, int]\n    receipt_failure_diagnostics: dict[str, int]\n    receipt_durable_pending: int\n    journal_durable: int\n    journal_checkpoints: int\n    receipt_transactions: int\n    checkpoint_pending: int\n\n\nclass RuntimeHookEvidenceWriterJournalMixin(_WriterJournalHost):\n    \"\"\"Bounded queue and durable-journal operations shared by the writer.\"\"\"\n\n    if TYPE_CHECKING:\n        # The concrete writer initializes this state and implements both hooks.\n        _condition: threading.Condition\n        _records: deque[_EvidenceRecord]\n        _stopping: bool\n        _checkpoint_pending: set[str]\n        _batch_wait_seconds: float\n        _max_batch: int\n        _queue_observation: EvidenceQueueObservation | None\n        _queued_bytes: int\n        _drain_deadline: float | None\n        _journal_path: Path\n        _max_bytes: int\n        _degraded: bool\n        _failures: int\n        _max_records: int\n        _receipt_seen: OrderedDict[str, None]\n        _durable: OrderedDict[str, _EvidenceRecord]\n        _recovered: int\n\n        @abstractmethod\n        def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None: ...\n\n        @abstractmethod\n        def _record_failure_diagnostics(\n            self, phase: EvidenceFailurePhase, code: str, records: int, receipts: int = 0\n        ) -> None: ...\n\n    def _next_batch(self) -> list[_EvidenceRecord]:\n        with self._condition:\n            while not self._records and not self._stopping:\n                if self._checkpoint_pending:\n                    self._condition.wait(timeout=0.1)\n                    break\n                self._condition.wait()\n            if not self._records:\n                return []\n            if not self._stopping and self._batch_wait_seconds:\n                _ = self._condition.wait(timeout=self._batch_wait_seconds)\n            batch: list[_EvidenceRecord] = []\n            while self._records and len(batch) < self._max_batch:\n                record = self._records.popleft()\n                if self._queue_observation is not None:\n                    self._observe_queue(record)\n                self._queued_bytes -= record.payload_bytes\n                batch.append(record)\n            return batch\n\n    def _drain_expired(self) -> bool:\n        return self._stopping and self._drain_deadline is not None and time.monotonic() >= self._drain_deadline\n\n    def _recover_journal(self) -> None:\n        try:\n            records, invalid_records = _writer.recover_journal_records(self._journal_path, max_bytes=self._max_bytes)\n        except FileNotFoundError:\n            return\n        except OSError as error:\n            self._degraded = True\n            self._failures += 1\n            self._record_failure_diagnostics(\"journal_recovery\", evidence_failure_code(error), 1)\n            return\n        if invalid_records:\n            self._degraded = True\n            self._failures += invalid_records\n            self._record_failure_diagnostics(\"journal_recovery\", \"invalid_record\", invalid_records)\n        for record in records:\n            if len(self._records) >= self._max_records or self._queued_bytes + record.payload_bytes > self._max_bytes:\n                self._degraded = True\n                self._failures += 1\n                self._record_failure_diagnostics(\"journal_recovery\", \"recovery_capacity\", 1)\n                continue\n            if isinstance(record, _NativeDecisionReceiptRecord):\n                if record.record_id in self._receipt_seen:\n                    self._degraded = True\n                    self._failures += 1\n                    self._record_failure_diagnostics(\"journal_recovery\", \"recovery_duplicate\", 1)\n                    continue\n                self._receipt_seen[record.record_id] = None\n            self._durable[record.record_id] = record\n            self._records.append(record)\n            if self._queue_observation is not None:\n                self._observe_queue(record, \"recovery\")\n            self._queued_bytes += record.payload_bytes\n            self._recovered += 1\n\n    def _append_journal(self, record: _EvidenceRecord) -> None:\n        _writer.append_journal(self._journal_path, record)\n\n    def _rewrite_journal(self, *, remove_record_id: str) -> None:\n        invalid_records = _writer.rewrite_journal(\n            self._journal_path,\n            remove_record_id=remove_record_id,\n            max_bytes=self._max_bytes,\n        )\n        if invalid_records:\n            self._degraded = True\n            self._failures += invalid_records\n            self._record_failure_diagnostics(\"journal_rewrite\", \"invalid_record\", invalid_records)\n\n\n# Bind after every declaration so either module can be imported first.\nfrom . import runtime_hook_evidence_writer as _writer  # noqa: E402\n",
+      "before_git_blob": "87b55c96ab39957eb6034bf066ff088c6b17dce6",
+      "before_sha256": "81d53379f76a0fc6912663c85a35e521d9642ef546bb49874bda744226d0d521",
+      "after_git_blob": "dd9ace2c8511999fe3f9d63a3be199866ea48fd8",
+      "after_sha256": "d1bbabb05fc604d21eb0ba3fa55c1c69c0e7476dec1c94d7b0cbf58abd017f72",
+      "after_bytes": 6367,
+      "hunks": [
+        {
+          "before_offset": 156,
+          "after_offset": 156,
+          "before": "from typing import TypedDict\n",
+          "after": "from typing import TYPE_CHECKING, TypedDict\n"
+        },
+        {
+          "before_offset": 389,
+          "after_offset": 404,
+          "before": "",
+          "after": "if TYPE_CHECKING:\n    import threading\n    from abc import ABC as _WriterJournalHost\n    from abc import abstractmethod\n    from collections import OrderedDict, deque\n    from pathlib import Path\n"
+        },
+        {
+          "before_offset": 390,
+          "after_offset": 601,
+          "before": "",
+          "after": "    from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase\n    from .runtime_hook_evidence_queue_observation import EvidenceQueueObservation\nelse:\n    _WriterJournalHost = object\n\n\n"
+        },
+        {
+          "before_offset": 1406,
+          "after_offset": 1811,
+          "before": "class RuntimeHookEvidenceWriterJournalMixin:\n",
+          "after": "class RuntimeHookEvidenceWriterJournalMixin(_WriterJournalHost):\n"
+        },
+        {
+          "before_offset": 1529,
+          "after_offset": 1954,
+          "before": "",
+          "after": "    if TYPE_CHECKING:\n        # The concrete writer initializes this state and implements both hooks.\n        _condition: threading.Condition\n        _records: deque[_EvidenceRecord]\n        _stopping: bool\n        _checkpoint_pending: set[str]\n        _batch_wait_seconds: float\n        _max_batch: int\n        _queue_observation: EvidenceQueueObservation | None\n        _queued_bytes: int\n        _drain_deadline: float | None\n        _journal_path: Path\n        _max_bytes: int\n        _degraded: bool\n        _failures: int\n        _max_records: int\n        _receipt_seen: OrderedDict[str, None]\n        _durable: OrderedDict[str, _EvidenceRecord]\n        _recovered: int\n\n        @abstractmethod\n        def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None: ...\n\n        @abstractmethod\n        def _record_failure_diagnostics(\n            self, phase: EvidenceFailurePhase, code: str, records: int, receipts: int = 0\n        ) -> None: ...\n\n"
+        }
+      ]
+    },
+    {
+      "path": "scripts/native_slo_sqlite_vfs.py",
+      "before": "\"\"\"Opt-in observation of the actual Python SQLite engine on an owned Linux store.\n\nThe named VFS reports logical VFS calls. It does not report kernel fsync counts,\nphysical bytes, mmap traffic, or complete process-tree I/O. No default VFS changes.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport contextlib\nimport contextvars\nimport copy\nimport hashlib\nimport json\nimport os\nimport sqlite3\nimport stat\nimport sys\nimport threading\nfrom pathlib import Path\nfrom typing import Any\nfrom uuid import uuid4\n\nfrom scripts.native_slo_sqlite_vfs_identity import already_mapped, code_mapping, image_identity, pinned_extension\n\n_ACTIVE = threading.Lock()\n_LOADED_IMAGES: dict[tuple[int, int], dict[str, Any]] = {}\n_SCOPE: contextvars.ContextVar[str] = contextvars.ContextVar(\"guard_vfs_read_scope\", default=\"other\")\n_RETAINED: list[SQLiteVFSObservation] = []\n\n\nclass _SQLiteProxy:\n    def __init__(self, original: Any, observer: SQLiteVFSObservation) -> None:\n        self.original, self.observer = original, observer\n\n    def __getattr__(self, name: str) -> Any:\n        return getattr(self.original, name)\n\n    def connect(self, database: Any, *args: Any, **kwargs: Any) -> sqlite3.Connection:\n        # The selected production factory passes the exact Path and timeout keyword.\n        # All other signatures/paths remain untouched and outside this observation.\n        with self.observer._lock:\n            if (\n                self.observer._closing\n                or not isinstance(database, Path)\n                or database != self.observer.database\n                or args\n                or set(kwargs) != {\"timeout\"}\n            ):\n                self.observer._bypassed_connects += 1\n                return self.original.connect(database, *args, **kwargs)\n            return self.observer._connect_factory(timeout=kwargs[\"timeout\"])\n\n\nclass SQLiteVFSObservation:\n    \"\"\"One explicitly loaded extension and one nondefault VFS for one owned store.\"\"\"\n\n    def __init__(self, *, database: Path, extension: Path, extension_sha256: str) -> None:\n        if sys.platform != \"linux\" or not Path(\"/proc/self/fd\").is_dir():\n            raise RuntimeError(\"SQLite VFS observation requires the admitted Linux descriptor loader\")\n        if not _ACTIVE.acquire(blocking=False):\n            raise RuntimeError(\"another SQLite VFS observation is active\")\n        self._lock = threading.RLock()\n        self._closing = False\n        self._closed = False\n        self._module: Any = None\n        self._proxy: _SQLiteProxy | None = None\n        self._writer_thread: threading.Thread | None = None\n        self._stack = contextlib.ExitStack()\n        self._control: sqlite3.Connection | None = None\n        self._connects = {\"other\": 0, \"writer\": 0, \"readback\": 0}\n        self._connect_failures = 0\n        self._attestation_failures = 0\n        self._identity_unchanged = True\n        self._bypassed_connects = 0\n        self._final: dict[str, Any] | None = None\n        try:\n            if _RETAINED:\n                raise RuntimeError(\"an earlier SQLite VFS observation has unretired connections\")\n            self.database = database.absolute()\n            if self.database != self.database.resolve(strict=True):\n                raise ValueError(\"owned database path must not contain symlinks\")\n            metadata = self.database.stat()\n            if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid() or metadata.st_nlink != 1:\n                raise ValueError(\"database must be an owned regular file\")\n            if metadata.st_mode & 0o022:\n                raise ValueError(\"database must not be writable by another principal\")\n            descriptor, extension_identity = self._stack.enter_context(\n                pinned_extension(extension, expected_sha256=extension_sha256)\n            )\n            image_key = (extension_identity[\"device\"], extension_identity[\"inode\"])\n            previous = _LOADED_IMAGES.get(image_key)\n            if previous is not None and previous != extension_identity:\n                raise ValueError(\"a resident extension image changed after its prior admission\")\n            if previous is None and (len(_LOADED_IMAGES) >= 4 or already_mapped(extension_identity)):\n                raise ValueError(\"extension is already mapped without admission or exceeds the four-image bound\")\n            _LOADED_IMAGES[image_key] = extension_identity\n            self._control = sqlite3.connect(\":memory:\", check_same_thread=False)\n            self._control.enable_load_extension(True)\n            try:\n                self._control.load_extension(f\"/proc/self/fd/{descriptor}\", entrypoint=\"sqlite3_guardvfsext_init\")\n            finally:\n                self._control.enable_load_extension(False)\n            self.name = f\"guard_rsp131_{uuid4().hex}\"\n            first = self._command(\"register\", self.name, str(self.database))\n            observer_mapping = code_mapping(first[\"observer_code_address\"])\n            if any(observer_mapping[key] != extension_identity[key] for key in (\"device\", \"inode\")):\n                raise RuntimeError(\"loaded observer callback does not belong to the verified extension inode\")\n            _LOADED_IMAGES[image_key] = extension_identity\n            if not first[\"registered\"] or not first[\"default_vfs_unchanged\"]:\n                raise RuntimeError(\"named VFS registration did not preserve the default VFS\")\n            source_id = self._control.execute(\"select sqlite_source_id()\").fetchone()[0]\n            if source_id != first[\"sqlite_source_id\"] or sqlite3.sqlite_version_info < (3, 31, 0):\n                raise RuntimeError(\"SQLite extension engine identity mismatch\")\n            import _sqlite3\n\n            api_image = Path(first[\"sqlite_api_image\"])\n            if not api_image.is_absolute():\n                raise RuntimeError(\"actual SQLite API image could not be identified\")\n            api_identity = image_identity(api_image)\n            api_mapping = code_mapping(first[\"sqlite_api_code_address\"])\n            if any(api_mapping[key] != api_identity[key] for key in (\"device\", \"inode\")):\n                raise RuntimeError(\"SQLite API callback does not belong to its hashed runtime image\")\n            self.identity = {\n                \"extension\": extension_identity,\n                \"python\": image_identity(Path(sys.executable)),\n                \"python_sqlite_extension\": image_identity(Path(_sqlite3.__file__)),\n                \"actual_sqlite_api_image\": api_identity,\n                \"actual_sqlite_api_mapping\": api_mapping,\n                \"actual_observer_mapping\": observer_mapping,\n                \"sqlite_version\": sqlite3.sqlite_version,\n                \"sqlite_source_id\": source_id,\n                \"extension_loaded_by_actual_python_connection\": True,\n                \"database_path_sha256\": hashlib.sha256(os.fsencode(self.database)).hexdigest(),\n                \"database_admission_identity\": [metadata.st_dev, metadata.st_ino],\n                \"platform\": sys.platform,\n            }\n        except BaseException:\n            if self._control is not None:\n                self._control.close()\n            self._stack.close()\n            _ACTIVE.release()\n            raise\n\n    def _command(self, command: str, name: str = \"\", database: str = \"\") -> dict[str, Any]:\n        assert self._control is not None\n        raw = self._control.execute(\"select guard_sqlite_vfs(?, ?, ?)\", (command, name, database)).fetchone()[0]\n        if not isinstance(raw, str) or len(raw.encode(\"utf-8\")) > 65_536:\n            raise RuntimeError(\"SQLite VFS aggregate exceeded its fixed report bound\")\n        result = json.loads(raw)\n        if result.get(\"schema\") != 1 or len(result.get(\"cells\", [])) != 12:\n            raise RuntimeError(\"SQLite VFS aggregate shape mismatch\")\n        return result\n\n    @staticmethod\n    def _main_opens(snapshot: dict[str, Any], scope: str) -> int:\n        return sum(\n            cell[\"vfs_x_open_calls\"]\n            for cell in snapshot[\"cells\"]\n            if cell[\"scope\"] == scope and cell[\"file_role\"] == \"main_database\"\n        )\n\n    def connect(self, *, scope: str = \"other\", **kwargs: Any) -> sqlite3.Connection:\n        \"\"\"Open an explicit local control before any store factory is installed.\"\"\"\n        with self._lock:\n            if self._writer_thread is not None:\n                raise RuntimeError(\"explicit local control is unavailable after factory installation\")\n            return self._connect_observed(scope=scope, **kwargs)\n\n    def _connect_factory(self, *, timeout: Any) -> sqlite3.Connection:\n        \"\"\"Derive factory attribution from the actual calling thread and context.\"\"\"\n        with self._lock:\n            if self._module is None or self._module.sqlite3 is not self._proxy:\n                raise RuntimeError(\"SQLite VFS selected factory is not installed\")\n            scope = \"writer\" if threading.current_thread() is self._writer_thread else _SCOPE.get()\n            return self._connect_observed(scope=scope, timeout=timeout)\n\n    def _connect_observed(self, *, scope: str, **kwargs: Any) -> sqlite3.Connection:\n        if scope not in self._connects or \"uri\" in kwargs:\n            raise ValueError(\"invalid SQLite VFS connection scope or URI override\")\n        with self._lock:\n            if self._closing:\n                raise RuntimeError(\"SQLite VFS observation is closing\")\n            before = self._command(\"snapshot\")\n            uri = f\"{self.database.as_uri()}?vfs={self.name}&guard_scope={scope}\"\n            try:\n                connection = sqlite3.connect(uri, uri=True, **kwargs)\n            except BaseException:\n                self._connect_failures += 1\n                raise\n            try:\n                after = self._command(\"snapshot\")\n                rows = connection.execute(\"pragma database_list\").fetchall()\n                actual = next(row[2] for row in rows if row[1] == \"main\")\n                source_id = connection.execute(\"select sqlite_source_id()\").fetchone()[0]\n                if (\n                    Path(actual) != self.database\n                    or source_id != self.identity[\"sqlite_source_id\"]\n                    or self._main_opens(after, scope) != self._main_opens(before, scope) + 1\n                    or not after[\"default_vfs_unchanged\"]\n                    or after[\"unsupported_method_versions\"]\n                ):\n                    raise RuntimeError(\"Python SQLite connection did not attest to the named VFS\")\n                self._connects[scope] += 1\n                return connection\n            except BaseException:\n                self._attestation_failures += 1\n                connection.close()\n                raise\n\n    def install(self, store: Any, writer: Any) -> None:\n        \"\"\"Patch only this module's reference, never sqlite3.connect globally.\"\"\"\n        from codex_plugin_scanner.guard import store_connection_schema\n\n        with self._lock:\n            if (\n                self._closing\n                or self._module is not None\n                or store.path != self.database\n                or sum(self._connects.values()) != 0\n            ):\n                raise RuntimeError(\"SQLite VFS store scope admission failed\")\n            if store_connection_schema.sqlite3 is not sqlite3 or store is not writer._store:\n                raise RuntimeError(\"SQLite VFS connection factory or writer ownership changed\")\n            self._writer_thread = writer._thread\n            self._module = store_connection_schema\n            self._proxy = _SQLiteProxy(sqlite3, self)\n            self._module.sqlite3 = self._proxy\n\n    @contextlib.contextmanager\n    def readback(self) -> Any:\n        token = _SCOPE.set(\"readback\")\n        try:\n            yield\n        finally:\n            _SCOPE.reset(token)\n\n    def report(self) -> dict[str, Any]:\n        with self._lock:\n            observed = copy.deepcopy(self._final) if self._closed else self._command(\"snapshot\")\n            assert observed is not None\n            cells = observed[\"cells\"]\n            scope_complete = (\n                observed[\"default_vfs_unchanged\"]\n                and not observed[\"saturated\"]\n                and observed[\"unsupported_method_versions\"] == 0\n                and observed[\"outside_owned_file_opens\"] == 0\n                and self._attestation_failures == 0\n                and self._identity_unchanged\n                and all(cell[\"calls_on_different_thread\"] == 0 and cell[\"vfs_x_close_errors\"] == 0 for cell in cells)\n            )\n            return {\n                \"identity\": copy.deepcopy(self.identity),\n                \"vfs\": observed,\n                \"attested_connections\": dict(self._connects),\n                \"connection_failures\": self._connect_failures,\n                \"connection_attestation_failures\": self._attestation_failures,\n                \"extension_identity_unchanged\": self._identity_unchanged,\n                \"connections_outside_exact_factory_signature\": self._bypassed_connects,\n                \"connection_scope_at_open_complete\": scope_complete,\n                \"closed\": self._closed,\n                \"all_vfs_files_closed\": observed[\"active_files\"] == 0 and observed[\"opening_files\"] == 0,\n                \"scope\": (\n                    \"named_vfs_connections_from_selected_store_factory\"\n                    if self._writer_thread is not None\n                    else \"explicit_named_vfs_local_control_connections\"\n                ),\n                \"scope_assignment\": (\n                    \"actual_writer_thread_else_explicit_readback_else_other\"\n                    if self._writer_thread is not None\n                    else \"explicit_local_control_scope_at_open\"\n                ),\n                \"connection_identity_attestation_is_included_in_observed_calls\": True,\n                \"unavailable\": {\n                    \"kernel_fsync_calls\": \"VFS_xSync_is_not_a_kernel_syscall_count\",\n                    \"kernel_written_bytes\": \"VFS_xWrite_status_is_not_a_kernel_byte_count\",\n                    \"physical_device_written_bytes\": \"not_observed\",\n                    \"mmap_read_bytes\": \"xFetch_returns_a_mapping_not_consumed_byte_counts\",\n                    \"shm_physical_bytes\": \"original_shared_memory_callbacks_forwarded_without_byte_accounting\",\n                    \"directory_sync_effects\": \"original_VFS_xDelete_and_other_nonfile_callbacks_are_forwarded\",\n                    \"failed_xWrite_actual_bytes\": \"a_failing_write_may_have_written_an_unknown_prefix\",\n                    \"complete_database_io\": \"other_factories_and_processes_are_outside_this_scope\",\n                },\n                \"qualified\": False,\n            }\n\n    def close(self) -> bool:\n        with self._lock:\n            if self._closed:\n                return True\n            self._closing = True\n            if self._module is not None:\n                if self._module.sqlite3 is not self._proxy:\n                    self._attestation_failures += 1\n                else:\n                    self._module.sqlite3 = sqlite3\n                self._module = None\n            observed = self._command(\"snapshot\")\n            if observed[\"active_files\"] or observed[\"opening_files\"]:\n                if self not in _RETAINED:\n                    _RETAINED.append(self)\n                return False\n            self._final = self._command(\"unregister\")\n            assert self._control is not None\n            self._control.close()\n            self._control = None\n            try:\n                self._stack.close()\n            except BaseException:\n                self._identity_unchanged = False\n                raise\n            finally:\n                self._closed = True\n                if self in _RETAINED:\n                    _RETAINED.remove(self)\n                _ACTIVE.release()\n            return True\n\n    def __enter__(self) -> SQLiteVFSObservation:\n        return self\n\n    def __exit__(self, *args: Any) -> None:\n        if not self.close():\n            raise RuntimeError(\"SQLite VFS observation ended with unretired connections\")\n",
+      "after": "\"\"\"Opt-in observation of the actual Python SQLite engine on an owned Linux store.\n\nThe named VFS reports logical VFS calls. It does not report kernel fsync counts,\nphysical bytes, mmap traffic, or complete process-tree I/O. No default VFS changes.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport contextlib\nimport contextvars\nimport copy\nimport hashlib\nimport json\nimport os\nimport sqlite3\nimport stat\nimport sys\nimport threading\nfrom pathlib import Path\nfrom typing import Any\nfrom uuid import uuid4\n\nfrom scripts.native_slo_sqlite_vfs_identity import already_mapped, code_mapping, image_identity, pinned_extension\n\n_ACTIVE = threading.Lock()\n_LOADED_IMAGES: dict[tuple[int, int], dict[str, Any]] = {}\n_SCOPE: contextvars.ContextVar[str] = contextvars.ContextVar(\"guard_vfs_read_scope\", default=\"other\")\n_RETAINED: list[SQLiteVFSObservation] = []\n\n\nclass _SQLiteProxy:\n    def __init__(self, original: Any, observer: SQLiteVFSObservation) -> None:\n        self.original, self.observer = original, observer\n\n    def __getattr__(self, name: str) -> Any:\n        return getattr(self.original, name)\n\n    def connect(self, database: Any, *args: Any, **kwargs: Any) -> sqlite3.Connection:\n        # The selected production factory passes the exact Path and timeout keyword.\n        # All other signatures/paths remain untouched and outside this observation.\n        with self.observer._lock:\n            if (\n                self.observer._closing\n                or not isinstance(database, Path)\n                or database != self.observer.database\n                or args\n                or set(kwargs) != {\"timeout\"}\n            ):\n                self.observer._bypassed_connects += 1\n                return self.original.connect(database, *args, **kwargs)\n            return self.observer._connect_factory(timeout=kwargs[\"timeout\"])\n\n\nclass SQLiteVFSObservation:\n    \"\"\"One explicitly loaded extension and one nondefault VFS for one owned store.\"\"\"\n\n    def __init__(self, *, database: Path, extension: Path, extension_sha256: str) -> None:\n        if sys.platform != \"linux\" or not Path(\"/proc/self/fd\").is_dir():\n            raise RuntimeError(\"SQLite VFS observation requires the admitted Linux descriptor loader\")\n        if not _ACTIVE.acquire(blocking=False):\n            raise RuntimeError(\"another SQLite VFS observation is active\")\n        self._lock = threading.RLock()\n        self._closing = False\n        self._closed = False\n        self._module: Any = None\n        self._proxy: _SQLiteProxy | None = None\n        self._writer_thread: threading.Thread | None = None\n        self._stack = contextlib.ExitStack()\n        self._control: sqlite3.Connection | None = None\n        self._connects = {\"other\": 0, \"writer\": 0, \"readback\": 0}\n        self._connect_failures = 0\n        self._attestation_failures = 0\n        self._identity_unchanged = True\n        self._bypassed_connects = 0\n        self._final: dict[str, Any] | None = None\n        try:\n            if _RETAINED:\n                raise RuntimeError(\"an earlier SQLite VFS observation has unretired connections\")\n            self.database = database.absolute()\n            if self.database != self.database.resolve(strict=True):\n                raise ValueError(\"owned database path must not contain symlinks\")\n            metadata = self.database.stat()\n            if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid() or metadata.st_nlink != 1:\n                raise ValueError(\"database must be an owned regular file\")\n            if metadata.st_mode & 0o022:\n                raise ValueError(\"database must not be writable by another principal\")\n            descriptor, extension_identity = self._stack.enter_context(\n                pinned_extension(extension, expected_sha256=extension_sha256)\n            )\n            image_key = (extension_identity[\"device\"], extension_identity[\"inode\"])\n            previous = _LOADED_IMAGES.get(image_key)\n            if previous is not None and previous != extension_identity:\n                raise ValueError(\"a resident extension image changed after its prior admission\")\n            if previous is None and (len(_LOADED_IMAGES) >= 4 or already_mapped(extension_identity)):\n                raise ValueError(\"extension is already mapped without admission or exceeds the four-image bound\")\n            _LOADED_IMAGES[image_key] = extension_identity\n            self._control = sqlite3.connect(\":memory:\", check_same_thread=False)\n            self._control.enable_load_extension(True)\n            try:\n                extension_path = f\"/proc/self/fd/{descriptor}\"\n                # Preserve the Python load audit while supporting its pre-3.12 API.\n                sys.audit(\"sqlite3.load_extension\", self._control, extension_path)\n                self._control.execute(\n                    \"select load_extension(?, ?)\", (extension_path, \"sqlite3_guardvfsext_init\")\n                ).close()\n            finally:\n                self._control.enable_load_extension(False)\n            self.name = f\"guard_rsp131_{uuid4().hex}\"\n            first = self._command(\"register\", self.name, str(self.database))\n            observer_mapping = code_mapping(first[\"observer_code_address\"])\n            if any(observer_mapping[key] != extension_identity[key] for key in (\"device\", \"inode\")):\n                raise RuntimeError(\"loaded observer callback does not belong to the verified extension inode\")\n            _LOADED_IMAGES[image_key] = extension_identity\n            if not first[\"registered\"] or not first[\"default_vfs_unchanged\"]:\n                raise RuntimeError(\"named VFS registration did not preserve the default VFS\")\n            source_id = self._control.execute(\"select sqlite_source_id()\").fetchone()[0]\n            if source_id != first[\"sqlite_source_id\"] or sqlite3.sqlite_version_info < (3, 31, 0):\n                raise RuntimeError(\"SQLite extension engine identity mismatch\")\n            import _sqlite3\n\n            api_image = Path(first[\"sqlite_api_image\"])\n            if not api_image.is_absolute():\n                raise RuntimeError(\"actual SQLite API image could not be identified\")\n            api_identity = image_identity(api_image)\n            api_mapping = code_mapping(first[\"sqlite_api_code_address\"])\n            if any(api_mapping[key] != api_identity[key] for key in (\"device\", \"inode\")):\n                raise RuntimeError(\"SQLite API callback does not belong to its hashed runtime image\")\n            self.identity = {\n                \"extension\": extension_identity,\n                \"python\": image_identity(Path(sys.executable)),\n                \"python_sqlite_extension\": image_identity(Path(_sqlite3.__file__)),\n                \"actual_sqlite_api_image\": api_identity,\n                \"actual_sqlite_api_mapping\": api_mapping,\n                \"actual_observer_mapping\": observer_mapping,\n                \"sqlite_version\": sqlite3.sqlite_version,\n                \"sqlite_source_id\": source_id,\n                \"extension_loaded_by_actual_python_connection\": True,\n                \"database_path_sha256\": hashlib.sha256(os.fsencode(self.database)).hexdigest(),\n                \"database_admission_identity\": [metadata.st_dev, metadata.st_ino],\n                \"platform\": sys.platform,\n            }\n        except BaseException:\n            if self._control is not None:\n                self._control.close()\n            self._stack.close()\n            _ACTIVE.release()\n            raise\n\n    def _command(self, command: str, name: str = \"\", database: str = \"\") -> dict[str, Any]:\n        assert self._control is not None\n        raw = self._control.execute(\"select guard_sqlite_vfs(?, ?, ?)\", (command, name, database)).fetchone()[0]\n        if not isinstance(raw, str) or len(raw.encode(\"utf-8\")) > 65_536:\n            raise RuntimeError(\"SQLite VFS aggregate exceeded its fixed report bound\")\n        result = json.loads(raw)\n        if result.get(\"schema\") != 1 or len(result.get(\"cells\", [])) != 12:\n            raise RuntimeError(\"SQLite VFS aggregate shape mismatch\")\n        return result\n\n    @staticmethod\n    def _main_opens(snapshot: dict[str, Any], scope: str) -> int:\n        return sum(\n            cell[\"vfs_x_open_calls\"]\n            for cell in snapshot[\"cells\"]\n            if cell[\"scope\"] == scope and cell[\"file_role\"] == \"main_database\"\n        )\n\n    def connect(self, *, scope: str = \"other\", **kwargs: Any) -> sqlite3.Connection:\n        \"\"\"Open an explicit local control before any store factory is installed.\"\"\"\n        with self._lock:\n            if self._writer_thread is not None:\n                raise RuntimeError(\"explicit local control is unavailable after factory installation\")\n            return self._connect_observed(scope=scope, **kwargs)\n\n    def _connect_factory(self, *, timeout: Any) -> sqlite3.Connection:\n        \"\"\"Derive factory attribution from the actual calling thread and context.\"\"\"\n        with self._lock:\n            if self._module is None or self._module.sqlite3 is not self._proxy:\n                raise RuntimeError(\"SQLite VFS selected factory is not installed\")\n            scope = \"writer\" if threading.current_thread() is self._writer_thread else _SCOPE.get()\n            return self._connect_observed(scope=scope, timeout=timeout)\n\n    def _connect_observed(self, *, scope: str, **kwargs: Any) -> sqlite3.Connection:\n        if scope not in self._connects or \"uri\" in kwargs:\n            raise ValueError(\"invalid SQLite VFS connection scope or URI override\")\n        with self._lock:\n            if self._closing:\n                raise RuntimeError(\"SQLite VFS observation is closing\")\n            before = self._command(\"snapshot\")\n            uri = f\"{self.database.as_uri()}?vfs={self.name}&guard_scope={scope}\"\n            try:\n                connection = sqlite3.connect(uri, uri=True, **kwargs)\n            except BaseException:\n                self._connect_failures += 1\n                raise\n            try:\n                after = self._command(\"snapshot\")\n                rows = connection.execute(\"pragma database_list\").fetchall()\n                actual = next(row[2] for row in rows if row[1] == \"main\")\n                source_id = connection.execute(\"select sqlite_source_id()\").fetchone()[0]\n                if (\n                    Path(actual) != self.database\n                    or source_id != self.identity[\"sqlite_source_id\"]\n                    or self._main_opens(after, scope) != self._main_opens(before, scope) + 1\n                    or not after[\"default_vfs_unchanged\"]\n                    or after[\"unsupported_method_versions\"]\n                ):\n                    raise RuntimeError(\"Python SQLite connection did not attest to the named VFS\")\n                self._connects[scope] += 1\n                return connection\n            except BaseException:\n                self._attestation_failures += 1\n                connection.close()\n                raise\n\n    def install(self, store: Any, writer: Any) -> None:\n        \"\"\"Patch only this module's reference, never sqlite3.connect globally.\"\"\"\n        from codex_plugin_scanner.guard import store_connection_schema\n\n        with self._lock:\n            if (\n                self._closing\n                or self._module is not None\n                or store.path != self.database\n                or sum(self._connects.values()) != 0\n            ):\n                raise RuntimeError(\"SQLite VFS store scope admission failed\")\n            if store_connection_schema.sqlite3 is not sqlite3 or store is not writer._store:\n                raise RuntimeError(\"SQLite VFS connection factory or writer ownership changed\")\n            self._writer_thread = writer._thread\n            self._module = store_connection_schema\n            self._proxy = _SQLiteProxy(sqlite3, self)\n            self._module.sqlite3 = self._proxy\n\n    @contextlib.contextmanager\n    def readback(self) -> Any:\n        token = _SCOPE.set(\"readback\")\n        try:\n            yield\n        finally:\n            _SCOPE.reset(token)\n\n    def report(self) -> dict[str, Any]:\n        with self._lock:\n            observed = copy.deepcopy(self._final) if self._closed else self._command(\"snapshot\")\n            assert observed is not None\n            cells = observed[\"cells\"]\n            scope_complete = (\n                observed[\"default_vfs_unchanged\"]\n                and not observed[\"saturated\"]\n                and observed[\"unsupported_method_versions\"] == 0\n                and observed[\"outside_owned_file_opens\"] == 0\n                and self._attestation_failures == 0\n                and self._identity_unchanged\n                and all(cell[\"calls_on_different_thread\"] == 0 and cell[\"vfs_x_close_errors\"] == 0 for cell in cells)\n            )\n            return {\n                \"identity\": copy.deepcopy(self.identity),\n                \"vfs\": observed,\n                \"attested_connections\": dict(self._connects),\n                \"connection_failures\": self._connect_failures,\n                \"connection_attestation_failures\": self._attestation_failures,\n                \"extension_identity_unchanged\": self._identity_unchanged,\n                \"connections_outside_exact_factory_signature\": self._bypassed_connects,\n                \"connection_scope_at_open_complete\": scope_complete,\n                \"closed\": self._closed,\n                \"all_vfs_files_closed\": observed[\"active_files\"] == 0 and observed[\"opening_files\"] == 0,\n                \"scope\": (\n                    \"named_vfs_connections_from_selected_store_factory\"\n                    if self._writer_thread is not None\n                    else \"explicit_named_vfs_local_control_connections\"\n                ),\n                \"scope_assignment\": (\n                    \"actual_writer_thread_else_explicit_readback_else_other\"\n                    if self._writer_thread is not None\n                    else \"explicit_local_control_scope_at_open\"\n                ),\n                \"connection_identity_attestation_is_included_in_observed_calls\": True,\n                \"unavailable\": {\n                    \"kernel_fsync_calls\": \"VFS_xSync_is_not_a_kernel_syscall_count\",\n                    \"kernel_written_bytes\": \"VFS_xWrite_status_is_not_a_kernel_byte_count\",\n                    \"physical_device_written_bytes\": \"not_observed\",\n                    \"mmap_read_bytes\": \"xFetch_returns_a_mapping_not_consumed_byte_counts\",\n                    \"shm_physical_bytes\": \"original_shared_memory_callbacks_forwarded_without_byte_accounting\",\n                    \"directory_sync_effects\": \"original_VFS_xDelete_and_other_nonfile_callbacks_are_forwarded\",\n                    \"failed_xWrite_actual_bytes\": \"a_failing_write_may_have_written_an_unknown_prefix\",\n                    \"complete_database_io\": \"other_factories_and_processes_are_outside_this_scope\",\n                },\n                \"qualified\": False,\n            }\n\n    def close(self) -> bool:\n        with self._lock:\n            if self._closed:\n                return True\n            self._closing = True\n            if self._module is not None:\n                if self._module.sqlite3 is not self._proxy:\n                    self._attestation_failures += 1\n                else:\n                    self._module.sqlite3 = sqlite3\n                self._module = None\n            observed = self._command(\"snapshot\")\n            if observed[\"active_files\"] or observed[\"opening_files\"]:\n                if self not in _RETAINED:\n                    _RETAINED.append(self)\n                return False\n            self._final = self._command(\"unregister\")\n            assert self._control is not None\n            self._control.close()\n            self._control = None\n            try:\n                self._stack.close()\n            except BaseException:\n                self._identity_unchanged = False\n                raise\n            finally:\n                self._closed = True\n                if self in _RETAINED:\n                    _RETAINED.remove(self)\n                _ACTIVE.release()\n            return True\n\n    def __enter__(self) -> SQLiteVFSObservation:\n        return self\n\n    def __exit__(self, *args: Any) -> None:\n        if not self.close():\n            raise RuntimeError(\"SQLite VFS observation ended with unretired connections\")\n",
+      "before_git_blob": "dc86097a44c74177f38a1ed698cc417fa5cf6c7b",
+      "before_sha256": "fbe86a9778477e699ba8006166f6a0c7e1a9590fd8b02bc7cf07d6b8a03b28fd",
+      "after_git_blob": "d46c819abad8be5566f229966c56cfa56efed6a5",
+      "after_sha256": "11b35097b728832e0dac4e0b1fe76ba4e1e04c1d632a353b40a3419ea7ac274a",
+      "after_bytes": 16297,
+      "hunks": [
+        {
+          "before_offset": 4540,
+          "after_offset": 4540,
+          "before": "                self._control.load_extension(f\"/proc/self/fd/{descriptor}\", entrypoint=\"sqlite3_guardvfsext_init\")\n",
+          "after": "                extension_path = f\"/proc/self/fd/{descriptor}\"\n                # Preserve the Python load audit while supporting its pre-3.12 API.\n                sys.audit(\"sqlite3.load_extension\", self._control, extension_path)\n                self._control.execute(\n                    \"select load_extension(?, ?)\", (extension_path, \"sqlite3_guardvfsext_init\")\n                ).close()\n"
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "before": "\"\"\"Bounded asynchronous persistence for non-authoritative hook evidence.\"\"\"\n\nfrom __future__ import annotations\n\nimport hashlib  # noqa: F401\nimport json  # noqa: F401\nimport threading\nimport time\nfrom collections import OrderedDict, deque\nfrom collections.abc import Mapping, Sequence\nfrom dataclasses import replace  # noqa: F401\nfrom datetime import datetime, timezone  # noqa: F401\nfrom pathlib import Path\nfrom typing import cast, final  # noqa: F401\nfrom uuid import uuid4  # noqa: F401\n\nfrom ..action_lattice import is_guard_action  # noqa: F401\nfrom ..cli.commands_support_command_activity import persist_deferred_post_hook_command_activity  # noqa: F401\nfrom ..models import GuardAction  # noqa: F401\nfrom ..native_decision_receipt import validate_native_decision_receipt  # noqa: F401\nfrom ..runtime.command_activity_contract import ActivityApprovalReuseStatus, CorrelationHandle  # noqa: F401\nfrom ..runtime.command_activity_correlation import (\n    derive_proven_request_correlation,  # noqa: F401\n    load_or_create_installation_correlation_key,\n)\nfrom ..runtime.command_activity_display import build_invocation_preview_from_payload  # noqa: F401\nfrom ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence  # noqa: F401\nfrom ..runtime.command_activity_privacy import InstallationCorrelationKey\nfrom ..sqlite_tuning import sqlite_connect_timeout_override\nfrom ..store import GuardStore\nfrom .runtime_hook_evidence_diagnostics import EvidenceFailurePhase, evidence_failure_code\n# The journal mixin resolves these helpers through their live facade bindings.\nfrom .runtime_hook_evidence_journal import (\n    _CommandActivityRecord,\n    _EvidenceRecord,\n    _NativeDecisionReceiptRecord,\n    _payload_has_command,  # noqa: F401\n    append_journal,  # noqa: F401\n    append_journal_batch,\n    checkpoint_journal,\n    recover_journal_records,  # noqa: F401\n    rewrite_journal,  # noqa: F401\n)\nfrom .runtime_hook_evidence_writer_journal import (\n    RuntimeHookEvidenceWriterJournalMixin,\n    RuntimeHookEvidenceWriterStats,\n    persist_native_decision_receipt,\n)\n\n\n@final\nclass RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):\n    \"\"\"Keeps best-effort activity writes outside security-decision workers.\"\"\"\n\n    def __init__(\n        self,\n        *,\n        store: GuardStore,\n        max_records: int = 2_000,\n        max_bytes: int = 16 * 1024 * 1024,\n        max_batch: int = 50,\n        batch_wait_seconds: float = 0.025,\n        journal_path: Path | None = None,\n        queue_observation: EvidenceQueueObservation | None = None,\n    ) -> None:\n        if min(max_records, max_bytes, max_batch) < 1 or batch_wait_seconds < 0:\n            raise ValueError(\"runtime hook evidence writer limits are invalid\")\n        self._store = store\n        self._guard_home = store.guard_home\n        self._max_records = max_records\n        self._max_bytes = max_bytes\n        self._max_batch = min(max_batch, 50)\n        self._batch_wait_seconds = batch_wait_seconds\n        self._condition = threading.Condition()\n        self._records: deque[_EvidenceRecord] = deque()\n        self._queue_observation: EvidenceQueueObservation | None = None\n        self._durable: OrderedDict[str, _EvidenceRecord] = OrderedDict()\n        self._receipt_seen: OrderedDict[str, None] = OrderedDict()\n        self._retry_attempts: dict[str, int] = {}\n        self._checkpoint_pending: set[str] = set()\n        self._journal_durable = 0\n        self._journal_checkpoints = 0\n        self._receipt_transactions = 0\n        self._in_flight = False\n        self._queued_bytes = 0\n        self._accepted = 0\n        self._processed = 0\n        self._dropped = 0\n        self._failures = 0\n        self._recovered = 0\n        self._degraded = False\n        self._receipt_accepted = 0\n        self._receipt_processed = 0\n        self._receipt_deduped = 0\n        self._receipt_dropped = 0\n        self._receipt_failures = 0\n        self._failure_diagnostics: dict[str, int] = {}\n        self._receipt_failure_diagnostics: dict[str, int] = {}\n        self._stopping = False\n        self._drain_deadline: float | None = None\n        self._sqlite_timeout_seconds = 0.05\n        self._journal_path = journal_path or self._guard_home / \"runtime-hook-evidence.jsonl\"\n        try:\n            self._correlation_key: InstallationCorrelationKey | None = load_or_create_installation_correlation_key(\n                self._guard_home\n            )\n        except (OSError, ValueError):\n            self._correlation_key = None\n        if queue_observation is not None:\n            try:\n                queue_observation.attach(self)\n            except BaseException:\n                try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.\n                    queue_observation._hook_failed(self)\n                except BaseException:\n                    pass\n        self._recover_journal()\n        self._thread = threading.Thread(\n            target=self._run,\n            name=\"hol-guard-hook-evidence\",\n            daemon=True,\n        )\n        self._thread.start()\n\n    def submit_command_activity(\n        self,\n        *,\n        harness: str,\n        event: str,\n        payload: Mapping[str, object],\n        succeeded: bool,\n        policy_action: str | None = None,\n        receipt_id: str | None = None,\n        prompted: bool = False,\n        approval_reuse_status: str = \"not-applicable\",\n    ) -> bool:\n        return _evidence_operations.submit_command_activity(\n            self,\n            harness=harness,\n            event=event,\n            payload=payload,\n            succeeded=succeeded,\n            policy_action=policy_action,\n            receipt_id=receipt_id,\n            prompted=prompted,\n            approval_reuse_status=approval_reuse_status,\n        )\n\n    def submit_native_decision_receipt(self, receipt: Mapping[str, object]) -> bool:\n        \"\"\"Queue one Rust receipt without touching SQLite or waiting on I/O.\"\"\"\n\n        return _evidence_operations.submit_native_decision_receipt(self, receipt)\n\n    def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None:\n        observation = self._queue_observation\n        if observation is None:\n            return\n        try:\n            if origin is None:\n                observation._dequeued(self, record)\n            else:\n                observation._enqueued(self, record, origin)\n        except BaseException:\n            # Diagnostic faults never change queue admission or persistence.\n            try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.\n                observation._hook_failed(self)\n            except BaseException:\n                pass\n\n    def _derive_correlation(\n        self,\n        *,\n        harness: str,\n        event: str,\n        payload: Mapping[str, object],\n    ) -> CorrelationHandle | None:\n        return _evidence_operations._derive_correlation(self, harness=harness, event=event, payload=payload)\n\n    def stats(self) -> RuntimeHookEvidenceWriterStats:\n        with self._condition:\n            return {\n                \"journal_durable\": self._journal_durable,\n                \"journal_checkpoints\": self._journal_checkpoints,\n                \"receipt_transactions\": self._receipt_transactions,\n                \"checkpoint_pending\": len(self._checkpoint_pending),\n                \"queued\": len(self._records),\n                \"queued_bytes\": self._queued_bytes,\n                \"accepted\": self._accepted,\n                \"processed\": self._processed,\n                \"dropped\": self._dropped,\n                \"failures\": self._failures,\n                \"recovered\": self._recovered,\n                \"durable_pending\": len(self._durable),\n                \"degraded\": self._degraded or bool(self._durable and not self._records and not self._in_flight),\n                \"running\": self._thread.is_alive() and not self._stopping,\n                \"receipt_accepted\": self._receipt_accepted,\n                \"receipt_processed\": self._receipt_processed,\n                \"receipt_deduped\": self._receipt_deduped,\n                \"receipt_dropped\": self._receipt_dropped,\n                \"receipt_failures\": self._receipt_failures,\n                \"failure_diagnostics\": dict(self._failure_diagnostics),\n                \"receipt_failure_diagnostics\": dict(self._receipt_failure_diagnostics),\n                \"receipt_durable_pending\": sum(\n                    isinstance(record, _NativeDecisionReceiptRecord) for record in self._durable.values()\n                ),\n            }\n\n    def stop(self, *, timeout_seconds: float = 1.0) -> bool:\n        with self._condition:\n            self._stopping = True\n            self._drain_deadline = time.monotonic() + max(0.0, timeout_seconds)\n            self._condition.notify_all()\n        self._thread.join(timeout=max(0.0, timeout_seconds))\n        with self._condition:\n            if self._durable:\n                self._degraded = True\n        return not self._thread.is_alive()\n\n    def _run(self) -> None:\n        while True:\n            batch = self._next_batch()\n            if not batch:\n                self._checkpoint_completed_records()\n                with self._condition:\n                    if self._stopping:\n                        return\n                continue\n            with self._condition:\n                self._in_flight = True\n                fresh = [record for record in batch if record.record_id not in self._durable]\n            if fresh:\n                try:\n                    append_journal_batch(self._journal_path, fresh, max_bytes=self._max_bytes)\n                except OSError as error:\n                    with self._condition:\n                        self._dropped += len(fresh)\n                        self._failures += len(fresh)\n                        receipts_dropped = sum(isinstance(record, _NativeDecisionReceiptRecord) for record in fresh)\n                        self._receipt_dropped += receipts_dropped\n                        self._receipt_failures += receipts_dropped\n                        self._record_failure_diagnostics(\n                            \"journal_append\", evidence_failure_code(error), len(fresh), receipts_dropped\n                        )\n                        for record in fresh:\n                            if isinstance(record, _NativeDecisionReceiptRecord):\n                                self._receipt_seen.pop(record.record_id, None)\n                        self._degraded = True\n                    fresh_ids = {record.record_id for record in fresh}\n                    batch = [record for record in batch if record.record_id not in fresh_ids]\n                else:\n                    with self._condition:\n                        self._durable.update((record.record_id, record) for record in fresh)\n                        self._journal_durable += len(fresh)\n            # Submission only accepts memory. Even when shutdown expires during\n            # append, finish the durability boundary before abandoning DB work.\n            with self._condition:\n                if self._drain_expired():\n                    self._degraded = bool(self._durable) or self._degraded\n                    self._in_flight = False\n                    return\n            receipts = [record for record in batch if isinstance(record, _NativeDecisionReceiptRecord)]\n            retry_delay = 0.0\n            if receipts:\n                failure_code: str | None = None\n                try:\n                    with sqlite_connect_timeout_override(self._sqlite_timeout_seconds):\n                        if len(receipts) == 1:\n                            if not persist_native_decision_receipt(store=self._store, receipt=receipts[0].receipt):\n                                failure_code = \"unacknowledged\"\n                                raise RuntimeError(\"native receipt persistence was not acknowledged\")\n                        else:\n                            acknowledged = self._store.record_native_decision_receipts(\n                                tuple(record.receipt for record in receipts)\n                            )\n                            if acknowledged != tuple(record.record_id for record in receipts):\n                                failure_code = \"unacknowledged\"\n                                raise RuntimeError(\"native receipt batch persistence was not acknowledged\")\n                    with self._condition:\n                        self._receipt_transactions += 1\n                except Exception as error:\n                    retry_delay = self._record_persistence_failure(\n                        receipts, phase=\"receipt_persistence\", code=failure_code or evidence_failure_code(error)\n                    )\n                else:\n                    self._record_committed(receipts)\n            for record in batch:\n                if isinstance(record, _NativeDecisionReceiptRecord):\n                    continue\n                try:\n                    with sqlite_connect_timeout_override(self._sqlite_timeout_seconds):\n                        self._persist_command_activity(record)\n                except Exception as error:\n                    retry_delay = max(\n                        retry_delay,\n                        self._record_persistence_failure(\n                            [record], phase=\"command_activity_persistence\", code=evidence_failure_code(error)\n                        ),\n                    )\n                else:\n                    self._record_committed([record])\n            self._checkpoint_completed_records()\n            with self._condition:\n                self._in_flight = False\n                if retry_delay and not self._stopping:\n                    self._condition.wait(timeout=retry_delay)\n\n    def _record_failure_diagnostics(\n        self, phase: EvidenceFailurePhase, code: str, records: int, receipts: int = 0\n    ) -> None:\n        # Keep the synchronization and failed-attempt units of the existing\n        # failure counters. Successful retry never clears diagnostics.\n        key = f\"{phase}/{code}\"\n        self._failure_diagnostics[key] = self._failure_diagnostics.get(key, 0) + records\n        if receipts:\n            self._receipt_failure_diagnostics[key] = self._receipt_failure_diagnostics.get(key, 0) + receipts\n\n    def _record_persistence_failure(\n        self, records: Sequence[_EvidenceRecord], *, phase: EvidenceFailurePhase, code: str\n    ) -> float:\n        retry_delay = 0.0\n        with self._condition:\n            self._failures += len(records)\n            self._receipt_failures += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            self._record_failure_diagnostics(\n                phase, code, len(records), sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            )\n            self._degraded = True\n            for record in records:\n                if not self._stopping:\n                    attempt = self._retry_attempts.get(record.record_id, 0) + 1\n                    self._retry_attempts[record.record_id] = attempt\n                    # Retries have already passed admission and remain durable.\n                    # Do not convert a SQLite outage into silent evidence loss.\n                    self._records.append(record)\n                    if self._queue_observation is not None:\n                        self._observe_queue(record, \"retry\")\n                    self._queued_bytes += record.payload_bytes\n                    retry_delay = max(retry_delay, min(1.0, 0.05 * (2 ** min(attempt - 1, 5))))\n        return retry_delay\n\n    def _record_committed(self, records: Sequence[_EvidenceRecord]) -> None:\n        with self._condition:\n            self._processed += len(records)\n            self._receipt_processed += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            for record in records:\n                self._retry_attempts.pop(record.record_id, None)\n                self._checkpoint_pending.add(record.record_id)\n\n    def _checkpoint_completed_records(self) -> None:\n        with self._condition:\n            completed = frozenset(self._checkpoint_pending)\n        if not completed:\n            return\n        try:\n            invalid_records = checkpoint_journal(\n                self._journal_path, remove_record_ids=completed, max_bytes=self._max_bytes\n            )\n        except OSError as error:\n            with self._condition:\n                self._failures += 1\n                self._record_failure_diagnostics(\"journal_checkpoint\", evidence_failure_code(error), 1)\n                self._degraded = True\n        else:\n            with self._condition:\n                self._journal_checkpoints += 1\n                if invalid_records:\n                    self._failures += invalid_records\n                    self._record_failure_diagnostics(\"journal_checkpoint\", \"invalid_record\", invalid_records)\n                    self._degraded = True\n                self._checkpoint_pending.difference_update(completed)\n                for record_id in completed:\n                    self._durable.pop(record_id, None)\n\n    def _persist_command_activity(self, record: _CommandActivityRecord) -> None:\n        _evidence_operations._persist_command_activity(self, record)\n\n\n__all__ = [\n    \"RuntimeHookEvidenceWriter\",\n    \"RuntimeHookEvidenceWriterStats\",\n    \"persist_native_decision_receipt\",\n]\n\n\n# Operations bind this facade only after declaring their deferred functions.\nfrom . import runtime_hook_evidence_operations as _evidence_operations  # noqa: E402\nfrom .runtime_hook_evidence_queue_observation import EvidenceQueueObservation  # noqa: E402\n",
+      "after": "\"\"\"Bounded asynchronous persistence for non-authoritative hook evidence.\"\"\"\n\nfrom __future__ import annotations\n\nimport hashlib  # noqa: F401\nimport json  # noqa: F401\nimport threading\nimport time\nfrom collections import OrderedDict, deque\nfrom collections.abc import Mapping, Sequence\nfrom dataclasses import replace  # noqa: F401\nfrom datetime import datetime, timezone  # noqa: F401\nfrom pathlib import Path\nfrom typing import cast, final  # noqa: F401\nfrom uuid import uuid4  # noqa: F401\n\nfrom ..action_lattice import is_guard_action  # noqa: F401\nfrom ..cli.commands_support_command_activity import persist_deferred_post_hook_command_activity  # noqa: F401\nfrom ..models import GuardAction  # noqa: F401\nfrom ..native_decision_receipt import validate_native_decision_receipt  # noqa: F401\nfrom ..runtime.command_activity_contract import ActivityApprovalReuseStatus, CorrelationHandle  # noqa: F401\nfrom ..runtime.command_activity_correlation import (\n    derive_proven_request_correlation,  # noqa: F401\n    load_or_create_installation_correlation_key,\n)\nfrom ..runtime.command_activity_display import build_invocation_preview_from_payload  # noqa: F401\nfrom ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence  # noqa: F401\nfrom ..runtime.command_activity_privacy import InstallationCorrelationKey\nfrom ..sqlite_tuning import sqlite_connect_timeout_override\nfrom ..store import GuardStore\nfrom .runtime_hook_evidence_diagnostics import EvidenceFailurePhase, evidence_failure_code\n\n# The journal mixin resolves these helpers through their live facade bindings.\nfrom .runtime_hook_evidence_journal import (\n    _CommandActivityRecord,\n    _EvidenceRecord,\n    _NativeDecisionReceiptRecord,\n    _payload_has_command,  # noqa: F401\n    append_journal,  # noqa: F401\n    append_journal_batch,\n    checkpoint_journal,\n    recover_journal_records,  # noqa: F401\n    rewrite_journal,  # noqa: F401\n)\nfrom .runtime_hook_evidence_writer_journal import (\n    RuntimeHookEvidenceWriterJournalMixin,\n    RuntimeHookEvidenceWriterStats,\n    persist_native_decision_receipt,\n)\n\n\n@final\nclass RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):\n    \"\"\"Keeps best-effort activity writes outside security-decision workers.\"\"\"\n\n    def __init__(\n        self,\n        *,\n        store: GuardStore,\n        max_records: int = 2_000,\n        max_bytes: int = 16 * 1024 * 1024,\n        max_batch: int = 50,\n        batch_wait_seconds: float = 0.025,\n        journal_path: Path | None = None,\n        queue_observation: EvidenceQueueObservation | None = None,\n    ) -> None:\n        if min(max_records, max_bytes, max_batch) < 1 or batch_wait_seconds < 0:\n            raise ValueError(\"runtime hook evidence writer limits are invalid\")\n        self._store = store\n        self._guard_home = store.guard_home\n        self._max_records = max_records\n        self._max_bytes = max_bytes\n        self._max_batch = min(max_batch, 50)\n        self._batch_wait_seconds = batch_wait_seconds\n        self._condition = threading.Condition()\n        self._records: deque[_EvidenceRecord] = deque()\n        self._queue_observation: EvidenceQueueObservation | None = None\n        self._durable: OrderedDict[str, _EvidenceRecord] = OrderedDict()\n        self._receipt_seen: OrderedDict[str, None] = OrderedDict()\n        self._retry_attempts: dict[str, int] = {}\n        self._checkpoint_pending: set[str] = set()\n        self._journal_durable = 0\n        self._journal_checkpoints = 0\n        self._receipt_transactions = 0\n        self._in_flight = False\n        self._queued_bytes = 0\n        self._accepted = 0\n        self._processed = 0\n        self._dropped = 0\n        self._failures = 0\n        self._recovered = 0\n        self._degraded = False\n        self._receipt_accepted = 0\n        self._receipt_processed = 0\n        self._receipt_deduped = 0\n        self._receipt_dropped = 0\n        self._receipt_failures = 0\n        self._failure_diagnostics: dict[str, int] = {}\n        self._receipt_failure_diagnostics: dict[str, int] = {}\n        self._stopping = False\n        self._drain_deadline: float | None = None\n        self._sqlite_timeout_seconds = 0.05\n        self._journal_path = journal_path or self._guard_home / \"runtime-hook-evidence.jsonl\"\n        try:\n            self._correlation_key: InstallationCorrelationKey | None = load_or_create_installation_correlation_key(\n                self._guard_home\n            )\n        except (OSError, ValueError):\n            self._correlation_key = None\n        if queue_observation is not None:\n            try:\n                queue_observation.attach(self)\n            except BaseException:\n                try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.\n                    queue_observation._hook_failed(self)\n                except BaseException:\n                    pass\n        self._recover_journal()\n        self._thread = threading.Thread(\n            target=self._run,\n            name=\"hol-guard-hook-evidence\",\n            daemon=True,\n        )\n        self._thread.start()\n\n    def submit_command_activity(\n        self,\n        *,\n        harness: str,\n        event: str,\n        payload: Mapping[str, object],\n        succeeded: bool,\n        policy_action: str | None = None,\n        receipt_id: str | None = None,\n        prompted: bool = False,\n        approval_reuse_status: str = \"not-applicable\",\n    ) -> bool:\n        return _evidence_operations.submit_command_activity(\n            self,\n            harness=harness,\n            event=event,\n            payload=payload,\n            succeeded=succeeded,\n            policy_action=policy_action,\n            receipt_id=receipt_id,\n            prompted=prompted,\n            approval_reuse_status=approval_reuse_status,\n        )\n\n    def submit_native_decision_receipt(self, receipt: Mapping[str, object]) -> bool:\n        \"\"\"Queue one Rust receipt without touching SQLite or waiting on I/O.\"\"\"\n\n        return _evidence_operations.submit_native_decision_receipt(self, receipt)\n\n    def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None:\n        observation = self._queue_observation\n        if observation is None:\n            return\n        try:\n            if origin is None:\n                observation._dequeued(self, record)\n            else:\n                observation._enqueued(self, record, origin)\n        except BaseException:\n            # Diagnostic faults never change queue admission or persistence.\n            try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.\n                observation._hook_failed(self)\n            except BaseException:\n                pass\n\n    def _derive_correlation(\n        self,\n        *,\n        harness: str,\n        event: str,\n        payload: Mapping[str, object],\n    ) -> CorrelationHandle | None:\n        return _evidence_operations._derive_correlation(self, harness=harness, event=event, payload=payload)\n\n    def stats(self) -> RuntimeHookEvidenceWriterStats:\n        with self._condition:\n            return {\n                \"journal_durable\": self._journal_durable,\n                \"journal_checkpoints\": self._journal_checkpoints,\n                \"receipt_transactions\": self._receipt_transactions,\n                \"checkpoint_pending\": len(self._checkpoint_pending),\n                \"queued\": len(self._records),\n                \"queued_bytes\": self._queued_bytes,\n                \"accepted\": self._accepted,\n                \"processed\": self._processed,\n                \"dropped\": self._dropped,\n                \"failures\": self._failures,\n                \"recovered\": self._recovered,\n                \"durable_pending\": len(self._durable),\n                \"degraded\": self._degraded or bool(self._durable and not self._records and not self._in_flight),\n                \"running\": self._thread.is_alive() and not self._stopping,\n                \"receipt_accepted\": self._receipt_accepted,\n                \"receipt_processed\": self._receipt_processed,\n                \"receipt_deduped\": self._receipt_deduped,\n                \"receipt_dropped\": self._receipt_dropped,\n                \"receipt_failures\": self._receipt_failures,\n                \"failure_diagnostics\": dict(self._failure_diagnostics),\n                \"receipt_failure_diagnostics\": dict(self._receipt_failure_diagnostics),\n                \"receipt_durable_pending\": sum(\n                    isinstance(record, _NativeDecisionReceiptRecord) for record in self._durable.values()\n                ),\n            }\n\n    def stop(self, *, timeout_seconds: float = 1.0) -> bool:\n        with self._condition:\n            self._stopping = True\n            self._drain_deadline = time.monotonic() + max(0.0, timeout_seconds)\n            self._condition.notify_all()\n        self._thread.join(timeout=max(0.0, timeout_seconds))\n        with self._condition:\n            if self._durable:\n                self._degraded = True\n        return not self._thread.is_alive()\n\n    def _run(self) -> None:\n        while True:\n            batch = self._next_batch()\n            if not batch:\n                self._checkpoint_completed_records()\n                with self._condition:\n                    if self._stopping:\n                        return\n                continue\n            with self._condition:\n                self._in_flight = True\n                fresh = [record for record in batch if record.record_id not in self._durable]\n            if fresh:\n                try:\n                    append_journal_batch(self._journal_path, fresh, max_bytes=self._max_bytes)\n                except OSError as error:\n                    with self._condition:\n                        self._dropped += len(fresh)\n                        self._failures += len(fresh)\n                        receipts_dropped = sum(isinstance(record, _NativeDecisionReceiptRecord) for record in fresh)\n                        self._receipt_dropped += receipts_dropped\n                        self._receipt_failures += receipts_dropped\n                        self._record_failure_diagnostics(\n                            \"journal_append\", evidence_failure_code(error), len(fresh), receipts_dropped\n                        )\n                        for record in fresh:\n                            if isinstance(record, _NativeDecisionReceiptRecord):\n                                self._receipt_seen.pop(record.record_id, None)\n                        self._degraded = True\n                    fresh_ids = {record.record_id for record in fresh}\n                    batch = [record for record in batch if record.record_id not in fresh_ids]\n                else:\n                    with self._condition:\n                        self._durable.update((record.record_id, record) for record in fresh)\n                        self._journal_durable += len(fresh)\n            # Submission only accepts memory. Even when shutdown expires during\n            # append, finish the durability boundary before abandoning DB work.\n            with self._condition:\n                if self._drain_expired():\n                    self._degraded = bool(self._durable) or self._degraded\n                    self._in_flight = False\n                    return\n            receipts = [record for record in batch if isinstance(record, _NativeDecisionReceiptRecord)]\n            retry_delay = 0.0\n            if receipts:\n                failure_code: str | None = None\n                try:\n                    with sqlite_connect_timeout_override(self._sqlite_timeout_seconds):\n                        if len(receipts) == 1:\n                            if not persist_native_decision_receipt(store=self._store, receipt=receipts[0].receipt):\n                                failure_code = \"unacknowledged\"\n                                raise RuntimeError(\"native receipt persistence was not acknowledged\")\n                        else:\n                            acknowledged = self._store.record_native_decision_receipts(\n                                tuple(record.receipt for record in receipts)\n                            )\n                            if acknowledged != tuple(record.record_id for record in receipts):\n                                failure_code = \"unacknowledged\"\n                                raise RuntimeError(\"native receipt batch persistence was not acknowledged\")\n                    with self._condition:\n                        self._receipt_transactions += 1\n                except Exception as error:\n                    retry_delay = self._record_persistence_failure(\n                        receipts, phase=\"receipt_persistence\", code=failure_code or evidence_failure_code(error)\n                    )\n                else:\n                    self._record_committed(receipts)\n            for record in batch:\n                if isinstance(record, _NativeDecisionReceiptRecord):\n                    continue\n                try:\n                    with sqlite_connect_timeout_override(self._sqlite_timeout_seconds):\n                        self._persist_command_activity(record)\n                except Exception as error:\n                    retry_delay = max(\n                        retry_delay,\n                        self._record_persistence_failure(\n                            [record], phase=\"command_activity_persistence\", code=evidence_failure_code(error)\n                        ),\n                    )\n                else:\n                    self._record_committed([record])\n            self._checkpoint_completed_records()\n            with self._condition:\n                self._in_flight = False\n                if retry_delay and not self._stopping:\n                    self._condition.wait(timeout=retry_delay)\n\n    def _record_failure_diagnostics(\n        self, phase: EvidenceFailurePhase, code: str, records: int, receipts: int = 0\n    ) -> None:\n        # Keep the synchronization and failed-attempt units of the existing\n        # failure counters. Successful retry never clears diagnostics.\n        key = f\"{phase}/{code}\"\n        self._failure_diagnostics[key] = self._failure_diagnostics.get(key, 0) + records\n        if receipts:\n            self._receipt_failure_diagnostics[key] = self._receipt_failure_diagnostics.get(key, 0) + receipts\n\n    def _record_persistence_failure(\n        self, records: Sequence[_EvidenceRecord], *, phase: EvidenceFailurePhase, code: str\n    ) -> float:\n        retry_delay = 0.0\n        with self._condition:\n            self._failures += len(records)\n            self._receipt_failures += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            self._record_failure_diagnostics(\n                phase, code, len(records), sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            )\n            self._degraded = True\n            for record in records:\n                if not self._stopping:\n                    attempt = self._retry_attempts.get(record.record_id, 0) + 1\n                    self._retry_attempts[record.record_id] = attempt\n                    # Retries have already passed admission and remain durable.\n                    # Do not convert a SQLite outage into silent evidence loss.\n                    self._records.append(record)\n                    if self._queue_observation is not None:\n                        self._observe_queue(record, \"retry\")\n                    self._queued_bytes += record.payload_bytes\n                    retry_delay = max(retry_delay, min(1.0, 0.05 * (2 ** min(attempt - 1, 5))))\n        return retry_delay\n\n    def _record_committed(self, records: Sequence[_EvidenceRecord]) -> None:\n        with self._condition:\n            self._processed += len(records)\n            self._receipt_processed += sum(isinstance(record, _NativeDecisionReceiptRecord) for record in records)\n            for record in records:\n                self._retry_attempts.pop(record.record_id, None)\n                self._checkpoint_pending.add(record.record_id)\n\n    def _checkpoint_completed_records(self) -> None:\n        with self._condition:\n            completed = frozenset(self._checkpoint_pending)\n        if not completed:\n            return\n        try:\n            invalid_records = checkpoint_journal(\n                self._journal_path, remove_record_ids=completed, max_bytes=self._max_bytes\n            )\n        except OSError as error:\n            with self._condition:\n                self._failures += 1\n                self._record_failure_diagnostics(\"journal_checkpoint\", evidence_failure_code(error), 1)\n                self._degraded = True\n        else:\n            with self._condition:\n                self._journal_checkpoints += 1\n                if invalid_records:\n                    self._failures += invalid_records\n                    self._record_failure_diagnostics(\"journal_checkpoint\", \"invalid_record\", invalid_records)\n                    self._degraded = True\n                self._checkpoint_pending.difference_update(completed)\n                for record_id in completed:\n                    self._durable.pop(record_id, None)\n\n    def _persist_command_activity(self, record: _CommandActivityRecord) -> None:\n        _evidence_operations._persist_command_activity(self, record)\n\n\n__all__ = [\n    \"RuntimeHookEvidenceWriter\",\n    \"RuntimeHookEvidenceWriterStats\",\n    \"persist_native_decision_receipt\",\n]\n\n\n# Operations bind this facade only after declaring their deferred functions.\nfrom . import runtime_hook_evidence_operations as _evidence_operations  # noqa: E402\nfrom .runtime_hook_evidence_queue_observation import EvidenceQueueObservation  # noqa: E402\n",
+      "before_git_blob": "d687969e00f5f60cce88e5a6b74200926f4ba42a",
+      "before_sha256": "f74f69dadb9d72e4c9bb8f0cf5cfb39e502b8391c40f48b03110356d575cdf22",
+      "after_git_blob": "1a73a47b3cc500e574209c6f7e83a358c05065b4",
+      "after_sha256": "ac0e7a35b171c4d224e78ca0e7dc524d66e0173945a942dff69fc9a0f9cb8173",
+      "after_bytes": 17710,
+      "hunks": [
+        {
+          "before_offset": 1510,
+          "after_offset": 1510,
+          "before": "",
+          "after": "\n"
+        }
+      ]
+    }
+  ],
+  "identity_and_inverse_proof": {
+    "rows": [
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+        "before_git_blob": "87b55c96ab39957eb6034bf066ff088c6b17dce6",
+        "after_git_blob": "dd9ace2c8511999fe3f9d63a3be199866ea48fd8",
+        "after_bytes": 6367,
+        "after_sha256": "d1bbabb05fc604d21eb0ba3fa55c1c69c0e7476dec1c94d7b0cbf58abd017f72",
+        "hunks": 5,
+        "actual_3cc_preimage_exact": true,
+        "two_sided_inverse_exact": true
+      },
+      {
+        "path": "scripts/native_slo_sqlite_vfs.py",
+        "before_git_blob": "dc86097a44c74177f38a1ed698cc417fa5cf6c7b",
+        "after_git_blob": "d46c819abad8be5566f229966c56cfa56efed6a5",
+        "after_bytes": 16297,
+        "after_sha256": "11b35097b728832e0dac4e0b1fe76ba4e1e04c1d632a353b40a3419ea7ac274a",
+        "hunks": 1,
+        "actual_3cc_preimage_exact": true,
+        "two_sided_inverse_exact": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+        "before_git_blob": "d687969e00f5f60cce88e5a6b74200926f4ba42a",
+        "after_git_blob": "1a73a47b3cc500e574209c6f7e83a358c05065b4",
+        "after_bytes": 17710,
+        "after_sha256": "ac0e7a35b171c4d224e78ca0e7dc524d66e0173945a942dff69fc9a0f9cb8173",
+        "hunks": 1,
+        "actual_3cc_preimage_exact": true,
+        "two_sided_inverse_exact": true
+      }
+    ],
+    "fields": [
+      {
+        "name": "_condition",
+        "annotation": "threading.Condition"
+      },
+      {
+        "name": "_records",
+        "annotation": "deque[_EvidenceRecord]"
+      },
+      {
+        "name": "_stopping",
+        "annotation": "bool"
+      },
+      {
+        "name": "_checkpoint_pending",
+        "annotation": "set[str]"
+      },
+      {
+        "name": "_batch_wait_seconds",
+        "annotation": "float"
+      },
+      {
+        "name": "_max_batch",
+        "annotation": "int"
+      },
+      {
+        "name": "_queue_observation",
+        "annotation": "EvidenceQueueObservation | None"
+      },
+      {
+        "name": "_queued_bytes",
+        "annotation": "int"
+      },
+      {
+        "name": "_drain_deadline",
+        "annotation": "float | None"
+      },
+      {
+        "name": "_journal_path",
+        "annotation": "Path"
+      },
+      {
+        "name": "_max_bytes",
+        "annotation": "int"
+      },
+      {
+        "name": "_degraded",
+        "annotation": "bool"
+      },
+      {
+        "name": "_failures",
+        "annotation": "int"
+      },
+      {
+        "name": "_max_records",
+        "annotation": "int"
+      },
+      {
+        "name": "_receipt_seen",
+        "annotation": "OrderedDict[str, None]"
+      },
+      {
+        "name": "_durable",
+        "annotation": "OrderedDict[str, _EvidenceRecord]"
+      },
+      {
+        "name": "_recovered",
+        "annotation": "int"
+      }
+    ],
+    "all17_initialized_in_concrete_writer": true,
+    "writer_equals_observed_formatter": true
+  },
+  "independent_existing_method_proof": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "methods": [
+        {
+          "name": "_next_batch",
+          "before_sha256": "03b9dbbf434e098caaae9cab0199f2042d95c9b309d02fcb71db7750fcf98ae4",
+          "after_sha256": "03b9dbbf434e098caaae9cab0199f2042d95c9b309d02fcb71db7750fcf98ae4",
+          "exact": true
+        },
+        {
+          "name": "_drain_expired",
+          "before_sha256": "e508aeba95cd4d29ff3ace0fd6f0e26807964b79cce01072f94fad11225189d4",
+          "after_sha256": "e508aeba95cd4d29ff3ace0fd6f0e26807964b79cce01072f94fad11225189d4",
+          "exact": true
+        },
+        {
+          "name": "_recover_journal",
+          "before_sha256": "863250ba0daa495e68d84e8eadecee4fbd19300efac6f127391de0c4db6b7528",
+          "after_sha256": "863250ba0daa495e68d84e8eadecee4fbd19300efac6f127391de0c4db6b7528",
+          "exact": true
+        },
+        {
+          "name": "_append_journal",
+          "before_sha256": "dffba4b02d0c3bc7193eb6f4ec87be049ab09c3bc447c0ec17195c3adabd7ba1",
+          "after_sha256": "dffba4b02d0c3bc7193eb6f4ec87be049ab09c3bc447c0ec17195c3adabd7ba1",
+          "exact": true
+        },
+        {
+          "name": "_rewrite_journal",
+          "before_sha256": "9c2818639ac6342cee8621d95024c544c239409b095394f47dfe9532eacba45a",
+          "after_sha256": "9c2818639ac6342cee8621d95024c544c239409b095394f47dfe9532eacba45a",
+          "exact": true
+        }
+      ]
+    },
+    {
+      "path": "scripts/native_slo_sqlite_vfs.py",
+      "methods": [
+        {
+          "name": "__init__",
+          "before_sha256": "407dc96ac1f15cc8a909327a7d9d8baa6521987c6a71808e2a7456ae2a9d15ff",
+          "after_sha256": "51999b7dcefffaf9e8c5d028cd0d7d160251e8e2adf648eb1ed2be735979d107",
+          "exact": false
+        },
+        {
+          "name": "__getattr__",
+          "before_sha256": "9c62b56ce2ee552b63f2252b76c6f72afc22810fd1ecc91365bf6d2e339e25c3",
+          "after_sha256": "9c62b56ce2ee552b63f2252b76c6f72afc22810fd1ecc91365bf6d2e339e25c3",
+          "exact": true
+        },
+        {
+          "name": "connect",
+          "before_sha256": "b50f5ea9128e26f32309b0755cc237a5d08c17f3365eb803c195a873f96061a3",
+          "after_sha256": "b50f5ea9128e26f32309b0755cc237a5d08c17f3365eb803c195a873f96061a3",
+          "exact": true
+        },
+        {
+          "name": "_command",
+          "before_sha256": "3de8b99a539a559e749d6406ba05b790c3fde591c7fea1ffe46dc852bca2e845",
+          "after_sha256": "3de8b99a539a559e749d6406ba05b790c3fde591c7fea1ffe46dc852bca2e845",
+          "exact": true
+        },
+        {
+          "name": "_main_opens",
+          "before_sha256": "d1d80cf377faf36bb2c99073f1695f0800bb70995014c7615a1694ea2be8b674",
+          "after_sha256": "d1d80cf377faf36bb2c99073f1695f0800bb70995014c7615a1694ea2be8b674",
+          "exact": true
+        },
+        {
+          "name": "_connect_factory",
+          "before_sha256": "efdd5cf05c3458590e957cdbed8bba578f2a5c0261a910e130d3f1f19648110f",
+          "after_sha256": "efdd5cf05c3458590e957cdbed8bba578f2a5c0261a910e130d3f1f19648110f",
+          "exact": true
+        },
+        {
+          "name": "_connect_observed",
+          "before_sha256": "8f88ec17b0517972a80931f01c7af1086ae7afc3b3fc278ef46054c2fa618dd4",
+          "after_sha256": "8f88ec17b0517972a80931f01c7af1086ae7afc3b3fc278ef46054c2fa618dd4",
+          "exact": true
+        },
+        {
+          "name": "install",
+          "before_sha256": "ffbbd2ec6be798251bf54faa6a178ca7b972a7cc2d2b2b7ed93c356202f40e95",
+          "after_sha256": "ffbbd2ec6be798251bf54faa6a178ca7b972a7cc2d2b2b7ed93c356202f40e95",
+          "exact": true
+        },
+        {
+          "name": "readback",
+          "before_sha256": "333ae9dd2ca3d134e24027770fbc636159b42831efb87228f38fd1e6f53892b2",
+          "after_sha256": "333ae9dd2ca3d134e24027770fbc636159b42831efb87228f38fd1e6f53892b2",
+          "exact": true
+        },
+        {
+          "name": "report",
+          "before_sha256": "0b6c7d7e6c47af44f8fe4393bbca28630963a0366662ab32e42429fd6dd84b99",
+          "after_sha256": "0b6c7d7e6c47af44f8fe4393bbca28630963a0366662ab32e42429fd6dd84b99",
+          "exact": true
+        },
+        {
+          "name": "close",
+          "before_sha256": "711f92f8fbeb05fbe64b41b27bf584a9c9e78c8f9df8b005578a186a719ef446",
+          "after_sha256": "711f92f8fbeb05fbe64b41b27bf584a9c9e78c8f9df8b005578a186a719ef446",
+          "exact": true
+        },
+        {
+          "name": "__enter__",
+          "before_sha256": "19438d9f948eef5ce192fbbde882257b7429d28043258d87279f6db8c2c5d352",
+          "after_sha256": "19438d9f948eef5ce192fbbde882257b7429d28043258d87279f6db8c2c5d352",
+          "exact": true
+        },
+        {
+          "name": "__exit__",
+          "before_sha256": "738600cb887d2e2654221d89fe9e6ec691beff9c0751ca4b4140b20288689c4f",
+          "after_sha256": "738600cb887d2e2654221d89fe9e6ec691beff9c0751ca4b4140b20288689c4f",
+          "exact": true
+        }
+      ]
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "methods": [
+        {
+          "name": "__init__",
+          "before_sha256": "40d9128c961201fe3327722a1a7297beba92dbc5848bffb7c269e50a0ede19b0",
+          "after_sha256": "40d9128c961201fe3327722a1a7297beba92dbc5848bffb7c269e50a0ede19b0",
+          "exact": true
+        },
+        {
+          "name": "submit_command_activity",
+          "before_sha256": "148ced891c1ac9cd061c414a21fb10a71438cbb418425b0e1759707f7e2b60e3",
+          "after_sha256": "148ced891c1ac9cd061c414a21fb10a71438cbb418425b0e1759707f7e2b60e3",
+          "exact": true
+        },
+        {
+          "name": "submit_native_decision_receipt",
+          "before_sha256": "77007c71e61d43c5294f1aeebe778aed60127f5316a662e38f0c36fb6279bab3",
+          "after_sha256": "77007c71e61d43c5294f1aeebe778aed60127f5316a662e38f0c36fb6279bab3",
+          "exact": true
+        },
+        {
+          "name": "_observe_queue",
+          "before_sha256": "6ad1a75bc835c07e8634ec6f386784da3f7652475ca93a8b8ec8f055b7e783af",
+          "after_sha256": "6ad1a75bc835c07e8634ec6f386784da3f7652475ca93a8b8ec8f055b7e783af",
+          "exact": true
+        },
+        {
+          "name": "_derive_correlation",
+          "before_sha256": "17ed2447700faa94d479ce04be8bb3877203acb8d828e7a844e0aa06e6b06c67",
+          "after_sha256": "17ed2447700faa94d479ce04be8bb3877203acb8d828e7a844e0aa06e6b06c67",
+          "exact": true
+        },
+        {
+          "name": "stats",
+          "before_sha256": "36b7e1b74af433bc2571f7b42f8324a657a15f85eeecf87e22c78dce1adacdbc",
+          "after_sha256": "36b7e1b74af433bc2571f7b42f8324a657a15f85eeecf87e22c78dce1adacdbc",
+          "exact": true
+        },
+        {
+          "name": "stop",
+          "before_sha256": "a2eb3aeb76b7343f960b7957b3863ff5452a13a00ba9138bb71fdc84c8b4b763",
+          "after_sha256": "a2eb3aeb76b7343f960b7957b3863ff5452a13a00ba9138bb71fdc84c8b4b763",
+          "exact": true
+        },
+        {
+          "name": "_run",
+          "before_sha256": "ee6a1e60ab35b395aef02f04a195945d38df69b8d271517257d275b26f997fd6",
+          "after_sha256": "ee6a1e60ab35b395aef02f04a195945d38df69b8d271517257d275b26f997fd6",
+          "exact": true
+        },
+        {
+          "name": "_record_failure_diagnostics",
+          "before_sha256": "709dd3fc38b6f8bbcf3c446438143c96588e86154af0757a3340b4a251dadbce",
+          "after_sha256": "709dd3fc38b6f8bbcf3c446438143c96588e86154af0757a3340b4a251dadbce",
+          "exact": true
+        },
+        {
+          "name": "_record_persistence_failure",
+          "before_sha256": "40114029a44ff138a150280035c54288cd9557a0674be0ccd1c8f54c85a50155",
+          "after_sha256": "40114029a44ff138a150280035c54288cd9557a0674be0ccd1c8f54c85a50155",
+          "exact": true
+        },
+        {
+          "name": "_record_committed",
+          "before_sha256": "67ff2acdf7d27b206d216ab20faa77f630b260d527d049a15233c16f88df9fe1",
+          "after_sha256": "67ff2acdf7d27b206d216ab20faa77f630b260d527d049a15233c16f88df9fe1",
+          "exact": true
+        },
+        {
+          "name": "_checkpoint_completed_records",
+          "before_sha256": "3d53d8e6c881bbe0ff8bdacba0f366d18b6f30a9a556d7e4c4944331a0095811",
+          "after_sha256": "3d53d8e6c881bbe0ff8bdacba0f366d18b6f30a9a556d7e4c4944331a0095811",
+          "exact": true
+        },
+        {
+          "name": "_persist_command_activity",
+          "before_sha256": "8633c8b2987cf02ae239f70764849115c3bc4cd84cd3620eb7f01b7f8d2b42a2",
+          "after_sha256": "8633c8b2987cf02ae239f70764849115c3bc4cd84cd3620eb7f01b7f8d2b42a2",
+          "exact": true
+        }
+      ]
+    }
+  ],
+  "original_43_measured_diagnostics": [
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_sqlite_vfs.py",
+      "severity": "error",
+      "message": "No parameter named \"entrypoint\"",
+      "range": {
+        "start": {
+          "line": 99,
+          "character": 76
+        },
+        "end": {
+          "line": 99,
+          "character": 86
+        }
+      },
+      "rule": "reportCallIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_condition\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_condition\" is unknown",
+      "range": {
+        "start": {
+          "line": 55,
+          "character": 18
+        },
+        "end": {
+          "line": 55,
+          "character": 28
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 56,
+          "character": 27
+        },
+        "end": {
+          "line": 56,
+          "character": 35
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_stopping\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_stopping\" is unknown",
+      "range": {
+        "start": {
+          "line": 56,
+          "character": 49
+        },
+        "end": {
+          "line": 56,
+          "character": 58
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_checkpoint_pending\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_checkpoint_pending\" is unknown",
+      "range": {
+        "start": {
+          "line": 57,
+          "character": 24
+        },
+        "end": {
+          "line": 57,
+          "character": 43
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_condition\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_condition\" is unknown",
+      "range": {
+        "start": {
+          "line": 58,
+          "character": 25
+        },
+        "end": {
+          "line": 58,
+          "character": 35
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_condition\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_condition\" is unknown",
+      "range": {
+        "start": {
+          "line": 60,
+          "character": 21
+        },
+        "end": {
+          "line": 60,
+          "character": 31
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 61,
+          "character": 24
+        },
+        "end": {
+          "line": 61,
+          "character": 32
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_stopping\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_stopping\" is unknown",
+      "range": {
+        "start": {
+          "line": 63,
+          "character": 24
+        },
+        "end": {
+          "line": 63,
+          "character": 33
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_batch_wait_seconds\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_batch_wait_seconds\" is unknown",
+      "range": {
+        "start": {
+          "line": 63,
+          "character": 43
+        },
+        "end": {
+          "line": 63,
+          "character": 62
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_condition\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_condition\" is unknown",
+      "range": {
+        "start": {
+          "line": 64,
+          "character": 25
+        },
+        "end": {
+          "line": 64,
+          "character": 35
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_batch_wait_seconds\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_batch_wait_seconds\" is unknown",
+      "range": {
+        "start": {
+          "line": 64,
+          "character": 54
+        },
+        "end": {
+          "line": 64,
+          "character": 73
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 66,
+          "character": 23
+        },
+        "end": {
+          "line": 66,
+          "character": 31
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_max_batch\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_max_batch\" is unknown",
+      "range": {
+        "start": {
+          "line": 66,
+          "character": 54
+        },
+        "end": {
+          "line": 66,
+          "character": 64
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 67,
+          "character": 30
+        },
+        "end": {
+          "line": 67,
+          "character": 38
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_queue_observation\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_queue_observation\" is unknown",
+      "range": {
+        "start": {
+          "line": 68,
+          "character": 24
+        },
+        "end": {
+          "line": 68,
+          "character": 42
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_observe_queue\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_observe_queue\" is unknown",
+      "range": {
+        "start": {
+          "line": 69,
+          "character": 25
+        },
+        "end": {
+          "line": 69,
+          "character": 39
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Instance variable \"_queued_bytes\" is not initialized in the class body or __init__ method",
+      "range": {
+        "start": {
+          "line": 70,
+          "character": 21
+        },
+        "end": {
+          "line": 70,
+          "character": 34
+        }
+      },
+      "rule": "reportUninitializedInstanceVariable"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_stopping\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_stopping\" is unknown",
+      "range": {
+        "start": {
+          "line": 75,
+          "character": 20
+        },
+        "end": {
+          "line": 75,
+          "character": 29
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_drain_deadline\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_drain_deadline\" is unknown",
+      "range": {
+        "start": {
+          "line": 75,
+          "character": 39
+        },
+        "end": {
+          "line": 75,
+          "character": 54
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_drain_deadline\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_drain_deadline\" is unknown",
+      "range": {
+        "start": {
+          "line": 75,
+          "character": 96
+        },
+        "end": {
+          "line": 75,
+          "character": 111
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_journal_path\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_journal_path\" is unknown",
+      "range": {
+        "start": {
+          "line": 79,
+          "character": 76
+        },
+        "end": {
+          "line": 79,
+          "character": 89
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_max_bytes\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_max_bytes\" is unknown",
+      "range": {
+        "start": {
+          "line": 79,
+          "character": 106
+        },
+        "end": {
+          "line": 79,
+          "character": 116
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Instance variable \"_degraded\" is not initialized in the class body or __init__ method",
+      "range": {
+        "start": {
+          "line": 83,
+          "character": 17
+        },
+        "end": {
+          "line": 83,
+          "character": 26
+        }
+      },
+      "rule": "reportUninitializedInstanceVariable"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Instance variable \"_failures\" is not initialized in the class body or __init__ method",
+      "range": {
+        "start": {
+          "line": 84,
+          "character": 17
+        },
+        "end": {
+          "line": 84,
+          "character": 26
+        }
+      },
+      "rule": "reportUninitializedInstanceVariable"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_record_failure_diagnostics\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_record_failure_diagnostics\" is unknown",
+      "range": {
+        "start": {
+          "line": 85,
+          "character": 17
+        },
+        "end": {
+          "line": 85,
+          "character": 44
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_record_failure_diagnostics\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_record_failure_diagnostics\" is unknown",
+      "range": {
+        "start": {
+          "line": 90,
+          "character": 17
+        },
+        "end": {
+          "line": 90,
+          "character": 44
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 92,
+          "character": 24
+        },
+        "end": {
+          "line": 92,
+          "character": 32
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_max_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_max_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 92,
+          "character": 42
+        },
+        "end": {
+          "line": 92,
+          "character": 54
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_max_bytes\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_max_bytes\" is unknown",
+      "range": {
+        "start": {
+          "line": 92,
+          "character": 107
+        },
+        "end": {
+          "line": 92,
+          "character": 117
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_record_failure_diagnostics\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_record_failure_diagnostics\" is unknown",
+      "range": {
+        "start": {
+          "line": 95,
+          "character": 21
+        },
+        "end": {
+          "line": 95,
+          "character": 48
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_receipt_seen\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_receipt_seen\" is unknown",
+      "range": {
+        "start": {
+          "line": 98,
+          "character": 44
+        },
+        "end": {
+          "line": 98,
+          "character": 57
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_record_failure_diagnostics\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_record_failure_diagnostics\" is unknown",
+      "range": {
+        "start": {
+          "line": 101,
+          "character": 25
+        },
+        "end": {
+          "line": 101,
+          "character": 52
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_receipt_seen\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_receipt_seen\" is unknown",
+      "range": {
+        "start": {
+          "line": 103,
+          "character": 21
+        },
+        "end": {
+          "line": 103,
+          "character": 34
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_durable\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_durable\" is unknown",
+      "range": {
+        "start": {
+          "line": 104,
+          "character": 17
+        },
+        "end": {
+          "line": 104,
+          "character": 25
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_records\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_records\" is unknown",
+      "range": {
+        "start": {
+          "line": 105,
+          "character": 17
+        },
+        "end": {
+          "line": 105,
+          "character": 25
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_queue_observation\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_queue_observation\" is unknown",
+      "range": {
+        "start": {
+          "line": 106,
+          "character": 20
+        },
+        "end": {
+          "line": 106,
+          "character": 38
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_observe_queue\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_observe_queue\" is unknown",
+      "range": {
+        "start": {
+          "line": 107,
+          "character": 21
+        },
+        "end": {
+          "line": 107,
+          "character": 35
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Instance variable \"_recovered\" is not initialized in the class body or __init__ method",
+      "range": {
+        "start": {
+          "line": 109,
+          "character": 17
+        },
+        "end": {
+          "line": 109,
+          "character": 27
+        }
+      },
+      "rule": "reportUninitializedInstanceVariable"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_journal_path\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_journal_path\" is unknown",
+      "range": {
+        "start": {
+          "line": 112,
+          "character": 36
+        },
+        "end": {
+          "line": 112,
+          "character": 49
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_journal_path\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_journal_path\" is unknown",
+      "range": {
+        "start": {
+          "line": 116,
+          "character": 17
+        },
+        "end": {
+          "line": 116,
+          "character": 30
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_max_bytes\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_max_bytes\" is unknown",
+      "range": {
+        "start": {
+          "line": 118,
+          "character": 27
+        },
+        "end": {
+          "line": 118,
+          "character": 37
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "severity": "error",
+      "message": "Cannot access attribute \"_record_failure_diagnostics\" for class \"RuntimeHookEvidenceWriterJournalMixin*\"\n  Attribute \"_record_failure_diagnostics\" is unknown",
+      "range": {
+        "start": {
+          "line": 123,
+          "character": 17
+        },
+        "end": {
+          "line": 123,
+          "character": 44
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    }
+  ],
+  "journal_findings": [
+    "TYPE_CHECKING imports abc.ABC as the single static base alias and defines exactly17 initialized host attributes plus the two precise abstract hooks. At runtime the alias is object and the type-only block does not execute; the existing base tuples, metaclass type, five methods, hook lookup and deferred live writer binding are preserved.",
+    "The actual final concrete writer has all17 state assignments before recovery/thread start and implements both existing hooks with matching signatures. It remains @final, so inherited abstract host declarations remain subject to the pinned checker's initialization checks.",
+    "All five journal method text bodies/signatures and all13 writer methods are byte-exact under independent extraction. The writer file itself is exactly the observed formatter proposal, one blank line, with all journal facade exports retained.",
+    "No blanket diagnostic suppression, implicit dummy initialized state, protocol rewrite, runtime abstract instantiation restriction, or changed evaluator path was added."
+  ],
+  "checker_source": {
+    "version": "v1.39.8",
+    "checker": {
+      "git_blob": "df4e15e849f76223f854f39fdbaa705d07a73b94",
+      "bytes": 332766,
+      "sha256": "c06e2a4c35edff18b2a690a90a46f8e91b14adcb15f5e8dc49119372a130ce7f"
+    },
+    "binder": {
+      "git_blob": "a4ce3e6db7b338b110625c5ade53bbe4662fac7f",
+      "bytes": 202311,
+      "sha256": "5977dea1c40651d7844de851859622e27634ca38867cfe45d322008f65d7c400"
+    },
+    "binder_byte_correction": "Owner reports202301 bytes; actual exact Git/SHA raw source is202311 UTF-8 bytes (same characters and source hashes).",
+    "checked_rule_excerpt": "        // rule is disabled.\n        if (this._fileInfo.diagnosticRuleSet.reportUninitializedInstanceVariable === 'none') {\n            return;\n        }\n\n        // Protocol classes and ABCs are exempted from this check unless they are\n        // marked @final.\n        if (\n            ClassType.isProtocolClass(classType) ||\n            (ClassType.supportsAbstractMethods(classType) && !ClassType.isFinal(classType))\n        ) {\n            return;\n        }\n\n        // If the class is final, see if it has any abstract base classes that define\n        // variables. We need to make sure these are initialized.\n        const abstractSymbols = new Map<string, ClassMember>();\n        if (ClassType.isFinal(classType)) {\n            getProtocolSymbolsRecursive(classType, abstractSymbols, ClassTypeFlags.SupportsAbstractMethods);\n        }\n\n        // If this is a dataclass, get all of the entries so we can tell which\n        // ones are initialized by the synthesized __init__ method.\n        const dataClassEntries: DataClassEntry[] = [];\n        if (ClassType.isDataClass(classType)) {\n            addInheritedDataClassEntries(classType, dataClassEntries);\n        }\n\n        ClassType.getSymbolTable(classType).forEach((localSymbol, name) => {\n            abstractSymbols.delete(name);\n\n            // This applies only to instance members.\n            if (!localSymbol.isInstanceMember()) {\n                return;\n            }\n\n            const decls = localSymbol.getDeclarations();\n\n            // If the symbol is assigned (or at least declared) within the\n            // class body or within the __init__ method, it can be ignored.\n            if (\n                decls.find((decl) => {\n                    const containingClass = ParseTreeUtils.getEnclosingClassOrFunction(decl.node);\n                    if (!containingClass) {\n                        return true;\n                    }\n                    // if it's an augmented assignment that doesn't count because it needs to have been assigned to already\n                    // otherwise it will crash at runtime\n                    if (ParseTreeUtils.isNodeContainedWithinNodeType(decl.node, ParseNodeType.AugmentedAssignment)) {\n                        return false;\n                    }\n                    if (containingClass.nodeType === ParseNodeType.Class) {\n                        // If this is part of an assignment statement, assume it has been\n                        // initialized as a class variable.\n                        if (decl.node.parent?.nodeType === ParseNodeType.Assignment) {\n                            return true;\n                        }\n\n                        if (\n                            decl.node.parent?.nodeType === ParseNodeType.TypeAnnotation &&\n                            decl.node.parent.parent?.nodeType === ParseNodeType.Assignment\n                        ) {\n                            return true;\n                        }\n\n                        // If this is part of a dataclass, a class handled by a dataclass_transform,\n                        // or a NamedTuple, exempt it because the class variable will be transformed\n                        // into an instance variable in this case.\n                        if (ClassType.isDataClass(classType) || ClassType.hasNamedTupleEntry(classType, name)) {\n                            return true;\n                        }\n\n                        // If this is part of a TypedDict, exempt it because the class variables\n                        // are not actually class variables in a TypedDict.\n                        if (ClassType.isTypedDictClass(classType)) {\n                            return true;\n                        }\n                    }\n\n                    if (containingClass.d.name.d.value === '__init__') {\n                        return true;\n                    }\n\n                    // if containingClass (that initializes this symbol) is a method that is called in __init__\n                    // then we consider this symbol initialized\n                    if (containingClass.nodeType === ParseNodeType.Function) {\n                        const initNode = ClassType.getSymbolTable(classType)\n                            .get('__init__')\n                            ?.getDeclarations()[0]?.node;\n                        if (initNode && initNode.nodeType === ParseNodeType.Function) {\n                            return initNode.d.suite.d.statements.some((maybeStatementList) => {\n                                if (maybeStatementList.nodeType === ParseNodeType.StatementList) {\n                                    return maybeStatementList.d.statements.some(\n                                        (maybeCall) =>\n                                            maybeCall.nodeType === ParseNodeType.Call &&\n                                            maybeCall.d.leftExpr.nodeType === ParseNodeType.MemberAccess &&\n                                            maybeCall.d.leftExpr.d.member.d.value === containingClass.d.name.d.value\n                                    );\n                                }\n                                return false;\n                            });\n                        }\n                    }\n\n                    return false;\n                })\n            ) {\n                return;\n            }\n\n            // If the symbol is declared by its parent, we can assume it\n            // is initialized there.\n            const parentSymbol = lookUpClassMember(classType, name, MemberAccessFlags.SkipOriginalClass);\n            if (parentSymbol) {\n                return;\n            }\n\n            // Report the variable as uninitialized only on the first decl.\n            this._evaluator.addDiagnostic(\n                DiagnosticRule.reportUninitializedInstanceVariable,\n                LocMessage.uninitializedInstanceVariable().format({ name: name }),\n                decls[0].node\n            );\n        });\n\n        // See if there are any variables from abstract base classes\n        // that are not initialized.\n        const diagAddendum = new DiagnosticAddendum();\n        abstractSymbols.forEach((member, name) => {\n            const decls = member.symbol.getDeclarations();\n\n            if (decls.length === 0 || !isClass(member.classType)) {\n                return;\n            }\n\n            if (decls[0].type !== DeclarationType.Variable) {\n                return;\n            }\n\n            // Dataclass fields are typically exempted from this check because\n            // they have synthesized __init__ methods that initialize these variables.\n            const dcEntry = dataClassEntries?.find((entry) => entry.name === name);\n            if (dcEntry) {\n                if (dcEntry.includeInInit) {\n                    return;\n                }\n            } else {\n                // Do one or more declarations involve assignments?\n                if (decls.some((decl) => decl.type === DeclarationType.Variable && !!decl.inferredTypeSource)) {\n                    return;\n                }\n            }\n\n            diagAddendum.addMessage(\n                LocAddendum.uninitializedAbstractVariable().format({\n                    name,\n                    classType: member.classType.shared.name,\n                })\n            );\n        });\n\n        if (!diagAddendum.isEmpty()) {\n            this._evaluator.addDiagnostic(\n                DiagnosticRule.reportUninitializedInstanceVariable,\n                LocMessage.uninitializedAbstractVariables().format({ classType: classType.shared.name }) +\n                    diagAddendum.getString(),\n                node.d.name\n            );\n        }\n    }\n\n    // Validates that the type variables used in a generic protocol class have",
+    "analysis": "The actual rule exempts non-final ABCs but explicitly gathers inherited abstract variables for final subclasses. The concrete writer supplies every declared field. This explains the proposed type-only ABC contract; it is source analysis, not a typechecker run."
+  },
+  "vfs_findings": [
+    "Python3.10 lacks the later entrypoint keyword. The new SQL call binds the exact pinned /proc/self/fd path and explicit sqlite3_guardvfsext_init name on the existing private control connection.",
+    "The code emits the same sqlite3.load_extension audit event before loading, closes the returned cursor, and retains the original enable/disable finally and all outer failure cleanup, inode, runtime engine and callback mapping checks.",
+    "The full actual C initializer registers only the new guard_sqlite_vfs scalar on a newly-created private connection, fitting SQLite's SQL load-extension rule that disallows replacing existing functions. It does not modify a currently executing loader function.",
+    "The SQL path is a real compatibility repair and has not been executed here; finite C/VFS controls remain required."
+  ],
+  "vfs_initializer": {
+    "git_blob": "295db495b24e06ca70e499b97dbe9ba9d88e062d",
+    "bytes": 9173,
+    "sha256": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb",
+    "content": "/* The API table comes from the engine that loads this extension. No -lsqlite3. */\n#ifndef _GNU_SOURCE\n#define _GNU_SOURCE\n#endif\n#include <dlfcn.h>\n#include \"guard_vfs.h\"\nSQLITE_EXTENSION_INIT1\n\n#define GUARD_REGISTRATION_LIMIT 16\nstatic pthread_mutex_t registrations_mutex = PTHREAD_MUTEX_INITIALIZER;\nstatic GuardVfs *permanent_contexts[GUARD_REGISTRATION_LIMIT];\nstatic int registration_count;\n\nstatic const char *scopes[] = {\"other\", \"writer\", \"readback\"};\nstatic const char *roles[] = {\"other\", \"main_database\", \"wal\", \"rollback_journal\"};\nstatic const char *metrics[] = {\n    \"vfs_x_open_calls\", \"vfs_x_open_errors\", \"vfs_x_close_calls\", \"vfs_x_close_errors\",\n    \"vfs_x_read_calls\", \"vfs_x_read_errors\", \"vfs_x_read_requested_bytes\", \"vfs_x_read_success_bytes\",\n    \"vfs_x_write_calls\", \"vfs_x_write_errors\", \"vfs_x_write_requested_bytes\", \"vfs_x_write_success_bytes\",\n    \"vfs_x_write_error_requested_bytes\", \"vfs_x_sync_calls\", \"vfs_x_sync_errors\",\n    \"vfs_x_sync_normal_calls\", \"vfs_x_sync_full_calls\", \"vfs_x_sync_dataonly_calls\",\n    \"vfs_x_truncate_calls\", \"vfs_x_truncate_errors\", \"vfs_x_fetch_calls\",\n    \"vfs_x_fetch_mapped_calls\", \"calls_on_different_thread\"\n};\n\nstatic void json_string(sqlite3_str *out, const char *value) {\n    sqlite3_str_appendchar(out, 1, '\"');\n    for (const unsigned char *p = (const unsigned char *)value; *p; ++p) {\n        if (*p == '\"' || *p == '\\\\') {\n            sqlite3_str_appendchar(out, 1, '\\\\');\n            sqlite3_str_appendchar(out, 1, (char)*p);\n        } else if (*p < 32) {\n            sqlite3_str_appendf(out, \"\\\\u%04x\", (unsigned int)*p);\n        } else {\n            sqlite3_str_appendchar(out, 1, (char)*p);\n        }\n    }\n    sqlite3_str_appendchar(out, 1, '\"');\n}\n\nstatic void snapshot(sqlite3_context *context, GuardVfs *owner) {\n    sqlite3_str *out = sqlite3_str_new(sqlite3_context_db_handle(context));\n    sqlite3_mutex_enter(owner->mutex);\n    Dl_info image;\n    memset(&image, 0, sizeof(image));\n    int identified = dladdr((const void *)(uintptr_t)sqlite3_api->libversion_number, &image);\n    sqlite3_str_appendf(out, \"{\\\"schema\\\":1,\\\"observer_code_address\\\":\\\"0x%llx\\\",\"\n        \"\\\"sqlite_api_code_address\\\":\\\"0x%llx\\\",\\\"sqlite_api_image\\\":\",\n        (sqlite3_uint64)(uintptr_t)guard_control,\n        (sqlite3_uint64)(uintptr_t)sqlite3_api->libversion_number);\n    json_string(out, identified && image.dli_fname ? image.dli_fname : \"\");\n    sqlite3_str_appendall(out, \",\\\"callback_context_retained_until_process_exit\\\":true,\"\n        \"\\\"context_registration_limit\\\":16,\\\"sqlite_source_id\\\":\");\n    json_string(out, sqlite3_sourceid());\n    sqlite3_str_appendf(out, \",\\\"sqlite_version_number\\\":%d,\\\"vfs_name\\\":\", sqlite3_libversion_number());\n    json_string(out, owner->name);\n    sqlite3_str_appendall(out, \",\\\"parent_vfs_name\\\":\");\n    json_string(out, owner->original ? owner->original->zName : \"\");\n    sqlite3_str_appendf(out,\n        \",\\\"registered\\\":%s,\\\"default_vfs_unchanged\\\":%s,\\\"active_files\\\":%lld,\"\n        \"\\\"opening_files\\\":%lld,\\\"unsupported_method_versions\\\":%lld,\"\n        \"\\\"outside_owned_file_opens\\\":%lld,\\\"saturated\\\":%s,\\\"cells\\\":[\",\n        owner->registered ? \"true\" : \"false\",\n        owner->original && sqlite3_vfs_find(0) == owner->original ? \"true\" : \"false\",\n        owner->active, owner->opening, owner->unsupported, owner->outside_owned, owner->saturated ? \"true\" : \"false\");\n    for (int scope = 0; scope < GUARD_SCOPES; ++scope) {\n        for (int role = 0; role < GUARD_ROLES; ++role) {\n            if (scope || role) sqlite3_str_appendchar(out, 1, ',');\n            sqlite3_str_appendf(out, \"{\\\"scope\\\":\\\"%s\\\",\\\"file_role\\\":\\\"%s\\\"\", scopes[scope], roles[role]);\n            for (int metric = 0; metric < GUARD_METRICS; ++metric) {\n                sqlite3_str_appendf(out, \",\\\"%s\\\":%lld\", metrics[metric], owner->values[scope][role][metric]);\n            }\n            sqlite3_str_appendchar(out, 1, '}');\n        }\n    }\n    sqlite3_str_appendall(out, \"]}\");\n    sqlite3_mutex_leave(owner->mutex);\n    char *result = sqlite3_str_finish(out);\n    if (!result) sqlite3_result_error_nomem(context);\n    else sqlite3_result_text(context, result, -1, sqlite3_free);\n}\n\nstatic int name_valid(const char *name, int bytes) {\n    if (bytes < 14 || bytes > 64 || strncmp(name, \"guard_rsp131_\", 13) != 0) return 0;\n    for (int i = 0; i < bytes; ++i) {\n        char c = name[i];\n        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return 0;\n    }\n    return name[bytes] == 0;\n}\n\nstatic int register_vfs(GuardVfs *owner, const char *name, int bytes, const char *database, int path_bytes) {\n    if (!database || path_bytes < 2 || path_bytes > 4096 || database[0] != '/' ||\n        (int)strlen(database) != path_bytes) return SQLITE_MISUSE;\n    if (owner->original || !name_valid(name, bytes) || sqlite3_vfs_find(name)) return SQLITE_MISUSE;\n    sqlite3_vfs *original = sqlite3_vfs_find(0);\n    if (!original || original->iVersion < 1 || original->iVersion > 3 ||\n        original->szOsFile <= 0 || original->szOsFile > INT_MAX - (int)GUARD_FILE_OFFSET ||\n        !original->xOpen || !original->xDelete || !original->xAccess || !original->xFullPathname ||\n        !original->xRandomness || !original->xSleep || !original->xCurrentTime) {\n        return SQLITE_MISUSE;\n    }\n    owner->database = sqlite3_mprintf(\"%s\", database);\n    if (!owner->database) return SQLITE_NOMEM;\n    owner->original = original;\n    memcpy(owner->name, name, (size_t)bytes + 1);\n    guard_vfs_methods(owner);\n    pthread_mutex_lock(&registrations_mutex);\n    if (registration_count == GUARD_REGISTRATION_LIMIT) {\n        pthread_mutex_unlock(&registrations_mutex);\n        return SQLITE_MISUSE;\n    }\n    permanent_contexts[registration_count++] = owner;\n    owner->permanent = 1;\n    pthread_mutex_unlock(&registrations_mutex);\n    owner->registered = 1;\n    int result = sqlite3_vfs_register(&owner->base, 0);\n    if (result != SQLITE_OK || sqlite3_vfs_find(0) != original) {\n        sqlite3_vfs_unregister(&owner->base);\n        owner->registered = 0;\n        return result == SQLITE_OK ? SQLITE_MISUSE : result;\n    }\n    return SQLITE_OK;\n}\n\nvoid guard_control(sqlite3_context *context, int argc, sqlite3_value **argv) {\n    GuardVfs *owner = sqlite3_user_data(context);\n    (void)argc;\n    const char *command = (const char *)sqlite3_value_text(argv[0]);\n    if (!command || sqlite3_value_bytes(argv[0]) > 16) {\n        sqlite3_result_error(context, \"invalid observer command\", -1);\n        return;\n    }\n    int result = SQLITE_OK;\n    if (strcmp(command, \"register\") == 0) {\n        const char *name = (const char *)sqlite3_value_text(argv[1]);\n        const char *database = (const char *)sqlite3_value_text(argv[2]);\n        result = name ? register_vfs(owner, name, sqlite3_value_bytes(argv[1]),\n            database, sqlite3_value_bytes(argv[2])) : SQLITE_MISUSE;\n    } else if (strcmp(command, \"unregister\") == 0) {\n        sqlite3_mutex_enter(owner->mutex);\n        if (!owner->registered || owner->active || owner->opening) result = SQLITE_BUSY;\n        else {\n            result = sqlite3_vfs_unregister(&owner->base);\n            if (result == SQLITE_OK) owner->registered = 0;\n        }\n        sqlite3_mutex_leave(owner->mutex);\n    } else if (strcmp(command, \"snapshot\") != 0 || !owner->original) {\n        result = SQLITE_MISUSE;\n    }\n    if (result != SQLITE_OK) {\n        sqlite3_result_error(context, \"SQLite VFS observer admission or lifecycle refused\", -1);\n        sqlite3_result_error_code(context, result);\n        return;\n    }\n    snapshot(context, owner);\n}\n\nvoid guard_destroy(void *pointer) {\n    GuardVfs *owner = pointer;\n    sqlite3_mutex_enter(owner->mutex);\n    if (owner->registered) sqlite3_vfs_unregister(&owner->base);\n    owner->registered = 0;\n    if (owner->permanent) {\n        /* xClose may precede later VFS cleanup inside sqlite3_close(). Keep both\n         * code and callback data alive. At most 16 contexts are admitted per image. */\n        owner->abandoned = owner->active || owner->opening;\n        sqlite3_mutex_leave(owner->mutex);\n        return;\n    }\n    sqlite3_mutex_leave(owner->mutex);\n    sqlite3_mutex_free(owner->mutex);\n    sqlite3_free(owner->database);\n    sqlite3_free(owner);\n}\n\n__attribute__((visibility(\"default\")))\nint sqlite3_guardvfsext_init(sqlite3 *db, char **error, const sqlite3_api_routines *api) {\n    (void)error;\n    if (sqlite3_api && sqlite3_api != api) return SQLITE_MISUSE;\n    SQLITE_EXTENSION_INIT2(api);\n    if (sqlite3_libversion_number() < 3031000 || !sqlite3_threadsafe()) return SQLITE_MISUSE;\n    GuardVfs *owner = sqlite3_malloc64(sizeof(*owner));\n    if (!owner) return SQLITE_NOMEM;\n    memset(owner, 0, sizeof(*owner));\n    owner->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);\n    if (!owner->mutex) {\n        sqlite3_free(owner);\n        return SQLITE_MISUSE;\n    }\n    int result = sqlite3_create_function_v2(db, \"guard_sqlite_vfs\", 3,\n        SQLITE_UTF8 | SQLITE_DIRECTONLY, owner, guard_control, 0, 0, guard_destroy);\n    /* SQLite calls the destructor if function registration fails. */\n    return result == SQLITE_OK ? SQLITE_OK_LOAD_PERMANENTLY : result;\n}\n"
+  },
+  "references": [
+    {
+      "url": "https://docs.python.org/3.12/library/sqlite3.html#sqlite3.Connection.load_extension",
+      "finding": "Official docs specify the3.12 entrypoint addition and the sqlite3.load_extension audit event."
+    },
+    {
+      "url": "https://www.sqlite.org/lang_corefunc.html#load_extension",
+      "finding": "Official docs specify the optional explicit entrypoint, null return, and addition-only function restriction for the SQL loader."
+    },
+    {
+      "url": "https://github.com/DetachHead/basedpyright/blob/v1.39.8/packages/pyright-internal/src/analyzer/checker.ts",
+      "finding": "Actual pinned initialization/ABC/final checks fetched and inspected."
+    }
+  ],
+  "existing_controls": [
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_dequeued_batch_is_not_mistaken_for_drained_evidence",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_witness_requires_exact_committed_ids_and_full_command_binding",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_witness.py::test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifying_result",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_controls.py::test_ack_requires_disk_mac_verified_binding_generation_and_effective_action",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_mixed_controls.py::test_failed_ack_retains_successful_public_mutation_without_approval_override",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distinct",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_native_slo_daemon_mixed_dispatch.py::test_actual_serve_session_keeps_default_observers_and_retires_wrappers",
+      "expected_cases": 2
+    },
+    {
+      "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_existing_writer_methods_keep_class_ownership_and_signature",
+      "expected_cases": 4
+    },
+    {
+      "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_fresh_process_import_orders_bind_the_actual_writer",
+      "expected_cases": 4
+    },
+    {
+      "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_io_error_is_global_and_snapshots_are_detached",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_compatibility_rewrite_invalid_records_keep_global_accounting",
+      "expected_cases": 1
+    },
+    {
+      "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_diagnostics_do_not_invent_native_receipts_for_unknown_records",
+      "expected_cases": 3
+    },
+    {
+      "selector": "tests/test_native_decision_receipt.py::test_journal_rewrite_preserves_another_writer_receipt",
+      "expected_cases": 1
+    }
+  ],
+  "limits": {
+    "runtime_executed": false,
+    "refs_changed": false,
+    "thresholds_changed": false,
+    "original_failed_0509_retained": true,
+    "original144tasks119catalog_unchanged": true
+  }
+}

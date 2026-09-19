@@ -1,0 +1,2227 @@
+{
+  "schema": "pr2974-0509-actual-native-rust-unicode-peer.v1",
+  "scope": "Original failed run: native backpressure, two fresh Rust builds, six Unicode controls, original owned cleanup and explicit absence of C/Python bodies.",
+  "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+  "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+  "harness_sha": "0509cec6c827aad30954df8649eb065938606ee7",
+  "run_id": 35470159481,
+  "run_attempt": 1,
+  "job_id": 105969529650,
+  "original_transport": {
+    "job_log": {
+      "bytes": 6973953,
+      "sha256": "e7874b106016a89c10246a600991566d8b7b631bf958c40c63b9e53b65fbb2f2",
+      "git_blob": "9f3d9cdc0dcc88692fcbf739d94c5d8270f7b133"
+    },
+    "frame": {
+      "frame": {
+        "base64_chars": 6439512,
+        "files": 91,
+        "gzip_bytes": 4829632,
+        "gzip_sha256": "0b88cd297ad4ba168ddcb6eb951b69683d58fcf5bd9f8a541454feb6fc65b766",
+        "harness_sha": "0509cec6c827aad30954df8649eb065938606ee7",
+        "parts": 1074,
+        "qualification_complete": false,
+        "raw_bytes": 75978254,
+        "raw_sha256": "64243f049044a57a184288621fae1e69ef89f966d1412f3739442cb780d40356",
+        "run_attempt": "1",
+        "run_id": "35470159481",
+        "schema": "pr2974-current-integration-validation-frame.v1",
+        "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+        "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b"
+      },
+      "actualOriginalEndpointFetched": true,
+      "oneFrame": true,
+      "all1074PartsOrdered": true,
+      "base64LengthExact": true,
+      "gzipBytesAndShaExact": true,
+      "gzipFlagsZero": true,
+      "gzipTrailerISIZEMatches": true,
+      "rawDecodedByThisAgent": false
+    },
+    "small_members_packet": {
+      "git_blob": "1d1790746334fe44d8e632920504bc1ba3304685",
+      "bytes": 1587915,
+      "sha256": "0bb8fcb905e85f643c25a32057561b0d652c9494fa84588f8ac5cb3e7d8317ad"
+    },
+    "all_80_member_hashes_independently_verified": true,
+    "compressed_1074_part_frame_recomputed_from_actual_original_job_log": true,
+    "large_projection_decoder_owned_by": "ci_repair",
+    "no_second_decode_or_execution": true
+  },
+  "original_member_bindings": [
+    {
+      "path": "commands.json",
+      "bytes": 64397,
+      "sha256": "5a143c17e47df63656c2a616681e7252b53f37302c8d88b63f8e1f952ad21a2d",
+      "git_blob": "2e47854fcaa796770ac595232c38fe1d02e85af6"
+    },
+    {
+      "path": "steps.json",
+      "bytes": 64397,
+      "sha256": "5a143c17e47df63656c2a616681e7252b53f37302c8d88b63f8e1f952ad21a2d",
+      "git_blob": "2e47854fcaa796770ac595232c38fe1d02e85af6"
+    },
+    {
+      "path": "job-outcome.json",
+      "bytes": 70362,
+      "sha256": "4ff2bb4fe3054712d59febe5fc57b526038f786528cf57d1ab42b3458fbb3840",
+      "git_blob": "aebcc72296199e88eb46c770f73fb2e3ab579fa2"
+    },
+    {
+      "path": "validation-summary.json",
+      "bytes": 790,
+      "sha256": "0ad77dccf105061fd1993ef1b81ef9e45692cfde62eac1946ce56a3ffa9358f7",
+      "git_blob": "135cf9b8491115fec76457b4d2430e321e9e98a5"
+    },
+    {
+      "path": "finite-controls.json",
+      "bytes": 39437,
+      "sha256": "e5088ee0dfca5509f65d4c09de8ad9619f39ffc4f6aff73afb784c4a762068b0",
+      "git_blob": "6b4867bcd09e4a01962652f33269d3de393c677a"
+    },
+    {
+      "path": "controls/native/collect.json",
+      "bytes": 130805,
+      "sha256": "b82c60ee2d7206b1490f7b5d6504f22e64963b0e1b3aa34ca2ac6e85ea03c137",
+      "git_blob": "8578e1637c935de26afd3ee80f92511158c4d33e"
+    },
+    {
+      "path": "controls/native/run.json",
+      "bytes": 146857,
+      "sha256": "424105c60ea0e28035fd0323db0e4181316b6ea1612e038d9a4d89e9ae7a8f16",
+      "git_blob": "3e6cabcec15dabb5de1eb318562e66f79ff2c52c"
+    },
+    {
+      "path": "controls/native/collect.xml",
+      "bytes": 239,
+      "sha256": "d86984af77948ad271b686cf9357b529dcefab3836442450cf3046aa7a88cefc",
+      "git_blob": "8c397429130390753c5781cc5437f10825889eea"
+    },
+    {
+      "path": "controls/native/run.xml",
+      "bytes": 9865,
+      "sha256": "f1f428d19c821c80faaec02256e81aca53ec5198e7746aadf0a0fb675d265ba0",
+      "git_blob": "c7aa58f0e254cc10f3580e2bd131ca080c28a73d"
+    },
+    {
+      "path": "controls-native-collect.log",
+      "bytes": 160,
+      "sha256": "b348893b8c29af4aab158b6cce5545260fec4242f6ab25c0b7e9c7d9634ec1b4",
+      "git_blob": "e4c62c0df314ef12e8bc4abcabb2deb16d4e8c75"
+    },
+    {
+      "path": "controls-native-run.log",
+      "bytes": 645,
+      "sha256": "a57b521518dd16d56ab97845b8b4837fc87bb44e04b08639beda85e0642b3263",
+      "git_blob": "fa499b748afb7fe53fef5c7d03ae235c412b0cab"
+    },
+    {
+      "path": "native-binaries.json",
+      "bytes": 4446,
+      "sha256": "319e0ad546615e7ac8aa610b28522eb9caea98afa41469e0dc0925705f5d7317",
+      "git_blob": "f1e89cf73456eeffc17bda65a150d865b844862a"
+    },
+    {
+      "path": "rust-validation.json",
+      "bytes": 669,
+      "sha256": "32e049f9f9c217ddfb250007f2acf008e1c5847665a3db5401398e5df523d8db",
+      "git_blob": "f7dcc8263717f8a7f3fcb1ff6c20a1468e569a65"
+    },
+    {
+      "path": "rust-default-build.log",
+      "bytes": 73659,
+      "sha256": "96bad5640c482937619a9e73d7b577f9232deba9e659dba310a57ec32c5ba1ae",
+      "git_blob": "1751d49912b40a78f3269e811a034448de06a313"
+    },
+    {
+      "path": "rust-diagnostic-build.log",
+      "bytes": 72754,
+      "sha256": "4bc2fef29fc21d5b0d60f24cea9d718704ac153335834e12371b6a997ade619a",
+      "git_blob": "6f2d7cec27b5d236af13c671bd6ba70ac5a2934b"
+    },
+    {
+      "path": "rust-unicode-build.log",
+      "bytes": 47873,
+      "sha256": "6ac833e3181b06e1a737cd3666df8ce25c2e52ffbc9d98c2e9ca50f08b13cf69",
+      "git_blob": "eb248a06a41e5a2cbc1b096ab1cbf890a9d0ec24"
+    },
+    {
+      "path": "rust-unicode-controls.json",
+      "bytes": 3194,
+      "sha256": "3dd29a44a25ee0daeb03aed530cab7fc70818e941488c8be7db57b7e42a25c96",
+      "git_blob": "cd8034ebd158cb64b6f9add789f4f28915e2e907"
+    },
+    {
+      "path": "rust-unicode-list.log",
+      "bytes": 710,
+      "sha256": "27886bee1332ca83e20ec8bc97964b8b2b26431459ba7097865b4f0c81042541",
+      "git_blob": "78a46eb84a9391ffec2e133f7fdb4da23c33f766"
+    },
+    {
+      "path": "rust-unicode-run.log",
+      "bytes": 837,
+      "sha256": "6c03a0f10ce6400dcea139be1852e36c113322cb899a750f8931ae1d265ec2b7",
+      "git_blob": "e5bce6c2ab3e73d2a49bc1a3199ec85da0ea2094"
+    },
+    {
+      "path": "rust-environment-before.json",
+      "bytes": 3631,
+      "sha256": "907875569f433fd4f797b97f1da84716fa91c221ff928f6186acbfe4f2541216",
+      "git_blob": "fff632090a6b56dbb6de567a64db989e69f8a151"
+    },
+    {
+      "path": "rust-environment-after.json",
+      "bytes": 2457,
+      "sha256": "8731a3e5c7e5beb2811e490f57786caae71d4d5276a6a47c555797d69ef35d28",
+      "git_blob": "59cd02cb2be46e28ec1987b38e5786b986d08841"
+    },
+    {
+      "path": "rust-environment-bootstrap.json",
+      "bytes": 1285,
+      "sha256": "65061c8ccc70d0c55fc9e8db449ff1af29ec4ac81884a783c3cb799a3d668b76",
+      "git_blob": "4b70a5b97567ca96e059f4be3c2b378a3bbb99b7"
+    },
+    {
+      "path": "rust-components.original",
+      "bytes": 177,
+      "sha256": "304c6fdc9630d284aee163afee3a1b0bd52f55ef8a621803589abca4a7229c3a",
+      "git_blob": "7e95702f70bd40a7afe173ae8d839547e7b3e485"
+    },
+    {
+      "path": "c-build-retention.json",
+      "bytes": 162,
+      "sha256": "bd31a610ca1deab56cc6ba7949582384ccf87bd012ffa820b8ff8d2bf162245f",
+      "git_blob": "715ad7cd9388b87759a1e0af0c7b7aa84063b784"
+    }
+  ],
+  "source_bindings": {
+    "all130_declared_source_inputs_equal_actual_3cc": true,
+    "native_collect_run_contracts_identical": true,
+    "all_five_provider_files_and_seven_definition_digests_verified": true,
+    "all_loaded_candidate_module_hashes_rebound_to_actual_3cc_leaves": true,
+    "extra_source_readbacks": [
+      {
+        "path": "scripts/__init__.py",
+        "git_blob": "e7e4e061cdbfe1a53ec7c82e9de8ce7689d0cb73",
+        "sha256": "89f00ad7c99fe80fe37d129df2fbe413c0197df2b94de610d2609312f4917ae4",
+        "bytes": 43
+      }
+    ],
+    "native_start_module_and_complete_collection_admission_peer": "991328a054e1d051848d13b73fc85fe59f247001",
+    "full_run_source_unchanged_is_terminal_report_observation": true,
+    "full_source_witness_peer_is_separate": true
+  },
+  "native": {
+    "source_inputs_count": 130,
+    "contract_exact": true,
+    "provider_count": 5,
+    "definition_count": 7,
+    "loaded_candidate_modules_count": 8,
+    "junit_suite": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "1",
+      "time": "0.724",
+      "timestamp": "2026-09-19T21:29:15.092010+00:00",
+      "hostname": "runnervmlun5p"
+    },
+    "junit_testcase": {
+      "classname": "ci.native_runtime.test_native_phase_lifecycle",
+      "name": "test_real_exporter_backpressure_is_reported_without_blocking_the_original_protocol",
+      "time": "0.625"
+    },
+    "ordered_property_names": [
+      "native_cleanup",
+      "native_diagnostic",
+      "native_backpressure_stderr",
+      "native_backpressure_admission"
+    ],
+    "properties": {
+      "native_cleanup": {
+        "client_returncode": 0,
+        "forced_signals": [],
+        "never_started_partial_header_control": false,
+        "no_live_retained_generations": true,
+        "original_session_capture_failed": false,
+        "passed": true,
+        "retained_generation_count": 3,
+        "scope": "existing_resident_stop_then_retained_owned_generation_pidfds",
+        "state_files_remaining": 0,
+        "stop_response_expected": true,
+        "stop_returncode": 0
+      },
+      "native_diagnostic": {
+        "bounds": {
+          "datagram_bytes": 8192,
+          "datagrams": 4096,
+          "processes": 16,
+          "received_bytes": 33554432,
+          "seconds": 60
+        },
+        "complete_run": false,
+        "counts": {
+          "accepted": 6,
+          "ordinal_gaps": 2,
+          "received": 519,
+          "received_bytes": 30077,
+          "refused": 513
+        },
+        "diagnostic_sockets_excluded_from_request_counts": true,
+        "final_tail_delivery_guaranteed": false,
+        "headline_timing_eligible": false,
+        "observed_call_scope": "actual_boundaries_include_startup_control_and_request_calls",
+        "platform_support": "linux",
+        "processes": [
+          {
+            "diagnostic_socket_opens": 1,
+            "export_window_exhausted": false,
+            "last_frame_ordinal": 7,
+            "prior_export_loss_observed": true,
+            "role": "managed_resident",
+            "run_state_when_last_sampled": "running",
+            "slot": 1,
+            "snapshot": {
+              "active_observations_when_read": 0,
+              "all_platform_socket_opens": null,
+              "collector_loss_observed": false,
+              "complete_run": false,
+              "headline_timing_eligible": false,
+              "loopback_failed_internal_socket_creations": null,
+              "max_duration_ns": 60000000000,
+              "max_observations_per_phase": 100000,
+              "phases": [
+                {
+                  "phase": "client_connect_inclusive",
+                  "statistics": null
+                },
+                {
+                  "phase": "client_authenticate",
+                  "statistics": null
+                },
+                {
+                  "phase": "client_request_write_flush",
+                  "statistics": null
+                },
+                {
+                  "phase": "client_committed_response_read",
+                  "statistics": null
+                },
+                {
+                  "phase": "resident_evaluate_inclusive",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 25571,
+                    "duration_ns_min": 1821,
+                    "duration_ns_sum": 106027,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 2,
+                    "returned_ok": 6,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "unix_socket_creation",
+                  "statistics": null
+                },
+                {
+                  "phase": "loopback_connect_handle",
+                  "statistics": null
+                }
+              ],
+              "schema": "hol-guard-native-phase-diagnostics.v1",
+              "scope": "diagnostic_instrumented_process_snapshot",
+              "snapshot_atomic": false,
+              "span_semantics": "inclusive_do_not_sum",
+              "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+            },
+            "snapshot_ordinal": 7
+          },
+          {
+            "diagnostic_socket_opens": 1,
+            "export_window_exhausted": false,
+            "last_frame_ordinal": 11,
+            "prior_export_loss_observed": true,
+            "role": "persistent_client",
+            "run_state_when_last_sampled": "running",
+            "slot": 2,
+            "snapshot": {
+              "active_observations_when_read": 0,
+              "all_platform_socket_opens": null,
+              "collector_loss_observed": false,
+              "complete_run": false,
+              "headline_timing_eligible": false,
+              "loopback_failed_internal_socket_creations": null,
+              "max_duration_ns": 60000000000,
+              "max_observations_per_phase": 100000,
+              "phases": [
+                {
+                  "phase": "client_connect_inclusive",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 35458,
+                    "duration_ns_min": 20483,
+                    "duration_ns_sum": 235106,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 0,
+                    "returned_ok": 8,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "client_authenticate",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 10082142,
+                    "duration_ns_min": 1228181,
+                    "duration_ns_sum": 21529525,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 0,
+                    "returned_ok": 8,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "client_request_write_flush",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 8356,
+                    "duration_ns_min": 3164,
+                    "duration_ns_sum": 44895,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 0,
+                    "returned_ok": 8,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "client_committed_response_read",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 59014,
+                    "duration_ns_min": 24337,
+                    "duration_ns_sum": 313598,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 0,
+                    "returned_ok": 8,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "resident_evaluate_inclusive",
+                  "statistics": null
+                },
+                {
+                  "phase": "unix_socket_creation",
+                  "statistics": {
+                    "abandoned": 0,
+                    "duration_clipped": false,
+                    "duration_ns_max": 6171,
+                    "duration_ns_min": 1581,
+                    "duration_ns_sum": 36010,
+                    "observations_discarded_at_cap": false,
+                    "retained_count": 8,
+                    "returned_err": 0,
+                    "returned_ok": 8,
+                    "unwound": 0
+                  }
+                },
+                {
+                  "phase": "loopback_connect_handle",
+                  "statistics": null
+                }
+              ],
+              "schema": "hol-guard-native-phase-diagnostics.v1",
+              "scope": "diagnostic_instrumented_process_snapshot",
+              "snapshot_atomic": false,
+              "span_semantics": "inclusive_do_not_sum",
+              "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+            },
+            "snapshot_ordinal": 11
+          }
+        ],
+        "qualification_complete": false,
+        "receiver_loss_observed": true,
+        "receiver_status": "receiver_stopped",
+        "receiver_terminal": true,
+        "request_socket_counts": "observed_successful_creation_returns_only_not_live_fd_counts",
+        "runtime_file_identity_scope": "last_observation_outside_snapshot_lock",
+        "runtime_file_identity_unchanged_at_last_check": true,
+        "runtime_sha256": "09b24d5f0f345b07c20436af68d59833ecf3b2cb92a3f17d16e34bed01eb4441",
+        "schema": "hol-guard-native-phase-receiver.v1",
+        "scope": "diagnostic_instrumented_owned_live_process_observations",
+        "snapshot_aggregation": "latest_retained_per_process_do_not_sum_cumulative_frames",
+        "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+      },
+      "native_backpressure_stderr": {
+        "bytes": 0,
+        "complete": true,
+        "content_hex": "",
+        "descriptor_closed": true,
+        "eof": true,
+        "error_errno": null,
+        "limit_bytes": 4096,
+        "overflow": false,
+        "scope": "owned_stderr_duplicate_after_original_cleanup",
+        "would_block": false
+      },
+      "native_backpressure_admission": {
+        "accepted": 513,
+        "all_fillers_closed": true,
+        "fresh_first_send_refused": true,
+        "live_socket_cap": 16,
+        "operation_failure": null,
+        "payload_bytes": 34,
+        "queue_limit": 512,
+        "queue_limit_errno": null,
+        "queue_limit_error": null,
+        "send_attempt_cap": 1024,
+        "sender_index": null,
+        "senders": [
+          {
+            "accepted": 278,
+            "attempts": 279,
+            "blocked_errno": 11,
+            "blocked_on_first_send": false,
+            "index": 0,
+            "send_buffer_bytes": 212992,
+            "socket_device": 9,
+            "socket_inode": 17942
+          },
+          {
+            "accepted": 235,
+            "attempts": 236,
+            "blocked_errno": 11,
+            "blocked_on_first_send": false,
+            "index": 1,
+            "send_buffer_bytes": 212992,
+            "socket_device": 9,
+            "socket_inode": 17943
+          },
+          {
+            "accepted": 0,
+            "attempts": 1,
+            "blocked_errno": 11,
+            "blocked_on_first_send": true,
+            "index": 2,
+            "send_buffer_bytes": 212992,
+            "socket_device": 9,
+            "socket_inode": 17944
+          }
+        ],
+        "stage": "owned_cleanup",
+        "terminal_errno": null,
+        "terminal_error": null,
+        "terminal_sender_index": null,
+        "terminal_stage": null,
+        "total_attempts": 516
+      }
+    },
+    "all_three_phases_passed": true,
+    "both_binary_identities_equal_before_after": true,
+    "all_source_inputs_and_loaded_candidate_modules_match_3cc": true
+  },
+  "rust": {
+    "builds": [
+      {
+        "variant": "default",
+        "build_command": "rust-default-build",
+        "cargo_artifact_all_fields_exact": true,
+        "artifact": {
+          "build_command_name": "rust-default-build",
+          "build_profile": "release",
+          "bytes": 12276520,
+          "cargo_message": {
+            "executable": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/hol-guard-runtime",
+            "features": [],
+            "filenames": [
+              "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/hol-guard-runtime"
+            ],
+            "fresh": false,
+            "manifest_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/Cargo.toml",
+            "package_id": "path+file:///home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime#hol-guard-runtime@0.1.0",
+            "profile": {
+              "debug_assertions": false,
+              "debuginfo": 0,
+              "opt_level": "3",
+              "overflow_checks": false,
+              "test": false
+            },
+            "reason": "compiler-artifact",
+            "target": {
+              "crate_types": [
+                "bin"
+              ],
+              "doc": true,
+              "doctest": false,
+              "edition": "2021",
+              "kind": [
+                "bin"
+              ],
+              "name": "hol-guard-runtime",
+              "src_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/main.rs",
+              "test": true
+            }
+          },
+          "cargo_profile": {
+            "debug_assertions": false,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": false,
+            "test": false
+          },
+          "cargo_target_directory": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default",
+          "features": [],
+          "git_source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/hol-guard-runtime",
+          "retained_artifact_path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/native-binaries/default/hol-guard-runtime",
+          "sha256": "c1346d8951c9787af8ed9e36dc2f5bb98034e3fbb31ef14666fad5735a9b1403",
+          "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+          "test_binary": false,
+          "toolchain": "1.88.0",
+          "uid": 1001
+        }
+      },
+      {
+        "variant": "diagnostic",
+        "build_command": "rust-diagnostic-build",
+        "cargo_artifact_all_fields_exact": true,
+        "artifact": {
+          "build_command_name": "rust-diagnostic-build",
+          "build_profile": "release",
+          "bytes": 12311744,
+          "cargo_message": {
+            "executable": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-diagnostic/release/hol-guard-runtime",
+            "features": [
+              "diagnostic-phases"
+            ],
+            "filenames": [
+              "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-diagnostic/release/hol-guard-runtime"
+            ],
+            "fresh": false,
+            "manifest_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/Cargo.toml",
+            "package_id": "path+file:///home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime#hol-guard-runtime@0.1.0",
+            "profile": {
+              "debug_assertions": false,
+              "debuginfo": 0,
+              "opt_level": "3",
+              "overflow_checks": false,
+              "test": false
+            },
+            "reason": "compiler-artifact",
+            "target": {
+              "crate_types": [
+                "bin"
+              ],
+              "doc": true,
+              "doctest": false,
+              "edition": "2021",
+              "kind": [
+                "bin"
+              ],
+              "name": "hol-guard-runtime",
+              "src_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/main.rs",
+              "test": true
+            }
+          },
+          "cargo_profile": {
+            "debug_assertions": false,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": false,
+            "test": false
+          },
+          "cargo_target_directory": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-diagnostic",
+          "features": [
+            "diagnostic-phases"
+          ],
+          "git_source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-diagnostic/release/hol-guard-runtime",
+          "retained_artifact_path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/native-binaries/diagnostic/hol-guard-runtime",
+          "sha256": "09b24d5f0f345b07c20436af68d59833ecf3b2cb92a3f17d16e34bed01eb4441",
+          "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+          "test_binary": false,
+          "toolchain": "1.88.0",
+          "uid": 1001
+        }
+      }
+    ],
+    "unicode": {
+      "artifact": {
+        "bytes": 11026368,
+        "cargo_message": {
+          "executable": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9",
+          "features": [],
+          "filenames": [
+            "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9"
+          ],
+          "fresh": false,
+          "manifest_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command/Cargo.toml",
+          "package_id": "path+file:///home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command#0.1.0",
+          "profile": {
+            "debug_assertions": false,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": false,
+            "test": true
+          },
+          "reason": "compiler-artifact",
+          "target": {
+            "crate_types": [
+              "lib"
+            ],
+            "doc": true,
+            "doctest": true,
+            "edition": "2021",
+            "kind": [
+              "lib"
+            ],
+            "name": "guard_command",
+            "src_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command/src/lib.rs",
+            "test": true
+          }
+        },
+        "mode": "0o755",
+        "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9",
+        "sha256": "689ea12adb886195cffec001a4d3044b6d80259c25a775b0a7978dd0b95121b0",
+        "uid": 1001
+      },
+      "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+      "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+      "exact_list_and_run_nodes": [
+        "command_option_parsing::unicode::tests::unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+        "command_specialized_matchers::unicode_tests::ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings",
+        "command_specialized_matchers::unicode_tests::unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+        "command_specialized_matchers::unicode_tests::unicode_operands_keep_python_and_php_launcher_classification_exact",
+        "command_structured_matchers::tests::opaque_unicode_operands_and_python_whitespace_are_supported",
+        "command_structured_matchers::tests::unsupported_unicode_case_mapping_is_error_not_a_negative_match"
+      ],
+      "required_anchors": [
+        "unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+        "unicode_operands_keep_python_and_php_launcher_classification_exact",
+        "unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+        "ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings"
+      ],
+      "original_report": {
+        "actual_passed_nodes": [
+          "command_option_parsing::unicode::tests::unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+          "command_specialized_matchers::unicode_tests::ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings",
+          "command_specialized_matchers::unicode_tests::unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+          "command_specialized_matchers::unicode_tests::unicode_operands_keep_python_and_php_launcher_classification_exact",
+          "command_structured_matchers::tests::opaque_unicode_operands_and_python_whitespace_are_supported",
+          "command_structured_matchers::tests::unsupported_unicode_case_mapping_is_error_not_a_negative_match"
+        ],
+        "artifact": {
+          "bytes": 11026368,
+          "cargo_message": {
+            "executable": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9",
+            "features": [],
+            "filenames": [
+              "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9"
+            ],
+            "fresh": false,
+            "manifest_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command/Cargo.toml",
+            "package_id": "path+file:///home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command#0.1.0",
+            "profile": {
+              "debug_assertions": false,
+              "debuginfo": 0,
+              "opt_level": "3",
+              "overflow_checks": false,
+              "test": true
+            },
+            "reason": "compiler-artifact",
+            "target": {
+              "crate_types": [
+                "lib"
+              ],
+              "doc": true,
+              "doctest": true,
+              "edition": "2021",
+              "kind": [
+                "lib"
+              ],
+              "name": "guard_command",
+              "src_path": "/home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-command/src/lib.rs",
+              "test": true
+            }
+          },
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rust-target-default/release/deps/guard_command-511efb79645c54e9",
+          "sha256": "689ea12adb886195cffec001a4d3044b6d80259c25a775b0a7978dd0b95121b0",
+          "uid": 1001
+        },
+        "body_attempted": true,
+        "collected_nodes": [
+          "command_option_parsing::unicode::tests::unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+          "command_specialized_matchers::unicode_tests::ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings",
+          "command_specialized_matchers::unicode_tests::unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+          "command_specialized_matchers::unicode_tests::unicode_operands_keep_python_and_php_launcher_classification_exact",
+          "command_structured_matchers::tests::opaque_unicode_operands_and_python_whitespace_are_supported",
+          "command_structured_matchers::tests::unsupported_unicode_case_mapping_is_error_not_a_negative_match"
+        ],
+        "passed": true,
+        "qualification_complete": false,
+        "schema": "pr2974-current-unicode-controls.v1",
+        "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+        "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b"
+      }
+    },
+    "toolchain": {
+      "programs": {
+        "cargo": {
+          "bytes": 38206480,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/cargo",
+          "sha256": "de9be4299324f5c1f5d12103792d35e8b8ab195df3a374194b8ffc33562c7e3d",
+          "uid": 1001
+        },
+        "cargo-clippy": {
+          "bytes": 1299904,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/cargo-clippy",
+          "sha256": "06860a0528fa8018b85bf4d0ca05f1df95862f7288d4ff3447d2961b65eca20b",
+          "uid": 1001
+        },
+        "cargo-fmt": {
+          "bytes": 3294568,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/cargo-fmt",
+          "sha256": "9b91896f62a4120efb39ab1299931a1d6d1e24bfcf6d2c31771ae10a0a5ce050",
+          "uid": 1001
+        },
+        "clippy-driver": {
+          "bytes": 13848608,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/clippy-driver",
+          "sha256": "a7a873792a901a1c916939dfbaa56d6ca64c1458bc883c1d01b6efe7ba6aea81",
+          "uid": 1001
+        },
+        "rustc": {
+          "bytes": 650600,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/rustc",
+          "sha256": "ac3e92e45fe15c789939deedf7614f4f9578cc9609cb9ead39c9b1808a316c5b",
+          "uid": 1001
+        },
+        "rustdoc": {
+          "bytes": 13332648,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+          "sha256": "131bfb775dd5c1ca2a074881322a9d3b4e6b802c51f5a461d9300486f0edfc18",
+          "uid": 1001
+        },
+        "rustfmt": {
+          "bytes": 6255008,
+          "mode": "0o755",
+          "path": "/home/runner/work/_temp/pr2974-current-integration-validation/scratch/rustup-home/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/rustfmt",
+          "sha256": "cf32a42bb26561ab14c74306b59b2739c5e9a9b20fd00c02f913a8589d77279e",
+          "uid": 1001
+        }
+      },
+      "programs_exact_before_after": true,
+      "seven_actual_programs": true,
+      "fresh_private_install": true,
+      "shared_cache_used": false,
+      "component_manifest_sha256": "304c6fdc9630d284aee163afee3a1b0bd52f55ef8a621803589abca4a7229c3a"
+    },
+    "commands": [
+      {
+        "name": "uv-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13062,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2449,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "create-validation-environment",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 90,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13068,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2450,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "frozen-project-install",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 420,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13090,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2451,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "dependency-compatibility",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13517,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2465,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "environment-before",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13535,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2469,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "python-ruff-check",
+        "returncode": 1,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 120,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13606,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2470,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "python-ruff-format-check",
+        "returncode": 1,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 120,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13625,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2476,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "python-production-types",
+        "returncode": 1,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 13648,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2482,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-io-ownership",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 14108,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2493,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-authority-ownership",
+        "returncode": 1,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 17208,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2499,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "native-receipt-persistence",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 17271,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2502,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "python-capability-cleanup",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 17303,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2504,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "formatter-proposals",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 22685,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2515,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "full-current-collection",
+        "returncode": 1,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 600,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 26430,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2614,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rustup-bootstrap-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 35455,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2686,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-toolchain-install",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 420,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 35458,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2691,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-toolchain-cargo-path",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36298,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2730,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "owned-cargo-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36306,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2735,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "owned-rustc-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36310,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2753,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "owned-rustfmt-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36312,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2755,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "owned-clippy-driver-version",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 30,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36314,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2756,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-format-check",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 120,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36319,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2757,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-default-build",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 600,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 36366,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 2760,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-diagnostic-build",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 600,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 41895,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 4024,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-unicode-build",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 600,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 47616,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5285,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-unicode-list",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 60,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 49604,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5470,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rust-unicode-run",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 120,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 49617,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5471,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-python-collect",
+        "returncode": 3,
+        "passed": false,
+        "timed_out": false,
+        "timeout_seconds": 600,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 49619,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5478,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-pure-collect",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 51526,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5508,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-pure-run",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 52332,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5536,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-forward-collect",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 54231,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5564,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-forward-run",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 54832,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5591,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-lifecycle-collect",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 55562,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5619,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-workspace-lifecycle-run",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 56141,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5646,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-native-collect",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 56775,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5674,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "controls-native-run",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 56873,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5701,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "environment-after",
+        "returncode": 0,
+        "passed": true,
+        "timed_out": false,
+        "timeout_seconds": 300,
+        "group_cleanup": {
+          "errors": [],
+          "leader_start_ticks": 57040,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5763,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ]
+        }
+      }
+    ],
+    "command_log_bindings": [
+      {
+        "name": "uv-version",
+        "member_available": true,
+        "bytes": 10,
+        "sha256": "48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1"
+      },
+      {
+        "name": "create-validation-environment",
+        "member_available": true,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "frozen-project-install",
+        "member_available": true,
+        "bytes": 2549,
+        "sha256": "ae672b1d1f285c0f5543884e4417bb7d68583ed596df043ebe44a7408979fc3c"
+      },
+      {
+        "name": "dependency-compatibility",
+        "member_available": true,
+        "bytes": 197,
+        "sha256": "0e61f954eae137fe03b3694489118df2b43d719950a7d5eab47c1ba2f97584d3"
+      },
+      {
+        "name": "environment-before",
+        "member_available": true,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "python-ruff-check",
+        "member_available": true,
+        "bytes": 32105,
+        "sha256": "e0211134de7fc3601531258b1d270ef4650a2ed36f9258dd275891174097eb5d"
+      },
+      {
+        "name": "python-ruff-format-check",
+        "member_available": true,
+        "bytes": 16639,
+        "sha256": "0c37b086f45a51e4aa48207194bc27aa9fbdc0e4d8132b16cef0165b34c1d4cc"
+      },
+      {
+        "name": "python-production-types",
+        "member_available": true,
+        "bytes": 165719,
+        "sha256": "903323c8851186e0f254dfd4194fcadf9e9342972e28f0b11c3b29cc55d31349"
+      },
+      {
+        "name": "rust-io-ownership",
+        "member_available": true,
+        "bytes": 37705,
+        "sha256": "62918bac15983b29c919de1c358c5a1b599ee86d0cb3bcdef5c90057b2221fcd"
+      },
+      {
+        "name": "rust-authority-ownership",
+        "member_available": true,
+        "bytes": 1154,
+        "sha256": "6c6dcbf63464aa09bf672e8b1bee2db72b089175b3f78ffab9700914f18dfdb5"
+      },
+      {
+        "name": "native-receipt-persistence",
+        "member_available": true,
+        "bytes": 500,
+        "sha256": "309230b58377eaba88ea5b98cfb6c1070383b9c5c0d2da9a9e37ca3c67626cb9"
+      },
+      {
+        "name": "python-capability-cleanup",
+        "member_available": true,
+        "bytes": 12451,
+        "sha256": "ac52f7f97355e65886f4b8003b7988e202e3663fce31a5da589bb7bfb8c72101"
+      },
+      {
+        "name": "formatter-proposals",
+        "member_available": true,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "full-current-collection",
+        "member_available": false
+      },
+      {
+        "name": "rustup-bootstrap-version",
+        "member_available": true,
+        "bytes": 287,
+        "sha256": "9aed7154ddda7f6f8cf9a714dd08e1e36a9c4849d743ca4002ac6d3694b99a82"
+      },
+      {
+        "name": "rust-toolchain-install",
+        "member_available": true,
+        "bytes": 320,
+        "sha256": "6a626e182b0dbdd4c99f403e920c0b267d6b6c688104177fa3cf0bfacac11c0e"
+      },
+      {
+        "name": "rust-toolchain-cargo-path",
+        "member_available": true,
+        "bytes": 135,
+        "sha256": "7a41c81dd9357bdd9fd67e9958d89d5f36747d1725944c7286fab8c7dfd5d71a"
+      },
+      {
+        "name": "owned-cargo-version",
+        "member_available": true,
+        "bytes": 336,
+        "sha256": "afbf09b72118669bd34e0e664424acd0d876ead7c68ab708a77e72b012b06ae3"
+      },
+      {
+        "name": "owned-rustc-version",
+        "member_available": true,
+        "bytes": 196,
+        "sha256": "2775ffb86baebfb4c9959501cdd336fe315dd8e1229ffaede4f428f33862f10d"
+      },
+      {
+        "name": "owned-rustfmt-version",
+        "member_available": true,
+        "bytes": 45,
+        "sha256": "05595eb958a7adf24b91a098c3f7515caa11c0bf97f95778ff1d52d17a26b510"
+      },
+      {
+        "name": "owned-clippy-driver-version",
+        "member_available": true,
+        "bytes": 38,
+        "sha256": "cc7a6ab7546b82880fed855dc65e6c63e2845f9a72e582bb9657c9355eb452ee"
+      },
+      {
+        "name": "rust-format-check",
+        "member_available": true,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "rust-default-build",
+        "member_available": true,
+        "bytes": 73659,
+        "sha256": "96bad5640c482937619a9e73d7b577f9232deba9e659dba310a57ec32c5ba1ae"
+      },
+      {
+        "name": "rust-diagnostic-build",
+        "member_available": true,
+        "bytes": 72754,
+        "sha256": "4bc2fef29fc21d5b0d60f24cea9d718704ac153335834e12371b6a997ade619a"
+      },
+      {
+        "name": "rust-unicode-build",
+        "member_available": true,
+        "bytes": 47873,
+        "sha256": "6ac833e3181b06e1a737cd3666df8ce25c2e52ffbc9d98c2e9ca50f08b13cf69"
+      },
+      {
+        "name": "rust-unicode-list",
+        "member_available": true,
+        "bytes": 710,
+        "sha256": "27886bee1332ca83e20ec8bc97964b8b2b26431459ba7097865b4f0c81042541"
+      },
+      {
+        "name": "rust-unicode-run",
+        "member_available": true,
+        "bytes": 837,
+        "sha256": "6c03a0f10ce6400dcea139be1852e36c113322cb899a750f8931ae1d265ec2b7"
+      },
+      {
+        "name": "controls-python-collect",
+        "member_available": true,
+        "bytes": 37960,
+        "sha256": "779dec08a0ca8b231765f9132c6c85f5f2c617d987346e0ef48390a911f2d4b8"
+      },
+      {
+        "name": "controls-workspace-pure-collect",
+        "member_available": true,
+        "bytes": 9710,
+        "sha256": "152521a209a035f80739487caa6fb8738ea30e86ea19c8430652c2b97a8478f1"
+      },
+      {
+        "name": "controls-workspace-pure-run",
+        "member_available": true,
+        "bytes": 100,
+        "sha256": "1f73755bc83b75966edb9728bbba20441cad85931917ff03abdfc0b554d1013d"
+      },
+      {
+        "name": "controls-workspace-forward-collect",
+        "member_available": true,
+        "bytes": 1944,
+        "sha256": "0a31de6e4f91f734587da66dde45fe1d3e4deb1d4ac0c6730e65ce498fc68772"
+      },
+      {
+        "name": "controls-workspace-forward-run",
+        "member_available": true,
+        "bytes": 99,
+        "sha256": "289c25cf0069c1a620a63f30995ebd159a21d21da40c2a125783a253cbd33220"
+      },
+      {
+        "name": "controls-workspace-lifecycle-collect",
+        "member_available": true,
+        "bytes": 1197,
+        "sha256": "76fe685a07953b8268b0430e3a7e17b8365a9182ec6d35a3b49087d92f72b7d8"
+      },
+      {
+        "name": "controls-workspace-lifecycle-run",
+        "member_available": true,
+        "bytes": 99,
+        "sha256": "8485742d9da01eaef121cbb14d7d7207b6357cff1f2e717f58062442a2e5d4bc"
+      },
+      {
+        "name": "controls-native-collect",
+        "member_available": true,
+        "bytes": 160,
+        "sha256": "b348893b8c29af4aab158b6cce5545260fec4242f6ab25c0b7e9c7d9634ec1b4"
+      },
+      {
+        "name": "controls-native-run",
+        "member_available": true,
+        "bytes": 645,
+        "sha256": "a57b521518dd16d56ab97845b8b4837fc87bb44e04b08639beda85e0642b3263"
+      },
+      {
+        "name": "environment-after",
+        "member_available": true,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "c_retention": {
+      "builds": [],
+      "complete_builds": 0,
+      "errors": [],
+      "observed_only": true,
+      "qualification_complete": false,
+      "schema": "pr2974-c-build-retention.v1"
+    },
+    "normal_cohort": {
+      "body_command_attempted": false,
+      "cohort": "python",
+      "collection_command_passed": false,
+      "collection_sha256": "c70a56c4c14e3fe517a5de1a9e151d3b232b7f98d60fa609275db95634dbaad2",
+      "error": {
+        "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_incoming_integration_validation/finite_controls.py\", line 150, in run\n    admitted(prior, expected, \"collect\")\n  File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_incoming_integration_validation/finite_controls.py\", line 41, in admitted\n    assert value[\"pytest_exit_code\"] == 0 and value[\"error\"] is None and value[\"evidence_error\"] is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+        "type": "AssertionError"
+      },
+      "expected_cases": 276,
+      "passed": false
+    },
+    "actual_total_passed_cases": 89
+  },
+  "normal_and_C": {
+    "normal_declared_cases": 276,
+    "normal_collected_cases": 265,
+    "normal_collection_admission_failed": true,
+    "normal_body_command_attempted": false,
+    "all_22_owned_writer_journal_dispatch_VFS_cases_unexecuted": true,
+    "c_builds_observed": 0,
+    "c_compiler_failure_observed": false,
+    "c_success_claim": false,
+    "affected_controls": [
+      {
+        "selector": "tests/test_native_slo_mixed_witness.py::test_dequeued_batch_is_not_mistaken_for_drained_evidence",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_mixed_witness.py::test_witness_requires_exact_committed_ids_and_full_command_binding",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_mixed_witness.py::test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifying_result",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_mixed_controls.py::test_ack_requires_disk_mac_verified_binding_generation_and_effective_action",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_mixed_controls.py::test_failed_ack_retains_successful_public_mutation_without_approval_override",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distinct",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_native_slo_daemon_mixed_dispatch.py::test_actual_serve_session_keeps_default_observers_and_retires_wrappers",
+        "expected_cases": 2
+      },
+      {
+        "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_existing_writer_methods_keep_class_ownership_and_signature",
+        "expected_cases": 4
+      },
+      {
+        "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_fresh_process_import_orders_bind_the_actual_writer",
+        "expected_cases": 4
+      },
+      {
+        "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_io_error_is_global_and_snapshots_are_detached",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_compatibility_rewrite_invalid_records_keep_global_accounting",
+        "expected_cases": 1
+      },
+      {
+        "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_diagnostics_do_not_invent_native_receipts_for_unknown_records",
+        "expected_cases": 3
+      },
+      {
+        "selector": "tests/test_native_decision_receipt.py::test_journal_rewrite_preserves_another_writer_receipt",
+        "expected_cases": 1
+      }
+    ],
+    "source_types_measured": {
+      "journal": 42,
+      "VFS": 1
+    },
+    "repair_packet_is_separate": "4c0c02675b35bc2fa9ebdf68a114b6f61fd30815"
+  },
+  "source_selection_review": {
+    "actual_collect_controls_blob": "77fb76fc601b9e347dd62d99b97e599aa728f433",
+    "actual_collect_controls_sha256": "1771b0ca75db0624450eb98592a0279021863c42335d32eb05cf88d8753a4767",
+    "actual_blob_readback": true,
+    "non_native_binary_admission_already_optional": true,
+    "scope_string": "native_binaries_not_required_or_qualified_for_python_controls",
+    "native_env_lookup_provider": "ci/native_runtime/test_native_phase_lifecycle.py::phase_binaries",
+    "phase_binary_fixture_absent_from_all_30_normal_selectors": true,
+    "no_native_binary_admission_change_required_for_normal_only_successor": true,
+    "successor_source_and_execution_review_remain_separate": true
+  },
+  "qualification": {
+    "overall_run_passed": false,
+    "finite_controls_passed": false,
+    "actual_finite_cases_passed": 89,
+    "workspace_88_scope_owned_by_other_peers": true,
+    "native_passed_cases": 1,
+    "native_passed_phases": 3,
+    "Rust_release_builds_passed": 2,
+    "Unicode_cases_passed": 6,
+    "full_Rust_unit_or_clippy_rerun": false,
+    "default_binary_built_and_admitted_but_not_executed_by_native_case": true,
+    "diagnostic_binary_executed_by_native_case": true,
+    "no_complete_descendant_cleanup_certificate": true,
+    "all_37_original_owned_groups_retired": true,
+    "three_retained_native_generations_retired": true,
+    "forced_cleanup_signals": 0,
+    "native_phase_complete_run": false,
+    "headline_performance_eligible": false,
+    "installed_phase_qualification_complete": false,
+    "qualification_complete": false,
+    "historical580_credit_separate": true,
+    "original_failure_preserved": true,
+    "no_ref_mutation_or_rerun_by_reviewer": true
+  }
+}

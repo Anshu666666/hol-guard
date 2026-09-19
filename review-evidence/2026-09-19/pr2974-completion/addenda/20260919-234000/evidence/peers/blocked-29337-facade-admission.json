@@ -1,0 +1,200 @@
+{
+  "schema": "pr2974-29337-focused-provider-admission-review.v1",
+  "status": "blocked_pending_narrow_facade_mapping",
+  "harness_sha": "29337f9c2c9b70ce7abe79deda881a2d09cb7d2c",
+  "harness_tree": "5f22bbec40b826cdcedb189c6c4f2ad7d309f4ec",
+  "source_sha": "9d37172d6bc1e1febeb9c7611a5a050ef5ea798a",
+  "source_tree": "1e5d43e1d6d3364a6e863a4c3c52e24222542f39",
+  "owner": {
+    "git_blob": "e8f700b7c72c77275edd0f5a782ef80e01e6f22c",
+    "bytes": 4286741,
+    "sha256": "9d4f127a1dbf978b5614c887ab1016de6fc79d31fa693c2d1a0864e413d998cb",
+    "blob_verified": true
+  },
+  "source_owner": {
+    "git_blob": "729426f7009b476e00d1ee67fa04b73a1c33b293",
+    "bytes": 2602403,
+    "sha256": "b19fa2155dc6ce8dd37663c67fdae3afcc897f1a7911162e1f9916f744d010d3",
+    "blob_verified": true
+  },
+  "source_only": true,
+  "no_execution": true,
+  "expected_cases": 276,
+  "expected_phases": 828,
+  "selectors": 40,
+  "unchanged_population_after_expanding_prior_11_case_provider_selector": true,
+  "findings": [
+    {
+      "id": "collector-provider-path",
+      "severity": "launch_blocker",
+      "description": "The 11 selected collecting-facade aliases retain provider code.co_filename. The existing provider-path equality therefore refuses collection admission. JUnit identity must separately remain the collecting facade path.",
+      "exact_current_lines": [
+        {
+          "line": 278,
+          "text": "                assert function[\"origin\"] == \"candidate\" and function[\"path\"] == item.nodeid.split(\"::\", 1)[0]"
+        },
+        {
+          "line": 300,
+          "text": "                    \"junit\": {\"classname\": function[\"path\"][:-3].replace(\"/\", \".\"), \"name\": item.name},"
+        }
+      ],
+      "required_fix": "Permit only the 11 exact named facade→provider bindings, prove each selected facade attribute is the identical actual provider function, retain both complete source files/current AST and use the selected facade path for JUnit identity. Keep all other path equality, count, source, fixture, pre-body, no-skip, phase and ordered JUnit checks unchanged.",
+      "mappings": [
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_startup_ack_and_mutation_push",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_startup_ack_and_mutation_push",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_does_not_ack_snapshot_after_concurrent_mutation",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_does_not_ack_snapshot_after_concurrent_mutation",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_repushes_after_resident_generation_change",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_repushes_after_resident_generation_change",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_does_not_republish_for_generation_created_by_own_ack",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_does_not_republish_for_generation_created_by_own_ack",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_rejects_ack_after_resident_restart_before_barrier",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_rejects_ack_after_resident_restart_before_barrier",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_publisher_rejects_mutated_ack_without_opening_barrier",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_publisher_rejects_mutated_ack_without_opening_barrier",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_auto_hook_uses_barrier_without_loading_config_per_request",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_auto_hook_uses_barrier_without_loading_config_per_request",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_prepare_workspace_policy_uses_bounded_first_workspace_handshake",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_prepare_workspace_policy_uses_bounded_first_workspace_handshake",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_prepare_workspace_policy_waits_publish_budget_without_caller_deadline",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_prepare_workspace_policy_waits_publish_budget_without_caller_deadline",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_prepare_workspace_policy_skips_wait_after_publisher_error",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_prepare_workspace_policy_skips_wait_after_publisher_error",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_v3_publisher.py::test_same_generation_retries_reuse_exact_signed_snapshot_bytes",
+          "original_provider": "tests/test_native_policy_snapshot_publisher.py",
+          "function": "test_same_generation_retries_reuse_exact_signed_snapshot_bytes",
+          "provider_definition_exists": true,
+          "facade_alias_exists": true
+        }
+      ]
+    }
+  ],
+  "unchanged_helpers": [
+    {
+      "path": "ci/pr2974_incoming_integration_validation/common.py",
+      "git_blob": "72e63350280dcb6db87d8401c4f96a7d023b89a0"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/environment_setup.py",
+      "git_blob": "5764334b8b63ec319c420b0f43aecf9974daebce"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/environment.py",
+      "git_blob": "42d1dd6d6b8d5b31f5b8500c0a07d641c96e8ae3"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/rust_environment.py",
+      "git_blob": "52a3abee4ae3a72453186575679a22a0eedd099e"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/rust_validation.py",
+      "git_blob": "53f44b1d24850a84b98c7eacf7f8eb0c842a2e6d"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/source_entry.py",
+      "git_blob": "4d5fd84c8112e8adc81a081b97b624a135a91fe4"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/collect_controls.py",
+      "git_blob": "77fb76fc601b9e347dd62d99b97e599aa728f433"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/report_projection.py",
+      "git_blob": "9f6022d87c85746bb83023c974087e892e2ee548"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/finite_controls.py",
+      "git_blob": "be15a98db0e671ca41b6ad3bec376fd7d451bb1a"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/retain_c_builds.py",
+      "git_blob": "9f83562c98b6088dc2e022c42ed5692425257336"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/formatter_outputs.py",
+      "git_blob": "3d7fd9e6c11f7876149bc4768790c28effc2cd0c"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/preparation_contract.py",
+      "git_blob": "dcf34047fef63dcd4fdd4874a3a4be9aff3c93b1"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/source_gates.py",
+      "git_blob": "7f884528759ab837673ba2b29b91278be505c03c"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/unicode_controls.py",
+      "git_blob": "7bceb111a07356259bf962adfd9abadae2bf1801"
+    }
+  ],
+  "reviewed_changed_helpers": [
+    "validate.py",
+    "full_collection.py",
+    "full_collection_evidence.py"
+  ],
+  "retention_review": {
+    "member_bytes": 1048576,
+    "total_collection_member_bytes": 50331648,
+    "max_collection_members": 64,
+    "source_member_bytes": 2097152,
+    "aggregate_raw_bytes": 100663296,
+    "aggregate_gzip_bytes": 16777216,
+    "source_and_body_deadlines_unchanged": true,
+    "lossless_indexed_records": true,
+    "all_partial_failure_records_required": true,
+    "complete_claim_requires_verified_index_and_reports": true,
+    "scope": "source review only; no current measurement"
+  },
+  "qualification_complete": false
+}

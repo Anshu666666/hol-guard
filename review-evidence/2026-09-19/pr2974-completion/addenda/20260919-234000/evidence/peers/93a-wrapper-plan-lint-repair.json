@@ -1,0 +1,604 @@
+{
+  "schema": "pr2974-measured93a-wrapper-lint-peer-v1",
+  "status": "positive source review; actual successor lint remains pending",
+  "owner": {
+    "git_blob": "ee4d503d97f6ed4414730223752bc67c88687797",
+    "bytes": 89513,
+    "sha256": "400024eb0f3a7892abefaa357a6bb68c7eba2ce75d983dcf776648845e0cc60d"
+  },
+  "source_sha": "9d37172d6bc1e1febeb9c7611a5a050ef5ea798a",
+  "original_run_id": 35474110646,
+  "original_job_id": 105980252039,
+  "original_small_result": {
+    "git_blob": "31bc03c2303930d5720efe544c757401d3fbc2a2",
+    "bytes": 1264734,
+    "sha256": "39973e299cb3c17846b2016333050fef43c7028e2b7cccc078e5f92dd7345c9b"
+  },
+  "independent_checks": {
+    "files": [
+      {
+        "path": "scripts/profile_guard_mcp_session.py",
+        "before_git_blob": "b90e3197753190aa0f98f488a9749e64ee0b96b4",
+        "after_git_blob": "1fa07d912a47b6d3cd9634ea6358c4d80493e57b",
+        "after_sha256": "892bd20d91a931337f98c2f09619d143ac0225efa9625c650d5aa4c0c7785665",
+        "whole_inverse": true,
+        "edits": 6
+      },
+      {
+        "path": "scripts/profile_guard_mcp_streaming_session.py",
+        "before_git_blob": "476e2358315db237afab9d94d67d1ad1166aff7d",
+        "after_git_blob": "49966c9cbd6bc1150085cbe867322071da3a36a6",
+        "after_sha256": "edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe",
+        "whole_inverse": true,
+        "edits": 6
+      },
+      {
+        "path": "docs/guard/rust-performance/mcp-streaming-preparation-plan.json",
+        "before_git_blob": "f5f46c43a7dca2965690a64d0fb622dd65f2a18c",
+        "after_git_blob": "746ae13a36693a7dd15a166690149fd19176ccf0",
+        "after_sha256": "97f5369d92d03db49b39f11abd2d298b06f34e7947c6278ca0d92cbca04b32e7",
+        "whole_inverse": true,
+        "edits": 1
+      }
+    ],
+    "plan_exactly_one_hash_difference": [
+      {
+        "path": "/harness_sources_sha256/profile_guard_mcp_streaming_session.py",
+        "before": "a03bd4771effcb4848393993d1dee8cfe968af670be6d8ef1f0b40fa127c95da",
+        "after": "edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe"
+      }
+    ],
+    "all64_cells_exact": true,
+    "threshold_and_schedule_fields_exact": true,
+    "all12_measured_comments_only": true
+  },
+  "findings": "The two Python files remove exactly twelve measured unused noqa: F401 comments inside TYPE_CHECKING branches. Import names, exported aliases, runtime else branches, calls and control flow are byte-exact. The streaming plan changes exactly its current wrapper SHA256 to the actual after-body; all 64 cells, schedules, source choices and acceptance/threshold fields remain exact.",
+  "complete_before_after_and_inverses": [
+    {
+      "path": "scripts/profile_guard_mcp_session.py",
+      "before": {
+        "content": "#!/usr/bin/env python3\n\"\"\"Measure the actual MCP serve route using synthetic client and child pipes.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport platform\nimport sys\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, Any\n\n_SCRIPT_DIR = Path(__file__).resolve().parent\nif str(_SCRIPT_DIR) not in sys.path:\n    sys.path.insert(0, str(_SCRIPT_DIR))\n\nif TYPE_CHECKING:\n    from scripts.profile_guard_mcp_case import run_case_common\n    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from scripts.profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from scripts.profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from scripts.profile_guard_mcp_worker import run_worker\n    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\nelse:\n    from profile_guard_mcp_case import run_case_common\n    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from profile_guard_mcp_worker import run_worker\n    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\n\n\ndef _worker(config_path: Path) -> int:\n    return run_worker(config_path, preparation_variant=\"owned\")\n\n\ndef run_case(\n    *,\n    catalog_size: int = 100,\n    payload_bytes: int = 1024,\n    samples: int = 100,\n    profile: bool = False,\n    uncached: bool = False,\n    child_delay_ms: float = 0,\n    approval: str = \"none\",\n    approval_delay_ms: float = 30,\n    refresh_every: int = 0,\n    compact_result: bool = False,\n    payload_kind: str = \"ascii\",\n    native_text_helper: Path | None = None,\n    native_minimum_characters: int = 256 * 1024,\n    owned_preparation_pilot: bool = False,\n) -> dict[str, Any]:\n    return run_case_common(\n        catalog_size=catalog_size,\n        payload_bytes=payload_bytes,\n        samples=samples,\n        profile=profile,\n        uncached=uncached,\n        child_delay_ms=child_delay_ms,\n        approval=approval,\n        approval_delay_ms=approval_delay_ms,\n        refresh_every=refresh_every,\n        compact_result=compact_result,\n        payload_kind=payload_kind,\n        native_text_helper=native_text_helper,\n        native_minimum_characters=native_minimum_characters,\n        fixture_arguments_provider=lambda: fixture_arguments,\n        preparation_variant=\"owned\",\n        preparation_pilot=owned_preparation_pilot,\n    )\n\n\ndef run_matrix(*, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:\n    return run_matrix_common(\n        case_runner=run_case,\n        schema=\"hol-guard-mcp-stdio-rebaseline.v1\",\n        samples=samples,\n        output=output,\n        lock_file=lock_file,\n        resume=resume,\n    )\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"--worker\", type=Path, help=argparse.SUPPRESS)\n    parser.add_argument(\"--matrix\", action=\"store_true\")\n    parser.add_argument(\"--resume\", action=\"store_true\")\n    parser.add_argument(\"--lock-file\", type=Path)\n    parser.add_argument(\"--catalog-size\", type=int, default=100)\n    parser.add_argument(\"--payload-bytes\", type=int, default=1024)\n    parser.add_argument(\"--samples\", type=int, default=100)\n    parser.add_argument(\"--profile\", action=\"store_true\")\n    parser.add_argument(\"--uncached\", action=\"store_true\")\n    parser.add_argument(\"--child-delay-ms\", type=float, default=0)\n    parser.add_argument(\"--approval\", choices=(\"none\", \"accept\", \"cancel\", \"invalidate\"), default=\"none\")\n    parser.add_argument(\"--approval-delay-ms\", type=float, default=30)\n    parser.add_argument(\"--refresh-every\", type=int, default=0)\n    parser.add_argument(\"--compact-result\", action=\"store_true\")\n    parser.add_argument(\"--payload-kind\", choices=(\"ascii\", \"unicode\"), default=\"ascii\")\n    parser.add_argument(\"--json\", type=Path)\n    args = parser.parse_args()\n    if args.worker:\n        return _worker(args.worker)\n    payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072\n    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= payload_limit and 1 <= args.samples <= 10000):\n        parser.error(f\"catalog must be 1..1000, payload 1..{payload_limit}, samples 1..10000\")\n    if not (0 <= args.child_delay_ms <= 1000 and 0 <= args.approval_delay_ms <= 1000 and args.refresh_every >= 0):\n        parser.error(\"delays must be 0..1000 ms; refresh interval must be nonnegative\")\n    if args.matrix:\n        if args.json is None:\n            parser.error(\"--matrix requires --json for per-case checkpoints\")\n        result = run_matrix(samples=args.samples, output=args.json, lock_file=args.lock_file, resume=args.resume)\n        print(json.dumps({\"completed_cases\": result[\"completed_cases\"], \"qualification\": False}))\n        return 0\n    if args.resume:\n        parser.error(\"--resume requires --matrix\")\n    with performance_lock(args.lock_file):\n        result = run_case(\n            **{\n                key: value\n                for key, value in vars(args).items()\n                if key not in {\"worker\", \"matrix\", \"json\", \"resume\", \"lock_file\"}\n            }\n        )\n    result.update(\n        {\n            \"schema\": \"hol-guard-mcp-stdio-profile.v1\",\n            \"platform\": platform.system(),\n            \"architecture\": platform.machine(),\n            \"python\": platform.python_version(),\n            \"percentile_estimator\": \"nearest_rank\",\n            \"remote_network\": \"not_measured_local_stdio_only\",\n            \"limitations\": [\n                \"source_route_not_installed_cli\",\n                \"c1_only\",\n                \"single_host_diagnostic\",\n                \"memory_samples_are_not_absolute_peak\",\n                \"profile_timings_are_not_qualification\",\n                \"human_wait_is_synthetic_client_delay\",\n                \"uncached_is_counterfactual_not_release\",\n            ],\n        }\n    )\n    encoded = json.dumps(result, indent=2) + \"\\n\"\n    if args.json:\n        args.json.parent.mkdir(parents=True, exist_ok=True)\n        args.json.write_text(encoded)\n    print(encoded, end=\"\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "b90e3197753190aa0f98f488a9749e64ee0b96b4",
+        "bytes": 6690,
+        "sha256": "0d6dc86d1922d29204db6d542ff27a3d323705b338f83c9e61294f098f0cfd9d"
+      },
+      "after": {
+        "content": "#!/usr/bin/env python3\n\"\"\"Measure the actual MCP serve route using synthetic client and child pipes.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport platform\nimport sys\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, Any\n\n_SCRIPT_DIR = Path(__file__).resolve().parent\nif str(_SCRIPT_DIR) not in sys.path:\n    sys.path.insert(0, str(_SCRIPT_DIR))\n\nif TYPE_CHECKING:\n    from scripts.profile_guard_mcp_case import run_case_common\n    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments\n    from scripts.profile_guard_mcp_fixture import summarize as _summary\n    from scripts.profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,\n        runtime_source_identity,\n        write_checkpoint,\n    )\n    from scripts.profile_guard_mcp_worker import run_worker\n    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample\nelse:\n    from profile_guard_mcp_case import run_case_common\n    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from profile_guard_mcp_worker import run_worker\n    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\n\n\ndef _worker(config_path: Path) -> int:\n    return run_worker(config_path, preparation_variant=\"owned\")\n\n\ndef run_case(\n    *,\n    catalog_size: int = 100,\n    payload_bytes: int = 1024,\n    samples: int = 100,\n    profile: bool = False,\n    uncached: bool = False,\n    child_delay_ms: float = 0,\n    approval: str = \"none\",\n    approval_delay_ms: float = 30,\n    refresh_every: int = 0,\n    compact_result: bool = False,\n    payload_kind: str = \"ascii\",\n    native_text_helper: Path | None = None,\n    native_minimum_characters: int = 256 * 1024,\n    owned_preparation_pilot: bool = False,\n) -> dict[str, Any]:\n    return run_case_common(\n        catalog_size=catalog_size,\n        payload_bytes=payload_bytes,\n        samples=samples,\n        profile=profile,\n        uncached=uncached,\n        child_delay_ms=child_delay_ms,\n        approval=approval,\n        approval_delay_ms=approval_delay_ms,\n        refresh_every=refresh_every,\n        compact_result=compact_result,\n        payload_kind=payload_kind,\n        native_text_helper=native_text_helper,\n        native_minimum_characters=native_minimum_characters,\n        fixture_arguments_provider=lambda: fixture_arguments,\n        preparation_variant=\"owned\",\n        preparation_pilot=owned_preparation_pilot,\n    )\n\n\ndef run_matrix(*, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:\n    return run_matrix_common(\n        case_runner=run_case,\n        schema=\"hol-guard-mcp-stdio-rebaseline.v1\",\n        samples=samples,\n        output=output,\n        lock_file=lock_file,\n        resume=resume,\n    )\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"--worker\", type=Path, help=argparse.SUPPRESS)\n    parser.add_argument(\"--matrix\", action=\"store_true\")\n    parser.add_argument(\"--resume\", action=\"store_true\")\n    parser.add_argument(\"--lock-file\", type=Path)\n    parser.add_argument(\"--catalog-size\", type=int, default=100)\n    parser.add_argument(\"--payload-bytes\", type=int, default=1024)\n    parser.add_argument(\"--samples\", type=int, default=100)\n    parser.add_argument(\"--profile\", action=\"store_true\")\n    parser.add_argument(\"--uncached\", action=\"store_true\")\n    parser.add_argument(\"--child-delay-ms\", type=float, default=0)\n    parser.add_argument(\"--approval\", choices=(\"none\", \"accept\", \"cancel\", \"invalidate\"), default=\"none\")\n    parser.add_argument(\"--approval-delay-ms\", type=float, default=30)\n    parser.add_argument(\"--refresh-every\", type=int, default=0)\n    parser.add_argument(\"--compact-result\", action=\"store_true\")\n    parser.add_argument(\"--payload-kind\", choices=(\"ascii\", \"unicode\"), default=\"ascii\")\n    parser.add_argument(\"--json\", type=Path)\n    args = parser.parse_args()\n    if args.worker:\n        return _worker(args.worker)\n    payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072\n    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= payload_limit and 1 <= args.samples <= 10000):\n        parser.error(f\"catalog must be 1..1000, payload 1..{payload_limit}, samples 1..10000\")\n    if not (0 <= args.child_delay_ms <= 1000 and 0 <= args.approval_delay_ms <= 1000 and args.refresh_every >= 0):\n        parser.error(\"delays must be 0..1000 ms; refresh interval must be nonnegative\")\n    if args.matrix:\n        if args.json is None:\n            parser.error(\"--matrix requires --json for per-case checkpoints\")\n        result = run_matrix(samples=args.samples, output=args.json, lock_file=args.lock_file, resume=args.resume)\n        print(json.dumps({\"completed_cases\": result[\"completed_cases\"], \"qualification\": False}))\n        return 0\n    if args.resume:\n        parser.error(\"--resume requires --matrix\")\n    with performance_lock(args.lock_file):\n        result = run_case(\n            **{\n                key: value\n                for key, value in vars(args).items()\n                if key not in {\"worker\", \"matrix\", \"json\", \"resume\", \"lock_file\"}\n            }\n        )\n    result.update(\n        {\n            \"schema\": \"hol-guard-mcp-stdio-profile.v1\",\n            \"platform\": platform.system(),\n            \"architecture\": platform.machine(),\n            \"python\": platform.python_version(),\n            \"percentile_estimator\": \"nearest_rank\",\n            \"remote_network\": \"not_measured_local_stdio_only\",\n            \"limitations\": [\n                \"source_route_not_installed_cli\",\n                \"c1_only\",\n                \"single_host_diagnostic\",\n                \"memory_samples_are_not_absolute_peak\",\n                \"profile_timings_are_not_qualification\",\n                \"human_wait_is_synthetic_client_delay\",\n                \"uncached_is_counterfactual_not_release\",\n            ],\n        }\n    )\n    encoded = json.dumps(result, indent=2) + \"\\n\"\n    if args.json:\n        args.json.parent.mkdir(parents=True, exist_ok=True)\n        args.json.write_text(encoded)\n    print(encoded, end=\"\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "1fa07d912a47b6d3cd9634ea6358c4d80493e57b",
+        "bytes": 6606,
+        "sha256": "892bd20d91a931337f98c2f09619d143ac0225efa9625c650d5aa4c0c7785665"
+      },
+      "sequential_edits": [
+        {
+          "offset": 1034,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 91,
+              "row": 29
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 91,
+                    "row": 29
+                  },
+                  "location": {
+                    "column": 77,
+                    "row": 29
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 79,
+              "row": 29
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 29,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 877,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 40,
+              "row": 26
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 40,
+                    "row": 26
+                  },
+                  "location": {
+                    "column": 26,
+                    "row": 26
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 28,
+              "row": 26
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 26,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 837,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 47,
+              "row": 25
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 47,
+                    "row": 25
+                  },
+                  "location": {
+                    "column": 33,
+                    "row": 25
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 35,
+              "row": 25
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 25,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 790,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 39,
+              "row": 24
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 39,
+                    "row": 24
+                  },
+                  "location": {
+                    "column": 25,
+                    "row": 24
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 27,
+              "row": 24
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 24,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 647,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 86,
+              "row": 20
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 86,
+                    "row": 20
+                  },
+                  "location": {
+                    "column": 72,
+                    "row": 20
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 74,
+              "row": 20
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 20,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 561,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 110,
+              "row": 19
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 110,
+                    "row": 19
+                  },
+                  "location": {
+                    "column": 96,
+                    "row": 19
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 98,
+              "row": 19
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 19,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        }
+      ],
+      "all_other_lines_exact": true,
+      "removed_only_unused_type_checking_noqas": true,
+      "runtime_else_branch_exact": true
+    },
+    {
+      "path": "scripts/profile_guard_mcp_streaming_session.py",
+      "before": {
+        "content": "#!/usr/bin/env python3\n\"\"\"Measure the actual MCP serve route with explicit streaming candidate F.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport platform\nimport sys\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, Any\n\n_SCRIPT_DIR = Path(__file__).resolve().parent\nif str(_SCRIPT_DIR) not in sys.path:\n    sys.path.insert(0, str(_SCRIPT_DIR))\n\nif TYPE_CHECKING:\n    from scripts.profile_guard_mcp_case import run_case_common\n    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from scripts.profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from scripts.profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from scripts.profile_guard_mcp_worker import run_worker\n    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\nelse:\n    from profile_guard_mcp_case import run_case_common\n    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from profile_guard_mcp_worker import run_worker\n    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\n\n\ndef _worker(config_path: Path) -> int:\n    return run_worker(config_path, preparation_variant=\"streaming\")\n\n\ndef run_case(\n    *,\n    catalog_size: int = 100,\n    payload_bytes: int = 1024,\n    samples: int = 100,\n    profile: bool = False,\n    uncached: bool = False,\n    child_delay_ms: float = 0,\n    approval: str = \"none\",\n    approval_delay_ms: float = 30,\n    refresh_every: int = 0,\n    compact_result: bool = False,\n    payload_kind: str = \"ascii\",\n    native_text_helper: Path | None = None,\n    native_minimum_characters: int = 256 * 1024,\n    streaming_preparation_pilot: bool = False,\n) -> dict[str, Any]:\n    return run_case_common(\n        catalog_size=catalog_size,\n        payload_bytes=payload_bytes,\n        samples=samples,\n        profile=profile,\n        uncached=uncached,\n        child_delay_ms=child_delay_ms,\n        approval=approval,\n        approval_delay_ms=approval_delay_ms,\n        refresh_every=refresh_every,\n        compact_result=compact_result,\n        payload_kind=payload_kind,\n        native_text_helper=native_text_helper,\n        native_minimum_characters=native_minimum_characters,\n        fixture_arguments_provider=lambda: fixture_arguments,\n        preparation_variant=\"streaming\",\n        preparation_pilot=streaming_preparation_pilot,\n    )\n\n\ndef run_matrix(*, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:\n    return run_matrix_common(\n        case_runner=run_case,\n        schema=\"hol-guard-mcp-streaming-stdio-rebaseline.v1\",\n        samples=samples,\n        output=output,\n        lock_file=lock_file,\n        resume=resume,\n    )\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"--worker\", type=Path, help=argparse.SUPPRESS)\n    parser.add_argument(\"--matrix\", action=\"store_true\")\n    parser.add_argument(\"--resume\", action=\"store_true\")\n    parser.add_argument(\"--lock-file\", type=Path)\n    parser.add_argument(\"--catalog-size\", type=int, default=100)\n    parser.add_argument(\"--payload-bytes\", type=int, default=1024)\n    parser.add_argument(\"--samples\", type=int, default=100)\n    parser.add_argument(\"--profile\", action=\"store_true\")\n    parser.add_argument(\"--streaming-preparation-pilot\", action=\"store_true\")\n    parser.add_argument(\"--uncached\", action=\"store_true\")\n    parser.add_argument(\"--child-delay-ms\", type=float, default=0)\n    parser.add_argument(\"--approval\", choices=(\"none\", \"accept\", \"cancel\", \"invalidate\"), default=\"none\")\n    parser.add_argument(\"--approval-delay-ms\", type=float, default=30)\n    parser.add_argument(\"--refresh-every\", type=int, default=0)\n    parser.add_argument(\"--compact-result\", action=\"store_true\")\n    parser.add_argument(\"--payload-kind\", choices=(\"ascii\", \"unicode\"), default=\"ascii\")\n    parser.add_argument(\"--json\", type=Path)\n    args = parser.parse_args()\n    if args.matrix and args.streaming_preparation_pilot:\n        parser.error(\"explicit F matrix requires compare_guard_mcp_streaming_preparation.py\")\n    if args.worker:\n        return _worker(args.worker)\n    payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072\n    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= payload_limit and 1 <= args.samples <= 10000):\n        parser.error(f\"catalog must be 1..1000, payload 1..{payload_limit}, samples 1..10000\")\n    if not (0 <= args.child_delay_ms <= 1000 and 0 <= args.approval_delay_ms <= 1000 and args.refresh_every >= 0):\n        parser.error(\"delays must be 0..1000 ms; refresh interval must be nonnegative\")\n    if args.matrix:\n        if args.json is None:\n            parser.error(\"--matrix requires --json for per-case checkpoints\")\n        result = run_matrix(samples=args.samples, output=args.json, lock_file=args.lock_file, resume=args.resume)\n        print(json.dumps({\"completed_cases\": result[\"completed_cases\"], \"qualification\": False}))\n        return 0\n    if args.resume:\n        parser.error(\"--resume requires --matrix\")\n    with performance_lock(args.lock_file):\n        result = run_case(\n            **{\n                key: value\n                for key, value in vars(args).items()\n                if key not in {\"worker\", \"matrix\", \"json\", \"resume\", \"lock_file\"}\n            }\n        )\n    result.update(\n        {\n            \"schema\": \"hol-guard-mcp-streaming-stdio-profile.v1\",\n            \"platform\": platform.system(),\n            \"architecture\": platform.machine(),\n            \"python\": platform.python_version(),\n            \"percentile_estimator\": \"nearest_rank\",\n            \"remote_network\": \"not_measured_local_stdio_only\",\n            \"limitations\": [\n                \"source_route_not_installed_cli\",\n                \"c1_only\",\n                \"single_host_diagnostic\",\n                \"memory_samples_are_not_absolute_peak\",\n                \"profile_timings_are_not_qualification\",\n                \"human_wait_is_synthetic_client_delay\",\n                \"uncached_is_counterfactual_not_release\",\n            ],\n        }\n    )\n    encoded = json.dumps(result, indent=2) + \"\\n\"\n    if args.json:\n        args.json.parent.mkdir(parents=True, exist_ok=True)\n        args.json.write_text(encoded)\n    print(encoded, end=\"\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "476e2358315db237afab9d94d67d1ad1166aff7d",
+        "bytes": 6952,
+        "sha256": "a03bd4771effcb4848393993d1dee8cfe968af670be6d8ef1f0b40fa127c95da"
+      },
+      "after": {
+        "content": "#!/usr/bin/env python3\n\"\"\"Measure the actual MCP serve route with explicit streaming candidate F.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport platform\nimport sys\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, Any\n\n_SCRIPT_DIR = Path(__file__).resolve().parent\nif str(_SCRIPT_DIR) not in sys.path:\n    sys.path.insert(0, str(_SCRIPT_DIR))\n\nif TYPE_CHECKING:\n    from scripts.profile_guard_mcp_case import run_case_common\n    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments\n    from scripts.profile_guard_mcp_fixture import summarize as _summary\n    from scripts.profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,\n        runtime_source_identity,\n        write_checkpoint,\n    )\n    from scripts.profile_guard_mcp_worker import run_worker\n    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample\nelse:\n    from profile_guard_mcp_case import run_case_common\n    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401\n    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401\n    from profile_guard_mcp_matrix import (\n        performance_lock,\n        run_matrix_common,\n        run_remote_case,  # noqa: F401\n        runtime_source_identity,  # noqa: F401\n        write_checkpoint,  # noqa: F401\n    )\n    from profile_guard_mcp_worker import run_worker\n    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401\n\n\ndef _worker(config_path: Path) -> int:\n    return run_worker(config_path, preparation_variant=\"streaming\")\n\n\ndef run_case(\n    *,\n    catalog_size: int = 100,\n    payload_bytes: int = 1024,\n    samples: int = 100,\n    profile: bool = False,\n    uncached: bool = False,\n    child_delay_ms: float = 0,\n    approval: str = \"none\",\n    approval_delay_ms: float = 30,\n    refresh_every: int = 0,\n    compact_result: bool = False,\n    payload_kind: str = \"ascii\",\n    native_text_helper: Path | None = None,\n    native_minimum_characters: int = 256 * 1024,\n    streaming_preparation_pilot: bool = False,\n) -> dict[str, Any]:\n    return run_case_common(\n        catalog_size=catalog_size,\n        payload_bytes=payload_bytes,\n        samples=samples,\n        profile=profile,\n        uncached=uncached,\n        child_delay_ms=child_delay_ms,\n        approval=approval,\n        approval_delay_ms=approval_delay_ms,\n        refresh_every=refresh_every,\n        compact_result=compact_result,\n        payload_kind=payload_kind,\n        native_text_helper=native_text_helper,\n        native_minimum_characters=native_minimum_characters,\n        fixture_arguments_provider=lambda: fixture_arguments,\n        preparation_variant=\"streaming\",\n        preparation_pilot=streaming_preparation_pilot,\n    )\n\n\ndef run_matrix(*, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:\n    return run_matrix_common(\n        case_runner=run_case,\n        schema=\"hol-guard-mcp-streaming-stdio-rebaseline.v1\",\n        samples=samples,\n        output=output,\n        lock_file=lock_file,\n        resume=resume,\n    )\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"--worker\", type=Path, help=argparse.SUPPRESS)\n    parser.add_argument(\"--matrix\", action=\"store_true\")\n    parser.add_argument(\"--resume\", action=\"store_true\")\n    parser.add_argument(\"--lock-file\", type=Path)\n    parser.add_argument(\"--catalog-size\", type=int, default=100)\n    parser.add_argument(\"--payload-bytes\", type=int, default=1024)\n    parser.add_argument(\"--samples\", type=int, default=100)\n    parser.add_argument(\"--profile\", action=\"store_true\")\n    parser.add_argument(\"--streaming-preparation-pilot\", action=\"store_true\")\n    parser.add_argument(\"--uncached\", action=\"store_true\")\n    parser.add_argument(\"--child-delay-ms\", type=float, default=0)\n    parser.add_argument(\"--approval\", choices=(\"none\", \"accept\", \"cancel\", \"invalidate\"), default=\"none\")\n    parser.add_argument(\"--approval-delay-ms\", type=float, default=30)\n    parser.add_argument(\"--refresh-every\", type=int, default=0)\n    parser.add_argument(\"--compact-result\", action=\"store_true\")\n    parser.add_argument(\"--payload-kind\", choices=(\"ascii\", \"unicode\"), default=\"ascii\")\n    parser.add_argument(\"--json\", type=Path)\n    args = parser.parse_args()\n    if args.matrix and args.streaming_preparation_pilot:\n        parser.error(\"explicit F matrix requires compare_guard_mcp_streaming_preparation.py\")\n    if args.worker:\n        return _worker(args.worker)\n    payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072\n    if not (1 <= args.catalog_size <= 1000 and 1 <= args.payload_bytes <= payload_limit and 1 <= args.samples <= 10000):\n        parser.error(f\"catalog must be 1..1000, payload 1..{payload_limit}, samples 1..10000\")\n    if not (0 <= args.child_delay_ms <= 1000 and 0 <= args.approval_delay_ms <= 1000 and args.refresh_every >= 0):\n        parser.error(\"delays must be 0..1000 ms; refresh interval must be nonnegative\")\n    if args.matrix:\n        if args.json is None:\n            parser.error(\"--matrix requires --json for per-case checkpoints\")\n        result = run_matrix(samples=args.samples, output=args.json, lock_file=args.lock_file, resume=args.resume)\n        print(json.dumps({\"completed_cases\": result[\"completed_cases\"], \"qualification\": False}))\n        return 0\n    if args.resume:\n        parser.error(\"--resume requires --matrix\")\n    with performance_lock(args.lock_file):\n        result = run_case(\n            **{\n                key: value\n                for key, value in vars(args).items()\n                if key not in {\"worker\", \"matrix\", \"json\", \"resume\", \"lock_file\"}\n            }\n        )\n    result.update(\n        {\n            \"schema\": \"hol-guard-mcp-streaming-stdio-profile.v1\",\n            \"platform\": platform.system(),\n            \"architecture\": platform.machine(),\n            \"python\": platform.python_version(),\n            \"percentile_estimator\": \"nearest_rank\",\n            \"remote_network\": \"not_measured_local_stdio_only\",\n            \"limitations\": [\n                \"source_route_not_installed_cli\",\n                \"c1_only\",\n                \"single_host_diagnostic\",\n                \"memory_samples_are_not_absolute_peak\",\n                \"profile_timings_are_not_qualification\",\n                \"human_wait_is_synthetic_client_delay\",\n                \"uncached_is_counterfactual_not_release\",\n            ],\n        }\n    )\n    encoded = json.dumps(result, indent=2) + \"\\n\"\n    if args.json:\n        args.json.parent.mkdir(parents=True, exist_ok=True)\n        args.json.write_text(encoded)\n    print(encoded, end=\"\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "49966c9cbd6bc1150085cbe867322071da3a36a6",
+        "bytes": 6868,
+        "sha256": "edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe"
+      },
+      "sequential_edits": [
+        {
+          "offset": 1031,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 91,
+              "row": 29
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 91,
+                    "row": 29
+                  },
+                  "location": {
+                    "column": 77,
+                    "row": 29
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 79,
+              "row": 29
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 29,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 874,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 40,
+              "row": 26
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 40,
+                    "row": 26
+                  },
+                  "location": {
+                    "column": 26,
+                    "row": 26
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 28,
+              "row": 26
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 26,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 834,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 47,
+              "row": 25
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 47,
+                    "row": 25
+                  },
+                  "location": {
+                    "column": 33,
+                    "row": 25
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 35,
+              "row": 25
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 25,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 787,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 39,
+              "row": 24
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 39,
+                    "row": 24
+                  },
+                  "location": {
+                    "column": 25,
+                    "row": 24
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 27,
+              "row": 24
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 24,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 644,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 86,
+              "row": 20
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 86,
+                    "row": 20
+                  },
+                  "location": {
+                    "column": 72,
+                    "row": 20
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 74,
+              "row": 20
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 20,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        },
+        {
+          "offset": 558,
+          "removed": "  # noqa: F401",
+          "inserted": "",
+          "original_diagnostic": {
+            "cell": null,
+            "code": "RUF100",
+            "end_location": {
+              "column": 110,
+              "row": 19
+            },
+            "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py",
+            "fix": {
+              "applicability": "safe",
+              "edits": [
+                {
+                  "content": "",
+                  "end_location": {
+                    "column": 110,
+                    "row": 19
+                  },
+                  "location": {
+                    "column": 96,
+                    "row": 19
+                  }
+                }
+              ],
+              "message": "Remove unused `noqa` directive"
+            },
+            "location": {
+              "column": 98,
+              "row": 19
+            },
+            "message": "Unused `noqa` directive (unused: `F401`)",
+            "noqa_row": 19,
+            "severity": "error",
+            "url": "https://docs.astral.sh/ruff/rules/unused-noqa"
+          }
+        }
+      ],
+      "all_other_lines_exact": true,
+      "removed_only_unused_type_checking_noqas": true,
+      "runtime_else_branch_exact": true
+    },
+    {
+      "path": "docs/guard/rust-performance/mcp-streaming-preparation-plan.json",
+      "before": {
+        "content": "{\n  \"schema\": \"hol-guard-mcp-streaming-preparation-plan.v1\",\n  \"status\": \"prepared_not_launched\",\n  \"activation_authorized\": false,\n  \"qualification\": false,\n  \"candidate_adapter_commit\": \"ce98191343bbd9df98ec7947a7eafe451abc90a1\",\n  \"prior_e_comparison_sha256\": \"bcd01af5aafbf9dcc3d17b3d8243a1358df2fb5498e2d2eac7b6f241d3ac916c\",\n  \"prior_e_worker_sha256\": \"6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932\",\n  \"prior_e_collector_sha256\": \"017fcf38a1356b7dfb15e61b6dd376afdcf732eb331f23bfb50d136fbeb279d2\",\n  \"ordinary_warm_samples\": 30,\n  \"large_warm_samples\": 3,\n  \"ordinary_profile_warm_samples\": 10,\n  \"cold_first_calls_per_cell\": 1,\n  \"expected_cells\": 64,\n  \"expected_pairs\": 32,\n  \"expected_forwarded_calls_per_arm\": 554,\n  \"same_runtime_for_both_arms\": true,\n  \"runtime_source_selection\": \"one_complete_frozen_runtime_export_for_B_default_and_explicit_F\",\n  \"oracle_source_selection\": \"separately_frozen_pre_owned_B_public_API_reference\",\n  \"schedule_rule\": \"exact_prior_E_schedule_with_E_arm_replaced_by_F\",\n  \"measurement_lock\": \"per_case_POSIX_flock\",\n  \"inter_case_fairness_yield_seconds\": 0.1,\n  \"percentile_estimator\": \"nearest_rank\",\n  \"latency_scope\": \"client_roundtrip_excludes_one_cold_first_call\",\n  \"large_p95_interpretation\": \"maximum_of_three_warm_calls_not_release_tail\",\n  \"tree_cpu_scope\": \"proxy_and_recursive_child_after_catalog_through_final_response_including_cold_call_excluding_client_cleanup\",\n  \"memory_sampling\": \"after_catalog_and_each_response_parent_plus_recursive_children_RSS_and_USS\",\n  \"worker_peak_scope\": \"OS_RUSAGE_SELF_whole_worker_including_imports_and_transients_excluding_children\",\n  \"phase_rule\": \"exclusive_main_thread_nested_phase_attribution_separate_profile_cells\",\n  \"binding_phase\": \"retained_binding_creation_and_streaming_comparison_both_count_in_owned_input_binding\",\n  \"deadlines\": {\n    \"final_quiet_interval_seconds\": 0.005,\n    \"benchmark_client_read_seconds\": 30,\n    \"child_cleanup_wait_seconds\": 30,\n    \"failed_worker_evidence_wait_seconds\": 2,\n    \"forced_cleanup_wait_seconds\": 10,\n    \"runtime_forwarding_and_separate_inline_approval\": \"unchanged_runtime_absolute_budgets\"\n  },\n  \"acceptance\": {\n    \"minimum_p95_or_tree_cpu_improvement_percent\": 30,\n    \"maximum_other_metric_regression_percent\": 5,\n    \"activation_by_this_campaign\": false,\n    \"source_c1_scope_only\": true,\n    \"no_inferred_size_or_content_selection\": true\n  },\n  \"before_launch_required\": [\n    \"root_campaign_coordination\",\n    \"independent_worker_collector_plan_review\",\n    \"complete_frozen_runtime_export_and_full_source_asset_hash_manifest\",\n    \"fixed_python_executable_and_dependency_identity\",\n    \"record_runtime_source_oracle_source_and_fixture_filesystems\",\n    \"actual_environment_and_capacity_observation\",\n    \"same_fixture_filesystem_for_both_arms\",\n    \"fresh_output_no_overwrite_no_resume\",\n    \"preserve_E_source_worker_collector_tests_and_raw_artifacts\"\n  ],\n  \"after_campaign_required\": [\n    \"preserve_every_failed_or_adverse_cell\",\n    \"verify_full_export_source_and_harness_identities\",\n    \"derive_results_without_retries_or_pooling_with_E\",\n    \"keep_B_default_pending_original_acceptance_and_qualification\"\n  ],\n  \"harness_sources_sha256\": {\n    \"compare_guard_mcp_streaming_preparation.py\": \"260879e34ca94a611e5b23a6151f73306b13f480c527f703919eb7342bd93485\",\n    \"compare_guard_mcp_risk.py\": \"7de4df7178e5d34fe521fd70833fe8cc5df06be7c64f88c3431a583bbf770309\",\n    \"profile_guard_mcp_streaming_session.py\": \"a03bd4771effcb4848393993d1dee8cfe968af670be6d8ef1f0b40fa127c95da\",\n    \"profile_guard_mcp_fixture.py\": \"7abb47207e15a17fe2985d6750234274cf68321828ba4d3bb22b4526e9125ac4\",\n    \"profile_guard_mcp_worker.py\": \"1973e68ab029628d8d8d8c959cfd96ab11d2fc7f744a6516bf06b9b0785c742f\",\n    \"profile_guard_mcp_case.py\": \"69852fad31a9a00502125471005775277feb74d5173b9c4f3dc14c4ca12042f2\",\n    \"profile_guard_mcp_matrix.py\": \"cf4466575d37394482201bde0dd3aed41717faf32cd12c700f98cd70604c425e\",\n    \"guard_mcp_streaming_preparation_pilot.py\": \"9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2\"\n  },\n  \"cells\": [\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"nested-records\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"nested-records\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    }\n  ],\n  \"public_oracle_reference_sources_sha256\": {\n    \"proxy/runtime_mcp.py\": \"9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b\",\n    \"proxy/framing.py\": \"e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300\",\n    \"proxy/tool_catalog.py\": \"c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845\",\n    \"mcp_tool_calls.py\": \"02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e\"\n  }\n}\n",
+        "git_blob": "f5f46c43a7dca2965690a64d0fb622dd65f2a18c",
+        "bytes": 14238,
+        "sha256": "42c3293ef4006ada94f84476537470bc01a0aa33eca25c3fa5e0afc78424cc41"
+      },
+      "after": {
+        "content": "{\n  \"schema\": \"hol-guard-mcp-streaming-preparation-plan.v1\",\n  \"status\": \"prepared_not_launched\",\n  \"activation_authorized\": false,\n  \"qualification\": false,\n  \"candidate_adapter_commit\": \"ce98191343bbd9df98ec7947a7eafe451abc90a1\",\n  \"prior_e_comparison_sha256\": \"bcd01af5aafbf9dcc3d17b3d8243a1358df2fb5498e2d2eac7b6f241d3ac916c\",\n  \"prior_e_worker_sha256\": \"6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932\",\n  \"prior_e_collector_sha256\": \"017fcf38a1356b7dfb15e61b6dd376afdcf732eb331f23bfb50d136fbeb279d2\",\n  \"ordinary_warm_samples\": 30,\n  \"large_warm_samples\": 3,\n  \"ordinary_profile_warm_samples\": 10,\n  \"cold_first_calls_per_cell\": 1,\n  \"expected_cells\": 64,\n  \"expected_pairs\": 32,\n  \"expected_forwarded_calls_per_arm\": 554,\n  \"same_runtime_for_both_arms\": true,\n  \"runtime_source_selection\": \"one_complete_frozen_runtime_export_for_B_default_and_explicit_F\",\n  \"oracle_source_selection\": \"separately_frozen_pre_owned_B_public_API_reference\",\n  \"schedule_rule\": \"exact_prior_E_schedule_with_E_arm_replaced_by_F\",\n  \"measurement_lock\": \"per_case_POSIX_flock\",\n  \"inter_case_fairness_yield_seconds\": 0.1,\n  \"percentile_estimator\": \"nearest_rank\",\n  \"latency_scope\": \"client_roundtrip_excludes_one_cold_first_call\",\n  \"large_p95_interpretation\": \"maximum_of_three_warm_calls_not_release_tail\",\n  \"tree_cpu_scope\": \"proxy_and_recursive_child_after_catalog_through_final_response_including_cold_call_excluding_client_cleanup\",\n  \"memory_sampling\": \"after_catalog_and_each_response_parent_plus_recursive_children_RSS_and_USS\",\n  \"worker_peak_scope\": \"OS_RUSAGE_SELF_whole_worker_including_imports_and_transients_excluding_children\",\n  \"phase_rule\": \"exclusive_main_thread_nested_phase_attribution_separate_profile_cells\",\n  \"binding_phase\": \"retained_binding_creation_and_streaming_comparison_both_count_in_owned_input_binding\",\n  \"deadlines\": {\n    \"final_quiet_interval_seconds\": 0.005,\n    \"benchmark_client_read_seconds\": 30,\n    \"child_cleanup_wait_seconds\": 30,\n    \"failed_worker_evidence_wait_seconds\": 2,\n    \"forced_cleanup_wait_seconds\": 10,\n    \"runtime_forwarding_and_separate_inline_approval\": \"unchanged_runtime_absolute_budgets\"\n  },\n  \"acceptance\": {\n    \"minimum_p95_or_tree_cpu_improvement_percent\": 30,\n    \"maximum_other_metric_regression_percent\": 5,\n    \"activation_by_this_campaign\": false,\n    \"source_c1_scope_only\": true,\n    \"no_inferred_size_or_content_selection\": true\n  },\n  \"before_launch_required\": [\n    \"root_campaign_coordination\",\n    \"independent_worker_collector_plan_review\",\n    \"complete_frozen_runtime_export_and_full_source_asset_hash_manifest\",\n    \"fixed_python_executable_and_dependency_identity\",\n    \"record_runtime_source_oracle_source_and_fixture_filesystems\",\n    \"actual_environment_and_capacity_observation\",\n    \"same_fixture_filesystem_for_both_arms\",\n    \"fresh_output_no_overwrite_no_resume\",\n    \"preserve_E_source_worker_collector_tests_and_raw_artifacts\"\n  ],\n  \"after_campaign_required\": [\n    \"preserve_every_failed_or_adverse_cell\",\n    \"verify_full_export_source_and_harness_identities\",\n    \"derive_results_without_retries_or_pooling_with_E\",\n    \"keep_B_default_pending_original_acceptance_and_qualification\"\n  ],\n  \"harness_sources_sha256\": {\n    \"compare_guard_mcp_streaming_preparation.py\": \"260879e34ca94a611e5b23a6151f73306b13f480c527f703919eb7342bd93485\",\n    \"compare_guard_mcp_risk.py\": \"7de4df7178e5d34fe521fd70833fe8cc5df06be7c64f88c3431a583bbf770309\",\n    \"profile_guard_mcp_streaming_session.py\": \"edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe\",\n    \"profile_guard_mcp_fixture.py\": \"7abb47207e15a17fe2985d6750234274cf68321828ba4d3bb22b4526e9125ac4\",\n    \"profile_guard_mcp_worker.py\": \"1973e68ab029628d8d8d8c959cfd96ab11d2fc7f744a6516bf06b9b0785c742f\",\n    \"profile_guard_mcp_case.py\": \"69852fad31a9a00502125471005775277feb74d5173b9c4f3dc14c4ca12042f2\",\n    \"profile_guard_mcp_matrix.py\": \"cf4466575d37394482201bde0dd3aed41717faf32cd12c700f98cd70604c425e\",\n    \"guard_mcp_streaming_preparation_pilot.py\": \"9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2\"\n  },\n  \"cells\": [\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 0,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 1,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 2,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 3,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 30,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"block\": 4,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 1024,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 16384,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 131072,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 10,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"unicode\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"dense-integers\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"ascii\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"nested-records\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"B\"\n    },\n    {\n      \"payload_bytes\": 4193792,\n      \"payload_kind\": \"nested-records\",\n      \"samples\": 3,\n      \"compact_result\": true,\n      \"profile\": true,\n      \"block\": null,\n      \"arm\": \"F\"\n    }\n  ],\n  \"public_oracle_reference_sources_sha256\": {\n    \"proxy/runtime_mcp.py\": \"9de4c965dda733476344e54ef36b38b79fa3f1456bc6dd296d0859c54f203b8b\",\n    \"proxy/framing.py\": \"e09bcf8ccfc6937565295f34b3e42bd49bf0d1f4bec69b26d6c3da9ed6c17300\",\n    \"proxy/tool_catalog.py\": \"c9220fc23e1c4cb6c9d76af78dcf69a994a309d96dc5975f1deb169c20cc1845\",\n    \"mcp_tool_calls.py\": \"02e5614996658bcda67c10357fac4d621db7d794e8264db6db6972bb1bb9e90e\"\n  }\n}\n",
+        "git_blob": "746ae13a36693a7dd15a166690149fd19176ccf0",
+        "bytes": 14238,
+        "sha256": "97f5369d92d03db49b39f11abd2d298b06f34e7947c6278ca0d92cbca04b32e7"
+      },
+      "sequential_edits": [
+        {
+          "offset": 3492,
+          "removed": "a03bd4771effcb4848393993d1dee8cfe968af670be6d8ef1f0b40fa127c95da",
+          "inserted": "edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe"
+        }
+      ],
+      "all_other_plan_fields_exact": true,
+      "all_64_cells_exact": true
+    }
+  ],
+  "original_complete_ruff_log": {
+    "name": "python-ruff-check.log",
+    "bytes": 10011,
+    "content": "[\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 110,\n      \"row\": 19\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 110,\n            \"row\": 19\n          },\n          \"location\": {\n            \"column\": 96,\n            \"row\": 19\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 98,\n      \"row\": 19\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 19,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 86,\n      \"row\": 20\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 86,\n            \"row\": 20\n          },\n          \"location\": {\n            \"column\": 72,\n            \"row\": 20\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 74,\n      \"row\": 20\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 20,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 39,\n      \"row\": 24\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 39,\n            \"row\": 24\n          },\n          \"location\": {\n            \"column\": 25,\n            \"row\": 24\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 27,\n      \"row\": 24\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 24,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 47,\n      \"row\": 25\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 47,\n            \"row\": 25\n          },\n          \"location\": {\n            \"column\": 33,\n            \"row\": 25\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 35,\n      \"row\": 25\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 25,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 40,\n      \"row\": 26\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 40,\n            \"row\": 26\n          },\n          \"location\": {\n            \"column\": 26,\n            \"row\": 26\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 28,\n      \"row\": 26\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 26,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 91,\n      \"row\": 29\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 91,\n            \"row\": 29\n          },\n          \"location\": {\n            \"column\": 77,\n            \"row\": 29\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 79,\n      \"row\": 29\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 29,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 110,\n      \"row\": 19\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 110,\n            \"row\": 19\n          },\n          \"location\": {\n            \"column\": 96,\n            \"row\": 19\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 98,\n      \"row\": 19\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 19,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 86,\n      \"row\": 20\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 86,\n            \"row\": 20\n          },\n          \"location\": {\n            \"column\": 72,\n            \"row\": 20\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 74,\n      \"row\": 20\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 20,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 39,\n      \"row\": 24\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 39,\n            \"row\": 24\n          },\n          \"location\": {\n            \"column\": 25,\n            \"row\": 24\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 27,\n      \"row\": 24\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 24,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 47,\n      \"row\": 25\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 47,\n            \"row\": 25\n          },\n          \"location\": {\n            \"column\": 33,\n            \"row\": 25\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 35,\n      \"row\": 25\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 25,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 40,\n      \"row\": 26\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 40,\n            \"row\": 26\n          },\n          \"location\": {\n            \"column\": 26,\n            \"row\": 26\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 28,\n      \"row\": 26\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 26,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"RUF100\",\n    \"end_location\": {\n      \"column\": 91,\n      \"row\": 29\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/scripts/profile_guard_mcp_streaming_session.py\",\n    \"fix\": {\n      \"applicability\": \"safe\",\n      \"edits\": [\n        {\n          \"content\": \"\",\n          \"end_location\": {\n            \"column\": 91,\n            \"row\": 29\n          },\n          \"location\": {\n            \"column\": 77,\n            \"row\": 29\n          }\n        }\n      ],\n      \"message\": \"Remove unused `noqa` directive\"\n    },\n    \"location\": {\n      \"column\": 79,\n      \"row\": 29\n    },\n    \"message\": \"Unused `noqa` directive (unused: `F401`)\",\n    \"noqa_row\": 29,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/unused-noqa\"\n  },\n  {\n    \"cell\": null,\n    \"code\": \"N811\",\n    \"end_location\": {\n      \"column\": 46,\n      \"row\": 18\n    },\n    \"filename\": \"/home/runner/work/hol-guard/hol-guard/source/src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py\",\n    \"fix\": null,\n    \"location\": {\n      \"column\": 21,\n      \"row\": 18\n    },\n    \"message\": \"Constant `ABC` imported as non-constant `_WriterJournalHost`\",\n    \"noqa_row\": 18,\n    \"severity\": \"error\",\n    \"url\": \"https://docs.astral.sh/ruff/rules/constant-imported-as-non-constant\"\n  }\n]",
+    "encoding": "utf-8",
+    "sha256": "e69c35f9eb78de67c11f007406eb55513e6eac4233bc1a898b811e3a20c34fbd",
+    "git_object_sha1": "aadd46b4189e9e0242ab6d02841131b8cdb5d265",
+    "verified": true
+  },
+  "remaining_source_diagnostic": "Journal N811 belongs to SourcePartition's separate repair; no suppression or check relaxation introduced.",
+  "no_runtime_replay_needed_for_comments_alone": "Fresh scoped quality checks on the composed source remain required; the existing performance campaign is not replayed.",
+  "qualification_complete": false,
+  "refs_mutated": false,
+  "tests_or_workloads_executed": false
+}

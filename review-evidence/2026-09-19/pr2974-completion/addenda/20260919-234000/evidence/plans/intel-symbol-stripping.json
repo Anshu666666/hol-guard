@@ -1,0 +1,736 @@
+{
+  "schema": "hol-guard.pr2974.intel-strip-experiment-design.v1",
+  "status": "frozen_design_only; no runner, workflow, build, binary mutation, probe or benchmark has been executed",
+  "scope": "One bounded isolated Intel macOS job, one strip=none build and one strip=symbols build of the same source, each assembled into its own actual native wheel and observed with existing installed probes and at most one original smoke schedule.",
+  "observed_at_utc": "2026-09-19T21:40:15Z",
+  "authorization_boundary": "Root alone owns refs and launch. This packet is a reviewable design and complete observation-helper source, not a launchable harness or approval to select a production change.",
+  "source": {
+    "sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+    "tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+    "sole_parent": "dfd40a627716117f7853aca51ab84b6b336ddf73",
+    "leaf_count": 4675,
+    "directory_count": 279,
+    "full_source_owner_packet": "605a2527f95ff490e9c14be255b58cdc2cb6469a",
+    "full_source_bodies_and_tree_packet": "605ab55e4bc10db468d4b2bfa3c43d09557c9c45",
+    "direct_inputs": [
+      {
+        "path": "rust/Cargo.toml",
+        "git_blob": "a4782eafffedc8a1dfae59db03740fe74937b9df",
+        "bytes": 1017,
+        "sha256": "73bb63b12d2f54b641ea3cf43cf8c065fac0238c7d5759a721da575fb088c869"
+      },
+      {
+        "path": "pyproject.toml",
+        "git_blob": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+        "bytes": 8647,
+        "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+      },
+      {
+        "path": ".github/workflows/native-wheel-ci.yml",
+        "git_blob": "396716400a0360ac123986505a0b0c35e823ba27",
+        "bytes": 23306,
+        "sha256": "0bd708e1aec09b534eb160f6def24c661e8cbd58752b3624cd3a404af85e16cf"
+      },
+      {
+        "path": "scripts/build_native_hol_guard_wheel.py",
+        "git_blob": "5ece449c233fd43043ef83e4df2a7e6ebb529824",
+        "bytes": 19800,
+        "sha256": "1ce90e6724af019556be94624db543f679e0f17885c223fc55392f4da4d9f7c6"
+      },
+      {
+        "path": "ci/native_runtime/probe_installed_runtime_identity.py",
+        "git_blob": "cbc2b324f770c39ae7a863599a9d150ccba53618",
+        "bytes": 13420,
+        "sha256": "72da3feb3b7bd647130638133a548484e198c743144521e7e3fda9f004e90a60"
+      },
+      {
+        "path": "ci/native_runtime/probe_native_default_auto.py",
+        "git_blob": "aa84a007fa02dd43bb4a1663af1e8119297b45b3",
+        "bytes": 20084,
+        "sha256": "e1a0812cb91cf0f419f22cba2a889372d98edaf49d0ac025f0e2ba3b4d5c2d8c"
+      },
+      {
+        "path": "ci/native_runtime/probe_installed_pi_output.py",
+        "git_blob": "2351b319b4874c20f0b52b0ec53b9d1e9c4d9c4a",
+        "bytes": 12444,
+        "sha256": "649afc8be47f24aca89aa3e40c87c1ea245d3064cf9d44d5adf00b08a924c5b2"
+      },
+      {
+        "path": "scripts/bench_guard_native_installed_slo.py",
+        "git_blob": "d2bbb5d777db1851ddba0090b37b5c8460fc88ce",
+        "bytes": 18142,
+        "sha256": "e25003e8a615bfc7270164e3af1a0210a99a3adafddeb30644ccaa4d568c0d5f"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_runtime.py",
+        "git_blob": "0f90c8673a26c43051cb9ae13b79845d951f86af",
+        "bytes": 25122,
+        "sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55"
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_runtime_identity.py",
+        "git_blob": "12eb238fbc97d282293d32dfa71611eaeded2df9",
+        "bytes": 14311,
+        "sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe"
+      },
+      {
+        "path": "tests/test_native_runtime_live_identity.py",
+        "git_blob": "221b8f51e3a57a80440453a8a628d8e40c75e12d",
+        "bytes": 18686,
+        "sha256": "ab58d93c11a88897df02bcd5f4840d1383d6c1be19d4d6bf786a9e4852177be1"
+      },
+      {
+        "path": "tests/test_native_runtime_unsupported_inspection.py",
+        "git_blob": "6d445d306b3cec5f70fb8e3b308933f5afb4f2d3",
+        "bytes": 13175,
+        "sha256": "4210723b2e3296c2dcc9fdafbb368bb40a73748ad93d49f5c214704e98f6ea18"
+      }
+    ],
+    "additional_tree_bound_inputs": [
+      {
+        "path": "rust/Cargo.lock",
+        "git_blob": "afa8eb8ec869ec9c9ade8b9ee21f6593cd9d363d",
+        "bytes": 23842,
+        "mode": "100644"
+      },
+      {
+        "path": "uv.lock",
+        "git_blob": "791b2efebdd6774bf7f1b5bd2504dd8cea3cac46",
+        "bytes": 961060,
+        "mode": "100644"
+      },
+      {
+        "path": "scripts/sync_repo_version.py",
+        "git_blob": "6b0e7252e82f22a5d78a24314ca407661df4d127",
+        "bytes": 9570,
+        "mode": "100644"
+      }
+    ],
+    "source_change_rule": "Pin exactly this source. If a later candidate is required, replace this identity with a separately reviewed complete source/provider closure before launch; do not silently inherit current-head credit."
+  },
+  "reason": {
+    "architecture_peer": {
+      "blob": "81745477ce86e6aa0884c306f619b795099147c6",
+      "bytes": 18170,
+      "sha256": "463e6182b7ac9e2480c45f1bce35e00828719e227824187a64e0b9e59001c156"
+    },
+    "required_validation": "The actual Darwin path intentionally reads and hashes the full runtime executable on every status admission. This experiment changes no runtime checks, cache keys, generation proof, permissions check or per-request validation. It changes final build bytes before the existing wheel manifest is constructed.",
+    "historical_opportunity": "Historical 77747 retained 16 full validations/448 operations over an 11,282,012-byte binary; SHA updates accounted for 424.039652ms of 499.802949ms summed validation thread CPU. Different source/runner environments prevent causal attribution to current Intel SLO failures or prediction of a speedup.",
+    "questions": [
+      "How many actual retained-file bytes belong to symbol/string/debug tables in the two completed artifacts?",
+      "Does Rust 1.88.0 strip=symbols perform the intended transformation without a strip warning, malformed loader structure or invalid signature?",
+      "Does the resulting exact wheel pass the unchanged installed identity, no-env default-auto, Pi output and original installed SLO smoke checks?",
+      "What are the complete same-host baseline/candidate byte counts, wall/CPU/resource observations and original smoke outcomes?"
+    ]
+  },
+  "environment": {
+    "runner_label": "macos-15-intel",
+    "scope_guard": {
+      "system": "Darwin",
+      "machine": "x86_64",
+      "thin_runtime_cpu": 16777223,
+      "python": "3.12.10",
+      "uv": "0.9.26",
+      "rust_toolchain": "1.88.0",
+      "target": "x86_64-apple-darwin",
+      "wheel_platform": "macosx_13_0_x86_64",
+      "deployment_target": "13.0",
+      "node": "24.16.0 from nodejs-wheel-binaries in the exact frozen uv.lock"
+    },
+    "same_host": "Both variants must run sequentially within one job on the same observed host/boot, with identical captured OS/kernel/CPU/SDK/linker/Rust/Python/uv/Node identities. Record host identity before/after both variants. One host does not control thermal or scheduler noise; no statistical qualification follows from one schedule.",
+    "owned_directories": "One previously absent experiment root outside the source checkout; private CARGO_HOME/RUSTUP_HOME, two initially empty target directories, one pure-wheel build directory, one backend environment, two separate runtime environments and per-variant report directories. Source remains byte-identical. Do not repurpose HOME or CODEX_HOME. Probe state uses each actual probe's owned temporary roots.",
+    "preflight_freeze": "Before either build, retain a machine-readable environment-admission record with the complete effective child environment (secrets excluded by construction), all reachable Cargo config files, exact resolved tool paths/full executable hashes/version stdout and stderr, selected SDK/clang/ld details, lock/source digests and original dependency-resolution/install logs. Reject unexpected inherited RUSTFLAGS/CARGO_ENCODED_RUSTFLAGS/profile overrides, PYTHONPATH/PYTEST flags or Guard override variables. Python must have assertions enabled, isolated imports where the actual probe supports them, and bytecode writes disabled.",
+    "backend": "pyproject.toml requires hatchling<1.31 but uv.lock does not pin Hatchling. Resolve the build backend once, before either build, into a retained exact-version hash-locked dependency file satisfying the source requirements and build==1.5.0. Install that one owned backend environment with hash checking, retain every backend wheel and installed distribution identity, then build the pure wheel once with --no-isolation. This preflight resolved closure is a required run input; no unobserved per-variant isolated backend resolution is allowed.",
+    "runtime_dependencies": "Create both initially empty runtime environments using the same frozen uv.lock and --extra dev --no-install-project. Retain original raw distribution inventory before duplicate/membership checks, all installed distribution RECORDs and actual dependency file hashes, then compare the two closures. Prefix-derived scripts/RECORD/direct_url differences must be individually retained and explained; unexplained provider differences make the pair ineligible.",
+    "rust_dependencies": "Retain cargo fetch --locked output and exact lock/config/toolchain/registry identities once. Build both variants from the same admitted dependency snapshot using --frozen (locked and offline) with default workspace features; no feature, optimization, LTO, panic or debug-profile difference other than the two declared strip values.",
+    "tool_choice": "Rust 1.88.0 on Darwin executable targets uses its selected rust-objcopy --strip-all for symbols. Resolve that exact rust-objcopy through the observed compiler search paths and retain its version/hash. Do not silently substitute Apple strip, another objcopy or a post-build signing command. Invoke the admitted actual 1.88.0 Cargo binary without a +toolchain argument, with RUSTC pointing to the admitted actual 1.88.0 rustc and the recorded private tool environment. The +toolchain syntax belongs only to a rustup proxy; this design does not use that alternative.",
+    "isolation_limit": "Process ancestry and whole-process-tree cleanup must use the current reviewed macOS qualification process observer. A known subprocess group alone does not prove absence of escaped or daemonized descendants."
+  },
+  "variants": [
+    {
+      "id": "baseline",
+      "order": 1,
+      "profile_environment": {
+        "CARGO_PROFILE_RELEASE_STRIP": "none"
+      },
+      "target_directory": "<EXPERIMENT_ROOT>/targets/baseline",
+      "wheel_directory": "<EXPERIMENT_ROOT>/wheels/baseline",
+      "runtime_environment": "<EXPERIMENT_ROOT>/venvs/baseline",
+      "attempts": 1
+    },
+    {
+      "id": "candidate",
+      "order": 2,
+      "profile_environment": {
+        "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+      },
+      "target_directory": "<EXPERIMENT_ROOT>/targets/candidate",
+      "wheel_directory": "<EXPERIMENT_ROOT>/wheels/candidate",
+      "runtime_environment": "<EXPERIMENT_ROOT>/venvs/candidate",
+      "attempts": 1
+    }
+  ],
+  "ordered_steps": [
+    {
+      "id": "preflight",
+      "action": "Admit source/tree, host, tools, environment/dependency closure and empty owned directories. Retain input census before asserting it. Run source sync_repo_version.py --check once and retain the exact package version."
+    },
+    {
+      "id": "pure_wheel",
+      "argv": [
+        "<BACKEND_PYTHON>",
+        "-I",
+        "-B",
+        "-m",
+        "build",
+        "--wheel",
+        "--no-isolation",
+        "--outdir",
+        "<PURE_WHEEL_DIR>",
+        "<SOURCE_ROOT>"
+      ],
+      "action": "Build and retain one pure wheel. Verify safe complete archive, full RECORD coverage/hashes and all Python/source force-include bytes against the frozen source. Both variants consume these exact wheel bytes."
+    },
+    {
+      "id": "build",
+      "per_variant": true,
+      "argv": [
+        "<ADMITTED_REAL_CARGO_1_88_0>",
+        "build",
+        "--manifest-path",
+        "<SOURCE_ROOT>/rust/Cargo.toml",
+        "--frozen",
+        "--release",
+        "--target",
+        "x86_64-apple-darwin",
+        "-p",
+        "hol-guard-runtime",
+        "-vv"
+      ],
+      "environment": {
+        "HOL_GUARD_BUILD_SHA": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+        "HOL_GUARD_PACKAGE_VERSION": "<SOURCE_VERSION>",
+        "MACOSX_DEPLOYMENT_TARGET": "13.0",
+        "CARGO_TARGET_DIR": "<VARIANT_TARGET_DIR>",
+        "CARGO_PROFILE_RELEASE_STRIP": "<DECLARED_VARIANT_VALUE>",
+        "RUSTC": "<ADMITTED_REAL_RUSTC_1_88_0>"
+      },
+      "action": "Retain complete stdout/stderr and actual emitted rustc arguments. Cargo zero alone is insufficient because external strip failure may only warn. Freeze the final binary bytes after process/tree cleanup; do not manually strip, patch, sign or retry it."
+    },
+    {
+      "id": "inventory_and_signature",
+      "per_variant": true,
+      "argv_sets": [
+        [
+          "<ASSERTIONS_ENABLED_PYTHON>",
+          "-I",
+          "-B",
+          "<READ_ONLY_INVENTORY_DRIVER>",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_OTOOL>",
+          "-h",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_OTOOL>",
+          "-l",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_OTOOL>",
+          "-L",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_OTOOL>",
+          "-I",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_CODESIGN>",
+          "--display",
+          "--verbose=4",
+          "<FINAL_BUILD_RUNTIME>"
+        ],
+        [
+          "<RESOLVED_CODESIGN>",
+          "--verify",
+          "--strict",
+          "--verbose=4",
+          "<FINAL_BUILD_RUNTIME>"
+        ]
+      ],
+      "action": "Retain original command outputs/return codes and helper inventories. Capture thin format, all load commands, segment/section ranges, symbol/string ranges, dyld/linkedit ranges, protections, dylib/loader/rpath commands, entrypoint and signature state. Optional LLVM observations require a pre-recorded available tool/flag check; unsupported flags stay explicit. Inspect LC_MAIN against the actual __TEXT segment map and resolve entry to executable file-backed code."
+    },
+    {
+      "id": "selftest_capabilities",
+      "per_variant": true,
+      "argv_sets": [
+        [
+          "<FINAL_BUILD_RUNTIME>",
+          "self-test",
+          "--json"
+        ],
+        [
+          "<FINAL_BUILD_RUNTIME>",
+          "capabilities",
+          "--json"
+        ]
+      ],
+      "action": "Retain both complete originals and bind package version, source SHA, target and rule digest. Do not proceed to executable probes after invalid existing/output signature, malformed structure or identity mismatch. A missing/unsigned signature is recorded separately and admits only this explicitly unsigned diagnostic scope; it is never release/signing evidence."
+    },
+    {
+      "id": "native_wheel",
+      "per_variant": true,
+      "argv": [
+        "<BACKEND_PYTHON>",
+        "-I",
+        "-B",
+        "<SOURCE_ROOT>/scripts/build_native_hol_guard_wheel.py",
+        "--wheel",
+        "<ONE_PURE_WHEEL>",
+        "--runtime",
+        "<FINAL_BUILD_RUNTIME>",
+        "--output-dir",
+        "<VARIANT_WHEEL_DIR>",
+        "--version",
+        "<SOURCE_VERSION>",
+        "--platform-tag",
+        "macosx_13_0_x86_64",
+        "--target",
+        "x86_64-apple-darwin",
+        "--source-sha",
+        "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+        "--rule-digest",
+        "<ACTUAL_RULE_DIGEST>"
+      ],
+      "action": "Use the unchanged actual builder. Independently verify final runtime member hash/size/mode, manifest source/version/target/platform/rule/runtime binding, full RECORD and every member. Do not use the release artifact-set checker with a fabricated Windows waiver."
+    },
+    {
+      "id": "install",
+      "per_variant": true,
+      "argv": [
+        "<ADMITTED_UV>",
+        "pip",
+        "install",
+        "--python",
+        "<VARIANT_PYTHON>",
+        "--no-deps",
+        "--force-reinstall",
+        "<VARIANT_WHEEL>"
+      ],
+      "action": "Prove noneditable installed ownership outside the source checkout and exact Python provider bytes, installed native member/manifest/RECORD. Resolve native_runtime_status().identity.path in the admitted installed interpreter; no development binary override. Record actual selected Node path/version/hash, requiring the same locked 24.16.0 bytes in both environments."
+    },
+    {
+      "id": "identity_probe",
+      "per_variant": true,
+      "argv": [
+        "<VARIANT_PYTHON>",
+        "-I",
+        "-B",
+        "<SOURCE_ROOT>/ci/native_runtime/probe_installed_runtime_identity.py",
+        "--json",
+        "<REPORT>/installed-runtime-identity.json"
+      ],
+      "action": "Execute unchanged once, including actual Mac full-hash fallback and executable/manifest replacement controls. Its temporary validation wrapper remains confined to this correctness process. Retain failures and restoration/cleanup evidence. Verify original runtime/manifest bytes and modes afterward; replacement may legitimately change inode."
+    },
+    {
+      "id": "default_auto_probe",
+      "per_variant": true,
+      "argv": [
+        "<VARIANT_PYTHON>",
+        "-B",
+        "<SOURCE_ROOT>/ci/native_runtime/probe_native_default_auto.py",
+        "--json",
+        "<REPORT>/native-default-auto.json"
+      ],
+      "action": "Execute unchanged once using the actual clean environment and installed distribution. Keep original readiness budget, all21 actual route/receipt records and every failure/degraded counter. No checkout src package or patched provider is admissible."
+    },
+    {
+      "id": "pi_probe",
+      "per_variant": true,
+      "argv": [
+        "<VARIANT_PYTHON>",
+        "-B",
+        "<SOURCE_ROOT>/ci/native_runtime/probe_installed_pi_output.py",
+        "--json",
+        "<REPORT>/installed-pi-output.json"
+      ],
+      "action": "Execute unchanged once and retain actual registered extension results, source-reference/negative cases, receipt/error/cleanup originals."
+    },
+    {
+      "id": "original_smoke",
+      "per_variant": true,
+      "argv": [
+        "<VARIANT_PYTHON>",
+        "-B",
+        "<SOURCE_ROOT>/scripts/bench_guard_native_installed_slo.py",
+        "--runtime",
+        "<ACTUAL_INSTALLED_RUNTIME>",
+        "--warm-iterations",
+        "2",
+        "--cold-iterations",
+        "2",
+        "--recovery-iterations",
+        "2",
+        "--readiness-samples",
+        "2",
+        "--launcher-iterations",
+        "2",
+        "--json",
+        "<REPORT>/native-installed-slo.json",
+        "--enforce"
+      ],
+      "environment": {
+        "MACOSX_DEPLOYMENT_TARGET": "13.0",
+        "PLATFORM_TAG": "macosx_13_0_x86_64",
+        "NATIVE_STOP_DIAGNOSTIC_PATH": "<REPORT>/native-stop-diagnostic.json"
+      },
+      "action": "At most one unchanged original schedule per admitted variant, sequentially. No skip-capacity, alternate routes, threshold/deadline changes, instrumentation, manual warmup, favorable retries or extra wave. Preserve every raw observation, error, denial, overload, timeout, p95/p99 and original gate result. An SLO assertion failure is an original completed outcome, not a reason to discard or rerun."
+    },
+    {
+      "id": "postwitness",
+      "per_variant": true,
+      "action": "Stop all owned real native/daemon processes, retain original native-stop diagnostics and complete process observer evidence, then inventory every installed/provider/runtime/manifest byte and source leaf again. Missing cleanup, mutation, capture or ancestry evidence makes the variant and pair ineligible. Never continue into the other variant if a prior owned process remains."
+    },
+    {
+      "id": "comparison",
+      "action": "Use the read-only helper's complete original inventories; report file bytes, symbol/string/debug/other ranges without double counting, all raw load-command differences and section differences. Every loader-affecting command change requires explicit review. Preserve differing UUIDs/build-path-dependent data as observed differences. Summarize same-host original smoke results with exact denominators and gate failures; no p-value or qualification claim from this single pair."
+    }
+  ],
+  "execution_policy": {
+    "only_attempts": "One job/run attempt; no internal retries. If the job fails or an input changes, retain its terminal evidence; any successor is a separately reviewed experiment with the failed original attached.",
+    "bounds": {
+      "job_minutes": 75,
+      "environment_setup_seconds": 600,
+      "pure_wheel_seconds": 180,
+      "each_build_seconds": 600,
+      "each_inventory_set_seconds": 60,
+      "each_selftest_and_capabilities_seconds": 60,
+      "each_wheel_assembly_and_install_seconds": 120,
+      "identity_probe_seconds": 120,
+      "default_auto_probe_seconds": 180,
+      "pi_probe_seconds": 180,
+      "original_smoke_seconds": 480,
+      "term_grace_seconds": 5,
+      "kill_grace_seconds": 5,
+      "projection_files": 256,
+      "projection_per_file_bytes": 33554432,
+      "projection_raw_bytes": 100663296,
+      "projection_gzip_bytes": 16777216,
+      "base64_chunk_characters": 6000,
+      "complete_binary_or_wheel_member_bytes": 67108864,
+      "complete_artifact_archive_bytes": 536870912
+    },
+    "bounds_scope": "These are outer harness/retention guards only. All source product/test deadlines, readiness/admission limits and original SLO thresholds remain exact. A bound hit is retained as a failure with the actual captured output extent, never a successful complete result. Dedicated cleanup and always-retain stages must fit inside the job bound.",
+    "failure_continuation": "Capture each command's argv, effective admitted environment identity, monotonic start/end, exit/signal/timeout, complete stdout/stderr hash and cleanup record. Preserve successful and failed candidate/baseline originals. Continue to the other variant only after proven safe cleanup and only for independent inputs. Do not execute an invalid or malformed artifact. A correctness-probe failure prevents that variant's SLO schedule; record the exact unrun prerequisite rather than manufacture timing.",
+    "no_environment_pollution": "Do not write build/install products inside the source checkout; no global package installs, inherited caches or global config changes. Do not modify the baseline artifact while creating the candidate.",
+    "retention": "Retain all complete source/helper/config/environment/probe/report/log originals, the pure wheel, both completed build binaries, both native wheels and final installed member manifests. Large binary/wheel artifacts are separate from the bounded text projection, with an exact full artifact manifest and download/readback verification. Missing originals, an exceeded capture bound or a missing member prevents completion/selection credit."
+  },
+  "admission_and_decision": {
+    "candidate_effect_required": "Full candidate file size must decrease and the independently inventoried symbol/string/debug changes must demonstrate the intended strip transformation. A Cargo warning, unchanged artifact or unaccounted range changes cannot be called a successful strip experiment.",
+    "signature_policy": "Record absent, valid ad hoc, valid certificate-backed and invalid as distinct states for build, wheel-member and installed bytes. Reject an invalid result; do not repair it. No signature may silently disappear and be treated as preserved. Unsigned diagnostic execution is explicitly non-release and does not establish Developer ID, notarization, Gatekeeper or cross-platform qualification.",
+    "correctness_required": "Unchanged self-test/capability binding, wheel builder/full RECORD verification, installed full-byte identity, actual 21-route default-auto receipt/ownership checks and actual Pi output controls must all succeed for a valid candidate smoke comparison. Preserve original failures even when the counterpart succeeds.",
+    "loader_review_required": "Compare lazy/weak/reexport/upward dylibs, loader/RPATH commands, entrypoint, segment protections and VM/file mappings, all retained load commands and known dyld/linkedit payload inventories. All changed command bytes remain review-required; the helper deliberately does not decode every dyld program/export trie. Neither matching section hashes nor identical entryoff integers alone proves loader preservation.",
+    "decision": "No production change is selected by this design or by automatic helper output. Report a structurally/identity-valid diagnostic candidate and its original smoke outcomes only after complete original-command/signature review. A second performance qualification would need separately adopted methodology and authorization; do not launch another campaign automatically.",
+    "qualification_complete": false,
+    "release_equivalence": false,
+    "cross_platform_equivalence": false,
+    "runtime_security_validation_unchanged": true,
+    "threshold_relaxation": false,
+    "cache_added": false,
+    "production_candidate_eligible": false
+  },
+  "helper": {
+    "blob": "0b90167b5e4162d24c0ed05ab6e2caf6eeb3c9a6",
+    "bytes": 13111,
+    "sha256": "abdc44e42b0c2458e8ca87ba9f9802421412f4a9068822eec77527e762a702b7",
+    "content": "\"\"\"Bounded read-only Mach-O inventory for the two retained build artifacts.\"\"\"\n\nfrom __future__ import annotations\n\nimport base64\nimport hashlib\nimport os\nfrom pathlib import Path\nimport stat\nimport struct\n\nMAX_BINARY_BYTES = 64 * 1024 * 1024\nMAX_COMMANDS = 4096\nMAX_COMMAND_BYTES = 1024 * 1024\n\n\ndef _sha(data: bytes) -> str:\n    return hashlib.sha256(data).hexdigest()\n\n\ndef _name(value: bytes) -> str:\n    value = value.split(b\"\\0\", 1)[0]\n    assert all(32 <= byte < 127 for byte in value), \"Non-ASCII Mach-O name\"\n    return value.decode(\"ascii\")\n\n\ndef _metadata(value) -> tuple[int, ...]:\n    return (value.st_dev, value.st_ino, value.st_mode, value.st_uid, value.st_gid,\n            value.st_size, value.st_mtime_ns, value.st_ctime_ns)\n\n\ndef inspect_macho(path: Path) -> dict:\n    before = path.lstat()\n    assert stat.S_ISREG(before.st_mode) and not path.is_symlink()\n    assert 0 < before.st_size <= MAX_BINARY_BYTES\n    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)\n    with os.fdopen(descriptor, \"rb\") as stream:\n        opened = os.fstat(stream.fileno())\n        assert _metadata(opened) == _metadata(before)\n        raw = stream.read(MAX_BINARY_BYTES + 1)\n        after = os.fstat(stream.fileno())\n    assert len(raw) == before.st_size and _metadata(after) == _metadata(before)\n    assert _metadata(path.lstat()) == _metadata(before)\n    assert len(raw) >= 32\n    magic, cpu, subtype, filetype, ncmds, sizeofcmds, flags, reserved = struct.unpack_from(\"<8I\", raw)\n    assert magic == 0xFEEDFACF, \"Expected a thin little-endian Mach-O 64 image\"\n    assert cpu == 0x01000007 and filetype == 2, \"Expected an x86_64 executable\"\n    assert 0 < ncmds <= MAX_COMMANDS and 8 <= sizeofcmds <= MAX_COMMAND_BYTES\n    assert 32 + sizeofcmds <= len(raw)\n    commands, sections, segments, signatures, symbol_tables = [], [], [], [], []\n    dynamic, loader_paths, payload_ranges, entrypoints = [], [], [], []\n    offset = 32\n\n    def extent(start: int, length: int) -> dict:\n        assert 0 <= start <= len(raw) and 0 <= length <= len(raw) - start\n        return {\"offset\": start, \"bytes\": length, \"sha256\": _sha(raw[start:start + length])}\n\n    for index in range(ncmds):\n        assert offset + 8 <= 32 + sizeofcmds\n        command, size = struct.unpack_from(\"<II\", raw, offset)\n        assert size >= 8 and size % 8 == 0 and offset + size <= 32 + sizeofcmds\n        entry = {\"index\": index, \"command\": command, \"offset\": offset, \"size\": size,\n                 \"raw_base64\": base64.b64encode(raw[offset:offset + size]).decode(\"ascii\")}\n        if command == 0x19:\n            assert size >= 72\n            (_, _, segment, address, memory_bytes, file_offset, file_bytes,\n             max_protection, initial_protection, count, segment_flags) = struct.unpack_from(\n                \"<II16sQQQQIIII\", raw, offset)\n            assert count <= 2048 and size == 72 + count * 80\n            assert address + memory_bytes <= 2**64\n            segment_name = _name(segment)\n            segments.append({\"name\": segment_name, \"address\": address, \"memory_bytes\": memory_bytes,\n                             \"file\": extent(file_offset, file_bytes), \"max_protection\": max_protection,\n                             \"initial_protection\": initial_protection, \"flags\": segment_flags})\n            for number in range(count):\n                values = struct.unpack_from(\"<16s16sQQIIIIIIII\", raw, offset + 72 + number * 80)\n                name, owner, address, length, start, alignment, relocation, relocation_count = values[:8]\n                section_flags, reserved1, reserved2, reserved3 = values[8:]\n                kind = section_flags & 0xFF\n                zero_fill = kind in {0x01, 0x0C, 0x12}\n                assert _name(owner) == segment_name\n                assert address + length <= 2**64\n                segment_address = segments[-1][\"address\"]\n                assert segment_address <= address and address + length <= segment_address + memory_bytes\n                section = {\"segment\": segment_name, \"section\": _name(name), \"address\": address,\n                           \"memory_bytes\": length, \"file_offset\": start, \"alignment\": alignment,\n                           \"relocation_offset\": relocation, \"relocation_count\": relocation_count,\n                           \"flags\": section_flags, \"zero_fill\": zero_fill,\n                           \"debug_attribute\": bool(section_flags & 0x02000000),\n                           \"reserved\": [reserved1, reserved2, reserved3]}\n                section[\"file\"] = None if zero_fill else extent(start, length)\n                if not zero_fill and length:\n                    assert file_offset <= start and start + length <= file_offset + file_bytes\n                if relocation_count:\n                    section[\"relocations\"] = extent(relocation, relocation_count * 8)\n                sections.append(section)\n        elif command == 0x02:\n            assert size == 24\n            _, _, symbols, count, strings, string_bytes = struct.unpack_from(\"<6I\", raw, offset)\n            symbol_tables.append({\"count\": count, \"nlist_entry_bytes\": 16,\n                                  \"symbols\": extent(symbols, count * 16),\n                                  \"strings\": extent(strings, string_bytes)})\n        elif command in {0x1D, 0x1E, 0x26, 0x29, 0x2B, 0x2E, 0x80000033, 0x80000034, 0x36}:\n            assert size == 16\n            _, _, start, length = struct.unpack_from(\"<4I\", raw, offset)\n            payload = extent(start, length)\n            payload_ranges.append({\"command\": command, \"kind\": \"linkedit_data\", \"file\": payload})\n            if command == 0x1D:\n                signatures.append(payload)\n        elif command in {0x22, 0x80000022}:\n            assert size == 48\n            values = struct.unpack_from(\"<12I\", raw, offset)\n            for number, label in enumerate((\"rebase\", \"bind\", \"weak_bind\", \"lazy_bind\", \"exports\")):\n                start, length = values[2 + number * 2:4 + number * 2]\n                payload_ranges.append({\"command\": command, \"kind\": label, \"file\": extent(start, length)})\n        elif command == 0xB:\n            assert size == 80\n            values = struct.unpack_from(\"<20I\", raw, offset)\n            for at, width, label in ((8, 8, \"table_of_contents\"), (10, 56, \"module_table\"),\n                                     (12, 4, \"external_references\"), (14, 4, \"indirect_symbols\"),\n                                     (16, 8, \"external_relocations\"), (18, 8, \"local_relocations\")):\n                payload_ranges.append({\"command\": command, \"kind\": label,\n                                       \"file\": extent(values[at], values[at + 1] * width)})\n            entry[\"symbol_groups\"] = {\"local\": list(values[2:4]), \"external\": list(values[4:6]),\n                                      \"undefined\": list(values[6:8])}\n        elif command == 0x80000028:\n            assert size == 24\n            _, _, start, stack = struct.unpack_from(\"<IIQQ\", raw, offset)\n            assert start < len(raw)\n            entrypoints.append({\"file_offset\": start, \"stack_size\": stack})\n        elif command in {0xE, 0xF, 0x8000001C}:\n            assert size >= 16\n            start = struct.unpack_from(\"<I\", raw, offset + 8)[0]\n            assert 12 <= start < size\n            end = raw.find(b\"\\0\", offset + start, offset + size)\n            assert end != -1\n            loader_paths.append({\"command\": command, \"path\": raw[offset + start:end].decode(\"utf-8\")})\n        elif command in {0xC, 0x80000018, 0x8000001F, 0x20, 0x80000023}:\n            assert size >= 24\n            _, _, start, stamp, version, compatibility = struct.unpack_from(\"<6I\", raw, offset)\n            assert 24 <= start < size\n            end = raw.find(b\"\\0\", offset + start, offset + size)\n            assert end != -1\n            dynamic.append({\"command\": command, \"path\": raw[offset + start:end].decode(\"utf-8\"),\n                            \"timestamp\": stamp, \"current_version\": version,\n                            \"compatibility_version\": compatibility})\n        commands.append(entry)\n        offset += size\n    assert offset == 32 + sizeofcmds\n    assert len(symbol_tables) <= 1 and len(signatures) <= 1\n    assert len({(row[\"segment\"], row[\"section\"]) for row in sections}) == len(sections)\n    table = ({\"present\": True, **symbol_tables[0]} if symbol_tables else\n             {\"present\": False, \"count\": 0, \"nlist_entry_bytes\": 16,\n              \"symbols\": extent(0, 0), \"strings\": extent(0, 0)})\n    for command in commands:\n        for index, count in command.get(\"symbol_groups\", {}).values():\n            assert index <= table[\"count\"] and count <= table[\"count\"] - index\n    backed = sorted((row[\"file\"][\"offset\"], row[\"file\"][\"offset\"] + row[\"file\"][\"bytes\"])\n                    for row in sections if row[\"file\"] and row[\"file\"][\"bytes\"])\n    assert all(left[1] <= right[0] for left, right in zip(backed, backed[1:]))\n    linkedit = [row for row in segments if row[\"name\"] == \"__LINKEDIT\"]\n    declared = [table[\"symbols\"], table[\"strings\"], *[row[\"file\"] for row in payload_ranges]]\n    for region in declared:\n        if region[\"bytes\"]:\n            assert len(linkedit) == 1\n            outer = linkedit[0][\"file\"]\n            assert outer[\"offset\"] <= region[\"offset\"]\n            assert region[\"offset\"] + region[\"bytes\"] <= outer[\"offset\"] + outer[\"bytes\"]\n    a, b = table[\"symbols\"], table[\"strings\"]\n    overlap = max(0, min(a[\"offset\"] + a[\"bytes\"], b[\"offset\"] + b[\"bytes\"]) - max(a[\"offset\"], b[\"offset\"]))\n    assert not overlap, \"Overlapping symbol and string tables\"\n    return {\"schema\": \"pr2974.macho-strip-inventory.v1\", \"path\": str(path),\n            \"bytes\": len(raw), \"sha256\": _sha(raw), \"mode\": oct(stat.S_IMODE(before.st_mode)),\n            \"header\": {\"cpu\": cpu, \"subtype\": subtype, \"filetype\": filetype, \"flags\": flags,\n                       \"reserved\": reserved, \"ncmds\": ncmds, \"sizeofcmds\": sizeofcmds},\n            \"load_commands\": commands, \"segments\": segments, \"sections\": sections,\n            \"symbol_table\": table, \"code_signature_ranges\": signatures, \"recorded_dylib_loads\": dynamic,\n            \"loader_paths\": loader_paths, \"entrypoints\": entrypoints, \"declared_linkedit_payloads\": payload_ranges,\n            \"unparsed_command_payloads\": \"Raw commands retained; no complete loader-semantics claim\",\n            \"symbol_and_string_bytes\": a[\"bytes\"] + b[\"bytes\"],\n            \"symbol_bytes_are_not_all_proven_discardable\": True,\n            \"kernel_signature_validity\": \"requires_separate_codesign_observation\",\n            \"qualification_complete\": False}\n\n\ndef compare_macho(baseline: dict, candidate: dict) -> dict:\n    def retained(value):\n        return {(row[\"segment\"], row[\"section\"]):\n                {\"memory_bytes\": row[\"memory_bytes\"], \"flags\": row[\"flags\"],\n                 \"sha256\": row[\"file\"][\"sha256\"] if row[\"file\"] is not None else None}\n                for row in value[\"sections\"] if not row[\"debug_attribute\"]}\n    old, new = retained(baseline), retained(candidate)\n    differences = [{\"section\": list(key), \"baseline\": old.get(key), \"candidate\": new.get(key)}\n                   for key in sorted(old.keys() | new.keys()) if old.get(key) != new.get(key)]\n    removed = baseline[\"bytes\"] - candidate[\"bytes\"]\n    table_removed = baseline[\"symbol_and_string_bytes\"] - candidate[\"symbol_and_string_bytes\"]\n    changed_commands = []\n    for number in range(max(len(baseline[\"load_commands\"]), len(candidate[\"load_commands\"]))):\n        old_command = baseline[\"load_commands\"][number] if number < len(baseline[\"load_commands\"]) else None\n        new_command = candidate[\"load_commands\"][number] if number < len(candidate[\"load_commands\"]) else None\n        if old_command != new_command:\n            changed_commands.append({\"index\": number, \"baseline\": old_command, \"candidate\": new_command})\n    return {\"baseline\": {key: baseline[key] for key in (\"bytes\", \"sha256\", \"symbol_and_string_bytes\")},\n            \"candidate\": {key: candidate[key] for key in (\"bytes\", \"sha256\", \"symbol_and_string_bytes\")},\n            \"file_bytes_removed\": removed, \"symbol_and_string_bytes_removed\": table_removed,\n            \"nondebug_section_differences\": differences,\n            \"recorded_dylib_loads_equal\": baseline[\"recorded_dylib_loads\"] == candidate[\"recorded_dylib_loads\"],\n            \"loader_paths_equal\": baseline[\"loader_paths\"] == candidate[\"loader_paths\"],\n            \"entrypoints_equal\": baseline[\"entrypoints\"] == candidate[\"entrypoints\"],\n            \"changed_load_commands\": changed_commands,\n            \"unreviewed_load_command_changes_require_review\": bool(changed_commands),\n            \"production_candidate_eligible\": False,\n            \"loader_semantics_preserved\": \"not_automatically_inferred\",\n            \"header_identity_equal\": all(baseline[\"header\"][key] == candidate[\"header\"][key]\n                                         for key in (\"cpu\", \"subtype\", \"filetype\", \"flags\")),\n            \"actual_reduction_observed\": removed > 0 and table_removed > 0,\n            \"code_semantics_or_release_equivalence_proven\": False,\n            \"qualification_complete\": False}\n",
+    "runtime_preconditions": [
+      "Python __debug__ true / sys.flags.optimize ==0; the helper's bounds use asserts.",
+      "Thin little-endian x86_64 executable with supported bounded layout.",
+      "Raw otool LC_MAIN plus __TEXT map must resolve entry to executable file-backed code.",
+      "No automatic loader-semantic or production-eligibility conclusion."
+    ]
+  },
+  "helper_source_peer": {
+    "blob": "55758ad9634e3351b78d1dcd5016d543f58468e4",
+    "bytes": 16540,
+    "sha256": "3d7f88672498692913ee2d18e3a00eda4005e4ddfb45f4bd57053ca724e4012b",
+    "complete_receipt": {
+      "schema": "pr2974.macho-readonly-helper-source-peer.v1",
+      "reviewed_at_utc": "2026-09-19 21:36:23 UTC",
+      "status": "source_positive_with_explicit_observation_scope_unexecuted",
+      "target": {
+        "git_blob": "0b90167b5e4162d24c0ed05ab6e2caf6eeb3c9a6",
+        "bytes": 13111,
+        "sha256": "abdc44e42b0c2458e8ca87ba9f9802421412f4a9068822eec77527e762a702b7",
+        "complete_source": "\"\"\"Bounded read-only Mach-O inventory for the two retained build artifacts.\"\"\"\n\nfrom __future__ import annotations\n\nimport base64\nimport hashlib\nimport os\nfrom pathlib import Path\nimport stat\nimport struct\n\nMAX_BINARY_BYTES = 64 * 1024 * 1024\nMAX_COMMANDS = 4096\nMAX_COMMAND_BYTES = 1024 * 1024\n\n\ndef _sha(data: bytes) -> str:\n    return hashlib.sha256(data).hexdigest()\n\n\ndef _name(value: bytes) -> str:\n    value = value.split(b\"\\0\", 1)[0]\n    assert all(32 <= byte < 127 for byte in value), \"Non-ASCII Mach-O name\"\n    return value.decode(\"ascii\")\n\n\ndef _metadata(value) -> tuple[int, ...]:\n    return (value.st_dev, value.st_ino, value.st_mode, value.st_uid, value.st_gid,\n            value.st_size, value.st_mtime_ns, value.st_ctime_ns)\n\n\ndef inspect_macho(path: Path) -> dict:\n    before = path.lstat()\n    assert stat.S_ISREG(before.st_mode) and not path.is_symlink()\n    assert 0 < before.st_size <= MAX_BINARY_BYTES\n    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)\n    with os.fdopen(descriptor, \"rb\") as stream:\n        opened = os.fstat(stream.fileno())\n        assert _metadata(opened) == _metadata(before)\n        raw = stream.read(MAX_BINARY_BYTES + 1)\n        after = os.fstat(stream.fileno())\n    assert len(raw) == before.st_size and _metadata(after) == _metadata(before)\n    assert _metadata(path.lstat()) == _metadata(before)\n    assert len(raw) >= 32\n    magic, cpu, subtype, filetype, ncmds, sizeofcmds, flags, reserved = struct.unpack_from(\"<8I\", raw)\n    assert magic == 0xFEEDFACF, \"Expected a thin little-endian Mach-O 64 image\"\n    assert cpu == 0x01000007 and filetype == 2, \"Expected an x86_64 executable\"\n    assert 0 < ncmds <= MAX_COMMANDS and 8 <= sizeofcmds <= MAX_COMMAND_BYTES\n    assert 32 + sizeofcmds <= len(raw)\n    commands, sections, segments, signatures, symbol_tables = [], [], [], [], []\n    dynamic, loader_paths, payload_ranges, entrypoints = [], [], [], []\n    offset = 32\n\n    def extent(start: int, length: int) -> dict:\n        assert 0 <= start <= len(raw) and 0 <= length <= len(raw) - start\n        return {\"offset\": start, \"bytes\": length, \"sha256\": _sha(raw[start:start + length])}\n\n    for index in range(ncmds):\n        assert offset + 8 <= 32 + sizeofcmds\n        command, size = struct.unpack_from(\"<II\", raw, offset)\n        assert size >= 8 and size % 8 == 0 and offset + size <= 32 + sizeofcmds\n        entry = {\"index\": index, \"command\": command, \"offset\": offset, \"size\": size,\n                 \"raw_base64\": base64.b64encode(raw[offset:offset + size]).decode(\"ascii\")}\n        if command == 0x19:\n            assert size >= 72\n            (_, _, segment, address, memory_bytes, file_offset, file_bytes,\n             max_protection, initial_protection, count, segment_flags) = struct.unpack_from(\n                \"<II16sQQQQIIII\", raw, offset)\n            assert count <= 2048 and size == 72 + count * 80\n            assert address + memory_bytes <= 2**64\n            segment_name = _name(segment)\n            segments.append({\"name\": segment_name, \"address\": address, \"memory_bytes\": memory_bytes,\n                             \"file\": extent(file_offset, file_bytes), \"max_protection\": max_protection,\n                             \"initial_protection\": initial_protection, \"flags\": segment_flags})\n            for number in range(count):\n                values = struct.unpack_from(\"<16s16sQQIIIIIIII\", raw, offset + 72 + number * 80)\n                name, owner, address, length, start, alignment, relocation, relocation_count = values[:8]\n                section_flags, reserved1, reserved2, reserved3 = values[8:]\n                kind = section_flags & 0xFF\n                zero_fill = kind in {0x01, 0x0C, 0x12}\n                assert _name(owner) == segment_name\n                assert address + length <= 2**64\n                segment_address = segments[-1][\"address\"]\n                assert segment_address <= address and address + length <= segment_address + memory_bytes\n                section = {\"segment\": segment_name, \"section\": _name(name), \"address\": address,\n                           \"memory_bytes\": length, \"file_offset\": start, \"alignment\": alignment,\n                           \"relocation_offset\": relocation, \"relocation_count\": relocation_count,\n                           \"flags\": section_flags, \"zero_fill\": zero_fill,\n                           \"debug_attribute\": bool(section_flags & 0x02000000),\n                           \"reserved\": [reserved1, reserved2, reserved3]}\n                section[\"file\"] = None if zero_fill else extent(start, length)\n                if not zero_fill and length:\n                    assert file_offset <= start and start + length <= file_offset + file_bytes\n                if relocation_count:\n                    section[\"relocations\"] = extent(relocation, relocation_count * 8)\n                sections.append(section)\n        elif command == 0x02:\n            assert size == 24\n            _, _, symbols, count, strings, string_bytes = struct.unpack_from(\"<6I\", raw, offset)\n            symbol_tables.append({\"count\": count, \"nlist_entry_bytes\": 16,\n                                  \"symbols\": extent(symbols, count * 16),\n                                  \"strings\": extent(strings, string_bytes)})\n        elif command in {0x1D, 0x1E, 0x26, 0x29, 0x2B, 0x2E, 0x80000033, 0x80000034, 0x36}:\n            assert size == 16\n            _, _, start, length = struct.unpack_from(\"<4I\", raw, offset)\n            payload = extent(start, length)\n            payload_ranges.append({\"command\": command, \"kind\": \"linkedit_data\", \"file\": payload})\n            if command == 0x1D:\n                signatures.append(payload)\n        elif command in {0x22, 0x80000022}:\n            assert size == 48\n            values = struct.unpack_from(\"<12I\", raw, offset)\n            for number, label in enumerate((\"rebase\", \"bind\", \"weak_bind\", \"lazy_bind\", \"exports\")):\n                start, length = values[2 + number * 2:4 + number * 2]\n                payload_ranges.append({\"command\": command, \"kind\": label, \"file\": extent(start, length)})\n        elif command == 0xB:\n            assert size == 80\n            values = struct.unpack_from(\"<20I\", raw, offset)\n            for at, width, label in ((8, 8, \"table_of_contents\"), (10, 56, \"module_table\"),\n                                     (12, 4, \"external_references\"), (14, 4, \"indirect_symbols\"),\n                                     (16, 8, \"external_relocations\"), (18, 8, \"local_relocations\")):\n                payload_ranges.append({\"command\": command, \"kind\": label,\n                                       \"file\": extent(values[at], values[at + 1] * width)})\n            entry[\"symbol_groups\"] = {\"local\": list(values[2:4]), \"external\": list(values[4:6]),\n                                      \"undefined\": list(values[6:8])}\n        elif command == 0x80000028:\n            assert size == 24\n            _, _, start, stack = struct.unpack_from(\"<IIQQ\", raw, offset)\n            assert start < len(raw)\n            entrypoints.append({\"file_offset\": start, \"stack_size\": stack})\n        elif command in {0xE, 0xF, 0x8000001C}:\n            assert size >= 16\n            start = struct.unpack_from(\"<I\", raw, offset + 8)[0]\n            assert 12 <= start < size\n            end = raw.find(b\"\\0\", offset + start, offset + size)\n            assert end != -1\n            loader_paths.append({\"command\": command, \"path\": raw[offset + start:end].decode(\"utf-8\")})\n        elif command in {0xC, 0x80000018, 0x8000001F, 0x20, 0x80000023}:\n            assert size >= 24\n            _, _, start, stamp, version, compatibility = struct.unpack_from(\"<6I\", raw, offset)\n            assert 24 <= start < size\n            end = raw.find(b\"\\0\", offset + start, offset + size)\n            assert end != -1\n            dynamic.append({\"command\": command, \"path\": raw[offset + start:end].decode(\"utf-8\"),\n                            \"timestamp\": stamp, \"current_version\": version,\n                            \"compatibility_version\": compatibility})\n        commands.append(entry)\n        offset += size\n    assert offset == 32 + sizeofcmds\n    assert len(symbol_tables) <= 1 and len(signatures) <= 1\n    assert len({(row[\"segment\"], row[\"section\"]) for row in sections}) == len(sections)\n    table = ({\"present\": True, **symbol_tables[0]} if symbol_tables else\n             {\"present\": False, \"count\": 0, \"nlist_entry_bytes\": 16,\n              \"symbols\": extent(0, 0), \"strings\": extent(0, 0)})\n    for command in commands:\n        for index, count in command.get(\"symbol_groups\", {}).values():\n            assert index <= table[\"count\"] and count <= table[\"count\"] - index\n    backed = sorted((row[\"file\"][\"offset\"], row[\"file\"][\"offset\"] + row[\"file\"][\"bytes\"])\n                    for row in sections if row[\"file\"] and row[\"file\"][\"bytes\"])\n    assert all(left[1] <= right[0] for left, right in zip(backed, backed[1:]))\n    linkedit = [row for row in segments if row[\"name\"] == \"__LINKEDIT\"]\n    declared = [table[\"symbols\"], table[\"strings\"], *[row[\"file\"] for row in payload_ranges]]\n    for region in declared:\n        if region[\"bytes\"]:\n            assert len(linkedit) == 1\n            outer = linkedit[0][\"file\"]\n            assert outer[\"offset\"] <= region[\"offset\"]\n            assert region[\"offset\"] + region[\"bytes\"] <= outer[\"offset\"] + outer[\"bytes\"]\n    a, b = table[\"symbols\"], table[\"strings\"]\n    overlap = max(0, min(a[\"offset\"] + a[\"bytes\"], b[\"offset\"] + b[\"bytes\"]) - max(a[\"offset\"], b[\"offset\"]))\n    assert not overlap, \"Overlapping symbol and string tables\"\n    return {\"schema\": \"pr2974.macho-strip-inventory.v1\", \"path\": str(path),\n            \"bytes\": len(raw), \"sha256\": _sha(raw), \"mode\": oct(stat.S_IMODE(before.st_mode)),\n            \"header\": {\"cpu\": cpu, \"subtype\": subtype, \"filetype\": filetype, \"flags\": flags,\n                       \"reserved\": reserved, \"ncmds\": ncmds, \"sizeofcmds\": sizeofcmds},\n            \"load_commands\": commands, \"segments\": segments, \"sections\": sections,\n            \"symbol_table\": table, \"code_signature_ranges\": signatures, \"recorded_dylib_loads\": dynamic,\n            \"loader_paths\": loader_paths, \"entrypoints\": entrypoints, \"declared_linkedit_payloads\": payload_ranges,\n            \"unparsed_command_payloads\": \"Raw commands retained; no complete loader-semantics claim\",\n            \"symbol_and_string_bytes\": a[\"bytes\"] + b[\"bytes\"],\n            \"symbol_bytes_are_not_all_proven_discardable\": True,\n            \"kernel_signature_validity\": \"requires_separate_codesign_observation\",\n            \"qualification_complete\": False}\n\n\ndef compare_macho(baseline: dict, candidate: dict) -> dict:\n    def retained(value):\n        return {(row[\"segment\"], row[\"section\"]):\n                {\"memory_bytes\": row[\"memory_bytes\"], \"flags\": row[\"flags\"],\n                 \"sha256\": row[\"file\"][\"sha256\"] if row[\"file\"] is not None else None}\n                for row in value[\"sections\"] if not row[\"debug_attribute\"]}\n    old, new = retained(baseline), retained(candidate)\n    differences = [{\"section\": list(key), \"baseline\": old.get(key), \"candidate\": new.get(key)}\n                   for key in sorted(old.keys() | new.keys()) if old.get(key) != new.get(key)]\n    removed = baseline[\"bytes\"] - candidate[\"bytes\"]\n    table_removed = baseline[\"symbol_and_string_bytes\"] - candidate[\"symbol_and_string_bytes\"]\n    changed_commands = []\n    for number in range(max(len(baseline[\"load_commands\"]), len(candidate[\"load_commands\"]))):\n        old_command = baseline[\"load_commands\"][number] if number < len(baseline[\"load_commands\"]) else None\n        new_command = candidate[\"load_commands\"][number] if number < len(candidate[\"load_commands\"]) else None\n        if old_command != new_command:\n            changed_commands.append({\"index\": number, \"baseline\": old_command, \"candidate\": new_command})\n    return {\"baseline\": {key: baseline[key] for key in (\"bytes\", \"sha256\", \"symbol_and_string_bytes\")},\n            \"candidate\": {key: candidate[key] for key in (\"bytes\", \"sha256\", \"symbol_and_string_bytes\")},\n            \"file_bytes_removed\": removed, \"symbol_and_string_bytes_removed\": table_removed,\n            \"nondebug_section_differences\": differences,\n            \"recorded_dylib_loads_equal\": baseline[\"recorded_dylib_loads\"] == candidate[\"recorded_dylib_loads\"],\n            \"loader_paths_equal\": baseline[\"loader_paths\"] == candidate[\"loader_paths\"],\n            \"entrypoints_equal\": baseline[\"entrypoints\"] == candidate[\"entrypoints\"],\n            \"changed_load_commands\": changed_commands,\n            \"unreviewed_load_command_changes_require_review\": bool(changed_commands),\n            \"production_candidate_eligible\": False,\n            \"loader_semantics_preserved\": \"not_automatically_inferred\",\n            \"header_identity_equal\": all(baseline[\"header\"][key] == candidate[\"header\"][key]\n                                         for key in (\"cpu\", \"subtype\", \"filetype\", \"flags\")),\n            \"actual_reduction_observed\": removed > 0 and table_removed > 0,\n            \"code_semantics_or_release_equivalence_proven\": False,\n            \"qualification_complete\": False}\n"
+      },
+      "superseded_initial_target": "149ef8949b31c408dac50248fa1ec918cb069e74",
+      "research": {
+        "git_blob": "b29d12b4b30c02297c3b2d5605bca18f9237c4d8",
+        "bytes": 12832,
+        "sha256": "49587ba4886999445c900545d182959d17f634aa102f8ef79b8960816bd6d597"
+      },
+      "review": {
+        "checked": [
+          "Thin little-endian x86_64 Mach-O executable gate and bounded immutable file read.",
+          "Complete raw load commands, correct Mach-O 64 section and 16-byte nlist layout.",
+          "All three zero-fill types retain VM sizes without fabricating file payload bytes.",
+          "Checked command, segment, section, symbol, string, relocation, known dyld and linkedit file ranges; uint64 VM arithmetic and section-in-segment VM bounds.",
+          "LC_DYSYMTAB group indices bounded against the one main symbol table, with separate indirect/reference/relocation extents.",
+          "Known nonempty linkedit payload extents contained in one __LINKEDIT; nonempty file-backed section ranges disjoint; symbol and string tables disjoint.",
+          "Lazy dylib loads plus dyld and RPATH command strings recorded.",
+          "File/section byte reductions and all original command changes observable; no automatic loader or production-equivalence pass."
+        ],
+        "limitations": [
+          "The helper is intentionally not a complete Mach-O verifier or dyld program interpreter. Raw unparsed commands and separate otool/codesign observations must be reviewed.",
+          "Runtime invocation must keep Python assertions enabled; no parser execution has been performed by this peer.",
+          "Resolve actual LC_MAIN entryoff using the original command and __TEXT segment mapping and confirm executable file-backed entry location in actual output; integer equality alone is not that proof.",
+          "Unknown or unreviewed changed commands cannot establish preserved loader semantics.",
+          "Signed, unsigned, invalid and ad hoc signatures remain distinct actual outcomes; no post-build repair is authorized by this review.",
+          "No Python syntax run, sample parse, binary inspection, build, codesign command, smoke schedule or performance/platform qualification has occurred."
+        ],
+        "conclusion": "The revised helper is suitable to retain structural observations for the proposed isolated pair. This source peer does not select a candidate or convert later raw differences into a pass."
+      }
+    }
+  },
+  "platform_primary_source_research": {
+    "blob": "b29d12b4b30c02297c3b2d5605bca18f9237c4d8",
+    "bytes": 12832,
+    "sha256": "49587ba4886999445c900545d182959d17f634aa102f8ef79b8960816bd6d597",
+    "complete_research": {
+      "schema": "hol_guard_macho_strip_research_v1",
+      "status": "read_only_research_unrun",
+      "observed_at_utc": "2026-09-19 21:26:12 UTC",
+      "scope": "Isolated same-host macos-15-intel Rust 1.88.0 none-versus-symbols experiment; no refs, binary edits, signing, builds, runs or production selection.",
+      "compiler": {
+        "version": "1.88.0",
+        "source_url": "https://github.com/rust-lang/rust/blob/1.88.0/compiler/rustc_codegen_ssa/src/back/link.rs",
+        "source_git_blob": "159c17b0af757cde66f303a79b5e10eccb41bc31",
+        "source_bytes": 142060,
+        "source_sha256": "8344483996cd2b1a6bc06ecec6e56d9833c077796a4949a4b37b5f89b87acdd4",
+        "darwin_executable_symbols": [
+          "rust-objcopy",
+          "--strip-all",
+          "<output>"
+        ],
+        "darwin_debuginfo": [
+          "rust-objcopy",
+          "--strip-debug",
+          "<output>"
+        ],
+        "darwin_dynamic_crate_symbols": [
+          "rust-objcopy",
+          "-x",
+          "<output>"
+        ],
+        "lookup": "rustc tools search paths followed by inherited PATH",
+        "nonzero_strip_exit": "warning: StrippingDebugInfoFailed, not a compilation failure",
+        "failure_to_execute": "fatal: UnableToRun",
+        "inference": "Cargo success is insufficient to establish that stripping succeeded.",
+        "packaging": {
+          "conclusion": "Normal Rust 1.88.0 rustc packaging includes the rust-objcopy alias; an additional llvm-tools-preview component is not required solely for Cargo strip. This is source-derived and must be confirmed against the actual runner installation.",
+          "rustc_component_destination": "lib/rustlib/<host>/bin/rust-objcopy",
+          "condition": "LLVM enabled for host and llvm_tools_enabled",
+          "default": "Config::default sets llvm_tools_enabled=true explicitly to ship the alias for macOS; parsed rust.llvm-tools also defaults true.",
+          "search_order": "selected sysroot host bin, fallback sysroot host bins, inherited PATH",
+          "optional_llvm_tools": "The separate llvm-tools-preview component installs optional llvm-* tools; it is distinct from the rustc component's rust-objcopy alias.",
+          "release_manifest_status": "Distribution TOML URL was not accessible with the web tool; no assertion that the actual release archive or runner filesystem was read."
+        }
+      },
+      "experiment_admission": [
+        "Use identical frozen source, lockfile, feature selection, Rust version, host, SDK, linker and build settings with separate initially empty target directories. Explicit CARGO_PROFILE_RELEASE_STRIP=none versus symbols is the intended sole profile change.",
+        "Retain exact effective build commands, environment/configuration affecting the profile, tool identities and complete stdout/stderr. Profile environment changes must reach the rustc invocation; record actual -C strip behavior.",
+        "Record selected rust-objcopy from the actual compiler tool search paths, its version and binary identity. Do not use Apple strip or a different objcopy silently.",
+        "Cargo exit zero plus a strip warning, absent actual transformation, malformed Mach-O, invalid existing/output signature, package/runtime identity mismatch or failed unchanged probes makes the candidate ineligible. Do not repair it silently.",
+        "Absent signatures must be reported as absent and distinguished from an invalid signature. Ad hoc validity is not Developer ID signing or notarization. Eligibility must preserve the experiment's explicit signing policy.",
+        "Hash the exact completed build executable, supplied wheel member, installed executable and installed distribution RECORD/identity. Any packaging modification must be visible; do not hash an earlier file and claim it identifies the final executable.",
+        "Only actual same-host baseline/candidate observations support measured size/runtime conclusions; no Linux extrapolation or production qualification."
+      ],
+      "inventory": {
+        "primary_commands": [
+          "xcrun otool -l <binary>",
+          "xcrun otool -h <binary>",
+          "xcrun otool -L <binary>",
+          "xcrun otool -I <binary>",
+          "llvm-objdump --macho --private-headers --section-headers --syms <binary>",
+          "llvm-readobj --sections --symbols --macho-segment --macho-dsymtab --macho-indirect-symbols <binary>"
+        ],
+        "conditional_commands": [
+          "llvm-objdump --macho --exports-trie <binary>",
+          "llvm-objdump --macho --bind --lazy-bind --weak-bind --rebase <binary>",
+          "llvm-objdump --macho --chained-fixups <binary>",
+          "llvm-objdump --macho --unwind-info --function-starts --data-in-code <binary>",
+          "codesign -d --verbose=4 <binary>",
+          "codesign --verify --strict --verbose=2 <binary>"
+        ],
+        "support_rule": "Resolve exact local tools and record their versions/help first; options in current LLVM documentation may be absent from the installed Apple/LLVM version. Keep complete raw output. llvm-readobj's documented ELF JSON output is not a Mach-O JSON promise.",
+        "ranges": [
+          {
+            "kind": "thin64 symbols",
+            "start": "LC_SYMTAB.symoff",
+            "bytes": "LC_SYMTAB.nsyms * 16",
+            "end": "start + bytes"
+          },
+          {
+            "kind": "thin32 symbols",
+            "start": "LC_SYMTAB.symoff",
+            "bytes": "LC_SYMTAB.nsyms * 12",
+            "end": "start + bytes"
+          },
+          {
+            "kind": "string table",
+            "start": "LC_SYMTAB.stroff",
+            "bytes": "LC_SYMTAB.strsize",
+            "end": "start + bytes"
+          },
+          {
+            "kind": "file-backed section",
+            "start": "section.offset",
+            "bytes": "section.size",
+            "end": "start + bytes"
+          },
+          {
+            "kind": "zero-fill section",
+            "types": [
+              "S_ZEROFILL",
+              "S_GB_ZEROFILL",
+              "S_THREAD_LOCAL_ZEROFILL"
+            ],
+            "bytes": 0,
+            "note": "VM size is not file payload."
+          },
+          {
+            "kind": "linkedit data command",
+            "start": "dataoff",
+            "bytes": "datasize",
+            "end": "start + bytes",
+            "examples": [
+              "LC_CODE_SIGNATURE",
+              "LC_DYLD_EXPORTS_TRIE",
+              "LC_DYLD_CHAINED_FIXUPS"
+            ]
+          },
+          {
+            "kind": "fat wrapper",
+            "start": "slice base + slice-relative range start",
+            "end": "slice base + slice-relative range end",
+            "note": "Bound every range against both the slice and enclosing file; explicitly reject formats/endianness not supported by the parser."
+          }
+        ],
+        "checks": [
+          "Parse Mach magic, bitness, endianness, CPU type/subtype, header/load-command bounds and expected architecture before interpreting fields. For the proposed narrow Intel experiment, rejecting non-thin-x86_64 input is a valid explicit scope.",
+          "Validate integer arithmetic, counts, file bounds and command sizes. Sections are contained in segments and linkedit tables in __LINKEDIT: preserve hierarchy and calculate unions without double-counting; show padding/unclassified bytes separately.",
+          "LC_DYSYMTAB local/external/undefined fields are indices/counts within the main symbol table. Its indirect table has separate offset/count fields; these are not additive full symbol tables.",
+          "n_strx references offsets within the string table; zero denotes no symbol name. Whole string-table bytes include possible unreferenced strings and padding.",
+          "Capture section flags, file/VM sizes, protections, dylib load commands, entry point, export/import semantics, rebase/bind/chained-fixup structures where present, indirect symbol mapping and unwind metadata.",
+          "Compare loader semantics after normalization only of independently justified layout addresses/indices; do not demand identical offsets after an intentional linkedit rewrite or silently ignore changed load commands.",
+          "A structural inventory cannot prove all dynamic runtime behavior. The unchanged installed identity/default-auto/Pi probes and original smoke schedule remain independent prerequisites.",
+          "Separate rebuilds may also change UUIDs, build-path-dependent metadata or other bytes; record all differences and limit attribution to observed, accounted ranges."
+        ]
+      },
+      "alternatives_not_selected": {
+        "apple_strip": "Apple strip -S removes debug symbol entries; -x removes local symbols while retaining global symbols. It is a narrower manual alternative, not the same operation as Rust 1.88.0 executable strip=symbols.",
+        "dynamic_limit": "Apple documents that runtime-loaded objects can require retained globals. Blanket static-executable stripping assumptions are not valid for every dynamic library/plugin.",
+        "signature_limit": "Apple documents that editing a signed executable can invalidate its signature. -no_code_signature_warning suppresses a warning; it does not preserve validity. Any production strip step belongs before the final signing/package identity boundary.",
+        "selected_experiment": "No manual post-build strip, resigning, UUID removal or production setting is proposed. Preserve and report the toolchain's actual final signature state."
+      },
+      "limitations": [
+        "Removing symbol-table names is not proof that __cstring, Rust string literals, diagnostics, type names or other runtime strings were removed.",
+        "Symbol/debug stripping can reduce backtrace, crash-reporting and profiling usefulness. A dSYM, if retained, must match the actual UUID; no dSYM availability is established by this research.",
+        "Valid code signing is distinct from notarization, Gatekeeper acceptance and platform qualification."
+      ],
+      "sources": [
+        {
+          "url": "https://doc.rust-lang.org/cargo/reference/profiles.html#strip",
+          "supports": "strip values none, debuginfo, symbols"
+        },
+        {
+          "url": "https://doc.rust-lang.org/cargo/reference/environment-variables.html",
+          "supports": "CARGO_PROFILE_<name>_STRIP override"
+        },
+        {
+          "url": "https://doc.rust-lang.org/rustc/codegen-options/index.html#strip",
+          "supports": "strip behavior and diagnostic/tooling limitations"
+        },
+        {
+          "url": "https://github.com/rust-lang/rust/blob/1.88.0/compiler/rustc_codegen_ssa/src/back/link.rs",
+          "supports": "exact pinned Darwin invocation and warning versus fatal outcomes"
+        },
+        {
+          "url": "https://llvm.org/docs/CommandGuide/llvm-objdump.html",
+          "supports": "Mach-O inventory options"
+        },
+        {
+          "url": "https://llvm.org/docs/CommandGuide/llvm-readobj.html",
+          "supports": "Mach-O section/symbol/dysymtab inventory and ELF-only JSON formatting"
+        },
+        {
+          "url": "https://llvm.org/docs/CommandGuide/llvm-otool.html",
+          "supports": "Apple-compatible Mach-O inspection flags"
+        },
+        {
+          "url": "https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h",
+          "supports": "load command, section and linkedit range layouts"
+        },
+        {
+          "url": "https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h",
+          "supports": "nlist_64 16-byte and nlist 12-byte layouts and string indexes"
+        },
+        {
+          "url": "https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/fat.h",
+          "supports": "fat-arch slice offsets and sizes"
+        },
+        {
+          "url": "https://github.com/apple-oss-distributions/cctools/blob/main/man/strip.1",
+          "supports": "Apple strip options, dynamic-loader caveats and code-signature warning semantics"
+        },
+        {
+          "url": "https://github.com/apple-oss-distributions/cctools/blob/main/man/otool-classic.1",
+          "supports": "Apple otool native inspection"
+        },
+        {
+          "url": "https://developer.apple.com/library/archive/technotes/tn2206/_index.html",
+          "supports": "signing order, verification, modifications and trust limitations"
+        },
+        {
+          "url": "https://github.com/rust-lang/rust/blob/1.88.0/src/bootstrap/src/core/build_steps/dist.rs",
+          "supports": "Pinned compiler component packaging, default configuration or exact tool lookup.",
+          "git_blob": "3c412683b949210c71a48799d68332aff5b90ab0",
+          "bytes": 94007,
+          "sha256": "c64a8454f0c1be96f18c060b398af04c159860011e6ea327318038df952c4dfa"
+        },
+        {
+          "url": "https://github.com/rust-lang/rust/blob/1.88.0/src/bootstrap/src/core/config/config.rs",
+          "supports": "Pinned compiler component packaging, default configuration or exact tool lookup.",
+          "git_blob": "65a3e7667e7f0ddc292f234d2e93ff503b172d0a",
+          "bytes": 145129,
+          "sha256": "3650bf6fad8aecf5fd78fdcc14928422854586ac39a9b49ce750ab6626249db2"
+        },
+        {
+          "url": "https://github.com/rust-lang/rust/blob/1.88.0/compiler/rustc_session/src/session.rs",
+          "supports": "Pinned compiler component packaging, default configuration or exact tool lookup.",
+          "git_blob": "010ae42c2802da45c15d8d216ab502f6af1e0f26",
+          "bytes": 62292,
+          "sha256": "b01a4b8fd5d69c407abb10d79c29e82029c1b30e478096738a4cfb46680d82d5"
+        }
+      ]
+    }
+  },
+  "remaining_before_launch": [
+    "Implement one isolated runner/workflow from this exact design with the actual owned macOS process observer, capture transport and cleanup; bind its complete source/provider/helper closure and exact final source SHA.",
+    "Execute meaningful bounded parser fixture controls for malformed/range/loader-command cases; the included helper has source review only, no parser execution result.",
+    "Independently peer the concrete runner, effective input/bounds/selection plan and original failure retention. Root then decides whether to launch it.",
+    "Resolve and retain the exact preflight backend/tool/dependency/host identities before either variant build; no result is admitted without them."
+  ],
+  "superseded_design": {
+    "blob": "9e6b46c801d69c7fa86bceeaad02775703d490f3",
+    "bytes": 70977,
+    "sha256": "71172804d9d76b1434192276e20500f26cb65c3605c878018750762a2c0330be",
+    "reason": "Platform identified ambiguity between an actual Cargo binary and rustup proxy. The executable design now chooses actual pinned Cargo/rustc paths and removes proxy-only +1.88.0."
+  }
+}

@@ -1,8 +1,9 @@
 """Private, bounded observation of real native receipts and journal I/O.
 
 Wrappers call production functions unchanged. They retain only correlation IDs
-and authenticated receipt fields, never hook text. An explicitly supplied SQLite observer adds separate VFS-level counters; the
-Python journal counters never imply kernel or physical SQLite I/O coverage.
+and authenticated receipt fields, never hook text. An explicitly supplied SQLite
+observer adds separate VFS-level counters; the Python journal counters never imply
+kernel or physical SQLite I/O coverage.
 """
 
 from __future__ import annotations

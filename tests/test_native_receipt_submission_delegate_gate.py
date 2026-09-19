@@ -120,5 +120,5 @@ def test_gate_refuses_io_or_disconnected_admission_body(tmp_path: Path, mutation
             }[mutation]
             source = source.replace(delegate, replacement, 1)
         writer.write_text(source, encoding="utf-8")
-    with pytest.raises(RuntimeError, match="receipt|admission"):
+    with pytest.raises(RuntimeError, match=r"receipt|admission"):
         _check(tmp_path)

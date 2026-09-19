@@ -136,15 +136,17 @@ def test_correlation_helpers_read_current_facade_bindings(tmp_path: Path) -> Non
     assert original_key is not None
     observed: list[str] = []
     writer._correlation_key = None
-    with patch.object(
-        writer_module, "load_or_create_installation_correlation_key", return_value=original_key
-    ) as loader:
-        with patch.object(
+    with (
+        patch.object(
+            writer_module, "load_or_create_installation_correlation_key", return_value=original_key
+        ) as loader,
+        patch.object(
             writer_module,
             "derive_proven_request_correlation",
             side_effect=lambda **_kwargs: observed.append("first"),
-        ):
-            assert writer._derive_correlation(harness="pi", event="PostToolUse", payload={}) is None
+        ),
+    ):
+        assert writer._derive_correlation(harness="pi", event="PostToolUse", payload={}) is None
     loader.assert_called_once_with(writer._guard_home)
     with patch.object(
         writer_module,

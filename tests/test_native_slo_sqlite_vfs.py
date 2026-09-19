@@ -5,8 +5,8 @@ from __future__ import annotations
 import ctypes
 import hashlib
 import json
-import shutil
 import shlex
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -152,7 +152,7 @@ def test_actual_python_engine_commit_rollback_and_busy_equal_without_observer(
         database = _database(tmp_path / f"{observed}.db", mode)
         observer = _observer(database, sqlite_vfs_build) if observed else None
 
-        def connect() -> sqlite3.Connection:
+        def connect(database: Path = database, observer: SQLiteVFSObservation | None = observer) -> sqlite3.Connection:
             return (
                 observer.connect(scope="writer", timeout=0.02) if observer else sqlite3.connect(database, timeout=0.02)
             )
@@ -312,8 +312,12 @@ def test_vfs_name_collision_refuses_without_changing_active_registry(
             duplicate.enable_load_extension(True)
             duplicate.load_extension(str(sqlite_vfs_build["extension"]), entrypoint="sqlite3_guardvfsext_init")
             duplicate.enable_load_extension(False)
-            with pytest.raises(sqlite3.DatabaseError):
+            with pytest.raises(sqlite3.InterfaceError) as error:
                 duplicate.execute("select guard_sqlite_vfs(?, ?, ?)", ("register", observer.name, str(database)))
+            assert type(error.value) is sqlite3.InterfaceError
+            assert str(error.value) == "SQLite VFS observer admission or lifecycle refused"
+            assert error.value.sqlite_errorcode == sqlite3.SQLITE_MISUSE
+            assert error.value.sqlite_errorname == "SQLITE_MISUSE"
             assert observer.report()["vfs"]["default_vfs_unchanged"] is True
             connection = observer.connect()
             connection.close()
@@ -410,7 +414,7 @@ def test_store_factory_scope_does_not_intercept_unrelated_connections_and_restor
     observer.install(store, writer)
     try:
         baseline = observer.report()["vfs"]["cells"]
-        with pytest.raises(RuntimeError, match="local control.*after factory"):
+        with pytest.raises(RuntimeError, match=r"local control.*after factory"):
             observer.connect(scope="writer")
         assert observer.report()["vfs"]["cells"] == baseline
         assert observer.report()["attested_connections"] == {"other": 0, "writer": 0, "readback": 0}
@@ -419,12 +423,11 @@ def test_store_factory_scope_does_not_intercept_unrelated_connections_and_restor
         connection.close()
         assert observer.report()["vfs"]["cells"] == baseline
         with observer.readback():
-            with pytest.raises(ValueError, match="sentinel"):
-                with observer.readback():
-                    with store._connect() as connection:
-                        assert connection.row_factory is sqlite3.Row
-                        assert connection.execute("pragma busy_timeout").fetchone()[0] >= 0
-                    raise ValueError("sentinel")
+            with pytest.raises(ValueError, match="sentinel"), observer.readback():
+                with store._connect() as connection:
+                    assert connection.row_factory is sqlite3.Row
+                    assert connection.execute("pragma busy_timeout").fetchone()[0] >= 0
+                raise ValueError("sentinel")
             with store._connect() as connection:
                 assert connection.row_factory is sqlite3.Row
         with store._connect():
@@ -460,6 +463,5 @@ def test_pinned_descriptor_detects_a_real_file_change_at_scope_exit(tmp_path: Pa
     image.write_bytes(b"local-unloaded-image")
     image.chmod(0o600)
     original = _sha(image)
-    with pytest.raises(ValueError, match="identity changed"):
-        with pinned_extension(image, expected_sha256=original):
-            image.write_bytes(b"changed-unloaded-image")
+    with pytest.raises(ValueError, match="identity changed"), pinned_extension(image, expected_sha256=original):
+        image.write_bytes(b"changed-unloaded-image")

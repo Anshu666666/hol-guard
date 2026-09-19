@@ -92,9 +92,13 @@ def _validate_submit_delegate(root: Path, writer_source: str) -> None:
     ):
         raise RuntimeError("receipt admission helper import is disconnected")
     body = list(method.body)
-    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
-        if isinstance(body[0].value.value, str):
-            body.pop(0)
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body.pop(0)
     expected = ast.parse("return _evidence_operations.submit_native_decision_receipt(self, receipt)").body
     if method.decorator_list or len(body) != 1 or ast.dump(body[0]) != ast.dump(expected[0]):
         raise RuntimeError("receipt admission facade is not the exact unconditional delegate")

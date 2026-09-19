@@ -139,7 +139,7 @@ class RuntimeHookEvidenceWriter:
             try:
                 queue_observation.attach(self)
             except BaseException:
-                try:
+                try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.
                     queue_observation._hook_failed(self)
                 except BaseException:
                     pass
@@ -191,7 +191,7 @@ class RuntimeHookEvidenceWriter:
                 observation._enqueued(self, record, origin)
         except BaseException:
             # Diagnostic faults never change queue admission or persistence.
-            try:
+            try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.
                 observation._hook_failed(self)
             except BaseException:
                 pass

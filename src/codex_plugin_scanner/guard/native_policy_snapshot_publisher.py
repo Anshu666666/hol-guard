@@ -475,7 +475,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 or self._acked
                 or self._initial_database_capture_retry_used
                 or self._last_error
-                not in {"native_policy_authority_changed_during_publish", "native_policy_authority_capture_changed"}
+                not in {
+                    "native_policy_authority_changed_during_publish",
+                    "native_policy_authority_capture_changed",
+                }
             ):
                 return
             self._initial_database_capture_retry_used = True
@@ -491,7 +494,9 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         prepared_command_extensions: Mapping[str, object] | None = None,
     ) -> PublicationContext | None:
         return publication_context(
-            self, publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions
+            self,
+            publish_epoch=publish_epoch,
+            prepared_command_extensions=prepared_command_extensions,
         )
 
     @staticmethod

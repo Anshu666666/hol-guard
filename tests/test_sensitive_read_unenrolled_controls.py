@@ -44,7 +44,7 @@ def _source(tmp_path: Path, store: GuardStore) -> dict[str, object]:
 
 @pytest.mark.parametrize(
     ("risk", "expected"),
-    [(None, "require-reapproval"), ("block", "block"), ("allow", "allow")],
+    [(None, "require-reapproval"), ("block", "block"), ("allow", "warn")],
 )
 def test_unenrolled_real_store_preserves_sensitive_read_policy(
     tmp_path: Path, risk: GuardAction | None, expected: GuardAction

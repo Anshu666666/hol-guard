@@ -224,7 +224,18 @@ def test_prior_native_acceptance_cannot_survive_installation_rotation(
             assert inputs.sources[0]["device_id"] == new_id
             assert inputs.sources[0]["materialized_at"] is None
         after = _sync_signed_v2_bundle(store, monkeypatch, bundle, synced_at="2026-09-17T00:01:00Z")
-        assert after["policy_application_status"] == "applied"
+        assert after["policy_application_status"] == "applied", {
+            "status": after.get("policy_application_status"),
+            "reason": after.get("policy_rejection_reason"),
+            "publisher_error": publisher.last_error,
+            "publisher_epoch": publisher._epoch,
+            "publisher_failures": publisher._failure_count,
+            "publisher_acked": publisher._acked,
+            "publisher_scoped": publisher._scoped_publication_enabled,
+            "publisher_closed": publisher.closed,
+            "snapshot_present": publisher._snapshot is not None,
+            "scoped_binding_present": publisher._v4_binding is not None,
+        }
         ack = store.get_sync_payload("policy_bundle_ack")
         assert isinstance(ack, dict) and ack["deviceId"] == new_id and ack["status"] == "applied"
         current = capture_accepted_policy_bundle(publisher, bundle=bundle, installation_id=new_id)

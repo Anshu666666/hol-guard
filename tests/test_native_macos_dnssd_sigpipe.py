@@ -19,13 +19,25 @@ RUNTIME = OLD_RUNTIME | {child.RUNTIME_KEY: "9" * 64}
 
 def state(stage, sequence, requested, initial):
     return {
-        "kind": "sigpipe_condition", "sequence": sequence, "stage": stage,
-        "requested": requested, "pid": 123, "main_thread": 1,
-        "active": stage not in ("before", "restored"), "action_rc": 0, "action_errno": 0,
+        "kind": "sigpipe_condition",
+        "sequence": sequence,
+        "stage": stage,
+        "requested": requested,
+        "pid": 123,
+        "main_thread": 1,
+        "active": stage not in ("before", "restored"),
+        "action_rc": 0,
+        "action_errno": 0,
         "handler_kind": initial if stage in ("before", "restored") else requested,
-        "flags": 0, "action_mask": "0", "action_mask_rc": 0, "blocked_mask": "0",
-        "blocked_mask_rc": 0, "mask_rc": 0,
-        "set_called": stage in ("installed", "restored"), "set_rc": 0, "set_errno": 0,
+        "flags": 0,
+        "action_mask": "0",
+        "action_mask_rc": 0,
+        "blocked_mask": "0",
+        "blocked_mask_rc": 0,
+        "mask_rc": 0,
+        "set_called": stage in ("installed", "restored"),
+        "set_rc": 0,
+        "set_errno": 0,
     }
 
 
@@ -38,13 +50,22 @@ def records(context="python", condition="ignore", mode="dns_simple"):
     rows[first:first] = [state("before", 1, requested, initial), state("installed", 2, requested, initial)]
     index = next(index for index, row in enumerate(rows) if row["kind"] == "endpoint_context")
     rows[index]["pipe_kind"] = requested
-    rows[index + 1:index + 1] = [
+    rows[index + 1 : index + 1] = [
         state("query", 3, requested, initial),
-        {"kind": "sigpipe_socket", "sequence": 1, "pid": 123, "fd": rows[index]["fd"],
-         "rc": 0, "errno": 0, "length": 4, "integer_bytes": 4, "value": 4096},
+        {
+            "kind": "sigpipe_socket",
+            "sequence": 1,
+            "pid": 123,
+            "fd": rows[index]["fd"],
+            "rc": 0,
+            "errno": 0,
+            "length": 4,
+            "integer_bytes": 4,
+            "value": 4096,
+        },
     ]
     result = next(index for index, row in enumerate(rows) if row["kind"] == "result")
-    rows[result + 1:result + 1] = [state("after", 4, requested, initial), state("restored", 5, requested, initial)]
+    rows[result + 1 : result + 1] = [state("after", 4, requested, initial), state("restored", 5, requested, initial)]
     return rows
 
 
@@ -72,17 +93,26 @@ def test_each_declared_condition_remains_bound_to_the_original_protocol(context,
 def test_pending_poll_retains_missing_post_query_and_restore_evidence(context, condition):
     rows = records(context, condition)
     index = next(index for index, row in enumerate(rows) if row["kind"] == "call_trace")
-    result = parse(rows[:index + 1], context, condition)
+    result = parse(rows[: index + 1], context, condition)
     assert result["valid"] and not result["complete"]
     assert result["pending_call"] == "poll" and result["condition"]["admitted"]
     assert result["condition"]["post_query_observed"] is False
     assert result["condition"]["restoration_observed"] is False
 
 
-@pytest.mark.parametrize("mutation", (
-    "moved_install", "changed_mask", "changed_flags", "wrong_handler",
-    "socket_error", "socket_length", "missing_restore", "wrong_image",
-))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "moved_install",
+        "changed_mask",
+        "changed_flags",
+        "wrong_handler",
+        "socket_error",
+        "socket_length",
+        "missing_restore",
+        "wrong_image",
+    ),
+)
 def test_changed_conditions_or_unbound_observations_are_retained_and_refused(mutation):
     rows = records()
     states = {row["stage"]: row for row in rows if row["kind"] == "sigpipe_condition"}
@@ -149,7 +179,13 @@ def library(monkeypatch, events, failure=None):
 @pytest.mark.parametrize("condition,requested", (("default", 0), ("ignore", 1)))
 @pytest.mark.parametrize("mode,operation", (("dns_simple", 0), ("dns_shared", 1)))
 def test_python_calls_the_shared_condition_abi_once_around_the_original_query(
-    monkeypatch, tmp_path, capsys, condition, requested, mode, operation,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    condition,
+    requested,
+    mode,
+    operation,
 ):
     events = []
     value = library(monkeypatch, events)

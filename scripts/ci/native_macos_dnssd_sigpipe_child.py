@@ -12,8 +12,8 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.ci.native_macos_dnssd_phase_child import CALL_POLICY, MODES
 from scripts.ci.native_macos_dnssd_endpoint_child import runtime_identity as original_runtime_identity
+from scripts.ci.native_macos_dnssd_phase_child import CALL_POLICY, MODES
 from scripts.ci.native_macos_python_resolver_child import bridge_image, emit, file_sha
 
 RUNTIME_KEY = "signal_child_source_sha256"

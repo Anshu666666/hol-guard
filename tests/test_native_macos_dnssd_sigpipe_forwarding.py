@@ -12,7 +12,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1] / "scripts/ci"
 
-CONTROL = r'''
+CONTROL = r"""
 #define _DARWIN_C_SOURCE 1
 #include <assert.h>
 #include <errno.h>
@@ -99,9 +99,9 @@ int main(int argc, char **argv) {
     assert(raw_action(SIGPIPE, &original_action, NULL) == 0);
     return 0;
 }
-'''
+"""
 
-HOST_LIBRARY = r'''
+HOST_LIBRARY = r"""
 #include <assert.h>
 #include <dlfcn.h>
 #include <stdio.h>
@@ -146,14 +146,16 @@ __attribute__((destructor)) static void unloaded(void) {
     const char data[] = "{\"kind\":\"fixture_unload\"}\n";
     assert(write(1, data, sizeof(data)-1) == (ssize_t)(sizeof(data)-1));
 }
-'''
+"""
 
 
 def compile_c(directory, arguments):
     assert sys.platform == "darwin", "These new compiled controls require the admitted macOS SDK"
     result = subprocess.run(
         ["/usr/bin/xcrun", "--sdk", "macosx", "clang", "-std=c11", "-Wall", "-Wextra", "-Werror", *arguments],
-        cwd=directory, capture_output=True, timeout=15,
+        cwd=directory,
+        capture_output=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
 
@@ -175,7 +177,10 @@ def programs(tmp_path_factory):
 @pytest.mark.parametrize("scenario", (0, 1, 2, 3))
 def test_compiled_control_preserves_masks_errno_and_single_attempt_failures(programs, requested, scenario):
     result = subprocess.run(
-        [str(programs / "control"), str(requested), str(scenario)], capture_output=True, timeout=5, check=True,
+        [str(programs / "control"), str(requested), str(scenario)],
+        capture_output=True,
+        timeout=5,
+        check=True,
     )
     assert result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]
@@ -199,15 +204,28 @@ def test_compiled_control_preserves_masks_errno_and_single_attempt_failures(prog
 @pytest.mark.parametrize("condition,requested", (("default", 0), ("ignore", 1)))
 @pytest.mark.parametrize("mode,operation,code", (("dns_simple", 0, 0), ("dns_shared", 1, 2)))
 def test_compiled_native_host_holds_the_image_across_condition_query_and_restore(
-    programs, condition, requested, mode, operation, code,
+    programs,
+    condition,
+    requested,
+    mode,
+    operation,
+    code,
 ):
     result = subprocess.run(
-        [str(programs / "host"), str(programs / "library.dylib"), mode, condition], capture_output=True, timeout=5,
+        [str(programs / "host"), str(programs / "library.dylib"), mode, condition],
+        capture_output=True,
+        timeout=5,
     )
     assert result.returncode == code and result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]
     assert [row.get("phase", row["kind"]) for row in rows] == [
-        "load_enter", "fixture_enter", "call_enter", "fixture_call", "fixture_leave", "complete", "fixture_unload"
+        "load_enter",
+        "fixture_enter",
+        "call_enter",
+        "fixture_call",
+        "fixture_leave",
+        "complete",
+        "fixture_unload",
     ]
     assert rows[1]["condition"] == requested and rows[3]["operation"] == operation
     assert rows[3]["condition"] == requested and rows[5]["return_code"] == code
@@ -216,7 +234,8 @@ def test_compiled_native_host_holds_the_image_across_condition_query_and_restore
 def test_compiled_native_host_missing_image_never_installs_a_condition(programs):
     result = subprocess.run(
         [str(programs / "host"), str(programs / "absent"), "dns_simple", "default"],
-        capture_output=True, timeout=5,
+        capture_output=True,
+        timeout=5,
     )
     assert result.returncode == 3 and result.stderr == b""
     rows = [json.loads(line) for line in result.stdout.splitlines()]

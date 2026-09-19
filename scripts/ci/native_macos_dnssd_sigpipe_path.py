@@ -14,18 +14,20 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.ci import native_macos_resolver_path as original
+from scripts.ci.native_macos_dnssd_phase_identity import CPU_TYPES, binary_identity
 from scripts.ci.native_macos_dnssd_sigpipe_binding import historical_admission, source_identity, tool_identity
 from scripts.ci.native_macos_dnssd_sigpipe_child import CONDITIONS, RUNTIME_KEY, runtime_identity
 from scripts.ci.native_macos_dnssd_sigpipe_evidence import parse_signal
-from scripts.ci.native_macos_dnssd_phase_identity import CPU_TYPES, binary_identity
 from scripts.ci.native_macos_python_resolver_child import file_sha
 from scripts.ci.native_macos_python_resolver_path import read_report
 from scripts.ci.native_macos_resolver_capture import clean_completion, run_lookup
 
 CHILD = Path(__file__).with_name("native_macos_dnssd_sigpipe_child.py")
 CONTROLS = tuple(
-    (context, condition, mode) for context in ("native_dlopen", "python")
-    for condition in CONDITIONS for mode in ("dns_simple", "dns_shared")
+    (context, condition, mode)
+    for context in ("native_dlopen", "python")
+    for condition in CONDITIONS
+    for mode in ("dns_simple", "dns_shared")
 )
 
 
@@ -91,17 +93,25 @@ def condition_pairs(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 states = condition.get("states", [])
                 before.append(
                     {key: states[0][key] for key in ("handler_kind", "flags", "action_mask", "blocked_mask")}
-                    if condition.get("admitted") is True and states else None
+                    if condition.get("admitted") is True and states
+                    else None
                 )
             comparable = (
                 [row["condition"] for row in matching] == list(CONDITIONS)
-                and len(before) == 2 and before[0] is not None and before[0] == before[1]
+                and len(before) == 2
+                and before[0] is not None
+                and before[0] == before[1]
             )
-            pairs.append({
-                "context": context, "mode": mode, "initial_actions": before,
-                "initial_condition_comparable": comparable, "cause_proved": False,
-                "scope": "Same current host and immutable image; no cross-run causal attribution",
-            })
+            pairs.append(
+                {
+                    "context": context,
+                    "mode": mode,
+                    "initial_actions": before,
+                    "initial_condition_comparable": comparable,
+                    "cause_proved": False,
+                    "scope": "Same current host and immutable image; no cross-run causal attribution",
+                }
+            )
     return pairs
 
 
@@ -183,22 +193,25 @@ def collect(
         for key in ("source", "tools", "runtime", "historical", "images"):
             report[key + "_unchanged"] = report[key + "_after"] == report[key + "_before"]
         report["same_host_condition_pairs"] = condition_pairs(report["rows"])
-        report["observation_complete"] = len(report["rows"]) == 8 and all(
-            pair["initial_condition_comparable"] for pair in report["same_host_condition_pairs"]
-        ) and all(
-            report[key + "_unchanged"] for key in ("source", "tools", "runtime", "historical", "images")
-        ) and all(
-            row["capture"]["direct_child_reaped"]
-            and row["capture"].get("status") in ("completed", "deadline_exceeded")
-            and row["capture"].get("stderr_bytes") == 0
-            and not any(key in row["capture"] for key in ("cleanup_error", "kill_errno", "output_limit", "error_type"))
-            and row["metadata"]["valid"]
-            and not row["metadata"].get("partial_line")
-            and not row["metadata"].get("trace_overflow")
-            and (row["capture"]["status"] != "completed" or row["metadata"]["complete"])
-            and row["metadata"]["endpoint"]["observation_complete"]
-            and row["metadata"]["condition"]["admitted"]
-            for row in report["rows"]
+        report["observation_complete"] = (
+            len(report["rows"]) == 8
+            and all(pair["initial_condition_comparable"] for pair in report["same_host_condition_pairs"])
+            and all(report[key + "_unchanged"] for key in ("source", "tools", "runtime", "historical", "images"))
+            and all(
+                row["capture"]["direct_child_reaped"]
+                and row["capture"].get("status") in ("completed", "deadline_exceeded")
+                and row["capture"].get("stderr_bytes") == 0
+                and not any(
+                    key in row["capture"] for key in ("cleanup_error", "kill_errno", "output_limit", "error_type")
+                )
+                and row["metadata"]["valid"]
+                and not row["metadata"].get("partial_line")
+                and not row["metadata"].get("trace_overflow")
+                and (row["capture"]["status"] != "completed" or row["metadata"]["complete"])
+                and row["metadata"]["endpoint"]["observation_complete"]
+                and row["metadata"]["condition"]["admitted"]
+                for row in report["rows"]
+            )
         )
         report["comparison"] = [
             {

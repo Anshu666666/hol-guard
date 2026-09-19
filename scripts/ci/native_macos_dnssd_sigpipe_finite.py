@@ -43,7 +43,9 @@ def expected_population() -> tuple[list[tuple[str, str]], list[dict[str, Any]]]:
             population.extend([(name[:-3].replace("/", "."), node.name)] * count)
         if sum(row["cases"] for row in functions) != expected:
             raise ValueError("New finite source count changed")
-        inputs.append({"path": name, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(), "functions": functions})
+        inputs.append(
+            {"path": name, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(), "functions": functions}
+        )
     if len(population) != 48:
         raise ValueError("New finite total")
     return population, inputs
@@ -52,9 +54,12 @@ def expected_population() -> tuple[list[tuple[str, str]], list[dict[str, Any]]]:
 def main() -> int:
     directory = Path(sys.argv[1])
     result: dict[str, Any] = {
-        "schema": "hol-guard.macos-sigpipe-finite-contract.v1", "passed": False,
-        "qualification_pass": False, "old_83_or_475_replayed": False,
-        "phase_observer_or_separate_collection_claimed": False, "cases": [],
+        "schema": "hol-guard.macos-sigpipe-finite-contract.v1",
+        "passed": False,
+        "qualification_pass": False,
+        "old_83_or_475_replayed": False,
+        "phase_observer_or_separate_collection_claimed": False,
+        "cases": [],
     }
     try:
         expected, result["inputs"] = expected_population()
@@ -70,18 +75,23 @@ def main() -> int:
         for case in cases:
             name, classname = case.attrib["name"], case.attrib["classname"]
             children = [item.tag for item in case]
-            result["cases"].append({
-                "classname": classname, "name": name, "seconds": case.attrib.get("time"),
-                "outcome_elements": [tag for tag in children if tag in ("failure", "error", "skipped")],
-            })
+            result["cases"].append(
+                {
+                    "classname": classname,
+                    "name": name,
+                    "seconds": case.attrib.get("time"),
+                    "outcome_elements": [tag for tag in children if tag in ("failure", "error", "skipped")],
+                }
+            )
             keys.append((classname, name))
             actual.append((classname, name.split("[", 1)[0]))
         if actual != expected or len(keys) != len(set(keys)):
             raise ValueError("Ordered finite function population or unique parameter IDs")
         suites = list(root.iter("testsuite"))
-        totals = {key: sum(int(suite.attrib.get(key, "0")) for suite in suites) for key in (
-            "tests", "failures", "errors", "skipped"
-        )}
+        totals = {
+            key: sum(int(suite.attrib.get(key, "0")) for suite in suites)
+            for key in ("tests", "failures", "errors", "skipped")
+        }
         result["totals"] = totals
         if totals != {"tests": 48, "failures": 0, "errors": 0, "skipped": 0}:
             raise ValueError("Finite outcomes")

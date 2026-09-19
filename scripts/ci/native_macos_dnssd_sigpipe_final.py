@@ -14,10 +14,10 @@ if __package__ in {None, ""}:
 
 from scripts.ci import native_macos_resolver_path as original
 from scripts.ci.native_macos_dnssd_endpoint_binding import _json
-from scripts.ci.native_macos_dnssd_sigpipe_binding import historical_admission, source_identity, tool_identity
-from scripts.ci.native_macos_dnssd_sigpipe_child import runtime_identity
 from scripts.ci.native_macos_dnssd_endpoint_environment import identity as file_identity
 from scripts.ci.native_macos_dnssd_phase_identity import binary_identity
+from scripts.ci.native_macos_dnssd_sigpipe_binding import historical_admission, source_identity, tool_identity
+from scripts.ci.native_macos_dnssd_sigpipe_child import runtime_identity
 from scripts.ci.native_macos_python_resolver_child import file_sha
 
 IMAGES = (

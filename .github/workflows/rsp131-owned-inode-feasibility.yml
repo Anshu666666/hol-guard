@@ -107,7 +107,11 @@ jobs:
         shell: bash
         run: |
           umask 077
-          "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -I -B scripts/ci/rsp131_inode_probe/driver.py \
+          test -n "${pythonLocation:-}"
+          test "${LD_LIBRARY_PATH:-}" = "$pythonLocation/lib"
+          test -z "${LD_PRELOAD:-}"
+          test -z "${LD_AUDIT:-}"
+          env -u LD_LIBRARY_PATH "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -I -B scripts/ci/rsp131_inode_probe/driver.py \
             --legacy-root "$GITHUB_WORKSPACE/legacy" \
             --expected-commit "$GITHUB_SHA" \
             --legacy-status "$LEGACY_FINITE_STATUS" \

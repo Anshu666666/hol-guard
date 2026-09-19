@@ -21,6 +21,7 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 from types import FunctionType, ModuleType
+from typing import cast
 
 
 def source_identity(root: Path) -> dict[str, object]:
@@ -36,7 +37,7 @@ def source_identity(root: Path) -> dict[str, object]:
 
 
 def _outer_function_calls(function: ast.FunctionDef):
-    pending = list(reversed(function.body))
+    pending: list[ast.AST] = list(reversed(function.body))
     nested_scopes = (
         ast.FunctionDef,
         ast.AsyncFunctionDef,
@@ -193,9 +194,9 @@ def main() -> int:
                 "lockfile_resolved_direct": "minimist@^1.2.0",
                 "exact_transitive": "anchor@1.0.0",
             }[case_name]
-            artifact = _artifact_for_targets(
-                target,
-                lockfile_paths=("package-lock.json",),
+            artifact = cast(
+                "evaluator.GuardArtifact",
+                _artifact_for_targets(target, lockfile_paths=("package-lock.json",)),
             )
             observed_calls.clear()
             observed_decisions.clear()

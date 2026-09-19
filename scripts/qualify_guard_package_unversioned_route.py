@@ -20,6 +20,7 @@ import sys
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
+from types import FunctionType, ModuleType
 
 
 def source_identity(root: Path) -> dict[str, object]:
@@ -32,6 +33,82 @@ def source_identity(root: Path) -> dict[str, object]:
             ["git", "status", "--porcelain", "--", "src"], cwd=root, text=True
         ).splitlines(),
     }
+
+
+def _outer_function_calls(function: ast.FunctionDef):
+    pending = list(reversed(function.body))
+    nested_scopes = (
+        ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda,
+        ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp,
+    )
+    while pending:
+        node = pending.pop()
+        if isinstance(node, nested_scopes):
+            continue
+        if isinstance(node, ast.Call):
+            yield node
+        pending.extend(reversed(list(ast.iter_child_nodes(node))))
+
+
+def _bound_lookup_source_records(root: Path, evaluator: ModuleType) -> list[dict[str, object]]:
+    root = root.resolve()
+    lookup = evaluator.evaluate_cached_supply_chain_bundle
+    records = []
+    for facade_name in ("_evaluate_with_bundle", "_transitive_lockfile_results"):
+        function = getattr(evaluator, facade_name)
+        if not isinstance(function, FunctionType):
+            raise TypeError(f"Source witness requires a function at {facade_name}")
+        source_path = Path(function.__code__.co_filename).resolve(strict=True)
+        relative_path = source_path.relative_to(root).as_posix()
+        source_bytes = source_path.read_bytes()
+        definitions = [
+            node for node in ast.parse(source_bytes, filename=str(source_path)).body
+            if isinstance(node, ast.FunctionDef)
+            and node.name == function.__code__.co_name
+            and node.lineno == function.__code__.co_firstlineno
+        ]
+        if len(definitions) != 1:
+            raise AssertionError(f"Cannot bind one outer source function for {facade_name}")
+        definition = definitions[0]
+        local_names = set(
+            function.__code__.co_varnames + function.__code__.co_cellvars + function.__code__.co_freevars
+        )
+        globals_map = function.__globals__
+        sites = []
+        for call in _outer_function_calls(definition):
+            target = call.func
+            matches = (
+                isinstance(target, ast.Name)
+                and target.id not in local_names
+                and globals_map.get(target.id) is lookup
+            )
+            if (
+                isinstance(target, ast.Attribute)
+                and isinstance(target.value, ast.Name)
+                and target.value.id not in local_names
+                and target.attr == "evaluate_cached_supply_chain_bundle"
+                and globals_map.get(target.value.id) is evaluator
+            ):
+                matches = True
+            if matches:
+                sites.append({
+                    "line": call.lineno,
+                    "column": call.col_offset,
+                    "expression": ast.unparse(target),
+                })
+        if not sites:
+            raise AssertionError(f"No bound outer lookup call found for {facade_name}")
+        records.append({
+            "facade_binding": facade_name,
+            "function_module": function.__module__,
+            "function_name": function.__qualname__,
+            "source_path": relative_path,
+            "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+            "function_line": definition.lineno,
+            "function_end_line": definition.end_lineno,
+            "lookup_calls": sorted(sites, key=lambda item: (item["line"], item["column"])),
+        })
+    return records
 
 
 def main() -> int:
@@ -70,6 +147,7 @@ def main() -> int:
         ]
     )
     original_lookup = evaluator.evaluate_cached_supply_chain_bundle
+    bound_lookup_sources = _bound_lookup_source_records(root, evaluator)
     api_decision = original_lookup(
         load_supply_chain_bundle_response(bundle_response),
         package_name="minimist",
@@ -165,6 +243,8 @@ def main() -> int:
         "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "evaluator_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "evaluator_direct_lookup_call_lines": sorted(direct_call_lines),
+        "evaluator_bound_lookup_sources": bound_lookup_sources,
+        "source_lookup_attribution_scope": "Direct calls in current outer function bodies; nested scopes excluded.",
         "python": platform.python_version(),
         "platform": platform.platform(),
         "timing_scope": "not collected; functional source-route reachability witness only",

@@ -10,9 +10,9 @@ _LOCK_NAME = "native-policy-generation.lock"
 _MAX_STATE_BYTES = 4 * 1024
 _MAX_GENERATION = (1 << 64) - 1
 
-# v3 is the only snapshot contract accepted by the managed Rust resident. The
-# v1 helpers below remain intentionally isolated for explicit differential
-# tests; production native hooks never call them.
+# These compatibility names remain bound to V3. Scoped publication uses the
+# separate authenticated V4 contract. V1 helpers remain isolated for explicit
+# differential tests; production native hooks never call them.
 POLICY_SNAPSHOT_V3_SCHEMA = "hol-guard-native-policy.v3"
 # Compatibility alias for callers that used the schema name while the v3
 # implementation was being introduced. It intentionally points only at v3.

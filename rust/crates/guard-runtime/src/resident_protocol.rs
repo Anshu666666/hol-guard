@@ -57,6 +57,11 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         "policy-snapshot-push-v1".into(),
         "policy-snapshot-control-v1".into(),
         "policy-snapshot-resident-generation-v1".into(),
+        // Non-default scoped authority accepts supported inline PreToolUse only.
+        // Other routes and optional authority remain fail closed.
+        "policy-snapshot-v4".into(),
+        "policy-scoped-authority-v1".into(),
+        "hook-envelope-v3".into(),
         "native-approval-artifact-v3".into(),
         "native-approval-challenge-v3".into(),
         "native-approval-validation-v3".into(),
@@ -84,7 +89,7 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         build_sha: crate::BUILD_SHA.to_owned(),
         target: format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS),
         features,
-        // Describes the source catalog only; scoped/managed activation is not advertised.
+        // Describes the source catalog; optional managed activation is not advertised.
         extension_catalog_digest: Some(crate::policy_scoped_managed::catalog_digest().to_owned()),
     }
 }

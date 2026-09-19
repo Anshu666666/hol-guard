@@ -46,7 +46,12 @@ def test_resident_fingerprint_mismatch_enters_bounded_retry_backoff(
     monkeypatch.setattr(
         publisher_module,
         "_publish_snapshot_v3",
-        lambda **_kwargs: ({}, 2, _kwargs["context"][5]),
+        lambda **_kwargs: (
+            {},
+            2,
+            _kwargs["context"][5],
+            publisher_module.time.monotonic() + publisher_module._PUBLISH_TIMEOUT_SECONDS,
+        ),
     )
     try:
         publisher._publish_once()
@@ -86,7 +91,16 @@ def test_run_loop_backs_off_after_resident_mismatch_at_expired_deadline(
         "_publication_context",
         lambda *, publish_epoch=None: (None, None, b"key", {}, lambda **_kwargs: b"unused", NativeCloudPolicyInputs()),
     )
-    monkeypatch.setattr(publisher_module, "_publish_snapshot_v3", lambda **_kwargs: ({}, 2, _kwargs["context"][5]))
+    monkeypatch.setattr(
+        publisher_module,
+        "_publish_snapshot_v3",
+        lambda **_kwargs: (
+            {},
+            2,
+            _kwargs["context"][5],
+            publisher_module.time.monotonic() + publisher_module._PUBLISH_TIMEOUT_SECONDS,
+        ),
+    )
 
     class StopAfterResidentRetry:
         def __init__(self) -> None:

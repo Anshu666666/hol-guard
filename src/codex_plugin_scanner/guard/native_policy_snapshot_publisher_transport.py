@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .native_cloud_policy_inputs import NativeCloudPolicyInputs
 from .native_policy_authority_read import NativeVerifiedPolicyInputs
@@ -18,6 +18,9 @@ from .native_policy_snapshot_constants import (
 from .native_policy_snapshot_contract import _policy_snapshot_push_bytes_v3
 from .native_policy_snapshot_generation import native_policy_snapshot_v3
 from .native_policy_snapshot_publisher_context import PublicationContext, capture_for_reservation
+
+if TYPE_CHECKING:
+    from .native_policy_snapshot_publisher_attempt import StartupPublicationRetry
 
 
 def _decode_ack_v3(output: bytes | None) -> dict[str, object] | None:
@@ -79,15 +82,19 @@ def _publish_snapshot_v3(
     context: PublicationContext,
     publish_epoch: int,
     renew_after_generation: int | None,
-) -> tuple[dict[str, object], int, NativeCloudPolicyInputs]:
+    startup_retry: StartupPublicationRetry | None = None,
+) -> tuple[dict[str, object], int, NativeCloudPolicyInputs, float]:
     """Materialize, push, and authenticate a snapshot, including one recovery retry."""
 
     from .native_resident_client import native_resident_client_failure_code
     from .native_runtime import _isolated_environment
 
     recovery_attempted = False
+    first_client_deadline: float | None = None
     while True:
         reservation_deadline = time.monotonic() + _PUBLISH_TIMEOUT_SECONDS
+        if startup_retry is not None:
+            reservation_deadline = min(reservation_deadline, startup_retry.deadline_monotonic)
         with capture_for_reservation(
             publisher,
             expected=context,
@@ -98,6 +105,9 @@ def _publish_snapshot_v3(
             if isinstance(inputs, NativeVerifiedPolicyInputs):
                 raise NativePolicySnapshotError("native_policy_snapshot_inputs_changed")
             try:
+                if startup_retry is not None:
+                    startup_retry.require_inputs(config, inputs)
+                    startup_retry.require_current(publisher)
                 issued_at_ms = int(publisher._wall_clock() * 1_000)
                 expires_at_ms = (
                     None
@@ -120,12 +130,19 @@ def _publish_snapshot_v3(
                 master_key = b""
         captured = None
         encoded = _policy_snapshot_push_bytes_v3(snapshot)
+        environment = _isolated_environment()
+        client_deadline = time.monotonic() + _PUBLISH_TIMEOUT_SECONDS
+        if startup_retry is not None:
+            client_deadline = min(client_deadline, startup_retry.deadline_monotonic)
+            startup_retry.require_current(publisher)
+        if first_client_deadline is None:
+            first_client_deadline = client_deadline
         output = client(
             executable=identity.path,
             guard_home=publisher.guard_home,
-            environment=_isolated_environment(),
+            environment=environment,
             payload=encoded,
-            deadline_monotonic=time.monotonic() + _PUBLISH_TIMEOUT_SECONDS,
+            deadline_monotonic=client_deadline,
         )
         ack = _ack_from_resident_output(output)
         if ack is None:
@@ -156,4 +173,4 @@ def _publish_snapshot_v3(
             or resident_generation <= 0
         ):
             raise NativePolicySnapshotError("native_policy_snapshot_ack_mismatch")
-        return snapshot, resident_generation, inputs
+        return snapshot, resident_generation, inputs, first_client_deadline

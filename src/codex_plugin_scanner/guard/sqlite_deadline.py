@@ -117,13 +117,15 @@ class DeadlineConnection(sqlite3.Connection):
         if action == sqlite3.SQLITE_TRANSACTION:
             allowed = first == self._transaction_control
         elif action == sqlite3.SQLITE_PRAGMA:
+            from .sqlite_tuning import SQLITE_CACHE_SIZE_KIB, SQLITE_MMAP_SIZE_BYTES
+
             name = (first or "").lower()
             allowed = (
                 (self._internal_pragma and name == "busy_timeout")
                 or (name in {"busy_timeout", "journal_mode"} and second is None)
                 or (name == "synchronous" and second is not None and second.lower() == "normal")
-                or (name == "cache_size" and second == "-262144")
-                or (name == "mmap_size" and second == "1073741824")
+                or (name == "cache_size" and second == str(-SQLITE_CACHE_SIZE_KIB))
+                or (name == "mmap_size" and second == str(SQLITE_MMAP_SIZE_BYTES))
             )
         elif action in {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE}:
             allowed = database in {None, "main", "temp"} and not (
@@ -211,10 +213,19 @@ class DeadlineConnection(sqlite3.Connection):
                 raise SQLiteDeadlineExceededError("SQLite maintenance deadline exceeded") from None
             raise
 
+    def _execute_owned_control(self, sql: str) -> None:
+        # Python 3.10 Connection helpers dispatch through the overridden cursor.
+        # Keep internal control SQL inside its existing deadline operation.
+        cursor = sqlite3.Cursor(self)
+        try:
+            sqlite3.Cursor.execute(cursor, sql)
+        finally:
+            sqlite3.Cursor.close(cursor)
+
     def _set_busy_timeout(self, timeout_ms: int) -> None:
         self._internal_pragma = True
         try:
-            sqlite3.Connection.execute(self, f"pragma busy_timeout={timeout_ms}")
+            self._execute_owned_control(f"pragma busy_timeout={timeout_ms}")
         finally:
             self._internal_pragma = False
 
@@ -227,7 +238,7 @@ class DeadlineConnection(sqlite3.Connection):
         self._transaction_control = "BEGIN"
         try:
             with self._operation(wait_for_lock=True):
-                sqlite3.Connection.execute(self, "begin immediate")
+                self._execute_owned_control("begin immediate")
         finally:
             self._transaction_control = None
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import sqlite3
 import subprocess
 import sys
@@ -143,6 +144,34 @@ def test_installation_retirement_fences_actual_resident_across_processes(
             policy_snapshot=binding,
         )
 
+    def assert_scoped_post_refused(binding: dict[str, object]) -> None:
+        deadline = time.monotonic() + 5
+        _, budget_ms = native_hook_edge._capture_deadline(deadline)
+        encoded = native_hook_edge._encode_hook_envelope(
+            payload={"tool_name": "Shell", "tool_input": {"command": "printf synthetic"}, "tool_response": "synthetic"},
+            harness="codex",
+            event="PostToolUse",
+            guard_home=store.guard_home,
+            home_dir=tmp_path,
+            cwd=workspace,
+            source_ref_external_allowed=False,
+            deadline_budget_ms=budget_ms,
+            snapshot=binding,
+            request_id=secrets.token_hex(16),
+        )
+        assert encoded is not None
+        output = native_resident_client_request(
+            executable=executable,
+            guard_home=store.guard_home,
+            environment=_isolated_environment(),
+            payload=encoded,
+            deadline_monotonic=deadline,
+            raw_hook_envelope=True,
+        )
+        assert output is not None, "the actual resident must explicitly refuse the unsupported scoped route"
+        assert json.loads(output)["error"] == "native_scoped_hook_route_unsupported"
+        assert edge(binding, "PostToolUse") is None
+
     try:
         if shape == "v4":
             publisher.start()
@@ -166,9 +195,12 @@ def test_installation_retirement_fences_actual_resident_across_processes(
             assert snapshot is not None
             replay = _policy_snapshot_push_bytes_v3(snapshot)
         for event in ("PreToolUse", "PostToolUse"):
-            accepted = edge(previous, event)
-            assert accepted is not None and accepted["authority"] == "rust"
-            assert accepted["receipt"]["policy_generation"] == old_generation
+            if shape == "v4" and event == "PostToolUse":
+                assert_scoped_post_refused(previous)
+            else:
+                accepted = edge(previous, event)
+                assert accepted is not None and accepted["authority"] == "rust"
+                assert accepted["receipt"]["policy_generation"] == old_generation
         # Stop publication, retaining the native resident and captured binding.
         # A remote process cannot invalidate this process's in-memory object.
         publisher.close()
@@ -264,9 +296,12 @@ def test_installation_retirement_fences_actual_resident_across_processes(
         assert fresh is not None
         assert isinstance(fresh["generation"], int) and fresh["generation"] > reserved[0]
         for event in ("PreToolUse", "PostToolUse"):
-            accepted = edge(fresh, event)
-            assert accepted is not None and accepted["authority"] == "rust"
-            assert accepted["receipt"]["policy_generation"] == fresh["generation"]
+            if shape == "v4" and event == "PostToolUse":
+                assert_scoped_post_refused(fresh)
+            else:
+                accepted = edge(fresh, event)
+                assert accepted is not None and accepted["authority"] == "rust"
+                assert accepted["receipt"]["policy_generation"] == fresh["generation"]
             assert edge(previous, event) is None
     finally:
         publisher.close()

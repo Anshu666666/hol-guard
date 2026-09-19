@@ -704,13 +704,38 @@ class DriverControls(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "module.py"
             path.write_text('raise AssertionError("must not run")\n')
-            checker = driver.InstalledImports({path: driver.digest(path.read_bytes())})
+            checker = driver.InstalledImports({path.resolve(strict=True): driver.digest(path.read_bytes())})
             checker.check(str(path))
             path.write_text('raise AssertionError("modified must not run")\n')
             with self.assertRaises(driver.DiagnosticError):
                 checker.check(str(path))
             with self.assertRaises(driver.DiagnosticError):
                 driver.InstalledImports({}).check(str(path))
+
+    def test_import_checker_canonical_origin_with_aliased_parent(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            real = root / "real"
+            real.mkdir()
+            alias = root / "alias"
+            alias.symlink_to(real, target_is_directory=True)
+            path = alias / "module.py"
+            path.write_text('raise AssertionError("must not run")\n')
+            canonical = path.resolve(strict=True)
+            self.assertNotEqual(path, canonical)
+            expected = driver.digest(path.read_bytes())
+            with self.assertRaises(driver.DiagnosticError):
+                driver.InstalledImports({path: expected}).check(str(path))
+            checker = driver.InstalledImports({canonical: expected})
+            checker.check(str(path))
+            checker.check(str(canonical))
+            path.write_text('raise AssertionError("modified must not run")\n')
+            for spelling in (path, canonical):
+                with self.subTest(canonical=spelling == canonical):
+                    with self.assertRaises(driver.DiagnosticError):
+                        checker.check(str(spelling))
+                    with self.assertRaises(driver.DiagnosticError):
+                        driver.InstalledImports({}).check(str(spelling))
 
     def test_owned_disposable_python_child_output_and_timeout_bounds(self):
         with tempfile.TemporaryDirectory() as temporary:

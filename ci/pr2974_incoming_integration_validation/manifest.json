@@ -1,0 +1,779 @@
+{
+  "schema": "pr2974-current-integration-validation.v1",
+  "source_sha": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+  "source_tree": "445f4d9fbd1deac36db6cde699c41ea41747966b",
+  "source_parent": "dfd40a627716117f7853aca51ab84b6b336ddf73",
+  "tracked_files": 4675,
+  "branch": "codex/pr2974-current-integration-validation-20260919",
+  "workflow_name": "PR2974 current integration and collection validation",
+  "harness_directory": "ci/pr2974_incoming_integration_validation",
+  "harness_paths": [
+    ".github/workflows/pr2974-current-integration-validation.yml",
+    "ci/pr2974_incoming_integration_validation/collect_controls.py",
+    "ci/pr2974_incoming_integration_validation/common.py",
+    "ci/pr2974_incoming_integration_validation/component-source.json",
+    "ci/pr2974_incoming_integration_validation/environment.py",
+    "ci/pr2974_incoming_integration_validation/environment_setup.py",
+    "ci/pr2974_incoming_integration_validation/finite_controls.py",
+    "ci/pr2974_incoming_integration_validation/formatter_outputs.py",
+    "ci/pr2974_incoming_integration_validation/full_collection.py",
+    "ci/pr2974_incoming_integration_validation/manifest.json",
+    "ci/pr2974_incoming_integration_validation/preparation_contract.py",
+    "ci/pr2974_incoming_integration_validation/report_projection.py",
+    "ci/pr2974_incoming_integration_validation/retain_c_builds.py",
+    "ci/pr2974_incoming_integration_validation/rust_environment.py",
+    "ci/pr2974_incoming_integration_validation/rust_validation.py",
+    "ci/pr2974_incoming_integration_validation/source_entry.py",
+    "ci/pr2974_incoming_integration_validation/source_gates.py",
+    "ci/pr2974_incoming_integration_validation/unicode_controls.py",
+    "ci/pr2974_incoming_integration_validation/validate.py"
+  ],
+  "observer_payloads": {
+    "common.py": "1259aad1837f3d8dbfe63a5fd18f57bfd3d481377fa4cc19dea7342ef011667d",
+    "environment_setup.py": "404d966945ed3023c95154696a363666245fba23f0fca5ec971fe84a6bd41dbe",
+    "environment.py": "8943a501d021a5401592f184546225055d8de36a1481200c50349f7e5dc77185",
+    "rust_environment.py": "b6007924c668f27886d9cabd45a9168379b681a852b0307e0d040e87ba722adb",
+    "rust_validation.py": "6331e910892a96b4747e158198738526885de7ff27f8597989793d6a33911b2e",
+    "source_entry.py": "f8e3719d2db2a32bf959f735b34dfa36b2079a9347762a2dea850b7e8b42593d",
+    "collect_controls.py": "1771b0ca75db0624450eb98592a0279021863c42335d32eb05cf88d8753a4767",
+    "report_projection.py": "f1ddd43ecc4d118fef91042d7d1c9c4849ba7415aa0784b055f13e2845c4b10a",
+    "full_collection.py": "cd70accc8382d3d2664f6583f8f2af3b4e3ad5a20ca25b39c3c68c0a1c13e108",
+    "finite_controls.py": "f60499951730845d92f05e9eee94d861381fb4af5b6ebadda6d9dcc7583ead16",
+    "retain_c_builds.py": "5135ab3f0da96ff464e204541f478064f3b07d4310d4053fab4b2fa9450a0904",
+    "formatter_outputs.py": "396026aac757291e799841e6c4adc1aeda98fa71d07c88fcf79638a561313360",
+    "preparation_contract.py": "4bacee26e6c72d9513390b8bcf27e2abbc383e8e47ccdfd6d3da9911b0950574",
+    "source_gates.py": "474d8461d3b5c1c43fa85ff3193787ee62eb6fc25226a34217996590de3f0f7f",
+    "unicode_controls.py": "710e5fb0b2077160ef30e38a123470d375341289e0a44cafba8b86482e99f6c1",
+    "validate.py": "56418af85c92c1b2fb0edc5c9e8784794e2f17095f23a8267314abc14b5c39e3",
+    "component-source.json": "984e9e32460bb2783dc4172a8472bcbe7e4221ad3298f11ed0d8a4a49f836056"
+  },
+  "source_inputs": {
+    "scripts/profile_guard_mcp_streaming_session.py": "ad886f61075f2b60127146a645753d1a6041f4a9654dd7bbc2cd9db8129f1221",
+    "tests/test_guard_store_base_partition.py": "614858032785d909e9a83a92a89f4c93d1c9a67971fbf5c6e8b1268f1c1f4391",
+    "tests/test_mcp_streaming_preparation_collector.py": "0e6f4db13d0a9e6f2944d182ddebb8c338a1fca4c73525a9078dc33cada7ff5e",
+    "docs/guard/rust-performance/mcp-streaming-preparation-plan.json": "79d6fff60390fcb10fb4de2687c9532e59c9ba335be0028301d421b332bbe03b",
+    "scripts/profile_guard_mcp_case.py": "8773f5b4957afc7d30afdba141cd567bcacff5450f997387838f177e5070ca0c",
+    "scripts/profile_guard_mcp_session.py": "b82b8ca432339cf792b9ce68684691ee98bfb4f590f5ac89e83e2fcba554dd54",
+    "scripts/compare_guard_mcp_native_text.py": "b2d5825c90e266f0ef25b936ead544feab985074654d877fc61ee0ea0f2d05ef",
+    "scripts/ci/rust_io_ownership_gate.py": "4508a92e40c171f250acb24aeeddca91589e6cc2c5cf6ba28c85e6132f770f0c",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py": "ab1cf85de2cacc1a34520aed23f083a196a561ddccc17ef2a81110a89005d3b2",
+    "tests/test_native_review_approval_atomic_consumption.py": "5499cea2047e5f68921c3d0afce70529757a5a583e327ef24427672b3a1f8a55",
+    "tests/test_store_native_review_approvals_security.py": "2e8968be02168b9c35fef8741f37c981bd70a89f4d4ec8ff2e1d7d79f9d68d04",
+    "tests/test_mcp_profile_fixture_dispatch.py": "f0104e5461a0369c404f9e806272ac6b78283ee8d2b436283391585c1d82d4aa",
+    "tests/test_native_policy_publisher_input_capture.py": "ab2ee991ad07f5b7ac33906a86f710fc67ef03ed673dd6ec3e88ad62fed2475f",
+    "tests/test_mcp_native_text_comparison.py": "259e03fa51880e2a73d5881799deec303dab946ca09b5064cb347ed01bf3f1f3",
+    "docs/guard/contracts/python-capability-ownership.v1.json": "69dee970a5d3b6db2789966539f603a97f0d0ca4aa87dc857e818161d0861267",
+    "scripts/ci/native_receipt_persistence_gate.py": "6c113e3ece2352a655324d29dae3da249a3e32e2b3d72ce832332bd9527576d2",
+    "scripts/ci/rsp131_sqlite_vfs/control.c": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb",
+    "scripts/ci/rsp131_sqlite_vfs/forward_fixture.c": "0abbdd32afa377ff3d097a72be2b8eee49198fce74676786a98998dbc7d5ede2",
+    "scripts/ci/rsp131_sqlite_vfs/guard_vfs.h": "866d7fa20466afdbe9932121b08d971d41f13c2e09b4aedf7065488290c8b9af",
+    "scripts/ci/rsp131_sqlite_vfs/io.c": "0b70933f6e6200c129ac482c775fd41b8f41d3e29d06fc3af58cbad22acd985d",
+    "scripts/ci/rsp131_sqlite_vfs/README.md": "8e28b98051aef3694c61c6a711cac978e2b275b2ed12b0f865b3abb1ae4c80dd",
+    "scripts/ci/rsp131_sqlite_vfs/vfs.c": "d11e596bb86fb6e47e0f637d31af20ce03197dd46e50446f7762a141a7d3f0c7",
+    "scripts/native_slo_mixed_server.py": "484519e484d62d050d3b7ca235d4f30b2a2ecdac58d1859bddbeca300f339899",
+    "scripts/native_slo_mixed_witness.py": "1d182a8b26a8284e3f107d85a4ddf442c919d3f136ecc14fe21c1146218a2dc8",
+    "scripts/native_slo_sqlite_vfs_identity.py": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+    "scripts/native_slo_sqlite_vfs.py": "fbe86a9778477e699ba8006166f6a0c7e1a9590fd8b02bc7cf07d6b8a03b28fd",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py": "83e49d02059b387d5e0b366d7a9939e209f8da0f50427fd4d713285f152585dc",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py": "f74f69dadb9d72e4c9bb8f0cf5cfb39e502b8391c40f48b03110356d575cdf22",
+    "tests/test_guard_runtime_hook_evidence_operations.py": "72da754f8bb98c0bdcdf0b68e2e526b8fc8383ba4a5d5e06bdd33e4bbc9f255e",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py": "7d0d72623ffda2b3cf4edbe51814b9c9718e6eeace3cba8f5291565f783c2be7",
+    "tests/test_native_receipt_submission_delegate_gate.py": "8f1c9d9116567c38bb2ef5dfa302add0953b4001983c13ff633fb4f3c67370b5",
+    "tests/test_native_slo_sqlite_vfs.py": "1dcbd37554658ea2d0e11e3b83a67be969633750b9c98fca17ec95dee992f8f8",
+    "tests/test_python_capability_cleanup_gate.py": "0e9008c4f699476b49b3a245be0e64fd883b8f2573fa675396f9b2f4a3e98c24",
+    "rust/crates/guard-runtime/Cargo.toml": "7fde37d8b47a3d259f96880db19c39676da6a6af46f67c0718840df8a87eea7e",
+    "rust/crates/guard-runtime/src/main.rs": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8",
+    "rust/crates/guard-runtime/src/resident_client.rs": "2eec750fdca4bbe7d4e102d279ce11bd79b0cdda40208aa1d6e1a8085eceb2a3",
+    "rust/crates/guard-runtime/src/resident_transport.rs": "4424adc17785ffebd0423d008a3ad25c7a26452265e3075f63ed374a425df5be",
+    "rust/crates/guard-runtime/src/native_phase_observation.rs": "cb023fe9aa8e8250653d0065cf065932d99b23fde3b3c918bae73403ab4844d5",
+    "rust/crates/guard-runtime/src/native_phase_endpoint.rs": "a209b2048b513e7207682b28afe5eaef5829a060376f33f518e9b00f225269ca",
+    "rust/crates/guard-runtime/src/native_phase_sink.rs": "009a81ba6ecf42f707f48518fcd3ce2592145b884927221ef895a7d77706c94f",
+    "rust/crates/guard-runtime/src/native_phase_observation_tests.rs": "0d43527eeb534538c2f586f9f9b82eca81fab0eb9e539171c6a75eb93ad39d0d",
+    "rust/crates/guard-runtime/src/native_phase_macro_tests.rs": "e7d85fcc686b319475e920719cf1aef983e2b11339dcc2194edb7a622a7dee90",
+    "rust/crates/guard-runtime/src/native_phase_sink_tests.rs": "52d016f1fcafce9f4d6c0f5f54b65e569061e2046bddb44f7672ab71d9527c0b",
+    "rust/crates/guard-runtime/src/native_phase_endpoint_tests.rs": "7edc2c685f33bead4f8d7ffa976df24eb413c3298558b93ac9c1a4be02a713eb",
+    "scripts/native_slo_daemon_fixture.py": "4eeb0f10c8893fc6e5bed9f538c9457cba35ad779dad730798550693c995d08c",
+    "scripts/native_slo_rust_phase_schema.py": "9f07461f7fbc743fdb0462d4f4f5dd135aaf21ec8fa4d6534d866ba8a4f8f84b",
+    "scripts/native_slo_rust_phase_process.py": "e08d2bea4f4fe1bf1f0a39a86ed1bb16380f03e7f7aa38b84cab96523e465682",
+    "scripts/native_slo_rust_phase_receiver.py": "6792e5bca67bc411e2937d3ac186f6d6c9577e43d47adf2f5dd9090d2f4b2685",
+    "scripts/native_slo_rust_phase_run.py": "902fb3c4a4f9b4908dce420d70f382cfb63db30d71e0c7e6329b17c4f1921a75",
+    "tests/native_slo_rust_phase_test_support.py": "da1ba39737eb08a87568ff97c1864a1db2c410b4716d243064d4df8bf379b108",
+    "tests/test_native_slo_rust_phase_schema.py": "9022b3f56da60e5099e74c88ef657ebde0ef662c30091c19f3a1bab88e420597",
+    "tests/test_native_slo_rust_phase_receiver.py": "38d91dc364e33d4eadaa64529b4f4350c721c842ce1e5857a86f069434ca66e1",
+    "tests/test_native_slo_rust_phase_run.py": "cf9de5bfa3a72c505e0a1608caa9935a4436dfbc4e940f314af211f46b1f6d3b",
+    "ci/native_runtime/native_phase_lifecycle_support.py": "b280c1fef16d6a7556e16bf341cfccdad3a62f1bce2df03f77f0c3aa9ec29adb",
+    "ci/native_runtime/test_native_phase_lifecycle.py": "9202adbc03494f206557b730c53ee0464ec495fe5edb05df99df211f52d80e3e",
+    "tests/test_native_slo_rust_phase_sender.py": "aad5d9ffabf1cc7b3fe0faed5df850b11fd336c1bf0fd368135021e593476469",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py": "81d53379f76a0fc6912663c85a35e521d9642ef546bb49874bda744226d0d521",
+    "tests/test_native_slo_daemon_mixed_dispatch.py": "d0ed6f1719d139e49480cef99ca14db19ecb2274abda5b3357655698a249ead9",
+    "scripts/ci/rsp129_workspace_lifecycle/README.md": "ba442b14a0f6d3efc2ef3c0837f38435508be650fab21850ebb3d76c8221897f",
+    "scripts/native_slo_workspace_decision.py": "972f0c351316764ce9b1e4e67d00b5fd28a4be0cecb88db97363d276f7bf730b",
+    "scripts/native_slo_workspace_request_observer.py": "f6e497ad7424a7230dcc7df4da22e6ce0791c55b180fa29db992a043824e756d",
+    "tests/native_workspace_request_fixtures.py": "381f82f6374daecaa3d54674bb0d518ea778f96b77a14bba1dd990fff9b40d9e",
+    "tests/test_native_slo_workspace_decision.py": "b26bc5e58093f4b4fa6d366eab30ff7350485a485b013af6a5b0d83783aed919",
+    "tests/test_native_slo_workspace_request_lifecycle.py": "e1352a9b6b96da34e7b2e9be27d10136b753154b1eb7494113e94cf2d8b1cd93",
+    "tests/test_native_slo_workspace_request_observer.py": "d92017d513f5bce918ab879a92ff737bbce601623c859fae3f7f63c1c26292f2",
+    "tests/test_native_slo_mixed_witness.py": "d22ef344a1cb15c300b3df46814aab7575709d80494994dc9939a8ccf266548f",
+    "tests/test_native_slo_mixed_controls.py": "cac09f39aeea07ce388749a28aa1a864f421ec75262db8b71d980e072d917f91",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py": "7e9ebd3f7008b3482cc6949194c30b75f7029ca6a053a181637d4bac816a229a",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c",
+    "tests/bundle_first_cloud.py": "613a183964249a0cde8585369ee1decfba845fb8f4102459ee519abc7ebb0f49",
+    "tests/test_native_decision_receipt.py": "36cffa5ccff1f7c6ff42c0e2b91f439a2a038e3010655b6f97f24d15cad3f6af",
+    "tests/test_native_command_observations.py": "0b0bd244a4d15f497d116b969487bbd1c5f4bc6b8041400c57de646787bc19ba",
+    "src/codex_plugin_scanner/guard/store.py": "1fe49b82841db80046092badcb72c7422c1d14d883b5d5b9f2b02584e1c09d4b",
+    "src/codex_plugin_scanner/guard/sqlite_profile.py": "3620dbe76a0504b75a837e63ccdacb8c039cba3527a3672dfd75d569a5445054",
+    "scripts/native_slo_launcher_review.py": "e848697a93dd697b14993bcb48ea590903300a107ebc23980152914fca778c46",
+    "scripts/native_slo_launcher_approval.py": "8058319d2eeb3b50378b2f694a20495a73a4c53bacd2d0cd8b9fff7224e6f304",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_acked.py": "7df24e80631db37ef7d151bab897a5ee32e554c182e91b8afd401cab05883915",
+    "scripts/ci/python_capability_cleanup_gate.py": "0cb4a8184f21f7b330b6c1a7ec7b06c6a99b4c7215afeeab226b2a6591aa1687",
+    "src/codex_plugin_scanner/guard/adapters/pi.py": "bf37d6b69bf9608995fdb37242e54f44804c83552f58f6c2a294a81a82b0add9",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py": "9d030aec21b89c7d7df1195f01ca1a455be6c575e1ec2a9325e4a9c98dfb4573",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py": "e671cb0c009bdf63cb5eb8883edd7d6b5eee98a242268be8966b84d436be5adc",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py": "9b9d208d35b530295a57d3c5e92d95c56049a10068a0e47a69375bc624302e22",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py": "92c17649177132dd8d76064aeba42a425b2d62fbed34f6570d62569ef2adbeca",
+    "src/codex_plugin_scanner/guard/store_base.py": "7d8c849b5106032f6d050dabbd199db9a898a3d5a93d6c576ead68eca527e988",
+    "src/codex_plugin_scanner/guard/store_base_values.py": "7273e9985de3ecf96fa87bbd21257b845d89e246f04403c7379b82718a02f34c",
+    "tests/native_review_approval_support.py": "2eb19c108409183397b61410f48201ad4951668ddc5652edfee90892259b2e5d",
+    "tests/test_guard_install_workspace.py": "aa6dcff9e2df8abb121e77139f09c8c57073d0a4585c8f2e6174328da2f1d1df",
+    "tests/test_native_review_policy_binding.py": "49300eec2cf2edca427b7dece619ed273c3bbf83c58ed4803bc06fa460c1829f",
+    "tests/test_pi_adapter.py": "a08c3a151af3272847d7bbeb090aef65a696602252c924ab72e653d498782600",
+    "tests/test_rust_pretool_authority_worker.py": "79af9a8b70d1d4723b3fc7b8b81121dbd78a556edf01118996e2c09cd81ac499",
+    "scripts/compare_guard_mcp_owned_preparation.py": "746d5ba88f331d3380e6066a46af4f9947ca187297d014763f2fd9468dc687c9",
+    "scripts/compare_guard_mcp_streaming_preparation.py": "2a68f347e51f8fb99961ddb4b40fa98fc47d58ccc43f3676adef696d65a36680",
+    "scripts/profile_guard_mcp_fixture.py": "49f704af68b5f37a000946e0bc4b70ce198313a2705c7c751fcf1c5fa6cfd829",
+    "scripts/profile_guard_mcp_matrix.py": "62f8990fb23f5e01957f60082021450f89b01d701112c562fd039afc1ae66645",
+    "scripts/profile_guard_mcp_worker.py": "9c0e265eae6265f4ab9cbafaf04c3129b55f8326bf6222b7db628bbe59ec8f94",
+    "scripts/ci/test_inventory.py": "fa610ce8fc26f5a9283f5d82e98b457f2f481e9c8047bdde40754f45d660287c",
+    "tests/conftest.py": "3df955f24316f1691bac0c4a2321546f54323209a48f8f39949ace0ff44ca67e",
+    "tests/test_native_review_approval_coordination.py": "b1682495442c1fce13ceb3af08eb7125f1f9fbede85d663d16f3edea28daaf9b",
+    "tests/test_native_policy_snapshot_publisher.py": "05113c48b8eca3540425dfee10c4e31767bc9e86f2c19ff956ad21fe73efaf5b",
+    "tests/guard_test_invariants.py": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "scripts/ci/rust_authority_ownership_gate.py": "93767a35eb2431d096a5db4187d9600f550e9cd71499d59d1ab5dee7aa0209b4",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d",
+    "rust/crates/guard-command/Cargo.toml": "a620802b3b88a77613489a527df370a5bc5f84f6892fe8410ceafe0a4c16c01c",
+    "rust/crates/guard-command/src/lib.rs": "3bff209ae529dcc5c0637b3a086826878e8eb565f39b4b79c70efbc730a7dac6",
+    "rust/crates/guard-command/src/command_option_unicode.rs": "de3e717b24abcfc95368890756f4ff196700689660584c7fb1c3ccb42d443f1d",
+    "rust/crates/guard-command/src/command_option_unicode/ranges_low.rs": "f0d59a0341e8c2ec3da0e1a13586d58549930a067f0a10ebb28ca8c0cab75867",
+    "rust/crates/guard-command/src/command_option_unicode/ranges_high.rs": "90e12eae9ba57d82006de98eea5a6a2f667e7a1ccb5abd2ad552c702feae6645",
+    "rust/crates/guard-command/src/command_specialized_unicode_tests.rs": "b4a85f185631e267b3def2ab5a87df093d7683473a647b472a3e1b2cf27f3d32",
+    "tests/test_pi_omp_extension_ownership.py": "7f8ada2027df4544f317e31cbb734ba132e7544ac8814446e2c5ee5d7a0025cf",
+    "ci/__init__.py": "77052478f94d8c1a24c6d25137758bc8e9bacf2372ebd32359f9182df0a2bf83",
+    "scripts/ci/rust_io_ownership_scopes.py": "bb8a7ceb63021160bd5527f90642eca271575931a593504f1025af46434f6274",
+    "tests/test_rust_io_ownership_gate.py": "0a6ae9d823ee5df73249817eb25f7836832c46e524a69259b031a40e8a10ea80",
+    "tests/test_native_pretool_generic.py": "de8bf8fa789dd8789cfee30eab4e9a75384d55a34a530141cbcf78d0f38b82e9",
+    "tests/test_guard_evidence_failure_diagnostics.py": "1b19d9aa67d9037ee23328dda8252ea39417f8d52f4fa4ff29b5b83688309ff7",
+    "tests/native_pretool_support.py": "4cf88d13e20ee8672655e47791c9a618fc6279008295d1134def88b641c21894",
+    "tests/test_native_slo_launcher_approval.py": "0982ede807c2c0f2527a0acf63c6981f5fb4db5ff3f4154f0f0e31b62b07949a",
+    "tests/test_native_slo_launcher_empty_approval.py": "53aa7ca899d509d9b895dac0a3ff45f2ba936859dab114fd2dfb548039b1fbb0",
+    "tests/test_native_slo_faults.py": "ff53ffe28360f93e416676401db2354fbf0d680a20b02fc7cdaedeec6f2070f8",
+    "tests/native_slo_approval_support.py": "85b706e336724b01eb20bee1640d2bb5b31cf3ef9a0c0c22e421ebe26885b012",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_retry.py": "495e8d776b7d69830ea6fc4f18f5b23a905290352359f3664fac06c610f20b65",
+    "src/codex_plugin_scanner/guard/native_decision_receipt.py": "e8de6f70cc419586f9c86ab6efb9a161515fe703585df5e449bafccb75819e09",
+    "src/codex_plugin_scanner/guard/native_command_observations.py": "841935c41667cee4fa91aa1634151d684046be8240da42e005c389e95d274a8f",
+    "scripts/native_slo_faults.py": "1cfeb0830cdfb077e43b84832ded3d857a5e355d1d00bae29b365035ba180f3b",
+    "tests/test_native_slo_approval_fault_fixture.py": "42537571dd0b160198a2bca7873fb1564e1f499d21bf4964b35b375b11e24985"
+  },
+  "fixed_files": {
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c",
+    "tests/conftest.py": "3df955f24316f1691bac0c4a2321546f54323209a48f8f39949ace0ff44ca67e",
+    "tests/guard_test_invariants.py": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d"
+  },
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "rust_toolchain": "1.88.0",
+  "rust_host": "x86_64-unknown-linux-gnu",
+  "project_version": "3.0.1",
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "python_source_paths": [
+    "scripts/profile_guard_mcp_streaming_session.py",
+    "tests/test_guard_store_base_partition.py",
+    "tests/test_pi_omp_extension_ownership.py",
+    "tests/test_mcp_streaming_preparation_collector.py",
+    "scripts/profile_guard_mcp_case.py",
+    "scripts/profile_guard_mcp_session.py",
+    "scripts/compare_guard_mcp_native_text.py",
+    "scripts/ci/rust_io_ownership_gate.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+    "tests/test_native_review_approval_atomic_consumption.py",
+    "tests/test_store_native_review_approvals_security.py",
+    "tests/test_mcp_profile_fixture_dispatch.py",
+    "tests/test_native_policy_publisher_input_capture.py",
+    "tests/test_mcp_native_text_comparison.py",
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "tests/test_guard_runtime_hook_evidence_operations.py",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+    "tests/test_native_receipt_submission_delegate_gate.py",
+    "tests/test_native_slo_sqlite_vfs.py",
+    "tests/test_python_capability_cleanup_gate.py",
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py",
+    "tests/native_slo_rust_phase_test_support.py",
+    "tests/test_native_slo_rust_phase_schema.py",
+    "tests/test_native_slo_rust_phase_receiver.py",
+    "tests/test_native_slo_rust_phase_run.py",
+    "ci/native_runtime/native_phase_lifecycle_support.py",
+    "ci/native_runtime/test_native_phase_lifecycle.py",
+    "tests/test_native_slo_rust_phase_sender.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+    "tests/test_native_slo_daemon_mixed_dispatch.py",
+    "scripts/native_slo_workspace_decision.py",
+    "scripts/native_slo_workspace_request_observer.py",
+    "tests/native_workspace_request_fixtures.py",
+    "tests/test_native_slo_workspace_decision.py",
+    "tests/test_native_slo_workspace_request_lifecycle.py",
+    "tests/test_native_slo_workspace_request_observer.py",
+    "src/codex_plugin_scanner/guard/adapters/pi.py",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "src/codex_plugin_scanner/guard/store_base.py",
+    "src/codex_plugin_scanner/guard/store_base_values.py",
+    "tests/native_review_approval_support.py",
+    "tests/test_guard_install_workspace.py",
+    "tests/test_native_review_policy_binding.py",
+    "tests/test_pi_adapter.py",
+    "tests/test_rust_pretool_authority_worker.py",
+    "scripts/compare_guard_mcp_owned_preparation.py",
+    "scripts/compare_guard_mcp_streaming_preparation.py",
+    "scripts/profile_guard_mcp_fixture.py",
+    "scripts/profile_guard_mcp_matrix.py",
+    "scripts/profile_guard_mcp_worker.py",
+    "scripts/ci/test_inventory.py",
+    "tests/conftest.py",
+    "ci/__init__.py",
+    "scripts/ci/rust_io_ownership_scopes.py",
+    "tests/test_rust_io_ownership_gate.py",
+    "tests/test_native_pretool_generic.py",
+    "tests/native_pretool_support.py",
+    "tests/test_native_slo_launcher_approval.py",
+    "tests/test_native_slo_launcher_empty_approval.py",
+    "tests/test_native_slo_faults.py",
+    "tests/native_slo_approval_support.py"
+  ],
+  "python_production_paths": [
+    "scripts/profile_guard_mcp_streaming_session.py",
+    "scripts/profile_guard_mcp_case.py",
+    "scripts/profile_guard_mcp_session.py",
+    "scripts/compare_guard_mcp_native_text.py",
+    "scripts/ci/rust_io_ownership_gate.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+    "scripts/native_slo_workspace_decision.py",
+    "scripts/native_slo_workspace_request_observer.py",
+    "src/codex_plugin_scanner/guard/adapters/pi.py",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "src/codex_plugin_scanner/guard/store_base.py",
+    "src/codex_plugin_scanner/guard/store_base_values.py",
+    "scripts/compare_guard_mcp_owned_preparation.py",
+    "scripts/compare_guard_mcp_streaming_preparation.py",
+    "scripts/profile_guard_mcp_fixture.py",
+    "scripts/profile_guard_mcp_matrix.py",
+    "scripts/profile_guard_mcp_worker.py",
+    "scripts/ci/test_inventory.py",
+    "scripts/ci/rust_io_ownership_scopes.py"
+  ],
+  "python_cohorts": [
+    {
+      "name": "python",
+      "selectors": [
+        "tests/test_pi_omp_extension_ownership.py",
+        "tests/test_guard_store_base_partition.py",
+        "tests/test_mcp_streaming_preparation_collector.py",
+        "tests/test_mcp_native_text_comparison.py",
+        "tests/test_mcp_profile_fixture_dispatch.py",
+        "tests/test_native_policy_publisher_input_capture.py",
+        "tests/test_native_review_approval_atomic_consumption.py",
+        "tests/test_store_native_review_approvals_security.py",
+        "tests/test_native_review_policy_binding.py",
+        "tests/test_native_review_approval_coordination.py",
+        "tests/test_native_policy_snapshot_publisher.py",
+        "tests/test_native_slo_mixed_witness.py::test_dequeued_batch_is_not_mistaken_for_drained_evidence",
+        "tests/test_native_slo_mixed_witness.py::test_witness_requires_exact_committed_ids_and_full_command_binding",
+        "tests/test_native_slo_mixed_witness.py::test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifying_result",
+        "tests/test_native_slo_mixed_controls.py::test_ack_requires_disk_mac_verified_binding_generation_and_effective_action",
+        "tests/test_native_slo_mixed_controls.py::test_failed_ack_retains_successful_public_mutation_without_approval_override",
+        "tests/test_native_slo_sqlite_vfs.py::test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distinct",
+        "tests/test_native_slo_daemon_mixed_dispatch.py::test_actual_serve_session_keeps_default_observers_and_retires_wrappers",
+        "tests/test_guard_runtime_hook_evidence_operations.py::test_existing_writer_methods_keep_class_ownership_and_signature",
+        "tests/test_guard_runtime_hook_evidence_operations.py::test_fresh_process_import_orders_bind_the_actual_writer",
+        "tests/test_rust_io_ownership_gate.py",
+        "tests/test_native_pretool_generic.py",
+        "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_io_error_is_global_and_snapshots_are_detached",
+        "tests/test_guard_evidence_failure_diagnostics.py::test_compatibility_rewrite_invalid_records_keep_global_accounting",
+        "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_diagnostics_do_not_invent_native_receipts_for_unknown_records",
+        "tests/test_native_decision_receipt.py::test_journal_rewrite_preserves_another_writer_receipt",
+        "tests/test_native_slo_approval_fault_fixture.py",
+        "tests/test_native_slo_launcher_approval.py",
+        "tests/test_native_slo_launcher_empty_approval.py",
+        "tests/test_native_slo_faults.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_pi_omp_extension_ownership.py",
+          "expected_cases": 8
+        },
+        {
+          "selector": "tests/test_guard_store_base_partition.py",
+          "expected_cases": 19
+        },
+        {
+          "selector": "tests/test_mcp_streaming_preparation_collector.py",
+          "expected_cases": 20
+        },
+        {
+          "selector": "tests/test_mcp_native_text_comparison.py",
+          "expected_cases": 6
+        },
+        {
+          "selector": "tests/test_mcp_profile_fixture_dispatch.py",
+          "expected_cases": 4
+        },
+        {
+          "selector": "tests/test_native_policy_publisher_input_capture.py",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_native_review_approval_atomic_consumption.py",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_store_native_review_approvals_security.py",
+          "expected_cases": 15
+        },
+        {
+          "selector": "tests/test_native_review_policy_binding.py",
+          "expected_cases": 17
+        },
+        {
+          "selector": "tests/test_native_review_approval_coordination.py",
+          "expected_cases": 28
+        },
+        {
+          "selector": "tests/test_native_policy_snapshot_publisher.py",
+          "expected_cases": 11
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_witness.py::test_dequeued_batch_is_not_mistaken_for_drained_evidence",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_witness.py::test_witness_requires_exact_committed_ids_and_full_command_binding",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_witness.py::test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifying_result",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_controls.py::test_ack_requires_disk_mac_verified_binding_generation_and_effective_action",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_mixed_controls.py::test_failed_ack_retains_successful_public_mutation_without_approval_override",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distinct",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_daemon_mixed_dispatch.py::test_actual_serve_session_keeps_default_observers_and_retires_wrappers",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_existing_writer_methods_keep_class_ownership_and_signature",
+          "expected_cases": 4
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_fresh_process_import_orders_bind_the_actual_writer",
+          "expected_cases": 4
+        },
+        {
+          "selector": "tests/test_rust_io_ownership_gate.py",
+          "expected_cases": 28
+        },
+        {
+          "selector": "tests/test_native_pretool_generic.py",
+          "expected_cases": 27
+        },
+        {
+          "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_io_error_is_global_and_snapshots_are_detached",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_compatibility_rewrite_invalid_records_keep_global_accounting",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_evidence_failure_diagnostics.py::test_recovery_diagnostics_do_not_invent_native_receipts_for_unknown_records",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_native_decision_receipt.py::test_journal_rewrite_preserves_another_writer_receipt",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_approval_fault_fixture.py",
+          "expected_cases": 13
+        },
+        {
+          "selector": "tests/test_native_slo_launcher_approval.py",
+          "expected_cases": 31
+        },
+        {
+          "selector": "tests/test_native_slo_launcher_empty_approval.py",
+          "expected_cases": 9
+        },
+        {
+          "selector": "tests/test_native_slo_faults.py",
+          "expected_cases": 15
+        }
+      ],
+      "expected_cases": 276,
+      "timeout": 600
+    },
+    {
+      "name": "workspace-pure",
+      "selectors": [
+        "tests/test_native_slo_workspace_decision.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_first_post_acceptance_request_keeps_earlier_offered_completion_distinct",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_entry_after_acceptance_cannot_relabel_an_earlier_offer",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_a_failed_earlier_sample_cannot_be_dropped_to_select_later_success",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_missing_declared_attempt_does_not_shrink_the_cohort",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_duplicate_causal_identities_are_not_unique_requests",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_equal_completion_stamps_retain_both_ties_without_claiming_unique_first",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_valid_but_wrong_receipt_authority_or_semantics_cannot_join",
+          "expected_cases": 11
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_each_valid_changed_command_authority_field_is_rejected",
+          "expected_cases": 6
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_missing_or_ambiguous_observation_is_not_complete",
+          "expected_cases": 17
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_stale_receipt_identity_is_revalidated_even_when_capture_flag_is_true",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_nonfinite_or_out_of_range_monotonic_endpoint_is_rejected",
+          "expected_cases": 7
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_backwards_clock_and_expired_wall_observation_are_separate_failures",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_incomplete_capture_cannot_be_promoted_by_otherwise_valid_rows",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_receipt_capture_detaches_the_full_validated_nested_binding",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_join_declaration_uses_exact_bounded_existing_witness_attempt_ids",
+          "expected_cases": 5
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_malformed_observed_attempt_is_retained_as_a_failed_exact_set",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_join_rejects_unbounded_extra_authority_fields",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_decision.py::test_clock_predicate_rejects_bool_and_huge_integer_without_overflow",
+          "expected_cases": 1
+        }
+      ],
+      "expected_cases": 62,
+      "timeout": 300
+    },
+    {
+      "name": "workspace-forward",
+      "selectors": [
+        "tests/test_native_slo_workspace_request_observer.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_secondary_request_preserves_original_calls_and_joins_real_sqlite_receipt",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_original_native_exception_identity_survives_observation",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_original_http_exception_identity_survives_without_inventing_native_call",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_diagnostic_clock_fault_cannot_replace_original_result",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_unknown_native_call_forwards_once_without_entering_declared_set",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_real_sqlite_missing_or_changed_receipt_cannot_supply_commit",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_public_readback_change_cannot_match_previous_request_authority",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_join_requires_closed_observer_before_sqlite_readback",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_refused_offer_is_counted_and_never_sent_to_http",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_observer.py::test_omitting_a_bad_owned_response_cannot_shrink_the_declared_join",
+          "expected_cases": 1
+        }
+      ],
+      "expected_cases": 16,
+      "timeout": 300
+    },
+    {
+      "name": "workspace-lifecycle",
+      "selectors": [
+        "tests/test_native_slo_workspace_request_lifecycle.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_http_timeout_does_not_hide_native_call_still_in_flight",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_freeze_during_valid_request_preserves_incomplete_http_and_native_counts",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_duplicate_owned_review_still_forwards_and_cannot_pass",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_late_retained_wrapper_call_is_forwarded_and_explicitly_incomplete",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_close_preserves_later_wrapper_owner_and_refuses_complete_result",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_nested_scope_restores_each_exact_captured_callable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_receipt_witness_must_be_entered_first",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_old_observer_refuses_request_after_actual_worker_replacement",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_declared_workspace_must_stay_within_owned_canonical_root",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_workspace_request_lifecycle.py::test_readback_scope_never_wraps_original_native_or_receipt_write",
+          "expected_cases": 1
+        }
+      ],
+      "expected_cases": 10,
+      "timeout": 300
+    },
+    {
+      "name": "native",
+      "selectors": [
+        "ci/native_runtime/test_native_phase_lifecycle.py::test_real_exporter_backpressure_is_reported_without_blocking_the_original_protocol"
+      ],
+      "selection_counts": [
+        {
+          "selector": "ci/native_runtime/test_native_phase_lifecycle.py::test_real_exporter_backpressure_is_reported_without_blocking_the_original_protocol",
+          "expected_cases": 1
+        }
+      ],
+      "expected_cases": 1,
+      "timeout": 180
+    }
+  ],
+  "rust_variants": {
+    "default": {
+      "features": []
+    },
+    "diagnostic": {
+      "features": [
+        "diagnostic-phases"
+      ]
+    }
+  },
+  "original_source_sha": "7045fb862de4245cf7740fa16f36d4d511e78fc1",
+  "component_manifest_sha256": "984e9e32460bb2783dc4172a8472bcbe7e4221ad3298f11ed0d8a4a49f836056",
+  "ownership_gates": {
+    "rust-io-ownership": "scripts/ci/rust_io_ownership_gate.py",
+    "rust-authority-ownership": "scripts/ci/rust_authority_ownership_gate.py",
+    "native-receipt-persistence": "scripts/ci/native_receipt_persistence_gate.py",
+    "python-capability-cleanup": "scripts/ci/python_capability_cleanup_gate.py"
+  },
+  "unicode_required_name_suffixes": [
+    "unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+    "unicode_operands_keep_python_and_php_launcher_classification_exact",
+    "unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+    "ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings"
+  ],
+  "scope": "One full current tests collection with the original protected-invariant gate, complete collection errors and current source origins. Fresh 364 scoped Python bodies (276 review, diagnostic and writer integration cases and 88 workspace controls), one real native backpressure case after two fresh release builds, and current Unicode library tests. Historical results remain separate. Formatter proposals are retained stdin outputs; source immutability is checked before and after validation. No E/F comparison campaign, installed performance workload or broad qualification claim.",
+  "qualification_complete": false,
+  "retention_bounds": {
+    "files": 256,
+    "per_file_bytes": 33554432,
+    "projection_raw_bytes": 100663296,
+    "projection_gzip_bytes": 16777216,
+    "formatter_report_bytes": 33554432,
+    "cohort_capture_bytes": 16777216,
+    "reason": "Expanded only for full collection, five complete fixture/phase captures and full formatter vectors across 75 current Python files; all original case/body deadlines are unchanged."
+  },
+  "component_file_count": 74,
+  "python_source_file_count": 75
+}

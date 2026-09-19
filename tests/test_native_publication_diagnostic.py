@@ -393,3 +393,79 @@ def test_actual_long_traceback_never_contains_retained_private_error(tmp_path):
     assert result.returncode == 1 and "1 failed" in output
     assert "last_publisher=other; error_epoch=0; epoch=1; error_events=1" in output
     assert environment["SYNTHETIC_PRIVATE_VALUE"] not in output
+
+
+@pytest.mark.parametrize("ready", [False, True])
+@pytest.mark.parametrize("publisher_error", ["native_policy_authority_source_changed", "private-publisher-canary"])
+@pytest.mark.parametrize("output_fails", [False, True])
+def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_original_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    ready: bool,
+    publisher_error: str,
+    output_fails: bool,
+) -> None:
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from codex_plugin_scanner.guard.store import GuardStore
+    from scripts import native_slo_session as session_module
+
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path))
+    original_record = publisher._record_error
+    events = []
+
+    def prepare(workspace: Path, *, deadline: float) -> dict[str, object] | None:
+        events.append((workspace, deadline))
+        publisher._record_error(publisher_error)
+        publisher.request_publish()
+        return {} if ready else None
+
+    daemon = SimpleNamespace(
+        start=lambda: events.append("start"),
+        port=1,
+        _server=SimpleNamespace(
+            hook_worker=SimpleNamespace(policy_snapshot_publisher=publisher, prepare_workspace_policy=prepare)
+        ),
+    )
+    session = object.__new__(session_module.AdapterSession)
+    session.daemon, session.workspace = cast(Any, daemon), Path("synthetic-workspace")
+    monotonic = iter([100.0, 100.401])
+    perf = iter([100.0, 100.401])
+    monkeypatch.setattr(session_module.time, "monotonic", lambda: next(monotonic))
+    monkeypatch.setattr(session_module.time, "perf_counter", lambda: next(perf))
+    monkeypatch.setattr(session_module, "HTTPConnection", lambda *args, **kwargs: object())
+
+    class BrokenOutput:
+        def write(self, value: str) -> int:
+            raise OSError("private-output-canary")
+
+    observation = (
+        "window=after_daemon_construction; attached=True; publisher=missing; transport=missing; started=0; completed=0"
+    )
+    original_error = (
+        "native_installed_slo_failed: native readiness exceeded budget"
+        if ready
+        else "native_installed_slo_failed: native policy was not ready; " + observation
+    )
+    try:
+        with monkeypatch.context() as output_patch:
+            if output_fails:
+                output_patch.setattr(diagnostic.sys, "stderr", BrokenOutput())
+            with pytest.raises(RuntimeError) as caught:
+                session.start()
+        assert str(caught.value) == original_error
+        assert events == ["start", (session.workspace, 100.4)]
+        assert session.readiness_ms == pytest.approx(401.0)
+        assert publisher._client_request is None and publisher._record_error == original_record
+        assert publisher.last_error is None and publisher._epoch == 1 and not publisher._started
+        output = capsys.readouterr().err
+        code = "other" if publisher_error.startswith("private-") else publisher_error
+        expected = (
+            "native_publication_observation: " + observation + "; "
+            "lifecycle_attached=True; initial_publisher=missing; "
+            f"last_publisher={code}; error_epoch=0; epoch=1; error_events=1\n"
+        )
+        assert output == ("" if output_fails else expected)
+        assert "private-" not in output
+    finally:
+        publisher.close()

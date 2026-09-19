@@ -27,7 +27,7 @@ from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_resident_client import close_native_resident_clients
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
-from scripts.native_publication_diagnostic import cleanup_after_failure, observe_publication
+from scripts.native_publication_diagnostic import cleanup_after_failure, observe_publication, report_publication_failure
 from scripts.native_slo_adapter import (
     Observation,
     is_allowed,
@@ -351,11 +351,13 @@ class AdapterSession:
                 time.sleep(0.01)
             self.readiness_ms = (time.perf_counter() - started) * 1_000.0
             if prepared is None:
+                report_publication_failure(observation, publisher)
                 raise RuntimeError(
                     "native_installed_slo_failed: native policy was not ready; "
                     + observation.describe(getattr(publisher, "last_error", None))
                 )
             if self.readiness_ms > MAX_READINESS_P95_MS:
+                report_publication_failure(observation, publisher)
                 raise RuntimeError("native_installed_slo_failed: native readiness exceeded budget")
 
     def observe(

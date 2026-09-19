@@ -1,719 +1,334 @@
-name: CI
+name: Store extraction acceptance
 on:
-  push:
-    branches: [main, release/3.0, release/3.1, release/3.2]
-  pull_request:
-    branches: [main, release/3.0, release/3.2]
-  schedule:
-    - cron: "0 5 * * 1"
   workflow_dispatch:
-
+    inputs:
+      diagnostic_sha:
+        required: true
+        type: string
+      diagnostic_tree:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
 permissions:
-  actions: read
   contents: read
-
-env:
-  CI_UV_CACHE_DEPENDENCY_GLOB: |
-    pyproject.toml
-    uv.lock
-    requirements.txt
-    docker-requirements.txt
-
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Validate protected test invariants
-        run: uv run --no-sync python scripts/ci/test_inventory.py --output test-inventory.json
-      - name: Publish test inventory
-        run: cat test-inventory.json
-      - name: Inventory required release collection and configured install checks
-        run: |
-          uv run --no-sync python scripts/ci/release_required_evidence.py \
-            --output release-required-evidence.json
-          cat release-required-evidence.json
-      - name: Publish exact test-body duplicate candidates
-        run: |
-          uv run --no-sync python scripts/ci/test_duplicate_candidates.py \
-            --output test-duplicate-candidates.json
-          cat test-duplicate-candidates.json
-      - name: Lint production sources
-        run: |
-          uv run --no-sync python -m ruff check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - name: Check formatting for production sources
-        run: |
-          uv run --no-sync python -m ruff format --check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - run: uv run --no-sync basedpyright --level error
-      - name: Dead-code scan (L329)
-        run: uv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/ --select=F401,F811,F841
-      - name: TODO/FIXME scan (L330)
-        run: |
-          count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore" | wc -l | tr -d ' ')
-          echo "Guard TODO/FIXME count: $count"
-          if [ "$count" -gt "0" ]; then
-            grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore"
-            exit 1
-          fi
-
-  test-plan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Restore latest trusted duration telemetry
-        id: latest-duration-telemetry
-        continue-on-error: true
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TELEMETRY_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
-        run: |
-          run_id=$(
-            gh api --method GET "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs" \
-              -f branch="$TELEMETRY_BRANCH" -f event=push -f status=success -f per_page=1 \
-              --jq '.workflow_runs[0].id // empty'
-          )
-          test -n "$run_id"
-          read -r event conclusion branch workflow_path < <(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" \
-              --jq '[.event, .conclusion, .head_branch, .path] | @tsv'
-          )
-          test "$event" = "push"
-          test "$conclusion" = "success"
-          test "$branch" = "$TELEMETRY_BRANCH"
-          test "$workflow_path" = ".github/workflows/ci.yml"
-          artifact_id=$(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?name=pytest-duration-manifest-candidate&per_page=100" \
-              --jq '.artifacts | map(select(.expired == false and .name == "pytest-duration-manifest-candidate")) | .[0].id // empty'
-          )
-          test -n "$artifact_id"
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > /tmp/duration-manifest.zip
-          unzip -p /tmp/duration-manifest.zip pytest-duration-manifest-candidate.json.gz \
-            > /tmp/pytest-duration-manifest.json.gz
-          gzip -t /tmp/pytest-duration-manifest.json.gz
-          mv /tmp/pytest-duration-manifest.json.gz pytest-duration-manifest.latest.json.gz
-      - name: Collect once and build 96 affinity-aware pytest shards
-        shell: bash
-        run: |
-          manifest=ci/pytest-duration-manifest.json.gz
-          if test -s pytest-duration-manifest.latest.json.gz; then
-            manifest=pytest-duration-manifest.latest.json.gz
-          fi
-          uv run --no-sync python scripts/ci/build_pytest_shard_plan.py \
-            --shard-count 96 \
-            --duration-manifest "$manifest" \
-            --max-manifest-age-days 28 \
-            --output-directory pytest-shards
-      - name: Publish pytest shard plan
-        run: cat pytest-shards/plan.json
-      - name: Upload pytest shard plan
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-          if-no-files-found: error
-          retention-days: 1
-
-  tests:
-    needs: test-plan
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
-        shard-index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          # Every shard must collect under the same patch release or node assignments can overlap.
-          python-version: "3.12.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
-        run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Download pytest shard plan
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-      - name: Run pytest shard ${{ matrix.shard-index }}
-        shell: bash
-        run: |
-          shard_file=$(printf 'pytest-shards/shard-%02d.txt' "${{ matrix.shard-index }}")
-          test -s "$shard_file"
-          # This process-pool timing contract is owned by scheduling-sensitive, which runs it untraced.
-          PYTHONPATH=scripts/ci GUARD_PYTEST_DURATION_OUTPUT=pytest-durations.json GUARD_PYTEST_UNDER_COVERAGE=1 \
-            uv run --no-sync pytest -p pytest_duration_report "@$shard_file" --tb=short \
-            --deselect tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial \
-            --cov --cov-branch --cov-report=
-      - name: Upload pytest coverage data artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-coverage-${{ matrix.shard-index }}
-          path: .coverage
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 1
-      - name: Upload pytest duration artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-durations-${{ matrix.shard-index }}
-          path: pytest-durations.json
-          if-no-files-found: warn
-          retention-days: 7
-
-  duration-manifest-candidate:
-    if: needs.tests.result == 'success'
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - name: Download pytest duration reports
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-durations-*
-          path: duration-reports
-      - name: Build duration manifest candidate
-        shell: bash
-        run: |
-          shopt -s globstar nullglob
-          reports=(duration-reports/**/pytest-durations.json)
-          test "${#reports[@]}" -eq 96
-          python3 scripts/ci/build_pytest_duration_manifest.py \
-            --output pytest-duration-manifest-candidate.json.gz \
-            --observed-at "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
-            "${reports[@]}"
-      - name: Upload pytest duration manifest candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-duration-manifest-candidate
-          path: pytest-duration-manifest-candidate.json.gz
-          if-no-files-found: error
-          retention-days: 90
-
-  sonar-guard:
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      has-token: ${{ steps.token-presence.outputs.has-token }}
-    steps:
-      - name: Check for SonarQube Cloud token
-        id: token-presence
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          if test -n "$SONAR_TOKEN"; then
-            echo "has-token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-token=false" >> "$GITHUB_OUTPUT"
-            echo "SONAR_TOKEN secret is not set; skipping SonarQube Cloud analysis"
-          fi
-
-  sonar:
-    needs: [sonar-guard, tests]
-    if: needs.sonar-guard.outputs.has-token == 'true' && vars.SONAR_CI_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Download pytest coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-coverage-*
-          path: coverage-data
-      - name: Cache Sonar analyzer downloads
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ${{ runner.temp }}/sonar/cache
-          key: sonar-analyzers-${{ runner.os }}-${{ hashFiles('sonar-project.properties') }}
-      - name: Initialize pinned Rust analysis toolchain
-        shell: bash
-        run: bash scripts/ci/setup_sonar_rust.sh
-      - name: Cache Rust analysis dependencies
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-        with:
-          workspaces: rust
-          shared-key: sonar
-          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      - name: Prepare coverage and pinned Rust analysis
-        shell: bash
-        run: bash scripts/ci/prepare_sonar_analysis.sh
-      - name: Analyze with SonarQube Cloud
-        uses: sonarsource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
-        env:
-          SONAR_USER_HOME: ${{ runner.temp }}/sonar
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@7a5fffe8e523c40e0c740b6bc2712ab503e52efa
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  scheduling-sensitive:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run scheduling-sensitive tests untraced
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_extension_control_recovery.py
-          tests/test_guard_sandbox.py
-          tests/test_guard_js_lockfile_resolution_phase11.py
-          tests/test_guard_runtime_hook_scheduler.py
-          tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial
-          tests/test_guard_continuation_contract.py
-          --tb=short
-
   compatibility:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-version compatibility contracts
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_cisco_install_surfaces.py
-          tests/test_policy.py
-          tests/test_policy_bundle_parser.py
-          --tb=short
-
-  deep-compatibility:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13"]
-        shard-index: [0, 1, 2, 3]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
-        run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Run deep compatibility shard ${{ matrix.shard-index }}
-        shell: bash
-        run: |
-          uv run --no-sync python scripts/ci/pytest_shard.py \
-            --shard-index "${{ matrix.shard-index }}" \
-            --shard-count 4 \
-            --granularity file > pytest-files.txt
-          test -s pytest-files.txt
-          uv run --no-sync pytest @pytest-files.txt --tb=short
-
-  mutation-baseline:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run command parser mutation baseline
-        run: uv run --no-sync mutmut run --max-children 4
-      - name: Validate mutation baseline
-        run: |
-          uv run --no-sync mutmut export-cicd-stats
-          uv run --no-sync python scripts/ci/mutation_gate.py --target command-model
-
-  ci-python-312:
-    name: ci (3.12)
-    if: always()
-    needs: [quality, test-plan, tests, compatibility, scheduling-sensitive]
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Verify Python CI dependencies
-        env:
-          QUALITY_RESULT: ${{ needs.quality.result }}
-          TEST_PLAN_RESULT: ${{ needs.test-plan.result }}
-          TESTS_RESULT: ${{ needs.tests.result }}
-          COMPATIBILITY_RESULT: ${{ needs.compatibility.result }}
-          SCHEDULING_SENSITIVE_RESULT: ${{ needs.scheduling-sensitive.result }}
-        run: |
-          test "$QUALITY_RESULT" = "success"
-          test "$TEST_PLAN_RESULT" = "success"
-          test "$TESTS_RESULT" = "success"
-          test "$COMPATIBILITY_RESULT" = "success"
-          test "$SCHEDULING_SENSITIVE_RESULT" = "success"
-
-  dashboard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: "1.3.14"
-      - run: cd dashboard && bun install --frozen-lockfile
-      - run: cd dashboard && bun run test
-      - name: Dashboard build and bundle-size report (L331)
-        run: |
-          cd dashboard && bun run build
-          git diff --exit-code -- ../src/codex_plugin_scanner/guard/daemon/static
-          js_size=$(du -sh dist/assets/*.js 2>/dev/null | awk '{print $1}' | head -1)
-          css_size=$(du -sh dist/assets/*.css 2>/dev/null | awk '{print $1}' | head -1)
-          echo "Bundle JS: ${js_size:-unknown}, CSS: ${css_size:-unknown}"
-
-  cisco-full:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - run: python3.13 -m pip install --dry-run --no-deps --require-hashes -r docker-requirements.txt
-      - run: uv sync --frozen --extra dev --extra cisco --group cisco-mcp --python 3.13
-      - run: uv run --no-sync pytest tests/test_cisco_install_surfaces.py tests/test_mcp_security.py tests/test_cli.py tests/test_action_runner.py tests/test_live_cisco_smoke.py --tb=short
-
-  cross-platform:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ["3.12"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-platform Guard regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_guard_skill_directory_identity.py
-          tests/test_guard_skill_directory_identity_discovery.py
-          tests/test_guard_skill_directory_identity_downstream.py
-          tests/test_guard_skill_directory_identity_links.py
-          tests/test_guard_consumer_skill_directory_identity.py
-          tests/test_guard_runner_skill_directory_identity.py
-          tests/test_gemini_adapter.py
-          tests/test_gemini_skill_directory_identity.py
-          tests/test_antigravity_adapter.py
-          tests/test_guard_aibom_detection.py
-          tests/test_guard_aibom_content_upload_batches.py
-          tests/test_guard_aibom_skill_directory_identity.py
-          --tb=short
-      - name: Run Windows Codex hook process-tree regressions
-        if: runner.os == 'Windows'
-        run: >-
-          uv run --no-sync pytest
-          tests/test_codex_hook_fallback_isolation.py
-          -k "isolated_process_timeout_kills_descendants or isolated_process_closes_descendant_held_pipes_after_parent_exit"
-          --tb=short
-      - name: Build and exercise packaged Windows Core daemon gate
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
-          $dist = Join-Path $env:RUNNER_TEMP "hol-guard-frozen"
-          $work = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-work"
-          $spec = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-spec"
-          $versionFile = Join-Path $env:RUNNER_TEMP "hol-guard-version-info.txt"
-          New-Item -ItemType Directory -Force -Path $dist, $work, $spec | Out-Null
-          uv sync --frozen --extra dev --extra mdm-build --python ${{ matrix.python-version }}
-          $version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()
-          uv run --no-sync python scripts/mdm/windows/write-version-info.py `
-            --version $version --output $versionFile
-          uv run --no-sync python -I scripts/release/stage_guard_cloud_review_artifacts.py `
-            --source-root (Get-Location).Path
-          if ($LASTEXITCODE -ne 0) {
-            throw "Staging Guard cloud review artifacts failed with exit code $LASTEXITCODE"
-          }
-          uv run --no-sync pyinstaller --clean --noconfirm --onedir --name hol-guard `
-            --collect-submodules codex_plugin_scanner --collect-data codex_plugin_scanner `
-            --version-file $versionFile `
-            --distpath $dist --workpath $work --specpath $spec `
-            scripts/mdm/hol-guard-entry.py
-          if ($LASTEXITCODE -ne 0) {
-            throw "PyInstaller failed with exit code $LASTEXITCODE"
-          }
-          $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE = Join-Path $dist "hol-guard/hol-guard.exe"
-          if (-not (Test-Path -LiteralPath $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE -PathType Leaf)) {
-            throw "Frozen hol-guard executable was not produced"
-          }
-          uv run --no-sync pytest tests/test_frozen_windows_daemon_bootstrap.py --tb=short
-
-  windows-updater:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
+    if: github.ref == 'refs/heads/hgp/diagnostic-store-extraction-acceptance-20260919'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.12"]
+        python: ["3.10", "3.12"]
+    env:
+      EXPECTED_SHA: ${{ inputs.diagnostic_sha }}
+      EXPECTED_TREE: ${{ inputs.diagnostic_tree }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ inputs.diagnostic_sha }}
+          fetch-depth: 3
+          persist-credentials: false
+      - name: Verify immutable extraction source
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_TREE" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$EXPECTED_TREE"
+          test "$(git show -s --format=%P HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse "${SOURCE_SHA}^{tree}")" = e18226860b66af2202a2f689996c6626bd4e3b7e
+          test "$(git show -s --format=%P "$SOURCE_SHA")" = 9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12
+          test "$(git hash-object .github/workflows/native-managed-source-contract.yml)" = cf1d3abfbcdd9250f4c99b966310c10de3cdc319
+          test "$(git hash-object basedpyright.native-managed-source.json)" = 4b56aeeb41fa2af0129511bcd3f7da2f37669d39
+          test "$(git hash-object conftest.py)" = 9e1408c12fe951ad2f1541b1c2c0508f3c35b41a
+          test "$(git hash-object pyproject.toml)" = 64a0281ee6b4f57a74cab68ac992fec3d782a6bb
+          test "$(git hash-object src/codex_plugin_scanner/__init__.py)" = 1bde9899a1379c44d9bbccfd8651608e1e013101
+          test "$(git hash-object src/codex_plugin_scanner/guard/__init__.py)" = 4a85303da8860d127c5e2d6ed29cd76598d12264
+          test "$(git hash-object src/codex_plugin_scanner/guard/native_runtime.py)" = 84b47cffb76f7d21d6af722ae4adc70ae4698eff
+          test "$(git hash-object src/codex_plugin_scanner/guard/native_runtime_selection.py)" = 301939afbe4df673d78f34ea2aeed180911b09d6
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/__init__.py)" = b438aac9453e3065584ce0eb6587f178858b73dc
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py)" = da13c9a3dbd7645cac6d056da567fbfd54842b7d
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/runner.py)" = 4743967f29196a7fce91d4bca3ec02e2f674bc6e
+          test "$(git hash-object src/codex_plugin_scanner/guard/store.py)" = 4edf1f65655e01fea4f634252d4242819ef92f52
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_cloud_events.py)" = b9330e96ae7ff68abc172b21c3f730f561602f85
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_connection_schema.py)" = c1630ef634b8b4ae79dbd67e1c1d0c045f58b485
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_extension_control_authority.py)" = cf793818bccbbba28612b26414b305ab2d6accce
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_extension_control_authority_support.py)" = abcbe92b9615cb3b667103e4893613d5cf5cdb32
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_oauth.py)" = 5c3fac2a8f9ad284b1e4723eb127d026edf4fe12
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_oauth_connection_authority.py)" = 907cebee5f0d3e7a0ea3e785eb397238d8e831c9
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_sync_locks.py)" = 8a68a6d0208890958746f8a4e336bb48c84fe5ce
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_sync_payload_mutations.py)" = 44319c8d3e2848456841d60933a5db64f4b9c8b3
+          test "$(git hash-object tests/conftest.py)" = 61e6d98609309fac99c9baae50fab5f47229fcde
+          test "$(git hash-object tests/fixtures/guard-command-corpus/decision-diff-report.json)" = ce50852ebd4f5f65415aa28cade8703cd7ab5fad
+          test "$(git hash-object tests/guard_command_decision_diff.py)" = 2150c9eb1da9371966b26cbfd1a8737fbf7e2e64
+          test "$(git hash-object tests/oauth_refresh_connection_support.py)" = 0a2e9677e267d1cd40e3a88e01915a9aa69ed83b
+          test "$(git hash-object tests/oauth_refresh_fixture_support.py)" = dcab0efe509dd99d543942987db3ddccdc32d62a
+          test "$(git hash-object tests/test_aibom_daemon_authority.py)" = 3182b375e8eafa70a7e8d40c8759bbdce7eb2cb0
+          test "$(git hash-object tests/test_aibom_operation_authority.py)" = 1ec0cb1f6116e59ffd2a76f6ae4b4ecaae7af1e8
+          test "$(git hash-object tests/test_aibom_sync_admission.py)" = a0344046d3f564992611c98485329bd8687296de
+          test "$(git hash-object tests/test_guard_command_queue.py)" = 0021778c8119fe28c346996cbb239381fa30b64c
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = a866713f175f3011de12c4bb739519e4709ca746
+          test "$(git hash-object tests/test_guard_extension_control_api.py)" = 7b5214f6bcdc4ed4012330ef54f2b5fc7b238ad5
+          test "$(git hash-object tests/test_guard_native_runtime.py)" = cee42c2a77b1f4bc2afaf05e85fe6ddd0a37052a
+          test "$(git hash-object tests/test_guard_oauth_cached_expiry_compatibility.py)" = b4d3f8554c99b0d45efc5e6efb3f702f41c3917d
+          test "$(git hash-object tests/test_guard_oauth_reconnect.py)" = 5b1e5a0a97b22fbfcee40389ee73a468ff929f88
+          test "$(git hash-object tests/test_guard_oauth_refresh_resilience.py)" = 9dd402073a05f0da18c3ce6ebce707b61ed974f8
+          test "$(git hash-object tests/test_guard_runtime.py)" = 699f385b4de589deb0d3980464314dfcefc55a9d
+          test "$(git hash-object tests/test_inventory_consumer_authority.py)" = 0702ad27e21ec0908d2ea86d4595d4119cb7bcb2
+          test "$(git hash-object tests/test_inventory_oauth_completion_authority.py)" = 74671e83adc21a7c2547b783d3b08595e6c39b4d
+          test "$(git hash-object tests/test_inventory_request_authority.py)" = 4db5bf0d023b25b15e42d0a127ba6b7098902d90
+          test "$(git hash-object tests/test_native_policy_authority_coherent_capture.py)" = f77dc7e3429325b0492baf83a95e1aef1164b06d
+          test "$(git hash-object tests/test_native_policy_authority_managed_read.py)" = eb56d298dda0a192f7f0e1fea8c0a17a04e94c36
+          test "$(git hash-object tests/test_native_policy_control_runtime.py)" = 46047c67bcd959e2e28cc6b8700738e2292d5fc8
+          test "$(git hash-object tests/test_native_policy_control_transport.py)" = 91749138413d5819ddff4321d46bfe71509c4b1e
+          test "$(git hash-object tests/test_native_policy_snapshot_control.py)" = edc5f686be49b69251287a5153d6e58986705e31
+          test "$(git hash-object tests/test_native_runtime_admission.py)" = 43585495a97b39f8516f1e58ead4db5d1ca00188
+          test "$(git hash-object tests/test_oauth_connection_authority.py)" = 0441f694d5ac0710e24b36f838e0eeb849c09278
+          test "$(git hash-object tests/test_oauth_refresh_connection_authority.py)" = a57f82c8de00851fb89222e24198feb1ba4bc32a
+          test "$(git hash-object tests/test_paseo_adapter.py)" = 88b34513adf145a7ce8c5e6fc51982c732de0694
+          test "$(git hash-object uv.lock)" = 10e18a310e63ba3c5940e25b44269d48dfc7f2da
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          git diff --name-only HEAD^ HEAD | sort > "$RUNNER_TEMP/extraction-diagnostic-changed.txt"
+          printf '%s\n' .github/workflows/ci.yml > "$RUNNER_TEMP/extraction-diagnostic-expected.txt"
+          cmp "$RUNNER_TEMP/extraction-diagnostic-changed.txt" "$RUNNER_TEMP/extraction-diagnostic-expected.txt"
+          git diff --name-only "${SOURCE_SHA}^" "$SOURCE_SHA" | sort > "$RUNNER_TEMP/extraction-source-changed.txt"
+          printf '%s\n' src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_selection.py src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py src/codex_plugin_scanner/guard/runtime/runner.py src/codex_plugin_scanner/guard/store_cloud_events.py src/codex_plugin_scanner/guard/store_connection_schema.py src/codex_plugin_scanner/guard/store_extension_control_authority.py src/codex_plugin_scanner/guard/store_extension_control_authority_support.py src/codex_plugin_scanner/guard/store_oauth.py src/codex_plugin_scanner/guard/store_oauth_connection_authority.py src/codex_plugin_scanner/guard/store_sync_locks.py src/codex_plugin_scanner/guard/store_sync_payload_mutations.py tests/fixtures/guard-command-corpus/decision-diff-report.json tests/oauth_refresh_connection_support.py tests/oauth_refresh_fixture_support.py tests/test_guard_command_queue.py tests/test_guard_runtime.py tests/test_oauth_refresh_connection_authority.py tests/test_paseo_adapter.py | sort > "$RUNNER_TEMP/extraction-source-expected.txt"
+          cmp "$RUNNER_TEMP/extraction-source-changed.txt" "$RUNNER_TEMP/extraction-source-expected.txt"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run trusted updater and daemon regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_update_artifact.py
-          tests/test_guard_update_subprocess.py
-          tests/test_guard_update_isolation.py
-          tests/test_guard_phase03_local_install.py
-          tests/test_guard_phase03_remainder.py
-          tests/test_dashboard_update.py
-          tests/test_guard_daemon_manager.py
-          tests/test_guard_mdm_policy.py
-          --tb=short
+          enable-cache: false
+      - name: Install frozen test dependencies
+        id: dependencies
+        run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Secure the CI virtualenv interpreter
+        id: interpreter
+        shell: bash
+        run: |
+          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
+          target="$(realpath "$interpreter")"
+          mode="$(stat -c '%a' "$target")"
+          if (( (8#$mode & 2) != 0 )); then
+            replacement="${interpreter}.guard-ci"
+            cp --dereference "$target" "$replacement"
+            chmod 0755 "$replacement"
+            mv "$replacement" "$target"
+          fi
+          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
+          (( (8#$secured_mode & 2) == 0 ))
+      - name: Check all changed Python source formatting
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          test "$(uv run --no-sync ruff --version)" = "ruff 0.15.17"
+          uv run --no-sync ruff check src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_selection.py src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py src/codex_plugin_scanner/guard/runtime/runner.py src/codex_plugin_scanner/guard/store_cloud_events.py src/codex_plugin_scanner/guard/store_connection_schema.py src/codex_plugin_scanner/guard/store_extension_control_authority.py src/codex_plugin_scanner/guard/store_extension_control_authority_support.py src/codex_plugin_scanner/guard/store_oauth.py src/codex_plugin_scanner/guard/store_oauth_connection_authority.py src/codex_plugin_scanner/guard/store_sync_locks.py src/codex_plugin_scanner/guard/store_sync_payload_mutations.py tests/oauth_refresh_connection_support.py tests/oauth_refresh_fixture_support.py tests/test_guard_command_queue.py tests/test_guard_runtime.py tests/test_oauth_refresh_connection_authority.py tests/test_paseo_adapter.py
+          uv run --no-sync ruff format --check src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_selection.py src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py src/codex_plugin_scanner/guard/runtime/runner.py src/codex_plugin_scanner/guard/store_cloud_events.py src/codex_plugin_scanner/guard/store_connection_schema.py src/codex_plugin_scanner/guard/store_extension_control_authority.py src/codex_plugin_scanner/guard/store_extension_control_authority_support.py src/codex_plugin_scanner/guard/store_oauth.py src/codex_plugin_scanner/guard/store_oauth_connection_authority.py src/codex_plugin_scanner/guard/store_sync_locks.py src/codex_plugin_scanner/guard/store_sync_payload_mutations.py tests/oauth_refresh_connection_support.py tests/oauth_refresh_fixture_support.py tests/test_guard_command_queue.py tests/test_guard_runtime.py tests/test_oauth_refresh_connection_authority.py tests/test_paseo_adapter.py
+      - name: Typecheck the original native source contract
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --pythonversion ${{ matrix.python }} --project basedpyright.native-managed-source.json
+      - name: Typecheck every changed and added Python file
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --pythonversion ${{ matrix.python }} --project basedpyright.native-managed-source.json src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_selection.py src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py src/codex_plugin_scanner/guard/runtime/runner.py src/codex_plugin_scanner/guard/store_cloud_events.py src/codex_plugin_scanner/guard/store_connection_schema.py src/codex_plugin_scanner/guard/store_extension_control_authority.py src/codex_plugin_scanner/guard/store_extension_control_authority_support.py src/codex_plugin_scanner/guard/store_oauth.py src/codex_plugin_scanner/guard/store_oauth_connection_authority.py src/codex_plugin_scanner/guard/store_sync_locks.py src/codex_plugin_scanner/guard/store_sync_payload_mutations.py tests/oauth_refresh_connection_support.py tests/oauth_refresh_fixture_support.py tests/test_guard_command_queue.py tests/test_guard_runtime.py tests/test_oauth_refresh_connection_authority.py tests/test_paseo_adapter.py
+      - name: Verify full repository imports and store method resolution
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        shell: bash
+        run: |
+          uv run --no-sync python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+          
+          root = Path.cwd().resolve()
+          pairs = [["codex_plugin_scanner.guard.store_oauth","codex_plugin_scanner.guard.store_oauth_connection_authority"],["codex_plugin_scanner.guard.store_cloud_events","codex_plugin_scanner.guard.store_sync_payload_mutations"],["codex_plugin_scanner.guard.store_extension_control_authority","codex_plugin_scanner.guard.store_extension_control_authority_support"],["codex_plugin_scanner.guard.native_runtime","codex_plugin_scanner.guard.native_runtime_selection"],["codex_plugin_scanner.guard.store_connection_schema","codex_plugin_scanner.guard.store_sync_locks"],["codex_plugin_scanner.guard.runtime.runner","codex_plugin_scanner.guard.runtime.oauth_refresh_context"]]
+          direct_bases = ["StoreSecretPolicyIntegrityMixin","StoreWorkflowCapabilitySecretControlMixin","StoreConnectionSchemaMixin","StoreContinuationMixin","StoreManagedControlsStatusMixin","StoreExtensionControlAuthorityMixin","StoreCustomExtensionContinuityMixin","StoreLocalCliMixin","StoreLocalMcpMixin","StoreCommandActivityMixin","StoreCommandActivityApiMixin","StoreCommandActivityLifecycleMixin","StoreCommandActivityMaintenanceMixin","StoreCommandActivityPrivacyMixin","StoreStorageMaintenanceMixin","StoreCommandShadowMixin","StoreInventoryMixin","StorePortableProjectMemoryMixin","StorePolicyMixin","StoreReviewPolicyMemoryMixin","StorePolicyIntegrityAdminMixin","StoreCloudEventsMixin","StoreReceiptsRuntimeMixin","StoreApprovalQueriesMixin","StoreApprovalsMixin","StoreExactCloudReviewMixin","StoreReviewEventOutboxMixin","StoreEventReceiptsMixin","StoreNativeDecisionReceiptsMixin","StoreOAuthConnectMixin","StoreSessionsMixin","StoreEvidenceMixin","StorePolicyDocumentMixin","StoreReadStateMixin","StoreTemporaryMcpMixin","StoreWorkflowCapabilitiesMixin","StoreWorkflowCapabilityLookupMixin","StoreWorkflowCapabilityReceiptLookupMixin","StoreWorkflowCapabilityRevocationMixin"]
+          method_groups = [["codex_plugin_scanner.guard.store_oauth_connection_authority","StoreOAuthConnectionAuthorityMixin",["clear_cloud_sync_state_for_reconnect","capture_oauth_connection","_capture_oauth_connection_unlocked","_clear_oauth_local_credentials_locked"]],["codex_plugin_scanner.guard.store_sync_payload_mutations","StoreSyncPayloadMutationsMixin",["reserve_sync_sequence","set_sync_payload","_set_oauth_sync_payload_unlocked","_set_sync_payload_unlocked","delete_sync_payload","delete_sync_payloads","_delete_sync_payloads_unlocked"]],["codex_plugin_scanner.guard.store_extension_control_authority_support","_ExtensionControlAuthoritySupportMixin",["_read_captured_extension_control_authority","_load_catalog_manifest"]]]
+          child = r"""
+          import importlib
+          import json
+          import sys
+          from pathlib import Path
+          
+          root = Path(sys.argv[1]).resolve()
+          first, second = sys.argv[2:4]
+          importlib.import_module(first.rsplit(".", 1)[0])
+          assert first not in sys.modules and second not in sys.modules
+          for name in (first, second):
+              module = importlib.import_module(name)
+              expected = root / "src" / (name.replace(".", "/") + ".py")
+              assert Path(module.__file__).resolve() == expected.resolve()
+          store_module = importlib.import_module("codex_plugin_scanner.guard.store")
+          assert Path(store_module.__file__).resolve() == (root / "src/codex_plugin_scanner/guard/store.py").resolve()
+          store_type = store_module.GuardStore
+          assert [base.__name__ for base in store_type.__bases__] == json.loads(sys.argv[4])
+          mro = store_type.__mro__
+          assert len(mro) == len(set(mro))
+          for module_name, class_name, methods in json.loads(sys.argv[5]):
+              module = importlib.import_module(module_name)
+              expected = root / "src" / (module_name.replace(".", "/") + ".py")
+              assert Path(module.__file__).resolve() == expected.resolve()
+              owner = getattr(module, class_name)
+              assert owner in mro
+              for name in methods:
+                  assert getattr(store_type, name) is owner.__dict__[name]
+          schema = importlib.import_module("codex_plugin_scanner.guard.store_connection_schema")
+          schema_type = schema.StoreConnectionSchemaMixin
+          assert schema_type in mro
+          for name in ("hold_oauth_refresh_lock", "hold_cloud_sync_lock", "hold_aibom_sync_lock"):
+              assert getattr(store_type, name) is schema_type.__dict__[name]
+          """
+          for index, pair in enumerate(pairs, start=1):
+              for direction, order in (("parent-first", pair), ("helper-first", list(reversed(pair)))):
+                  print(f"IMPORT_MRO_CASE_START={index}:{direction}", flush=True)
+                  subprocess.run(
+                      [
+                          sys.executable, "-c", child, str(root), *order,
+                          json.dumps(direct_bases), json.dumps(method_groups),
+                      ],
+                      cwd=root,
+                      check=True,
+                      timeout=60,
+                  )
+                  print(f"IMPORT_MRO_CASE_OK={index}:{direction}", flush=True)
+          print("FULL_REPOSITORY_IMPORT_MRO_CASES_PASSED=12")
+          PY
+      - name: Verify OAuth connection and refresh authority
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_oauth_connection_authority.py \
+            tests/test_oauth_refresh_connection_authority.py \
+            tests/test_guard_oauth_reconnect.py \
+            tests/test_guard_oauth_refresh_resilience.py \
+            tests/test_guard_oauth_cached_expiry_compatibility.py \
+            --tb=short
+      - name: Verify shared OAuth transports and repaired fixtures
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_guard_runtime.py::test_sync_runtime_session_rejects_untrusted_oauth_issuer_before_network \
+            tests/test_guard_runtime.py::test_sync_runtime_session_refreshes_oauth_access_token_and_rotates_refresh_token \
+            tests/test_guard_runtime.py::test_resolve_guard_sync_auth_context_serializes_refresh_token_rotation \
+            tests/test_guard_runtime.py::test_sync_local_guard_cloud_proof_refreshes_oauth_once \
+            tests/test_guard_runtime.py::test_sync_local_guard_cloud_proof_serializes_concurrent_oauth_refresh \
+            tests/test_guard_runtime.py::test_sync_pain_signals_raises_when_oauth_refresh_is_revoked \
+            tests/test_guard_command_queue.py::test_poll_once_reuses_cached_access_token_across_oauth_polls \
+            tests/test_guard_command_queue.py::test_command_queue_loop_retries_revoked_oauth_auth_and_records_reconnect_state \
+            tests/test_paseo_adapter.py::test_cloud_sync_preserves_native_inventories_without_sending_local_paseo_content \
+            --tb=short
+      - name: Verify inventory connection authority
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_inventory_oauth_completion_authority.py \
+            tests/test_inventory_request_authority.py \
+            tests/test_inventory_consumer_authority.py \
+            --tb=short
+      - name: Verify connection locks and daemon storage
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_aibom_sync_admission.py \
+            tests/test_aibom_operation_authority.py \
+            tests/test_aibom_daemon_authority.py \
+            tests/test_guard_daemon_storage_liveness.py \
+            --tb=short
+      - name: Verify managed authority and coherent captures
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_native_policy_authority_coherent_capture.py \
+            tests/test_native_policy_authority_managed_read.py \
+            tests/test_guard_extension_control_api.py \
+            --tb=short
+      - name: Verify native selection and control boundaries
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync pytest -q \
+            tests/test_guard_native_runtime.py \
+            tests/test_native_runtime_admission.py \
+            tests/test_native_policy_control_runtime.py \
+            tests/test_native_policy_control_transport.py \
+            tests/test_native_policy_snapshot_control.py \
+            --tb=short
+      - name: Check the unchanged command decision report
+        if: ${{ !cancelled() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' }}
+        run: |
+          uv run --no-sync python tests/guard_command_decision_diff.py --check
+      - name: Verify tracked source after execution
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$EXPECTED_TREE"
+          test "$(git show -s --format=%P HEAD)" = "$SOURCE_SHA"
+          test "$(git rev-parse "${SOURCE_SHA}^{tree}")" = e18226860b66af2202a2f689996c6626bd4e3b7e
+          test "$(git show -s --format=%P "$SOURCE_SHA")" = 9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12
+          test "$(git hash-object .github/workflows/native-managed-source-contract.yml)" = cf1d3abfbcdd9250f4c99b966310c10de3cdc319
+          test "$(git hash-object basedpyright.native-managed-source.json)" = 4b56aeeb41fa2af0129511bcd3f7da2f37669d39
+          test "$(git hash-object conftest.py)" = 9e1408c12fe951ad2f1541b1c2c0508f3c35b41a
+          test "$(git hash-object pyproject.toml)" = 64a0281ee6b4f57a74cab68ac992fec3d782a6bb
+          test "$(git hash-object src/codex_plugin_scanner/__init__.py)" = 1bde9899a1379c44d9bbccfd8651608e1e013101
+          test "$(git hash-object src/codex_plugin_scanner/guard/__init__.py)" = 4a85303da8860d127c5e2d6ed29cd76598d12264
+          test "$(git hash-object src/codex_plugin_scanner/guard/native_runtime.py)" = 84b47cffb76f7d21d6af722ae4adc70ae4698eff
+          test "$(git hash-object src/codex_plugin_scanner/guard/native_runtime_selection.py)" = 301939afbe4df673d78f34ea2aeed180911b09d6
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/__init__.py)" = b438aac9453e3065584ce0eb6587f178858b73dc
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/oauth_refresh_context.py)" = da13c9a3dbd7645cac6d056da567fbfd54842b7d
+          test "$(git hash-object src/codex_plugin_scanner/guard/runtime/runner.py)" = 4743967f29196a7fce91d4bca3ec02e2f674bc6e
+          test "$(git hash-object src/codex_plugin_scanner/guard/store.py)" = 4edf1f65655e01fea4f634252d4242819ef92f52
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_cloud_events.py)" = b9330e96ae7ff68abc172b21c3f730f561602f85
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_connection_schema.py)" = c1630ef634b8b4ae79dbd67e1c1d0c045f58b485
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_extension_control_authority.py)" = cf793818bccbbba28612b26414b305ab2d6accce
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_extension_control_authority_support.py)" = abcbe92b9615cb3b667103e4893613d5cf5cdb32
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_oauth.py)" = 5c3fac2a8f9ad284b1e4723eb127d026edf4fe12
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_oauth_connection_authority.py)" = 907cebee5f0d3e7a0ea3e785eb397238d8e831c9
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_sync_locks.py)" = 8a68a6d0208890958746f8a4e336bb48c84fe5ce
+          test "$(git hash-object src/codex_plugin_scanner/guard/store_sync_payload_mutations.py)" = 44319c8d3e2848456841d60933a5db64f4b9c8b3
+          test "$(git hash-object tests/conftest.py)" = 61e6d98609309fac99c9baae50fab5f47229fcde
+          test "$(git hash-object tests/fixtures/guard-command-corpus/decision-diff-report.json)" = ce50852ebd4f5f65415aa28cade8703cd7ab5fad
+          test "$(git hash-object tests/guard_command_decision_diff.py)" = 2150c9eb1da9371966b26cbfd1a8737fbf7e2e64
+          test "$(git hash-object tests/oauth_refresh_connection_support.py)" = 0a2e9677e267d1cd40e3a88e01915a9aa69ed83b
+          test "$(git hash-object tests/oauth_refresh_fixture_support.py)" = dcab0efe509dd99d543942987db3ddccdc32d62a
+          test "$(git hash-object tests/test_aibom_daemon_authority.py)" = 3182b375e8eafa70a7e8d40c8759bbdce7eb2cb0
+          test "$(git hash-object tests/test_aibom_operation_authority.py)" = 1ec0cb1f6116e59ffd2a76f6ae4b4ecaae7af1e8
+          test "$(git hash-object tests/test_aibom_sync_admission.py)" = a0344046d3f564992611c98485329bd8687296de
+          test "$(git hash-object tests/test_guard_command_queue.py)" = 0021778c8119fe28c346996cbb239381fa30b64c
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = a866713f175f3011de12c4bb739519e4709ca746
+          test "$(git hash-object tests/test_guard_extension_control_api.py)" = 7b5214f6bcdc4ed4012330ef54f2b5fc7b238ad5
+          test "$(git hash-object tests/test_guard_native_runtime.py)" = cee42c2a77b1f4bc2afaf05e85fe6ddd0a37052a
+          test "$(git hash-object tests/test_guard_oauth_cached_expiry_compatibility.py)" = b4d3f8554c99b0d45efc5e6efb3f702f41c3917d
+          test "$(git hash-object tests/test_guard_oauth_reconnect.py)" = 5b1e5a0a97b22fbfcee40389ee73a468ff929f88
+          test "$(git hash-object tests/test_guard_oauth_refresh_resilience.py)" = 9dd402073a05f0da18c3ce6ebce707b61ed974f8
+          test "$(git hash-object tests/test_guard_runtime.py)" = 699f385b4de589deb0d3980464314dfcefc55a9d
+          test "$(git hash-object tests/test_inventory_consumer_authority.py)" = 0702ad27e21ec0908d2ea86d4595d4119cb7bcb2
+          test "$(git hash-object tests/test_inventory_oauth_completion_authority.py)" = 74671e83adc21a7c2547b783d3b08595e6c39b4d
+          test "$(git hash-object tests/test_inventory_request_authority.py)" = 4db5bf0d023b25b15e42d0a127ba6b7098902d90
+          test "$(git hash-object tests/test_native_policy_authority_coherent_capture.py)" = f77dc7e3429325b0492baf83a95e1aef1164b06d
+          test "$(git hash-object tests/test_native_policy_authority_managed_read.py)" = eb56d298dda0a192f7f0e1fea8c0a17a04e94c36
+          test "$(git hash-object tests/test_native_policy_control_runtime.py)" = 46047c67bcd959e2e28cc6b8700738e2292d5fc8
+          test "$(git hash-object tests/test_native_policy_control_transport.py)" = 91749138413d5819ddff4321d46bfe71509c4b1e
+          test "$(git hash-object tests/test_native_policy_snapshot_control.py)" = edc5f686be49b69251287a5153d6e58986705e31
+          test "$(git hash-object tests/test_native_runtime_admission.py)" = 43585495a97b39f8516f1e58ead4db5d1ca00188
+          test "$(git hash-object tests/test_oauth_connection_authority.py)" = 0441f694d5ac0710e24b36f838e0eeb849c09278
+          test "$(git hash-object tests/test_oauth_refresh_connection_authority.py)" = a57f82c8de00851fb89222e24198feb1ba4bc32a
+          test "$(git hash-object tests/test_paseo_adapter.py)" = 88b34513adf145a7ce8c5e6fc51982c732de0694
+          test "$(git hash-object uv.lock)" = 10e18a310e63ba3c5940e25b44269d48dfc7f2da
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          echo 'STORE_EXTRACTION_TRACKED_SOURCE_UNCHANGED=true'

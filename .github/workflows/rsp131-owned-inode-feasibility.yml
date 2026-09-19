@@ -1,0 +1,165 @@
+name: Read-only RSP-131 owned inode feasibility
+
+on:
+  push:
+    branches: [codex/rsp131-owned-inode-feasibility]
+    paths:
+      - '.github/workflows/rsp131-owned-inode-feasibility.yml'
+      - 'scripts/ci/rsp131_inode_probe/**'
+      - 'tests/test_rsp131_inode_feasibility.py'
+      - 'tests/test_rsp131_inode_file_identity.py'
+      - 'review-evidence/2026-09-19/rsp131-inode-feasibility/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rsp131-owned-inode-feasibility-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finite-owned-control:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Initialize retained refusal outcome
+        shell: bash
+        run: |
+          umask 077
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "rsp131-inode-evidence"
+          root.mkdir(mode=0o700)
+          report = {
+              "workflow_commit": os.environ["GITHUB_SHA"],
+              "workflow_run": os.environ["GITHUB_RUN_ID"],
+              "workflow_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "status": "not_run", "feasible": False,
+              "installed_workload": False, "rsp131_qualified": False,
+              "sqlite_ingestion_observed": False, "physical_device_bytes_measured": False,
+          }
+          (root / "job-outcome.json").write_text(json.dumps(report, sort_keys=True) + "\n")
+          PY
+      - name: Check out the exact proposed source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Check out the unchanged prior 111-control source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 67d90ff0211dbc1d878499b90eecb126da98b7fb
+          path: legacy
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Install the previously audited finite runner versions
+        id: finite_runner
+        shell: bash
+        run: |
+          umask 077
+          python -I -B -m venv "$RUNNER_TEMP/rsp131-inode-venv"
+          "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -I -B -m pip install \
+            --disable-pip-version-check --no-compile \
+            pytest==9.0.3 iniconfig==2.3.0 packaging==26.0 pluggy==1.6.0 pygments==2.20.0
+      - name: Re-run all unchanged prior finite controls
+        id: legacy_finite
+        working-directory: legacy
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          umask 077
+          "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -B -m pytest --noconftest -c /dev/null -p no:cacheprovider -q \
+            tests/test_sqlite_syscall_hosted_diagnostic.py \
+            tests/test_sqlite_syscall_probe_parser.py \
+            tests/test_sqlite_syscall_trace_diagnostics.py \
+            --junitxml="$RUNNER_TEMP/rsp131-inode-evidence/legacy.junit.xml" \
+            > "$RUNNER_TEMP/rsp131-inode-evidence/legacy.log" 2>&1
+      - name: Validate new decoder, identity and lost-record refusals
+        id: new_finite
+        if: ${{ always() && steps.finite_runner.outcome == 'success' }}
+        working-directory: candidate
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          umask 077
+          "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -B -m pytest --noconftest -c /dev/null -p no:cacheprovider -q \
+            tests/test_rsp131_inode_feasibility.py \
+            tests/test_rsp131_inode_file_identity.py \
+            --junitxml="$RUNNER_TEMP/rsp131-inode-evidence/new.junit.xml" \
+            > "$RUNNER_TEMP/rsp131-inode-evidence/new.log" 2>&1
+      - name: Admit and run the single owned-child feasibility control
+        id: owned_probe
+        if: always()
+        timeout-minutes: 2
+        working-directory: candidate
+        env:
+          LEGACY_FINITE_STATUS: ${{ steps.legacy_finite.outcome }}
+          NEW_FINITE_STATUS: ${{ steps.new_finite.outcome }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          umask 077
+          "$RUNNER_TEMP/rsp131-inode-venv/bin/python" -I -B scripts/ci/rsp131_inode_probe/driver.py \
+            --legacy-root "$GITHUB_WORKSPACE/legacy" \
+            --expected-commit "$GITHUB_SHA" \
+            --legacy-status "$LEGACY_FINITE_STATUS" \
+            --finite-status "$NEW_FINITE_STATUS" \
+            --legacy-junit "$RUNNER_TEMP/rsp131-inode-evidence/legacy.junit.xml" \
+            --finite-junit "$RUNNER_TEMP/rsp131-inode-evidence/new.junit.xml" \
+            --work "$RUNNER_TEMP/rsp131-owned-inode-work" \
+            --output "$RUNNER_TEMP/rsp131-inode-evidence/owned-inode-report.json"
+      - name: Retain normalized outcomes after success or refusal
+        if: always()
+        env:
+          LEGACY_FINITE_STATUS: ${{ steps.legacy_finite.outcome }}
+          NEW_FINITE_STATUS: ${{ steps.new_finite.outcome }}
+          OWNED_PROBE_STATUS: ${{ steps.owned_probe.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "rsp131-inode-evidence"
+          output = root / "job-outcome.json"
+          report = json.loads(output.read_text())
+          report.update(
+              status="finished", legacy_finite_status=os.environ["LEGACY_FINITE_STATUS"],
+              new_finite_status=os.environ["NEW_FINITE_STATUS"],
+              owned_probe_status=os.environ["OWNED_PROBE_STATUS"],
+              compiler_and_probe_boundary="owned_group_eight_second_command_plus_bounded_retirement",
+              unchanged_prior_control_count_required=111, new_control_count_required=92,
+              raw_compiler_output_exported=False, write_buffers_observed_or_exported=False,
+          )
+          for name in ("legacy.log", "new.log", "legacy.junit.xml", "new.junit.xml"):
+              path = root / name
+              if path.is_file():
+                  with path.open("rb") as stream:
+                      data = stream.read(4 * 1024 * 1024 + 1)
+                  report[name] = {
+                      "bytes_read": len(data), "complete": len(data) <= 4 * 1024 * 1024,
+                      "sha256": hashlib.sha256(data).hexdigest(),
+                  }
+          observed = root / "owned-inode-report.json"
+          if observed.is_file():
+              data = observed.read_bytes()
+              current = json.loads(data)
+              report["owned_report_sha256"] = hashlib.sha256(data).hexdigest()
+              report["feasible"] = current.get("feasible") is True and os.environ["OWNED_PROBE_STATUS"] == "success"
+          output.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n")
+          PY
+      - name: Upload normalized reports only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rsp131-owned-inode-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rsp131-inode-evidence/*.json
+          if-no-files-found: error
+          retention-days: 30

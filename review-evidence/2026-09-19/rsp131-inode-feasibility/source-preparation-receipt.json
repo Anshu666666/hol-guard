@@ -1,0 +1,382 @@
+{
+  "schema": "hol-guard.rsp131-inode-source-preparation.v1",
+  "status": "SOURCE_PREPARATION_ONLY_REQUIRES_INDEPENDENT_REVIEW",
+  "parent_commit": "44353b20262f1ca56b56204f4c764b047710454f",
+  "parent_tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+  "legacy_source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb",
+  "requirement_source_commit": "aeb04b6b06bd15ae2a2ecf00e8671c7501239278",
+  "requirement_source_path": "docs/guard/rust-performance/execution-ledger.json",
+  "requirement_source_sha256": "3e3427480f9d490c0e938ad2a043b4715a36070892ac62cb135538d6a6cb6697",
+  "task": "RSP-131",
+  "task_status": "BLOCKED",
+  "dependencies": [
+    "RSP-126",
+    "RSP-129",
+    "RSP-130"
+  ],
+  "acceptance": "Drive actual native receipts alongside mixed pre/post hooks and policy updates; report fsyncs, bytes rewritten, queue age and process-tree resources.",
+  "qualification": false,
+  "installed_workload": false,
+  "selected_runtime_changed": false,
+  "default_budgets_changed": false,
+  "original_task_statuses_changed": false,
+  "source_files": [
+    {
+      "path": ".github/workflows/rsp131-owned-inode-feasibility.yml",
+      "sha256": "9deeb2952748d3237d603c9dbe2c621cac2c997a0b9d6ef4b5ec008e31e1d4fc",
+      "git_blob": "62b683433ccc8f4a50c5b69644cc8397771f5773",
+      "bytes": 7446,
+      "lines": 165
+    },
+    {
+      "path": "review-evidence/2026-09-19/rsp131-inode-feasibility/README.md",
+      "sha256": "61c97064f288326e7b183ac1de53c387974a76cc0ed196aadf3d335f8b5de310",
+      "git_blob": "8670804c845bae1ba6cccc7bc3e1b263a2a94077",
+      "bytes": 13140,
+      "lines": 49
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/capture.py",
+      "sha256": "b43b85f5da803b0a392bb0be68e2cec7bfa307b93d8ca5d47a8992628c016d4d",
+      "git_blob": "6217d5d89e55757c8d40386f6a1399d0fa879f01",
+      "bytes": 2977,
+      "lines": 72
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/child.c",
+      "sha256": "3b2c6c492151a8462caf452b40425efba805e30cfaebccddc4ddd72364f4e163",
+      "git_blob": "7caac8e6a692925b2d38a0746bf1c6b66a9e5e44",
+      "bytes": 1918,
+      "lines": 49
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/driver.py",
+      "sha256": "52d868d67a0c53d96f7ea6751bd54561be136d594ab881f407c265c7536f5ce3",
+      "git_blob": "0a6afaa71620e97d93a809eb66a3f61d3114b193",
+      "bytes": 17484,
+      "lines": 345
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/evidence.py",
+      "sha256": "8c6276a7c48caf901d3ad1c08afb8ef68d239b5759aa730ca06fea45dea52513",
+      "git_blob": "9679885b23c43aaccc6cb35375f321503b8d6d37",
+      "bytes": 11389,
+      "lines": 220
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/identity.py",
+      "sha256": "1b24b730f7a3c64ba32a93cc4a1a8339323abdada95a3020e875d2dfdfc46277",
+      "git_blob": "a79e860e3a25bb361860c944062ff476953c20a4",
+      "bytes": 7043,
+      "lines": 165
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/probe.c",
+      "sha256": "797d788f8a53ed593ad4b697b7c98178b7a93023c03f576defed579960feb6cf",
+      "git_blob": "82b23cbb0e3aa3c3e5f0c1170ff19e39ed178b0f",
+      "bytes": 9949,
+      "lines": 235
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/probe.h",
+      "sha256": "bc3d75fa42202a5b539e8742465e91d814c9cdf145e6545e4e9d7a3338bf2686",
+      "git_blob": "c655a5d1660703001deb79d88f597575fba77fbb",
+      "bytes": 1067,
+      "lines": 41
+    },
+    {
+      "path": "scripts/ci/rsp131_inode_probe/trace.c",
+      "sha256": "e901c001b029e8f4ce717a6d8e5a96aa621bf5701fbe4e6ac18dd3992b782bfc",
+      "git_blob": "6d82471ea916c9d2a4a0a7331c7d21ca3d5cacc2",
+      "bytes": 10046,
+      "lines": 214
+    },
+    {
+      "path": "tests/test_rsp131_inode_feasibility.py",
+      "sha256": "c10473f912e3083e97e204b9aa1c1301540bf520948c553f586466d3a2d2b806",
+      "git_blob": "58351e4f16b7a1bf06a363affcae176a80e18a7c",
+      "bytes": 8859,
+      "lines": 196
+    },
+    {
+      "path": "tests/test_rsp131_inode_file_identity.py",
+      "sha256": "c727afea1499b278ec5b02cc6fb85760bfd6bd4198316e2a0144029b9c084412",
+      "git_blob": "5704ea4af6e66a6112aa47a9f30c6a80475ab1a3",
+      "bytes": 3776,
+      "lines": 116
+    }
+  ],
+  "legacy_source_files": [
+    {
+      "path": ".github/workflows/sqlite-syscall-feasibility-diagnostic.yml",
+      "sha256": "e7b1ebee2314fb50e77ffdb35086e20132ef18f6fbaa63e490fa42c08dd3401c",
+      "git_blob": "40cea0117ddf77432ee2d2d92abccee7ce06ec11",
+      "bytes": 4264,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "scripts/ci/run_sqlite_syscall_diagnostic.py",
+      "sha256": "0b6c301665e08a44a08a03c563ef182be25130b203814cd9ce7bb2da4f7d0fb9",
+      "git_blob": "cfae05840381e1ed1a0cd8699e69fdffddb44196",
+      "bytes": 8870,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "scripts/probe_sqlite_syscall_observation.py",
+      "sha256": "c5d2767d9dc9daa24ddb19a41ef50eb4d137ba4161b0bc2fd8786893decb719e",
+      "git_blob": "e28c424b3065de23ca992161a61e5910e7e032b9",
+      "bytes": 15581,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "scripts/sqlite_syscall_probe_child.py",
+      "sha256": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
+      "git_blob": "7dcbd6f42274ab2749cd0ce41a5bd3b522d988bb",
+      "bytes": 5623,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "scripts/sqlite_syscall_probe_supervision.py",
+      "sha256": "3686af06d61fcc4d44f54150f8c4d59840cdcaf273383d0cf94740e9c733a478",
+      "git_blob": "531a6fbbb83e82a585ce30de8c2255340887ec56",
+      "bytes": 7047,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "scripts/sqlite_syscall_trace_diagnostics.py",
+      "sha256": "ad6549984257dd637cdfb9219085d72a82508e4ab1482be814a3a7cb5025a042",
+      "git_blob": "ab4aafc4dd8abda55257ef4f127489807b1a6fd7",
+      "bytes": 9813,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "tests/test_sqlite_syscall_hosted_diagnostic.py",
+      "sha256": "bc99160b00b58f8ccdc549747dcafd23301c2d67789c1537f38fa67c4cd49e15",
+      "git_blob": "c494e6ffbfe2c66ddd91e6e9a76821f92f595e27",
+      "bytes": 9712,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "tests/test_sqlite_syscall_probe_parser.py",
+      "sha256": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
+      "git_blob": "7afccb0b083c2d22c56430973a0559e07401d6d2",
+      "bytes": 8951,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    },
+    {
+      "path": "tests/test_sqlite_syscall_trace_diagnostics.py",
+      "sha256": "1d1ed5e67531532cad5752a51911efebabc95370fb36c4cee8c17c3ff7f488cc",
+      "git_blob": "44c7464d3abc4bc2090d984aa32ebfb25e3c9b51",
+      "bytes": 13363,
+      "source_commit": "67d90ff0211dbc1d878499b90eecb126da98b7fb"
+    }
+  ],
+  "receipt_self_binding": "This receipt is excluded from its own source-file hash list; its exact Git blob and SHA256 are retained in the final prepublication packet and immutable checkpoint readback.",
+  "expected_finite_cases": {
+    "legacy_unchanged": 111,
+    "new_transcript": 84,
+    "new_owned_file_identity": 8,
+    "total_new": 92
+  },
+  "expected_control_values_not_observed": {
+    "owned_a_syscall_return_bytes": 14,
+    "owned_b_syscall_return_bytes": 11,
+    "owned_b_file_length": 18,
+    "successful_fsync": 1,
+    "successful_fdatasync": 1,
+    "failed_sync_ebadf": 1,
+    "pairs": 12
+  },
+  "validation_performed": {
+    "immutable_original_file_reads": true,
+    "original_git_blob_and_sha256_recomputation": true,
+    "actual_C_and_Python_ordered_operation_table_extraction": {
+      "operations": [
+        [
+          "write",
+          "write",
+          "a",
+          "-1",
+          1,
+          9,
+          0
+        ],
+        [
+          "dup",
+          "dup",
+          "a",
+          "-1",
+          1,
+          0,
+          0
+        ],
+        [
+          "fsync",
+          "fsync",
+          "alias",
+          "-1",
+          1,
+          0,
+          0
+        ],
+        [
+          "close",
+          "close",
+          "a",
+          "-1",
+          1,
+          0,
+          0
+        ],
+        [
+          "dup2",
+          "dup2",
+          "b",
+          "a",
+          2,
+          0,
+          0
+        ],
+        [
+          "pwrite64",
+          "pwrite64",
+          "a",
+          "-1",
+          2,
+          11,
+          7
+        ],
+        [
+          "fdatasync",
+          "fdatasync",
+          "a",
+          "-1",
+          2,
+          0,
+          0
+        ],
+        [
+          "close",
+          "close",
+          "a",
+          "-1",
+          2,
+          0,
+          0
+        ],
+        [
+          "fsync",
+          "fsync",
+          "a",
+          "-1",
+          0,
+          0,
+          0
+        ],
+        [
+          "write",
+          "write",
+          "alias",
+          "-1",
+          1,
+          5,
+          0
+        ],
+        [
+          "close",
+          "close",
+          "alias",
+          "-1",
+          1,
+          0,
+          0
+        ],
+        [
+          "close",
+          "close",
+          "b",
+          "-1",
+          2,
+          0,
+          0
+        ]
+      ],
+      "source_tuple_equality": true,
+      "operation_count": 12,
+      "proof_kind": "read-only JavaScript extraction of actual C and Python ordered literal tables; not C/Python execution"
+    },
+    "manual_source_review": true,
+    "independent_source_review": false,
+    "python_parse": false,
+    "python_import": false,
+    "format": false,
+    "lint": false,
+    "type_check": false,
+    "pytest_collection": false,
+    "pytest_execution": false,
+    "C_compilation": false,
+    "owned_child_launch": false,
+    "kernel_measurement": false,
+    "installed_native_ingestion": false,
+    "workflow_dispatch": false,
+    "ref_update": false
+  },
+  "bounds": {
+    "admitted_architecture": "Linux x86_64",
+    "uid": "nonzero and equals effective uid",
+    "effective_capabilities": "zero",
+    "C_inner_seconds": 6,
+    "shared_supervisor_command_seconds": 8,
+    "stream_bytes": 262144,
+    "C_records": 64,
+    "workflow_minutes": 6,
+    "compiler_and_control_step_minutes": 2,
+    "headers_maximum_count_per_translation_unit": 512,
+    "headers_maximum_total_bytes": 33554432,
+    "finite_runner_maximum_files_per_distribution": 2048,
+    "finite_runner_maximum_total_bytes": 67108864,
+    "normalized_report_bytes": 2097152
+  },
+  "refusals": [
+    "pidfd/ptrace permission or support denial",
+    "unknown syscall, ABI, stop, signal or process event",
+    "unproved live descriptor or returned alias",
+    "unexpected control result including short write or failed close",
+    "lost/extra/reordered records or output saturation",
+    "incomplete capture or retirement",
+    "changed source, actual compiler headers, binary, environment or finite runner package files"
+  ],
+  "preserved_history": {
+    "feasibility_run": 35412005276,
+    "finite_controls": 111,
+    "records": 474,
+    "probes": 13,
+    "identities": 4,
+    "VFS_files": 15,
+    "VFS_records": 109,
+    "VFS_exact_observations": 12,
+    "qualified": false,
+    "linux_590_attempts": 48,
+    "linux_590_native_receipts": 47,
+    "linux_590_distinct_receipts": false,
+    "mixed_no_drops_pass": false,
+    "mixed_resource_coverage_pass": false,
+    "windows_auto_persistence_failures_after_drain": 1,
+    "windows_failure_cause": "unknown",
+    "reviewed_kernel_series": "6.8",
+    "observed_kernel": "6.18.44",
+    "CapEff": 0,
+    "NoNewPrivs": 1,
+    "Seccomp": 2,
+    "admitted_BTF_KPROBES_FTRACE_BPF_JIT": false
+  },
+  "deferred_interfaces": [
+    "concurrent FD-table and process-generation coverage",
+    "event binding after actual kernel file selection",
+    "generic SQLite VFS write and sync coverage",
+    "collector loss proof for the full installed process tree",
+    "instrumentation overhead qualification",
+    "installed mixed native receipts/policy/queue/resource reconciliation"
+  ],
+  "toolchain_identity_limit": "Compiler executable and actual headers are bound; complete compiler/linker toolchain attestation is not claimed."
+}

@@ -50,7 +50,11 @@ def test_cli_reports_static_profiles_separately_from_activation(capsys: pytest.C
     assert value["runtime_lanes"]["activation_evidence"] == "not_evaluated"
     assert value["command_pattern_expressions"]["evaluation_scope"] == "cli_evaluator_only"
     assert value["command_pattern_expressions"]["authenticated_application"] == "unsupported"
-    assert value["runtime_lanes"]["lanes"]["native-scoped-v4"]["activation"]["advertised"] is False
+    scoped = value["runtime_lanes"]["lanes"]["native-scoped-v4"]
+    assert scoped["scoped_request_events"] == ["PreToolUse"]
+    assert scoped["scoped_payload_kinds"] == ["inline"]
+    assert scoped["activation"]["advertised"] is False
+    assert scoped["activation"]["reason"] == "negotiated_consumer_not_proven"
 
 
 @pytest.mark.parametrize(

@@ -10,6 +10,7 @@ use guard_contracts::{
     NATIVE_COMMAND_RECEIPT_BINDING_SCHEMA,
 };
 
+use crate::native_command_control_projection::project_validated_layer;
 use crate::native_command_program::{
     digest_value, packaged_command_program, NativeCommandProgram, ProgramRule,
 };
@@ -66,21 +67,19 @@ impl CompiledNativeCommandControls {
         let mut global_block = binding.health != "protected";
         for layer in &binding.layers {
             global_block |= layer.global_lockdown;
-            for control in &layer.controls {
-                let is_extension = control.target_kind == "extension";
-                if (is_extension && !extension_indices.contains_key(control.target_id.as_str()))
-                    || (!is_extension && !permissions.contains_key(control.target_id.as_str()))
+            for ((target_kind, target_id), disabled) in project_validated_layer(layer)? {
+                let is_extension = target_kind == "extension";
+                if (is_extension && !extension_indices.contains_key(target_id))
+                    || (!is_extension && !permissions.contains_key(target_id))
                 {
                     return Err("native_command_control_target_unknown");
                 }
-                let disabled = control.state == "disabled";
-                let key = (control.target_kind.as_str(), control.target_id.as_str());
                 composed
-                    .entry(key)
+                    .entry((target_kind, target_id))
                     .and_modify(|previous| *previous |= disabled)
                     .or_insert(disabled);
                 if is_extension && layer.kind == "local-admin" && !disabled {
-                    locally_enabled.insert(control.target_id.as_str());
+                    locally_enabled.insert(target_id);
                 }
             }
         }

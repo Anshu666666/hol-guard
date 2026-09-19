@@ -19,17 +19,17 @@ from tests.test_claude_native_launcher_transport import _fixture, binary, owned_
 
 
 @pytest.mark.parametrize("partial", [b"", b'{"hook_event_name":"PreToolUse","tool_input":'])
-def test_stalled_stdin_retains_frozen_bridge_outer_containment(tmp_path, monkeypatch, partial, request):
+def test_stalled_stdin_retains_current_bridge_outer_containment(tmp_path, monkeypatch, partial, request):
     runtime = request.getfixturevalue("binary")
     server, thread, context = _fixture(tmp_path, runtime, monkeypatch, "PreToolUse", "allow")
     outcomes = []
     try:
         installed = ClaudeCodeHarnessAdapter().install(context)
         handler = json.loads(Path(installed["config_path"]).read_text())["hooks"]["PreToolUse"][0]["hooks"][0]
-        baseline = command_handler_argv(handler)
+        current_python = command_handler_argv(handler)
         record = installer.install_private_pilot(context, qualification_root=tmp_path)
         candidate = json.loads(record.read_text())["argv"]["PreToolUse"]
-        for implementation, argv in (("python", baseline), ("native", candidate)):
+        for implementation, argv in (("current_python", current_python), ("native", candidate)):
             began = time.monotonic()
             process, job, liveness = _spawn_hook_process(
                 argv,
@@ -43,7 +43,7 @@ def test_stalled_stdin_retains_frozen_bridge_outer_containment(tmp_path, monkeyp
             try:
                 process.stdin.write(partial)
                 process.stdin.flush()
-                # The frozen bridge reads synchronously before it can enforce
+                # The bound current bridge reads synchronously before it can enforce
                 # its operation deadline. Keep the writer open beyond 8 s.
                 with pytest.raises(subprocess.TimeoutExpired):
                     process.wait(timeout=8.2)
@@ -103,13 +103,13 @@ def test_character_limit_completes_with_writer_still_open(tmp_path, monkeypatch,
     try:
         installed = ClaudeCodeHarnessAdapter().install(context)
         handler = json.loads(Path(installed["config_path"]).read_text())["hooks"]["PreToolUse"][0]["hooks"][0]
-        baseline = command_handler_argv(handler)
+        current_python = command_handler_argv(handler)
         record = installer.install_private_pilot(context, qualification_root=tmp_path)
         candidate = json.loads(record.read_text())["argv"]["PreToolUse"]
         prefix = '{"hook_event_name":"PreToolUse","padding":"'
         body = (prefix + character * (1_000_001 - len(prefix))).encode()
         outcomes = []
-        for argv in (baseline, candidate):
+        for argv in (current_python, candidate):
             process, job, _ = _spawn_hook_process(
                 argv,
                 cwd=context.workspace_dir,

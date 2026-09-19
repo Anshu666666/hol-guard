@@ -1,4 +1,4 @@
-"""Pin native body-reader edge cases to the frozen Python HTTPResponse contract."""
+"""Pin native body-reader edge cases to the bound current Python HTTPResponse contract."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from tests.test_claude_native_launcher_transport import owned_interpreter  # noq
 
 @pytest.mark.parametrize("reader", ["hook", "challenge"])
 @pytest.mark.parametrize("case", ["complete_late", "zero_late", "early_eof_late", "complete_in_time"])
-def test_frozen_python_final_eof_budget_contract(monkeypatch, reader, case):
+def test_current_python_final_eof_budget_contract(monkeypatch, reader, case):
     clock = [0.995 if case == "zero_late" else 0.0]
     monkeypatch.setattr(transport, "time", SimpleNamespace(monotonic=lambda: clock[0]))
     monkeypatch.setattr(auth, "time", SimpleNamespace(monotonic=lambda: clock[0]))

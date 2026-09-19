@@ -20,6 +20,7 @@ from codex_plugin_scanner.guard.adapters.claude_code import ClaudeCodeHarnessAda
 from codex_plugin_scanner.guard.adapters.claude_hook_config import command_handler_argv
 from codex_plugin_scanner.guard.adapters.codex_daemon_hook_auth import _sign_discovery_payload
 from scripts import native_claude_launcher_pilot as installer
+from tests.claude_launcher_conformance import verify_current_conformance
 
 
 @pytest.fixture
@@ -34,10 +35,8 @@ def binary():
 
 @pytest.fixture(autouse=True)
 def owned_interpreter(monkeypatch):
-    fixture = json.loads((Path(__file__).parent / "fixtures/claude-launcher-pilot-auth.json").read_text())
     guard = Path(installer.claude_native_pilot_fallback.__file__).resolve().parents[1]
-    for name, expected in fixture["bridge_modules"].items():
-        assert hashlib.sha256((guard / name).read_bytes()).hexdigest() == expected
+    verify_current_conformance(guard)
     invocation = os.environ.get("CLAUDE_PILOT_TEST_INTERPRETER")
     if invocation:
         assert Path(invocation).is_absolute() and Path(invocation).stat().st_uid in {0, os.getuid()}
@@ -190,13 +189,13 @@ def _fixture(tmp_path, binary, monkeypatch, event, mode):
         "partial_invalid",
     ],
 )
-def test_native_process_matches_frozen_python_bridge(tmp_path, binary, monkeypatch, event, mode):
+def test_native_process_matches_current_python_bridge(tmp_path, binary, monkeypatch, event, mode):
     server, thread, context = _fixture(tmp_path, binary, monkeypatch, event, mode)
     try:
         installed = ClaudeCodeHarnessAdapter().install(context)
         configuration = Path(installed["config_path"])
         handler = json.loads(configuration.read_text())["hooks"][event][0]["hooks"][0]
-        baseline_argv = command_handler_argv(handler)
+        current_python_argv = command_handler_argv(handler)
         body = json.dumps(
             {
                 "hook_event_name": event,
@@ -205,8 +204,8 @@ def test_native_process_matches_frozen_python_bridge(tmp_path, binary, monkeypat
                 "tool_input": {"text": "é中文"},
             }
         )
-        baseline = subprocess.run(
-            baseline_argv, input=body, text=True, capture_output=True, timeout=10, cwd=context.workspace_dir
+        current_python = subprocess.run(
+            current_python_argv, input=body, text=True, capture_output=True, timeout=10, cwd=context.workspace_dir
         )
         server.state["state_id"] = "synthetic-conformance-state"
         server.publish()
@@ -221,9 +220,9 @@ def test_native_process_matches_frozen_python_bridge(tmp_path, binary, monkeypat
             timeout=10,
             cwd=context.workspace_dir,
         )
-        assert candidate.returncode == baseline.returncode == 0, candidate.stderr
-        assert candidate.stdout == baseline.stdout
-        assert candidate.stderr == baseline.stderr == ""
+        assert candidate.returncode == current_python.returncode == 0, candidate.stderr
+        assert candidate.stdout == current_python.stdout
+        assert candidate.stderr == current_python.stderr == ""
         assert len(server.hook_posts) == (
             0 if mode in {"wrong_proof", "expired", "state_changed", "key_changed"} else 1
         )
@@ -287,7 +286,7 @@ def test_crlf_input_limit_cannot_be_normalized_into_an_allow(tmp_path, binary, m
     try:
         installed = ClaudeCodeHarnessAdapter().install(context)
         handler = json.loads(Path(installed["config_path"]).read_text())["hooks"][event][0]["hooks"][0]
-        baseline = command_handler_argv(handler)
+        current_python = command_handler_argv(handler)
         prefix = json.dumps({"hook_event_name": event, "tool_name": "Read"})
         body = prefix + " " * (999_999 - len(prefix)) + "\r\n"
         assert len(body.encode()) == 1_000_001
@@ -295,7 +294,7 @@ def test_crlf_input_limit_cannot_be_normalized_into_an_allow(tmp_path, binary, m
         candidate = json.loads(record.read_text())["argv"][event]
         outcomes = [
             subprocess.run(argv, input=body, text=True, capture_output=True, cwd=context.workspace_dir, timeout=10)
-            for argv in (baseline, candidate)
+            for argv in (current_python, candidate)
         ]
         assert all(item.returncode == 0 and item.stderr == "" for item in outcomes)
         assert outcomes[0].stdout == outcomes[1].stdout

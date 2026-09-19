@@ -8,6 +8,7 @@ mod command_option_parsing;
 mod command_specialized_matchers;
 mod command_structured_matchers;
 mod executable_flag_contract;
+mod native_command_control_projection;
 pub mod native_command_controls;
 pub mod native_command_program;
 pub mod pretool;

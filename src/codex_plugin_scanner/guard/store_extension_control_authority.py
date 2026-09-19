@@ -19,7 +19,6 @@ from .managed_controls_policy_bundle import (
     managed_controls_layers_from_activation_state,
     managed_controls_revision_from_state,
 )
-from .runtime.command_dns_extensions import expand_legacy_dns_layers
 from .runtime.command_extensions import CommandSafetyExtensionRegistry
 from .runtime.extension_control_authority import (
     SNAPSHOT_PURPOSE,
@@ -40,6 +39,7 @@ from .runtime.extension_control_contract import (
     ExtensionControl,
     ExtensionControlLayer,
 )
+from .runtime.extension_control_projection import expand_legacy_dns_layers
 from .runtime.extension_control_proof import (
     ExtensionControlEnrollment,
     ExtensionControlEnrollmentProof,

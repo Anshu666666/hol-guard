@@ -140,6 +140,10 @@ const COMPONENTS: &[(&str, &[u8])] = &[
         include_bytes!("../../guard-command/src/lib.rs"),
     ),
     (
+        "guard-command-native-command-control-projection",
+        include_bytes!("../../guard-command/src/native_command_control_projection.rs"),
+    ),
+    (
         "guard-command-native-command-controls",
         include_bytes!("../../guard-command/src/native_command_controls.rs"),
     ),

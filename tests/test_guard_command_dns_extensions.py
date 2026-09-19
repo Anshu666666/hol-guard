@@ -161,7 +161,6 @@ def test_lumped_dns_extension_is_not_registered() -> None:
 
 
 def test_legacy_dns_controls_expand_onto_provider_extensions() -> None:
-    from codex_plugin_scanner.guard.runtime.command_dns_extensions import expand_legacy_dns_layers
     from codex_plugin_scanner.guard.runtime.extension_control_contract import (
         CONTROL_SCHEMA_VERSION,
         ControlLayerKind,
@@ -171,6 +170,7 @@ def test_legacy_dns_controls_expand_onto_provider_extensions() -> None:
         ExtensionControl,
         ExtensionControlLayer,
     )
+    from codex_plugin_scanner.guard.runtime.extension_control_projection import expand_legacy_dns_layers
 
     layer = ExtensionControlLayer(
         schema_version=CONTROL_SCHEMA_VERSION,
@@ -192,7 +192,6 @@ def test_legacy_dns_controls_expand_onto_provider_extensions() -> None:
 
 
 def test_legacy_dns_expansion_merges_provider_collision_and_keeps_original_duplicates() -> None:
-    from codex_plugin_scanner.guard.runtime.command_dns_extensions import expand_legacy_dns_layers
     from codex_plugin_scanner.guard.runtime.extension_control_contract import (
         CONTROL_SCHEMA_VERSION,
         ControlLayerKind,
@@ -202,6 +201,7 @@ def test_legacy_dns_expansion_merges_provider_collision_and_keeps_original_dupli
         ExtensionControl,
         ExtensionControlLayer,
     )
+    from codex_plugin_scanner.guard.runtime.extension_control_projection import expand_legacy_dns_layers
 
     def _layer(*controls: ExtensionControl) -> ExtensionControlLayer:
         return ExtensionControlLayer(

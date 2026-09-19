@@ -266,3 +266,7 @@ mod bench;
 #[cfg(test)]
 #[path = "native_command_program_matrix.rs"]
 mod matrix;
+
+#[cfg(test)]
+#[path = "native_command_control_projection_tests.rs"]
+mod dns_control_tests;

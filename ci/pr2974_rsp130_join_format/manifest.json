@@ -1,0 +1,139 @@
+{
+  "schema": 1,
+  "source_sha": "6884543d0f49d17e982a73c2274ee3866c2d32fb",
+  "source_tree": "f8a40e86b14adbdbaddf576685adb9bc180a81a3",
+  "source_parent": "0dd6f65c01609ddb0cdd6a32675ddf8e73ae5f73",
+  "source_parent_tree": "65983fa16e72dcb03f799efc3f2d421753db8434",
+  "tracked_files": 4623,
+  "branch": "codex/pr2974-rsp130-join-format-20260919",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "ruff_version": "0.15.17",
+  "source_inputs": {
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "fixed_files": {
+    "src/codex_plugin_scanner/guard/aibom_collection.py": "7ec505fc50c7066045112cdc72a05b64b82a11683c243088feed0408c14123d0",
+    "src/codex_plugin_scanner/guard/aibom_cloud_contract.py": "db16898041157c7968d39b4f2be7cd290c9fdaed79fee8b5b51940af9efb70b8",
+    "src/codex_plugin_scanner/guard/aibom_sync.py": "a85843d0f7f0bbd439cd6dba58cfb06dfa1b903c35b2a904c1ef17a6894c913d",
+    "src/codex_plugin_scanner/guard/inventory_contract.py": "63db91b7df77ae9c142d5f42588c2e023367b91c1e790400e4ba654dd396a3fc",
+    "src/codex_plugin_scanner/guard/inventory_contract_models.py": "485d7806a84b31ab9805658854943439f2ae335dddba32940693f01e5b0d8ecb",
+    "tests/test_guard_aibom_cli.py": "5631a5e7f12c8e7fa87930e8d97e09afb444de5177fec28932b8687234aa6ab3",
+    "tests/test_guard_aibom_content_upload_batches.py": "745cb4a609f0b752af14f1d404b73b0cdc292f5e8ce8f09ab538f69d3e503aae",
+    "tests/test_aibom_batch_byte_accounting.py": "663268a635155b6a99eeaa7e56b384b49f8c6d72a762d96d23b6b661981c1e2a"
+  },
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "partition_input_files": {
+    "src/codex_plugin_scanner/guard/aibom_cli.py": {
+      "git_blob": "5441259d64e61f1b4f57017d441debaabcd7097c",
+      "sha256": "d727925086987e5c909c0f154a68ea1c26e90df242ef3703d237de3c4a719a08",
+      "bytes": 18681,
+      "mode": "100644"
+    },
+    "src/codex_plugin_scanner/guard/aibom_content_upload.py": {
+      "git_blob": "010f1c7c09223ea6cc0faff982b3c14fc96b58ea",
+      "sha256": "81922724fcf611efb7272e891503faa96f7ecdf4c64e777befa1245ad7137e08",
+      "bytes": 15176,
+      "mode": "100644"
+    },
+    "tests/test_aibom_primary_content_join_contract.py": {
+      "git_blob": "51a8ae3c359202fdd8d3bb9f33920dbb128d45de",
+      "sha256": "6d65518eccde2bef7d700ab66e14d0bde8a60fac23b69061872370d3ae59430f",
+      "bytes": 14179,
+      "mode": "100644"
+    }
+  },
+  "format_paths": [
+    "src/codex_plugin_scanner/guard/aibom_cli.py",
+    "src/codex_plugin_scanner/guard/aibom_content_upload.py",
+    "tests/test_aibom_primary_content_join_contract.py"
+  ],
+  "source_proof": {
+    "path": "ci/pr2974_rsp130_join_format/source_contract.py",
+    "preparation_path": "ci/pr2974_rsp130_join_format/source-preparation.json",
+    "preparation_sha256": "4e9793f92d533032b3507219ea494facc46c2c5e6f06bcd791610fd0fa6b2d34"
+  },
+  "scope": "Parse and prove the exact three-file unselected RSP-130 prototype, then format only these paths in a separate tracked source copy using Ruff 0.15.17 alone. Preserve all 4,623 original source leaves, five whole-file source inverses, the exact original inline fallback and surrounding caller AST, complete three-file before/after payloads, strict AST/type-comment/literal/token/comment bridges, patch and original command logs. No project import, pytest body, typing, opcode measurement, timing, native/installed workload or task qualification runs here. A newly immutable formatted source and fresh source bridge must precede the separate 45-case and six-operation-cell validation.",
+  "qualification_complete": false,
+  "optimization_selected": false,
+  "future_validation": {
+    "existing_cases": 23,
+    "new_cases": 22,
+    "total_cases": 45,
+    "operation_cells": 6,
+    "actual_collection": null,
+    "recipe": {
+      "existing_selectors": [
+        {
+          "selector": "tests/test_guard_aibom_cli.py::test_sync_uploads_exact_primary_hermes_content_after_legacy_ack",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_aibom_cli.py::test_sync_aibom_snapshots_404_reports_only_remaining_batch",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_aibom_cli.py::test_sync_aibom_snapshots_skips_oversized_snapshot_and_syncs_valid_snapshot",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_aibom_cli.py::test_sync_aibom_snapshots_preserves_oversized_rejection_when_valid_batch_is_unavailable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_aibom_cli.py::test_sync_aibom_snapshots_marks_oversized_rejection_partial_on_transport_failure",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_aibom_content_upload_batches.py",
+          "expected_cases": 5
+        },
+        {
+          "selector": "tests/test_aibom_batch_byte_accounting.py",
+          "expected_cases": 11
+        }
+      ],
+      "expected_existing_cases": 23,
+      "new_test_path": "tests/test_aibom_primary_content_join_contract.py",
+      "expected_new_cases": 22,
+      "expected_total_cases": 45,
+      "counts_are_static_until_actual_collection": true,
+      "zero_skips": true,
+      "required": "Actual unchanged baseline/candidate ordered node/parameter/marker/fixture equality on all 23 existing cases; actual candidate 22 controls and ordered per-node phase/JUnit reconciliation. No test/body/fixture assertions altered.",
+      "preparation_count_correction": {
+        "historical_existing": 22,
+        "historical_total": 44,
+        "corrected_existing": 23,
+        "corrected_total": 45,
+        "reason": "The existing transport-failure test has the unchanged two-value failure_kind parameter (http, network).",
+        "actual_collection": false
+      }
+    },
+    "performance_selection": {
+      "status": "not_frozen_not_run_not_selected",
+      "proposal": "After exact source/semantic gates, run at least five alternating independent controlled cohorts of original and proposed join with full raw cells, CPU/wall/allocation observations; fixture creation, opcode tracing and import costs stay outside timed join. Record them separately.",
+      "input_matrix": "Vary S and P independently, include S=1 and empty/small groups, production-shaped distinct IDs, repeated snapshot IDs, repeated source references, cold freshly allocated equal key values and warm reuse. Never use a shared pre-hashed key population for only the later arm.",
+      "whole_route": "Then repeat the existing source-bound 24/128/486-file incremental inventory scenarios with actual traversal/upsert behavior and identical controlled scanner/cloud conditions, reporting local CPU and full wall separately. Missing real scanner/cloud routes remain unavailable; no fabricated success.",
+      "gate": "RSP-012 must declare the applicable original PRD go/no-go boundary before timing. A selected hot-path claim requires the existing >=30% p95 or process-tree CPU benefit and <=5% regression in the other primary metric when that tranche definition applies; this proposal does not silently substitute a microbenchmark for it.",
+      "fallback": "If benefit is immaterial or small-input/resource regressions fail the predeclared rule, retain the original production join and preserve the rejected experiment."
+    }
+  },
+  "historical_evidence": {
+    "scope": "Preparation and source-only peer references; no previous runtime or performance result applies to this prototype.",
+    "original_preparation": {
+      "git_blob": "6f3feecc5eee0b5e32db24b1bfc5968913640568",
+      "bytes": 207460,
+      "sha256": "77d63f6f9f0bc0c6fcb8daca7f49e58f126f5361ca493c9e37e34cb9a8ac5408",
+      "static_total_superseded": 44
+    },
+    "independent_source_peer": {
+      "git_blob": "57a47da2bc0f51bd4fbf5d8eb7acfed3c0cbbb2b",
+      "bytes": 11229,
+      "sha256": "c3d4179e6e5b326b6717c7f73c0188f8ca46224abdd14fb31a06355a4a637431",
+      "required_count_correction_applied": true
+    },
+    "original_task": "RSP-130 OPEN; RSP-011/012 dependencies and measured selection remain unresolved."
+  }
+}

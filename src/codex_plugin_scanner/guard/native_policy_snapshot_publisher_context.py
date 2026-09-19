@@ -111,7 +111,14 @@ def compiled_v3_compatible_policy(
     return config, _v3_inputs_from_capture(publisher, inputs, allow_signed_defaults=allow_signed_defaults)
 
 
-def publication_context(self: NativePolicySnapshotPublisher) -> PublicationContext | None:
+def publication_context(
+    self: NativePolicySnapshotPublisher, *, publish_epoch: int | None = None
+) -> PublicationContext | None:
+    with self._condition:
+        if publish_epoch is None:
+            publish_epoch = self._epoch
+        if self._closed or self._epoch != publish_epoch:
+            return None
     refresh_source_requirement(self)
     status_provider = self._status_provider
     if status_provider is None:
@@ -120,7 +127,11 @@ def publication_context(self: NativePolicySnapshotPublisher) -> PublicationConte
         status_provider = native_runtime_status
     status = status_provider()
     if getattr(status, "mode", None) not in {"auto", "force", "shadow"}:
-        _context_error(self, "native_policy_snapshot_native_disabled")
+        _context_error(
+            self,
+            "native_policy_snapshot_native_disabled",
+            publish_epoch=publish_epoch,
+        )
         return None
     identity = getattr(status, "identity", None)
     capabilities = getattr(status, "capabilities", None)
@@ -130,12 +141,20 @@ def publication_context(self: NativePolicySnapshotPublisher) -> PublicationConte
         or identity is None
         or capabilities is None
     ):
-        _context_error(self, "native_policy_snapshot_runtime_unavailable")
+        _context_error(
+            self,
+            "native_policy_snapshot_runtime_unavailable",
+            publish_epoch=publish_epoch,
+        )
         return None
     features = frozenset(getattr(capabilities, "features", ()))
     material_getter = getattr(self.store, "_policy_integrity_secret_material", None)
     if not callable(material_getter):
-        _context_error(self, "native_policy_snapshot_integrity_key_unavailable")
+        _context_error(
+            self,
+            "native_policy_snapshot_integrity_key_unavailable",
+            publish_epoch=publish_epoch,
+        )
         return None
     material: object = None
     try:
@@ -146,7 +165,11 @@ def publication_context(self: NativePolicySnapshotPublisher) -> PublicationConte
             or not isinstance(material[0], bytes)
             or not isinstance(material[1], str)
         ):
-            _context_error(self, "native_policy_snapshot_integrity_key_unavailable")
+            _context_error(
+                self,
+                "native_policy_snapshot_integrity_key_unavailable",
+                publish_epoch=publish_epoch,
+            )
             return None
         if not self._scoped_publication_enabled and not features.intersection(SCOPED_PUBLISH_FEATURES):
             if not _REQUIRED_PUBLISH_FEATURES.issubset(features):
@@ -177,6 +200,8 @@ def publication_context(self: NativePolicySnapshotPublisher) -> PublicationConte
         else:
             cloud_inputs = inputs
         with self._condition:
+            if self._closed or self._epoch != publish_epoch:
+                return None
             self._scoped_publication_enabled = scoped
         required = (
             (_REQUIRED_PUBLISH_FEATURES - {"policy-snapshot-v3", "policy-snapshot-push-v1"}) | SCOPED_PUBLISH_FEATURES
@@ -190,20 +215,26 @@ def publication_context(self: NativePolicySnapshotPublisher) -> PublicationConte
             from .native_resident_client import native_resident_client_request
 
             client = native_resident_client_request
-        return identity, capabilities, material[0], config, client, cloud_inputs
+        with self._condition:
+            if self._closed or self._epoch != publish_epoch:
+                return None
+            return identity, capabilities, material[0], config, client, cloud_inputs
     except (OSError, RuntimeError, TypeError, ValueError, AttributeError, sqlite3.Error):
         with self._condition:
-            self._acked = False
+            if not self._closed and self._epoch == publish_epoch:
+                self._acked = False
         raise
     finally:
         material = None
 
 
-def _context_error(publisher: NativePolicySnapshotPublisher, reason: str) -> None:
-    if publisher._scoped_publication_enabled or reason == "native_policy_snapshot_integrity_key_unavailable":
-        with publisher._condition:
+def _context_error(publisher: NativePolicySnapshotPublisher, reason: str, *, publish_epoch: int) -> None:
+    with publisher._condition:
+        if publisher._closed or publisher._epoch != publish_epoch:
+            return
+        if publisher._scoped_publication_enabled or reason == "native_policy_snapshot_integrity_key_unavailable":
             publisher._acked = False
-    publisher._record_error(reason)
+        publisher._record_error(reason)
 
 
 @contextmanager
@@ -231,7 +262,7 @@ def capture_for_reservation(
         with managed_policy_cache_read_only(), publisher.store._connect() as connection:
             version = connection.execute("pragma data_version").fetchone()[0]
             before = publisher._current_input_fingerprint()[0]
-            current = publisher._publication_context()
+            current = publisher._publication_context(publish_epoch=publish_epoch)
             after = publisher._current_input_fingerprint()[0]
             if current is None:
                 raise NativePolicySnapshotError("native_policy_snapshot_runtime_unavailable")

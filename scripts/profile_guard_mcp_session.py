@@ -61,6 +61,7 @@ def run_case(
         payload_kind=payload_kind,
         native_text_helper=native_text_helper,
         native_minimum_characters=native_minimum_characters,
+        fixture_arguments_provider=lambda: fixture_arguments,
         preparation_variant="owned",
         preparation_pilot=owned_preparation_pilot,
     )

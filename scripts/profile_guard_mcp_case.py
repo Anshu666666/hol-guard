@@ -11,11 +11,12 @@ import sys
 import tempfile
 import time
 from collections import Counter
+from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
-from profile_guard_mcp_fixture import BenchmarkCaseError, fixture_arguments, summarize
+from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
 from profile_guard_mcp_worker import tree_sample
 
 def run_case_common(
@@ -34,6 +35,7 @@ def run_case_common(
     native_text_helper: Path | None = None,
     native_minimum_characters: int = 256 * 1024,
     preparation_variant: str,
+    fixture_arguments_provider: Callable[[], Callable[[int, str, int], dict[str, Any]]],
     preparation_pilot: bool = False,
 ) -> dict[str, Any]:
     """Complete ordinary local proxy path; abort on a mismatched result or ID."""
@@ -170,7 +172,7 @@ def run_case_common(
                     send({"jsonrpc": "2.0", "id": "catalog", "method": "tools/list", "params": {}})
                     response_for("catalog")
                 request_id: str | int = f"call-{index}" if index % 2 else index
-                arguments = fixture_arguments(payload_bytes, payload_kind, index)
+                arguments = fixture_arguments_provider()(payload_bytes, payload_kind, index)
                 payload = arguments["text"]
                 params = {"name": "echo_0", "arguments": arguments}
                 # The declared review policy exercises real elicitation for an ordinary tool.

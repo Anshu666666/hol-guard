@@ -20,11 +20,11 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 108
+    assert payload["scope_files"] == 110
     assert payload["capabilities"] == {
         "hook_control_and_transport": 83,
         "python_reference_oracle": 17,
-        "hook_evidence_persistence": 6,
+        "hook_evidence_persistence": 8,
         "legacy_python_resident_transport": 2,
     }
     assert payload["candidate_evidence"] == [
@@ -45,6 +45,8 @@ def test_evidence_diagnostics_has_explicit_non_authoritative_ownership() -> None
     contract, owners, scope = GATE._validate_contract(ROOT)
     paths = {
         "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py",
+        "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+        "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
         "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
     }
     for path in paths:

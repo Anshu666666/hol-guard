@@ -6,6 +6,9 @@ mod edge;
 mod hardening;
 mod managed_resident;
 mod native_hook_receipt;
+mod native_phase_observation;
+#[cfg(all(feature = "diagnostic-phases", target_os = "linux"))]
+mod native_phase_sink;
 mod oneshot;
 mod policy_enforcement;
 mod policy_store;
@@ -277,7 +280,7 @@ fn run() -> Result<(), String> {
 
 fn main() {
     std::panic::set_hook(Box::new(|_| eprintln!("native_runtime_panicked")));
-    if let Err(code) = run() {
+    if let Err(code) = crate::with_native_phase_export!(run()) {
         eprintln!("{code}");
         std::process::exit(2);
     }

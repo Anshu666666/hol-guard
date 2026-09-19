@@ -34,6 +34,10 @@ def harness_identity() -> dict[str, str]:
             "compare_guard_mcp_native_text.py",
             "compare_guard_mcp_risk.py",
             "profile_guard_mcp_session.py",
+            "profile_guard_mcp_case.py",
+            "profile_guard_mcp_fixture.py",
+            "profile_guard_mcp_worker.py",
+            "profile_guard_mcp_matrix.py",
             "guard_mcp_text_facts_pilot.py",
         )
     }

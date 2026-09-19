@@ -19,12 +19,11 @@ from contextlib import suppress
 from http.client import HTTPConnection
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
-
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
@@ -69,6 +68,7 @@ class DaemonFixture:
         setup: str | None = None,
         policy: str | None = None,
         workspace_count: int | None = None,
+        _native_phase_environment: Mapping[str, str] | None = None,
     ) -> None:
         if workspace_count is not None and (type(workspace_count) is not int or workspace_count not in {1, 10, 100}):
             raise ValueError("workspace count outside declared matrix")
@@ -76,11 +76,16 @@ class DaemonFixture:
         self.setup = setup
         self.policy = policy
         self.workspace_count = workspace_count
+        self._native_phase_environment = _native_phase_environment
         self.process: subprocess.Popen[bytes] | None = None
         self._job: Any = None
         self._lock = threading.Lock()
         self._responses: queue.Queue[bytes | None] = queue.Queue(maxsize=1)
         self._readers: list[threading.Thread] = []
+        self.root: Path
+        self.workspace: Path
+        self.guard_home: Path
+        self.daemon: Any
         self._connection: HTTPConnection | None = None
         self._owner_thread_id = 0
         self._closed = False
@@ -173,6 +178,8 @@ class DaemonFixture:
     def __enter__(self) -> DaemonFixture:
         environment = dict(os.environ)
         clear_proof_environment(environment)
+        if self._native_phase_environment is not None:
+            environment.update(self._native_phase_environment)
         started = time.perf_counter()
         self.process, self._job, _ = _spawn_hook_process(
             (
@@ -202,9 +209,9 @@ class DaemonFixture:
             self.root = Path(str(ready["root"]))
             self.workspace = Path(str(ready["workspace"]))
             self.guard_home = Path(str(ready["guard_home"]))
-            self.readiness_ms = float(ready["readiness_ms"])
+            self.readiness_ms = float(cast(float, ready["readiness_ms"]))
             self.daemon = SimpleNamespace(
-                port=int(ready["port"]),
+                port=int(cast(int, ready["port"])),
                 _server=SimpleNamespace(
                     auth_token=str(ready["auth_token"]),
                     hook_worker=SimpleNamespace(metrics=_RemoteMetrics(self)),
@@ -267,7 +274,7 @@ class DaemonFixture:
         return self.control("stop_resident").get("contained") is True
 
     def native_overload_count(self) -> int:
-        return int(self.control("native_overloads")["count"])
+        return int(cast(int, self.control("native_overloads")["count"]))
 
     def close(self) -> None:
         if self._closed:
@@ -425,8 +432,7 @@ def _serve_session(session: Any, fault: Any, workspace_fixture: Any = None) -> N
                 break
             request = json.loads(raw)
             operation = request.get("op")
-            if operation == "snapshot":
-                # Only the bounded route counters are required by this fixture.
+            if operation == "snapshot":  # Only the bounded route counters are required by this fixture.
                 _emit({"routes": dict(route_counts(session.daemon._server.hook_worker.metrics.snapshot()))})
             elif operation == "case_before" and fault is not None:
                 fault.before_case()

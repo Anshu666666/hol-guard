@@ -1,0 +1,243 @@
+name: PR2974 Mac finite artifact audit
+
+on:
+  push:
+    branches: [codex/rsp-macos-finite-artifact-audit-35435241584]
+    paths:
+      - '.github/workflows/pr2974-macos-finite-artifact-audit.yml'
+      - 'ci/pr2974_macos_finite_artifact_audit/**'
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: pr2974-macos-finite-artifact-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUDIT_SOURCE: ${{ github.workspace }}/source
+  AUDIT_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  original-artifacts:
+    name: Inspect original attempt 1 artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Initialize retained observer outcome
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-macos-finite-artifact-audit
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          output = Path(os.environ['AUDIT_OUTPUT'])
+          report = output / 'audit'
+          report.mkdir(parents=True, exist_ok=True)
+          value = {'status': 'not_run', 'passed': False, 'qualification_complete': False,
+                   'original_run_id': 35435241584, 'original_run_attempt': 1,
+                   'source_sha': 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c',
+                   'observer_harness_sha': os.environ['GITHUB_SHA']}
+          (report / 'job-outcome.json').write_text(json.dumps(value, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('AUDIT_OUTPUT=' + str(output) + '\n')
+          PY
+      - name: Checkout artifact observer harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact original Mac source and public parent
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up observer Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Inspect original artifacts without executing original workloads
+        id: audit
+        env:
+          AUDIT_TOKEN: ${{ github.token }}
+        shell: bash
+        run: python3 -B -I "$AUDIT_HARNESS/ci/pr2974_macos_finite_artifact_audit/observer.py"
+      - name: Preserve observer workflow outcome
+        if: always()
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-macos-finite-artifact-audit
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          PYTHON_SETUP: ${{ steps.python.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          report = Path(os.environ['AUDIT_OUTPUT']) / 'audit'
+          report.mkdir(parents=True, exist_ok=True)
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'status': 'missing', 'passed': False}
+          value['workflow_step_outcomes'] = {key: os.environ[key] for key in (
+              'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'PYTHON_SETUP', 'AUDIT_OUTCOME')}
+          value['workflow_gate_passed'] = value.get('passed') is True and all(
+              status == 'success' for status in value['workflow_step_outcomes'].values())
+          value['qualification_complete'] = False
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'observer_workflow_gate': value['workflow_gate_passed'],
+                            'step_outcomes': value['workflow_step_outcomes'],
+                            'outcome_sha256': hashlib.sha256(path.read_bytes()).hexdigest()}))
+          manifest = report / 'observer-output-manifest.json'
+          if manifest.is_file():
+              inventory = json.loads(manifest.read_text())
+              inventory['audit/job-outcome.json'] = {
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bytes': path.stat().st_size}
+              manifest.write_text(json.dumps(inventory, sort_keys=True, indent=2) + '\n')
+          PY
+      - name: Retain all original ZIPs and audit receipts
+        id: retention
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-macos-finite-artifact-audit-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-macos-finite-artifact-audit/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require completed audit and successful retention
+        if: always()
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-macos-finite-artifact-audit
+          RETENTION_OUTCOME: ${{ steps.retention.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['AUDIT_OUTPUT']) / 'audit/job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {}
+          passed = value.get('workflow_gate_passed') is True and os.environ['RETENTION_OUTCOME'] == 'success'
+          print(json.dumps({'observer_final_passed': passed, 'retention': os.environ['RETENTION_OUTCOME'],
+                            'original_run_id': 35435241584, 'original_run_attempt': 1,
+                            'original_workloads_reexecuted': False}))
+          raise SystemExit(0 if passed else 1)
+          PY
+  stage2-original-artifacts:
+    name: Inspect original four-partition failures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      AUDIT_SOURCE: ${{ github.workspace }}/unused-stage2-source
+    steps:
+      - name: Initialize retained Stage2 readout outcome
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-stage2-original-artifact-readout
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          output = Path(os.environ['AUDIT_OUTPUT'])
+          report = output / 'audit'
+          report.mkdir(parents=True, exist_ok=True)
+          value = {'status': 'not_run', 'audit_passed': False, 'qualification_complete': False,
+                   'original_run_id': 35435665346, 'original_run_attempt': 1,
+                   'source_sha': 'e655b80b2d81610a925d08051c061f4c23eb9f0b',
+                   'observer_harness_sha': os.environ['GITHUB_SHA'],
+                   'original_tests_repeated': False}
+          (report / 'stage2-artifact-readout.json').write_text(json.dumps(value, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('AUDIT_OUTPUT=' + str(output) + '\n')
+          PY
+      - name: Checkout immutable artifact observer harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up observer Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Read the four original failed artifacts
+        id: audit
+        env:
+          AUDIT_TOKEN: ${{ github.token }}
+        shell: bash
+        run: python3 -B -I "$AUDIT_HARNESS/ci/pr2974_macos_finite_artifact_audit/stage2_readout.py"
+      - name: Preserve Stage2 observer workflow outcome
+        if: always()
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-stage2-original-artifact-readout
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          PYTHON_SETUP: ${{ steps.python.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          output = Path(os.environ['AUDIT_OUTPUT'])
+          report = output / 'audit'
+          report.mkdir(parents=True, exist_ok=True)
+          path = report / 'stage2-artifact-readout.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'status': 'missing', 'audit_passed': False}
+          value['workflow_step_outcomes'] = {key: os.environ[key] for key in (
+              'HARNESS_CHECKOUT', 'PYTHON_SETUP', 'AUDIT_OUTCOME')}
+          value['workflow_gate_passed'] = value.get('audit_passed') is True and all(
+              status == 'success' for status in value['workflow_step_outcomes'].values())
+          value['qualification_complete'] = False
+          value['original_failed_jobs_remain_failed'] = True
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          inventory = {}
+          for member in sorted(output.rglob('*')):
+              if member.is_file() and member.name != 'stage2-output-manifest.json':
+                  raw = member.read_bytes()
+                  inventory[member.relative_to(output).as_posix()] = {
+                      'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+          (report / 'stage2-output-manifest.json').write_text(json.dumps(inventory, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'readout_workflow_gate': value['workflow_gate_passed'],
+                            'original_run_id': 35435665346, 'original_failed_jobs_remain_failed': True,
+                            'outcome_sha256': hashlib.sha256(path.read_bytes()).hexdigest()}))
+          PY
+      - name: Retain the original Stage2 ZIPs and readout evidence
+        id: retention
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-stage2-original-artifact-readout-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-stage2-original-artifact-readout/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require completed readout and successful retention
+        if: always()
+        env:
+          AUDIT_OUTPUT: ${{ runner.temp }}/pr2974-stage2-original-artifact-readout
+          RETENTION_OUTCOME: ${{ steps.retention.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['AUDIT_OUTPUT']) / 'audit/stage2-artifact-readout.json'
+          value = json.loads(path.read_text()) if path.is_file() else {}
+          passed = value.get('workflow_gate_passed') is True and os.environ['RETENTION_OUTCOME'] == 'success'
+          print(json.dumps({'readout_final_passed': passed, 'retention': os.environ['RETENTION_OUTCOME'],
+                            'original_run_id': 35435665346, 'original_run_attempt': 1,
+                            'original_failed_jobs_remain_failed': True, 'original_tests_repeated': False}))
+          raise SystemExit(0 if passed else 1)
+          PY

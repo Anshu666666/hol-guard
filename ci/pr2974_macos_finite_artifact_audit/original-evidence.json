@@ -1,0 +1,1140 @@
+{
+  "schema": "hol-guard.macos-finite-original-framing-failure.v1",
+  "original_run": {
+    "id": 35435241584,
+    "job_id": 105876673751,
+    "attempt": 1,
+    "head_sha": "2d93ea30b9d15ef2e31612da5db0f0b16d490781",
+    "status": "completed",
+    "conclusion": "failure",
+    "branch": "codex/rsp-macos-phase-finite-20260919"
+  },
+  "log_utf8": {
+    "bytes": 81489,
+    "sha256": "b5e9a0dd6d9f6ca86f4b00ef80d4152d1ce55403fbc99692b3ca449f33756505"
+  },
+  "log": "﻿2026-09-19T09:38:20.6557883Z Current runner version: '2.337.0'\n2026-09-19T09:38:20.6594582Z ##[group]Runner Image Provisioner\n2026-09-19T09:38:20.6595869Z Hosted Compute Agent\n2026-09-19T09:38:20.6597255Z Version: 20260828.587\n2026-09-19T09:38:20.6598409Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29\n2026-09-19T09:38:20.6599724Z Build Date: 2026-08-28T16:44:25Z\n2026-09-19T09:38:20.6600955Z Worker ID: {cc2ea538-bbf4-4c6d-8285-80c71c6bfa18}\n2026-09-19T09:38:20.6602277Z Azure Region: eastus\n2026-09-19T09:38:20.6603421Z ##[endgroup]\n2026-09-19T09:38:20.6605888Z ##[group]Operating System\n2026-09-19T09:38:20.6607394Z Ubuntu\n2026-09-19T09:38:20.6608358Z 24.04.5\n2026-09-19T09:38:20.6609226Z LTS\n2026-09-19T09:38:20.6610213Z ##[endgroup]\n2026-09-19T09:38:20.6611260Z ##[group]Runner Image\n2026-09-19T09:38:20.6612374Z Image: ubuntu-24.04\n2026-09-19T09:38:20.6613329Z Version: 20260907.300.1\n2026-09-19T09:38:20.6615685Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md\n2026-09-19T09:38:20.6618757Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300\n2026-09-19T09:38:20.6620601Z ##[endgroup]\n2026-09-19T09:38:20.6622527Z ##[group]GITHUB_TOKEN Permissions\n2026-09-19T09:38:20.6625206Z Contents: read\n2026-09-19T09:38:20.6626251Z Metadata: read\n2026-09-19T09:38:20.6627447Z ##[endgroup]\n2026-09-19T09:38:20.6630529Z Secret source: Actions\n2026-09-19T09:38:20.6632196Z Cache mode: write\n2026-09-19T09:38:20.6633502Z Prepare workflow directory\n2026-09-19T09:38:20.7457217Z Prepare all required actions\n2026-09-19T09:38:20.7534151Z Getting action download info\n2026-09-19T09:38:20.9398647Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)\n2026-09-19T09:38:21.0526171Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)\n2026-09-19T09:38:21.1694765Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)\n2026-09-19T09:38:21.3591397Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)\n2026-09-19T09:38:21.5404424Z Complete job name: Exact source and thirteen finite modules\n2026-09-19T09:38:21.6019780Z ##[group]Run python3 -B -I - <<'PY'\n2026-09-19T09:38:21.6020493Z \u001b[36;1mpython3 -B -I - <<'PY'\u001b[0m\n2026-09-19T09:38:21.6021056Z \u001b[36;1mimport json, os\u001b[0m\n2026-09-19T09:38:21.6021587Z \u001b[36;1mfrom pathlib import Path\u001b[0m\n2026-09-19T09:38:21.6022252Z \u001b[36;1mreport = Path(os.environ['VALIDATION_REPORT'])\u001b[0m\n2026-09-19T09:38:21.6023057Z \u001b[36;1mreport.mkdir(mode=0o700, parents=True, exist_ok=False)\u001b[0m\n2026-09-19T09:38:21.6024064Z \u001b[36;1mPath(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=False)\u001b[0m\n2026-09-19T09:38:21.6025134Z \u001b[36;1mvalue = {'source_sha': 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c',\u001b[0m\n2026-09-19T09:38:21.6026047Z \u001b[36;1m         'source_tree': '2af6c4254b375682fb487af2b3322c59d64040f4',\u001b[0m\n2026-09-19T09:38:21.6027203Z \u001b[36;1m         'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],\u001b[0m\n2026-09-19T09:38:21.6028222Z \u001b[36;1m         'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',\u001b[0m\n2026-09-19T09:38:21.6029644Z \u001b[36;1m         'passed': False, 'native_qualification_credit': False,\u001b[0m\n2026-09-19T09:38:21.6030723Z \u001b[36;1m         'installed_qualification_credit': False, 'qualification_complete': False}\u001b[0m\n2026-09-19T09:38:21.6031786Z \u001b[36;1m(report / 'job-outcome.json').write_text(json.dumps(value, sort_keys=True) + '\\n')\u001b[0m\n2026-09-19T09:38:21.6032741Z \u001b[36;1mwith Path(os.environ['GITHUB_ENV']).open('a') as stream:\u001b[0m\n2026-09-19T09:38:21.6033551Z \u001b[36;1m    for name in ('VALIDATION_REPORT', 'VALIDATION_SCRATCH'):\u001b[0m\n2026-09-19T09:38:21.6034332Z \u001b[36;1m        stream.write(name + '=' + os.environ[name] + '\\n')\u001b[0m\n2026-09-19T09:38:21.6034979Z \u001b[36;1mPY\u001b[0m\n2026-09-19T09:38:21.6075691Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}\n2026-09-19T09:38:21.6076659Z env:\n2026-09-19T09:38:21.6077732Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:21.6078602Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:21.6079374Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:21.6080108Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:21.6081119Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:21.6082095Z ##[endgroup]\n2026-09-19T09:38:21.6757935Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n2026-09-19T09:38:21.6759278Z with:\n2026-09-19T09:38:21.6829947Z   ref: 2d93ea30b9d15ef2e31612da5db0f0b16d490781\n2026-09-19T09:38:21.6831088Z   path: harness\n2026-09-19T09:38:21.6831925Z   fetch-depth: 2\n2026-09-19T09:38:21.6832725Z   persist-credentials: false\n2026-09-19T09:38:21.6833728Z   repository: hashgraph-online/hol-guard\n2026-09-19T09:38:21.6840707Z   token: ***\n2026-09-19T09:38:21.6841482Z   ssh-strict: true\n2026-09-19T09:38:21.6842209Z   ssh-user: git\n2026-09-19T09:38:21.6842851Z   clean: true\n2026-09-19T09:38:21.6843594Z   sparse-checkout-cone-mode: true\n2026-09-19T09:38:21.6844504Z   fetch-tags: false\n2026-09-19T09:38:21.6845205Z   show-progress: true\n2026-09-19T09:38:21.6845922Z   lfs: false\n2026-09-19T09:38:21.6846545Z   submodules: false\n2026-09-19T09:38:21.6847517Z   set-safe-directory: true\n2026-09-19T09:38:21.6848314Z env:\n2026-09-19T09:38:21.6849253Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:21.6850195Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:21.6850912Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:21.6851626Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:21.6852606Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:21.6853365Z ##[endgroup]\n2026-09-19T09:38:21.7866351Z Syncing repository: hashgraph-online/hol-guard\n2026-09-19T09:38:21.7869080Z ##[group]Getting Git version info\n2026-09-19T09:38:21.7869921Z Working directory is '/home/runner/work/hol-guard/hol-guard/harness'\n2026-09-19T09:38:21.7871026Z [command]/usr/bin/git version\n2026-09-19T09:38:21.7935061Z git version 2.55.0\n2026-09-19T09:38:21.7958753Z ##[endgroup]\n2026-09-19T09:38:21.7973027Z Temporarily overriding HOME='/home/runner/work/_temp/116d4451-9e50-4ce0-a218-beb2904687b8' before making global git config changes\n2026-09-19T09:38:21.7974506Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-19T09:38:21.7978528Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:21.8052705Z ##[group]Determining repository object format\n2026-09-19T09:38:21.8055274Z ##[endgroup]\n2026-09-19T09:38:21.8056261Z ##[group]Initializing the repository\n2026-09-19T09:38:21.8060236Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:21.8173500Z hint: Using 'master' as the name for the initial branch. This default branch name\n2026-09-19T09:38:21.8174729Z hint: will change to \"main\" in Git 3.0. To configure the initial branch name\n2026-09-19T09:38:21.8176009Z hint: to use in all of your new repositories, which will suppress this warning,\n2026-09-19T09:38:21.8177314Z hint: call:\n2026-09-19T09:38:21.8177833Z hint:\n2026-09-19T09:38:21.8178458Z hint: \tgit config --global init.defaultBranch <name>\n2026-09-19T09:38:21.8179605Z hint:\n2026-09-19T09:38:21.8180454Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\n2026-09-19T09:38:21.8182069Z hint: 'development'. The just-created branch can be renamed via this command:\n2026-09-19T09:38:21.8183040Z hint:\n2026-09-19T09:38:21.8183555Z hint: \tgit branch -m <name>\n2026-09-19T09:38:21.8184121Z hint:\n2026-09-19T09:38:21.8184840Z hint: Disable this message with \"git config set advice.defaultBranchName false\"\n2026-09-19T09:38:21.8186278Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/harness/.git/\n2026-09-19T09:38:21.8189154Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard\n2026-09-19T09:38:21.8236456Z ##[endgroup]\n2026-09-19T09:38:21.8237585Z ##[group]Disabling automatic garbage collection\n2026-09-19T09:38:21.8240943Z [command]/usr/bin/git config --local gc.auto 0\n2026-09-19T09:38:21.8270859Z ##[endgroup]\n2026-09-19T09:38:21.8272595Z ##[group]Setting up auth\n2026-09-19T09:38:21.8273223Z Removing SSH command configuration\n2026-09-19T09:38:21.8279495Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:21.8311691Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:21.8653751Z Removing HTTP extra header\n2026-09-19T09:38:21.8654817Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:21.8688411Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:21.8906190Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:21.8912260Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:21.8943896Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:21.9167321Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config http.https://github.com/.extraheader AUTHORIZATION: basic ***\n2026-09-19T09:38:21.9203580Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git.path /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:21.9233156Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:21.9266253Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/harness/.git.path /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:21.9301988Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/harness/.git/worktrees/*.path /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:21.9327216Z ##[endgroup]\n2026-09-19T09:38:21.9328006Z ##[group]Fetching the repository\n2026-09-19T09:38:21.9335108Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 2d93ea30b9d15ef2e31612da5db0f0b16d490781\n2026-09-19T09:38:24.1457753Z From https://github.com/hashgraph-online/hol-guard\n2026-09-19T09:38:24.1459610Z  * branch            2d93ea30b9d15ef2e31612da5db0f0b16d490781 -> FETCH_HEAD\n2026-09-19T09:38:24.1470185Z [command]/usr/bin/git rev-parse --verify --quiet 2d93ea30b9d15ef2e31612da5db0f0b16d490781^{object}\n2026-09-19T09:38:24.1498203Z 2d93ea30b9d15ef2e31612da5db0f0b16d490781\n2026-09-19T09:38:24.1504841Z ##[endgroup]\n2026-09-19T09:38:24.1506036Z ##[group]Determining the checkout info\n2026-09-19T09:38:24.1507380Z ##[endgroup]\n2026-09-19T09:38:24.1513517Z [command]/usr/bin/git sparse-checkout disable\n2026-09-19T09:38:24.1570726Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig\n2026-09-19T09:38:24.1604318Z ##[group]Checking out the ref\n2026-09-19T09:38:24.1609517Z [command]/usr/bin/git checkout --progress --force 2d93ea30b9d15ef2e31612da5db0f0b16d490781\n2026-09-19T09:38:24.4977379Z Note: switching to '2d93ea30b9d15ef2e31612da5db0f0b16d490781'.\n2026-09-19T09:38:24.4978348Z \n2026-09-19T09:38:24.4978653Z You are in 'detached HEAD' state. You can look around, make experimental\n2026-09-19T09:38:24.4979304Z changes and commit them, and you can discard any commits you make in this\n2026-09-19T09:38:24.4979918Z state without impacting any branches by switching back to a branch.\n2026-09-19T09:38:24.4980255Z \n2026-09-19T09:38:24.4980503Z If you want to create a new branch to retain commits you create, you may\n2026-09-19T09:38:24.4981078Z do so (now or later) by using -c with the switch command. Example:\n2026-09-19T09:38:24.4981440Z \n2026-09-19T09:38:24.4981745Z   git switch -c <new-branch-name>\n2026-09-19T09:38:24.4982013Z \n2026-09-19T09:38:24.4982233Z Or undo this operation with:\n2026-09-19T09:38:24.4982440Z \n2026-09-19T09:38:24.4982584Z   git switch -\n2026-09-19T09:38:24.4982772Z \n2026-09-19T09:38:24.4983072Z Turn off this advice by setting config variable advice.detachedHead to false\n2026-09-19T09:38:24.4983458Z \n2026-09-19T09:38:24.4983849Z HEAD is now at 2d93ea3 Prepare exact-source portable finite harness for corrected Mac phase observer\n2026-09-19T09:38:24.4992615Z ##[endgroup]\n2026-09-19T09:38:24.5037410Z [command]/usr/bin/git log -1 --format=%H\n2026-09-19T09:38:24.5062002Z 2d93ea30b9d15ef2e31612da5db0f0b16d490781\n2026-09-19T09:38:24.5072945Z ##[group]Removing auth\n2026-09-19T09:38:24.5073525Z Removing SSH command configuration\n2026-09-19T09:38:24.5077287Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:24.5107117Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:24.5335049Z Removing HTTP extra header\n2026-09-19T09:38:24.5340852Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:24.5380243Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:24.5633043Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:24.5637498Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:24.5665243Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git.path\n2026-09-19T09:38:24.5666462Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git/worktrees/*.path\n2026-09-19T09:38:24.5667817Z includeif.gitdir:/github/workspace/harness/.git.path\n2026-09-19T09:38:24.5669105Z includeif.gitdir:/github/workspace/harness/.git/worktrees/*.path\n2026-09-19T09:38:24.5677110Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git.path\n2026-09-19T09:38:24.5700935Z /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5711507Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git.path /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5744543Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git/worktrees/*.path\n2026-09-19T09:38:24.5766080Z /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5776057Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/harness/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5811661Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/harness/.git.path\n2026-09-19T09:38:24.5833415Z /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5850411Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/harness/.git.path /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5889338Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/harness/.git/worktrees/*.path\n2026-09-19T09:38:24.5911809Z /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5919762Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/harness/.git/worktrees/*.path /github/runner_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config\n2026-09-19T09:38:24.5952273Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:24.6176381Z Removing credentials config '/home/runner/work/_temp/git-credentials-5c8e5123-bbc5-4c72-b0ca-8c8c430d7bcb.config'\n2026-09-19T09:38:24.6185548Z ##[endgroup]\n2026-09-19T09:38:24.6401227Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10\n2026-09-19T09:38:24.6401724Z with:\n2026-09-19T09:38:24.6401998Z   ref: c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\n2026-09-19T09:38:24.6402332Z   path: source\n2026-09-19T09:38:24.6402579Z   fetch-depth: 2\n2026-09-19T09:38:24.6402839Z   persist-credentials: false\n2026-09-19T09:38:24.6403145Z   repository: hashgraph-online/hol-guard\n2026-09-19T09:38:24.6405507Z   token: ***\n2026-09-19T09:38:24.6405764Z   ssh-strict: true\n2026-09-19T09:38:24.6406014Z   ssh-user: git\n2026-09-19T09:38:24.6406254Z   clean: true\n2026-09-19T09:38:24.6406513Z   sparse-checkout-cone-mode: true\n2026-09-19T09:38:24.6406996Z   fetch-tags: false\n2026-09-19T09:38:24.6407260Z   show-progress: true\n2026-09-19T09:38:24.6407516Z   lfs: false\n2026-09-19T09:38:24.6407748Z   submodules: false\n2026-09-19T09:38:24.6407998Z   set-safe-directory: true\n2026-09-19T09:38:24.6408269Z env:\n2026-09-19T09:38:24.6408636Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:24.6409122Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:24.6409539Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:24.6409957Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:24.6410519Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:24.6410950Z ##[endgroup]\n2026-09-19T09:38:24.7253601Z Syncing repository: hashgraph-online/hol-guard\n2026-09-19T09:38:24.7259725Z ##[group]Getting Git version info\n2026-09-19T09:38:24.7260532Z Working directory is '/home/runner/work/hol-guard/hol-guard/source'\n2026-09-19T09:38:24.7296135Z [command]/usr/bin/git version\n2026-09-19T09:38:24.7333061Z git version 2.55.0\n2026-09-19T09:38:24.7356400Z ##[endgroup]\n2026-09-19T09:38:24.7370726Z Temporarily overriding HOME='/home/runner/work/_temp/7e81ffd4-ba01-4520-bca6-323cbeb77bba' before making global git config changes\n2026-09-19T09:38:24.7372228Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-19T09:38:24.7376025Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:24.7411907Z ##[group]Determining repository object format\n2026-09-19T09:38:24.7414864Z ##[endgroup]\n2026-09-19T09:38:24.7415556Z ##[group]Initializing the repository\n2026-09-19T09:38:24.7419889Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:24.7462459Z hint: Using 'master' as the name for the initial branch. This default branch name\n2026-09-19T09:38:24.7463880Z hint: will change to \"main\" in Git 3.0. To configure the initial branch name\n2026-09-19T09:38:24.7465505Z hint: to use in all of your new repositories, which will suppress this warning,\n2026-09-19T09:38:24.7467041Z hint: call:\n2026-09-19T09:38:24.7467962Z hint:\n2026-09-19T09:38:24.7468944Z hint: \tgit config --global init.defaultBranch <name>\n2026-09-19T09:38:24.7469641Z hint:\n2026-09-19T09:38:24.7470206Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\n2026-09-19T09:38:24.7471187Z hint: 'development'. The just-created branch can be renamed via this command:\n2026-09-19T09:38:24.7471940Z hint:\n2026-09-19T09:38:24.7472287Z hint: \tgit branch -m <name>\n2026-09-19T09:38:24.7472565Z hint:\n2026-09-19T09:38:24.7472969Z hint: Disable this message with \"git config set advice.defaultBranchName false\"\n2026-09-19T09:38:24.7473620Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/source/.git/\n2026-09-19T09:38:24.7475707Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard\n2026-09-19T09:38:24.7507971Z ##[endgroup]\n2026-09-19T09:38:24.7508768Z ##[group]Disabling automatic garbage collection\n2026-09-19T09:38:24.7512277Z [command]/usr/bin/git config --local gc.auto 0\n2026-09-19T09:38:24.7542438Z ##[endgroup]\n2026-09-19T09:38:24.7543179Z ##[group]Setting up auth\n2026-09-19T09:38:24.7543736Z Removing SSH command configuration\n2026-09-19T09:38:24.7549930Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:24.7581508Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:24.7805899Z Removing HTTP extra header\n2026-09-19T09:38:24.7812471Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:24.7846113Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:24.8067834Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:24.8074876Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:24.8108665Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:24.8342683Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config http.https://github.com/.extraheader AUTHORIZATION: basic ***\n2026-09-19T09:38:24.8382974Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:24.8414247Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:24.8446689Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/source/.git.path /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:24.8504438Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/source/.git/worktrees/*.path /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:24.8530674Z ##[endgroup]\n2026-09-19T09:38:24.8531175Z ##[group]Fetching the repository\n2026-09-19T09:38:24.8541297Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\n2026-09-19T09:38:27.0237699Z From https://github.com/hashgraph-online/hol-guard\n2026-09-19T09:38:27.0238339Z  * branch            c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c -> FETCH_HEAD\n2026-09-19T09:38:27.0249066Z [command]/usr/bin/git rev-parse --verify --quiet c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c^{object}\n2026-09-19T09:38:27.0274421Z c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\n2026-09-19T09:38:27.0280069Z ##[endgroup]\n2026-09-19T09:38:27.0280771Z ##[group]Determining the checkout info\n2026-09-19T09:38:27.0281744Z ##[endgroup]\n2026-09-19T09:38:27.0287301Z [command]/usr/bin/git sparse-checkout disable\n2026-09-19T09:38:27.0328560Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig\n2026-09-19T09:38:27.0356261Z ##[group]Checking out the ref\n2026-09-19T09:38:27.0361907Z [command]/usr/bin/git checkout --progress --force c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\n2026-09-19T09:38:27.3675744Z Note: switching to 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c'.\n2026-09-19T09:38:27.3676519Z \n2026-09-19T09:38:27.3677236Z You are in 'detached HEAD' state. You can look around, make experimental\n2026-09-19T09:38:27.3678221Z changes and commit them, and you can discard any commits you make in this\n2026-09-19T09:38:27.3679160Z state without impacting any branches by switching back to a branch.\n2026-09-19T09:38:27.3679689Z \n2026-09-19T09:38:27.3680028Z If you want to create a new branch to retain commits you create, you may\n2026-09-19T09:38:27.3680595Z do so (now or later) by using -c with the switch command. Example:\n2026-09-19T09:38:27.3680903Z \n2026-09-19T09:38:27.3681367Z   git switch -c <new-branch-name>\n2026-09-19T09:38:27.3681639Z \n2026-09-19T09:38:27.3681767Z Or undo this operation with:\n2026-09-19T09:38:27.3681975Z \n2026-09-19T09:38:27.3682081Z   git switch -\n2026-09-19T09:38:27.3682227Z \n2026-09-19T09:38:27.3682482Z Turn off this advice by setting config variable advice.detachedHead to false\n2026-09-19T09:38:27.3682860Z \n2026-09-19T09:38:27.3683210Z HEAD is now at c5e2c8e Prepare formatted Mac phase observer with two explicit Ruff source corrections\n2026-09-19T09:38:27.3691727Z ##[endgroup]\n2026-09-19T09:38:27.3737373Z [command]/usr/bin/git log -1 --format=%H\n2026-09-19T09:38:27.3764461Z c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\n2026-09-19T09:38:27.3777921Z ##[group]Removing auth\n2026-09-19T09:38:27.3778291Z Removing SSH command configuration\n2026-09-19T09:38:27.3781645Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:27.3811059Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:27.4032851Z Removing HTTP extra header\n2026-09-19T09:38:27.4036465Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:27.4069893Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:27.4289105Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:27.4292822Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:27.4315566Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path\n2026-09-19T09:38:27.4317170Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path\n2026-09-19T09:38:27.4318358Z includeif.gitdir:/github/workspace/source/.git.path\n2026-09-19T09:38:27.4319352Z includeif.gitdir:/github/workspace/source/.git/worktrees/*.path\n2026-09-19T09:38:27.4327134Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path\n2026-09-19T09:38:27.4349799Z /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4360919Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4393316Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path\n2026-09-19T09:38:27.4414815Z /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4424937Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4458346Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/source/.git.path\n2026-09-19T09:38:27.4481024Z /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4489600Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/source/.git.path /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4526136Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/source/.git/worktrees/*.path\n2026-09-19T09:38:27.4547889Z /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4555255Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/source/.git/worktrees/*.path /github/runner_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config\n2026-09-19T09:38:27.4585272Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:27.4802837Z Removing credentials config '/home/runner/work/_temp/git-credentials-336f4313-069d-406f-9563-eeeb8bda09fa.config'\n2026-09-19T09:38:27.4811532Z ##[endgroup]\n2026-09-19T09:38:27.5030736Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405\n2026-09-19T09:38:27.5031175Z with:\n2026-09-19T09:38:27.5031385Z   python-version: 3.12.13\n2026-09-19T09:38:27.5031635Z   check-latest: false\n2026-09-19T09:38:27.5033863Z   token: ***\n2026-09-19T09:38:27.5034077Z   update-environment: true\n2026-09-19T09:38:27.5034320Z   allow-prereleases: false\n2026-09-19T09:38:27.5034545Z   freethreaded: false\n2026-09-19T09:38:27.5034753Z env:\n2026-09-19T09:38:27.5035023Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:27.5035459Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:27.5035832Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:27.5036204Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:27.5036741Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:27.5037452Z ##[endgroup]\n2026-09-19T09:38:27.6358823Z ##[group]Installed versions\n2026-09-19T09:38:27.6381935Z Version 3.12.13 was not found in the local cache\n2026-09-19T09:38:28.1356257Z Version 3.12.13 is available for downloading\n2026-09-19T09:38:28.1358117Z Download from \"https://github.com/actions/python-versions/releases/download/3.12.13-27650778726/python-3.12.13-linux-24.04-x64.tar.gz\"\n2026-09-19T09:38:28.7011572Z Extract downloaded archive\n2026-09-19T09:38:28.7134791Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/d37a219d-278e-48de-b187-76d9c847bfe6 -f /home/runner/work/_temp/b3b87288-c4ff-4693-b8eb-2148464b22fd\n2026-09-19T09:38:30.6192671Z Execute installation script\n2026-09-19T09:38:30.6306459Z Check if Python hostedtoolcache folder exist...\n2026-09-19T09:38:30.6307334Z Create Python 3.12.13 folder\n2026-09-19T09:38:30.6318565Z Copy Python binaries to hostedtoolcache folder\n2026-09-19T09:38:31.1123654Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)\n2026-09-19T09:38:31.1168197Z Upgrading pip...\n2026-09-19T09:38:33.3136422Z Collecting pip\n2026-09-19T09:38:33.3462462Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)\n2026-09-19T09:38:33.3549606Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)\n2026-09-19T09:38:33.3984919Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 59.2 MB/s eta 0:00:00\n2026-09-19T09:38:33.3985657Z \n2026-09-19T09:38:33.4183420Z Installing collected packages: pip\n2026-09-19T09:38:33.4184611Z Attempting uninstall: pip\n2026-09-19T09:38:33.4206945Z Found existing installation: pip 25.0.1\n2026-09-19T09:38:33.4566712Z Uninstalling pip-25.0.1:\n2026-09-19T09:38:33.4625188Z Successfully uninstalled pip-25.0.1\n2026-09-19T09:38:34.3651523Z Successfully installed pip-26.2.1\n2026-09-19T09:38:34.4168629Z Create complete file\n2026-09-19T09:38:34.4208776Z Successfully set up CPython (3.12.13)\n2026-09-19T09:38:34.4211419Z ##[endgroup]\n2026-09-19T09:38:34.4392342Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39\n2026-09-19T09:38:34.4392750Z with:\n2026-09-19T09:38:34.4392937Z   version: 0.9.26\n2026-09-19T09:38:34.4393143Z   enable-cache: false\n2026-09-19T09:38:34.4393367Z   activate-environment: false\n2026-09-19T09:38:34.4393604Z   no-project: false\n2026-09-19T09:38:34.4393876Z   working-directory: /home/runner/work/hol-guard/hol-guard\n2026-09-19T09:38:34.4396184Z   github-token: ***\n2026-09-19T09:38:34.4396755Z   cache-dependency-glob: **/*requirements*.txt\n**/*requirements*.in\n**/*constraints*.txt\n**/*constraints*.in\n**/pyproject.toml\n**/uv.lock\n**/*.py.lock\n\n2026-09-19T09:38:34.4397692Z   restore-cache: true\n2026-09-19T09:38:34.4397903Z   save-cache: true\n2026-09-19T09:38:34.4398103Z   prune-cache: true\n2026-09-19T09:38:34.4398301Z   cache-python: false\n2026-09-19T09:38:34.4398536Z   ignore-nothing-to-cache: false\n2026-09-19T09:38:34.4398812Z   ignore-empty-workdir: false\n2026-09-19T09:38:34.4399093Z   download-from-astral-mirror: true\n2026-09-19T09:38:34.4399361Z   add-problem-matchers: true\n2026-09-19T09:38:34.4399585Z   quiet: false\n2026-09-19T09:38:34.4399785Z   resolution-strategy: highest\n2026-09-19T09:38:34.4400016Z env:\n2026-09-19T09:38:34.4400282Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:34.4400709Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:34.4401071Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:34.4401430Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:34.4401945Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:34.4402394Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:34.4402832Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig\n2026-09-19T09:38:34.4403252Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:34.4403633Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:34.4404019Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:34.4404396Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib\n2026-09-19T09:38:34.4404714Z ##[endgroup]\n2026-09-19T09:38:34.6167033Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...\n2026-09-19T09:38:34.6772725Z Downloading uv from \"https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-unknown-linux-gnu.tar.gz\" ...\n2026-09-19T09:38:34.9039977Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/46cf729c-c12f-4996-b2a4-55cf3309332f -f /home/runner/work/_temp/4e79684b-007f-49ba-8730-ee06394c067b\n2026-09-19T09:38:35.3567482Z Added /home/runner/.local/bin to the path\n2026-09-19T09:38:35.3571731Z Added /opt/hostedtoolcache/uv/0.9.26/x86_64 to the path\n2026-09-19T09:38:35.3573408Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir\n2026-09-19T09:38:35.3574327Z Added /home/runner/work/_temp/uv-python-dir to the path\n2026-09-19T09:38:35.3584680Z Successfully installed uv version 0.9.26\n2026-09-19T09:38:35.6962041Z ##[group]Run set -euo pipefail\n2026-09-19T09:38:35.6962363Z \u001b[36;1mset -euo pipefail\u001b[0m\n2026-09-19T09:38:35.6962643Z \u001b[36;1mexport VALIDATION_UV=\"$(command -v uv)\"\u001b[0m\n2026-09-19T09:38:35.6963080Z \u001b[36;1mpython3 -B -I \"$VALIDATION_HARNESS/ci/pr2974_macos_phase_finite/driver.py\"\u001b[0m\n2026-09-19T09:38:35.7000699Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}\n2026-09-19T09:38:35.7001053Z env:\n2026-09-19T09:38:35.7001337Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:35.7001802Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:35.7002173Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:35.7002543Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:35.7003242Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:35.7003697Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:35.7004158Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig\n2026-09-19T09:38:35.7004573Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:35.7004945Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:35.7005323Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:35.7005705Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib\n2026-09-19T09:38:35.7006098Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir\n2026-09-19T09:38:35.7006426Z ##[endgroup]\n2026-09-19T09:38:36.5275033Z MACOS_FINITE_COMMAND {\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--version\"], \"duration_seconds\": 0.10073797700000142, \"log_bytes\": 10, \"log_limit_exceeded\": false, \"log_sha256\": \"48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1\", \"name\": \"uv-version\", \"passed\": true, \"pid\": 2662, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}\n2026-09-19T09:38:36.8728480Z MACOS_FINITE_COMMAND {\"args\": [\"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3\", \"-B\", \"-I\", \"-m\", \"venv\", \"--copies\", \"--without-pip\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment\"], \"duration_seconds\": 0.3010270369999972, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"create-environment\", \"passed\": true, \"pid\": 2663, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}\n2026-09-19T09:38:40.0384996Z MACOS_FINITE_COMMAND {\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--no-config\", \"pip\", \"install\", \"--python\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"--no-deps\", \"--require-hashes\", \"--only-binary\", \":all:\", \"--index-url\", \"https://pypi.org/simple\", \"-r\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/requirements.txt\"], \"duration_seconds\": 3.004783457000002, \"log_bytes\": 623, \"log_limit_exceeded\": false, \"log_sha256\": \"672055f69002f321d84d8b8062bd637f93b45a2cf1583cc99b790ef7660c6073\", \"name\": \"install-nine-locked-tools\", \"passed\": true, \"pid\": 2664, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 300}\n2026-09-19T09:38:40.2413079Z MACOS_FINITE_COMMAND {\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--no-config\", \"pip\", \"check\", \"--python\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\"], \"duration_seconds\": 0.2007789399999993, \"log_bytes\": 184, \"log_limit_exceeded\": false, \"log_sha256\": \"bf5e9b827abba632680508dce76fb05011850d061bff848f1bee0569c154f793\", \"name\": \"dependency-compatibility\", \"passed\": true, \"pid\": 2673, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}\n2026-09-19T09:38:42.7469911Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-before.json\"], \"duration_seconds\": 2.5044124839999995, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"environment-before\", \"passed\": true, \"pid\": 2677, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:43.3496118Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"before\"], \"duration_seconds\": 0.6016036860000042, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"syntax-before\", \"passed\": true, \"pid\": 2679, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:43.7516640Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"preservation\"], \"duration_seconds\": 0.401015938999997, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"original-admission-preservation\", \"passed\": true, \"pid\": 2681, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:43.8532507Z MACOS_FINITE_COMMAND {\"args\": [\"git\", \"diff\", \"--check\", \"0f4840d7e8c4f9d1af5e151bddd40b309657e1a3\"], \"duration_seconds\": 0.10071793200000201, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"git-diff-check\", \"passed\": true, \"pid\": 2709, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:43.9552231Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff\", \"check\", \"--no-cache\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\", \"scripts/ci/native_macos_resolver_path.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 0.10067881300000181, \"log_bytes\": 19, \"log_limit_exceeded\": false, \"log_sha256\": \"82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18\", \"name\": \"ruff-nine-files\", \"passed\": true, \"pid\": 2718, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:44.0571068Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff\", \"format\", \"--no-cache\", \"--check\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\", \"scripts/ci/native_macos_resolver_path.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 0.10072976600000061, \"log_bytes\": 26, \"log_limit_exceeded\": false, \"log_sha256\": \"2ce9758b9f8abd876ec3e76c589e099e8b05377b1e7ea2331e81ee80f07bdff8\", \"name\": \"ruff-format-nine-files\", \"passed\": true, \"pid\": 2724, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:45.5641859Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/basedpyright\", \"--level\", \"error\", \"--pythonpath\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 1.5057206170000015, \"log_bytes\": 32, \"log_limit_exceeded\": false, \"log_sha256\": \"607a3b10024e8d406e9a5dc8bd9b517482dd815734bf0ea681db2bd82fa2898d\", \"name\": \"basedpyright-four-implementations\", \"passed\": true, \"pid\": 2730, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:45.6664273Z MACOS_FINITE_COMMAND {\"args\": [\"/usr/bin/cc\", \"--version\"], \"duration_seconds\": 0.1009408520000008, \"log_bytes\": 245, \"log_limit_exceeded\": false, \"log_sha256\": \"3e8cc208c40f60832f67377aa1b03c3e7e858f20cd5d365464944700c0bd7ad1\", \"name\": \"portable-c-compiler\", \"passed\": true, \"pid\": 2740, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}\n2026-09-19T09:38:52.9804975Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/pytest_capture.py\", \"--noconftest\", \"-c\", \"/dev/null\", \"--rootdir\", \"/home/runner/work/hol-guard/hol-guard/source\", \"-q\", \"-m\", \"\", \"-p\", \"no:cacheprovider\", \"--basetemp\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/pytest-basetemp\", \"--junitxml\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/finite-junit.xml\", \"tests/test_native_macos_resolver_evidence.py\", \"tests/test_native_macos_resolver_capture.py\", \"tests/test_native_macos_resolver_path.py\", \"tests/test_native_macos_resolver_tool_capture.py\", \"tests/test_native_macos_python_resolver.py\", \"tests/test_native_macos_python_resolver_binding.py\", \"tests/test_native_macos_dnssd_python.py\", \"tests/test_native_macos_dnssd_python_path.py\", \"tests/test_native_macos_xcode_selection.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_path.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\"], \"duration_seconds\": 7.310640689000003, \"log_bytes\": 580, \"log_limit_exceeded\": false, \"log_sha256\": \"6c633a525d21f701bce507761704907343e4eca2ebe8019156d55826b14ca6ff\", \"name\": \"all-thirteen-finite-modules\", \"passed\": true, \"pid\": 2741, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 240}\n2026-09-19T09:38:53.5048386Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"after\"], \"duration_seconds\": 0.5012274259999998, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"syntax-and-source-after\", \"passed\": true, \"pid\": 2788, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:55.9099812Z MACOS_FINITE_COMMAND {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-after.json\"], \"duration_seconds\": 2.4037834619999927, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"environment-after\", \"passed\": true, \"pid\": 2789, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}\n2026-09-19T09:38:56.1783166Z MACOS_FINITE_FILE_BEGIN {\"kind\": \"finite-results.json\", \"bytes\": 3565, \"sha256\": \"b8bd200c6188ebe18e143d9c3f631e6251f5863551c013e5bf7dfa915386d03e\", \"chunks\": 5, \"encoding\": \"base64\", \"chunk_characters\": 1024}\n2026-09-19T09:38:56.1784843Z Traceback (most recent call last):\n2026-09-19T09:38:56.1804469Z MACOS_FINITE_FILE_CHUNK finite-results.json 1/5 ewogICJhY3R1YWxfZXhlY3V0aW9uX2NvdW50cyI6IHsKICAgICJmYWlsZWQiOiAwLAogICAgImluY29tcGxldGUiOiAwLAogICAgInBhc3NlZCI6IDQ3NSwKICAgICJza2lwcGVkIjogMAogIH0sCiAgImFjdHVhbF9qdW5pdF9jb3VudHMiOiB7CiAgICAiZXJyb3JlZCI6IDAsCiAgICAiZmFpbGVkIjogMCwKICAgICJwYXNzZWQiOiA0NzUsCiAgICAic2tpcHBlZCI6IDAsCiAgICAidGVzdHMiOiA0NzUKICB9LAogICJhY3R1YWxfanVuaXRfc3VpdGVzIjogWwogICAgewogICAgICAiZXJyb3JzIjogIjAiLAogICAgICAiZmFpbHVyZXMiOiAiMCIsCiAgICAgICJob3N0bmFtZSI6ICJydW5uZXJ2bWx1bjVwIiwKICAgICAgIm5hbWUiOiAicHl0ZXN0IiwKICAgICAgInNraXBwZWQiOiAiMCIsCiAgICAgICJ0ZXN0cyI6ICI0NzUiLAogICAgICAidGltZSI6ICI2LjIyMCIsCiAgICAgICJ0aW1lc3RhbXAiOiAiMjAyNi0wOS0xOVQwOTozODo0Ni41MDc3NjkrMDA6MDAiCiAgICB9CiAgXSwKICAiY29sbGVjdGVkIjogNDc1LAogICJlcnJvcnMiOiBbXSwKICAiaW5zdGFsbGVkX3F1YWxpZmljYXRpb25fY3JlZGl0IjogZmFsc2UsCiAgIm1vZHVsZXMiOiBbCiAgICAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfZG5zc2RfcGhhc2UucHkiLAogICAgInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3BoYXNlX2ZvcndhcmRpbmcucHkiLAogICAgInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3BoYXNlX2lkZW50aXR5LnB5IiwKICAgICJ0ZXN0cy90ZXN0\n2026-09-19T09:38:56.1822197Z   File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/driver.py\", line 210, in <module>\n2026-09-19T09:38:56.1822829Z     raise SystemExit(main())\n2026-09-19T09:38:56.1823078Z                      ^^^^^^\n2026-09-19T09:38:56.1823629Z   File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/driver.py\", line 205, in main\n2026-09-19T09:38:56.1824169Z     emit_file(path, name, 262144)\n2026-09-19T09:38:56.1824718Z   File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/common.py\", line 109, in emit_file\n2026-09-19T09:38:56.1825315Z     assert len(data) <= limit, (str(path), len(data), limit)\n2026-09-19T09:38:56.1825633Z            ^^^^^^^^^^^^^^^^^^\n2026-09-19T09:38:56.1826148Z AssertionError: ('/home/runner/work/_temp/pr2974-macos-phase-finite/report/finite-junit-log-copy.json', 1208096, 262144)\n2026-09-19T09:38:56.1837616Z MACOS_FINITE_FILE_CHUNK finite-results.json 2/5 X25hdGl2ZV9tYWNvc19kbnNzZF9waGFzZV9wYXRoLnB5IiwKICAgICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19kbnNzZF9weXRob24ucHkiLAogICAgInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3B5dGhvbl9wYXRoLnB5IiwKICAgICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19weXRob25fcmVzb2x2ZXIucHkiLAogICAgInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX3B5dGhvbl9yZXNvbHZlcl9iaW5kaW5nLnB5IiwKICAgICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19yZXNvbHZlcl9jYXB0dXJlLnB5IiwKICAgICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19yZXNvbHZlcl9ldmlkZW5jZS5weSIsCiAgICAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfcmVzb2x2ZXJfcGF0aC5weSIsCiAgICAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfcmVzb2x2ZXJfdG9vbF9jYXB0dXJlLnB5IiwKICAgICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc194Y29kZV9zZWxlY3Rpb24ucHkiCiAgXSwKICAibmF0aXZlX3F1YWxpZmljYXRpb25fY3JlZGl0IjogZmFsc2UsCiAgIm9ic2VydmVkX3NvdXJjZV9tb2R1bGVzIjogMzIsCiAgInBhc3NlZCI6IHRydWUsCiAgInBvcnRhYmxlX2NfY2FzZXMiOiBbCiAgICB7CiAgICAgICJub2RlaWQiOiAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfZG5zc2RfcGhhc2VfZm9yd2FyZGluZy5weTo6dGVzdF9hcmd1bWVudHNfcmV0dXJuc19lcnJub19hbmRfdW5kZXJseWluZ19jYWxsc19zdXJ2aXZlX3RyYWNlX2xpbWl0WzAtMV0i\n2026-09-19T09:38:56.1861360Z MACOS_FINITE_FILE_CHUNK finite-results.json 3/5 LAogICAgICAicGFyYW1ldGVycyI6IHsKICAgICAgICAiY3ljbGVzIjogMSwKICAgICAgICAic2NlbmFyaW8iOiAwCiAgICAgIH0KICAgIH0sCiAgICB7CiAgICAgICJub2RlaWQiOiAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfZG5zc2RfcGhhc2VfZm9yd2FyZGluZy5weTo6dGVzdF9hcmd1bWVudHNfcmV0dXJuc19lcnJub19hbmRfdW5kZXJseWluZ19jYWxsc19zdXJ2aXZlX3RyYWNlX2xpbWl0WzAtOF0iLAogICAgICAicGFyYW1ldGVycyI6IHsKICAgICAgICAiY3ljbGVzIjogOCwKICAgICAgICAic2NlbmFyaW8iOiAwCiAgICAgIH0KICAgIH0sCiAgICB7CiAgICAgICJub2RlaWQiOiAidGVzdHMvdGVzdF9uYXRpdmVfbWFjb3NfZG5zc2RfcGhhc2VfZm9yd2FyZGluZy5weTo6dGVzdF9hcmd1bWVudHNfcmV0dXJuc19lcnJub19hbmRfdW5kZXJseWluZ19jYWxsc19zdXJ2aXZlX3RyYWNlX2xpbWl0WzAtMTddIiwKICAgICAgInBhcmFtZXRlcnMiOiB7CiAgICAgICAgImN5Y2xlcyI6IDE3LAogICAgICAgICJzY2VuYXJpbyI6IDAKICAgICAgfQogICAgfSwKICAgIHsKICAgICAgIm5vZGVpZCI6ICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19kbnNzZF9waGFzZV9mb3J3YXJkaW5nLnB5Ojp0ZXN0X2FyZ3VtZW50c19yZXR1cm5zX2Vycm5vX2FuZF91bmRlcmx5aW5nX2NhbGxzX3N1cnZpdmVfdHJhY2VfbGltaXRbMS0xXSIsCiAgICAgICJwYXJhbWV0ZXJzIjogewogICAgICAgICJjeWNsZXMiOiAxLAogICAgICAgICJzY2VuYXJpbyI6IDEKICAgICAg\n2026-09-19T09:38:56.1884495Z MACOS_FINITE_FILE_CHUNK finite-results.json 4/5 fQogICAgfSwKICAgIHsKICAgICAgIm5vZGVpZCI6ICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19kbnNzZF9waGFzZV9mb3J3YXJkaW5nLnB5Ojp0ZXN0X2FyZ3VtZW50c19yZXR1cm5zX2Vycm5vX2FuZF91bmRlcmx5aW5nX2NhbGxzX3N1cnZpdmVfdHJhY2VfbGltaXRbMS04XSIsCiAgICAgICJwYXJhbWV0ZXJzIjogewogICAgICAgICJjeWNsZXMiOiA4LAogICAgICAgICJzY2VuYXJpbyI6IDEKICAgICAgfQogICAgfSwKICAgIHsKICAgICAgIm5vZGVpZCI6ICJ0ZXN0cy90ZXN0X25hdGl2ZV9tYWNvc19kbnNzZF9waGFzZV9mb3J3YXJkaW5nLnB5Ojp0ZXN0X2FyZ3VtZW50c19yZXR1cm5zX2Vycm5vX2FuZF91bmRlcmx5aW5nX2NhbGxzX3N1cnZpdmVfdHJhY2VfbGltaXRbMS0xN10iLAogICAgICAicGFyYW1ldGVycyI6IHsKICAgICAgICAiY3ljbGVzIjogMTcsCiAgICAgICAgInNjZW5hcmlvIjogMQogICAgICB9CiAgICB9LAogICAgewogICAgICAibm9kZWlkIjogInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3BoYXNlX2ZvcndhcmRpbmcucHk6OnRlc3RfYXJndW1lbnRzX3JldHVybnNfZXJybm9fYW5kX3VuZGVybHlpbmdfY2FsbHNfc3Vydml2ZV90cmFjZV9saW1pdFsyLTFdIiwKICAgICAgInBhcmFtZXRlcnMiOiB7CiAgICAgICAgImN5Y2xlcyI6IDEsCiAgICAgICAgInNjZW5hcmlvIjogMgogICAgICB9CiAgICB9LAogICAgewogICAgICAibm9kZWlkIjogInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3BoYXNlX2Zvcndh\n2026-09-19T09:38:56.1903582Z MACOS_FINITE_FILE_CHUNK finite-results.json 5/5 cmRpbmcucHk6OnRlc3RfYXJndW1lbnRzX3JldHVybnNfZXJybm9fYW5kX3VuZGVybHlpbmdfY2FsbHNfc3Vydml2ZV90cmFjZV9saW1pdFsyLThdIiwKICAgICAgInBhcmFtZXRlcnMiOiB7CiAgICAgICAgImN5Y2xlcyI6IDgsCiAgICAgICAgInNjZW5hcmlvIjogMgogICAgICB9CiAgICB9LAogICAgewogICAgICAibm9kZWlkIjogInRlc3RzL3Rlc3RfbmF0aXZlX21hY29zX2Ruc3NkX3BoYXNlX2ZvcndhcmRpbmcucHk6OnRlc3RfYXJndW1lbnRzX3JldHVybnNfZXJybm9fYW5kX3VuZGVybHlpbmdfY2FsbHNfc3Vydml2ZV90cmFjZV9saW1pdFsyLTE3XSIsCiAgICAgICJwYXJhbWV0ZXJzIjogewogICAgICAgICJjeWNsZXMiOiAxNywKICAgICAgICAic2NlbmFyaW8iOiAyCiAgICAgIH0KICAgIH0KICBdLAogICJwb3J0YWJsZV9jX3Byb2dyYW1zIjogMSwKICAicHl0ZXN0X2V4aXRfY29kZSI6IDAsCiAgInF1YWxpZmljYXRpb25fY29tcGxldGUiOiBmYWxzZQp9Cg==\n2026-09-19T09:38:56.1909649Z MACOS_FINITE_FILE_END finite-results.json\n2026-09-19T09:38:56.1918949Z ##[error]Process completed with exit code 1.\n2026-09-19T09:38:56.1968973Z ##[group]Run python3 -B -I - <<'PY'\n2026-09-19T09:38:56.1969345Z \u001b[36;1mpython3 -B -I - <<'PY'\u001b[0m\n2026-09-19T09:38:56.1969601Z \u001b[36;1mimport hashlib, json, os\u001b[0m\n2026-09-19T09:38:56.1969854Z \u001b[36;1mfrom pathlib import Path\u001b[0m\n2026-09-19T09:38:56.1970159Z \u001b[36;1mreport = Path(os.environ['VALIDATION_REPORT'])\u001b[0m\n2026-09-19T09:38:56.1970500Z \u001b[36;1mpath = report / 'job-outcome.json'\u001b[0m\n2026-09-19T09:38:56.1970980Z \u001b[36;1mvalue = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}\u001b[0m\n2026-09-19T09:38:56.1971587Z \u001b[36;1mvalue['workflow_step_outcomes'] = {name: os.environ[name] for name in (\u001b[0m\n2026-09-19T09:38:56.1972161Z \u001b[36;1m    'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'PYTHON_SETUP', 'UV_SETUP', 'DRIVER_OUTCOME')}\u001b[0m\n2026-09-19T09:38:56.1972640Z \u001b[36;1mvalue['qualification_complete'] = False\u001b[0m\n2026-09-19T09:38:56.1972974Z \u001b[36;1mvalue['native_qualification_credit'] = False\u001b[0m\n2026-09-19T09:38:56.1973353Z \u001b[36;1mvalue['installed_qualification_credit'] = False\u001b[0m\n2026-09-19T09:38:56.1973803Z \u001b[36;1mvalue['pre_upload_gate_passed'] = value.get('passed') is True and all(\u001b[0m\n2026-09-19T09:38:56.1974332Z \u001b[36;1m    outcome == 'success' for outcome in value['workflow_step_outcomes'].values())\u001b[0m\n2026-09-19T09:38:56.1974869Z \u001b[36;1mpath.write_text(json.dumps(value, sort_keys=True, indent=2) + '\\n')\u001b[0m\n2026-09-19T09:38:56.1975248Z \u001b[36;1mmanifest = {}\u001b[0m\n2026-09-19T09:38:56.1975499Z \u001b[36;1mfor item in sorted(report.rglob('*')):\u001b[0m\n2026-09-19T09:38:56.1975886Z \u001b[36;1m    if item.is_file() and item.name != 'artifact-manifest.json':\u001b[0m\n2026-09-19T09:38:56.1976254Z \u001b[36;1m        data = item.read_bytes()\u001b[0m\n2026-09-19T09:38:56.1976568Z \u001b[36;1m        manifest[str(item.relative_to(report))] = {\u001b[0m\n2026-09-19T09:38:56.1977251Z \u001b[36;1m            'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}\u001b[0m\n2026-09-19T09:38:56.1977851Z \u001b[36;1m(report / 'artifact-manifest.json').write_text(json.dumps(manifest, sort_keys=True, indent=2) + '\\n')\u001b[0m\n2026-09-19T09:38:56.1978390Z \u001b[36;1mprint(json.dumps(value, sort_keys=True))\u001b[0m\n2026-09-19T09:38:56.1978791Z \u001b[36;1mprint(json.dumps({'artifact_manifest_sha256': hashlib.sha256(\u001b[0m\n2026-09-19T09:38:56.1979336Z \u001b[36;1m    (report / 'artifact-manifest.json').read_bytes()).hexdigest(), 'files': len(manifest)}))\u001b[0m\n2026-09-19T09:38:56.1979774Z \u001b[36;1mPY\u001b[0m\n2026-09-19T09:38:56.2020271Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}\n2026-09-19T09:38:56.2020986Z env:\n2026-09-19T09:38:56.2021289Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:56.2021753Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:56.2022132Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:56.2022527Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:56.2023043Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:56.2023506Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2024134Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig\n2026-09-19T09:38:56.2024570Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2024950Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2025334Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2025718Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib\n2026-09-19T09:38:56.2026119Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir\n2026-09-19T09:38:56.2026455Z   HARNESS_CHECKOUT: success\n2026-09-19T09:38:56.2026680Z   SOURCE_CHECKOUT: success\n2026-09-19T09:38:56.2027193Z   PYTHON_SETUP: success\n2026-09-19T09:38:56.2027418Z   UV_SETUP: success\n2026-09-19T09:38:56.2027619Z   DRIVER_OUTCOME: failure\n2026-09-19T09:38:56.2027834Z ##[endgroup]\n2026-09-19T09:38:56.2726580Z {\"actual_finite_results\": {\"actual_execution_counts\": {\"failed\": 0, \"incomplete\": 0, \"passed\": 475, \"skipped\": 0}, \"actual_junit_counts\": {\"errored\": 0, \"failed\": 0, \"passed\": 475, \"skipped\": 0, \"tests\": 475}, \"actual_junit_suites\": [{\"errors\": \"0\", \"failures\": \"0\", \"hostname\": \"runnervmlun5p\", \"name\": \"pytest\", \"skipped\": \"0\", \"tests\": \"475\", \"time\": \"6.220\", \"timestamp\": \"2026-09-19T09:38:46.507769+00:00\"}], \"collected\": 475, \"errors\": [], \"installed_qualification_credit\": false, \"modules\": [\"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_path.py\", \"tests/test_native_macos_dnssd_python.py\", \"tests/test_native_macos_dnssd_python_path.py\", \"tests/test_native_macos_python_resolver.py\", \"tests/test_native_macos_python_resolver_binding.py\", \"tests/test_native_macos_resolver_capture.py\", \"tests/test_native_macos_resolver_evidence.py\", \"tests/test_native_macos_resolver_path.py\", \"tests/test_native_macos_resolver_tool_capture.py\", \"tests/test_native_macos_xcode_selection.py\"], \"native_qualification_credit\": false, \"observed_source_modules\": 32, \"passed\": true, \"portable_c_cases\": [{\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-1]\", \"parameters\": {\"cycles\": 1, \"scenario\": 0}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-8]\", \"parameters\": {\"cycles\": 8, \"scenario\": 0}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-17]\", \"parameters\": {\"cycles\": 17, \"scenario\": 0}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-1]\", \"parameters\": {\"cycles\": 1, \"scenario\": 1}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-8]\", \"parameters\": {\"cycles\": 8, \"scenario\": 1}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-17]\", \"parameters\": {\"cycles\": 17, \"scenario\": 1}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-1]\", \"parameters\": {\"cycles\": 1, \"scenario\": 2}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-8]\", \"parameters\": {\"cycles\": 8, \"scenario\": 2}}, {\"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-17]\", \"parameters\": {\"cycles\": 17, \"scenario\": 2}}], \"portable_c_programs\": 1, \"pytest_exit_code\": 0, \"qualification_complete\": false}, \"environment_unchanged\": true, \"errors\": [], \"finite_execution_credit\": true, \"harness_sha\": \"2d93ea30b9d15ef2e31612da5db0f0b16d490781\", \"installed_qualification_credit\": false, \"native_qualification_credit\": false, \"no_complete_descendant_cleanup_certificate\": true, \"passed\": true, \"pre_upload_gate_passed\": false, \"qualification_complete\": false, \"run_attempt\": \"1\", \"run_id\": \"35435241584\", \"schema\": \"hol-guard.macos-phase-finite-outcome.v1\", \"source_sha\": \"c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\", \"source_tree\": \"2af6c4254b375682fb487af2b3322c59d64040f4\", \"source_unchanged\": true, \"status\": \"finished\", \"steps\": [{\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--version\"], \"duration_seconds\": 0.10073797700000142, \"log_bytes\": 10, \"log_limit_exceeded\": false, \"log_sha256\": \"48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1\", \"name\": \"uv-version\", \"passed\": true, \"pid\": 2662, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}, {\"args\": [\"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3\", \"-B\", \"-I\", \"-m\", \"venv\", \"--copies\", \"--without-pip\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment\"], \"duration_seconds\": 0.3010270369999972, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"create-environment\", \"passed\": true, \"pid\": 2663, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}, {\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--no-config\", \"pip\", \"install\", \"--python\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"--no-deps\", \"--require-hashes\", \"--only-binary\", \":all:\", \"--index-url\", \"https://pypi.org/simple\", \"-r\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/requirements.txt\"], \"duration_seconds\": 3.004783457000002, \"log_bytes\": 623, \"log_limit_exceeded\": false, \"log_sha256\": \"672055f69002f321d84d8b8062bd637f93b45a2cf1583cc99b790ef7660c6073\", \"name\": \"install-nine-locked-tools\", \"passed\": true, \"pid\": 2664, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 300}, {\"args\": [\"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\", \"--no-config\", \"pip\", \"check\", \"--python\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\"], \"duration_seconds\": 0.2007789399999993, \"log_bytes\": 184, \"log_limit_exceeded\": false, \"log_sha256\": \"bf5e9b827abba632680508dce76fb05011850d061bff848f1bee0569c154f793\", \"name\": \"dependency-compatibility\", \"passed\": true, \"pid\": 2673, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-before.json\"], \"duration_seconds\": 2.5044124839999995, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"environment-before\", \"passed\": true, \"pid\": 2677, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"before\"], \"duration_seconds\": 0.6016036860000042, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"syntax-before\", \"passed\": true, \"pid\": 2679, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"preservation\"], \"duration_seconds\": 0.401015938999997, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"original-admission-preservation\", \"passed\": true, \"pid\": 2681, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"git\", \"diff\", \"--check\", \"0f4840d7e8c4f9d1af5e151bddd40b309657e1a3\"], \"duration_seconds\": 0.10071793200000201, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"git-diff-check\", \"passed\": true, \"pid\": 2709, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff\", \"check\", \"--no-cache\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\", \"scripts/ci/native_macos_resolver_path.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 0.10067881300000181, \"log_bytes\": 19, \"log_limit_exceeded\": false, \"log_sha256\": \"82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18\", \"name\": \"ruff-nine-files\", \"passed\": true, \"pid\": 2718, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff\", \"format\", \"--no-cache\", \"--check\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\", \"scripts/ci/native_macos_resolver_path.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 0.10072976600000061, \"log_bytes\": 26, \"log_limit_exceeded\": false, \"log_sha256\": \"2ce9758b9f8abd876ec3e76c589e099e8b05377b1e7ea2331e81ee80f07bdff8\", \"name\": \"ruff-format-nine-files\", \"passed\": true, \"pid\": 2724, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/basedpyright\", \"--level\", \"error\", \"--pythonpath\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"scripts/ci/native_macos_dnssd_phase_child.py\", \"scripts/ci/native_macos_dnssd_phase_evidence.py\", \"scripts/ci/native_macos_dnssd_phase_identity.py\", \"scripts/ci/native_macos_dnssd_phase_path.py\"], \"duration_seconds\": 1.5057206170000015, \"log_bytes\": 32, \"log_limit_exceeded\": false, \"log_sha256\": \"607a3b10024e8d406e9a5dc8bd9b517482dd815734bf0ea681db2bd82fa2898d\", \"name\": \"basedpyright-four-implementations\", \"passed\": true, \"pid\": 2730, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/usr/bin/cc\", \"--version\"], \"duration_seconds\": 0.1009408520000008, \"log_bytes\": 245, \"log_limit_exceeded\": false, \"log_sha256\": \"3e8cc208c40f60832f67377aa1b03c3e7e858f20cd5d365464944700c0bd7ad1\", \"name\": \"portable-c-compiler\", \"passed\": true, \"pid\": 2740, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 90}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/pytest_capture.py\", \"--noconftest\", \"-c\", \"/dev/null\", \"--rootdir\", \"/home/runner/work/hol-guard/hol-guard/source\", \"-q\", \"-m\", \"\", \"-p\", \"no:cacheprovider\", \"--basetemp\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/pytest-basetemp\", \"--junitxml\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/finite-junit.xml\", \"tests/test_native_macos_resolver_evidence.py\", \"tests/test_native_macos_resolver_capture.py\", \"tests/test_native_macos_resolver_path.py\", \"tests/test_native_macos_resolver_tool_capture.py\", \"tests/test_native_macos_python_resolver.py\", \"tests/test_native_macos_python_resolver_binding.py\", \"tests/test_native_macos_dnssd_python.py\", \"tests/test_native_macos_dnssd_python_path.py\", \"tests/test_native_macos_xcode_selection.py\", \"tests/test_native_macos_dnssd_phase.py\", \"tests/test_native_macos_dnssd_phase_path.py\", \"tests/test_native_macos_dnssd_phase_identity.py\", \"tests/test_native_macos_dnssd_phase_forwarding.py\"], \"duration_seconds\": 7.310640689000003, \"log_bytes\": 580, \"log_limit_exceeded\": false, \"log_sha256\": \"6c633a525d21f701bce507761704907343e4eca2ebe8019156d55826b14ca6ff\", \"name\": \"all-thirteen-finite-modules\", \"passed\": true, \"pid\": 2741, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 240}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py\", \"after\"], \"duration_seconds\": 0.5012274259999998, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"syntax-and-source-after\", \"passed\": true, \"pid\": 2788, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}, {\"args\": [\"/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python\", \"-B\", \"-I\", \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py\", \"/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-after.json\"], \"duration_seconds\": 2.4037834619999927, \"log_bytes\": 0, \"log_limit_exceeded\": false, \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\", \"name\": \"environment-after\", \"passed\": true, \"pid\": 2789, \"returncode\": 0, \"timed_out\": false, \"timeout_seconds\": 120}], \"workflow_step_outcomes\": {\"DRIVER_OUTCOME\": \"failure\", \"HARNESS_CHECKOUT\": \"success\", \"PYTHON_SETUP\": \"success\", \"SOURCE_CHECKOUT\": \"success\", \"UV_SETUP\": \"success\"}}\n2026-09-19T09:38:56.2770809Z {\"artifact_manifest_sha256\": \"797e587f2a8c35c9e533b7a3ef2d3166f5af26de179e7c7daa087df109f3d3c1\", \"files\": 114}\n2026-09-19T09:38:56.2817877Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a\n2026-09-19T09:38:56.2818336Z with:\n2026-09-19T09:38:56.2818724Z   name: pr2974-macos-phase-finite-2d93ea30b9d15ef2e31612da5db0f0b16d490781-35435241584-1\n2026-09-19T09:38:56.2819292Z   path: /home/runner/work/_temp/pr2974-macos-phase-finite/report/\n2026-09-19T09:38:56.2819659Z   if-no-files-found: error\n2026-09-19T09:38:56.2819899Z   retention-days: 30\n2026-09-19T09:38:56.2820123Z   compression-level: 6\n2026-09-19T09:38:56.2820334Z   overwrite: false\n2026-09-19T09:38:56.2820544Z   include-hidden-files: false\n2026-09-19T09:38:56.2820771Z   archive: true\n2026-09-19T09:38:56.2820956Z env:\n2026-09-19T09:38:56.2821216Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:56.2821646Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:56.2822001Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:56.2822385Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:56.2822890Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:56.2823334Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2823753Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig\n2026-09-19T09:38:56.2824160Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2824532Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2824912Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:56.2825290Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib\n2026-09-19T09:38:56.2825685Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir\n2026-09-19T09:38:56.2826003Z ##[endgroup]\n2026-09-19T09:38:56.4429603Z With the provided path, there will be 115 files uploaded\n2026-09-19T09:38:56.4433795Z Artifact name is valid!\n2026-09-19T09:38:56.4434726Z Root directory input is valid!\n2026-09-19T09:38:56.6426666Z Uploading artifact: pr2974-macos-phase-finite-2d93ea30b9d15ef2e31612da5db0f0b16d490781-35435241584-1.zip\n2026-09-19T09:38:56.6471872Z Beginning upload of artifact content to blob storage\n2026-09-19T09:38:57.1389774Z Uploaded bytes 2244262\n2026-09-19T09:38:57.1542534Z Finished uploading artifact content to blob storage!\n2026-09-19T09:38:57.1543292Z SHA256 digest of uploaded artifact is 48e87b82248d2363f353445246c59ccc30bbc92bf5baa1e16312b3ae169904f7\n2026-09-19T09:38:57.1544259Z Finalizing artifact upload\n2026-09-19T09:38:57.3812768Z Artifact pr2974-macos-phase-finite-2d93ea30b9d15ef2e31612da5db0f0b16d490781-35435241584-1 successfully finalized. Artifact ID 10581738845\n2026-09-19T09:38:57.3815101Z Artifact pr2974-macos-phase-finite-2d93ea30b9d15ef2e31612da5db0f0b16d490781-35435241584-1 has been successfully uploaded! Final size is 2244262 bytes. Artifact ID is 10581738845\n2026-09-19T09:38:57.3817286Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35435241584/artifacts/10581738845\n2026-09-19T09:38:57.3933661Z ##[group]Run python3 -B -I - <<'PY'\n2026-09-19T09:38:57.3934009Z \u001b[36;1mpython3 -B -I - <<'PY'\u001b[0m\n2026-09-19T09:38:57.3934269Z \u001b[36;1mimport json, os\u001b[0m\n2026-09-19T09:38:57.3934509Z \u001b[36;1mfrom pathlib import Path\u001b[0m\n2026-09-19T09:38:57.3934892Z \u001b[36;1mpath = Path(os.environ['VALIDATION_REPORT']) / 'job-outcome.json'\u001b[0m\n2026-09-19T09:38:57.3935371Z \u001b[36;1mvalue = json.loads(path.read_text()) if path.is_file() else {}\u001b[0m\n2026-09-19T09:38:57.3935802Z \u001b[36;1mpassed = (value.get('pre_upload_gate_passed') is True\u001b[0m\n2026-09-19T09:38:57.3936193Z \u001b[36;1m          and os.environ['RETAINED_OUTCOME'] == 'success'\u001b[0m\n2026-09-19T09:38:57.3936568Z \u001b[36;1m          and os.environ['ARTIFACT_OUTCOME'] == 'success')\u001b[0m\n2026-09-19T09:38:57.3937349Z \u001b[36;1mprint(json.dumps({'final_workflow_gate_passed': passed,\u001b[0m\n2026-09-19T09:38:57.3937782Z \u001b[36;1m                  'retention_outcome': os.environ['RETAINED_OUTCOME'],\u001b[0m\n2026-09-19T09:38:57.3938234Z \u001b[36;1m                  'artifact_outcome': os.environ['ARTIFACT_OUTCOME'],\u001b[0m\n2026-09-19T09:38:57.3938675Z \u001b[36;1m                  'source_sha': 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c',\u001b[0m\n2026-09-19T09:38:57.3939095Z \u001b[36;1m                  'native_qualification_credit': False,\u001b[0m\n2026-09-19T09:38:57.3939595Z \u001b[36;1m                  'installed_qualification_credit': False, 'qualification_complete': False}))\u001b[0m\n2026-09-19T09:38:57.3940062Z \u001b[36;1mraise SystemExit(0 if passed else 1)\u001b[0m\n2026-09-19T09:38:57.3940341Z \u001b[36;1mPY\u001b[0m\n2026-09-19T09:38:57.3977132Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}\n2026-09-19T09:38:57.3977488Z env:\n2026-09-19T09:38:57.3977779Z   VALIDATION_SOURCE: /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:57.3978234Z   VALIDATION_HARNESS: /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:57.3978600Z   PYTHONDONTWRITEBYTECODE: 1\n2026-09-19T09:38:57.3978968Z   VALIDATION_REPORT: /home/runner/work/_temp/pr2974-macos-phase-finite/report\n2026-09-19T09:38:57.3979493Z   VALIDATION_SCRATCH: /home/runner/work/_temp/pr2974-macos-phase-finite/scratch\n2026-09-19T09:38:57.3979963Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:57.3980381Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig\n2026-09-19T09:38:57.3980804Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:57.3981181Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:57.3981565Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64\n2026-09-19T09:38:57.3981950Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib\n2026-09-19T09:38:57.3982349Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir\n2026-09-19T09:38:57.3982683Z   RETAINED_OUTCOME: success\n2026-09-19T09:38:57.3982912Z   ARTIFACT_OUTCOME: success\n2026-09-19T09:38:57.3983130Z ##[endgroup]\n2026-09-19T09:38:57.4264800Z {\"final_workflow_gate_passed\": false, \"retention_outcome\": \"success\", \"artifact_outcome\": \"success\", \"source_sha\": \"c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c\", \"native_qualification_credit\": false, \"installed_qualification_credit\": false, \"qualification_complete\": false}\n2026-09-19T09:38:57.4300916Z ##[error]Process completed with exit code 1.\n2026-09-19T09:38:57.4393031Z Post job cleanup.\n2026-09-19T09:38:57.5265547Z [command]/usr/bin/git version\n2026-09-19T09:38:57.5334239Z git version 2.55.0\n2026-09-19T09:38:57.5373085Z Temporarily overriding HOME='/home/runner/work/_temp/a23e5f8b-4d48-4c6f-af33-bbe233b36ead' before making global git config changes\n2026-09-19T09:38:57.5374535Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-19T09:38:57.5378759Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/source\n2026-09-19T09:38:57.5408373Z Removing SSH command configuration\n2026-09-19T09:38:57.5415333Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:57.5449192Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:57.5671949Z Removing HTTP extra header\n2026-09-19T09:38:57.5676599Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:57.5707993Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:57.5938442Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:57.5948170Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:57.5985264Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:57.6382300Z Post job cleanup.\n2026-09-19T09:38:57.7221569Z [command]/usr/bin/git version\n2026-09-19T09:38:57.7258598Z git version 2.55.0\n2026-09-19T09:38:57.7300692Z Temporarily overriding HOME='/home/runner/work/_temp/5a03f5fe-5e33-47db-bf45-3334887a430f' before making global git config changes\n2026-09-19T09:38:57.7302105Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-19T09:38:57.7307706Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/harness\n2026-09-19T09:38:57.7339143Z Removing SSH command configuration\n2026-09-19T09:38:57.7345038Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-19T09:38:57.7379616Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-19T09:38:57.7626667Z Removing HTTP extra header\n2026-09-19T09:38:57.7634347Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-19T09:38:57.7670816Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-19T09:38:57.7899961Z Removing includeIf entries pointing to credentials config files\n2026-09-19T09:38:57.7906640Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-19T09:38:57.7937991Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-19T09:38:57.8301930Z Cleaning up orphan processes\n",
+  "observed_artifact": {
+    "id": 10581738845,
+    "node_id": "MDg6QXJ0aWZhY3QxMDU4MTczODg0NQ==",
+    "name": "pr2974-macos-phase-finite-2d93ea30b9d15ef2e31612da5db0f0b16d490781-35435241584-1",
+    "size_in_bytes": 2244262,
+    "url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10581738845",
+    "archive_download_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10581738845/zip",
+    "expired": false,
+    "digest": "sha256:48e87b82248d2363f353445246c59ccc30bbc92bf5baa1e16312b3ae169904f7",
+    "created_at": "2026-09-19T09:38:57Z",
+    "updated_at": "2026-09-19T09:38:57Z",
+    "expires_at": "2026-10-19T09:38:56Z",
+    "workflow_run": {
+      "id": 35435241584,
+      "repository_id": 1194748811,
+      "head_repository_id": 1194748811,
+      "head_branch": "codex/rsp-macos-phase-finite-20260919",
+      "head_sha": "2d93ea30b9d15ef2e31612da5db0f0b16d490781"
+    }
+  },
+  "decoded_finite_frame": {
+    "meta": {
+      "kind": "finite-results.json",
+      "bytes": 3565,
+      "sha256": "b8bd200c6188ebe18e143d9c3f631e6251f5863551c013e5bf7dfa915386d03e",
+      "chunks": 5,
+      "encoding": "base64",
+      "chunk_characters": 1024
+    },
+    "data": "{\n  \"actual_execution_counts\": {\n    \"failed\": 0,\n    \"incomplete\": 0,\n    \"passed\": 475,\n    \"skipped\": 0\n  },\n  \"actual_junit_counts\": {\n    \"errored\": 0,\n    \"failed\": 0,\n    \"passed\": 475,\n    \"skipped\": 0,\n    \"tests\": 475\n  },\n  \"actual_junit_suites\": [\n    {\n      \"errors\": \"0\",\n      \"failures\": \"0\",\n      \"hostname\": \"runnervmlun5p\",\n      \"name\": \"pytest\",\n      \"skipped\": \"0\",\n      \"tests\": \"475\",\n      \"time\": \"6.220\",\n      \"timestamp\": \"2026-09-19T09:38:46.507769+00:00\"\n    }\n  ],\n  \"collected\": 475,\n  \"errors\": [],\n  \"installed_qualification_credit\": false,\n  \"modules\": [\n    \"tests/test_native_macos_dnssd_phase.py\",\n    \"tests/test_native_macos_dnssd_phase_forwarding.py\",\n    \"tests/test_native_macos_dnssd_phase_identity.py\",\n    \"tests/test_native_macos_dnssd_phase_path.py\",\n    \"tests/test_native_macos_dnssd_python.py\",\n    \"tests/test_native_macos_dnssd_python_path.py\",\n    \"tests/test_native_macos_python_resolver.py\",\n    \"tests/test_native_macos_python_resolver_binding.py\",\n    \"tests/test_native_macos_resolver_capture.py\",\n    \"tests/test_native_macos_resolver_evidence.py\",\n    \"tests/test_native_macos_resolver_path.py\",\n    \"tests/test_native_macos_resolver_tool_capture.py\",\n    \"tests/test_native_macos_xcode_selection.py\"\n  ],\n  \"native_qualification_credit\": false,\n  \"observed_source_modules\": 32,\n  \"passed\": true,\n  \"portable_c_cases\": [\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-1]\",\n      \"parameters\": {\n        \"cycles\": 1,\n        \"scenario\": 0\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-8]\",\n      \"parameters\": {\n        \"cycles\": 8,\n        \"scenario\": 0\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-17]\",\n      \"parameters\": {\n        \"cycles\": 17,\n        \"scenario\": 0\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-1]\",\n      \"parameters\": {\n        \"cycles\": 1,\n        \"scenario\": 1\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-8]\",\n      \"parameters\": {\n        \"cycles\": 8,\n        \"scenario\": 1\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-17]\",\n      \"parameters\": {\n        \"cycles\": 17,\n        \"scenario\": 1\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-1]\",\n      \"parameters\": {\n        \"cycles\": 1,\n        \"scenario\": 2\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-8]\",\n      \"parameters\": {\n        \"cycles\": 8,\n        \"scenario\": 2\n      }\n    },\n    {\n      \"nodeid\": \"tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-17]\",\n      \"parameters\": {\n        \"cycles\": 17,\n        \"scenario\": 2\n      }\n    }\n  ],\n  \"portable_c_programs\": 1,\n  \"pytest_exit_code\": 0,\n  \"qualification_complete\": false\n}\n",
+    "value": {
+      "actual_execution_counts": {
+        "failed": 0,
+        "incomplete": 0,
+        "passed": 475,
+        "skipped": 0
+      },
+      "actual_junit_counts": {
+        "errored": 0,
+        "failed": 0,
+        "passed": 475,
+        "skipped": 0,
+        "tests": 475
+      },
+      "actual_junit_suites": [
+        {
+          "errors": "0",
+          "failures": "0",
+          "hostname": "runnervmlun5p",
+          "name": "pytest",
+          "skipped": "0",
+          "tests": "475",
+          "time": "6.220",
+          "timestamp": "2026-09-19T09:38:46.507769+00:00"
+        }
+      ],
+      "collected": 475,
+      "errors": [],
+      "installed_qualification_credit": false,
+      "modules": [
+        "tests/test_native_macos_dnssd_phase.py",
+        "tests/test_native_macos_dnssd_phase_forwarding.py",
+        "tests/test_native_macos_dnssd_phase_identity.py",
+        "tests/test_native_macos_dnssd_phase_path.py",
+        "tests/test_native_macos_dnssd_python.py",
+        "tests/test_native_macos_dnssd_python_path.py",
+        "tests/test_native_macos_python_resolver.py",
+        "tests/test_native_macos_python_resolver_binding.py",
+        "tests/test_native_macos_resolver_capture.py",
+        "tests/test_native_macos_resolver_evidence.py",
+        "tests/test_native_macos_resolver_path.py",
+        "tests/test_native_macos_resolver_tool_capture.py",
+        "tests/test_native_macos_xcode_selection.py"
+      ],
+      "native_qualification_credit": false,
+      "observed_source_modules": 32,
+      "passed": true,
+      "portable_c_cases": [
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 2
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 2
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 2
+          }
+        }
+      ],
+      "portable_c_programs": 1,
+      "pytest_exit_code": 0,
+      "qualification_complete": false
+    }
+  },
+  "original_retained_workflow_outcome": {
+    "actual_finite_results": {
+      "actual_execution_counts": {
+        "failed": 0,
+        "incomplete": 0,
+        "passed": 475,
+        "skipped": 0
+      },
+      "actual_junit_counts": {
+        "errored": 0,
+        "failed": 0,
+        "passed": 475,
+        "skipped": 0,
+        "tests": 475
+      },
+      "actual_junit_suites": [
+        {
+          "errors": "0",
+          "failures": "0",
+          "hostname": "runnervmlun5p",
+          "name": "pytest",
+          "skipped": "0",
+          "tests": "475",
+          "time": "6.220",
+          "timestamp": "2026-09-19T09:38:46.507769+00:00"
+        }
+      ],
+      "collected": 475,
+      "errors": [],
+      "installed_qualification_credit": false,
+      "modules": [
+        "tests/test_native_macos_dnssd_phase.py",
+        "tests/test_native_macos_dnssd_phase_forwarding.py",
+        "tests/test_native_macos_dnssd_phase_identity.py",
+        "tests/test_native_macos_dnssd_phase_path.py",
+        "tests/test_native_macos_dnssd_python.py",
+        "tests/test_native_macos_dnssd_python_path.py",
+        "tests/test_native_macos_python_resolver.py",
+        "tests/test_native_macos_python_resolver_binding.py",
+        "tests/test_native_macos_resolver_capture.py",
+        "tests/test_native_macos_resolver_evidence.py",
+        "tests/test_native_macos_resolver_path.py",
+        "tests/test_native_macos_resolver_tool_capture.py",
+        "tests/test_native_macos_xcode_selection.py"
+      ],
+      "native_qualification_credit": false,
+      "observed_source_modules": 32,
+      "passed": true,
+      "portable_c_cases": [
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[0-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 0
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[1-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 1
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-1]",
+          "parameters": {
+            "cycles": 1,
+            "scenario": 2
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-8]",
+          "parameters": {
+            "cycles": 8,
+            "scenario": 2
+          }
+        },
+        {
+          "nodeid": "tests/test_native_macos_dnssd_phase_forwarding.py::test_arguments_returns_errno_and_underlying_calls_survive_trace_limit[2-17]",
+          "parameters": {
+            "cycles": 17,
+            "scenario": 2
+          }
+        }
+      ],
+      "portable_c_programs": 1,
+      "pytest_exit_code": 0,
+      "qualification_complete": false
+    },
+    "environment_unchanged": true,
+    "errors": [],
+    "finite_execution_credit": true,
+    "harness_sha": "2d93ea30b9d15ef2e31612da5db0f0b16d490781",
+    "installed_qualification_credit": false,
+    "native_qualification_credit": false,
+    "no_complete_descendant_cleanup_certificate": true,
+    "passed": true,
+    "pre_upload_gate_passed": false,
+    "qualification_complete": false,
+    "run_attempt": "1",
+    "run_id": "35435241584",
+    "schema": "hol-guard.macos-phase-finite-outcome.v1",
+    "source_sha": "c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c",
+    "source_tree": "2af6c4254b375682fb487af2b3322c59d64040f4",
+    "source_unchanged": true,
+    "status": "finished",
+    "steps": [
+      {
+        "args": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--version"
+        ],
+        "duration_seconds": 0.10073797700000142,
+        "log_bytes": 10,
+        "log_limit_exceeded": false,
+        "log_sha256": "48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1",
+        "name": "uv-version",
+        "passed": true,
+        "pid": 2662,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 90
+      },
+      {
+        "args": [
+          "/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3",
+          "-B",
+          "-I",
+          "-m",
+          "venv",
+          "--copies",
+          "--without-pip",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment"
+        ],
+        "duration_seconds": 0.3010270369999972,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "create-environment",
+        "passed": true,
+        "pid": 2663,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 90
+      },
+      {
+        "args": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--no-config",
+          "pip",
+          "install",
+          "--python",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "--no-deps",
+          "--require-hashes",
+          "--only-binary",
+          ":all:",
+          "--index-url",
+          "https://pypi.org/simple",
+          "-r",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/report/requirements.txt"
+        ],
+        "duration_seconds": 3.004783457000002,
+        "log_bytes": 623,
+        "log_limit_exceeded": false,
+        "log_sha256": "672055f69002f321d84d8b8062bd637f93b45a2cf1583cc99b790ef7660c6073",
+        "name": "install-nine-locked-tools",
+        "passed": true,
+        "pid": 2664,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 300
+      },
+      {
+        "args": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--no-config",
+          "pip",
+          "check",
+          "--python",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python"
+        ],
+        "duration_seconds": 0.2007789399999993,
+        "log_bytes": 184,
+        "log_limit_exceeded": false,
+        "log_sha256": "bf5e9b827abba632680508dce76fb05011850d061bff848f1bee0569c154f793",
+        "name": "dependency-compatibility",
+        "passed": true,
+        "pid": 2673,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 90
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-before.json"
+        ],
+        "duration_seconds": 2.5044124839999995,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "environment-before",
+        "passed": true,
+        "pid": 2677,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+          "before"
+        ],
+        "duration_seconds": 0.6016036860000042,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "syntax-before",
+        "passed": true,
+        "pid": 2679,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+          "preservation"
+        ],
+        "duration_seconds": 0.401015938999997,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "original-admission-preservation",
+        "passed": true,
+        "pid": 2681,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "0f4840d7e8c4f9d1af5e151bddd40b309657e1a3"
+        ],
+        "duration_seconds": 0.10071793200000201,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "git-diff-check",
+        "passed": true,
+        "pid": 2709,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff",
+          "check",
+          "--no-cache",
+          "scripts/ci/native_macos_dnssd_phase_child.py",
+          "scripts/ci/native_macos_dnssd_phase_evidence.py",
+          "scripts/ci/native_macos_dnssd_phase_identity.py",
+          "scripts/ci/native_macos_dnssd_phase_path.py",
+          "scripts/ci/native_macos_resolver_path.py",
+          "tests/test_native_macos_dnssd_phase.py",
+          "tests/test_native_macos_dnssd_phase_forwarding.py",
+          "tests/test_native_macos_dnssd_phase_identity.py",
+          "tests/test_native_macos_dnssd_phase_path.py"
+        ],
+        "duration_seconds": 0.10067881300000181,
+        "log_bytes": 19,
+        "log_limit_exceeded": false,
+        "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "name": "ruff-nine-files",
+        "passed": true,
+        "pid": 2718,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff",
+          "format",
+          "--no-cache",
+          "--check",
+          "scripts/ci/native_macos_dnssd_phase_child.py",
+          "scripts/ci/native_macos_dnssd_phase_evidence.py",
+          "scripts/ci/native_macos_dnssd_phase_identity.py",
+          "scripts/ci/native_macos_dnssd_phase_path.py",
+          "scripts/ci/native_macos_resolver_path.py",
+          "tests/test_native_macos_dnssd_phase.py",
+          "tests/test_native_macos_dnssd_phase_forwarding.py",
+          "tests/test_native_macos_dnssd_phase_identity.py",
+          "tests/test_native_macos_dnssd_phase_path.py"
+        ],
+        "duration_seconds": 0.10072976600000061,
+        "log_bytes": 26,
+        "log_limit_exceeded": false,
+        "log_sha256": "2ce9758b9f8abd876ec3e76c589e099e8b05377b1e7ea2331e81ee80f07bdff8",
+        "name": "ruff-format-nine-files",
+        "passed": true,
+        "pid": 2724,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/basedpyright",
+          "--level",
+          "error",
+          "--pythonpath",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "scripts/ci/native_macos_dnssd_phase_child.py",
+          "scripts/ci/native_macos_dnssd_phase_evidence.py",
+          "scripts/ci/native_macos_dnssd_phase_identity.py",
+          "scripts/ci/native_macos_dnssd_phase_path.py"
+        ],
+        "duration_seconds": 1.5057206170000015,
+        "log_bytes": 32,
+        "log_limit_exceeded": false,
+        "log_sha256": "607a3b10024e8d406e9a5dc8bd9b517482dd815734bf0ea681db2bd82fa2898d",
+        "name": "basedpyright-four-implementations",
+        "passed": true,
+        "pid": 2730,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/usr/bin/cc",
+          "--version"
+        ],
+        "duration_seconds": 0.1009408520000008,
+        "log_bytes": 245,
+        "log_limit_exceeded": false,
+        "log_sha256": "3e8cc208c40f60832f67377aa1b03c3e7e858f20cd5d365464944700c0bd7ad1",
+        "name": "portable-c-compiler",
+        "passed": true,
+        "pid": 2740,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 90
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/pytest_capture.py",
+          "--noconftest",
+          "-c",
+          "/dev/null",
+          "--rootdir",
+          "/home/runner/work/hol-guard/hol-guard/source",
+          "-q",
+          "-m",
+          "",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/pytest-basetemp",
+          "--junitxml",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/report/finite-junit.xml",
+          "tests/test_native_macos_resolver_evidence.py",
+          "tests/test_native_macos_resolver_capture.py",
+          "tests/test_native_macos_resolver_path.py",
+          "tests/test_native_macos_resolver_tool_capture.py",
+          "tests/test_native_macos_python_resolver.py",
+          "tests/test_native_macos_python_resolver_binding.py",
+          "tests/test_native_macos_dnssd_python.py",
+          "tests/test_native_macos_dnssd_python_path.py",
+          "tests/test_native_macos_xcode_selection.py",
+          "tests/test_native_macos_dnssd_phase.py",
+          "tests/test_native_macos_dnssd_phase_path.py",
+          "tests/test_native_macos_dnssd_phase_identity.py",
+          "tests/test_native_macos_dnssd_phase_forwarding.py"
+        ],
+        "duration_seconds": 7.310640689000003,
+        "log_bytes": 580,
+        "log_limit_exceeded": false,
+        "log_sha256": "6c633a525d21f701bce507761704907343e4eca2ebe8019156d55826b14ca6ff",
+        "name": "all-thirteen-finite-modules",
+        "passed": true,
+        "pid": 2741,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 240
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+          "after"
+        ],
+        "duration_seconds": 0.5012274259999998,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "syntax-and-source-after",
+        "passed": true,
+        "pid": 2788,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      },
+      {
+        "args": [
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+          "-B",
+          "-I",
+          "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py",
+          "/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-after.json"
+        ],
+        "duration_seconds": 2.4037834619999927,
+        "log_bytes": 0,
+        "log_limit_exceeded": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "environment-after",
+        "passed": true,
+        "pid": 2789,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 120
+      }
+    ],
+    "workflow_step_outcomes": {
+      "DRIVER_OUTCOME": "failure",
+      "HARNESS_CHECKOUT": "success",
+      "PYTHON_SETUP": "success",
+      "SOURCE_CHECKOUT": "success",
+      "UV_SETUP": "success"
+    }
+  },
+  "actual_commands": [
+    {
+      "args": [
+        "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+        "--version"
+      ],
+      "duration_seconds": 0.10073797700000142,
+      "log_bytes": 10,
+      "log_limit_exceeded": false,
+      "log_sha256": "48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1",
+      "name": "uv-version",
+      "passed": true,
+      "pid": 2662,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 90
+    },
+    {
+      "args": [
+        "/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3",
+        "-B",
+        "-I",
+        "-m",
+        "venv",
+        "--copies",
+        "--without-pip",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment"
+      ],
+      "duration_seconds": 0.3010270369999972,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "create-environment",
+      "passed": true,
+      "pid": 2663,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 90
+    },
+    {
+      "args": [
+        "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+        "--no-config",
+        "pip",
+        "install",
+        "--python",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "--no-deps",
+        "--require-hashes",
+        "--only-binary",
+        ":all:",
+        "--index-url",
+        "https://pypi.org/simple",
+        "-r",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/report/requirements.txt"
+      ],
+      "duration_seconds": 3.004783457000002,
+      "log_bytes": 623,
+      "log_limit_exceeded": false,
+      "log_sha256": "672055f69002f321d84d8b8062bd637f93b45a2cf1583cc99b790ef7660c6073",
+      "name": "install-nine-locked-tools",
+      "passed": true,
+      "pid": 2664,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 300
+    },
+    {
+      "args": [
+        "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+        "--no-config",
+        "pip",
+        "check",
+        "--python",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python"
+      ],
+      "duration_seconds": 0.2007789399999993,
+      "log_bytes": 184,
+      "log_limit_exceeded": false,
+      "log_sha256": "bf5e9b827abba632680508dce76fb05011850d061bff848f1bee0569c154f793",
+      "name": "dependency-compatibility",
+      "passed": true,
+      "pid": 2673,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 90
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-before.json"
+      ],
+      "duration_seconds": 2.5044124839999995,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "environment-before",
+      "passed": true,
+      "pid": 2677,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+        "before"
+      ],
+      "duration_seconds": 0.6016036860000042,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "syntax-before",
+      "passed": true,
+      "pid": 2679,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+        "preservation"
+      ],
+      "duration_seconds": 0.401015938999997,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "original-admission-preservation",
+      "passed": true,
+      "pid": 2681,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "git",
+        "diff",
+        "--check",
+        "0f4840d7e8c4f9d1af5e151bddd40b309657e1a3"
+      ],
+      "duration_seconds": 0.10071793200000201,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "git-diff-check",
+      "passed": true,
+      "pid": 2709,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff",
+        "check",
+        "--no-cache",
+        "scripts/ci/native_macos_dnssd_phase_child.py",
+        "scripts/ci/native_macos_dnssd_phase_evidence.py",
+        "scripts/ci/native_macos_dnssd_phase_identity.py",
+        "scripts/ci/native_macos_dnssd_phase_path.py",
+        "scripts/ci/native_macos_resolver_path.py",
+        "tests/test_native_macos_dnssd_phase.py",
+        "tests/test_native_macos_dnssd_phase_forwarding.py",
+        "tests/test_native_macos_dnssd_phase_identity.py",
+        "tests/test_native_macos_dnssd_phase_path.py"
+      ],
+      "duration_seconds": 0.10067881300000181,
+      "log_bytes": 19,
+      "log_limit_exceeded": false,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "name": "ruff-nine-files",
+      "passed": true,
+      "pid": 2718,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/ruff",
+        "format",
+        "--no-cache",
+        "--check",
+        "scripts/ci/native_macos_dnssd_phase_child.py",
+        "scripts/ci/native_macos_dnssd_phase_evidence.py",
+        "scripts/ci/native_macos_dnssd_phase_identity.py",
+        "scripts/ci/native_macos_dnssd_phase_path.py",
+        "scripts/ci/native_macos_resolver_path.py",
+        "tests/test_native_macos_dnssd_phase.py",
+        "tests/test_native_macos_dnssd_phase_forwarding.py",
+        "tests/test_native_macos_dnssd_phase_identity.py",
+        "tests/test_native_macos_dnssd_phase_path.py"
+      ],
+      "duration_seconds": 0.10072976600000061,
+      "log_bytes": 26,
+      "log_limit_exceeded": false,
+      "log_sha256": "2ce9758b9f8abd876ec3e76c589e099e8b05377b1e7ea2331e81ee80f07bdff8",
+      "name": "ruff-format-nine-files",
+      "passed": true,
+      "pid": 2724,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/basedpyright",
+        "--level",
+        "error",
+        "--pythonpath",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "scripts/ci/native_macos_dnssd_phase_child.py",
+        "scripts/ci/native_macos_dnssd_phase_evidence.py",
+        "scripts/ci/native_macos_dnssd_phase_identity.py",
+        "scripts/ci/native_macos_dnssd_phase_path.py"
+      ],
+      "duration_seconds": 1.5057206170000015,
+      "log_bytes": 32,
+      "log_limit_exceeded": false,
+      "log_sha256": "607a3b10024e8d406e9a5dc8bd9b517482dd815734bf0ea681db2bd82fa2898d",
+      "name": "basedpyright-four-implementations",
+      "passed": true,
+      "pid": 2730,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/usr/bin/cc",
+        "--version"
+      ],
+      "duration_seconds": 0.1009408520000008,
+      "log_bytes": 245,
+      "log_limit_exceeded": false,
+      "log_sha256": "3e8cc208c40f60832f67377aa1b03c3e7e858f20cd5d365464944700c0bd7ad1",
+      "name": "portable-c-compiler",
+      "passed": true,
+      "pid": 2740,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 90
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/pytest_capture.py",
+        "--noconftest",
+        "-c",
+        "/dev/null",
+        "--rootdir",
+        "/home/runner/work/hol-guard/hol-guard/source",
+        "-q",
+        "-m",
+        "",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/pytest-basetemp",
+        "--junitxml",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/report/finite-junit.xml",
+        "tests/test_native_macos_resolver_evidence.py",
+        "tests/test_native_macos_resolver_capture.py",
+        "tests/test_native_macos_resolver_path.py",
+        "tests/test_native_macos_resolver_tool_capture.py",
+        "tests/test_native_macos_python_resolver.py",
+        "tests/test_native_macos_python_resolver_binding.py",
+        "tests/test_native_macos_dnssd_python.py",
+        "tests/test_native_macos_dnssd_python_path.py",
+        "tests/test_native_macos_xcode_selection.py",
+        "tests/test_native_macos_dnssd_phase.py",
+        "tests/test_native_macos_dnssd_phase_path.py",
+        "tests/test_native_macos_dnssd_phase_identity.py",
+        "tests/test_native_macos_dnssd_phase_forwarding.py"
+      ],
+      "duration_seconds": 7.310640689000003,
+      "log_bytes": 580,
+      "log_limit_exceeded": false,
+      "log_sha256": "6c633a525d21f701bce507761704907343e4eca2ebe8019156d55826b14ca6ff",
+      "name": "all-thirteen-finite-modules",
+      "passed": true,
+      "pid": 2741,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 240
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/source.py",
+        "after"
+      ],
+      "duration_seconds": 0.5012274259999998,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "syntax-and-source-after",
+      "passed": true,
+      "pid": 2788,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    },
+    {
+      "args": [
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/scratch/validation-environment/bin/python",
+        "-B",
+        "-I",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_macos_phase_finite/environment.py",
+        "/home/runner/work/_temp/pr2974-macos-phase-finite/report/environment-after.json"
+      ],
+      "duration_seconds": 2.4037834619999927,
+      "log_bytes": 0,
+      "log_limit_exceeded": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "environment-after",
+      "passed": true,
+      "pid": 2789,
+      "returncode": 0,
+      "timed_out": false,
+      "timeout_seconds": 120
+    }
+  ],
+  "original_job": {
+    "id": 105876673751,
+    "run_id": 35435241584,
+    "workflow_name": "PR2974 macOS phase portable finite",
+    "head_branch": "codex/rsp-macos-phase-finite-20260919",
+    "run_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/runs/35435241584",
+    "run_attempt": 1,
+    "node_id": "CR_kwDORzZri88AAAAYpr3U1w",
+    "head_sha": "2d93ea30b9d15ef2e31612da5db0f0b16d490781",
+    "url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/jobs/105876673751",
+    "html_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35435241584/job/105876673751",
+    "status": "completed",
+    "conclusion": "failure",
+    "created_at": "2026-09-19T09:38:17Z",
+    "started_at": "2026-09-19T09:38:19Z",
+    "completed_at": "2026-09-19T09:38:59Z",
+    "name": "Exact source and thirteen finite modules",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-09-19T09:38:20Z",
+        "completed_at": "2026-09-19T09:38:21Z"
+      },
+      {
+        "name": "Initialize retained outcome",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-09-19T09:38:21Z",
+        "completed_at": "2026-09-19T09:38:21Z"
+      },
+      {
+        "name": "Checkout isolated harness",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-09-19T09:38:21Z",
+        "completed_at": "2026-09-19T09:38:24Z"
+      },
+      {
+        "name": "Checkout immutable corrected Mac source and public parent",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-09-19T09:38:24Z",
+        "completed_at": "2026-09-19T09:38:27Z"
+      },
+      {
+        "name": "Set up exact Python",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-09-19T09:38:27Z",
+        "completed_at": "2026-09-19T09:38:34Z"
+      },
+      {
+        "name": "Set up exact dependency installer",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6,
+        "started_at": "2026-09-19T09:38:34Z",
+        "completed_at": "2026-09-19T09:38:35Z"
+      },
+      {
+        "name": "Check exact source and execute the complete portable finite cohort",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 7,
+        "started_at": "2026-09-19T09:38:35Z",
+        "completed_at": "2026-09-19T09:38:56Z"
+      },
+      {
+        "name": "Retain original outcomes before artifact upload",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8,
+        "started_at": "2026-09-19T09:38:56Z",
+        "completed_at": "2026-09-19T09:38:56Z"
+      },
+      {
+        "name": "Upload exact source evidence and actual finite outcomes",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9,
+        "started_at": "2026-09-19T09:38:56Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Apply final gate after evidence retention",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 10,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Post Set up exact dependency installer",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 17,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Post Set up exact Python",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 18,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Post Checkout immutable corrected Mac source and public parent",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 19,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Post Checkout isolated harness",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 20,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 21,
+        "started_at": "2026-09-19T09:38:57Z",
+        "completed_at": "2026-09-19T09:38:57Z"
+      }
+    ],
+    "check_run_url": "https://api.github.com/repos/hashgraph-online/hol-guard/check-runs/105876673751",
+    "labels": [
+      "ubuntu-24.04"
+    ],
+    "runner_id": 1000923500,
+    "runner_name": "GitHub Actions 1000923500",
+    "runner_group_id": 0,
+    "runner_group_name": "GitHub Actions"
+  },
+  "original_framing_failure": {
+    "kind": "finite-junit-log-copy.json",
+    "actual_bytes": 1208096,
+    "limit_bytes": 262144,
+    "emitted_files": [
+      "finite-results.json"
+    ]
+  },
+  "qualification_complete": false,
+  "original_failure_preserved": true
+}

@@ -1,0 +1,385 @@
+name: Initial publication retry ordering baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact tests-only source commit
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Exact diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Exact diagnostic tree
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: initial-retry-priority-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  initial-retry-priority:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-initial-retry-priority-f064-20260919' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      EXPECTED_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      EXPECTED_DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+      MATRIX_PYTHON: ${{ matrix.python }}
+      PYTEST_ADDOPTS: ""
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        id: checkout
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact source before regression
+        id: source_guard
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import subprocess
+          
+          SOURCE = "f983575d6ae80d89ff1c44f3cdd987f44521529b"
+          SOURCE_TREE = "12f6d2a1ca28611c90cc8b7656cac137003f657c"
+          BASE = "f064a4b63aee59cb6e88e717e777f8fd85162158"
+          BASE_TREE = "0dbb18e0e3bdd8fe057774f53ef2d8c15e634edb"
+          TEST = "tests/test_native_policy_initial_retry_priority.py"
+          WORKFLOW = ".github/workflows/native-managed-source-contract.yml"
+          PINS = [
+              [".github/workflows/ci.yml","100644","2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],
+              ["src/codex_plugin_scanner/guard/native_command_control_binding.py","100644","2054cad886715d67e97586a38542dbd825f1c785"],
+              ["src/codex_plugin_scanner/guard/native_command_control_projection.py","100644","fa5366372b43367e8864af63c7b16f00c2ceb2b5"],
+              ["src/codex_plugin_scanner/guard/native_managed_capture.py","100644","cbefb015f7bd1ca9b117fff641acf041ca2e10cc"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","afb888ee46939730c04380142ea550c4b11fa74a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","100644","9b5b470f013ac9724dbe6b7958ffc494010a15a8"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","863969c225850342d508a253b592c62f5f6417cd"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","3d1282e0fb0d187d76a5a454097bd08c3290a310"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","100644","11919f2b5c9f955f569c83b17d93d009e083d069"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","5cb393fba684873addfcaa97e4342a404fb317c0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","e4049a532d98eaf797ecd4e0a057fc094e9721fe"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_source_requirement.py","100644","417c3066e8e413eecab52d9e989b01e37854baaa"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/fixtures/guard-command-corpus/decision-diff-report.json","100644","d9c3e3dc77cdc92a87ba1e1497d4b2cf902d11e5"],
+              ["tests/fixtures/guard-command-corpus/known-gaps.json","100644","6c6d7a820fe795252bcfc6d227cbb9f3788b2cb9"],
+              ["tests/fixtures/guard-command-corpus/minimal-delta-pairs.json","100644","de808e793ee8f51eb5533850b4a9fbf221e6ba90"],
+              ["tests/fixtures/guard-command-corpus/seed-manifest.json","100644","f26cda4652a06f51b412486721e2a615f0abdb98"],
+              ["tests/guard_command_corpus_diagnostics.py","100644","35d6318d3e863e7f8ad33a090328c53a0297664d"],
+              ["tests/guard_command_corpus_oracle_adversarial.py","100644","98682a83f649b6b555c3fb69abca01a7bf6d36f1"],
+              ["tests/guard_command_corpus_oracle_benign.py","100644","591a8e8f0e2a16c7f1f39f2f199c16a12dedd042"],
+              ["tests/guard_command_corpus_oracle_loader.py","100644","62bc1a5a371b3646315f18e0db335f303d74f8de"],
+              ["tests/guard_command_corpus_oracle_types.py","100644","b9c7ecb6d8f5ca06c50ac43c66dfb51a4b64b1a7"],
+              ["tests/guard_command_corpus_oracle.py","100644","e3244452563a1a82ecd68aec0bc100ae91ac47ac"],
+              ["tests/guard_command_corpus_runner.py","100644","2dc19323ea3fd7e4539f12ce770a0218b3c781ed"],
+              ["tests/guard_command_corpus.py","100644","ea46044f3d99c58bbdc51b95487b0464abc37a43"],
+              ["tests/guard_command_decision_diff_runner.py","100644","3ff1e896e0c0b8a32c57988b7f5914b320b66ba3"],
+              ["tests/guard_command_decision_diff.py","100644","2150c9eb1da9371966b26cbfd1a8737fbf7e2e64"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","831e1e9dfa438241720a973fa6308bfaaa7093a5"],
+              ["tests/test_guard_command_corpus.py","100644","21e8fec14255c5c367887b9e55d09570f452162e"],
+              ["tests/test_guard_command_decision_diff.py","100644","8d5fa7b75cb70bfb607075834adc97e1fd46a717"],
+              ["tests/test_native_policy_capture_retry_origin.py","100644","3e91e737c975f259d6d08fb81759a367f730daf8"],
+              ["tests/test_native_policy_initial_retry_priority.py","100644","93cdd98f4e268f9a6d824ffe89f057b3025e8f68"],
+              ["tests/test_native_policy_postack_capture_retry.py","100644","2db79ab391c014023f0661fd33f1574ff344600e"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","da017b74b5bfc7ee4effb46f19618dab366f1e94"],
+              ["tests/test_native_policy_snapshot_default_capture_worker.py","100644","dd5fc085b379830ab7b90725da2c9dd4d19789c0"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","131c4f51c26c71cb563bdcc62cbc56ab3672cb4c"],
+              ["tests/test_native_policy_snapshot_v4_barrier.py","100644","348c2dcd04b04191325cb5ea0eb08a0a8a077d62"],
+              ["tests/test_native_policy_source_selection.py","100644","c11d2df2817e383d0ddc279f7cdf523ede4428c6"],
+              ["tests/test_native_source_free_renewal.py","100644","433d59d0a74d0d04be3cf4659df858a2ddd513ff"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == SOURCE
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-initial-retry-priority-f064-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", head).split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, BASE]
+          assert git("rev-list", "--parents", "-n", "1", BASE).split() == [
+              BASE, "88dd45eae28bc1b7710f96c93d9f3178b700766d"
+          ]
+          assert git("rev-parse", source + "^{tree}") == SOURCE_TREE
+          assert git("rev-parse", BASE + "^{tree}") == BASE_TREE
+          assert git("diff", "--name-status", "--no-renames", BASE, source).splitlines() == ["A\t" + TEST]
+          assert git("diff", "--name-status", "--no-renames", source, head).splitlines() == ["A\t" + WORKFLOW]
+          assert git("ls-tree", BASE, "--", TEST) == ""
+          assert git("ls-tree", source, "--", WORKFLOW) == ""
+          anchor = "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          subprocess.run(["git", "merge-base", "--is-ancestor", anchor, source], check=True)
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, head) == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, anchor)
+          for path, mode, sha in PINS:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", head, "--", path) == expected
+              file = Path(path)
+              metadata = file.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not file.is_symlink()
+              assert bool(metadata.st_mode & 0o111) == (mode == "100755")
+              assert git("hash-object", "--", path) == sha
+          subprocess.run(["git", "diff", "--cached", "--quiet"], check=True)
+          subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], check=True)
+          print(json.dumps({"record": "initial-retry-priority-source-guard",
+                            "source": source, "sourceTree": SOURCE_TREE, "pins": len(PINS),
+                            "productionUnchanged": True, "trackedFilesUnchanged": True}, sort_keys=True))
+          PY
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
+        run: |
+          python -I - <<'PY'
+          import pathlib
+          import venv
+
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Verify installation fixture interpreter provenance
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
+
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
+      - name: Run the complete four-case ordering regression
+        id: initial_retry_tests
+        run: |
+          uv run --no-sync python -m pytest -q --tb=short -o addopts=--strict-markers \
+            tests/test_native_policy_initial_retry_priority.py \
+            --junitxml="$RUNNER_TEMP/initial-retry-priority-${{ matrix.python }}.xml"
+      - name: Record exact baseline outcomes
+        if: ${{ always() && steps.source_guard.outcome == 'success' && (steps.initial_retry_tests.outcome == 'success' || steps.initial_retry_tests.outcome == 'failure') }}
+        run: |
+          python -I - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+          
+          report = Path(os.environ["RUNNER_TEMP"]) / ("initial-retry-priority-" + os.environ["MATRIX_PYTHON"] + ".xml")
+          assert report.is_file() and not report.is_symlink()
+          assert report.stat().st_size <= 2 * 1024 * 1024
+          root = ET.parse(report).getroot()
+          cases = list(root.iter("testcase"))
+          classname = "tests.test_native_policy_initial_retry_priority"
+          prefix = "test_due_retry_preserves_fresh_authority_and_following_observation"
+          parameters = ["steady", "configuration", "unsigned-source", "new-request"]
+          expected = Counter((classname, prefix + "[" + value + "]") for value in parameters)
+          actual = Counter((case.get("classname"), case.get("name")) for case in cases)
+          rows = []
+          for case in cases:
+              tags = {tag: len(case.findall(tag)) for tag in ("failure", "error", "skipped")}
+              rows.append({"classname": case.get("classname"), "name": case.get("name"),
+                           "status": "pass" if not any(tags.values()) else "nonpass", **tags})
+          steady = [case for case in cases if case.get("name") == prefix + "[steady]"]
+          controls = [case for case in cases if case.get("name") != prefix + "[steady]"]
+          identity_ok = actual == expected
+          no_errors_or_skips = not list(root.iter("error")) and not list(root.iter("skipped"))
+          control_passes = len(controls) == 3 and all(
+              not any(case.findall(tag) for tag in ("failure", "error", "skipped")) for case in controls
+          )
+          failures = list(root.iter("failure"))
+          steady_failures = [] if len(steady) != 1 else steady[0].findall("failure")
+          location_ok = False
+          predicate_ok = False
+          if len(steady_failures) == 1:
+              failure = steady_failures[0]
+              body = failure.text or ""
+              location_ok = bool(re.search(
+                  r"(?m)^tests/test_native_policy_initial_retry_priority\.py:196:(?: in | AssertionError)", body
+              ))
+              predicate_ok = (
+                  "due retry performed duplicate observation before fresh publication" in body
+                  and "due retry performed duplicate observation before fresh publication" in failure.get("message", "")
+              )
+          meaningful_red = identity_ok and no_errors_or_skips and control_passes and (
+              len(failures) == 1 and len(steady_failures) == 1 and location_ok and predicate_ok
+          )
+          print(json.dumps({"record": "initial-retry-priority-outcomes",
+                            "source": os.environ["EXPECTED_SOURCE_COMMIT"],
+                            "python": os.environ["MATRIX_PYTHON"], "count": len(cases), "cases": rows,
+                            "exactIdentities": identity_ok, "noErrorsOrSkips": no_errors_or_skips,
+                            "threeControlsPassed": control_passes, "exactOrderingLocation": location_ok,
+                            "exactOrderingPredicate": predicate_ok, "meaningfulBaselineRed": meaningful_red}, sort_keys=True))
+          assert identity_ok, "unexpected JUnit identities"
+          assert no_errors_or_skips, "errors or skipped cases are not ordering evidence"
+          assert control_passes, "the three authority controls must pass"
+          assert meaningful_red, "expected ordering assertion was not established"
+          PY
+      - name: Check the new test source
+        if: ${{ always() && steps.source_guard.outcome == 'success' && (steps.initial_retry_tests.outcome == 'success' || steps.initial_retry_tests.outcome == 'failure') }}
+        run: uv run --no-sync ruff check tests/test_native_policy_initial_retry_priority.py
+      - name: Check the new test formatting
+        if: ${{ always() && steps.source_guard.outcome == 'success' && (steps.initial_retry_tests.outcome == 'success' || steps.initial_retry_tests.outcome == 'failure') }}
+        run: uv run --no-sync ruff format --check tests/test_native_policy_initial_retry_priority.py
+      - name: Verify exact source after regression
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import subprocess
+          
+          SOURCE = "f983575d6ae80d89ff1c44f3cdd987f44521529b"
+          SOURCE_TREE = "12f6d2a1ca28611c90cc8b7656cac137003f657c"
+          BASE = "f064a4b63aee59cb6e88e717e777f8fd85162158"
+          BASE_TREE = "0dbb18e0e3bdd8fe057774f53ef2d8c15e634edb"
+          TEST = "tests/test_native_policy_initial_retry_priority.py"
+          WORKFLOW = ".github/workflows/native-managed-source-contract.yml"
+          PINS = [
+              [".github/workflows/ci.yml","100644","2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],
+              ["src/codex_plugin_scanner/guard/native_command_control_binding.py","100644","2054cad886715d67e97586a38542dbd825f1c785"],
+              ["src/codex_plugin_scanner/guard/native_command_control_projection.py","100644","fa5366372b43367e8864af63c7b16f00c2ceb2b5"],
+              ["src/codex_plugin_scanner/guard/native_managed_capture.py","100644","cbefb015f7bd1ca9b117fff641acf041ca2e10cc"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","afb888ee46939730c04380142ea550c4b11fa74a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","100644","9b5b470f013ac9724dbe6b7958ffc494010a15a8"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","863969c225850342d508a253b592c62f5f6417cd"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","3d1282e0fb0d187d76a5a454097bd08c3290a310"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","100644","11919f2b5c9f955f569c83b17d93d009e083d069"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","5cb393fba684873addfcaa97e4342a404fb317c0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","e4049a532d98eaf797ecd4e0a057fc094e9721fe"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_source_requirement.py","100644","417c3066e8e413eecab52d9e989b01e37854baaa"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/fixtures/guard-command-corpus/decision-diff-report.json","100644","d9c3e3dc77cdc92a87ba1e1497d4b2cf902d11e5"],
+              ["tests/fixtures/guard-command-corpus/known-gaps.json","100644","6c6d7a820fe795252bcfc6d227cbb9f3788b2cb9"],
+              ["tests/fixtures/guard-command-corpus/minimal-delta-pairs.json","100644","de808e793ee8f51eb5533850b4a9fbf221e6ba90"],
+              ["tests/fixtures/guard-command-corpus/seed-manifest.json","100644","f26cda4652a06f51b412486721e2a615f0abdb98"],
+              ["tests/guard_command_corpus_diagnostics.py","100644","35d6318d3e863e7f8ad33a090328c53a0297664d"],
+              ["tests/guard_command_corpus_oracle_adversarial.py","100644","98682a83f649b6b555c3fb69abca01a7bf6d36f1"],
+              ["tests/guard_command_corpus_oracle_benign.py","100644","591a8e8f0e2a16c7f1f39f2f199c16a12dedd042"],
+              ["tests/guard_command_corpus_oracle_loader.py","100644","62bc1a5a371b3646315f18e0db335f303d74f8de"],
+              ["tests/guard_command_corpus_oracle_types.py","100644","b9c7ecb6d8f5ca06c50ac43c66dfb51a4b64b1a7"],
+              ["tests/guard_command_corpus_oracle.py","100644","e3244452563a1a82ecd68aec0bc100ae91ac47ac"],
+              ["tests/guard_command_corpus_runner.py","100644","2dc19323ea3fd7e4539f12ce770a0218b3c781ed"],
+              ["tests/guard_command_corpus.py","100644","ea46044f3d99c58bbdc51b95487b0464abc37a43"],
+              ["tests/guard_command_decision_diff_runner.py","100644","3ff1e896e0c0b8a32c57988b7f5914b320b66ba3"],
+              ["tests/guard_command_decision_diff.py","100644","2150c9eb1da9371966b26cbfd1a8737fbf7e2e64"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","831e1e9dfa438241720a973fa6308bfaaa7093a5"],
+              ["tests/test_guard_command_corpus.py","100644","21e8fec14255c5c367887b9e55d09570f452162e"],
+              ["tests/test_guard_command_decision_diff.py","100644","8d5fa7b75cb70bfb607075834adc97e1fd46a717"],
+              ["tests/test_native_policy_capture_retry_origin.py","100644","3e91e737c975f259d6d08fb81759a367f730daf8"],
+              ["tests/test_native_policy_initial_retry_priority.py","100644","93cdd98f4e268f9a6d824ffe89f057b3025e8f68"],
+              ["tests/test_native_policy_postack_capture_retry.py","100644","2db79ab391c014023f0661fd33f1574ff344600e"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","da017b74b5bfc7ee4effb46f19618dab366f1e94"],
+              ["tests/test_native_policy_snapshot_default_capture_worker.py","100644","dd5fc085b379830ab7b90725da2c9dd4d19789c0"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","131c4f51c26c71cb563bdcc62cbc56ab3672cb4c"],
+              ["tests/test_native_policy_snapshot_v4_barrier.py","100644","348c2dcd04b04191325cb5ea0eb08a0a8a077d62"],
+              ["tests/test_native_policy_source_selection.py","100644","c11d2df2817e383d0ddc279f7cdf523ede4428c6"],
+              ["tests/test_native_source_free_renewal.py","100644","433d59d0a74d0d04be3cf4659df858a2ddd513ff"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+          
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == SOURCE
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-initial-retry-priority-f064-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", head).split() == [head, source]
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, BASE]
+          assert git("rev-list", "--parents", "-n", "1", BASE).split() == [
+              BASE, "88dd45eae28bc1b7710f96c93d9f3178b700766d"
+          ]
+          assert git("rev-parse", source + "^{tree}") == SOURCE_TREE
+          assert git("rev-parse", BASE + "^{tree}") == BASE_TREE
+          assert git("diff", "--name-status", "--no-renames", BASE, source).splitlines() == ["A\t" + TEST]
+          assert git("diff", "--name-status", "--no-renames", source, head).splitlines() == ["A\t" + WORKFLOW]
+          assert git("ls-tree", BASE, "--", TEST) == ""
+          assert git("ls-tree", source, "--", WORKFLOW) == ""
+          anchor = "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          subprocess.run(["git", "merge-base", "--is-ancestor", anchor, source], check=True)
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, head) == git("show", "-s", identity, source)
+          assert git("show", "-s", identity, source) == git("show", "-s", identity, anchor)
+          for path, mode, sha in PINS:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", head, "--", path) == expected
+              file = Path(path)
+              metadata = file.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not file.is_symlink()
+              assert bool(metadata.st_mode & 0o111) == (mode == "100755")
+              assert git("hash-object", "--", path) == sha
+          subprocess.run(["git", "diff", "--cached", "--quiet"], check=True)
+          subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], check=True)
+          print(json.dumps({"record": "initial-retry-priority-source-guard",
+                            "source": source, "sourceTree": SOURCE_TREE, "pins": len(PINS),
+                            "productionUnchanged": True, "trackedFilesUnchanged": True}, sort_keys=True))
+          PY

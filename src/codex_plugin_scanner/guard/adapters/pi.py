@@ -36,9 +36,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
     global_config_dir = PI_AGENT_DIR
     display_name = "Pi"
 
-    def approval_flow(
-        self, *, managed_install: dict[str, object] | None = None
-    ) -> dict[str, object]:
+    def approval_flow(self, *, managed_install: dict[str, object] | None = None) -> dict[str, object]:
         if isinstance(managed_install, dict) and bool(managed_install.get("active")):
             return {
                 "tier": "approval-center",
@@ -179,9 +177,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
             return
         append_found_path(found_paths, settings_path)
         payload = json_payload(settings_path)
-        self._append_package_setting_artifacts(
-            artifacts, seen_keys, settings_path, payload, scope, id_scope
-        )
+        self._append_package_setting_artifacts(artifacts, seen_keys, settings_path, payload, scope, id_scope)
         self._append_configured_resource_setting_artifacts(
             artifacts,
             found_paths,
@@ -413,9 +409,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
             return
         for path in sorted(extension_root.rglob("*")):
             if path.is_file() and path.suffix in EXTENSION_SUFFIXES:
-                self._append_extension_file(
-                    artifacts, found_paths, seen_keys, path, scope, id_scope, id_root
-                )
+                self._append_extension_file(artifacts, found_paths, seen_keys, path, scope, id_scope, id_root)
 
     def _append_extension_file(
         self,
@@ -457,9 +451,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
         if not skill_root.is_dir():
             return
         for skill_path in sorted(skill_root.rglob("SKILL.md")):
-            self._append_skill_file(
-                artifacts, found_paths, seen_keys, skill_path, scope, id_scope, id_root
-            )
+            self._append_skill_file(artifacts, found_paths, seen_keys, skill_path, scope, id_scope, id_root)
 
     def _append_skill_file(
         self,
@@ -502,9 +494,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
         if not prompt_root.is_dir():
             return
         for prompt_path in sorted(prompt_root.rglob("*.md")):
-            self._append_prompt_file(
-                artifacts, found_paths, seen_keys, prompt_path, scope, id_scope, id_root
-            )
+            self._append_prompt_file(artifacts, found_paths, seen_keys, prompt_path, scope, id_scope, id_root)
 
     def _append_prompt_file(
         self,
@@ -608,9 +598,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
         )
         raw_notes = shim_manifest.get("notes")
         shim_notes = (
-            [str(note) for note in raw_notes if isinstance(note, str)]
-            if isinstance(raw_notes, (list, tuple))
-            else []
+            [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
         )
         return {
             "harness": self.harness,
@@ -640,9 +628,7 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
             extension_path.unlink()
         raw_notes = shim_manifest.get("notes")
         shim_notes = (
-            [str(note) for note in raw_notes if isinstance(note, str)]
-            if isinstance(raw_notes, (list, tuple))
-            else []
+            [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
         )
         return {
             "harness": self.harness,

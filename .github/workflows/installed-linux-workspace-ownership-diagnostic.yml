@@ -1,15 +1,16 @@
-name: Installed Linux workspace publication span diagnosis at 8156
+name: Installed Linux workspace active stage diagnosis at 8156
 
 on:
   push:
     branches:
-      - diagnostic/workspace-publication-spans-8156
+      - diagnostic/workspace-active-stages-8156
     paths:
       - .github/workflows/installed-linux-workspace-ownership-diagnostic.yml
       - ci/installed_lifecycle_diagnostic/summarize_workspace_attempt.py
       - ci/workspace_publication_diagnostic/**
       - scripts/native_slo_session.py
       - scripts/native_slo_workspace_server.py
+      - scripts/native_slo_workspace_observer.py
       - scripts/native_slo_daemon_fixture.py
 
 permissions:
@@ -17,12 +18,12 @@ permissions:
   actions: read
 
 concurrency:
-  group: installed-linux-workspace-publication-span-diagnostic-8156
+  group: installed-linux-workspace-active-stage-diagnostic-8156
   cancel-in-progress: false
 
 jobs:
   workspace_publication:
-    name: Installed workspace publication span diagnosis (8156)
+    name: Installed workspace active stage diagnosis (8156)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -75,6 +76,9 @@ jobs:
           --output "$RUNNER_TEMP/workspace-publication-evidence/offline-controls.json"
         python -I -B diagnostic/ci/workspace_publication_diagnostic/construction_controls.py \
           --output "$RUNNER_TEMP/workspace-publication-evidence/construction-controls.json"
+        python -I -B diagnostic/ci/workspace_publication_diagnostic/causal_controls.py \
+          --production-source source \
+          --output "$RUNNER_TEMP/workspace-publication-evidence/causal-controls.json"
     - name: Install pinned dependency versions and the bound wheel without builds
       shell: bash
       run: |
@@ -117,7 +121,7 @@ jobs:
           --output-directory "$RUNNER_TEMP/workspace-publication-evidence/attempt-001"
       id: witness
       timeout-minutes: 5
-    - name: Print bounded final phase spans and ownership facts from unchanged evidence
+    - name: Print bounded active stages and evaluated acknowledgment facts
       if: always() && steps.prepare.outcome == 'success'
       timeout-minutes: 1
       shell: bash
@@ -178,13 +182,14 @@ jobs:
       if: always() && steps.prepare.outcome == 'success'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: installed-workspace-publication-spans-8156-${{ github.run_id }}-${{ github.run_attempt }}
+        name: installed-workspace-active-stages-8156-${{ github.run_id }}-${{ github.run_attempt }}
         if-no-files-found: error
         retention-days: 90
         path: |
           ${{ runner.temp }}/workspace-publication-evidence/artifact-binding.json
           ${{ runner.temp }}/workspace-publication-evidence/offline-controls.json
           ${{ runner.temp }}/workspace-publication-evidence/construction-controls.json
+          ${{ runner.temp }}/workspace-publication-evidence/causal-controls.json
           ${{ runner.temp }}/workspace-publication-evidence/environment-before.json
           ${{ runner.temp }}/workspace-publication-evidence/environment-after.json
           ${{ runner.temp }}/workspace-publication-evidence/attempt-001/harness-source-inventory.json

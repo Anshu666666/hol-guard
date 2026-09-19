@@ -24,6 +24,7 @@ DIAGNOSTIC_HELPER_OVERRIDES = frozenset(
     {
         "scripts/native_slo_session.py",
         "scripts/native_slo_workspace_server.py",
+        "scripts/native_slo_workspace_observer.py",
         "scripts/native_slo_daemon_fixture.py",
     }
 )

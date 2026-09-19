@@ -25,6 +25,22 @@ WORKSPACE_PHASES = (
     "resident_restart",
 )
 BURST_WRITES = 32
+ACK_PREDICATES = (
+    "prepared_mapping",
+    "snapshot_mapping",
+    "snapshot_binding_present",
+    "prepared_binding_matches",
+    "authenticated_readback_matches",
+    "generation_at_least_floor",
+    "enforce_mode",
+    "effective_mapping",
+    "default_action_matches",
+    "subprocess_action_matches",
+    "strict_not_required",
+    "sandbox_strict",
+    "within_deadline",
+    "retry_deadline_reached",
+)
 
 
 class WorkspaceScenarioFixture:
@@ -64,6 +80,7 @@ class WorkspaceScenarioFixture:
         self.cache_feature_failed = False
         self.finished = False
         self.phases: list[dict[str, Any]] = []
+        self._ack_observation: dict[str, Any] | None = None
         self.initial_started = time.monotonic()
         for workspace in self.workspaces if early else self.workspaces[1:]:
             if workspace != session.workspace:
@@ -132,28 +149,58 @@ class WorkspaceScenarioFixture:
             }
 
     def _ack(self, *, previous: int, action: str, strict: bool, deadline: float) -> Mapping[str, Any]:
+        iteration = 0
+
+        def observed(name: str, value: Any) -> Any:
+            # Preserve the original operand and its truth testing. Recording a
+            # non-boolean value must not invoke its __bool__ a second time.
+            observation[name] = value if type(value) is bool else None
+            return value
+
         while True:
+            iteration += 1
+            observation: dict[str, Any] = {
+                "schema": "workspace_ack_observation.v1",
+                "iteration": iteration,
+                "stage": "prepare",
+                **dict.fromkeys(ACK_PREDICATES),
+            }
+            self._ack_observation = observation
             prepared = self.worker.prepare_workspace_policy(self.session.workspace, deadline=deadline)
+            observation["stage"] = "snapshot"
             snapshot = self.publisher.current_snapshot()
-            if isinstance(prepared, Mapping) and isinstance(snapshot, Mapping):
+            observation["stage"] = "mapping_predicates"
+            if observed("prepared_mapping", isinstance(prepared, Mapping)) and observed(
+                "snapshot_mapping", isinstance(snapshot, Mapping)
+            ):
+                observation["stage"] = "authenticated_readback"
                 binding, accepted = _authenticated_readback(self.session.store)
+                observation["stage"] = "snapshot_fields"
                 effective = snapshot.get("effective_policy")
                 snapshot_binding = public_binding(snapshot)
+                observation["stage"] = "authority_predicates"
                 if (
-                    snapshot_binding is not None
-                    and public_binding(prepared) == snapshot_binding
-                    and _readback_matches(binding, accepted, snapshot)
-                    and snapshot_binding["generation"] >= previous
-                    and snapshot.get("mode") == "enforce"
-                    and isinstance(effective, Mapping)
-                    and effective.get("default_action") == action
-                    and effective.get("subprocess_action") == action
-                    and (not strict or effective.get("sandbox_analysis") == "strict")
-                    and time.monotonic() <= deadline
+                    observed("snapshot_binding_present", snapshot_binding is not None)
+                    and observed("prepared_binding_matches", public_binding(prepared) == snapshot_binding)
+                    and observed("authenticated_readback_matches", _readback_matches(binding, accepted, snapshot))
+                    and observed("generation_at_least_floor", snapshot_binding["generation"] >= previous)
+                    and observed("enforce_mode", snapshot.get("mode") == "enforce")
+                    and observed("effective_mapping", isinstance(effective, Mapping))
+                    and observed("default_action_matches", effective.get("default_action") == action)
+                    and observed("subprocess_action_matches", effective.get("subprocess_action") == action)
+                    and (
+                        observed("strict_not_required", not strict)
+                        or observed("sandbox_strict", effective.get("sandbox_analysis") == "strict")
+                    )
+                    and observed("within_deadline", time.monotonic() <= deadline)
                 ):
+                    observation["stage"] = "accepted"
                     return snapshot
-            if time.monotonic() >= deadline:
+            observation["stage"] = "retry_clock"
+            if observed("retry_deadline_reached", time.monotonic() >= deadline):
+                observation["stage"] = "deadline"
                 raise RuntimeError("workspace authenticated acknowledgment deadline")
+            observation["stage"] = "sleep"
             time.sleep(0.005)
 
     def _probe(self, index: int, snapshot: Mapping[str, Any], action: str, accepted: float) -> dict[str, object]:
@@ -210,6 +257,7 @@ class WorkspaceScenarioFixture:
         index = self.next_phase
         self.next_phase += 1
         self.observer.phase(index)
+        self._ack_observation = None
         before = public_binding(self.publisher.current_snapshot_binding())
         if before is None:
             raise RuntimeError("workspace phase starting authority unavailable")
@@ -316,6 +364,7 @@ class WorkspaceScenarioFixture:
             "cache_feature_checks_passed": all(features.values()),
             "readiness_deadline_ms": MAX_READINESS_P95_MS,
             "failure": error,
+            "ack_observation": self._ack_observation,
             **evidence,
         }
         self.phases.append(result)

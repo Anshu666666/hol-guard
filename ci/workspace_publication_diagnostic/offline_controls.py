@@ -41,7 +41,7 @@ def main() -> int:
             "guard_module_already_loaded",
         )
         report["helper_binding"] = verify_helpers()
-        report["passed_controls"].append("60_original_helpers_and_three_explicit_overrides_bound")
+        report["passed_controls"].append("59_original_helpers_and_four_explicit_overrides_bound")
         scripts = types.ModuleType("scripts")
         scripts.__path__ = [str(ROOT / "helpers/scripts")]
         sys.modules["scripts"] = scripts

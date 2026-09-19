@@ -248,6 +248,34 @@ PHASE_TIMES = (
     "accept_to_delivered_response_ms",
     "readiness_deadline_ms",
 )
+ACK_PREDICATES = (
+    "prepared_mapping",
+    "snapshot_mapping",
+    "snapshot_binding_present",
+    "prepared_binding_matches",
+    "authenticated_readback_matches",
+    "generation_at_least_floor",
+    "enforce_mode",
+    "effective_mapping",
+    "default_action_matches",
+    "subprocess_action_matches",
+    "strict_not_required",
+    "sandbox_strict",
+    "within_deadline",
+    "retry_deadline_reached",
+)
+ACK_STAGES = (
+    "prepare",
+    "snapshot",
+    "mapping_predicates",
+    "authenticated_readback",
+    "snapshot_fields",
+    "authority_predicates",
+    "accepted",
+    "retry_clock",
+    "deadline",
+    "sleep",
+)
 
 
 class ProjectionError(ValueError):
@@ -429,13 +457,38 @@ def observer_report(value: Any) -> dict[str, Any] | None:
     if value is None:
         return None
     report = mapping(value)
+    active = report.get("active_stages_at_freeze")
+    if active is not None:
+        active = mapping(active)
+        require(set(active) == set(EVENT_KINDS))
+        active = {kind: integer(active[kind]) for kind in EVENT_KINDS}
+        require(all(count is not None for count in active.values()))
+        require(sum(active.values()) == integer(report.get("calls_in_flight_at_freeze")))
     return {
         "events": integer(report.get("events"), 0, 256),
         "event_bound": integer(report.get("event_bound"), 256, 256),
         "counts": event_counts(report.get("counts"), report=True),
         "complete": flag(report.get("complete")),
         "calls_in_flight_at_freeze": integer(report.get("calls_in_flight_at_freeze"), 0, 1048576),
+        "active_stages_at_freeze": active,
         "headline_timing_eligible": flag(report.get("headline_timing_eligible")),
+    }
+
+
+def ack_observation(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    detail = mapping(value)
+    require(detail.get("schema") == "workspace_ack_observation.v1")
+    require(detail.get("stage") in ACK_STAGES)
+    require(set(detail) >= {*ACK_PREDICATES, "schema", "stage", "iteration"})
+    iteration = integer(detail.get("iteration"), 1)
+    require(iteration is not None)
+    return {
+        "iteration": iteration,
+        "stage": detail["stage"],
+        "predicates": {name: flag(detail[name]) for name in ACK_PREDICATES},
+        "null_means_unexecuted_or_non_boolean": True,
     }
 
 
@@ -446,6 +499,7 @@ def phase_observation(phase: dict[str, Any], index: int) -> dict[str, Any]:
         "observer_counts_at_phase_return": event_counts(phase.get("observer_counts")),
         "config_loads": integer(phase.get("config_loads")),
         "offered_writes": integer(phase.get("offered_writes"), 0, 32),
+        "last_ack_observation": ack_observation(phase.get("ack_observation")),
         "cache_feature_checks": {name: flag(checks[name]) for name in CACHE_CHECKS if name in checks},
         "recorded_times": {
             name: milliseconds(phase[name], offset=name == "accepted_ms") for name in PHASE_TIMES if name in phase
@@ -661,7 +715,7 @@ def publication_observation(rows: list[dict[str, Any]], count: int) -> dict[str,
             kind: completed_span(values[-1], expected, accepted) if values else None for kind, values in groups.items()
         },
         "recorded_chain": observed_chain(current, expected, accepted, PHASES[index] == "coalesced_burst"),
-        "ack_predicate_bits_recorded": False,
+        "ack_predicate_bits_recorded": ack_observation(phase.get("ack_observation")) is not None,
     }
 
 

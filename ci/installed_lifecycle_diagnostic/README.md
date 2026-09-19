@@ -65,13 +65,14 @@ list, including failed receipts. There is no recursive upload of private state.
 The independent workspace-publication job uses the same existing artifact and
 version-pinned dependency environment plus the explicit workspace observer
 dependency. It verifies 63 qualification helpers and two resources against
-exact 8156 Git source before applying three explicitly declared diagnostic
+exact 8156 Git source before applying four explicitly declared diagnostic
 helper overrides. The manifest retains every original byte count and digest.
-The executed closure contains 60 unchanged helpers, two unchanged resources,
+The executed closure contains 59 unchanged helpers, two unchanged resources,
 and the diagnostic checkout's source-bound overrides for
-`native_slo_session.py`, `native_slo_workspace_server.py`, and
-`native_slo_daemon_fixture.py`. The original collector's definition hash covers
-the materialized helper closure, including those three overrides. It covers
+`native_slo_session.py`, `native_slo_workspace_server.py`,
+`native_slo_workspace_observer.py`, and `native_slo_daemon_fixture.py`.
+The original collector's definition hash covers
+the materialized helper closure, including those four overrides. It covers
 57 selected files in this closure, compared with 68 in the complete 8156
 checkout; the separate manifest binds all 63 helper files and both resources.
 Its matrix has 1, 10, and 100 workspaces, six phases per cell, at most
@@ -134,3 +135,35 @@ handoff, partial-construction cleanup failures, and original/override source
 binding rejection. They import no Guard code from disk and launch no native
 process, socket, thread, or timed workload. Actual installed acceptance remains
 dependent on the separately reviewed hosted execution.
+
+The separate `diagnostic/workspace-active-stages-8156` proposal retains the
+original artifact and 1/10/100 workload. It follows the frozen publication-span
+diagnostic at `7e911e832b4ffed7e4054542e35a41080e5df28b`, whose three cells
+failed after 5, 5, and 2 successful phase observations. The first two cells
+reported an authenticated restart ACK before their publication-chain deadline;
+the last failed the stricter-overlay ACK deadline. The observed in-flight
+counts were 3, 3, and 1. Those counts and missing completed spans did not
+identify the active stages or a product cause. The official artifact transfer
+returned HTTP 403, so the retained log projection does not imply access to the
+private raw ledger.
+
+The additional observer counters label compile, push, authenticated transport
+ACK, and publication barrier entries and completions inside the existing
+accounting lock. The first freeze captures a fixed global stage inventory;
+later completions cannot change it. This inventory includes work from any
+phase and does not itself attribute an active call to the final phase. Before
+freeze the inventory remains null. No new synchronization or clock reads are
+introduced. Entry before wrapper setup can remain active when setup raises
+before the original call or its existing finally block; the counters retain
+that original boundary rather than claiming the underlying call started.
+
+The ACK observation captures only the last iteration's already evaluated
+operands. Its wrapper returns the identical operand without coercing or
+re-evaluating it. Fixed stage labels and nullable boolean fields expose which
+existing checks completed; null means skipped, unavailable, or non-boolean,
+and must not be treated as false. The original conjunction order, readback,
+clock calls, retry, sleep, exception, and 400 ms deadline remain unchanged.
+Recording adds diagnostic overhead and supplies no ordinary performance or
+release-acceptance claim. Exact-AST and explicit-double controls compare the
+original operations, object identities, nesting, short-circuit behavior,
+exceptions, freeze state, and clocks before any hosted attempt.

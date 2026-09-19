@@ -1,4 +1,4 @@
-"""Verify original8156 helpers, then apply three explicit diagnostic overrides."""
+"""Verify original8156 helpers, then apply four explicit diagnostic overrides."""
 
 from __future__ import annotations
 

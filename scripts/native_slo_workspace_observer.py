@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 MAX_EVENTS = 256
 PAGE_SIZE = 32
+ACTIVE_STAGES = ("compile", "push", "transport_ack", "barrier")
 _DIGEST = re.compile(r"[0-9a-f]{64}")
 
 
@@ -61,6 +62,8 @@ class PublicationObserver:
         self._frozen = False
         self._active = 0
         self._active_at_freeze: int | None = None
+        self._active_stages: Counter[str] = Counter()
+        self._active_stages_at_freeze: dict[str, int] | None = None
         self._attempt = 0
 
     def phase(self, index: int) -> None:
@@ -69,10 +72,11 @@ class PublicationObserver:
         with self._lock:
             self._phase = index
 
-    def _mark(self, phase: int | None = None) -> tuple[int, float, float]:
+    def _mark(self, kind: str, phase: int | None = None) -> tuple[int, float, float]:
         with self._lock:
             phase = self._phase if phase is None else phase
             self._active += 1
+            self._active_stages[kind] += 1
         return phase, time.monotonic(), time.thread_time()
 
     def _record(self, kind: str, mark: tuple[int, float, float], **fields: object) -> None:
@@ -87,6 +91,7 @@ class PublicationObserver:
         }
         with self._lock:
             self._active -= 1
+            self._active_stages[kind] -= 1
             if self._frozen:
                 return
             self._counts[kind] += 1
@@ -99,7 +104,7 @@ class PublicationObserver:
 
     def _compilation(self, original: Callable[..., Any]) -> Callable[..., Any]:
         def observed(*args: Any, **kwargs: Any) -> Any:
-            mark = self._mark(getattr(self._local, "publication_phase", None))
+            mark = self._mark("compile", getattr(self._local, "publication_phase", None))
             previous = getattr(self._local, "compilation", None)
             context: dict[str, Any] = {
                 "mark": mark,
@@ -178,14 +183,14 @@ class PublicationObserver:
         def observed(*args: Any, **kwargs: Any) -> Any:
             if kwargs.get("publisher") is not self.publisher:
                 return original(*args, **kwargs)
-            mark = self._mark(getattr(self._local, "publication_phase", None))
+            mark = self._mark("transport_ack", getattr(self._local, "publication_phase", None))
             previous = getattr(self._local, "publication", None)
             context: dict[str, object] = {"binding": None}
             self._local.publication = context
             client = kwargs["client"]
 
             def forwarded_client(*client_args: Any, **client_kwargs: Any) -> Any:
-                push_mark = self._mark(mark[0])
+                push_mark = self._mark("push", mark[0])
                 succeeded = False
                 try:
                     output = client(*client_args, **client_kwargs)
@@ -209,7 +214,7 @@ class PublicationObserver:
 
     def _publication(self, original: Callable[..., Any]) -> Callable[..., Any]:
         def observed(*args: Any, **kwargs: Any) -> Any:
-            mark = self._mark()
+            mark = self._mark("barrier")
             previous = getattr(self._local, "attempt", None), getattr(self._local, "publication_phase", None)
             with self._lock:
                 self._attempt += 1
@@ -265,6 +270,7 @@ class PublicationObserver:
             if not self._frozen:
                 self._frozen = True
                 self._active_at_freeze = self._active
+                self._active_stages_at_freeze = {kind: self._active_stages[kind] for kind in ACTIVE_STAGES}
 
     def __exit__(self, *_args: object) -> None:
         self.close()
@@ -294,6 +300,7 @@ class PublicationObserver:
         rows = self.rows()
         with self._lock:
             counts = dict(self._counts)
+            active_stages = None if self._active_stages_at_freeze is None else dict(self._active_stages_at_freeze)
         return {
             "events": len(rows),
             "event_bound": MAX_EVENTS,
@@ -305,6 +312,7 @@ class PublicationObserver:
             and counts.get("scope_overflow", 0) == 0
             and self._active_at_freeze in {None, 0},
             "calls_in_flight_at_freeze": self._active_at_freeze,
+            "active_stages_at_freeze": active_stages,
             "timing_scope": "instrumented_publisher_thread_including_forwarding_observer",
             "thread_cpu_scope": "calling_thread_only_excludes_native_resident_cpu",
             "headline_timing_eligible": False,

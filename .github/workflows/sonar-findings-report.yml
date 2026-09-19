@@ -1,37 +1,153 @@
-name: Sonar findings report
+name: Read one reviewed Sonar finding
+
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  checks: read
-  pull-requests: read
 
 concurrency:
-  group: sonar-report-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: sonar-issue-read-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
-  report:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  inspect:
+    if: github.ref == 'refs/heads/hgp/diagnostic-sonar-issue-read-20260919'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
+          fetch-depth: 2
           persist-credentials: false
-      - name: Export findings and analyzed revisions
+      - name: Bind the exact reviewed source
+        run: |
+          python3 - <<'PY'
+          import os
+          import subprocess
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          assert git("rev-parse", "HEAD") == os.environ["GITHUB_SHA"]
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:] == ["a9b57b3df7424310b48fda91ea9ec66432919fa8"]
+          assert git("rev-parse", "a9b57b3df7424310b48fda91ea9ec66432919fa8^{tree}") == "b6cf46262e0d53299f85a71cddb3997b68369490"
+          assert git("diff", "--name-only", "a9b57b3df7424310b48fda91ea9ec66432919fa8", "HEAD").splitlines() == [".github/workflows/sonar-findings-report.yml"]
+          assert git("hash-object", "src/codex_plugin_scanner/guard/policy_bundle_staging.py") == "1c7850aff51a894f63d1bcda207f94ff8516c3b2"
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          print("SONAR_ISSUE_SOURCE_BOUND")
+          PY
+      - name: Read only the fixed issue, available API and gate
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-        run: python3 scripts/ci/sonar_findings_report.py
-      - name: Upload read-only Sonar report
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+          ISSUE = "AaC3pfVjAiSrZ4WoIHjZ"
+          PROJECT = "hashgraph-online_hol-guard"
+          COMPONENT = PROJECT + ":src/codex_plugin_scanner/guard/policy_bundle_staging.py"
+          ALLOWED = {"/api/webservices/list", "/api/issues/search", "/api/qualitygates/project_status"}
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          opener = urllib.request.build_opener(NoRedirect())
+          token = os.environ.get("SONAR_TOKEN", "")
+          report = {"schema": "sonar-single-issue-read.v1", "issue": ISSUE, "pull_request": 2961, "token_present": bool(token), "mutation_performed": False, "errors": []}
+          def read(path, parameters):
+              assert path in ALLOWED
+              headers = {"Accept": "application/json"}
+              if token:
+                  headers["Authorization"] = "Bearer " + token
+              request = urllib.request.Request("https://sonarcloud.io" + path + "?" + urllib.parse.urlencode(parameters), headers=headers, method="GET")
+              try:
+                  with opener.open(request, timeout=30) as response:
+                      assert response.status == 200
+                      raw = response.read(4 * 1024 * 1024 + 1)
+                  assert len(raw) <= 4 * 1024 * 1024
+                  value = json.loads(raw)
+                  assert isinstance(value, dict)
+                  return value
+              except Exception as error:
+                  report["errors"].append({"endpoint": path, "http_status": error.code if isinstance(error, urllib.error.HTTPError) else None, "category": "http" if isinstance(error, urllib.error.HTTPError) else "unavailable"})
+                  return None
+          catalog = read("/api/webservices/list", {"include_internals": "true"})
+          search_has_transitions = False
+          actions = []
+          if catalog is not None:
+              for service in catalog.get("webServices", []):
+                  if service.get("path") != "api/issues":
+                      continue
+                  for action in service.get("actions", []):
+                      if action.get("key") not in {"search", "do_transition", "add_comment"}:
+                          continue
+                      parameters = action.get("params", [])
+                      names = sorted(p["key"] for p in parameters if isinstance(p.get("key"), str) and re.fullmatch(r"[A-Za-z_]{1,64}", p["key"]))
+                      transitions = []
+                      for parameter in parameters:
+                          if parameter.get("key") == "additionalFields" and "transitions" in parameter.get("possibleValues", []):
+                              search_has_transitions = True
+                          if parameter.get("key") == "transition":
+                              transitions = sorted(v for v in parameter.get("possibleValues", []) if v in {"falsepositive", "reopen", "accept", "resolve"})
+                      actions.append({"action": action["key"], "post": action.get("post") is True, "internal": action.get("internal") is True, "parameters": names, "known_transitions": transitions})
+          report["api"] = actions
+          parameters = {"issues": ISSUE, "componentKeys": PROJECT, "pullRequest": "2961", "ps": 1}
+          if search_has_transitions:
+              parameters["additionalFields"] = "transitions"
+          found = read("/api/issues/search", parameters)
+          if found is not None:
+              issues = found.get("issues", [])
+              matched = len(issues) == 1 and issues[0].get("key") == ISSUE and issues[0].get("component") == COMPONENT
+              report["exact_issue_match"] = matched
+              if matched:
+                  issue = issues[0]
+                  status = issue.get("issueStatus", issue.get("status"))
+                  resolution = issue.get("resolution")
+                  rule = issue.get("rule")
+                  report["finding"] = {
+                      "rule": rule if isinstance(rule, str) and re.fullmatch(r"[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+", rule) else None,
+                      "line": issue.get("line") if type(issue.get("line")) is int else None,
+                      "status": status if status in {"OPEN", "CONFIRMED", "REOPENED", "RESOLVED", "CLOSED", "ACCEPTED", "FALSE_POSITIVE", "FIXED"} else "unknown",
+                      "resolution": resolution if resolution in {"FALSE-POSITIVE", "FALSE_POSITIVE", "FIXED", "WONTFIX", "REMOVED"} else None,
+                      "expected_message": issue.get("message") == "Fix this condition that always evaluates to true.",
+                      "falsepositive_available": "falsepositive" in issue.get("transitions", []),
+                  }
+          gate = read("/api/qualitygates/project_status", {"projectKey": PROJECT, "pullRequest": "2961"})
+          if gate is not None:
+              value = gate.get("projectStatus", {})
+              report["gate"] = {"status": value.get("status") if value.get("status") in {"OK", "WARN", "ERROR", "NONE"} else "unknown", "conditions": []}
+              for condition in value.get("conditions", []):
+                  metric = condition.get("metricKey")
+                  actual = condition.get("actualValue")
+                  threshold = condition.get("errorThreshold")
+                  if isinstance(metric, str) and re.fullmatch(r"[a-z_]{1,80}", metric):
+                      report["gate"]["conditions"].append({
+                          "metric": metric,
+                          "status": condition.get("status") if condition.get("status") in {"OK", "WARN", "ERROR", "NO_VALUE"} else "unknown",
+                          "actual": actual if isinstance(actual, str) and re.fullmatch(r"[0-9.-]{1,32}", actual) else None,
+                          "threshold": threshold if isinstance(threshold, str) and re.fullmatch(r"[0-9.-]{1,32}", threshold) else None,
+                      })
+          encoded = json.dumps(report, sort_keys=True)
+          Path("sonar-single-issue-read.json").write_text(encoded + "\n", encoding="utf8")
+          print(encoded)
+          if report["errors"] or not report.get("exact_issue_match"):
+              sys.exit(1)
+          PY
+      - name: Retain only the filtered issue report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: sonar-findings-report
-          path: sonar-findings-report/
+          name: sonar-single-issue-read
+          path: sonar-single-issue-read.json
           if-no-files-found: error
+          retention-days: 7
+      - name: Verify tracked source preservation
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet HEAD --
+          echo "SONAR_ISSUE_SOURCE_PRESERVED"

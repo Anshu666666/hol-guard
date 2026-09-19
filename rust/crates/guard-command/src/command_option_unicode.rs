@@ -58,7 +58,10 @@ mod tests {
     #[test]
     fn unicode_reference_categories_are_disjoint_sorted_and_python_compatible() {
         let mut previous_end = None;
-        for &(start, end, _) in PYTHON_ALNUM_RANGES_LOW.iter().chain(PYTHON_ALNUM_RANGES_HIGH.iter()) {
+        for &(start, end, _) in PYTHON_ALNUM_RANGES_LOW
+            .iter()
+            .chain(PYTHON_ALNUM_RANGES_HIGH.iter())
+        {
             assert!(start <= end);
             if let Some(previous) = previous_end {
                 assert!(previous < start);

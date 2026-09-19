@@ -179,8 +179,13 @@ def test_local_navigation_uses_product_language_without_breaking_routes() -> Non
     assert 'eyebrow="Rules & exceptions"' in rules_page
     assert 'title="Remembered decisions and exceptions"' in rules_page
     assert "Configure tools and capability posture in Extensions." in rules_page
-    assert 'import { navigate, viewTitle } from "./app-routing";' in app
     assert 'if (view === "policy") return "Rules & exceptions";' in app_routing
+    assert 'import { navigate, viewTitle } from "./app-routing";' in app
+    assert (
+        'export { PROTECT_ROUTE, TODAY_EVIDENCE_ROUTE, viewTitle, parseAppDetail, resolveView } from "./app-routing";'
+        in app
+    )
+    assert "{viewTitle(view)}" in app
     assert 'viewTitle("policy") === "Rules & exceptions"' in app_title_test
     assert "Managed extensions and integrations" not in navigation
 

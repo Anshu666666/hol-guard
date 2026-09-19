@@ -16,6 +16,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+
 from codex_plugin_scanner.guard.managed_controls_policy_bundle import (
     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
     signed_cloud_extension_projection_digest,
@@ -30,6 +33,12 @@ from codex_plugin_scanner.guard.policy_bundle_trusted_keys import (
     policy_bundle_keyring_payload,
     validate_synced_policy_bundle,
 )
+from codex_plugin_scanner.guard.policy_bundle_v2 import (
+    canonical_policy_bundle_v2_payload,
+    computed_policy_bundle_v2_hash,
+    payload_hash_for_policy_bundle_v2,
+    validated_policy_bundle_v2_payload,
+)
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
 from codex_plugin_scanner.guard.runtime.extension_catalog_sync import MANAGED_CONTROLS_RUNTIME_CAPABILITIES
@@ -37,15 +46,6 @@ from codex_plugin_scanner.guard.runtime.extension_control_contract import Contro
 from codex_plugin_scanner.guard.runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
 from codex_plugin_scanner.guard.store import GuardStore
 from codex_plugin_scanner.guard.synced_policy import cached_policy_bundle_validation
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-
-from codex_plugin_scanner.guard.policy_bundle_v2 import (
-    canonical_policy_bundle_v2_payload,
-    computed_policy_bundle_v2_hash,
-    payload_hash_for_policy_bundle_v2,
-    validated_policy_bundle_v2_payload,
-)
 from tests.managed_controls_activation_support import parse_managed_bundle
 from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen

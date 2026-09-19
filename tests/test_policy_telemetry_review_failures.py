@@ -18,7 +18,6 @@ from tests.test_policy_bundle_v2_runtime_admission import _SyncResponse
 from tests.test_policy_telemetry_isolation import _AUTH, _connected_policy
 from tests.test_policy_telemetry_transport import _add_signal
 
-
 pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 

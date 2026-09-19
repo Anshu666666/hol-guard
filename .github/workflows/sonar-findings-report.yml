@@ -1,37 +1,247 @@
-name: Sonar findings report
+name: Review one proven Sonar false positive
+
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  checks: read
-  pull-requests: read
 
 concurrency:
-  group: sonar-report-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: sonar-issue-review-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
-  report:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  inspect:
+    if: github.ref == 'refs/heads/hgp/diagnostic-sonar-current-issue-review-20260919'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
+          fetch-depth: 2
           persist-credentials: false
-      - name: Export findings and analyzed revisions
+      - name: Bind the exact reviewed source
+        run: |
+          python3 - <<'PY'
+          import os
+          import subprocess
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          assert git("rev-parse", "HEAD") == os.environ["GITHUB_SHA"]
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:] == ["0ece2fef0a4307e7f3049545a94d2804e95c7e6d"]
+          assert git("rev-parse", "0ece2fef0a4307e7f3049545a94d2804e95c7e6d^{tree}") == "3170c6aeb795963fc1ac49989538da3f7fc35bbf"
+          assert git("diff", "--name-only", "0ece2fef0a4307e7f3049545a94d2804e95c7e6d", "HEAD").splitlines() == [".github/workflows/sonar-findings-report.yml"]
+          assert git("hash-object", "src/codex_plugin_scanner/guard/policy_bundle_staging.py") == "7bbfd2a3036f37b60ee88a206399f06c841082bb"
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          print("SONAR_ISSUE_SOURCE_BOUND")
+          PY
+      - name: Review only the exact proven finding
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-        run: python3 scripts/ci/sonar_findings_report.py
-      - name: Upload read-only Sonar report
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+          
+          ISSUE = "AaC4j2fTCtfOw3YG4Lij"
+          PROJECT = "hashgraph-online_hol-guard"
+          COMPONENT = PROJECT + ":src/codex_plugin_scanner/guard/policy_bundle_staging.py"
+          RULE = "pythonbugs:S2583"
+          MESSAGE = "Fix this condition that always evaluates to true."
+          COMMENT = "This condition is not always true. On source 18c8bb3dd74d96a2fe9f9aa07ddab4f89700f081, tests/test_policy_bundle_staging.py::test_generic_staging_compares_complete_multiset_without_requiring_row_order[reversed-True] executes authenticated activation with both correct generic decisions in reversed order and accepts them. Matching and permuted rows also pass; omitted, substituted-duplicate, extra-duplicate, twelve individual-field mismatches, and duplicate-multiplicity controls reject invalid rows while preserving transaction state. Ordinary CI run 35428717894 passed all 37 current staging cases across two successful zero-skip jobs: job 105859386536 passed 276 tests including 18 staging cases, and job 105859388350 passed 330 tests including 19 staging cases. The 37 cases are a subset of those 606 tests. The verified CI checkout has the exact source tree a730a8e8f79dbcfbe466cf177516d04b23a6ec91. Source 0ece2fef0a4307e7f3049545a94d2804e95c7e6d retains the same staging blob 7bbfd2a3036f37b60ee88a206399f06c841082bb and test blob 13d290753cb7f1c65cb6f200d5fe32f0456d73cf; the cited execution remains bound to 18c8. At line 108, typed Counter locals preserve complete value equality and duplicate multiplicity while permitting row reordering. Evidence: https://github.com/hashgraph-online/hol-guard/actions/runs/35428717894/job/105859386536 and https://github.com/hashgraph-online/hol-guard/actions/runs/35428717894/job/105859388350"
+          READ_PATHS = {"/api/webservices/list", "/api/issues/search", "/api/qualitygates/project_status"}
+          TRANSITION_PATH = "/api/issues/do_transition"
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          
+          opener = urllib.request.build_opener(NoRedirect())
+          token = os.environ.get("SONAR_TOKEN", "")
+          report = {
+              "schema": "sonar-single-issue-review.v1",
+              "issue": ISSUE,
+              "pull_request": 2961,
+              "token_present": bool(token),
+              "mutation_attempted": False,
+              "transition_response_accepted": False,
+              "post_count": 0,
+              "comment_sha256": hashlib.sha256(COMMENT.encode()).hexdigest(),
+              "errors": [],
+          }
+          
+          def request(path, parameters, *, post=False):
+              assert (post and path == TRANSITION_PATH) or (not post and path in READ_PATHS)
+              headers = {"Accept": "application/json", "Authorization": "Bearer " + token}
+              encoded = urllib.parse.urlencode(parameters)
+              if post:
+                  assert report["post_count"] == 0
+                  report["post_count"] = 1
+                  report["mutation_attempted"] = True
+                  headers["Content-Type"] = "application/x-www-form-urlencoded"
+                  url = "https://sonarcloud.io" + path
+                  data = encoded.encode("utf8")
+              else:
+                  url = "https://sonarcloud.io" + path + "?" + encoded
+                  data = None
+              req = urllib.request.Request(url, data=data, headers=headers, method="POST" if post else "GET")
+              try:
+                  with opener.open(req, timeout=30) as response:
+                      assert response.status == 200
+                      raw = response.read(4 * 1024 * 1024 + 1)
+                  assert len(raw) <= 4 * 1024 * 1024
+                  value = json.loads(raw)
+                  assert isinstance(value, dict)
+                  if post:
+                      report["transition_response_accepted"] = True
+                  return value
+              except Exception as error:
+                  report["errors"].append({
+                      "endpoint": path,
+                      "method": "POST" if post else "GET",
+                      "http_status": error.code if isinstance(error, urllib.error.HTTPError) else None,
+                      "category": "http" if isinstance(error, urllib.error.HTTPError) else "unavailable",
+                  })
+                  return None
+          
+          def finding(value):
+              if not isinstance(value, dict):
+                  return None
+              issues = value.get("issues")
+              if not isinstance(issues, list) or len(issues) != 1 or not isinstance(issues[0], dict):
+                  return None
+              issue = issues[0]
+              exact = (
+                  issue.get("key") == ISSUE
+                  and issue.get("component") == COMPONENT
+                  and issue.get("rule") == RULE
+                  and issue.get("message") == MESSAGE
+                  and type(issue.get("line")) is int
+                  and issue["line"] == 108
+              )
+              status = issue.get("issueStatus", issue.get("status"))
+              resolution = issue.get("resolution")
+              transitions = issue.get("transitions", [])
+              return {
+                  "exact_match": exact,
+                  "status": status if status in {"OPEN", "CONFIRMED", "REOPENED", "RESOLVED", "CLOSED", "ACCEPTED", "FALSE_POSITIVE", "FIXED"} else "unknown",
+                  "resolution": resolution if resolution in {"FALSE-POSITIVE", "FALSE_POSITIVE", "FIXED", "WONTFIX", "REMOVED"} else None if resolution is None else "unknown",
+                  "falsepositive_available": isinstance(transitions, list) and "falsepositive" in transitions,
+              }
+          
+          def resolved(issue):
+              return bool(issue and (
+                  issue["status"] in {"RESOLVED", "CLOSED", "ACCEPTED", "FALSE_POSITIVE", "FIXED"}
+                  or issue["resolution"] in {"FALSE-POSITIVE", "FALSE_POSITIVE", "FIXED", "WONTFIX", "REMOVED"}
+              ))
+          
+          def read_issue():
+              return finding(request("/api/issues/search", {
+                  "issues": ISSUE,
+                  "componentKeys": PROJECT,
+                  "pullRequest": "2961",
+                  "ps": 1,
+                  "additionalFields": "transitions",
+                  "issueStatuses": "OPEN,CONFIRMED,FALSE_POSITIVE,ACCEPTED,FIXED",
+              }))
+          
+          def inspect_and_review():
+              if not token:
+                  report["errors"].append({"category": "token_absent"})
+                  return
+              catalog = request("/api/webservices/list", {"include_internals": "true"})
+              catalog_ok = False
+              if isinstance(catalog, dict):
+                  for service in catalog.get("webServices", []):
+                      if service.get("path") != "api/issues":
+                          continue
+                      for action in service.get("actions", []):
+                          if action.get("key") != "do_transition":
+                              continue
+                          params = action.get("params", [])
+                          names = {p.get("key") for p in params}
+                          transitions = next((p.get("possibleValues", []) for p in params if p.get("key") == "transition"), [])
+                          catalog_ok = (
+                              action.get("post") is True
+                              and action.get("internal") is False
+                              and {"issue", "transition", "comment"}.issubset(names)
+                              and "falsepositive" in transitions
+                          )
+              report["deployed_transition_contract_matches"] = catalog_ok
+              before = read_issue()
+              report["before"] = before
+              if before and before["exact_match"] and resolved(before):
+                  report["action"] = "already_resolved_no_mutation"
+              elif not (
+                  catalog_ok
+                  and not report["errors"]
+                  and before
+                  and before["exact_match"]
+                  and before["status"] in {"OPEN", "CONFIRMED", "REOPENED"}
+                  and before["resolution"] is None
+                  and before["falsepositive_available"]
+              ):
+                  report["action"] = "precondition_refused_no_mutation"
+                  report["errors"].append({"category": "precondition_refused"})
+              else:
+                  report["action"] = "single_falsepositive_transition"
+                  request(TRANSITION_PATH, {"issue": ISSUE, "transition": "falsepositive", "comment": COMMENT}, post=True)
+              # Always read the issue after the decision or attempted POST; never retry the POST.
+              after = read_issue()
+              report["after"] = after
+              report["resolved_readback"] = bool(after and after["exact_match"] and resolved(after))
+              report["false_positive_readback"] = bool(after and after["exact_match"] and (
+                  after["status"] == "FALSE_POSITIVE" or after["resolution"] in {"FALSE-POSITIVE", "FALSE_POSITIVE"}
+              ))
+              gate = request("/api/qualitygates/project_status", {"projectKey": PROJECT, "pullRequest": "2961"})
+              if isinstance(gate, dict):
+                  value = gate.get("projectStatus", {})
+                  report["gate"] = {"status": value.get("status") if value.get("status") in {"OK", "WARN", "ERROR", "NONE"} else "unknown", "conditions": []}
+                  for condition in value.get("conditions", []):
+                      metric = condition.get("metricKey")
+                      actual = condition.get("actualValue")
+                      threshold = condition.get("errorThreshold")
+                      if isinstance(metric, str) and re.fullmatch(r"[a-z_]{1,80}", metric):
+                          report["gate"]["conditions"].append({
+                              "metric": metric,
+                              "status": condition.get("status") if condition.get("status") in {"OK", "WARN", "ERROR", "NO_VALUE"} else "unknown",
+                              "actual": actual if isinstance(actual, str) and re.fullmatch(r"[0-9.-]{1,32}", actual) else None,
+                              "threshold": threshold if isinstance(threshold, str) and re.fullmatch(r"[0-9.-]{1,32}", threshold) else None,
+                          })
+          
+          try:
+              inspect_and_review()
+          except Exception:
+              report["errors"].append({"category": "validation_unavailable"})
+          encoded = json.dumps(report, sort_keys=True)
+          Path("sonar-single-issue-review.json").write_text(encoded + "\n", encoding="utf8")
+          print(encoded)
+          complete = (
+              not report["errors"]
+              and report.get("resolved_readback") is True
+              and (not report["mutation_attempted"] or report.get("false_positive_readback") is True)
+              and report.get("gate", {}).get("status") == "OK"
+          )
+          sys.exit(0 if complete else 1)
+          PY
+      - name: Retain only the filtered issue report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: sonar-findings-report
-          path: sonar-findings-report/
+          name: sonar-single-issue-review
+          path: sonar-single-issue-review.json
           if-no-files-found: error
+          retention-days: 7
+      - name: Verify tracked source preservation
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet HEAD --
+          echo "SONAR_ISSUE_SOURCE_PRESERVED"

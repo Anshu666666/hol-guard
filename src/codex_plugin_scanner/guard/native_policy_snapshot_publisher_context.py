@@ -259,6 +259,14 @@ def publication_context(
                 return None
         v3_only = not self._scoped_publication_enabled and not features.intersection(SCOPED_PUBLISH_FEATURES)
         if v3_only and not _REQUIRED_PUBLISH_FEATURES.issubset(features):
+            # When this already-failing V3 negotiation also carries signed
+            # Cloud policy, preserve the more specific finite policy refusal.
+            # Source-free successful publications never enter this branch.
+            _ = read_native_cloud_policy_inputs(
+                self.store,
+                now=self._wall_clock(),
+                command_controls_bound=command_extensions.get("health") == "protected",
+            )
             raise NativePolicySnapshotError("native_policy_snapshot_protocol_unsupported")
         # Capabilities describe what a runtime can consume, not the authority
         # selected for this publication. Authenticate the complete input next.

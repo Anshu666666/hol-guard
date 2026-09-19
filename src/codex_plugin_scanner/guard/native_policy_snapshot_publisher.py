@@ -116,6 +116,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._retry_not_before_monotonic: float | None = None
         self._failure_count = 0
         self._initial_database_capture_retry_used = False
+        self._initial_database_capture_retry_epoch: int | None = None
         self._workspace_paths: set[Path] = set()
         self._input_fingerprint: (
             tuple[tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]] | None
@@ -179,6 +180,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             self._epoch += 1
             self._acked = False
             self._last_error = None
+            self._initial_database_capture_retry_epoch = None
             self._renewal_due_monotonic = None
             self._renewal_after_generation = None
             self._retry_not_before_monotonic = None
@@ -351,6 +353,8 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                     return
                 self._mark_expired_locked()
             fingerprint = self._current_input_fingerprint()
+            if self._publish_due_initial_retry(fingerprint):
+                continue
             if self._input_fingerprint is None:
                 self._input_fingerprint = fingerprint
             elif fingerprint[1] != self._input_fingerprint[1]:
@@ -415,12 +419,46 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             if should_publish:
                 self._publish_once(renew_after_generation=renewal_after_generation)
 
+    def _publish_due_initial_retry(
+        self,
+        fingerprint: tuple[
+            tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]
+        ],
+    ) -> bool:
+        """Take the already scheduled fresh attempt before duplicate observation."""
+        with self._condition:
+            previous = self._input_fingerprint
+            if (
+                self._closed
+                or self._acked
+                or self._renewal_after_generation is not None
+                or self._initial_database_capture_retry_epoch != self._epoch
+                or not self._initial_database_capture_retry_used
+                or self._retry_not_before_monotonic is None
+                or self._monotonic_clock() < self._retry_not_before_monotonic
+                or not self._publish_event.is_set()
+                or previous is None
+                or fingerprint[1] != previous[1]
+            ):
+                return False
+            database = str(self.guard_home / "guard.db")
+            if _external_source_metadata(previous[0], database) != _external_source_metadata(fingerprint[0], database):
+                return False
+            self._initial_database_capture_retry_epoch = None
+            self._publish_event.clear()
+        # Keep the source half of the previous fingerprint. The following
+        # ordinary iteration must observe changes after success or refusal.
+        self._publish_once()
+        return True
+
     def _record_error(self, error: str) -> None:
         record_error(self, error)
 
     def _publish_once(self, *, renew_after_generation: int | None = None) -> None:
         from .native_policy_snapshot_publisher_attempt import publish_once
 
+        with self._condition:
+            self._initial_database_capture_retry_epoch = None
         publish_once(self, renew_after_generation=renew_after_generation)
 
     def _schedule_initial_database_capture_retry(self, *, publish_epoch: int) -> None:
@@ -441,6 +479,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             ):
                 return
             self._initial_database_capture_retry_used = True
+            self._initial_database_capture_retry_epoch = publish_epoch
             self._retry_not_before_monotonic = self._monotonic_clock()
             self._condition.notify_all()
         self._publish_event.set()

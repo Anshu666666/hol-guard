@@ -27,6 +27,7 @@ from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_resident_client import close_native_resident_clients
 from codex_plugin_scanner.guard.native_runtime import native_runtime_health
 from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_publication_diagnostic import cleanup_after_failure, observe_publication
 from scripts.native_slo_adapter import (
     Observation,
     is_allowed,
@@ -323,7 +324,7 @@ class AdapterSession:
         try:
             self.start()
         except BaseException:
-            self.close()
+            cleanup_after_failure(self.close)
             raise
         return self
 
@@ -335,22 +336,27 @@ class AdapterSession:
         self.daemon.start()
         self._connection = HTTPConnection("127.0.0.1", self.daemon.port, timeout=5)
         self._owner_thread_id = threading.get_ident()
-        started = time.perf_counter()
-        deadline = time.monotonic() + (MAX_READINESS_P95_MS / 1_000.0)
-        prepared = None
-        while True:
-            prepared = self.daemon._server.hook_worker.prepare_workspace_policy(
-                self.workspace,
-                deadline=deadline,
-            )
-            if prepared is not None or time.monotonic() >= deadline:
-                break
-            time.sleep(0.01)
-        self.readiness_ms = (time.perf_counter() - started) * 1_000.0
-        if prepared is None:
-            raise RuntimeError("native_installed_slo_failed: native policy was not ready")
-        if self.readiness_ms > MAX_READINESS_P95_MS:
-            raise RuntimeError("native_installed_slo_failed: native readiness exceeded budget")
+        publisher = self.daemon._server.hook_worker.policy_snapshot_publisher
+        with observe_publication(publisher) as observation:
+            started = time.perf_counter()
+            deadline = time.monotonic() + (MAX_READINESS_P95_MS / 1_000.0)
+            prepared = None
+            while True:
+                prepared = self.daemon._server.hook_worker.prepare_workspace_policy(
+                    self.workspace,
+                    deadline=deadline,
+                )
+                if prepared is not None or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.01)
+            self.readiness_ms = (time.perf_counter() - started) * 1_000.0
+            if prepared is None:
+                raise RuntimeError(
+                    "native_installed_slo_failed: native policy was not ready; "
+                    + observation.describe(getattr(publisher, "last_error", None))
+                )
+            if self.readiness_ms > MAX_READINESS_P95_MS:
+                raise RuntimeError("native_installed_slo_failed: native readiness exceeded budget")
 
     def observe(
         self,

@@ -125,8 +125,7 @@ def test_effective_response_projects_frozen_windows_terminal_commands(
         "shell": "powershell",
         "enroll": "& 'C:\\custom install\\hol-guard.exe' command --guard-home 'C:\\custom guard' controls enroll",
         "recover_authority": (
-            "& 'C:\\custom install\\hol-guard.exe' command --guard-home '"
-            "C:\\custom guard' controls recover-authority"
+            "& 'C:\\custom install\\hol-guard.exe' command --guard-home 'C:\\custom guard' controls recover-authority"
         ),
     }
     builder = Mock(return_value=commands)
@@ -220,11 +219,18 @@ def test_authority_recovery_consumes_daemon_bound_approval_before_repair(
         runtime=ExtensionControlRuntime(tampered),
     )
     calls: list[str] = []
-    monkeypatch.setattr(store, "read_extension_control_authority_for_registry", lambda _registry: tampered)
+    current_view = [tampered]
+    monkeypatch.setattr(store, "read_extension_control_authority_for_registry", lambda _registry: current_view[0])
+
+    def recover(**_kwargs: object) -> ExtensionControlAuthorityView:
+        calls.append("recover")
+        current_view[0] = protected
+        return protected
+
     monkeypatch.setattr(
         store,
         "recover_extension_control_authority",
-        lambda **_kwargs: calls.append("recover") or protected,
+        recover,
     )
     monkeypatch.setattr(
         extension_control_api_module,

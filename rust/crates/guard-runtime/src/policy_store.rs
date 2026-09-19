@@ -31,6 +31,8 @@ mod policy_store_approval;
 mod policy_store_authority;
 #[path = "policy_store_migration.rs"]
 mod policy_store_migration;
+#[path = "policy_store_mutation.rs"]
+mod policy_store_mutation;
 #[path = "policy_store_persistence.rs"]
 mod policy_store_persistence;
 #[path = "policy_store_versioned.rs"]
@@ -166,6 +168,7 @@ impl PolicySnapshotStore {
         resident_generation: u64,
     ) -> Result<Self, String> {
         validate_private_directory(state_base)?;
+        let _writer = policy_store_mutation::acquire_writer(state_base)?;
         let verifier_key = read_verifier_key(state_base)?;
         let authority_path = state_base.join(SNAPSHOT_FILE_NAME);
         recover_authority_replacement(&authority_path)?;
@@ -249,6 +252,7 @@ impl PolicySnapshotStore {
         runtime_identity: &str,
     ) -> Result<(), String> {
         validate_private_directory(state_base)?;
+        let _writer = policy_store_mutation::acquire_writer(state_base)?;
         let verifier_key = read_verifier_key(state_base)?;
         let authority_path = state_base.join(SNAPSHOT_FILE_NAME);
         let legacy_floor_path = state_base.join(GENERATION_FLOOR_FILE_NAME);
@@ -281,10 +285,24 @@ impl PolicySnapshotStore {
         let candidate = AuthenticatedPolicySnapshot::from_push(value)?;
         let snapshot_bytes = candidate.bytes()?;
         let now = now_ms()?;
+        let parent = self
+            .authority_path
+            .parent()
+            .ok_or_else(|| "native_policy_snapshot_authority_parent_missing".to_owned())?;
+        let _writer = policy_store_mutation::acquire_writer(parent)?;
         let mut state = self
             .state
             .lock()
             .map_err(|_| "native_policy_snapshot_state_unavailable".to_owned())?;
+        // Preserve the original exact-retry currentness predicate before
+        // reconciliation can retire an already changed in-memory snapshot.
+        if state.snapshot.as_ref().is_some_and(|current| {
+            current.generation() == candidate.generation()
+                && snapshot_bytes == state.canonical_bytes
+        }) {
+            policy_store_authority::require_current_authority_for_ack(self)?;
+        }
+        policy_store_mutation::refresh_floor(self, &mut state)?;
         if state.invalid_on_startup && state.generation_floor == 0 {
             return Err("native_policy_snapshot_invalid".to_owned());
         }

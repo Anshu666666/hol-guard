@@ -5,10 +5,14 @@ import time
 from collections.abc import Mapping
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
 from scripts.native_probe_receipts import receipt_corpus_is_complete, wait_for_receipt_corpus, wait_for_route_corpus
+
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 
 
 def test_receipt_corpus_complete_requires_processed_count() -> None:
@@ -160,7 +164,10 @@ def test_installed_route_requires_observed_native_provenance(
     for route, count in observed_routes.items():
         for _ in range(count):
             metrics.record_route(route)
-    daemon = SimpleNamespace(_server=SimpleNamespace(hook_worker=SimpleNamespace(metrics=metrics)))
+    daemon = cast(
+        "GuardDaemonServer",
+        cast(object, SimpleNamespace(_server=SimpleNamespace(hook_worker=SimpleNamespace(metrics=metrics)))),
+    )
     monkeypatch.setattr(
         probe,
         "_installed_hook_request",

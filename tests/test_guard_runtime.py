@@ -88,6 +88,7 @@ from codex_plugin_scanner.guard.store import (
     runtime_tool_action_exact_match_context,
 )
 from codex_plugin_scanner.guard.synced_policy import synced_policy_payload
+from tests.guard_review_authority_fixtures import enroll_review_authority
 from tests.policy_bundle_activation_helpers import activate_signed_policy_bundle
 from tests.policy_bundle_signing_helpers import (
     policy_bundle_test_keyring,
@@ -302,8 +303,10 @@ def _isolate_git_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GIT_EXTERNAL_DIFF", raising=False)
 
 
-def _build_guard_fixture(home_dir: Path, workspace_dir: Path) -> None:
+def _build_guard_fixture(home_dir: Path, workspace_dir: Path, *, review_authority: bool = False) -> None:
     _write_text(home_dir / "config.toml", "approval_wait_timeout_seconds = 0\n")
+    if review_authority:
+        enroll_review_authority(home_dir)
     _write_text(
         home_dir / ".codex" / "config.toml",
         """
@@ -4998,7 +5001,7 @@ clearer UX and an implementation plan with technical references.
     def test_guard_hook_uses_copilot_repo_hook_runtime_path(self, tmp_path, capsys, monkeypatch):
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
-        _build_guard_fixture(home_dir, workspace_dir)
+        _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
         event = {
             "tool_name": "read_file",
             "tool_input": {"path": str(home_dir / ".env")},
@@ -5035,7 +5038,7 @@ clearer UX and an implementation plan with technical references.
     def test_guard_hook_normalizes_copilot_camel_case_payload(self, tmp_path, capsys, monkeypatch):
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
-        _build_guard_fixture(home_dir, workspace_dir)
+        _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
         event = {
             "toolName": "view",
             "toolArgs": json.dumps({"path": str(home_dir / ".env")}),
@@ -5086,7 +5089,7 @@ clearer UX and an implementation plan with technical references.
     def test_guard_hook_asks_for_planned_secret_file_reads(self, tmp_path, capsys, monkeypatch, path):
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
-        _build_guard_fixture(home_dir, workspace_dir)
+        _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
         event = {
             "tool_name": "read_file",
             "tool_input": {"path": path},
@@ -8656,7 +8659,7 @@ def test_guard_hook_emits_copilot_native_deny_response_for_sandbox_required_requ
 def test_guard_hook_emits_claude_native_ask_response(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     event = {
         "tool_name": "Read",
         "tool_input": {"file_path": str(workspace_dir / ".env")},
@@ -8690,7 +8693,7 @@ def test_guard_hook_emits_claude_native_ask_response(tmp_path, capsys, monkeypat
 def test_guard_hook_emits_claude_native_pretooluse_notice_on_stderr(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     event = {
         "tool_name": "Read",
         "tool_input": {"file_path": str(workspace_dir / ".env")},
@@ -8732,7 +8735,7 @@ def test_guard_hook_emits_claude_native_pretooluse_notice_on_stderr(tmp_path, ca
 def test_guard_hook_claude_native_approval_does_not_lower_current_reapproval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-approval",
         "hook_event_name": "PreToolUse",
@@ -8831,7 +8834,7 @@ def _load_claude_pending_question_contract(home_dir: Path, session_id: str) -> t
 def test_guard_hook_claude_ask_user_question_allow_does_not_lower_current_reapproval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-allow",
         "hook_event_name": "PreToolUse",
@@ -8973,7 +8976,7 @@ def test_guard_hook_claude_docker_saved_allow_does_not_lower_terminal_block(
 def test_guard_hook_claude_notification_saved_allow_does_not_lower_current_reapproval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-notification-only",
         "hook_event_name": "PreToolUse",
@@ -9072,7 +9075,7 @@ def test_guard_hook_claude_repeated_notifications_keep_bound_question_without_lo
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-repeat-notification",
         "hook_event_name": "PreToolUse",
@@ -9181,7 +9184,7 @@ def test_guard_hook_claude_repeated_notifications_keep_bound_question_without_lo
 def test_guard_hook_claude_ask_user_question_keep_blocked_persists_block(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-block",
         "hook_event_name": "PreToolUse",
@@ -9272,7 +9275,7 @@ def test_guard_hook_claude_ask_user_question_keep_blocked_persists_block(tmp_pat
 def test_guard_hook_claude_ask_user_question_without_answer_does_not_persist_block(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-no-answer",
         "hook_event_name": "PreToolUse",
@@ -9361,7 +9364,7 @@ def test_guard_hook_claude_ask_user_question_without_answer_does_not_persist_blo
 def test_guard_hook_claude_ask_user_question_spoofed_prompt_does_not_persist_approval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-spoof",
         "hook_event_name": "PreToolUse",
@@ -9451,7 +9454,7 @@ def test_guard_hook_claude_ask_user_question_multiple_questions_does_not_persist
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-guard-question-multi",
         "hook_event_name": "PreToolUse",
@@ -9988,7 +9991,7 @@ def test_guard_hook_claude_ask_user_question_unsigned_bound_pending_cannot_persi
 def test_guard_hook_claude_native_cancel_does_not_persist_flat_block(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-native-cancel",
         "hook_event_name": "PreToolUse",
@@ -10055,7 +10058,7 @@ def test_guard_hook_claude_native_cancel_does_not_persist_flat_block(tmp_path, c
 def test_guard_hook_claude_alias_saved_allow_does_not_lower_canonical_reapproval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-alias-approval",
         "hook_event_name": "PreToolUse",
@@ -10689,7 +10692,7 @@ def test_guard_hook_claude_alias_reuses_legacy_alias_policy_keys(tmp_path, capsy
 def test_guard_hook_claude_stop_keeps_native_cancel_transient(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-deny",
         "hook_event_name": "PreToolUse",
@@ -10761,7 +10764,7 @@ def test_guard_hook_claude_stop_does_not_persist_denial_without_visible_prompt(
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     first_event = {
         "session_id": "session-claude-headless",
         "hook_event_name": "PreToolUse",
@@ -10812,7 +10815,7 @@ def test_guard_hook_claude_stop_does_not_persist_denial_without_visible_prompt(
 def test_guard_hook_emits_claude_native_ask_response_for_claude_alias(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     event = {
         "tool_name": "Read",
         "tool_input": {"file_path": str(workspace_dir / ".env")},
@@ -10920,7 +10923,7 @@ def test_guard_hook_uses_deny_specific_copy_for_blocked_claude_secret_reads(
 def test_guard_hook_emits_codex_runtime_denial_with_guard_remediation(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     event = {
         "tool_name": "Read",
         "tool_input": {"file_path": str(workspace_dir / ".env")},
@@ -11351,7 +11354,7 @@ def test_guard_hook_copilot_user_prompt_submitted_normalizes_to_prompt_request(
 def test_guard_hook_emits_claude_notification_notice_for_permission_prompt(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     pre_tool_event = {
         "session_id": "session-claude-1",
         "tool_name": "Read",
@@ -11421,7 +11424,7 @@ def test_guard_hook_emits_claude_permission_request_attribution_without_decision
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     pre_tool_event = {
         "session_id": "session-claude-permission-request",
         "hook_event_name": "PreToolUse",
@@ -12049,7 +12052,7 @@ def test_guard_hook_emits_claude_native_ask_for_sensitive_file_reads(
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     install_rc = main(
         [
             "guard",
@@ -12148,7 +12151,7 @@ def test_guard_hook_emits_generic_claude_notification_notice_without_cached_reas
 def test_guard_hook_claude_notification_notice_is_tool_scoped_and_retained_while_pending(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     monkeypatch.setattr(
         guard_commands_module, "schedule_guard_daemon_ensure", lambda _guard_home, **_kwargs: "http://127.0.0.1:4455"
     )
@@ -12229,7 +12232,7 @@ def test_guard_hook_claude_notification_notice_is_tool_scoped_and_retained_while
 def test_guard_hook_claude_notification_stale_notice_falls_back_to_generic_context(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     session_id = "session-claude-stale-notice"
     pre_tool_event = {
         "session_id": session_id,
@@ -12349,7 +12352,7 @@ def test_guard_hook_claude_notification_notice_falls_back_when_tool_name_is_miss
 def test_guard_hook_claude_notice_storage_failures_fall_back_to_generic_prompt(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     monkeypatch.setattr(
         guard_commands_module, "schedule_guard_daemon_ensure", lambda _guard_home, **_kwargs: "http://127.0.0.1:4455"
     )
@@ -14402,7 +14405,7 @@ def test_guard_hook_invalid_policy_action_falls_back_to_reapproval(tmp_path, cap
 def test_runtime_hook_saved_v1_allow_satisfies_exact_unchanged_current_review(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     _write_text(
         home_dir / "config.toml",
         'approval_wait_timeout_seconds = 0\n[risk_actions]\nlocal_secret_read = "review"\n',
@@ -15183,7 +15186,7 @@ def test_runtime_hook_package_without_workspace_invalidates_allow_after_lockfile
 def test_guard_hook_saved_file_read_allow_does_not_lower_current_reapproval(tmp_path, capsys, monkeypatch):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     monkeypatch.setattr(
         guard_commands_module, "schedule_guard_daemon_ensure", lambda _guard_home, **_kwargs: "http://127.0.0.1:4455"
     )
@@ -15514,7 +15517,7 @@ def test_guard_hook_codex_falls_back_to_native_deny_after_daemon_request_failure
 ):
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    _build_guard_fixture(home_dir, workspace_dir)
+    _build_guard_fixture(home_dir, workspace_dir, review_authority=True)
     _write_text(home_dir / "config.toml", "approval_wait_timeout_seconds = 0\n")
     monkeypatch.setattr(
         runtime_review_module,

@@ -753,14 +753,38 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
             row = connection.execute(
                 "select * from extension_control_authority_snapshot where singleton = 1"
             ).fetchone()
+            prior_authority = None
+            if row is None:
+                # Residue cannot authenticate a replacement snapshot, but it
+                # disqualifies the ordinary never-enrolled policy path.
+                prior_authority = connection.execute(
+                    """
+                    select 1 from extension_control_authority_transition
+                    union all select 1 from extension_control_authority_proof
+                    union all select 1 from extension_control_catalog_manifest
+                    union all select 1 from extension_control_authority_recovery_archive
+                    union all select 1 from sync_state where state_key in (?, ?, ?)
+                    limit 1
+                    """,
+                    (
+                        MANAGED_CONTROLS_ACTIVE_STATE_KEY,
+                        MANAGED_CONTROLS_REVISION_STATE_KEY,
+                        MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
+                    ),
+                ).fetchone()
         try:
             key = self._authority_key(required=False)
             anchor = self._read_anchor(key=key) if key is not None else None
+            unverified_anchor = (
+                self._secret_store().get_secret(self._anchor_ref()) if row is None and key is None else None
+            )
         except Exception:
             return self._degraded_view(catalog_digest)
-        if row is None and anchor is None:
-            return ExtensionControlAuthorityView(AuthorityHealth.UNENROLLED, 0, catalog_digest, ())
-        if row is None or key is None or anchor is None:
+        if row is None:
+            if key is None and unverified_anchor is None and prior_authority is None:
+                return ExtensionControlAuthorityView(AuthorityHealth.UNENROLLED, 0, catalog_digest, ())
+            return self._tampered_view(catalog_digest)
+        if key is None or anchor is None:
             return self._tampered_view(catalog_digest)
         try:
             revision = int(row["revision"])

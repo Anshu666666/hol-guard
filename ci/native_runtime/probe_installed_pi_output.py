@@ -26,7 +26,7 @@ import time
 from collections.abc import Mapping
 from importlib import metadata
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TEXT_LIMIT = 12_000
@@ -109,7 +109,7 @@ def _installed_package_path(repo_root: Path) -> Path:
     try:
         resolved_distribution_files = set()
         for path in distribution_files:
-            manifest_path = distribution.locate_file(path)
+            manifest_path = cast(Path, distribution.locate_file(path))
             if stat.S_ISLNK(os.lstat(manifest_path).st_mode):
                 raise ProbeError("installed hol-guard distribution manifest contains a symlink")
             resolved_distribution_files.add(manifest_path.resolve())
@@ -372,6 +372,18 @@ globalThis.fetch = async (input, init) => {
         const value = body[key];
         if (typeof value === "string" || typeof value === "boolean") proof[key] = value;
       }
+      const reason = body.reason_code;
+      // Only fixed categories cross this diagnostic boundary. Never retain
+      // arbitrary reason text, response bodies, URLs, or filesystem paths.
+      proof.reason_category = typeof reason !== "string" ? "missing"
+        : reason.startsWith("daemon_hook_process_") ? "isolated_worker"
+        : reason === "native_scoped_authority_unavailable" ? "policy_authority"
+        : ["native_post_tool_unavailable", "native_hook_edge_invalid_response",
+           "native_hook_event_unavailable"].includes(reason) ? "native_edge"
+        : reason.startsWith("daemon_hook_") ? "daemon_admission"
+        : ["output_scan_allow", "output_empty_allow", "source_full_scan_allow",
+           "native_policy_warning"].includes(reason) ? "review_result"
+        : "other";
     }
   } catch {}
   fetchEvidence.push({ method, pathname: requestUrl.pathname, status: response.status, ...proof });
@@ -564,6 +576,42 @@ def _assert_real_results(
     return evidence
 
 
+def _fetch_failure_summary(fetch: Mapping[str, object], expected_digest: str) -> dict[str, str]:
+    """Describe a failed proof using fixed values, never response contents."""
+
+    def selected(key: str, allowed: tuple[str, ...]) -> str:
+        if key not in fetch:
+            return "missing"
+        value = fetch[key]
+        return value if isinstance(value, str) and value in allowed else "invalid"
+
+    digest = fetch.get("reviewed_output_sha256")
+    digest_state = "missing" if digest is None else "mismatch"
+    if isinstance(digest, str) and digest == expected_digest:
+        digest_state = "match"
+    observe = fetch.get("observe_mode")
+    return {
+        "decision": selected("decision", ("allow", "deny")),
+        "action": selected(
+            "model_output_action", ("allow_original", "replace_with_reviewed_excerpt", "block", "not_applicable")
+        ),
+        "digest": digest_state,
+        "observe": "true" if observe is True else "false" if observe is False else "missing_or_invalid",
+        "reason_category": selected(
+            "reason_category",
+            (
+                "missing",
+                "isolated_worker",
+                "policy_authority",
+                "native_edge",
+                "daemon_admission",
+                "review_result",
+                "other",
+            ),
+        ),
+    }
+
+
 def _assert_fetch_evidence(
     fetches: list[dict[str, Any]],
     results: list[dict[str, Any]],
@@ -580,6 +628,7 @@ def _assert_fetch_evidence(
         "reviewed_output_sha256",
         "observe_mode",
         "policy_action",
+        "reason_category",
     }
     if len(fetches) != len(cases):
         raise ProbeError("generated extension did not make exactly one daemon request per real case")
@@ -628,7 +677,8 @@ def _assert_fetch_evidence(
                 raise ProbeError(f"{case_id} was not preserved and is not an excerpt case")
         for key, expected in expected_proof.items():
             if fetch.get(key) != expected:
-                raise ProbeError(f"daemon response proof mismatch for {case_id}: {key}")
+                diagnostic = json.dumps(_fetch_failure_summary(fetch, digest), sort_keys=True)
+                raise ProbeError(f"daemon response proof mismatch for {case_id}: {key}; {diagnostic}")
         evidence[case_id] = {
             "case_id": case_id,
             "method": fetch["method"],
@@ -1210,6 +1260,7 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
     native_started = False
     startup_cleanup_failure: ProbeError | None = None
     receipt: dict[str, Any] | None = None
+    guard_home = root
     try:
         home = root / "home"
         guard_home = root / "guard-home"

@@ -36,6 +36,7 @@ from tests.guard_command_corpus import (
     load_seed_manifest,
     stable_case_id,
 )
+from tests.guard_command_corpus_diagnostics import CorpusDiagnosticError, corpus_failure_boundary
 from tests.guard_command_corpus_oracle import (
     ADVERSARIAL_ORACLE,
     BENIGN_ORACLE,
@@ -338,15 +339,20 @@ def test_full_guard_evaluation_matches_exact_non_widening_known_gap_baseline() -
         expected[key] = (count, digest)
 
     runner_path = Path(__file__).with_name("guard_command_corpus_runner.py")
-    completed = subprocess.run(
-        [sys.executable, str(runner_path)],
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=90,
-        cwd=Path.cwd(),
-    )
-    report_value = cast(object, json.loads(completed.stdout))
+    try:
+        with corpus_failure_boundary("coordinator_process"):
+            completed = subprocess.run(
+                [sys.executable, str(runner_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=90,
+                cwd=Path.cwd(),
+            )
+        with corpus_failure_boundary("coordinator_report"):
+            report_value = cast(object, json.loads(completed.stdout))
+    except CorpusDiagnosticError as error:
+        pytest.fail(str(error), pytrace=False)
     assert isinstance(report_value, dict)
     report = cast(dict[str, object], report_value)
     actual_value = report["actual"]
@@ -358,7 +364,7 @@ def test_full_guard_evaluation_matches_exact_non_widening_known_gap_baseline() -
     }
     assert actual == expected
     assert isinstance(report["elapsed"], int | float) and report["elapsed"] < int(
-        load_seed_manifest()["evaluation_budget_seconds"]
+        cast(int, load_seed_manifest()["evaluation_budget_seconds"])
     )
     assert isinstance(report["rss_mib"], int | float) and report["rss_mib"] < 512
 

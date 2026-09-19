@@ -12,7 +12,10 @@ from codex_plugin_scanner.guard.managed_controls_policy_bundle import (
     MANAGED_CONTROLS_ACTIVE_STATE_KEY,
     MANAGED_CONTROLS_REVISION_STATE_KEY,
 )
-from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
+from codex_plugin_scanner.guard.native_policy_authority_read import (
+    _capture_native_policy_authority_inputs,
+    read_native_policy_authority_inputs,
+)
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
 from tests.native_managed_source_support import PERMISSION, managed_store
 from tests.test_canonical_policy_row_authority import _ARTIFACT, _NOW
@@ -51,6 +54,28 @@ def test_actual_local_controls_survive_without_a_managed_cloud_activation(
     assert result.authority.managed is not None
     assert result.authority.managed.managed_revision == 0
     assert [(item.target_id, item.state) for item in result.authority.managed.controls] == [(PERMISSION, "enabled")]
+
+
+@pytest.mark.parametrize("cloud", [False, True])
+def test_authenticated_controls_require_the_managed_capture_consumer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cloud: bool,
+) -> None:
+    store = managed_store(tmp_path, monkeypatch, cloud=cloud)
+    before = read_native_policy_authority_inputs(store, now=_TIME)
+    managed = before.authority.managed
+    assert managed is not None
+    assert managed.managed_revision == int(cloud)
+    assert [(item.target_id, item.state) for item in managed.controls] == [
+        (PERMISSION, "disabled" if cloud else "enabled")
+    ]
+    with pytest.raises(NativePolicySnapshotError, match=r"^native_policy_authority_managed_consumer_required$"):
+        _capture_native_policy_authority_inputs(store, now=_TIME, managed=None)
+    after = read_native_policy_authority_inputs(store, now=_TIME)
+    assert after.input_digest == before.input_digest
+    assert after.authority.managed == managed
+    assert after.sources == before.sources
 
 
 def test_signed_global_lockdown_cannot_disappear_from_frozen_authority(

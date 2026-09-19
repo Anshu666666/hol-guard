@@ -16,6 +16,8 @@ from codex_plugin_scanner.guard.managed_controls_policy_bundle import (
 from codex_plugin_scanner.guard.models import PolicyDecision
 from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
+from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
+from codex_plugin_scanner.guard.runtime.extension_control_authority import AuthorityHealth
 from tests.test_canonical_policy_row_authority import _ARTIFACT, _NOW, _activated_store
 from tests.test_guard_review_policy_memory_command import _bundle, _resign_bundle, _store
 
@@ -205,12 +207,14 @@ def test_signed_source_expiry_remains_a_whole_input_bound(tmp_path: Path) -> Non
 
 
 @pytest.mark.parametrize("state_key", [MANAGED_CONTROLS_ACTIVE_STATE_KEY, MANAGED_CONTROLS_REVISION_STATE_KEY])
-def test_unimplemented_managed_authority_cannot_disappear_from_a_generic_publication(
+def test_unauthenticated_managed_residue_refuses_the_whole_publication(
     tmp_path: Path, state_key: str,
 ) -> None:
     store = _activated_store(tmp_path)
     store.set_sync_payload(state_key, {}, _NOW)
-    with pytest.raises(NativePolicySnapshotError, match="managed_consumer_required"):
+    view = store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+    assert view.health is AuthorityHealth.TAMPERED
+    with pytest.raises(NativePolicySnapshotError, match=r"^native_policy_authority_managed_unavailable$"):
         read_native_policy_authority_inputs(store, now=_TIME)
 
 

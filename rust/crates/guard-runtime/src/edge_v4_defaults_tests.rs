@@ -209,6 +209,8 @@ fn existing_scoped_generic_composition_is_not_replaced_by_the_defaults_extension
 #[test]
 fn authenticated_defaults_preserve_verified_source_output_and_reviewed_excerpt() {
     let root = test_root("v4-defaults-source-output");
+    // The secure reader rejects aliases in the supplied path. Match the
+    // existing source-read fixtures when the platform's temp root is an alias.
     #[cfg(unix)]
     let root = fs::canonicalize(root).unwrap();
     let key = install_test_key(&root, 83);
@@ -233,15 +235,24 @@ fn authenticated_defaults_preserve_verified_source_output_and_reviewed_excerpt()
             assert_eq!(allowed["result"]["decision"], "allow", "{allowed}");
             assert_eq!(allowed["result"]["reason_code"], "source_full_scan_allow");
             assert_eq!(allowed["result"]["reviewed_output_sha256"], digest);
+            emit_vector(&format!("source-file/{mode}"), &allowed, &candidate, 45);
         }
         #[cfg(not(unix))]
         {
+            // The existing reader requires a descriptor-bound path walk and
+            // refuses on these platforms. Authenticated defaults cannot
+            // manufacture a reviewed-output proof for an unsupported read.
             assert_eq!(allowed["result"]["decision"], "deny", "{allowed}");
             assert_eq!(allowed["result"]["reason_code"], "no_output_to_review");
             assert_eq!(allowed["result"]["model_output_action"], "block");
-            assert!(allowed["result"]["reviewed_output_sha256"].is_null());
+            assert_eq!(allowed["result"]["reviewed_output_sha256"], Value::Null);
+            emit_vector(
+                &format!("source-file-refusal/{mode}"),
+                &allowed,
+                &candidate,
+                45,
+            );
         }
-        emit_vector(&format!("source-file/{mode}"), &allowed, &candidate, 45);
         payload["guard_source_ref"]["output_sha256"] = json!("f".repeat(64));
         let denied = edge(&store, request(&candidate, &root, "PostToolUse", payload));
         assert_eq!(denied["result"]["decision"], "deny");

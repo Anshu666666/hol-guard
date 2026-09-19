@@ -41,6 +41,7 @@ from codex_plugin_scanner.guard.schemas import build_surface_server_contract
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.claude_hook_diagnostics import claude_prompt_diagnostics
 from tests.daemon_hook_test_client import open_authenticated_claude_request
+from tests.guard_review_authority_fixtures import enroll_review_authority
 from tests.support.network import urlopen_json
 
 
@@ -980,6 +981,7 @@ class TestGuardSurfaceServer:
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
         workspace_dir.mkdir(parents=True, exist_ok=True)
+        enroll_review_authority(home_dir)
         store = GuardStore(home_dir)
         daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
         daemon.start()
@@ -1196,6 +1198,7 @@ class TestGuardSurfaceServer:
         home_dir = tmp_path / "home"
         workspace_dir = tmp_path / "workspace"
         workspace_dir.mkdir(parents=True, exist_ok=True)
+        enroll_review_authority(home_dir)
         store = GuardStore(home_dir)
         daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
         daemon.start()

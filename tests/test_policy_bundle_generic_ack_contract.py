@@ -57,7 +57,7 @@ def test_matching_applied_ack_survives_later_unverified_observation() -> None:
 
 
 def test_generic_validator_accepts_the_existing_cloud_schema() -> None:
-    ack = {
+    ack: dict[str, object] = {
         "contractVersion": "guard-policy-bundle.v2",
         "workspaceId": "workspace-1",
         "deviceId": "device-alpha",

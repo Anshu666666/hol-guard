@@ -400,6 +400,38 @@ fn unrelated_managed_controls_neither_grant_permission_nor_lose_generic_preceden
 }
 
 #[test]
+fn current_catalog_targets_do_not_authorize_unmodeled_mcp_requests() {
+    for (kind, target) in [
+        ("extension", "command.mcp-instapods"),
+        (
+            "permission",
+            "command.mcp-instapods.permission.mcp-instapods-tool",
+        ),
+    ] {
+        for state in ["enabled", "disabled"] {
+            let policy = with_managed(
+                snapshot("review", vec![]),
+                false,
+                vec![json!({"target_kind":kind,"target_id":target,"state":state})],
+            );
+            assert_eq!(
+                evaluate(&policy, &envelope(COMMAND)).result.minimum_action,
+                "review"
+            );
+            let mut source = envelope(COMMAND);
+            source.raw_payload = json!({"tool_name":"mcp__instapods__synthetic","tool_input":{}});
+            let intrinsic = evaluate_pre_tool_envelope("codex", "PreToolUse", &source.raw_payload);
+            assert_eq!(
+                apply_scoped_pre_tool_policy(&policy, &source, "codex", intrinsic, 100)
+                    .err()
+                    .as_deref(),
+                Some("native_scoped_managed_policy_unsupported")
+            );
+        }
+    }
+}
+
+#[test]
 fn managed_unknown_delegated_and_unmodeled_requests_refuse_as_a_whole() {
     for target in [
         "command.synthetic",

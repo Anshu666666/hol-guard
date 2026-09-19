@@ -479,3 +479,9 @@ fn authority_fingerprint_detects_same_size_in_place_rewrite() {
     assert!(!store.test_authorities_unchanged());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[path = "policy_store_durable_writer_tests.rs"]
+mod durable_writer_tests;
+
+#[path = "policy_store_edge_fence_tests.rs"]
+mod edge_fence_tests;

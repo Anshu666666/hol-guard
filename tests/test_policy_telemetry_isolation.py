@@ -9,9 +9,11 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
+from codex_plugin_scanner.guard import native_policy_bundle_sync
 from codex_plugin_scanner.guard.cli.render import emit_guard_payload
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.support.native_policy_application import controlled_policy_publisher
 from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
@@ -78,6 +80,12 @@ def test_optional_failure_keeps_applied_policy_and_uploads_its_ack_on_retry(
     assert "secret-canary" not in json.dumps(first)
     saved_ack = store.get_sync_payload("policy_bundle_ack")
     assert saved_ack["status"] == "applied"
+    publisher = native_policy_bundle_sync.get_native_policy_snapshot_publisher(store)
+    assert publisher.is_ready()
+    acceptance = store.get_sync_payload("native_policy_bundle_ack_acceptance")
+    assert isinstance(acceptance, dict)
+    assert acceptance["ack"] == saved_ack
+    assert acceptance["binding"] == publisher.current_snapshot_binding()
     assert store.get_sync_payload("policy_bundle")["bundleHash"] == bundle["bundleHash"]
     assert store.get_sync_payload("sync_summary") == first
     decisions = store.list_policy_decisions()
@@ -157,3 +165,33 @@ def test_typed_authorization_and_endpoint_failures_propagate(
         runner.sync_receipts(store, auth_context=_AUTH)
 
     assert caught.value is failure
+
+
+@pytest.mark.parametrize("lane", ["pain_signals", "guard_events"])
+@pytest.mark.parametrize("native_reply", ["timeout", "different-source"])
+def test_optional_telemetry_cannot_promote_unaccepted_policy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    lane: str,
+    native_reply: str,
+) -> None:
+    store, bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    publisher = controlled_policy_publisher(store, reply=native_reply)
+    monkeypatch.setattr(native_policy_bundle_sync, "get_native_policy_snapshot_publisher", lambda _store: publisher)
+    monkeypatch.setattr(runner, f"sync_{lane}", _fail(OSError("telemetry unavailable")))
+
+    try:
+        summary = runner.sync_receipts(store, auth_context=_AUTH)
+
+        assert summary["receipt_upload_status"] == "success"
+        assert summary["policy_application_status"] == "unverified"
+        assert summary["policy_rejection_reason"] == "native_policy_publication_pending"
+        assert summary["telemetry_status"] == "degraded"
+        ack = store.get_sync_payload("policy_bundle_ack")
+        assert isinstance(ack, dict) and ack["status"] == "received"
+        assert ack["bundleHash"] == bundle["bundleHash"]
+        assert store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
+        assert not native_policy_bundle_sync.get_native_policy_snapshot_publisher(store).is_ready()
+
+    finally:
+        publisher.close()

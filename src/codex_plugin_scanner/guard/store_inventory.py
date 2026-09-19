@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from .action_lattice import normalize_guard_action_result
-from .config_mutation import notify_native_policy_mutation
 from .models import GuardAction
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
@@ -415,6 +414,8 @@ class StoreInventoryMixin:
         return self.get_device_metadata()
 
     def rotate_installation_id(self, now: str) -> dict[str, str]:
+        from .config_mutation import notify_native_policy_mutation
+
         new_installation_id = uuid4().hex
         with hold_policy_publication_mutation(self.guard_home):
             with self._connect() as connection:
@@ -428,10 +429,13 @@ class StoreInventoryMixin:
                     """,
                     (new_installation_id, now, _DEVICE_ROW_KEY),
                 )
-                # A new installation must freshly admit its signed source and ACK.
+                # These are derived proofs for the previous installation. Keep
+                # signed sources and trust checkpoints, but require ordinary
+                # authenticated sync to reconstruct rows and earn a new ACK.
+                self._replace_remote_policy_rows_locked(connection, ())
                 connection.execute(
-                    "delete from sync_state where state_key in (?, ?)",
-                    (POLICY_BUNDLE_MATERIALIZATION_KEY, "policy_bundle_ack"),
+                    "delete from sync_state where state_key in (?, ?, ?)",
+                    ("policy_bundle_ack", POLICY_BUNDLE_MATERIALIZATION_KEY, "native_policy_bundle_ack_acceptance"),
                 )
             notify_native_policy_mutation(self.guard_home, require_source_authority=True)
         return self.get_device_metadata()

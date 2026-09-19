@@ -106,6 +106,7 @@ jobs:
             ci/native_runtime/test_guard_native_runtime_mutation_differential.py \
             --tb=short
       - name: Enforce native performance
+        id: native_performance
         env:
           HOL_GUARD_NATIVE: force
           HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
@@ -114,6 +115,17 @@ jobs:
             --runtime "$HOL_GUARD_NATIVE_BINARY" \
             --warm-iterations 30 --cold-iterations 2 \
             --json rust-authority-performance.json --enforce
+      - name: Record separate warm-phase diagnostics
+        if: ${{ failure() && steps.native_performance.outcome == 'failure' }}
+        continue-on-error: true
+        env:
+          HOL_GUARD_NATIVE: force
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+        run: |
+          uv run --no-sync python scripts/diagnose_guard_native_warm_phases.py \
+            --runtime "$HOL_GUARD_NATIVE_BINARY" \
+            --warm-iterations 30 \
+            --json rust-authority-performance-phases.json
       - name: Run installed native-wheel execution proof
         env:
           HOL_GUARD_NATIVE: force
@@ -129,6 +141,7 @@ jobs:
             rust-pretool-authority.json
             rust-posttool-authority.json
             rust-authority-performance.json
+            rust-authority-performance-phases.json
             native-receipt-persistence.json
             python-capability-cleanup.json
             python-capability-cleanup-wheel.json

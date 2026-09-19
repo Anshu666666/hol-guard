@@ -188,6 +188,11 @@ class ExtensionControlApiService:
             raise ExtensionControlApiError(503, "authority_recovery_failed") from exc
         if view.health is not AuthorityHealth.PROTECTED:
             raise ExtensionControlApiError(503, "authority_recovery_incomplete")
+        # Local repair does not authenticate the retained catalog or managed layer.
+        # Keep the failed runtime until their complete composition is protected.
+        view = self._store.read_extension_control_authority_for_registry(self._registry)
+        if view.health is not AuthorityHealth.PROTECTED:
+            raise ExtensionControlApiError(503, "authority_recovery_incomplete")
         try:
             _ = self._runtime.replace_after_recovery(view)
         except ValueError as exc:

@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "branch": "codex/pr2974-command-budget-diagnostic-20260919",
+  "workflow": "PR2974 command budget diagnosis",
+  "source_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "evaluation_budget_seconds": 60,
+  "evaluation_rss_budget_mib": 512,
+  "child_timeout_seconds": 75,
+  "worker_count": 4,
+  "selector": "tests/test_guard_command_decision_diff.py::test_fresh_process_report_is_environment_independent_and_bounded",
+  "source_order": [
+    "baseline",
+    "candidate"
+  ],
+  "sources": {
+    "baseline": {
+      "sha": "b5c43e72fbb9d81ec4074579e0a05f7098afc5b0",
+      "tree": "ce541e861f09a03165f05a1d4a6ee6bb5244dc66",
+      "parents": [
+        "b2b724e050dcaa08f5c321c14500a3d008dc5b00"
+      ],
+      "tracked_files": 4287
+    },
+    "candidate": {
+      "sha": "44353b20262f1ca56b56204f4c764b047710454f",
+      "tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+      "parents": [
+        "b5c43e72fbb9d81ec4074579e0a05f7098afc5b0"
+      ],
+      "tracked_files": 4546
+    }
+  },
+  "equal_input_blobs": {
+    "tests/test_guard_command_decision_diff.py": "8d5fa7b75cb70bfb607075834adc97e1fd46a717",
+    "tests/guard_command_decision_diff.py": "2150c9eb1da9371966b26cbfd1a8737fbf7e2e64",
+    "tests/guard_command_decision_diff_runner.py": "d86da384c604ee349829b3dbebe7a115723a7b5a",
+    "tests/guard_command_corpus.py": "ea46044f3d99c58bbdc51b95487b0464abc37a43",
+    "tests/guard_command_corpus_oracle.py": "e3244452563a1a82ecd68aec0bc100ae91ac47ac",
+    "tests/fixtures/guard-command-corpus/seed-manifest.json": "f26cda4652a06f51b412486721e2a615f0abdb98",
+    "pyproject.toml": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+    "uv.lock": "791b2efebdd6774bf7f1b5bd2504dd8cea3cac46"
+  },
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "scope": "Separate diagnosis of original retained failure, no rerun, replacement, budget change or qualification credit. Two original pytest calls contain at most four metric children; two separate profile parents retain tracing overhead and timeout limits.",
+  "fixture_reports": {
+    "baseline": {
+      "file_sha256": "37caab390d1e1d243c64f5168553894c1c99482f4c4bcafe6449510a173c7f39",
+      "file_bytes": 51399
+    },
+    "candidate": {
+      "file_sha256": "618d837ccae1cfa8b60d404ccb7889822d1b80067430f1c250f15807cfc5e2d1",
+      "file_bytes": 54669
+    }
+  }
+}

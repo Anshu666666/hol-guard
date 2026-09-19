@@ -1,0 +1,122 @@
+name: PR2974 command budget diagnosis
+
+on:
+  push:
+    branches: [codex/pr2974-command-budget-diagnostic-20260919]
+    paths:
+      - '.github/workflows/pr2974-command-budget.yml'
+      - 'ci/pr2974_command_budget/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-command-budget-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUDGET_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  paired-diagnosis:
+    name: Paired original budgets and separate profiles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Initialize retained outcome
+        env:
+          BUDGET_REPORT: ${{ runner.temp }}/pr2974-command-budget/report
+          BUDGET_SCRATCH: ${{ runner.temp }}/pr2974-command-budget/scratch
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ["BUDGET_REPORT"])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ["BUDGET_SCRATCH"]).mkdir(mode=0o700, parents=True, exist_ok=True)
+          (report / "outcome.json").write_text(json.dumps({
+              "passed": False, "status": "not_run", "qualification_complete": False,
+              "harness_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"]}) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              for name in ("BUDGET_REPORT", "BUDGET_SCRATCH"):
+                  stream.write(name + "=" + os.environ[name] + "\n")
+          PY
+      - name: Checkout separate diagnostic harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact original passing source
+        id: baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 'b5c43e72fbb9d81ec4074579e0a05f7098afc5b0'
+          path: baseline
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact original failing source
+        id: candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact original Python version
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up frozen installer
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Record original metric calls and bounded separate profiles
+        id: diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          export BUDGET_UV="$(command -v uv)"
+          python3 -I "$BUDGET_HARNESS/ci/pr2974_command_budget/diagnostic.py"
+      - name: Retain all outcomes, metrics and profiles
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-command-budget-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-command-budget/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve actual final diagnostic status
+        if: always()
+        env:
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          BASELINE_OUTCOME: ${{ steps.baseline.outcome }}
+          CANDIDATE_OUTCOME: ${{ steps.candidate.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          UV_OUTCOME: ${{ steps.uv.outcome }}
+          DIAGNOSTIC_OUTCOME: ${{ steps.diagnostic.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["BUDGET_REPORT"]) / "outcome.json"
+          value = json.loads(path.read_text()) if path.is_file() else {"passed": False}
+          names = ("HARNESS_OUTCOME", "BASELINE_OUTCOME", "CANDIDATE_OUTCOME",
+                   "PYTHON_OUTCOME", "UV_OUTCOME", "DIAGNOSTIC_OUTCOME", "UPLOAD_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          passed = value.get("passed") is True and all(item == "success" for item in outcomes.values())
+          print(json.dumps({"paired_diagnostic_gate": passed, "workflow_step_outcomes": outcomes,
+                            "qualification_complete": False}))
+          raise SystemExit(0 if passed else 1)
+          PY

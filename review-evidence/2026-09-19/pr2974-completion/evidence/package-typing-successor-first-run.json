@@ -1,0 +1,1439 @@
+{
+  "schema": "pr2974-package-finite-typing-successor-terminal.v1",
+  "source_sha": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+  "source_tree": "9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29",
+  "harness_sha": "38e71e163872c35e1740092d8ac7fb61d30248dd",
+  "run_id": 35446100641,
+  "job_id": 105905167726,
+  "run_attempt": 1,
+  "workflow_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35446100641",
+  "outcome": "failure",
+  "actual_tests": {
+    "existing_passed": 17,
+    "new_passed": 11,
+    "new_failed": 1,
+    "skipped": 0
+  },
+  "source_gates_passed": true,
+  "types": {
+    "files": 21,
+    "error_count": 0
+  },
+  "failure_disposition": {
+    "kind": "real_source_witness_scope_bug",
+    "test": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_excludes_nested_and_comprehension_scopes",
+    "observed": "No bound outer lookup call found for _evaluate_with_bundle",
+    "cause": "The diagnostic source witness excludes co_varnames from outer globals. CPython 3.12 comprehension inlining can place an isolated iteration temporary there while the outer occurrence remains global.",
+    "core_evaluator_changed": false,
+    "assertion_unchanged": true,
+    "correction_not_executed": true
+  },
+  "reconciliations": [
+    {
+      "lane": "candidate-existing",
+      "case_count": 17,
+      "passed_cases": 17,
+      "failed_cases": 0,
+      "all_case_setup_call_teardown_observed": true,
+      "ordered_junit_bijection": true,
+      "current_execution_collection_equals_prior": true,
+      "prior_snapshot_sha256": "3daea7cb7b358ed16f3354e615fba151b17cbff861e4b39422e0c267d9d0fa2f",
+      "execution_snapshot_sha256": "1d4d45fa8c565d299757ec12ac07553f80a11259527aa28161ebcfab45199f3f",
+      "junit_sha256": "2b4e0cd6b6d66a4e2ef5dff8385370c8624e608c5d20fe7ab692a6bc19ebf400",
+      "observed_source_files_unchanged_field": true,
+      "raw_phases": [
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_canonical_decision_order_prefers_cloud_over_signed_bundle",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.00964400099999807
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.7610375620000127
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0004175380000219775
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_posts_cloud_request_and_maps_block_response",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009449960000154078
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.9415170689999854
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00046886900000231435
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_uses_cached_eval_before_network",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009217599999828963
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.7861123060000068
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00041840299999762465
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_skips_cached_eval_when_workspace_fingerprint_changes",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.000882383999993408
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.3664569479999784
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00038868199999342323
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_cloud_non_timeout_transport_error_remains_fail_closed",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008686209999950734
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.27427997600000253
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0004334639999967749
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_untrusted_stored_oauth_issuer_cannot_use_bundle_fallback",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008884560000126385
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.275931503999999
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003877900000190948
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_applies_policy_rule_override",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009419179999952121
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.44025665700002037
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0004202420000183338
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_external_tarball_requires_approval_without_network",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.000888121000002684
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.15916275700001847
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00041411799998058996
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_blocks_external_tarball_zip_slip",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009665600000232644
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.2811508209999829
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00041315699999699973
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_honors_cloud_advisory_block_when_auth_expired",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009651310000151625
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.4876655319999941
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00044829799998069575
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_supply_chain_evaluator.py::test_evidence_id_distinguishes_versions_and_dependency_paths",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009121029999903385
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.000305190999995375
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00035699700001146084
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_caps_aggregate_retained_bytes_and_cleans_blobs",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008757589999959237
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.17215881199999217
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003601559999992787
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_deadline_fails_before_next_download",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009928409999986343
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0002411069999936899
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00038510000001679145
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_external_archive_private_binding.py::test_external_archive_private_source_mutation_fails_closed_before_scan",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008650499999873773
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.2710798570000179
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003314940000223032
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_external_archive_private_binding.py::test_direct_pip_signed_url_preserves_exact_private_download_and_binding_source",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008690909999984342
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.31219385800000055
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00039769599999317506
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_js_lockfile_resolution_phase11.py::test_evaluate_package_request_artifact_preserves_direct_version_when_package_lock_contains_nested_duplicate",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008998460000100295
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.1896855659999801
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003924330000018017
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_js_lockfile_resolution_phase11.py::test_incomplete_lockfile_evidence_contains_hash_and_reason_without_contents",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.000911301999991565
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.5298406639999769
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00051341100001423
+            }
+          ],
+          "failed": false
+        }
+      ],
+      "failed_body_reports": []
+    },
+    {
+      "lane": "candidate-candidate-only",
+      "case_count": 12,
+      "passed_cases": 11,
+      "failed_cases": 1,
+      "all_case_setup_call_teardown_observed": true,
+      "ordered_junit_bijection": true,
+      "current_execution_collection_equals_prior": true,
+      "prior_snapshot_sha256": "784ef419e72094f252794d02930acc46e0fc7d2d9ad7a8234588fa04e4fd508e",
+      "execution_snapshot_sha256": "b0de63813752102d1ab97b1ff518e537bd5537610daf512d342d981bdbceff5f",
+      "junit_sha256": "c8da9392fac73dc837ec237b211b485955022dfbf3887ac2c6eac61acc7721d9",
+      "observed_source_files_unchanged_field": null,
+      "raw_phases": [
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_request_cache_scope_restores_outer_state_and_current_dispatch[False]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.009825055999982624
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.00026394500000037624
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.000321708999990733
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_request_cache_scope_restores_outer_state_and_current_dispatch[True]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0010491160000185573
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.00031688100000337727
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00030793800002015814
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_lockfile_cache_only_admits_complete_results_and_reads_current_parsers",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009609089999855769
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.00025406899999325105
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00029200999998124644
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_download_preserves_captured_timeout_and_current_transport_limits",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009413219999885314
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.00019142100001090512
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00031719800000473697
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_archive_guards_prevent_scan_before_current_authority[False-False-ask-external_tarball_source]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009473959999866111
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0004072339999936503
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0002773200000092402
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_archive_guards_prevent_scan_before_current_authority[True-True-block-external_archive_source_integrity_invalid]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009807350000130555
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0001973269999950844
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.000309328000014375
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_eval_partition_boundaries.py::test_nested_cloud_failure_callbacks_read_current_facade_authority",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008094089999985954
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.00022998200000756697
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003917319999970914
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_uses_actual_callable_path_and_binding[evaluate_cached_supply_chain_bundle()]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0009509200000081819
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.000924079999975902
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.0003614540000000943
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_uses_actual_callable_path_and_binding[_eval.evaluate_cached_supply_chain_bundle()]",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.000985516000014286
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0008002600000054372
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00031987299999514107
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_excludes_nested_and_comprehension_scopes",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008594859999959681
+            },
+            {
+              "phase": "call",
+              "outcome": "failed",
+              "duration": 0.0009874829999887424
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00027784399998154186
+            }
+          ],
+          "failed": true
+        },
+        {
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_rejects_locally_shadowed_facade_alias",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008423839999807115
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0007267109999986587
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00027654400000187707
+            }
+          ],
+          "failed": false
+        },
+        {
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_rejects_an_unrelated_global_lookup",
+          "phases": [
+            {
+              "phase": "setup",
+              "outcome": "passed",
+              "duration": 0.0008414440000024115
+            },
+            {
+              "phase": "call",
+              "outcome": "passed",
+              "duration": 0.0006267739999827882
+            },
+            {
+              "phase": "teardown",
+              "outcome": "passed",
+              "duration": 0.00043953800002327625
+            }
+          ],
+          "failed": false
+        }
+      ],
+      "failed_body_reports": [
+        {
+          "duration": 0.0009874829999887424,
+          "longrepr": "tmp_path = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\n\n    def test_source_witness_excludes_nested_and_comprehension_scopes(tmp_path):\n        body = (\n            \"def nested(_eval):\\n\"\n            \"    return _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"class Nested:\\n\"\n            \"    value = _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"callback = lambda: _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"values = [_eval.evaluate_cached_supply_chain_bundle() for _eval in ()]\\n\"\n            \"return _eval.evaluate_cached_supply_chain_bundle()\"\n        )\n        facade, _, _ = _caller_facade(tmp_path, body)\n    \n>       records = _bound_lookup_source_records(tmp_path, facade)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_guard_package_unversioned_source_witness.py:65: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nroot = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\nevaluator = <module 'witness_evaluator_facade'>\n\n    def _bound_lookup_source_records(root: Path, evaluator: ModuleType) -> list[dict[str, object]]:\n        root = root.resolve()\n        lookup = evaluator.evaluate_cached_supply_chain_bundle\n        records = []\n        for facade_name in (\"_evaluate_with_bundle\", \"_transitive_lockfile_results\"):\n            function = getattr(evaluator, facade_name)\n            if not isinstance(function, FunctionType):\n                raise TypeError(f\"Source witness requires a function at {facade_name}\")\n            source_path = Path(function.__code__.co_filename).resolve(strict=True)\n            relative_path = source_path.relative_to(root).as_posix()\n            source_bytes = source_path.read_bytes()\n            definitions = [\n                node\n                for node in ast.parse(source_bytes, filename=str(source_path)).body\n                if isinstance(node, ast.FunctionDef)\n                and node.name == function.__code__.co_name\n                and node.lineno == function.__code__.co_firstlineno\n            ]\n            if len(definitions) != 1:\n                raise AssertionError(f\"Cannot bind one outer source function for {facade_name}\")\n            definition = definitions[0]\n            local_names = set(function.__code__.co_varnames + function.__code__.co_cellvars + function.__code__.co_freevars)\n            globals_map = function.__globals__\n            sites = []\n            for call in _outer_function_calls(definition):\n                target = call.func\n                matches = (\n                    isinstance(target, ast.Name) and target.id not in local_names and globals_map.get(target.id) is lookup\n                )\n                if (\n                    isinstance(target, ast.Attribute)\n                    and isinstance(target.value, ast.Name)\n                    and target.value.id not in local_names\n                    and target.attr == \"evaluate_cached_supply_chain_bundle\"\n                    and globals_map.get(target.value.id) is evaluator\n                ):\n                    matches = True\n                if matches:\n                    sites.append(\n                        {\n                            \"line\": call.lineno,\n                            \"column\": call.col_offset,\n                            \"expression\": ast.unparse(target),\n                        }\n                    )\n            if not sites:\n>               raise AssertionError(f\"No bound outer lookup call found for {facade_name}\")\nE               AssertionError: No bound outer lookup call found for _evaluate_with_bundle\n\nscripts/qualify_guard_package_unversioned_route.py:106: AssertionError",
+          "nodeid": "tests/test_guard_package_unversioned_source_witness.py::test_source_witness_excludes_nested_and_comprehension_scopes",
+          "outcome": "failed",
+          "phase": "call",
+          "wasxfail": null
+        }
+      ]
+    }
+  ],
+  "retention": {
+    "envelope_blob": "52f7c2507908826f98fb47aeb4f33fb3dfaeeb26",
+    "bytes": 5378640,
+    "sha256": "59f0cbedf0e4673c97ca59b81b8f4cf5d7e6cb62449c44ec955885ddf55f0ee7",
+    "all_128_members_verified": true,
+    "member_inventory": [
+      {
+        "path": "artifact-manifest.json",
+        "bytes": 21028,
+        "sha256": "be46fd8ed4b7b2ba49759673c6c831be5a06b8ed1af4034de14975982c96d361"
+      },
+      {
+        "path": "baseline-after.json",
+        "bytes": 1166363,
+        "sha256": "ad34116f0e5a1b519e21a57f94814c3c42a1737ae9514c23cb85243f9d66c047"
+      },
+      {
+        "path": "baseline-before.json",
+        "bytes": 1166363,
+        "sha256": "ad34116f0e5a1b519e21a57f94814c3c42a1737ae9514c23cb85243f9d66c047"
+      },
+      {
+        "path": "baseline-candidate-collection-comparison.json",
+        "bytes": 7499,
+        "sha256": "e68f7d6358e4657191881233849d2e560795aeaf9e02937ac548f0a479112b59"
+      },
+      {
+        "path": "baseline-existing-collection.json",
+        "bytes": 3413366,
+        "sha256": "84a2d9de9f2f942df65f810d7cca77fe69a14d4977c338a3e1a6b6fac58be8f2"
+      },
+      {
+        "path": "baseline-existing-collection.log",
+        "bytes": 2095,
+        "sha256": "9104676ab640457a8be1f49b4eb5710d42dafa6230b9058b6966a0a0a82f4e2c"
+      },
+      {
+        "path": "candidate-candidate-only-collection.json",
+        "bytes": 3166387,
+        "sha256": "784ef419e72094f252794d02930acc46e0fc7d2d9ad7a8234588fa04e4fd508e"
+      },
+      {
+        "path": "candidate-candidate-only-collection.log",
+        "bytes": 1642,
+        "sha256": "e4f96ab79e9f16c39b33042417b7ee0835b54475e40278ffb0f1ff1031fc1dad"
+      },
+      {
+        "path": "candidate-candidate-only-execution.json",
+        "bytes": 2923498,
+        "sha256": "b0de63813752102d1ab97b1ff518e537bd5537610daf512d342d981bdbceff5f"
+      },
+      {
+        "path": "candidate-candidate-only-execution.log",
+        "bytes": 4853,
+        "sha256": "aa81e8af3ccca3f2ab5d2c3295567cb5deb353c2eb8fe82f4edf6eec1518b75b"
+      },
+      {
+        "path": "candidate-candidate-only-execution.xml",
+        "bytes": 6296,
+        "sha256": "c8da9392fac73dc837ec237b211b485955022dfbf3887ac2c6eac61acc7721d9"
+      },
+      {
+        "path": "candidate-existing-collection.json",
+        "bytes": 3555751,
+        "sha256": "3daea7cb7b358ed16f3354e615fba151b17cbff861e4b39422e0c267d9d0fa2f"
+      },
+      {
+        "path": "candidate-existing-collection.log",
+        "bytes": 2095,
+        "sha256": "eb761e21618dfc0d0991092a44dcb6b630c018e22a872964c5e89dbdb2016fd7"
+      },
+      {
+        "path": "candidate-existing-execution.json",
+        "bytes": 3571831,
+        "sha256": "1d4d45fa8c565d299757ec12ac07553f80a11259527aa28161ebcfab45199f3f"
+      },
+      {
+        "path": "candidate-existing-execution.log",
+        "bytes": 100,
+        "sha256": "cc74522721a22215f1054ac28050e88b58db6aafe572cf67a02a3dc5be5022d6"
+      },
+      {
+        "path": "candidate-existing-execution.xml",
+        "bytes": 2997,
+        "sha256": "2b4e0cd6b6d66a4e2ef5dff8385370c8624e608c5d20fe7ab692a6bc19ebf400"
+      },
+      {
+        "path": "changed-witness-format-check.log",
+        "bytes": 25,
+        "sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50"
+      },
+      {
+        "path": "changed-witness-ruff-check.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      {
+        "path": "changed-witness-ruff-check.log",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "path": "commands.json",
+        "bytes": 40007,
+        "sha256": "fd08381f6a3997fa5102f504ec1b7481fd50cf00754899b1435b8a9dc0aa0510"
+      },
+      {
+        "path": "corpus-binding-currentness.json",
+        "bytes": 939,
+        "sha256": "2555b8d1a0c97a00fb59996679551ff58a7bdd89e5a700b05b72ef8fe96e2f23"
+      },
+      {
+        "path": "create-validation-environment.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "dependency-compatibility.log",
+        "bytes": 186,
+        "sha256": "f825b152b9bd236ef172966940ea6ad17a8e870834e06dbca56ea5c486a49021"
+      },
+      {
+        "path": "environment-after.json",
+        "bytes": 14357,
+        "sha256": "6dcb49c76677954015774fba8f5093727ff5f76c3f4218cd230e7a37e02ae2f3"
+      },
+      {
+        "path": "environment-after.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "environment-before.json",
+        "bytes": 14357,
+        "sha256": "6dcb49c76677954015774fba8f5093727ff5f76c3f4218cd230e7a37e02ae2f3"
+      },
+      {
+        "path": "environment-before.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "existing-guard-dead-code-gate.log",
+        "bytes": 19,
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      {
+        "path": "frozen-project-install.log",
+        "bytes": 2516,
+        "sha256": "509f488892737d1b3e1ff7759bb42be04a22d86c1df0a8420d72ce2f6bb7e5be"
+      },
+      {
+        "path": "host.json",
+        "bytes": 582,
+        "sha256": "f0d7f8e7c0fc2df09fc2cb7be5e293f3ffee8d6656fdb5c121c609d05bf40ce5"
+      },
+      {
+        "path": "job-outcome.json",
+        "bytes": 44936,
+        "sha256": "2acb5aa4d293a081443666537752e2658559b4a12145f219d7e9c7236cf23657"
+      },
+      {
+        "path": "job-start.json",
+        "bytes": 388,
+        "sha256": "7158ddd9223c86ad3c1ca5dbdeed47eb5fa97f1903bae8dbef135aa7022d7e07"
+      },
+      {
+        "path": "observed-source-bytes/baseline/conftest.py",
+        "bytes": 815,
+        "sha256": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c"
+      },
+      {
+        "path": "observed-source-bytes/baseline/pyproject.toml",
+        "bytes": 8647,
+        "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/cli/oauth_client.py",
+        "bytes": 8760,
+        "sha256": "b30bed716808cd4a1837c61f0f231ce5360e2b089c81dac2d326411b494c5e0d"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/local_supply_chain.py",
+        "bytes": 174848,
+        "sha256": "7d6e7f3e310a67b563b37bd4575e917115433e77ea08fe0e0dec96aec17549f3"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/runtime/package_intent_common.py",
+        "bytes": 23883,
+        "sha256": "7598b3be6eef2b0f7bf27b5ab7eb91e0ecd02eefb7fdaf938f3958c4bb559058"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/runtime/package_intent_parser.py",
+        "bytes": 65919,
+        "sha256": "167efbf9152be44b23c45e46d15cc33ea9ca73dda54a955384759982571c2ac2"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py",
+        "bytes": 208940,
+        "sha256": "e6f5becf96e31670ea1905d31df73a78dc9899baf96c3de2eee3416303990034"
+      },
+      {
+        "path": "observed-source-bytes/baseline/src/codex_plugin_scanner/guard/stable_digest.py",
+        "bytes": 1153,
+        "sha256": "ddebefd66e7bb5e0fac6125f675802fd371bbef2993cdd9394706719adac2fa3"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/bundle_first_cloud.py",
+        "bytes": 815,
+        "sha256": "613a183964249a0cde8585369ee1decfba845fb8f4102459ee519abc7ebb0f49"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/conftest.py",
+        "bytes": 13829,
+        "sha256": "ad53c2c93e24e27d284ce02461f5d1badd22b2a7c75a413bd0fb7b6f21858c92"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/guard_test_invariants.py",
+        "bytes": 9875,
+        "sha256": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/test_guard_external_archive_approval_boundary.py",
+        "bytes": 13567,
+        "sha256": "ba85c90a01748a5ac69a0a5be9ed46052efee746d80fdb4886b23a26e1bbd5a0"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/test_guard_external_archive_private_binding.py",
+        "bytes": 9480,
+        "sha256": "2b4391d066b1d9018f3d059f9f565916b9d470804fe1e062dabfd5b44e890f2d"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/test_guard_js_lockfile_resolution_phase11.py",
+        "bytes": 18342,
+        "sha256": "cbecf4e6af4dfc13d4008746cef9d8ed17301792f4ec2706e89bfdb9ccb4d385"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/test_guard_js_supply_chain_phase11.py",
+        "bytes": 39207,
+        "sha256": "c3bfc4f0d252a2fc193e5afe5be5f47db8fb57d2c985fea56be6fa806b1b86b9"
+      },
+      {
+        "path": "observed-source-bytes/baseline/tests/test_guard_supply_chain_evaluator.py",
+        "bytes": 124547,
+        "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+      },
+      {
+        "path": "observed-source-bytes/baseline/uv.lock",
+        "bytes": 961060,
+        "sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+      },
+      {
+        "path": "observed-source-bytes/candidate/conftest.py",
+        "bytes": 815,
+        "sha256": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c"
+      },
+      {
+        "path": "observed-source-bytes/candidate/pyproject.toml",
+        "bytes": 8647,
+        "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+      },
+      {
+        "path": "observed-source-bytes/candidate/scripts/qualify_guard_package_unversioned_route.py",
+        "bytes": 11940,
+        "sha256": "4c470013b1f731e66aab897d1768ade749720eacba77c847670ab0d2269fe2cd"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/cli/oauth_client.py",
+        "bytes": 8760,
+        "sha256": "b30bed716808cd4a1837c61f0f231ce5360e2b089c81dac2d326411b494c5e0d"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/local_supply_chain.py",
+        "bytes": 174848,
+        "sha256": "7d6e7f3e310a67b563b37bd4575e917115433e77ea08fe0e0dec96aec17549f3"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_archives.py",
+        "bytes": 8027,
+        "sha256": "6765cc368cb16cbb0400da0eb734ff38c5f62afd5b7f72ef5768834a10bb302b"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_bundle.py",
+        "bytes": 17388,
+        "sha256": "ec0380e5e5556607ed29ffb89b14b86a6595ee1f814acd9d208e65e1b5ba6a38"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_cloud.py",
+        "bytes": 18979,
+        "sha256": "a3e7d5e5afbe0de6ca4513349eb51f9dad1854f897329438597def22d91176a5"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_cloud_failures.py",
+        "bytes": 8985,
+        "sha256": "8ac5ed901d5d0a4e85b63da86d328b586c1c5c8ef0b513952e8e2318258a0982"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_cloud_fallback.py",
+        "bytes": 1262,
+        "sha256": "fb84ac10aa328ba5c7ad47931a2257f1c2b782e901d71edda4eef77dd6a1935a"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_dispatch.py",
+        "bytes": 8570,
+        "sha256": "1bb865e9ca1f3efd4cf2863168913fbd5422755e419f9d8be3415c0b9b4008ba"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_evidence.py",
+        "bytes": 7807,
+        "sha256": "b248dd6e182cf41be56db3cb0d72c43d5f8c9b626cc9ff06b52605f515a60e14"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_finalize.py",
+        "bytes": 5085,
+        "sha256": "dfc6ec68beb1aebf7a77d4b7968abb66cd38222453ad92bbf7425d7dab4f8f20"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_heuristics.py",
+        "bytes": 9901,
+        "sha256": "39da86ba77ea0dbca09aa3ce2c65cb56509c4a8e6a96320561f93ef92515dc47"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_local_sources.py",
+        "bytes": 15369,
+        "sha256": "712c7f464abda6920347e8454d7aae12cbb0706b96dae899ae80f044fb3eb193"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_status.py",
+        "bytes": 8855,
+        "sha256": "60d6e69fe1c22ecf5b5c5a91d5ea283a9de414383e3f975c1386510fa5c430fe"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_versions.py",
+        "bytes": 11256,
+        "sha256": "d903b3ff93c51e0a976131d266db8e2ab20aed518db1bb6405b11dd00c160a2d"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_other_lockfiles.py",
+        "bytes": 12801,
+        "sha256": "db947bb872e0a4e0c409485f2da640af82f2888856c75748541d0599b51df7f5"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_registry.py",
+        "bytes": 9365,
+        "sha256": "3217d61739f0bbe44e5d64f8c6309a9b311f9d6332577fdd33103e17f26f6266"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_results.py",
+        "bytes": 15705,
+        "sha256": "592200a75d081fc5a8341ab62c9085102a7cedf60f04a262472011a0cb2575f1"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_targets.py",
+        "bytes": 7395,
+        "sha256": "0fa06a1a2275f72cc3cd774a77d3729d718250cf69b359c6abc200155f80c353"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_transitive.py",
+        "bytes": 11267,
+        "sha256": "abb16120e865910af329efb728597fe003e0001c72481e348c413215b10f6320"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_uncached.py",
+        "bytes": 21264,
+        "sha256": "8023b7ff4b05e2af3c7842792ec15bb487eb0c210342bb0172d9942e63dfd9d4"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_eval_values.py",
+        "bytes": 6672,
+        "sha256": "c0de909a820b4a1746765232aed5232f49f3d3df3a37244a9e0d3574dff708a9"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_intent_common.py",
+        "bytes": 23883,
+        "sha256": "7598b3be6eef2b0f7bf27b5ab7eb91e0ecd02eefb7fdaf938f3958c4bb559058"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/runtime/package_intent_parser.py",
+        "bytes": 65919,
+        "sha256": "167efbf9152be44b23c45e46d15cc33ea9ca73dda54a955384759982571c2ac2"
+      },
+      {
+        "path": "observed-source-bytes/candidate/src/codex_plugin_scanner/guard/stable_digest.py",
+        "bytes": 1153,
+        "sha256": "ddebefd66e7bb5e0fac6125f675802fd371bbef2993cdd9394706719adac2fa3"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/bundle_first_cloud.py",
+        "bytes": 815,
+        "sha256": "613a183964249a0cde8585369ee1decfba845fb8f4102459ee519abc7ebb0f49"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/conftest.py",
+        "bytes": 13829,
+        "sha256": "ad53c2c93e24e27d284ce02461f5d1badd22b2a7c75a413bd0fb7b6f21858c92"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/guard_test_invariants.py",
+        "bytes": 9875,
+        "sha256": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_external_archive_approval_boundary.py",
+        "bytes": 13567,
+        "sha256": "ba85c90a01748a5ac69a0a5be9ed46052efee746d80fdb4886b23a26e1bbd5a0"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_external_archive_private_binding.py",
+        "bytes": 9480,
+        "sha256": "2b4391d066b1d9018f3d059f9f565916b9d470804fe1e062dabfd5b44e890f2d"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_js_lockfile_resolution_phase11.py",
+        "bytes": 18342,
+        "sha256": "cbecf4e6af4dfc13d4008746cef9d8ed17301792f4ec2706e89bfdb9ccb4d385"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_js_supply_chain_phase11.py",
+        "bytes": 39207,
+        "sha256": "c3bfc4f0d252a2fc193e5afe5be5f47db8fb57d2c985fea56be6fa806b1b86b9"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_package_eval_partition_boundaries.py",
+        "bytes": 8048,
+        "sha256": "81b4d73e5b568f5b46319f6bfe3062ae7bcdc044bcc15c734ecefb6cf1588691"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_package_unversioned_source_witness.py",
+        "bytes": 3634,
+        "sha256": "1e265611d0dd1602548aa1713136547e1bc28f8f1a1fe7c76168abf1b0141487"
+      },
+      {
+        "path": "observed-source-bytes/candidate/tests/test_guard_supply_chain_evaluator.py",
+        "bytes": 124547,
+        "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a"
+      },
+      {
+        "path": "observed-source-bytes/candidate/uv.lock",
+        "bytes": 961060,
+        "sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+      },
+      {
+        "path": "observed-source-bytes/external/597dffe9ccd42e1bdcdf0485fb437c55eb1bbfdc0637777096261c0ef4fc11fb.py",
+        "bytes": 15500,
+        "sha256": "597dffe9ccd42e1bdcdf0485fb437c55eb1bbfdc0637777096261c0ef4fc11fb"
+      },
+      {
+        "path": "observed-source-bytes/external/b25a80db25476cfd9d58e7c80e8962ac9e39ca628369a1db789a9c81a2261dd9.py",
+        "bytes": 12526,
+        "sha256": "b25a80db25476cfd9d58e7c80e8962ac9e39ca628369a1db789a9c81a2261dd9"
+      },
+      {
+        "path": "observed-source-bytes/external/fd28318a23e7afb8cf81794ab3cb028ddb0148df80a14666cc8bc9320324561e.py",
+        "bytes": 68754,
+        "sha256": "fd28318a23e7afb8cf81794ab3cb028ddb0148df80a14666cc8bc9320324561e"
+      },
+      {
+        "path": "observed-source-retention-baseline.json",
+        "bytes": 5800,
+        "sha256": "41114a042c00d34aa05e4e75a9600934d09fcabb1202c494fcf418b9b06c4cad"
+      },
+      {
+        "path": "observed-source-retention-candidate.json",
+        "bytes": 13314,
+        "sha256": "185e6e642c8ba086be2194d6b42cbdf53899ec37778322de10e507147a8abf2e"
+      },
+      {
+        "path": "package-eval-source-contract-asts.json",
+        "bytes": 1423305,
+        "sha256": "0a7a87d97c2c3206ae5c2330cc8cc31c2e7fec6a2b4a085844d37694260bf25c"
+      },
+      {
+        "path": "package-eval-source-contract.json",
+        "bytes": 114795,
+        "sha256": "51d81a2a13dc4208c3cf5b2283079f59d98b67363bd2fcdb5c854b287e614fcb"
+      },
+      {
+        "path": "package-unversioned-route-loaded-source.json",
+        "bytes": 156398,
+        "sha256": "773a4224dce19cd2721b24ae030bb3e4531e7c31763befe38e046a3870fcfc39"
+      },
+      {
+        "path": "package-unversioned-route.json",
+        "bytes": 23381,
+        "sha256": "73612defa9d6f2e0adb6e4f7cadd271be86a8fcf9b5718e0423e0b0f4d167db0"
+      },
+      {
+        "path": "package-unversioned-route.log",
+        "bytes": 142,
+        "sha256": "49ea2873879298227124a6b7edcd6b3d5bec323f625986fae11d91959d1d7497"
+      },
+      {
+        "path": "physical-line-bounds.json",
+        "bytes": 1807,
+        "sha256": "7467e50f96417a85a3b6e645c46833a218d314e51155081e278848626a3e445b"
+      },
+      {
+        "path": "prior-scoped-lint-currentness.json",
+        "bytes": 530,
+        "sha256": "9549a998f3d6c3e3bcc7773d0fcd6974f086d04de7ffd2bb1008c99248b5f1f6"
+      },
+      {
+        "path": "python-capability-cleanup-loaded-source.json",
+        "bytes": 408,
+        "sha256": "291bfea29e6d8bc96b8eefd02f48f4286f246099c1e5a172934acea0c3fd73a3"
+      },
+      {
+        "path": "python-capability-cleanup.json",
+        "bytes": 12616,
+        "sha256": "6b1e2f547211913ddf1114e83be34223d5da981b6b413c8a7960816aa0a4efef"
+      },
+      {
+        "path": "python-capability-cleanup.log",
+        "bytes": 12616,
+        "sha256": "6b1e2f547211913ddf1114e83be34223d5da981b6b413c8a7960816aa0a4efef"
+      },
+      {
+        "path": "python-hook-semantic-callgraph-loaded-source.json",
+        "bytes": 418,
+        "sha256": "18aef043b4d316cd03779f054abb4bf8a20d058ae4f2e2f909792d68b31e6467"
+      },
+      {
+        "path": "python-hook-semantic-callgraph.json",
+        "bytes": 99,
+        "sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab"
+      },
+      {
+        "path": "python-hook-semantic-callgraph.log",
+        "bytes": 99,
+        "sha256": "37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab"
+      },
+      {
+        "path": "rust-authority-ownership-loaded-source.json",
+        "bytes": 536,
+        "sha256": "a23db56e2e1c384a88b2fa0c47ba3309df075d88529bcfb36b16132a54fd96f3"
+      },
+      {
+        "path": "rust-authority-ownership.json",
+        "bytes": 32031,
+        "sha256": "f8f2192ef5bad415ee227ed65de32d86afa34d748dd9770e594422b8bc8337f5"
+      },
+      {
+        "path": "rust-authority-ownership.log",
+        "bytes": 32031,
+        "sha256": "f8f2192ef5bad415ee227ed65de32d86afa34d748dd9770e594422b8bc8337f5"
+      },
+      {
+        "path": "rust-io-ownership-loaded-source.json",
+        "bytes": 456,
+        "sha256": "0d269652188d67debd299e835a284c11130ccc74b103b7622a61e77d9351946c"
+      },
+      {
+        "path": "rust-io-ownership.json",
+        "bytes": 37706,
+        "sha256": "dcd44a0121180e3a3eeb8b8111aeb9acac3cf286fd93a5ca20c31f84507225e4"
+      },
+      {
+        "path": "rust-io-ownership.log",
+        "bytes": 37706,
+        "sha256": "dcd44a0121180e3a3eeb8b8111aeb9acac3cf286fd93a5ca20c31f84507225e4"
+      },
+      {
+        "path": "rust-migration-tree-hygiene-loaded-source.json",
+        "bytes": 378,
+        "sha256": "38bb290ca939c1c71eed6e6370da031e160b07910ff02ecc83f71032cc5abcb5"
+      },
+      {
+        "path": "rust-migration-tree-hygiene.log",
+        "bytes": 45,
+        "sha256": "132b46f71954d5509417f06eee60e080721ab5472e6d3ff33fdd1254004019c4"
+      },
+      {
+        "path": "rust-pretool-no-python-loaded-source.json",
+        "bytes": 466,
+        "sha256": "fba9c1e921443e91963b9c2bae74d498d94fa1bd9638c472602ca485a3f50a0d"
+      },
+      {
+        "path": "rust-pretool-no-python.json",
+        "bytes": 94,
+        "sha256": "74f987b7b0ad5f13a624bbc2e3202a0ff49711119693fbc987dd250b27ff91c7"
+      },
+      {
+        "path": "rust-pretool-no-python.log",
+        "bytes": 94,
+        "sha256": "74f987b7b0ad5f13a624bbc2e3202a0ff49711119693fbc987dd250b27ff91c7"
+      },
+      {
+        "path": "scoped-error-level-types.json",
+        "bytes": 223,
+        "sha256": "5e8f7cd3eabca79b40aabb80b3d048f3e8940976c2d3c537821adfacf33250e2"
+      },
+      {
+        "path": "scoped-error-level-types.log",
+        "bytes": 254,
+        "sha256": "dbaceb902d896118a302950a24e5582928e98b81f0f78e3e3aecc884af0dc800"
+      },
+      {
+        "path": "source-after.json",
+        "bytes": 1177667,
+        "sha256": "3b3ea5ad29df5f97677d3913739f838405352f1c967bb32a66bfeb8295069d6d"
+      },
+      {
+        "path": "source-before.json",
+        "bytes": 1177667,
+        "sha256": "3b3ea5ad29df5f97677d3913739f838405352f1c967bb32a66bfeb8295069d6d"
+      },
+      {
+        "path": "source-gates-result.json",
+        "bytes": 2083,
+        "sha256": "27de5626319af1e805c38fa4701b491acdee134e4b1fb4a963c9dccbe5ffeb8c"
+      },
+      {
+        "path": "steps.json",
+        "bytes": 40007,
+        "sha256": "fd08381f6a3997fa5102f504ec1b7481fd50cf00754899b1435b8a9dc0aa0510"
+      },
+      {
+        "path": "test-temp-root.json",
+        "bytes": 288,
+        "sha256": "d5cf359d02449861cb90a3216d9d06318169ecd881283ea2e5e0a6f50d238c4c"
+      },
+      {
+        "path": "type-interpreter-origin.json",
+        "bytes": 2957,
+        "sha256": "fb6a7aba2ac2c2009fd99ba84d066864867c27468c5b1df1977b4f7cee9b8af7"
+      },
+      {
+        "path": "type-interpreter-origin.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "uv-binary.json",
+        "bytes": 170,
+        "sha256": "4f0c286330463dc7164ee65ab36d93d235d170c782b863519c6d6d6bef78f4af"
+      },
+      {
+        "path": "uv-version.log",
+        "bytes": 10,
+        "sha256": "48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1"
+      },
+      {
+        "path": "whole-ordered-package-source-proof.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "frame_header": {
+      "base64_chars": 5357956,
+      "files": 128,
+      "gzip_bytes": 4018465,
+      "gzip_sha256": "f3b80d1b90458271c314c7cb9dc301883770c3e1fbdf17bc0d3387b179b8d030",
+      "harness_sha": "38e71e163872c35e1740092d8ac7fb61d30248dd",
+      "parts": 893,
+      "qualification_complete": false,
+      "raw_bytes": 28639279,
+      "raw_sha256": "080af7f6303abf5d3676fe8cd5d79f62d6d473506d52f489b6fb16d582d1fd97",
+      "run_attempt": "1",
+      "run_id": "35446100641",
+      "schema": "pr2974-package-eval-finite-frame.v1",
+      "source_sha": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+      "source_tree": "9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29"
+    }
+  },
+  "source_and_environment": {
+    "full_source_before_after_equal": true,
+    "full_baseline_before_after_equal": true,
+    "complete_environment_before_after_equal": true,
+    "source_before_sha256": "3b3ea5ad29df5f97677d3913739f838405352f1c967bb32a66bfeb8295069d6d",
+    "source_after_sha256": "3b3ea5ad29df5f97677d3913739f838405352f1c967bb32a66bfeb8295069d6d",
+    "baseline_before_sha256": "ad34116f0e5a1b519e21a57f94814c3c42a1737ae9514c23cb85243f9d66c047",
+    "baseline_after_sha256": "ad34116f0e5a1b519e21a57f94814c3c42a1737ae9514c23cb85243f9d66c047",
+    "environment_before_sha256": "6dcb49c76677954015774fba8f5093727ff5f76c3f4218cd230e7a37e02ae2f3",
+    "environment_after_sha256": "6dcb49c76677954015774fba8f5093727ff5f76c3f4218cd230e7a37e02ae2f3",
+    "all_24_original_process_groups_retired": true,
+    "no_complete_descendant_cleanup_claim": true
+  },
+  "complete_original_records": {
+    "job-outcome.json": {
+      "bytes": 44936,
+      "content": "{\n  \"all_original_owned_groups_retired\": true,\n  \"baseline_source_unchanged\": true,\n  \"error\": \"AssertionError('candidate-candidate-only-execution failed; original output and terminal snapshot remain retained')\",\n  \"final_combined_source_requires_fresh_report_and_original_metrics\": true,\n  \"finished_utc\": \"2026-09-19T13:35:58.839950+00:00\",\n  \"harness_sha\": \"38e71e163872c35e1740092d8ac7fb61d30248dd\",\n  \"job\": \"package-eval-source-and-finite\",\n  \"known_corpus_performance_contract\": \"failed\",\n  \"no_complete_descendant_cleanup_certificate\": true,\n  \"overall_qualification_complete\": false,\n  \"passed\": false,\n  \"pre_retention_driver_passed\": false,\n  \"prior_formatted_source_sha\": \"78634b0b3a15f756d0f96aff2d5b174d01501b78\",\n  \"qualification_complete\": false,\n  \"run_attempt\": \"1\",\n  \"run_id\": \"35446100641\",\n  \"scope\": \"Fresh source-only complete ordered original module inverse, 160 actual exports and 923 lexical live facade loads; current exact 20 production files and one source witness checked by the explicitly owned type interpreter, existing source authority gates and actual route attribution. Compare the unchanged 17-case baseline/candidate collections before candidate bodies, collect 12 new seam cases and require all 29 actual cases, raw fixtures, current/prior snapshots and ordered JUnit. Verify the prior scoped Ruff pass on 22 unchanged Python files, run fresh Ruff and format checks on the one type-repaired witness, retain the first 21-file type-check failure with zero finite collection/body credit and actual generated 452-binding report while retaining its original 5-pass/1-performance-failure result. No corpus metric rerun, full-suite, installed, native, performance or PRD acceptance qualification.\",\n  \"source_is_exact_immutable_corrected_commit\": true,\n  \"source_sha\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n  \"source_tree\": \"9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29\",\n  \"source_unchanged\": true,\n  \"started_utc\": \"2026-09-19T13:33:28.326969+00:00\",\n  \"status\": \"finished\",\n  \"steps\": [\n    {\n      \"command\": [\n        \"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_contract.py\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 6972,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2667,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2667,\n        \"pid\": 2667,\n        \"ppid\": 2636,\n        \"session\": 2667,\n        \"start_ticks\": 6972,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 0,\n      \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"name\": \"whole-ordered-package-source-proof\",\n      \"passed\": true,\n      \"pid\": 2667,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 180,\n      \"wall_seconds\": 1.0239450239999996\n    },\n    {\n      \"command\": [\n        \"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\",\n        \"--version\"\n      ],\n      \"cwd\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7074,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2668,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2668,\n        \"pid\": 2668,\n        \"ppid\": 2636,\n        \"session\": 2668,\n        \"start_ticks\": 7074,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 10,\n      \"log_sha256\": \"48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1\",\n      \"name\": \"uv-version\",\n      \"passed\": true,\n      \"pid\": 2668,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 300,\n      \"wall_seconds\": 0.014574314000000754\n    },\n    {\n      \"command\": [\n        \"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3\",\n        \"-I\",\n        \"-B\",\n        \"-m\",\n        \"venv\",\n        \"--copies\",\n        \"--without-pip\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment\"\n      ],\n      \"cwd\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7080,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2669,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2669,\n        \"pid\": 2669,\n        \"ppid\": 2636,\n        \"session\": 2669,\n        \"start_ticks\": 7080,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 0,\n      \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"name\": \"create-validation-environment\",\n      \"passed\": true,\n      \"pid\": 2669,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 90,\n      \"wall_seconds\": 0.17130358200000728\n    },\n    {\n      \"command\": [\n        \"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\",\n        \"--no-config\",\n        \"sync\",\n        \"--frozen\",\n        \"--extra\",\n        \"dev\",\n        \"--python\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7098,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2670,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2670,\n        \"pid\": 2670,\n        \"ppid\": 2636,\n        \"session\": 2670,\n        \"start_ticks\": 7098,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 2516,\n      \"log_sha256\": \"509f488892737d1b3e1ff7759bb42be04a22d86c1df0a8420d72ce2f6bb7e5be\",\n      \"name\": \"frozen-project-install\",\n      \"passed\": true,\n      \"pid\": 2670,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 420,\n      \"wall_seconds\": 5.433241148999997\n    },\n    {\n      \"command\": [\n        \"/opt/hostedtoolcache/uv/0.9.26/x86_64/uv\",\n        \"--no-config\",\n        \"pip\",\n        \"check\",\n        \"--python\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7643,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2682,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2682,\n        \"pid\": 2682,\n        \"ppid\": 2636,\n        \"session\": 2682,\n        \"start_ticks\": 7643,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 186,\n      \"log_sha256\": \"f825b152b9bd236ef172966940ea6ad17a8e870834e06dbca56ea5c486a49021\",\n      \"name\": \"dependency-compatibility\",\n      \"passed\": true,\n      \"pid\": 2682,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 300,\n      \"wall_seconds\": 0.17175516300000027\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/environment.py\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/environment-before.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7661,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2686,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2686,\n        \"pid\": 2686,\n        \"ppid\": 2636,\n        \"session\": 2686,\n        \"start_ticks\": 7661,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 0,\n      \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"name\": \"environment-before\",\n      \"passed\": true,\n      \"pid\": 2686,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 300,\n      \"wall_seconds\": 0.5729978090000003\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"-m\",\n        \"ruff\",\n        \"check\",\n        \"--output-format\",\n        \"json\",\n        \"scripts/qualify_guard_package_unversioned_route.py\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7719,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2688,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2688,\n        \"pid\": 2688,\n        \"ppid\": 2636,\n        \"session\": 2688,\n        \"start_ticks\": 7719,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 2,\n      \"log_sha256\": \"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\n      \"name\": \"changed-witness-ruff-check\",\n      \"passed\": true,\n      \"pid\": 2688,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 90,\n      \"wall_seconds\": 0.12163067800000249\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"-m\",\n        \"ruff\",\n        \"format\",\n        \"--check\",\n        \"scripts/qualify_guard_package_unversioned_route.py\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7731,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2694,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2694,\n        \"pid\": 2694,\n        \"ppid\": 2636,\n        \"session\": 2694,\n        \"start_ticks\": 7731,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 25,\n      \"log_sha256\": \"fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50\",\n      \"name\": \"changed-witness-format-check\",\n      \"passed\": true,\n      \"pid\": 2694,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 90,\n      \"wall_seconds\": 0.12254822500000273\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/type_environment.py\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/type-interpreter-origin.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7744,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2700,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2700,\n        \"pid\": 2700,\n        \"ppid\": 2636,\n        \"session\": 2700,\n        \"start_ticks\": 7744,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 0,\n      \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"name\": \"type-interpreter-origin\",\n      \"passed\": true,\n      \"pid\": 2700,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 60,\n      \"wall_seconds\": 0.32196611799999175\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/basedpyright\",\n        \"--pythonpath\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"--level\",\n        \"error\",\n        \"--outputjson\",\n        \"scripts/qualify_guard_package_unversioned_route.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_archives.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_bundle.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud_failures.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud_fallback.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_dispatch.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_evidence.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_finalize.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_heuristics.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_local_sources.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_status.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_versions.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_other_lockfiles.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_registry.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_results.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_targets.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_transitive.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_uncached.py\",\n        \"src/codex_plugin_scanner/guard/runtime/package_eval_values.py\",\n        \"src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 7776,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2701,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2701,\n        \"pid\": 2701,\n        \"ppid\": 2636,\n        \"session\": 2701,\n        \"start_ticks\": 7776,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 254,\n      \"log_sha256\": \"dbaceb902d896118a302950a24e5582928e98b81f0f78e3e3aecc884af0dc800\",\n      \"name\": \"scoped-error-level-types\",\n      \"passed\": true,\n      \"pid\": 2701,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 300,\n      \"wall_seconds\": 2.4303127130000064\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"-m\",\n        \"ruff\",\n        \"check\",\n        \"src/codex_plugin_scanner/guard/\",\n        \"--select=F401,F811,F841\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 8019,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2711,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2711,\n        \"pid\": 2711,\n        \"ppid\": 2636,\n        \"session\": 2711,\n        \"start_ticks\": 8019,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 19,\n      \"log_sha256\": \"82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18\",\n      \"name\": \"existing-guard-dead-code-gate\",\n      \"passed\": true,\n      \"pid\": 2711,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 180,\n      \"wall_seconds\": 0.37257907000000046\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/python_capability_cleanup_gate.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--json\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/python-capability-cleanup.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 8060,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2717,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2717,\n        \"pid\": 2717,\n        \"ppid\": 2636,\n        \"session\": 2717,\n        \"start_ticks\": 8060,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 12616,\n      \"log_sha256\": \"6b1e2f547211913ddf1114e83be34223d5da981b6b413c8a7960816aa0a4efef\",\n      \"name\": \"python-capability-cleanup\",\n      \"passed\": true,\n      \"pid\": 2717,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 240,\n      \"wall_seconds\": 44.233346197\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/python_hook_semantic_callgraph_gate.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--json\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/python-hook-semantic-callgraph.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 12484,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2725,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2725,\n        \"pid\": 2725,\n        \"ppid\": 2636,\n        \"session\": 2725,\n        \"start_ticks\": 12484,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 99,\n      \"log_sha256\": \"37de677ad3178e61d62cbd2c3b2a808e40385d26be5b5ae6b3ecc404b76285ab\",\n      \"name\": \"python-hook-semantic-callgraph\",\n      \"passed\": true,\n      \"pid\": 2725,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 240,\n      \"wall_seconds\": 2.9289270909999914\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/rust_io_ownership_gate.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--json\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/rust-io-ownership.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 12777,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2726,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2726,\n        \"pid\": 2726,\n        \"ppid\": 2636,\n        \"session\": 2726,\n        \"start_ticks\": 12777,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 37706,\n      \"log_sha256\": \"dcd44a0121180e3a3eeb8b8111aeb9acac3cf286fd93a5ca20c31f84507225e4\",\n      \"name\": \"rust-io-ownership\",\n      \"passed\": true,\n      \"pid\": 2726,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 240,\n      \"wall_seconds\": 25.090188382000008\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/rust_authority_ownership_gate.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--json\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/rust-authority-ownership.json\",\n        \"--base-ref\",\n        \"44353b20262f1ca56b56204f4c764b047710454f\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 15286,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2731,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2731,\n        \"pid\": 2731,\n        \"ppid\": 2636,\n        \"session\": 2731,\n        \"start_ticks\": 15286,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 32031,\n      \"log_sha256\": \"f8f2192ef5bad415ee227ed65de32d86afa34d748dd9770e594422b8bc8337f5\",\n      \"name\": \"rust-authority-ownership\",\n      \"passed\": true,\n      \"pid\": 2731,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 240,\n      \"wall_seconds\": 5.640543081000004\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/rust_pretool_no_python_gate.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--json\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/rust-pretool-no-python.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 15850,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2737,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2737,\n        \"pid\": 2737,\n        \"ppid\": 2636,\n        \"session\": 2737,\n        \"start_ticks\": 15850,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 94,\n      \"log_sha256\": \"74f987b7b0ad5f13a624bbc2e3202a0ff49711119693fbc987dd250b27ff91c7\",\n      \"name\": \"rust-pretool-no-python\",\n      \"passed\": true,\n      \"pid\": 2737,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 240,\n      \"wall_seconds\": 2.1279793350000205\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/ci/rust_migration_tree_hygiene.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--self-test\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 16063,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2739,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2739,\n        \"pid\": 2739,\n        \"ppid\": 2636,\n        \"session\": 2739,\n        \"start_ticks\": 16063,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 45,\n      \"log_sha256\": \"132b46f71954d5509417f06eee60e080721ab5472e6d3ff33fdd1254004019c4\",\n      \"name\": \"rust-migration-tree-hygiene\",\n      \"passed\": true,\n      \"pid\": 2739,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 180,\n      \"wall_seconds\": 0.17208441599998991\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/source_entry.py\",\n        \"/home/runner/work/hol-guard/hol-guard/source/scripts/qualify_guard_package_unversioned_route.py\",\n        \"--source-root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--output\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-unversioned-route.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 16081,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2740,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2740,\n        \"pid\": 2740,\n        \"ppid\": 2636,\n        \"session\": 2740,\n        \"start_ticks\": 16081,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 142,\n      \"log_sha256\": \"49ea2873879298227124a6b7edcd6b3d5bec323f625986fae11d91959d1d7497\",\n      \"name\": \"package-unversioned-route\",\n      \"passed\": true,\n      \"pid\": 2740,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 180,\n      \"wall_seconds\": 4.332293181000011\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/baseline\",\n        \"--manifest\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collection-manifest.json\",\n        \"--source-proof\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-eval-source-contract.json\",\n        \"--corpus-provenance\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/corpus-provenance.json\",\n        \"--side\",\n        \"baseline\",\n        \"--lane\",\n        \"package_eval\",\n        \"--cases\",\n        \"existing\",\n        \"--snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/baseline-existing-collection.json\",\n        \"--basetemp\",\n        \"/tmp/pr2974-package-eval-tests-ps46iedi/baseline-existing-collection\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/baseline\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 16519,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 2802,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 2802,\n        \"pid\": 2802,\n        \"ppid\": 2636,\n        \"session\": 2802,\n        \"start_ticks\": 16519,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 2095,\n      \"log_sha256\": \"9104676ab640457a8be1f49b4eb5710d42dafa6230b9058b6966a0a0a82f4e2c\",\n      \"name\": \"baseline-existing-collection\",\n      \"passed\": true,\n      \"pid\": 2802,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 480,\n      \"wall_seconds\": 11.94964628400001\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--manifest\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collection-manifest.json\",\n        \"--source-proof\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-eval-source-contract.json\",\n        \"--corpus-provenance\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/corpus-provenance.json\",\n        \"--side\",\n        \"candidate\",\n        \"--lane\",\n        \"package_eval\",\n        \"--cases\",\n        \"existing\",\n        \"--snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-existing-collection.json\",\n        \"--basetemp\",\n        \"/tmp/pr2974-package-eval-tests-ps46iedi/candidate-existing-collection\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 17717,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 4376,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 4376,\n        \"pid\": 4376,\n        \"ppid\": 2636,\n        \"session\": 4376,\n        \"start_ticks\": 17717,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 2095,\n      \"log_sha256\": \"eb761e21618dfc0d0991092a44dcb6b630c018e22a872964c5e89dbdb2016fd7\",\n      \"name\": \"candidate-existing-collection\",\n      \"passed\": true,\n      \"pid\": 4376,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 480,\n      \"wall_seconds\": 8.643944392999998\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--manifest\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collection-manifest.json\",\n        \"--source-proof\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-eval-source-contract.json\",\n        \"--corpus-provenance\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/corpus-provenance.json\",\n        \"--side\",\n        \"candidate\",\n        \"--lane\",\n        \"package_eval\",\n        \"--cases\",\n        \"candidate-only\",\n        \"--snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-candidate-only-collection.json\",\n        \"--basetemp\",\n        \"/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-collection\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 18586,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 5970,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 5970,\n        \"pid\": 5970,\n        \"ppid\": 2636,\n        \"session\": 5970,\n        \"start_ticks\": 18586,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 1642,\n      \"log_sha256\": \"e4f96ab79e9f16c39b33042417b7ee0835b54475e40278ffb0f1ff1031fc1dad\",\n      \"name\": \"candidate-candidate-only-collection\",\n      \"passed\": true,\n      \"pid\": 5970,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 480,\n      \"wall_seconds\": 7.443258565000008\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--manifest\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collection-manifest.json\",\n        \"--source-proof\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-eval-source-contract.json\",\n        \"--corpus-provenance\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/corpus-provenance.json\",\n        \"--side\",\n        \"candidate\",\n        \"--lane\",\n        \"package_eval\",\n        \"--cases\",\n        \"existing\",\n        \"--snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-existing-execution.json\",\n        \"--basetemp\",\n        \"/tmp/pr2974-package-eval-tests-ps46iedi/candidate-existing-execution\",\n        \"--run\",\n        \"--junit\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-existing-execution.xml\",\n        \"--prior-snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-existing-collection.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 19333,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 7441,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 7441,\n        \"pid\": 7441,\n        \"ppid\": 2636,\n        \"session\": 7441,\n        \"start_ticks\": 19333,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 100,\n      \"log_sha256\": \"cc74522721a22215f1054ac28050e88b58db6aafe572cf67a02a3dc5be5022d6\",\n      \"name\": \"candidate-existing-execution\",\n      \"passed\": true,\n      \"pid\": 7441,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 900,\n      \"wall_seconds\": 17.261076043999992\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\",\n        \"--root\",\n        \"/home/runner/work/hol-guard/hol-guard/source\",\n        \"--manifest\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collection-manifest.json\",\n        \"--source-proof\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/package-eval-source-contract.json\",\n        \"--corpus-provenance\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/corpus-provenance.json\",\n        \"--side\",\n        \"candidate\",\n        \"--lane\",\n        \"package_eval\",\n        \"--cases\",\n        \"candidate-only\",\n        \"--snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-candidate-only-execution.json\",\n        \"--basetemp\",\n        \"/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution\",\n        \"--run\",\n        \"--junit\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-candidate-only-execution.xml\",\n        \"--prior-snapshot\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/candidate-candidate-only-collection.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 21063,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 9043,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 9043,\n        \"pid\": 9043,\n        \"ppid\": 2636,\n        \"session\": 9043,\n        \"start_ticks\": 21063,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 4853,\n      \"log_sha256\": \"aa81e8af3ccca3f2ab5d2c3295567cb5deb353c2eb8fe82f4edf6eec1518b75b\",\n      \"name\": \"candidate-candidate-only-execution\",\n      \"passed\": false,\n      \"pid\": 9043,\n      \"returncode\": 1,\n      \"timed_out\": false,\n      \"timeout_seconds\": 900,\n      \"wall_seconds\": 7.741772176000012\n    },\n    {\n      \"command\": [\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n        \"-I\",\n        \"-B\",\n        \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/environment.py\",\n        \"/home/runner/work/_temp/pr2974-package-eval-finite/report/environment-after.json\"\n      ],\n      \"cwd\": \"/home/runner/work/hol-guard/hol-guard/source\",\n      \"group_cleanup\": {\n        \"errors\": [],\n        \"leader_start_ticks\": 21843,\n        \"no_live_members_in_original_group\": true,\n        \"passed\": true,\n        \"pgid\": 9389,\n        \"scope\": \"Only this verified original process group; no complete-descendant claim\",\n        \"signals\": [],\n        \"snapshots\": [\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          },\n          {\n            \"inspection_errors\": [],\n            \"live\": [],\n            \"members\": []\n          }\n        ]\n      },\n      \"leader_identity\": {\n        \"pgrp\": 9389,\n        \"pid\": 9389,\n        \"ppid\": 2636,\n        \"session\": 9389,\n        \"start_ticks\": 21843,\n        \"state\": \"R\",\n        \"uid\": 1001\n      },\n      \"log_bytes\": 0,\n      \"log_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"name\": \"environment-after\",\n      \"passed\": true,\n      \"pid\": 9389,\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"timeout_seconds\": 300,\n      \"wall_seconds\": 0.5732524299999966\n    }\n  ],\n  \"workflow_step_outcomes\": {\n    \"BASELINE_CHECKOUT\": \"success\",\n    \"DRIVER_OUTCOME\": \"failure\",\n    \"HARNESS_CHECKOUT\": \"success\",\n    \"SOURCE_CHECKOUT\": \"success\",\n    \"TOOL_INSTALL\": \"success\",\n    \"TOOL_SETUP\": \"success\"\n  }\n}\n",
+      "encoding": "utf-8",
+      "sha256": "2acb5aa4d293a081443666537752e2658559b4a12145f219d7e9c7236cf23657"
+    },
+    "source-gates-result.json": {
+      "bytes": 2083,
+      "content": "{\n  \"all_commands_passed\": true,\n  \"physical_line_bounds\": {\n    \"scripts/qualify_guard_package_unversioned_route.py\": 270,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_archives.py\": 213,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_bundle.py\": 417,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud.py\": 419,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud_failures.py\": 231,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_cloud_fallback.py\": 34,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_dispatch.py\": 231,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_evidence.py\": 183,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_finalize.py\": 111,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_heuristics.py\": 204,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_local_sources.py\": 376,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_status.py\": 235,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_lockfile_versions.py\": 260,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_other_lockfiles.py\": 309,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_registry.py\": 253,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_results.py\": 388,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_targets.py\": 166,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_transitive.py\": 257,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_uncached.py\": 459,\n    \"src/codex_plugin_scanner/guard/runtime/package_eval_values.py\": 171,\n    \"src/codex_plugin_scanner/guard/runtime/supply_chain_package_eval.py\": 471,\n    \"tests/test_guard_package_eval_partition_boundaries.py\": 217,\n    \"tests/test_guard_package_unversioned_source_witness.py\": 88\n  },\n  \"qualification_complete\": false,\n  \"scoped_production_type_files\": 20,\n  \"scoped_python_files\": 23,\n  \"scoped_source_witness_type_files\": 1,\n  \"source_sha\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n  \"source_tree\": \"9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29\"\n}\n",
+      "encoding": "utf-8",
+      "sha256": "27de5626319af1e805c38fa4701b491acdee134e4b1fb4a963c9dccbe5ffeb8c"
+    },
+    "scoped-error-level-types.json": {
+      "bytes": 223,
+      "content": "{\n  \"generalDiagnostics\": [],\n  \"summary\": {\n    \"errorCount\": 0,\n    \"filesAnalyzed\": 21,\n    \"informationCount\": 0,\n    \"timeInSec\": 2.015,\n    \"warningCount\": 2228\n  },\n  \"time\": \"1789824819496\",\n  \"version\": \"1.39.8\"\n}\n",
+      "encoding": "utf-8",
+      "sha256": "5e8f7cd3eabca79b40aabb80b3d048f3e8940976c2d3c537821adfacf33250e2"
+    },
+    "changed-witness-ruff-check.json": {
+      "bytes": 3,
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "changed-witness-format-check.log": {
+      "bytes": 25,
+      "content": "1 file already formatted\n",
+      "encoding": "utf-8",
+      "sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50"
+    },
+    "baseline-candidate-collection-comparison.json": {
+      "bytes": 7499,
+      "content": "{\n  \"actual_baseline_selector_counts\": {\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_caps_aggregate_retained_bytes_and_cleans_blobs\": 1,\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_deadline_fails_before_next_download\": 1,\n    \"tests/test_guard_external_archive_private_binding.py::test_direct_pip_signed_url_preserves_exact_private_download_and_binding_source\": 1,\n    \"tests/test_guard_external_archive_private_binding.py::test_external_archive_private_source_mutation_fails_closed_before_scan\": 1,\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_evaluate_package_request_artifact_preserves_direct_version_when_package_lock_contains_nested_duplicate\": 1,\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_incomplete_lockfile_evidence_contains_hash_and_reason_without_contents\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_canonical_decision_order_prefers_cloud_over_signed_bundle\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_cloud_non_timeout_transport_error_remains_fail_closed\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_external_tarball_requires_approval_without_network\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_applies_policy_rule_override\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_blocks_external_tarball_zip_slip\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_honors_cloud_advisory_block_when_auth_expired\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_posts_cloud_request_and_maps_block_response\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_skips_cached_eval_when_workspace_fingerprint_changes\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_uses_cached_eval_before_network\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evidence_id_distinguishes_versions_and_dependency_paths\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_untrusted_stored_oauth_issuer_cannot_use_bundle_fallback\": 1\n  },\n  \"actual_candidate_selector_counts\": {\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_caps_aggregate_retained_bytes_and_cleans_blobs\": 1,\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_deadline_fails_before_next_download\": 1,\n    \"tests/test_guard_external_archive_private_binding.py::test_direct_pip_signed_url_preserves_exact_private_download_and_binding_source\": 1,\n    \"tests/test_guard_external_archive_private_binding.py::test_external_archive_private_source_mutation_fails_closed_before_scan\": 1,\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_evaluate_package_request_artifact_preserves_direct_version_when_package_lock_contains_nested_duplicate\": 1,\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_incomplete_lockfile_evidence_contains_hash_and_reason_without_contents\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_canonical_decision_order_prefers_cloud_over_signed_bundle\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_cloud_non_timeout_transport_error_remains_fail_closed\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_external_tarball_requires_approval_without_network\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_applies_policy_rule_override\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_blocks_external_tarball_zip_slip\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_honors_cloud_advisory_block_when_auth_expired\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_posts_cloud_request_and_maps_block_response\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_skips_cached_eval_when_workspace_fingerprint_changes\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_uses_cached_eval_before_network\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_evidence_id_distinguishes_versions_and_dependency_paths\": 1,\n    \"tests/test_guard_supply_chain_evaluator.py::test_untrusted_stored_oauth_issuer_cannot_use_bundle_fallback\": 1\n  },\n  \"actual_existing_cases\": 17,\n  \"baseline_commit\": \"44353b20262f1ca56b56204f4c764b047710454f\",\n  \"baseline_snapshot_sha256\": \"84a2d9de9f2f942df65f810d7cca77fe69a14d4977c338a3e1a6b6fac58be8f2\",\n  \"candidate_commit\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n  \"candidate_snapshot_sha256\": \"3daea7cb7b358ed16f3354e615fba151b17cbff861e4b39422e0c267d9d0fa2f\",\n  \"candidate_tree\": \"9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29\",\n  \"function_selectors\": [\n    \"tests/test_guard_supply_chain_evaluator.py::test_canonical_decision_order_prefers_cloud_over_signed_bundle\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_posts_cloud_request_and_maps_block_response\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_uses_cached_eval_before_network\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_skips_cached_eval_when_workspace_fingerprint_changes\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_cloud_non_timeout_transport_error_remains_fail_closed\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_untrusted_stored_oauth_issuer_cannot_use_bundle_fallback\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_applies_policy_rule_override\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_external_tarball_requires_approval_without_network\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_blocks_external_tarball_zip_slip\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evaluate_package_request_artifact_honors_cloud_advisory_block_when_auth_expired\",\n    \"tests/test_guard_supply_chain_evaluator.py::test_evidence_id_distinguishes_versions_and_dependency_paths\",\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_caps_aggregate_retained_bytes_and_cleans_blobs\",\n    \"tests/test_guard_external_archive_approval_boundary.py::test_external_archive_request_deadline_fails_before_next_download\",\n    \"tests/test_guard_external_archive_private_binding.py::test_external_archive_private_source_mutation_fails_closed_before_scan\",\n    \"tests/test_guard_external_archive_private_binding.py::test_direct_pip_signed_url_preserves_exact_private_download_and_binding_source\",\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_evaluate_package_request_artifact_preserves_direct_version_when_package_lock_contains_nested_duplicate\",\n    \"tests/test_guard_js_lockfile_resolution_phase11.py::test_incomplete_lockfile_evidence_contains_hash_and_reason_without_contents\"\n  ],\n  \"ordered_nodes_parameters_marks_fixtures_autouse_globals_equal\": true,\n  \"product_normalization\": \"160 exact original function exports through verified live facade/provider identities\",\n  \"qualification_complete\": false,\n  \"raw_origins_and_asts_retained\": true,\n  \"test_path_normalization\": null\n}\n",
+      "encoding": "utf-8",
+      "sha256": "e68f7d6358e4657191881233849d2e560795aeaf9e02937ac548f0a479112b59"
+    },
+    "candidate-existing-execution.xml": {
+      "bytes": 2997,
+      "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?><testsuites name=\"pytest tests\"><testsuite name=\"pytest\" errors=\"0\" failures=\"0\" skipped=\"0\" tests=\"17\" time=\"10.716\" timestamp=\"2026-09-19T13:35:37.008202+00:00\" hostname=\"runnervmlun5p\"><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_canonical_decision_order_prefers_cloud_over_signed_bundle\" time=\"0.771\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_posts_cloud_request_and_maps_block_response\" time=\"0.943\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_uses_cached_eval_before_network\" time=\"0.787\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_skips_cached_eval_when_workspace_fingerprint_changes\" time=\"0.368\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_cloud_non_timeout_transport_error_remains_fail_closed\" time=\"0.276\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_untrusted_stored_oauth_issuer_cannot_use_bundle_fallback\" time=\"0.277\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_applies_policy_rule_override\" time=\"0.442\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_external_tarball_requires_approval_without_network\" time=\"0.160\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_blocks_external_tarball_zip_slip\" time=\"0.283\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evaluate_package_request_artifact_honors_cloud_advisory_block_when_auth_expired\" time=\"0.489\" /><testcase classname=\"tests.test_guard_supply_chain_evaluator\" name=\"test_evidence_id_distinguishes_versions_and_dependency_paths\" time=\"0.002\" /><testcase classname=\"tests.test_guard_external_archive_approval_boundary\" name=\"test_external_archive_request_caps_aggregate_retained_bytes_and_cleans_blobs\" time=\"0.173\" /><testcase classname=\"tests.test_guard_external_archive_approval_boundary\" name=\"test_external_archive_request_deadline_fails_before_next_download\" time=\"0.002\" /><testcase classname=\"tests.test_guard_external_archive_private_binding\" name=\"test_external_archive_private_source_mutation_fails_closed_before_scan\" time=\"0.272\" /><testcase classname=\"tests.test_guard_external_archive_private_binding\" name=\"test_direct_pip_signed_url_preserves_exact_private_download_and_binding_source\" time=\"0.313\" /><testcase classname=\"tests.test_guard_js_lockfile_resolution_phase11\" name=\"test_evaluate_package_request_artifact_preserves_direct_version_when_package_lock_contains_nested_duplicate\" time=\"0.191\" /><testcase classname=\"tests.test_guard_js_lockfile_resolution_phase11\" name=\"test_incomplete_lockfile_evidence_contains_hash_and_reason_without_contents\" time=\"0.531\" /></testsuite></testsuites>",
+      "encoding": "utf-8",
+      "sha256": "2b4e0cd6b6d66a4e2ef5dff8385370c8624e608c5d20fe7ab692a6bc19ebf400"
+    },
+    "candidate-candidate-only-execution.xml": {
+      "bytes": 6296,
+      "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?><testsuites name=\"pytest tests\"><testsuite name=\"pytest\" errors=\"0\" failures=\"1\" skipped=\"0\" tests=\"12\" time=\"2.973\" timestamp=\"2026-09-19T13:35:54.141606+00:00\" hostname=\"runnervmlun5p\"><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_request_cache_scope_restores_outer_state_and_current_dispatch[False]\" time=\"0.010\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_request_cache_scope_restores_outer_state_and_current_dispatch[True]\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_lockfile_cache_only_admits_complete_results_and_reads_current_parsers\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_download_preserves_captured_timeout_and_current_transport_limits\" time=\"0.001\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_archive_guards_prevent_scan_before_current_authority[False-False-ask-external_tarball_source]\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_archive_guards_prevent_scan_before_current_authority[True-True-block-external_archive_source_integrity_invalid]\" time=\"0.001\" /><testcase classname=\"tests.test_guard_package_eval_partition_boundaries\" name=\"test_nested_cloud_failure_callbacks_read_current_facade_authority\" time=\"0.001\" /><testcase classname=\"tests.test_guard_package_unversioned_source_witness\" name=\"test_source_witness_uses_actual_callable_path_and_binding[evaluate_cached_supply_chain_bundle()]\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_unversioned_source_witness\" name=\"test_source_witness_uses_actual_callable_path_and_binding[_eval.evaluate_cached_supply_chain_bundle()]\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_unversioned_source_witness\" name=\"test_source_witness_excludes_nested_and_comprehension_scopes\" time=\"0.002\"><failure message=\"AssertionError: No bound outer lookup call found for _evaluate_with_bundle\">tmp_path = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\n\n    def test_source_witness_excludes_nested_and_comprehension_scopes(tmp_path):\n        body = (\n            \"def nested(_eval):\\n\"\n            \"    return _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"class Nested:\\n\"\n            \"    value = _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"callback = lambda: _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"values = [_eval.evaluate_cached_supply_chain_bundle() for _eval in ()]\\n\"\n            \"return _eval.evaluate_cached_supply_chain_bundle()\"\n        )\n        facade, _, _ = _caller_facade(tmp_path, body)\n    \n&gt;       records = _bound_lookup_source_records(tmp_path, facade)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_guard_package_unversioned_source_witness.py:65: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nroot = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\nevaluator = &lt;module 'witness_evaluator_facade'&gt;\n\n    def _bound_lookup_source_records(root: Path, evaluator: ModuleType) -&gt; list[dict[str, object]]:\n        root = root.resolve()\n        lookup = evaluator.evaluate_cached_supply_chain_bundle\n        records = []\n        for facade_name in (\"_evaluate_with_bundle\", \"_transitive_lockfile_results\"):\n            function = getattr(evaluator, facade_name)\n            if not isinstance(function, FunctionType):\n                raise TypeError(f\"Source witness requires a function at {facade_name}\")\n            source_path = Path(function.__code__.co_filename).resolve(strict=True)\n            relative_path = source_path.relative_to(root).as_posix()\n            source_bytes = source_path.read_bytes()\n            definitions = [\n                node\n                for node in ast.parse(source_bytes, filename=str(source_path)).body\n                if isinstance(node, ast.FunctionDef)\n                and node.name == function.__code__.co_name\n                and node.lineno == function.__code__.co_firstlineno\n            ]\n            if len(definitions) != 1:\n                raise AssertionError(f\"Cannot bind one outer source function for {facade_name}\")\n            definition = definitions[0]\n            local_names = set(function.__code__.co_varnames + function.__code__.co_cellvars + function.__code__.co_freevars)\n            globals_map = function.__globals__\n            sites = []\n            for call in _outer_function_calls(definition):\n                target = call.func\n                matches = (\n                    isinstance(target, ast.Name) and target.id not in local_names and globals_map.get(target.id) is lookup\n                )\n                if (\n                    isinstance(target, ast.Attribute)\n                    and isinstance(target.value, ast.Name)\n                    and target.value.id not in local_names\n                    and target.attr == \"evaluate_cached_supply_chain_bundle\"\n                    and globals_map.get(target.value.id) is evaluator\n                ):\n                    matches = True\n                if matches:\n                    sites.append(\n                        {\n                            \"line\": call.lineno,\n                            \"column\": call.col_offset,\n                            \"expression\": ast.unparse(target),\n                        }\n                    )\n            if not sites:\n&gt;               raise AssertionError(f\"No bound outer lookup call found for {facade_name}\")\nE               AssertionError: No bound outer lookup call found for _evaluate_with_bundle\n\nscripts/qualify_guard_package_unversioned_route.py:106: AssertionError</failure></testcase><testcase classname=\"tests.test_guard_package_unversioned_source_witness\" name=\"test_source_witness_rejects_locally_shadowed_facade_alias\" time=\"0.002\" /><testcase classname=\"tests.test_guard_package_unversioned_source_witness\" name=\"test_source_witness_rejects_an_unrelated_global_lookup\" time=\"0.002\" /></testsuite></testsuites>",
+      "encoding": "utf-8",
+      "sha256": "c8da9392fac73dc837ec237b211b485955022dfbf3887ac2c6eac61acc7721d9"
+    },
+    "candidate-candidate-only-execution.log": {
+      "bytes": 4853,
+      "content": ".........F..                                                             [100%]\n=================================== FAILURES ===================================\n_________ test_source_witness_excludes_nested_and_comprehension_scopes _________\n\ntmp_path = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\n\n    def test_source_witness_excludes_nested_and_comprehension_scopes(tmp_path):\n        body = (\n            \"def nested(_eval):\\n\"\n            \"    return _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"class Nested:\\n\"\n            \"    value = _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"callback = lambda: _eval.evaluate_cached_supply_chain_bundle()\\n\"\n            \"values = [_eval.evaluate_cached_supply_chain_bundle() for _eval in ()]\\n\"\n            \"return _eval.evaluate_cached_supply_chain_bundle()\"\n        )\n        facade, _, _ = _caller_facade(tmp_path, body)\n    \n>       records = _bound_lookup_source_records(tmp_path, facade)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_guard_package_unversioned_source_witness.py:65: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nroot = PosixPath('/tmp/pr2974-package-eval-tests-ps46iedi/candidate-candidate-only-execution/test_source_witness_excludes_n0')\nevaluator = <module 'witness_evaluator_facade'>\n\n    def _bound_lookup_source_records(root: Path, evaluator: ModuleType) -> list[dict[str, object]]:\n        root = root.resolve()\n        lookup = evaluator.evaluate_cached_supply_chain_bundle\n        records = []\n        for facade_name in (\"_evaluate_with_bundle\", \"_transitive_lockfile_results\"):\n            function = getattr(evaluator, facade_name)\n            if not isinstance(function, FunctionType):\n                raise TypeError(f\"Source witness requires a function at {facade_name}\")\n            source_path = Path(function.__code__.co_filename).resolve(strict=True)\n            relative_path = source_path.relative_to(root).as_posix()\n            source_bytes = source_path.read_bytes()\n            definitions = [\n                node\n                for node in ast.parse(source_bytes, filename=str(source_path)).body\n                if isinstance(node, ast.FunctionDef)\n                and node.name == function.__code__.co_name\n                and node.lineno == function.__code__.co_firstlineno\n            ]\n            if len(definitions) != 1:\n                raise AssertionError(f\"Cannot bind one outer source function for {facade_name}\")\n            definition = definitions[0]\n            local_names = set(function.__code__.co_varnames + function.__code__.co_cellvars + function.__code__.co_freevars)\n            globals_map = function.__globals__\n            sites = []\n            for call in _outer_function_calls(definition):\n                target = call.func\n                matches = (\n                    isinstance(target, ast.Name) and target.id not in local_names and globals_map.get(target.id) is lookup\n                )\n                if (\n                    isinstance(target, ast.Attribute)\n                    and isinstance(target.value, ast.Name)\n                    and target.value.id not in local_names\n                    and target.attr == \"evaluate_cached_supply_chain_bundle\"\n                    and globals_map.get(target.value.id) is evaluator\n                ):\n                    matches = True\n                if matches:\n                    sites.append(\n                        {\n                            \"line\": call.lineno,\n                            \"column\": call.col_offset,\n                            \"expression\": ast.unparse(target),\n                        }\n                    )\n            if not sites:\n>               raise AssertionError(f\"No bound outer lookup call found for {facade_name}\")\nE               AssertionError: No bound outer lookup call found for _evaluate_with_bundle\n\nscripts/qualify_guard_package_unversioned_route.py:106: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_guard_package_unversioned_source_witness.py::test_source_witness_excludes_nested_and_comprehension_scopes - AssertionError: No bound outer lookup call found for _evaluate_with_bundle\n1 failed, 11 passed in 3.02s\nTraceback (most recent call last):\n  File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\", line 575, in <module>\n    main()\n  File \"/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_package_eval_validation/collect_package_contract.py\", line 527, in main\n    assert state[\"exit_code\"] == 0 and state[\"collection_complete\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+      "encoding": "utf-8",
+      "sha256": "aa81e8af3ccca3f2ab5d2c3295567cb5deb353c2eb8fe82f4edf6eec1518b75b"
+    },
+    "package-unversioned-route.json": {
+      "bytes": 23381,
+      "content": "{\n  \"schema\": \"guard-package-unversioned-route-witness-v1\",\n  \"source\": {\n    \"commit\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n    \"source_diff_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"source_status\": []\n  },\n  \"final_source\": {\n    \"commit\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n    \"source_diff_sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"source_status\": []\n  },\n  \"harness_sha256\": \"4c470013b1f731e66aab897d1768ade749720eacba77c847670ab0d2269fe2cd\",\n  \"evaluator_sha256\": \"8633077164efaa8b8b5b13626dc2ee0cf3e98e7bfdadac795b4135be71f9d7dc\",\n  \"evaluator_direct_lookup_call_lines\": [],\n  \"evaluator_bound_lookup_sources\": [\n    {\n      \"facade_binding\": \"_evaluate_with_bundle\",\n      \"function_module\": \"codex_plugin_scanner.guard.runtime.package_eval_bundle\",\n      \"function_name\": \"_evaluate_with_bundle\",\n      \"source_path\": \"src/codex_plugin_scanner/guard/runtime/package_eval_bundle.py\",\n      \"source_sha256\": \"ec0380e5e5556607ed29ffb89b14b86a6595ee1f814acd9d208e65e1b5ba6a38\",\n      \"function_line\": 6,\n      \"function_end_line\": 165,\n      \"lookup_calls\": [\n        {\n          \"line\": 74,\n          \"column\": 18,\n          \"expression\": \"_eval.evaluate_cached_supply_chain_bundle\"\n        }\n      ]\n    },\n    {\n      \"facade_binding\": \"_transitive_lockfile_results\",\n      \"function_module\": \"codex_plugin_scanner.guard.runtime.package_eval_transitive\",\n      \"function_name\": \"_transitive_lockfile_results\",\n      \"source_path\": \"src/codex_plugin_scanner/guard/runtime/package_eval_transitive.py\",\n      \"source_sha256\": \"abb16120e865910af329efb728597fe003e0001c72481e348c413215b10f6320\",\n      \"function_line\": 6,\n      \"function_end_line\": 178,\n      \"lookup_calls\": [\n        {\n          \"line\": 84,\n          \"column\": 22,\n          \"expression\": \"_eval.evaluate_cached_supply_chain_bundle\"\n        }\n      ]\n    }\n  ],\n  \"source_lookup_attribution_scope\": \"Direct calls in current outer function bodies; nested scopes excluded.\",\n  \"python\": \"3.12.13\",\n  \"platform\": \"Linux-6.17.0-1022-azure-x86_64-with-glibc2.39\",\n  \"timing_scope\": \"not collected; functional source-route reachability witness only\",\n  \"api_only_unversioned_decision\": {\n    \"action\": \"block\",\n    \"bundle_version\": \"1747612800000-deadbeef\",\n    \"matched_advisory_ids\": [\n      \"GHSA-vh95-rmgr-6w4m\"\n    ],\n    \"reason\": \"known_malware_or_kev\",\n    \"stale\": false,\n    \"recommended_fix_version\": null,\n    \"emergency_deny\": false\n  },\n  \"api_only_persistence_exercised\": false,\n  \"full_evaluator_cases\": [\n    {\n      \"case\": \"bare_registry_direct\",\n      \"command\": \"npm install minimist\",\n      \"cached_bundle_calls\": [\n        {\n          \"package_name\": \"minimist\",\n          \"package_version\": \"latest\",\n          \"ecosystem\": \"npm\"\n        }\n      ],\n      \"cached_bundle_decisions\": [\n        {\n          \"action\": \"monitor\",\n          \"bundle_version\": \"1747612800000-deadbeef\",\n          \"matched_advisory_ids\": [],\n          \"reason\": \"no_cached_match\",\n          \"stale\": false,\n          \"recommended_fix_version\": null,\n          \"emergency_deny\": false\n        }\n      ],\n      \"result\": {\n        \"decision\": \"block\",\n        \"policy_action\": \"block\",\n        \"enforcement\": \"premium_cloud\",\n        \"entitlement_state\": \"premium\",\n        \"cache_status\": \"cloud-error\",\n        \"workspace_fingerprint\": \"bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71\",\n        \"reasons\": [\n          {\n            \"code\": \"cloud_auth_error\",\n            \"message\": \"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\",\n            \"severity\": \"unknown\",\n            \"source\": \"guard-cloud\"\n          }\n        ],\n        \"packages\": [\n          {\n            \"decision\": \"block\",\n            \"ecosystem\": \"npm\",\n            \"name\": \"minimist\",\n            \"namespace\": null,\n            \"requestedVersion\": \"latest\",\n            \"resolvedVersion\": null,\n            \"recommendedFixVersion\": null,\n            \"riskScore\": null,\n            \"direct\": true,\n            \"dependencyPath\": null,\n            \"packageManager\": \"npm\",\n            \"redactedCommand\": \"npm install minimist\",\n            \"alias\": null,\n            \"sourceIdentity\": null,\n            \"sourceRepository\": null,\n            \"sourceRevisionKind\": null,\n            \"reasons\": [\n              {\n                \"code\": \"cloud_auth_error\",\n                \"message\": \"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\",\n                \"severity\": \"critical\",\n                \"source\": \"guard-local\"\n              }\n            ],\n            \"supportLevel\": \"protected\",\n            \"supportLabel\": \"Protected\"\n          }\n        ],\n        \"matched_rule_id\": null,\n        \"exception_id\": null,\n        \"risk_summary\": \"HOL Guard blocked `minimist@latest` before install.\",\n        \"record_monitor_evidence\": false,\n        \"external_archive_source_hashes\": [],\n        \"user_copy\": {\n          \"title\": \"Critical install blocked\",\n          \"summary\": \"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection. Guard Cloud needs a fresh sign-in before shared review can resume.\",\n          \"next_step\": \"hol-guard connect\",\n          \"dashboard_url\": null,\n          \"harness_message\": \"HOL Guard blocked `minimist@latest` before install. Reason: Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection. Guard kept this request local-only because Guard Cloud authorization expired. Run `hol-guard connect` to restore shared review and sync.\"\n        },\n        \"package_intent_hash\": \"fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4\",\n        \"policy_version\": \"policy-hash-1\",\n        \"bundle_version\": \"1747612800000-deadbeef\",\n        \"refresh_required\": false,\n        \"evidence_ids\": [\n          \"evidence-a74d3040dd136940\"\n        ]\n      },\n      \"persisted_evidence\": [\n        {\n          \"evidence_id\": \"evidence-a74d3040dd136940\",\n          \"action_id\": \"codex:project:package-request:fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4\",\n          \"request_id\": \"fc5291ad8d28502e9be45091904abb7a995443d3e4bdc8ee53ed6c76097adab4\",\n          \"harness\": \"codex\",\n          \"workspace\": \"project\",\n          \"signal_id\": \"block\",\n          \"category\": \"supply-chain\",\n          \"severity\": \"critical\",\n          \"confidence\": 1.0,\n          \"summary\": \"HOL Guard blocked `minimist@latest` before install.\",\n          \"details_json\": \"{\\\"agent_app\\\": \\\"codex\\\", \\\"command_shape\\\": \\\"npm install minimist\\\", \\\"decision\\\": \\\"block\\\", \\\"enforcement\\\": \\\"premium_cloud\\\", \\\"exception_id\\\": null, \\\"harness\\\": \\\"codex\\\", \\\"matched_rule_id\\\": null, \\\"package\\\": {\\\"decision\\\": \\\"block\\\", \\\"ecosystem\\\": \\\"npm\\\", \\\"name\\\": \\\"minimist\\\", \\\"namespace\\\": null, \\\"requestedVersion\\\": \\\"latest\\\", \\\"resolvedVersion\\\": null, \\\"recommendedFixVersion\\\": null, \\\"riskScore\\\": null, \\\"direct\\\": true, \\\"dependencyPath\\\": null, \\\"packageManager\\\": \\\"npm\\\", \\\"redactedCommand\\\": \\\"npm install minimist\\\", \\\"alias\\\": null, \\\"sourceIdentity\\\": null, \\\"sourceRepository\\\": null, \\\"sourceRevisionKind\\\": null, \\\"reasons\\\": [{\\\"code\\\": \\\"cloud_auth_error\\\", \\\"message\\\": \\\"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"guard-local\\\"}], \\\"supportLevel\\\": \\\"protected\\\", \\\"supportLabel\\\": \\\"Protected\\\"}, \\\"package_manager\\\": \\\"npm\\\", \\\"repo_fingerprint\\\": \\\"bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71\\\", \\\"reasons\\\": [{\\\"code\\\": \\\"cloud_auth_error\\\", \\\"message\\\": \\\"Guard Cloud credentials were unavailable. Guard blocked this package request rather than bypassing Cloud package protection.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"guard-local\\\"}], \\\"workspace_fingerprint\\\": \\\"bcbc6e66b6763c89dd21f003efb4a2bf69f27d8478ee1e29f5092c54bcaa6d71\\\"}\",\n          \"action_identity\": null,\n          \"created_at\": \"2026-05-19T00:00:00Z\"\n        }\n      ]\n    },\n    {\n      \"case\": \"lockfile_resolved_direct\",\n      \"command\": \"npm install minimist@^1.2.0\",\n      \"cached_bundle_calls\": [\n        {\n          \"package_name\": \"minimist\",\n          \"package_version\": \"1.2.8\",\n          \"ecosystem\": \"npm\"\n        }\n      ],\n      \"cached_bundle_decisions\": [\n        {\n          \"action\": \"block\",\n          \"bundle_version\": \"1747612800000-deadbeef\",\n          \"matched_advisory_ids\": [\n            \"GHSA-vh95-rmgr-6w4m\"\n          ],\n          \"reason\": \"known_malware_or_kev\",\n          \"stale\": false,\n          \"recommended_fix_version\": null,\n          \"emergency_deny\": false\n        }\n      ],\n      \"result\": {\n        \"decision\": \"block\",\n        \"policy_action\": \"block\",\n        \"enforcement\": \"offline_cached\",\n        \"entitlement_state\": \"premium\",\n        \"cache_status\": \"miss\",\n        \"workspace_fingerprint\": \"58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c\",\n        \"reasons\": [\n          {\n            \"advisoryId\": \"GHSA-vh95-rmgr-6w4m\",\n            \"code\": \"known_malware_or_kev\",\n            \"message\": \"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\",\n            \"severity\": \"critical\",\n            \"source\": \"bundle\"\n          }\n        ],\n        \"packages\": [\n          {\n            \"decision\": \"block\",\n            \"ecosystem\": \"npm\",\n            \"name\": \"minimist\",\n            \"namespace\": null,\n            \"requestedVersion\": \"^1.2.0\",\n            \"resolvedVersion\": \"1.2.8\",\n            \"recommendedFixVersion\": null,\n            \"riskScore\": 980,\n            \"direct\": true,\n            \"dependencyPath\": null,\n            \"packageManager\": \"npm\",\n            \"redactedCommand\": \"npm install minimist@^1.2.0\",\n            \"alias\": null,\n            \"sourceIdentity\": null,\n            \"sourceRepository\": null,\n            \"sourceRevisionKind\": null,\n            \"relatedAdvisoryIds\": [\n              \"GHSA-vh95-rmgr-6w4m\"\n            ],\n            \"reasons\": [\n              {\n                \"advisoryId\": \"GHSA-vh95-rmgr-6w4m\",\n                \"code\": \"known_malware_or_kev\",\n                \"message\": \"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\",\n                \"severity\": \"critical\",\n                \"source\": \"bundle\"\n              }\n            ],\n            \"advisoryAliases\": [\n              \"GHSA-VH95-RMGR-6W4M\",\n              \"CVE-2020-7598\"\n            ],\n            \"supportLevel\": \"protected\",\n            \"supportLabel\": \"Protected\"\n          }\n        ],\n        \"matched_rule_id\": null,\n        \"exception_id\": null,\n        \"risk_summary\": \"HOL Guard blocked `minimist@^1.2.0` before install.\",\n        \"record_monitor_evidence\": false,\n        \"external_archive_source_hashes\": [],\n        \"user_copy\": {\n          \"title\": \"Critical install blocked\",\n          \"summary\": \"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\",\n          \"next_step\": null,\n          \"dashboard_url\": null,\n          \"harness_message\": \"HOL Guard blocked `minimist@^1.2.0` before install. Reason: Cached bundle flagged minimist@1.2.8 from advisory intelligence.\"\n        },\n        \"package_intent_hash\": \"33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b\",\n        \"policy_version\": \"policy-hash-1\",\n        \"bundle_version\": \"1747612800000-deadbeef\",\n        \"refresh_required\": false,\n        \"evidence_ids\": [\n          \"evidence-c5721d0ef667d951\"\n        ]\n      },\n      \"persisted_evidence\": [\n        {\n          \"evidence_id\": \"evidence-c5721d0ef667d951\",\n          \"action_id\": \"codex:project:package-request:33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b\",\n          \"request_id\": \"33d7e26cd307a37affae6dede18f19daf3f20e9803dcee17d030cb53fccea96b\",\n          \"harness\": \"codex\",\n          \"workspace\": \"project\",\n          \"signal_id\": \"block\",\n          \"category\": \"supply-chain\",\n          \"severity\": \"critical\",\n          \"confidence\": 1.0,\n          \"summary\": \"HOL Guard blocked `minimist@^1.2.0` before install.\",\n          \"details_json\": \"{\\\"agent_app\\\": \\\"codex\\\", \\\"command_shape\\\": \\\"npm install minimist@^1.2.0\\\", \\\"decision\\\": \\\"block\\\", \\\"enforcement\\\": \\\"offline_cached\\\", \\\"exception_id\\\": null, \\\"harness\\\": \\\"codex\\\", \\\"matched_rule_id\\\": null, \\\"package\\\": {\\\"decision\\\": \\\"block\\\", \\\"ecosystem\\\": \\\"npm\\\", \\\"name\\\": \\\"minimist\\\", \\\"namespace\\\": null, \\\"requestedVersion\\\": \\\"^1.2.0\\\", \\\"resolvedVersion\\\": \\\"1.2.8\\\", \\\"recommendedFixVersion\\\": null, \\\"riskScore\\\": 980, \\\"direct\\\": true, \\\"dependencyPath\\\": null, \\\"packageManager\\\": \\\"npm\\\", \\\"redactedCommand\\\": \\\"npm install minimist@^1.2.0\\\", \\\"alias\\\": null, \\\"sourceIdentity\\\": null, \\\"sourceRepository\\\": null, \\\"sourceRevisionKind\\\": null, \\\"relatedAdvisoryIds\\\": [\\\"GHSA-vh95-rmgr-6w4m\\\"], \\\"reasons\\\": [{\\\"advisoryId\\\": \\\"GHSA-vh95-rmgr-6w4m\\\", \\\"code\\\": \\\"known_malware_or_kev\\\", \\\"message\\\": \\\"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"bundle\\\"}], \\\"advisoryAliases\\\": [\\\"GHSA-VH95-RMGR-6W4M\\\", \\\"CVE-2020-7598\\\"], \\\"supportLevel\\\": \\\"protected\\\", \\\"supportLabel\\\": \\\"Protected\\\"}, \\\"package_manager\\\": \\\"npm\\\", \\\"repo_fingerprint\\\": \\\"58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c\\\", \\\"reasons\\\": [{\\\"advisoryId\\\": \\\"GHSA-vh95-rmgr-6w4m\\\", \\\"code\\\": \\\"known_malware_or_kev\\\", \\\"message\\\": \\\"Cached bundle flagged minimist@1.2.8 from advisory intelligence.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"bundle\\\"}], \\\"workspace_fingerprint\\\": \\\"58fb4ead9f7b5becb7cadc006b4cbdf59dfc043176fa222098509ddd5c8be50c\\\"}\",\n          \"action_identity\": null,\n          \"created_at\": \"2026-05-19T00:00:00Z\"\n        }\n      ]\n    },\n    {\n      \"case\": \"exact_transitive\",\n      \"command\": \"npm install anchor@1.0.0\",\n      \"cached_bundle_calls\": [\n        {\n          \"package_name\": \"anchor\",\n          \"package_version\": \"1.0.0\",\n          \"ecosystem\": \"npm\"\n        },\n        {\n          \"package_name\": \"minimist\",\n          \"package_version\": \"1.2.8\",\n          \"ecosystem\": \"npm\"\n        }\n      ],\n      \"cached_bundle_decisions\": [\n        {\n          \"action\": \"block\",\n          \"bundle_version\": \"1747612800000-deadbeef\",\n          \"matched_advisory_ids\": [\n            \"GHSA-vh95-rmgr-6w4m\"\n          ],\n          \"reason\": \"known_malware_or_kev\",\n          \"stale\": false,\n          \"recommended_fix_version\": null,\n          \"emergency_deny\": false\n        },\n        {\n          \"action\": \"block\",\n          \"bundle_version\": \"1747612800000-deadbeef\",\n          \"matched_advisory_ids\": [\n            \"GHSA-vh95-rmgr-6w4m\"\n          ],\n          \"reason\": \"known_malware_or_kev\",\n          \"stale\": false,\n          \"recommended_fix_version\": null,\n          \"emergency_deny\": false\n        }\n      ],\n      \"result\": {\n        \"decision\": \"block\",\n        \"policy_action\": \"block\",\n        \"enforcement\": \"offline_cached\",\n        \"entitlement_state\": \"premium\",\n        \"cache_status\": \"miss\",\n        \"workspace_fingerprint\": \"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\",\n        \"reasons\": [\n          {\n            \"advisoryId\": \"GHSA-vh95-rmgr-6w4m\",\n            \"code\": \"known_malware_or_kev\",\n            \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\",\n            \"severity\": \"critical\",\n            \"source\": \"bundle\"\n          },\n          {\n            \"code\": \"transitive_lockfile_match\",\n            \"message\": \"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\",\n            \"severity\": \"critical\",\n            \"source\": \"lockfile\"\n          }\n        ],\n        \"packages\": [\n          {\n            \"decision\": \"block\",\n            \"ecosystem\": \"npm\",\n            \"name\": \"anchor\",\n            \"namespace\": null,\n            \"requestedVersion\": \"1.0.0\",\n            \"resolvedVersion\": \"1.0.0\",\n            \"recommendedFixVersion\": null,\n            \"riskScore\": 980,\n            \"direct\": true,\n            \"dependencyPath\": null,\n            \"packageManager\": \"npm\",\n            \"redactedCommand\": \"npm install anchor@1.0.0\",\n            \"alias\": null,\n            \"sourceIdentity\": null,\n            \"sourceRepository\": null,\n            \"sourceRevisionKind\": null,\n            \"relatedAdvisoryIds\": [\n              \"GHSA-vh95-rmgr-6w4m\"\n            ],\n            \"reasons\": [\n              {\n                \"advisoryId\": \"GHSA-vh95-rmgr-6w4m\",\n                \"code\": \"known_malware_or_kev\",\n                \"message\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\",\n                \"severity\": \"critical\",\n                \"source\": \"bundle\"\n              }\n            ],\n            \"advisoryAliases\": [\n              \"GHSA-VH95-RMGR-6W4M\",\n              \"CVE-2020-7598\"\n            ],\n            \"supportLevel\": \"protected\",\n            \"supportLabel\": \"Protected\"\n          },\n          {\n            \"decision\": \"block\",\n            \"ecosystem\": \"npm\",\n            \"name\": \"minimist\",\n            \"namespace\": null,\n            \"requestedVersion\": \"1.2.8\",\n            \"resolvedVersion\": \"1.2.8\",\n            \"recommendedFixVersion\": null,\n            \"riskScore\": 980,\n            \"direct\": false,\n            \"dependencyPath\": \"holder/node_modules/minimist\",\n            \"packageManager\": \"npm\",\n            \"redactedCommand\": \"npm install anchor@1.0.0\",\n            \"reasons\": [\n              {\n                \"code\": \"transitive_lockfile_match\",\n                \"message\": \"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\",\n                \"severity\": \"critical\",\n                \"source\": \"lockfile\"\n              }\n            ],\n            \"supportLevel\": \"protected\",\n            \"supportLabel\": \"Protected\"\n          }\n        ],\n        \"matched_rule_id\": null,\n        \"exception_id\": null,\n        \"risk_summary\": \"HOL Guard blocked `anchor@1.0.0` before install.\",\n        \"record_monitor_evidence\": false,\n        \"external_archive_source_hashes\": [],\n        \"user_copy\": {\n          \"title\": \"Critical install blocked\",\n          \"summary\": \"Cached bundle flagged anchor@1.0.0 from advisory intelligence. Also flagged: minimist.\",\n          \"next_step\": null,\n          \"dashboard_url\": null,\n          \"harness_message\": \"HOL Guard blocked `anchor@1.0.0` before install. Reason: Cached bundle flagged anchor@1.0.0 from advisory intelligence.\"\n        },\n        \"package_intent_hash\": \"c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55\",\n        \"policy_version\": \"policy-hash-1\",\n        \"bundle_version\": \"1747612800000-deadbeef\",\n        \"refresh_required\": false,\n        \"evidence_ids\": [\n          \"evidence-8345d9dc94432397\",\n          \"evidence-5a381b997e1d3971\"\n        ]\n      },\n      \"persisted_evidence\": [\n        {\n          \"evidence_id\": \"evidence-5a381b997e1d3971\",\n          \"action_id\": \"codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55\",\n          \"request_id\": \"c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55\",\n          \"harness\": \"codex\",\n          \"workspace\": \"project\",\n          \"signal_id\": \"block\",\n          \"category\": \"supply-chain\",\n          \"severity\": \"critical\",\n          \"confidence\": 1.0,\n          \"summary\": \"HOL Guard blocked `anchor@1.0.0` before install.\",\n          \"details_json\": \"{\\\"agent_app\\\": \\\"codex\\\", \\\"command_shape\\\": \\\"npm install anchor@1.0.0\\\", \\\"decision\\\": \\\"block\\\", \\\"enforcement\\\": \\\"offline_cached\\\", \\\"exception_id\\\": null, \\\"harness\\\": \\\"codex\\\", \\\"matched_rule_id\\\": null, \\\"package\\\": {\\\"decision\\\": \\\"block\\\", \\\"ecosystem\\\": \\\"npm\\\", \\\"name\\\": \\\"minimist\\\", \\\"namespace\\\": null, \\\"requestedVersion\\\": \\\"1.2.8\\\", \\\"resolvedVersion\\\": \\\"1.2.8\\\", \\\"recommendedFixVersion\\\": null, \\\"riskScore\\\": 980, \\\"direct\\\": false, \\\"dependencyPath\\\": \\\"holder/node_modules/minimist\\\", \\\"packageManager\\\": \\\"npm\\\", \\\"redactedCommand\\\": \\\"npm install anchor@1.0.0\\\", \\\"reasons\\\": [{\\\"code\\\": \\\"transitive_lockfile_match\\\", \\\"message\\\": \\\"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"lockfile\\\"}], \\\"supportLevel\\\": \\\"protected\\\", \\\"supportLabel\\\": \\\"Protected\\\"}, \\\"package_manager\\\": \\\"npm\\\", \\\"repo_fingerprint\\\": \\\"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\\\", \\\"reasons\\\": [{\\\"code\\\": \\\"transitive_lockfile_match\\\", \\\"message\\\": \\\"Existing lockfile already includes vulnerable minimist@1.2.8 at dependency path holder/node_modules/minimist.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"lockfile\\\"}], \\\"workspace_fingerprint\\\": \\\"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\\\"}\",\n          \"action_identity\": null,\n          \"created_at\": \"2026-05-19T00:00:00Z\"\n        },\n        {\n          \"evidence_id\": \"evidence-8345d9dc94432397\",\n          \"action_id\": \"codex:project:package-request:c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55\",\n          \"request_id\": \"c4abdfdf804843a69ee49cb552bbf25b029013307b3a20e17b1fca53ab78cc55\",\n          \"harness\": \"codex\",\n          \"workspace\": \"project\",\n          \"signal_id\": \"block\",\n          \"category\": \"supply-chain\",\n          \"severity\": \"critical\",\n          \"confidence\": 1.0,\n          \"summary\": \"HOL Guard blocked `anchor@1.0.0` before install.\",\n          \"details_json\": \"{\\\"agent_app\\\": \\\"codex\\\", \\\"command_shape\\\": \\\"npm install anchor@1.0.0\\\", \\\"decision\\\": \\\"block\\\", \\\"enforcement\\\": \\\"offline_cached\\\", \\\"exception_id\\\": null, \\\"harness\\\": \\\"codex\\\", \\\"matched_rule_id\\\": null, \\\"package\\\": {\\\"decision\\\": \\\"block\\\", \\\"ecosystem\\\": \\\"npm\\\", \\\"name\\\": \\\"anchor\\\", \\\"namespace\\\": null, \\\"requestedVersion\\\": \\\"1.0.0\\\", \\\"resolvedVersion\\\": \\\"1.0.0\\\", \\\"recommendedFixVersion\\\": null, \\\"riskScore\\\": 980, \\\"direct\\\": true, \\\"dependencyPath\\\": null, \\\"packageManager\\\": \\\"npm\\\", \\\"redactedCommand\\\": \\\"npm install anchor@1.0.0\\\", \\\"alias\\\": null, \\\"sourceIdentity\\\": null, \\\"sourceRepository\\\": null, \\\"sourceRevisionKind\\\": null, \\\"relatedAdvisoryIds\\\": [\\\"GHSA-vh95-rmgr-6w4m\\\"], \\\"reasons\\\": [{\\\"advisoryId\\\": \\\"GHSA-vh95-rmgr-6w4m\\\", \\\"code\\\": \\\"known_malware_or_kev\\\", \\\"message\\\": \\\"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"bundle\\\"}], \\\"advisoryAliases\\\": [\\\"GHSA-VH95-RMGR-6W4M\\\", \\\"CVE-2020-7598\\\"], \\\"supportLevel\\\": \\\"protected\\\", \\\"supportLabel\\\": \\\"Protected\\\"}, \\\"package_manager\\\": \\\"npm\\\", \\\"repo_fingerprint\\\": \\\"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\\\", \\\"reasons\\\": [{\\\"advisoryId\\\": \\\"GHSA-vh95-rmgr-6w4m\\\", \\\"code\\\": \\\"known_malware_or_kev\\\", \\\"message\\\": \\\"Cached bundle flagged anchor@1.0.0 from advisory intelligence.\\\", \\\"severity\\\": \\\"critical\\\", \\\"source\\\": \\\"bundle\\\"}], \\\"workspace_fingerprint\\\": \\\"8e61146dea75c13486a27ba81d9eb2759aa078e0cf9c1dff5df92e6e50aacd3e\\\"}\",\n          \"action_identity\": null,\n          \"created_at\": \"2026-05-19T00:00:00Z\"\n        }\n      ]\n    }\n  ],\n  \"assertions_passed\": true\n}\n",
+      "encoding": "utf-8",
+      "sha256": "73612defa9d6f2e0adb6e4f7cadd271be86a8fcf9b5718e0423e0b0f4d167db0"
+    },
+    "corpus-binding-currentness.json": {
+      "bytes": 939,
+      "content": "{\n  \"actual_current_bytes_verified_by_full_source_witness\": true,\n  \"baseline\": \"44353b20262f1ca56b56204f4c764b047710454f\",\n  \"bound_source_files\": 452,\n  \"candidate\": \"b81da3dd48dd0315bd17a22ce5f1c221c941c0ee\",\n  \"candidate_tree\": \"9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29\",\n  \"corpus_provenance_sha256\": \"84fdcea3504324cc8e689e63cf0e5034d0fa368edbad76ddcee8010c8f72d880\",\n  \"final_combined_source_requires_fresh_report_and_original_metrics\": true,\n  \"final_report\": {\n    \"bytes\": 56740,\n    \"git_blob\": \"5202b8c004ed746ce0c0cdf6fd312d7a29e16d61\",\n    \"mode\": \"100644\",\n    \"path\": \"tests/fixtures/guard-command-corpus/decision-diff-report.json\",\n    \"sha256\": \"403d785d4bd4cb923534fa65c3e8fe11fe8e7d17efa51996d98913e08a0fff8a\"\n  },\n  \"known_corpus_performance_contract\": \"failed\",\n  \"new_regeneration_or_metric_execution\": false,\n  \"prior_original_contracts\": {\n    \"failed\": 1,\n    \"passed\": 5\n  },\n  \"qualification_complete\": false\n}\n",
+      "encoding": "utf-8",
+      "sha256": "2555b8d1a0c97a00fb59996679551ff58a7bdd89e5a700b05b72ef8fe96e2f23"
+    },
+    "type-interpreter-origin.json": {
+      "bytes": 2957,
+      "content": "{\n  \"basedpyright_explicit_pythonpath\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n  \"basedpyright_search_path_values_not_directly_observed\": true,\n  \"dependencies\": {\n    \"cryptography\": {\n      \"source_files\": [\n        {\n          \"bytes\": 364,\n          \"path\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/lib/python3.12/site-packages/cryptography/__init__.py\",\n          \"relative\": \"cryptography/__init__.py\",\n          \"sha256\": \"9ad86e52b4dde0544e0a9518ad322a863cfab3a4fd763019ad5ee7675a0c9b6a\"\n        },\n        {\n          \"bytes\": 7687,\n          \"path\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/lib/python3.12/site-packages/cryptography/fernet.py\",\n          \"relative\": \"cryptography/fernet.py\",\n          \"sha256\": \"dac2c23ce99e8e13956ee75c4b742c3353c8b876f109e45c46d5a49dc437982a\"\n        }\n      ],\n      \"version\": \"50.0.0\"\n    },\n    \"keyring\": {\n      \"source_files\": [\n        {\n          \"bytes\": 271,\n          \"path\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/lib/python3.12/site-packages/keyring/__init__.py\",\n          \"relative\": \"keyring/__init__.py\",\n          \"sha256\": \"e1b93aea1c4eb30e49461cb2e08f54f1cfd55cafa92eeb01f9807e692f3aa2dd\"\n        },\n        {\n          \"bytes\": 2589,\n          \"path\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/lib/python3.12/site-packages/keyring/backends/macOS/__init__.py\",\n          \"relative\": \"keyring/backends/macOS/__init__.py\",\n          \"sha256\": \"f8220e36fc2b2456deba3eb4a296c2319c38c16b621b21ee182b21a1c77835d8\"\n        }\n      ],\n      \"version\": \"25.7.0\"\n    }\n  },\n  \"dependency_modules_imported_by_this_witness\": [],\n  \"isolated_probe_sys_path\": [\n    \"/opt/hostedtoolcache/Python/3.12.13/x64/lib/python312.zip\",\n    \"/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12\",\n    \"/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/lib-dynload\",\n    \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/lib/python3.12/site-packages\",\n    \"/home/runner/work/hol-guard/hol-guard/source/src\"\n  ],\n  \"passed\": true,\n  \"path_default_python3\": \"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3\",\n  \"path_default_python3_resolved\": \"/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3.12\",\n  \"prior_failed_run_search_path_was_not_observed\": true,\n  \"python_base_prefix\": \"/opt/hostedtoolcache/Python/3.12.13/x64\",\n  \"python_executable\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment/bin/python\",\n  \"python_prefix\": \"/home/runner/work/_temp/pr2974-package-eval-finite/scratch/validation-environment\",\n  \"python_sha256\": \"edcdaf07e49bb241cbccb0f18fdb2c8f2e6e1be36a583fce9fc703894d814238\",\n  \"python_version\": \"3.12.13 (main, Jun 16 2026, 22:05:08) [GCC 13.3.0]\",\n  \"qualification_complete\": false\n}\n",
+      "encoding": "utf-8",
+      "sha256": "fb6a7aba2ac2c2009fd99ba84d066864867c27468c5b1df1977b4f7cee9b8af7"
+    }
+  },
+  "qualification_complete": false,
+  "original_package_corpus_metric_status": "failed",
+  "original_package_corpus_seconds": 62.57964566200002,
+  "original_package_corpus_limit_seconds": 60,
+  "no_corpus_rerun": true
+}

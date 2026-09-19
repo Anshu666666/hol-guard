@@ -1,0 +1,1103 @@
+{
+  "schema": "pr2974-four-partition-formatter-independent-reconstruction-v1",
+  "source_commit": "ad40ceec7c9eb3ee50cffff827db8f54c7522fb1",
+  "input_tree": "2780b299c076a736208efa70ae864d618a856648",
+  "harness_commit": "4e359014d548c61e32ae4ad0606b6c4c3138a2c2",
+  "run_id": 35433509845,
+  "job_id": 105872176663,
+  "attempt": 1,
+  "run_event": "push",
+  "run_branch": "codex/pr2974-partition-format-20260919",
+  "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35433509845",
+  "actual_run_conclusion": "success",
+  "all_actual_job_steps_succeeded": true,
+  "actual_driver_outcome": {
+    "error": null,
+    "finished_utc": "2026-09-19T09:01:33.636668+00:00",
+    "fresh_immutable_formatted_commit_and_validation_required": true,
+    "harness_sha": "4e359014d548c61e32ae4ad0606b6c4c3138a2c2",
+    "job": "four-partition-source-only-formatter-harvest",
+    "mutable_formatter_output_is_not_an_immutable_validation_result": true,
+    "no_complete_descendant_cleanup_certificate": true,
+    "passed": true,
+    "qualification_complete": false,
+    "run_attempt": "1",
+    "run_id": "35433509845",
+    "scope": "Source-only formatter harvest for four disjoint partitions. No project imports, tests, types, package, Gitleaks, installed, native, performance, release, or human-approval qualification. A new immutable formatted source commit and fresh validation remain required.",
+    "source_sha": "ad40ceec7c9eb3ee50cffff827db8f54c7522fb1",
+    "source_tree": "2780b299c076a736208efa70ae864d618a856648",
+    "source_unchanged": true,
+    "started_utc": "2026-09-19T09:01:26.941940+00:00",
+    "status": "finished",
+    "steps": [
+      {
+        "command": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--version"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch",
+        "duration_seconds": 0.008049254000013661,
+        "log_bytes": 10,
+        "log_sha256": "48703788344d7b88ae4c8d6700546005c597a1cecffb8f51088e795cdffebcb1",
+        "name": "uv-version",
+        "passed": true,
+        "pid": 2669,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 30
+      },
+      {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.12.13/x64/bin/python3",
+          "-I",
+          "-B",
+          "-m",
+          "venv",
+          "--copies",
+          "--without-pip",
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch",
+        "duration_seconds": 0.2646720319999929,
+        "log_bytes": 0,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "create-ruff-only-venv",
+        "passed": true,
+        "pid": 2670,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 60
+      },
+      {
+        "command": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--no-config",
+          "pip",
+          "install",
+          "--python",
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv/bin/python",
+          "--no-deps",
+          "--require-hashes",
+          "--requirements",
+          "/home/runner/work/_temp/pr2974-partition-format/report/ruff-locked-requirement.txt"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch",
+        "duration_seconds": 0.6656945359999895,
+        "log_bytes": 191,
+        "log_sha256": "56ef92c8b43630fd8c3df58f5ec4e984fbb30b1882a1af6f0f9008974d8b1d09",
+        "name": "install-hash-locked-ruff-only",
+        "passed": true,
+        "pid": 2671,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 300
+      },
+      {
+        "command": [
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv/bin/python",
+          "-I",
+          "-B",
+          "-c",
+          "\nimport importlib.metadata, json, os, pathlib, platform, stat, sys, hashlib\nassert sys.version.split()[0] == \"3.12.13\", sys.version\nassert sys.prefix != sys.base_prefix\ndistributions = {item.metadata[\"Name\"].lower().replace(\"_\", \"-\"): item.version\n                 for item in importlib.metadata.distributions()}\nassert distributions == {\"ruff\": \"0.15.17\"}, distributions\npaths = {}\nfor name in (\"python\", \"python3\", \"python3.12\", \"ruff\"):\n    path = pathlib.Path(sys.executable).parent / name\n    info = path.lstat()\n    assert stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid()\n    paths[name] = {\"sha256\": hashlib.sha256(path.read_bytes()).hexdigest(),\n                   \"uid\": info.st_uid, \"mode\": oct(stat.S_IMODE(info.st_mode)), \"regular\": True}\nassert not any(name == \"codex_plugin_scanner\" or name.startswith(\"codex_plugin_scanner.\")\n               for name in sys.modules)\nresult = {\"python\": sys.version, \"executable\": sys.executable, \"platform\": platform.platform(),\n          \"distributions\": distributions, \"files\": paths, \"project_imports\": [],\n          \"qualification_complete\": False}\npathlib.Path(sys.argv[1]).write_text(json.dumps(result, sort_keys=True, indent=2) + \"\\n\")\n",
+          "/home/runner/work/_temp/pr2974-partition-format/report/ruff-environment-before.json"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch",
+        "duration_seconds": 0.41524272200001633,
+        "log_bytes": 0,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "ruff-environment-before",
+        "passed": true,
+        "pid": 2679,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 30
+      },
+      {
+        "command": [
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv/bin/ruff",
+          "format",
+          "--",
+          "src/codex_plugin_scanner/guard/adapters/codex.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py",
+          "src/codex_plugin_scanner/guard/protect.py",
+          "src/codex_plugin_scanner/guard/protect_command_parsing.py",
+          "src/codex_plugin_scanner/guard/protect_execution.py",
+          "src/codex_plugin_scanner/guard/protect_receipts.py",
+          "src/codex_plugin_scanner/guard/protect_target_parsing.py",
+          "tests/test_guard_command_extensions.py",
+          "tests/test_guard_command_extensions_runtime.py",
+          "tests/test_guard_command_extensions_runtime_policy.py",
+          "tests/test_guard_protect_partition_boundaries.py",
+          "tests/test_guard_surface_server.py",
+          "tests/test_guard_surface_server_01_dashboard.py",
+          "tests/test_guard_surface_server_02_settings.py",
+          "tests/test_guard_surface_server_03_hook_requests.py",
+          "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+          "tests/test_guard_surface_server_05_hook_capacity.py",
+          "tests/test_guard_surface_server_06_hook_authority.py",
+          "tests/test_guard_surface_server_07_cloud_identity.py",
+          "tests/test_guard_surface_server_08_cloud_recovery.py",
+          "tests/test_guard_surface_server_09_hook_responses_idle.py",
+          "tests/test_guard_surface_server_10_surface_contracts.py",
+          "tests/test_guard_surface_server_11_surface_operations.py",
+          "tests/test_guard_surface_server_12_approval_browser.py",
+          "tests/test_guard_surface_server_13_surface_clients.py",
+          "tests/test_guard_surface_server_14_fast_hook_path.py"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch/formatted-source",
+        "duration_seconds": 0.017318214999988868,
+        "log_bytes": 45,
+        "log_sha256": "513484677fa8d3ca0218c35428f803d38f680c6e11097e46dd1669719c66b51f",
+        "name": "format-exact-32-files",
+        "passed": true,
+        "pid": 2681,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 180
+      },
+      {
+        "command": [
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv/bin/ruff",
+          "format",
+          "--check",
+          "--",
+          "src/codex_plugin_scanner/guard/adapters/codex.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+          "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py",
+          "src/codex_plugin_scanner/guard/protect.py",
+          "src/codex_plugin_scanner/guard/protect_command_parsing.py",
+          "src/codex_plugin_scanner/guard/protect_execution.py",
+          "src/codex_plugin_scanner/guard/protect_receipts.py",
+          "src/codex_plugin_scanner/guard/protect_target_parsing.py",
+          "tests/test_guard_command_extensions.py",
+          "tests/test_guard_command_extensions_runtime.py",
+          "tests/test_guard_command_extensions_runtime_policy.py",
+          "tests/test_guard_protect_partition_boundaries.py",
+          "tests/test_guard_surface_server.py",
+          "tests/test_guard_surface_server_01_dashboard.py",
+          "tests/test_guard_surface_server_02_settings.py",
+          "tests/test_guard_surface_server_03_hook_requests.py",
+          "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+          "tests/test_guard_surface_server_05_hook_capacity.py",
+          "tests/test_guard_surface_server_06_hook_authority.py",
+          "tests/test_guard_surface_server_07_cloud_identity.py",
+          "tests/test_guard_surface_server_08_cloud_recovery.py",
+          "tests/test_guard_surface_server_09_hook_responses_idle.py",
+          "tests/test_guard_surface_server_10_surface_contracts.py",
+          "tests/test_guard_surface_server_11_surface_operations.py",
+          "tests/test_guard_surface_server_12_approval_browser.py",
+          "tests/test_guard_surface_server_13_surface_clients.py",
+          "tests/test_guard_surface_server_14_fast_hook_path.py"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch/formatted-source",
+        "duration_seconds": 0.008126090999979851,
+        "log_bytes": 27,
+        "log_sha256": "6ed8d1cb172b51dddf192664f6e4b2a6c56db357a990dcce6f028de11201bd61",
+        "name": "check-exact-32-formatted-files",
+        "passed": true,
+        "pid": 2690,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 180
+      },
+      {
+        "command": [
+          "/home/runner/work/_temp/pr2974-partition-format/scratch/ruff-venv/bin/python",
+          "-I",
+          "-B",
+          "-c",
+          "\nimport importlib.metadata, json, os, pathlib, platform, stat, sys, hashlib\nassert sys.version.split()[0] == \"3.12.13\", sys.version\nassert sys.prefix != sys.base_prefix\ndistributions = {item.metadata[\"Name\"].lower().replace(\"_\", \"-\"): item.version\n                 for item in importlib.metadata.distributions()}\nassert distributions == {\"ruff\": \"0.15.17\"}, distributions\npaths = {}\nfor name in (\"python\", \"python3\", \"python3.12\", \"ruff\"):\n    path = pathlib.Path(sys.executable).parent / name\n    info = path.lstat()\n    assert stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid()\n    paths[name] = {\"sha256\": hashlib.sha256(path.read_bytes()).hexdigest(),\n                   \"uid\": info.st_uid, \"mode\": oct(stat.S_IMODE(info.st_mode)), \"regular\": True}\nassert not any(name == \"codex_plugin_scanner\" or name.startswith(\"codex_plugin_scanner.\")\n               for name in sys.modules)\nresult = {\"python\": sys.version, \"executable\": sys.executable, \"platform\": platform.platform(),\n          \"distributions\": distributions, \"files\": paths, \"project_imports\": [],\n          \"qualification_complete\": False}\npathlib.Path(sys.argv[1]).write_text(json.dumps(result, sort_keys=True, indent=2) + \"\\n\")\n",
+          "/home/runner/work/_temp/pr2974-partition-format/report/ruff-environment-after.json"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-partition-format/scratch",
+        "duration_seconds": 0.41524908299999197,
+        "log_bytes": 0,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "ruff-environment-after",
+        "passed": true,
+        "pid": 2699,
+        "returncode": 0,
+        "status": "finished",
+        "timed_out": false,
+        "timeout_seconds": 30
+      }
+    ]
+  },
+  "raw_job_log_sha256": "960c7cc9015b645cc8d8efe5e7fcce0446846bafd5093d11ae206bc2109f675a",
+  "projection_framing": {
+    "base64_chars": 96128,
+    "files": 33,
+    "gzip_bytes": 72095,
+    "gzip_sha256": "189f4eb97be1c50fc1cfc7a24f679a71208141f0e42eb02e46cfb5ca6da402e2",
+    "parts": 17,
+    "raw_bytes": 455476,
+    "raw_sha256": "2a3caf6f62a9b85f85be4a7bbaa5ba69d468f30d6fdf3226ea36e01eb319d1d2",
+    "schema": "pr2974-four-partition-format-log-projection-v1",
+    "strict_base64_validated": true,
+    "unique_matching_terminal_frames": true,
+    "contiguous_unique_parts": true,
+    "part_size_limit": 6000,
+    "encoded_size_limit": 350000,
+    "compressed_size_limit": 262144,
+    "raw_size_limit": 1048576
+  },
+  "decoder_source_sha256": "b546b93b0c701cd9173d47cbd8e79f7854d10680546d1e95fcec65c51bacb23e",
+  "decoded_gzip_crc32": "e6a9b2c9",
+  "independently_verified_post_format_tree": "79341eeb7fdb9684685beffbdcf6852d33fd54b6",
+  "full_tracked_files": 4574,
+  "complete_payload_file_count": 33,
+  "complete_payload_sources_cached": true,
+  "exact_changed_paths": [
+    "src/codex_plugin_scanner/guard/adapters/codex.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py"
+  ],
+  "all_nonformat_paths_and_modes_unchanged": true,
+  "all_33_payload_sha256_and_git_blobs_independently_verified": true,
+  "output_files": {
+    "docs/guard/all-harness-hook-review.md": {
+      "sha256": "7f6283de189eebb43b837bef63fc276e615ae33426aec2c1a5b87ab5d638095e",
+      "git_blob": "5d2344fad70c713a07f166ed87bccbbe18235a0c",
+      "mode": "100644",
+      "bytes": 6362,
+      "input_sha256": "7f6283de189eebb43b837bef63fc276e615ae33426aec2c1a5b87ab5d638095e"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex.py": {
+      "sha256": "60da52cc19c9fe98f03375bf805ad57418a75b4d198255e3efa40cf665d1158d",
+      "git_blob": "8128205cdcbdbc5638e5598da9d4b99ab367d16a",
+      "mode": "100644",
+      "bytes": 17012,
+      "input_sha256": "9b7f4f03620a6427079cdba6df6ac49e25754564fdbb53cf758c1e07595f7004"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py": {
+      "sha256": "d3f880d693ef16658ccc76eeacf19785f87ba98b6a20a4b4b53945f9235a3627",
+      "git_blob": "c96d4b32c374315ad69192926abf53554b15527e",
+      "mode": "100644",
+      "bytes": 6717,
+      "input_sha256": "c3a8e0937458c59736c876195e6ba65aefcb9ae17d04dfc98b545549948bb0bc"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py": {
+      "sha256": "d35cd3230683ad47c1d1606843e550f9d3a8e887d0a1321d9ce738b1da75e7ad",
+      "git_blob": "72058a4b3e2c9a5b9e3ab71ca8c8a14dbd51525c",
+      "mode": "100644",
+      "bytes": 8667,
+      "input_sha256": "5d73fe9c12d0a7d7681734c4e4318b18368eedeeebe910a5368d6068a1c72002"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py": {
+      "sha256": "46af588b0f0583e9e1570ebc9397e8093597cc32b35e39aa63f15b10ca31cfd9",
+      "git_blob": "98d15fd63338a321726085e8d99f1c1eab08394d",
+      "mode": "100644",
+      "bytes": 8390,
+      "input_sha256": "3096dc693782c52193a374e73f85ba10156e6556a69c48af22b83ceb5c8781de"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py": {
+      "sha256": "0d45e858055182b7aafe66d7f3b4d7f3222c29b3fef5983b7c24e7f253cf516d",
+      "git_blob": "a8d8a1a2f6cb1a9da31a91a6b73e52be10663da4",
+      "mode": "100644",
+      "bytes": 10206,
+      "input_sha256": "4e050c7eefaf6699ec82200b26f5ed037b1884aaa84b17336dbe4a404ce197ef"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py": {
+      "sha256": "fe227d4c3bdae91612f9ec5ca72ad9a1de30e1c8cf4d0376868791ba601a3219",
+      "git_blob": "ede8e18cd13cf197a03b7cf066cddc30bbb3cd6a",
+      "mode": "100644",
+      "bytes": 14294,
+      "input_sha256": "c36461dfa42733dba6023f52190bc0545c3f75729e80e3d9c14f52449e606ca1"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py": {
+      "sha256": "f7d2d929331059ca2ce88c91da394b0d3b28a3a7e6ab1f61d85f92716711a15d",
+      "git_blob": "fb07ad708b1897b50e30d143257104dd6c9ec653",
+      "mode": "100644",
+      "bytes": 7800,
+      "input_sha256": "c72c044f1167240d5f386222c80b461ecffcec79b58457cefd0c50ce57b13737"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py": {
+      "sha256": "45d16bd4b6f82fd5ffb6e5bde5d91a2458b3dbabdccfbbfc1f2812d4517b21ff",
+      "git_blob": "7258ca9c419587e48a684d1062417387a3736c36",
+      "mode": "100644",
+      "bytes": 9550,
+      "input_sha256": "9a1a2ade6550e90143da88d990a38e98408cb3c5c1f9896f81b8d81d8c0c6072"
+    },
+    "src/codex_plugin_scanner/guard/protect.py": {
+      "sha256": "62a162672b0f526bf75482208c2b88718ed49f96e4401c4826df5d88621a457a",
+      "git_blob": "c21f9120780091601918976739a585ee6e45d7da",
+      "mode": "100644",
+      "bytes": 11869,
+      "input_sha256": "62a162672b0f526bf75482208c2b88718ed49f96e4401c4826df5d88621a457a"
+    },
+    "src/codex_plugin_scanner/guard/protect_command_parsing.py": {
+      "sha256": "343e55b923ed33f6361e00063d13dc897a55d4ad275e598ccab87c6dffc1d4d3",
+      "git_blob": "022f8ef4f436a286d455b4dd520bae061e7d6636",
+      "mode": "100644",
+      "bytes": 11811,
+      "input_sha256": "343e55b923ed33f6361e00063d13dc897a55d4ad275e598ccab87c6dffc1d4d3"
+    },
+    "src/codex_plugin_scanner/guard/protect_execution.py": {
+      "sha256": "afc4e02c51d8b106afeae6f683b0c2b68ecbfafa2e5815fcdff9a24438d11ad2",
+      "git_blob": "c460bf2297b55b1c7dd552b5a29b7a57f1447bc7",
+      "mode": "100644",
+      "bytes": 16416,
+      "input_sha256": "afc4e02c51d8b106afeae6f683b0c2b68ecbfafa2e5815fcdff9a24438d11ad2"
+    },
+    "src/codex_plugin_scanner/guard/protect_receipts.py": {
+      "sha256": "6d59e11e30bb32e10dcd316c4f4d1a5168efca2dc29e9c50b1a47eaa9ec90776",
+      "git_blob": "e7f1f14901c4befc2a2339ec114b24d2fa81a0d1",
+      "mode": "100644",
+      "bytes": 2541,
+      "input_sha256": "6d59e11e30bb32e10dcd316c4f4d1a5168efca2dc29e9c50b1a47eaa9ec90776"
+    },
+    "src/codex_plugin_scanner/guard/protect_target_parsing.py": {
+      "sha256": "6a62038b98eaad1b3fcc24db6011d3e672161200db3339d90df18eed2be38afe",
+      "git_blob": "8895f0ed683f5286e898a90b1a395440db34c53a",
+      "mode": "100644",
+      "bytes": 8123,
+      "input_sha256": "6a62038b98eaad1b3fcc24db6011d3e672161200db3339d90df18eed2be38afe"
+    },
+    "tests/test_guard_command_extensions.py": {
+      "sha256": "c81327d674e09e49d1b111a3a6dab67fbaa56a66e609706873bfeccbc4c193c4",
+      "git_blob": "d281362c94e2c00ee353fcadaa9ced564477f31f",
+      "mode": "100644",
+      "bytes": 14570,
+      "input_sha256": "c81327d674e09e49d1b111a3a6dab67fbaa56a66e609706873bfeccbc4c193c4"
+    },
+    "tests/test_guard_command_extensions_runtime.py": {
+      "sha256": "30a77f8f86a928cd9600eb4c2b081ed571501cea9175e46d123f8eb562b75b61",
+      "git_blob": "5e4602eaa363b747492719ae346b6078bed9af7c",
+      "mode": "100644",
+      "bytes": 7049,
+      "input_sha256": "30a77f8f86a928cd9600eb4c2b081ed571501cea9175e46d123f8eb562b75b61"
+    },
+    "tests/test_guard_command_extensions_runtime_policy.py": {
+      "sha256": "68db528bd1d8d14d46c7df51d81d5bceed5ee68866cb845e8345209910bd5dc7",
+      "git_blob": "ad18d49ecbb8aab50ee0d48d3c9b6abc1b35b4b0",
+      "mode": "100644",
+      "bytes": 16886,
+      "input_sha256": "68db528bd1d8d14d46c7df51d81d5bceed5ee68866cb845e8345209910bd5dc7"
+    },
+    "tests/test_guard_protect_partition_boundaries.py": {
+      "sha256": "1529bbb23e5a39a403cedf696d4c1a7f967a91e76c3013439fcda8d40347a3b9",
+      "git_blob": "60da5a4d0e285dbfa26f7a5e20545b653aaca31e",
+      "mode": "100644",
+      "bytes": 5727,
+      "input_sha256": "1529bbb23e5a39a403cedf696d4c1a7f967a91e76c3013439fcda8d40347a3b9"
+    },
+    "tests/test_guard_surface_server.py": {
+      "sha256": "d244b5e261e9282556cc67fc0c1d084674632faff500022c6f8ce0698284b483",
+      "git_blob": "5696a7738c4ea6ca8705bbeeff2542191021ceb4",
+      "mode": "100644",
+      "bytes": 20817,
+      "input_sha256": "d244b5e261e9282556cc67fc0c1d084674632faff500022c6f8ce0698284b483"
+    },
+    "tests/test_guard_surface_server_01_dashboard.py": {
+      "sha256": "c8fec1debfa654a7ecbbdcbb40fe0e2c3ecd713a33fad7245fa54f66de04083e",
+      "git_blob": "1a7971c1eaea81271083921b9fbdba9e5e0ba96c",
+      "mode": "100644",
+      "bytes": 8880,
+      "input_sha256": "c8fec1debfa654a7ecbbdcbb40fe0e2c3ecd713a33fad7245fa54f66de04083e"
+    },
+    "tests/test_guard_surface_server_02_settings.py": {
+      "sha256": "4d3d245f4f9b93dad55161a2be6dd2252d4867bb630b400a4e309e77055f9887",
+      "git_blob": "857d886f37643b483339882294bfff65f7a3da5a",
+      "mode": "100644",
+      "bytes": 12917,
+      "input_sha256": "4d3d245f4f9b93dad55161a2be6dd2252d4867bb630b400a4e309e77055f9887"
+    },
+    "tests/test_guard_surface_server_03_hook_requests.py": {
+      "sha256": "51a988f5478f0c7a0f6b005cd126eeaa8fb05fb474b18220e2f4792b163b935c",
+      "git_blob": "fe0443f82aa12017d196ba0c32905f5ba6c5d4ac",
+      "mode": "100644",
+      "bytes": 15199,
+      "input_sha256": "51a988f5478f0c7a0f6b005cd126eeaa8fb05fb474b18220e2f4792b163b935c"
+    },
+    "tests/test_guard_surface_server_04_hook_temporary_workspaces.py": {
+      "sha256": "01772b1b8bdf01eb7ff195c41806e7bd490db5e77695dfef95768c18c771c67a",
+      "git_blob": "4c4ae3273c4b760406547f970796c67002280422",
+      "mode": "100644",
+      "bytes": 10781,
+      "input_sha256": "01772b1b8bdf01eb7ff195c41806e7bd490db5e77695dfef95768c18c771c67a"
+    },
+    "tests/test_guard_surface_server_05_hook_capacity.py": {
+      "sha256": "a9b9e145889970c68c387cef827f4fa4914148795771a381c5e28cb90cf3e73a",
+      "git_blob": "5e85a5c6eb79822d633d90f56517aa3e8e97af0b",
+      "mode": "100644",
+      "bytes": 20250,
+      "input_sha256": "a9b9e145889970c68c387cef827f4fa4914148795771a381c5e28cb90cf3e73a"
+    },
+    "tests/test_guard_surface_server_06_hook_authority.py": {
+      "sha256": "814a026e0387a4bfd14ed4741ed16c9969e6d798b1f3e03380a084ce497d7479",
+      "git_blob": "6e7d7eb4f2b52b7b7e0682c9510fd11d7f548280",
+      "mode": "100644",
+      "bytes": 10164,
+      "input_sha256": "814a026e0387a4bfd14ed4741ed16c9969e6d798b1f3e03380a084ce497d7479"
+    },
+    "tests/test_guard_surface_server_07_cloud_identity.py": {
+      "sha256": "8941cee53538006ef14bf1c235e397ba4a8113c469c79d321b0b172c06f02fdf",
+      "git_blob": "18fe791da9a00e971c594711b7e9f949dade969d",
+      "mode": "100644",
+      "bytes": 12059,
+      "input_sha256": "8941cee53538006ef14bf1c235e397ba4a8113c469c79d321b0b172c06f02fdf"
+    },
+    "tests/test_guard_surface_server_08_cloud_recovery.py": {
+      "sha256": "aff97a78d70901f5db52ac1983a1d27bf6f1725ef1668161181952ad138f37dc",
+      "git_blob": "9c621992287f41a7d3e0cd55f6fbefe304655573",
+      "mode": "100644",
+      "bytes": 10406,
+      "input_sha256": "aff97a78d70901f5db52ac1983a1d27bf6f1725ef1668161181952ad138f37dc"
+    },
+    "tests/test_guard_surface_server_09_hook_responses_idle.py": {
+      "sha256": "ebc503dea605f4540f90b02a7c7ab2db42a1cd8792847807bdc2e843f102915a",
+      "git_blob": "32301e09b93fd9df3e604b2f27c54ddd9c83d5e5",
+      "mode": "100644",
+      "bytes": 8758,
+      "input_sha256": "ebc503dea605f4540f90b02a7c7ab2db42a1cd8792847807bdc2e843f102915a"
+    },
+    "tests/test_guard_surface_server_10_surface_contracts.py": {
+      "sha256": "9f7e6c858f23c493e4859b85ba236ac627fccaf2a4972222265672a98294b24e",
+      "git_blob": "c677c9f6f70850d83f9914d5c4b6edf1abb5e43c",
+      "mode": "100644",
+      "bytes": 18564,
+      "input_sha256": "9f7e6c858f23c493e4859b85ba236ac627fccaf2a4972222265672a98294b24e"
+    },
+    "tests/test_guard_surface_server_11_surface_operations.py": {
+      "sha256": "50d6918f8fdb70642a80da3f797fc3d57279ba0b56daa246aa40e059a85de32b",
+      "git_blob": "7125009e87514657589bbc42157c19fbaad43458",
+      "mode": "100644",
+      "bytes": 20934,
+      "input_sha256": "50d6918f8fdb70642a80da3f797fc3d57279ba0b56daa246aa40e059a85de32b"
+    },
+    "tests/test_guard_surface_server_12_approval_browser.py": {
+      "sha256": "f596c737ca75fd787274eaf114df47c29e672be5887481ab6fdf2e58eb3322a7",
+      "git_blob": "c1dde20a5ed3a3436b6cc54e5c08c7591d4aa6ad",
+      "mode": "100644",
+      "bytes": 15419,
+      "input_sha256": "f596c737ca75fd787274eaf114df47c29e672be5887481ab6fdf2e58eb3322a7"
+    },
+    "tests/test_guard_surface_server_13_surface_clients.py": {
+      "sha256": "78ca0b2f1aee9196e504210527547f747ba77f6d90170f07969ba43e0f1ecd0b",
+      "git_blob": "20e7a4ef804a15fa75c119addd1328a378d635de",
+      "mode": "100644",
+      "bytes": 6106,
+      "input_sha256": "78ca0b2f1aee9196e504210527547f747ba77f6d90170f07969ba43e0f1ecd0b"
+    },
+    "tests/test_guard_surface_server_14_fast_hook_path.py": {
+      "sha256": "70c48b5e7221d4718cc80a342fd652a47e94231e0ad3d84bfe8c1ccd5c88d1f7",
+      "git_blob": "4403c8dfb70660a6ecd553b1de63373da6e14232",
+      "mode": "100644",
+      "bytes": 16535,
+      "input_sha256": "70c48b5e7221d4718cc80a342fd652a47e94231e0ad3d84bfe8c1ccd5c88d1f7"
+    }
+  },
+  "actual_32_ast_literal_token_comment_bridges": [
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 17012,
+      "after_sha256": "60da52cc19c9fe98f03375bf805ad57418a75b4d198255e3efa40cf665d1158d",
+      "before_bytes": 16995,
+      "before_sha256": "9b7f4f03620a6427079cdba6df6ac49e25754564fdbb53cf758c1e07595f7004",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "dd1af7c724acbaf39f1f83b2a436b21e39e4b32d3b7524abce93296db99bef61",
+        "before": "dd1af7c724acbaf39f1f83b2a436b21e39e4b32d3b7524abce93296db99bef61"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex.py",
+      "physical_lines": 466,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 6717,
+      "after_sha256": "d3f880d693ef16658ccc76eeacf19785f87ba98b6a20a4b4b53945f9235a3627",
+      "before_bytes": 6681,
+      "before_sha256": "c3a8e0937458c59736c876195e6ba65aefcb9ae17d04dfc98b545549948bb0bc",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "be276b19bf76850f778200f4f4c810d90e8a337a23576d4e54e038d035ae93f6",
+        "before": "be276b19bf76850f778200f4f4c810d90e8a337a23576d4e54e038d035ae93f6"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+      "physical_lines": 179,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 8667,
+      "after_sha256": "d35cd3230683ad47c1d1606843e550f9d3a8e887d0a1321d9ce738b1da75e7ad",
+      "before_bytes": 8662,
+      "before_sha256": "5d73fe9c12d0a7d7681734c4e4318b18368eedeeebe910a5368d6068a1c72002",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "ac1e32ed742ac9c9dc2cfeb38620d685d08f1b24347dc7a26c40a33b7eda5134",
+        "before": "ac1e32ed742ac9c9dc2cfeb38620d685d08f1b24347dc7a26c40a33b7eda5134"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+      "physical_lines": 217,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 8390,
+      "after_sha256": "46af588b0f0583e9e1570ebc9397e8093597cc32b35e39aa63f15b10ca31cfd9",
+      "before_bytes": 8393,
+      "before_sha256": "3096dc693782c52193a374e73f85ba10156e6556a69c48af22b83ceb5c8781de",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "5581aaa373b690201e05b7073def45d7b7a6110b85e64fc3ab3808b569aaffae",
+        "before": "5581aaa373b690201e05b7073def45d7b7a6110b85e64fc3ab3808b569aaffae"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+      "physical_lines": 201,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 10206,
+      "after_sha256": "0d45e858055182b7aafe66d7f3b4d7f3222c29b3fef5983b7c24e7f253cf516d",
+      "before_bytes": 10205,
+      "before_sha256": "4e050c7eefaf6699ec82200b26f5ed037b1884aaa84b17336dbe4a404ce197ef",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "8a3b4e8859c83031c3d1001ba2eeedf0bebddb213677fb071f68d9e29f1419b8",
+        "before": "8a3b4e8859c83031c3d1001ba2eeedf0bebddb213677fb071f68d9e29f1419b8"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+      "physical_lines": 220,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 14294,
+      "after_sha256": "fe227d4c3bdae91612f9ec5ca72ad9a1de30e1c8cf4d0376868791ba601a3219",
+      "before_bytes": 14287,
+      "before_sha256": "c36461dfa42733dba6023f52190bc0545c3f75729e80e3d9c14f52449e606ca1",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "55b5ae0eae2a10572d1fc0a41d12b4cdf564b2855ea88f1950b3135f4707a9b9",
+        "before": "55b5ae0eae2a10572d1fc0a41d12b4cdf564b2855ea88f1950b3135f4707a9b9"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+      "physical_lines": 341,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 7800,
+      "after_sha256": "f7d2d929331059ca2ce88c91da394b0d3b28a3a7e6ab1f61d85f92716711a15d",
+      "before_bytes": 7788,
+      "before_sha256": "c72c044f1167240d5f386222c80b461ecffcec79b58457cefd0c50ce57b13737",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "279e49c5e70f14d262f1e9158e4df51acb4593508d56f04a1b90cdf919cfe2b7",
+        "before": "279e49c5e70f14d262f1e9158e4df51acb4593508d56f04a1b90cdf919cfe2b7"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+      "physical_lines": 154,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 9550,
+      "after_sha256": "45d16bd4b6f82fd5ffb6e5bde5d91a2458b3dbabdccfbbfc1f2812d4517b21ff",
+      "before_bytes": 9522,
+      "before_sha256": "9a1a2ade6550e90143da88d990a38e98408cb3c5c1f9896f81b8d81d8c0c6072",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "5b634f18213aefd9fca0b18228f5cf6a9145f4e47b0c531e397901bd3be502cc",
+        "before": "5b634f18213aefd9fca0b18228f5cf6a9145f4e47b0c531e397901bd3be502cc"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py",
+      "physical_lines": 245,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 11869,
+      "after_sha256": "62a162672b0f526bf75482208c2b88718ed49f96e4401c4826df5d88621a457a",
+      "before_bytes": 11869,
+      "before_sha256": "62a162672b0f526bf75482208c2b88718ed49f96e4401c4826df5d88621a457a",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "0b715bc9df3c3c28a8fae9df8f045ac548565905da452f2aaedf313ddf5af99c",
+        "before": "0b715bc9df3c3c28a8fae9df8f045ac548565905da452f2aaedf313ddf5af99c"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/protect.py",
+      "physical_lines": 353,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 11811,
+      "after_sha256": "343e55b923ed33f6361e00063d13dc897a55d4ad275e598ccab87c6dffc1d4d3",
+      "before_bytes": 11811,
+      "before_sha256": "343e55b923ed33f6361e00063d13dc897a55d4ad275e598ccab87c6dffc1d4d3",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "299a824a5118114dc2ccfdd0aa515947de5e8060f3b61620ea27e0e7acd2b08d",
+        "before": "299a824a5118114dc2ccfdd0aa515947de5e8060f3b61620ea27e0e7acd2b08d"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/protect_command_parsing.py",
+      "physical_lines": 275,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 16416,
+      "after_sha256": "afc4e02c51d8b106afeae6f683b0c2b68ecbfafa2e5815fcdff9a24438d11ad2",
+      "before_bytes": 16416,
+      "before_sha256": "afc4e02c51d8b106afeae6f683b0c2b68ecbfafa2e5815fcdff9a24438d11ad2",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "6b272e00c0a90340a05fb77d243dbfcf61a1bb64ac2f26bd1bce888f02ebdf05",
+        "before": "6b272e00c0a90340a05fb77d243dbfcf61a1bb64ac2f26bd1bce888f02ebdf05"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/protect_execution.py",
+      "physical_lines": 389,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 2541,
+      "after_sha256": "6d59e11e30bb32e10dcd316c4f4d1a5168efca2dc29e9c50b1a47eaa9ec90776",
+      "before_bytes": 2541,
+      "before_sha256": "6d59e11e30bb32e10dcd316c4f4d1a5168efca2dc29e9c50b1a47eaa9ec90776",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "091b0ba3e362716a5354782475085a68092662329ffc88c8489434c8f3d2d6d8",
+        "before": "091b0ba3e362716a5354782475085a68092662329ffc88c8489434c8f3d2d6d8"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/protect_receipts.py",
+      "physical_lines": 56,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 8123,
+      "after_sha256": "6a62038b98eaad1b3fcc24db6011d3e672161200db3339d90df18eed2be38afe",
+      "before_bytes": 8123,
+      "before_sha256": "6a62038b98eaad1b3fcc24db6011d3e672161200db3339d90df18eed2be38afe",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "33c339a46cadb326ba649f638c889af2f2c57c60c53e32f0c4c816fac3ad91a1",
+        "before": "33c339a46cadb326ba649f638c889af2f2c57c60c53e32f0c4c816fac3ad91a1"
+      },
+      "passed": true,
+      "path": "src/codex_plugin_scanner/guard/protect_target_parsing.py",
+      "physical_lines": 233,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 14570,
+      "after_sha256": "c81327d674e09e49d1b111a3a6dab67fbaa56a66e609706873bfeccbc4c193c4",
+      "before_bytes": 14570,
+      "before_sha256": "c81327d674e09e49d1b111a3a6dab67fbaa56a66e609706873bfeccbc4c193c4",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "1feaded975627792a797fa80c7121b5404f0a073aaca32c0e2b46a1550659fbf",
+        "before": "1feaded975627792a797fa80c7121b5404f0a073aaca32c0e2b46a1550659fbf"
+      },
+      "passed": true,
+      "path": "tests/test_guard_command_extensions.py",
+      "physical_lines": 384,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 7049,
+      "after_sha256": "30a77f8f86a928cd9600eb4c2b081ed571501cea9175e46d123f8eb562b75b61",
+      "before_bytes": 7049,
+      "before_sha256": "30a77f8f86a928cd9600eb4c2b081ed571501cea9175e46d123f8eb562b75b61",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "6742b5ce737a8f5df9c466ea3bbdd9c54cb56fbf84a03192bc8408e96d2f5b10",
+        "before": "6742b5ce737a8f5df9c466ea3bbdd9c54cb56fbf84a03192bc8408e96d2f5b10"
+      },
+      "passed": true,
+      "path": "tests/test_guard_command_extensions_runtime.py",
+      "physical_lines": 194,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 16886,
+      "after_sha256": "68db528bd1d8d14d46c7df51d81d5bceed5ee68866cb845e8345209910bd5dc7",
+      "before_bytes": 16886,
+      "before_sha256": "68db528bd1d8d14d46c7df51d81d5bceed5ee68866cb845e8345209910bd5dc7",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "9f4bd869d41f09ba82e56a6ce6ae4b5f3b49728263c7a3749f90f50568bfa944",
+        "before": "9f4bd869d41f09ba82e56a6ce6ae4b5f3b49728263c7a3749f90f50568bfa944"
+      },
+      "passed": true,
+      "path": "tests/test_guard_command_extensions_runtime_policy.py",
+      "physical_lines": 451,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 5727,
+      "after_sha256": "1529bbb23e5a39a403cedf696d4c1a7f967a91e76c3013439fcda8d40347a3b9",
+      "before_bytes": 5727,
+      "before_sha256": "1529bbb23e5a39a403cedf696d4c1a7f967a91e76c3013439fcda8d40347a3b9",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "d2e3ecb11f68db6755d579542a3d7adf6055a385c8c14ab5aba5298fcd717cf3",
+        "before": "d2e3ecb11f68db6755d579542a3d7adf6055a385c8c14ab5aba5298fcd717cf3"
+      },
+      "passed": true,
+      "path": "tests/test_guard_protect_partition_boundaries.py",
+      "physical_lines": 158,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 20817,
+      "after_sha256": "d244b5e261e9282556cc67fc0c1d084674632faff500022c6f8ce0698284b483",
+      "before_bytes": 20817,
+      "before_sha256": "d244b5e261e9282556cc67fc0c1d084674632faff500022c6f8ce0698284b483",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "6fd3d022e8d1ff9318b0bff6bd7fcd65a301f9056889abb14037efc180cb792f",
+        "before": "6fd3d022e8d1ff9318b0bff6bd7fcd65a301f9056889abb14037efc180cb792f"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server.py",
+      "physical_lines": 500,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 8880,
+      "after_sha256": "c8fec1debfa654a7ecbbdcbb40fe0e2c3ecd713a33fad7245fa54f66de04083e",
+      "before_bytes": 8880,
+      "before_sha256": "c8fec1debfa654a7ecbbdcbb40fe0e2c3ecd713a33fad7245fa54f66de04083e",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "de858556eafa29ee9801d7fd8ee96d7b3bcafc9a8d6cf9befbb2e01cd80395e1",
+        "before": "de858556eafa29ee9801d7fd8ee96d7b3bcafc9a8d6cf9befbb2e01cd80395e1"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_01_dashboard.py",
+      "physical_lines": 203,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 12917,
+      "after_sha256": "4d3d245f4f9b93dad55161a2be6dd2252d4867bb630b400a4e309e77055f9887",
+      "before_bytes": 12917,
+      "before_sha256": "4d3d245f4f9b93dad55161a2be6dd2252d4867bb630b400a4e309e77055f9887",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "f70b80f2e30aba5fb0234957c3d6b8b412f17d42fea0ac648d5f8190c6bed286",
+        "before": "f70b80f2e30aba5fb0234957c3d6b8b412f17d42fea0ac648d5f8190c6bed286"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_02_settings.py",
+      "physical_lines": 305,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 15199,
+      "after_sha256": "51a988f5478f0c7a0f6b005cd126eeaa8fb05fb474b18220e2f4792b163b935c",
+      "before_bytes": 15199,
+      "before_sha256": "51a988f5478f0c7a0f6b005cd126eeaa8fb05fb474b18220e2f4792b163b935c",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "25b495190586470813c2b428080edab0a152487c4035ed281d0596e1cf6447da",
+        "before": "25b495190586470813c2b428080edab0a152487c4035ed281d0596e1cf6447da"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_03_hook_requests.py",
+      "physical_lines": 329,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 10781,
+      "after_sha256": "01772b1b8bdf01eb7ff195c41806e7bd490db5e77695dfef95768c18c771c67a",
+      "before_bytes": 10781,
+      "before_sha256": "01772b1b8bdf01eb7ff195c41806e7bd490db5e77695dfef95768c18c771c67a",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "00ce856f3080c6ae3d40167e131481d809cff801b7070277ba17567ffb932706",
+        "before": "00ce856f3080c6ae3d40167e131481d809cff801b7070277ba17567ffb932706"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+      "physical_lines": 269,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 20250,
+      "after_sha256": "a9b9e145889970c68c387cef827f4fa4914148795771a381c5e28cb90cf3e73a",
+      "before_bytes": 20250,
+      "before_sha256": "a9b9e145889970c68c387cef827f4fa4914148795771a381c5e28cb90cf3e73a",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "b722ae07ea75bd22c25368a497a0d1d996e3f777a618cc81e68079e46eea7f04",
+        "before": "b722ae07ea75bd22c25368a497a0d1d996e3f777a618cc81e68079e46eea7f04"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_05_hook_capacity.py",
+      "physical_lines": 481,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 10164,
+      "after_sha256": "814a026e0387a4bfd14ed4741ed16c9969e6d798b1f3e03380a084ce497d7479",
+      "before_bytes": 10164,
+      "before_sha256": "814a026e0387a4bfd14ed4741ed16c9969e6d798b1f3e03380a084ce497d7479",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "e39c76d8172b60a6521704fb4877a9dfe5c159c05499aec61c6aba891284166a",
+        "before": "e39c76d8172b60a6521704fb4877a9dfe5c159c05499aec61c6aba891284166a"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_06_hook_authority.py",
+      "physical_lines": 234,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 12059,
+      "after_sha256": "8941cee53538006ef14bf1c235e397ba4a8113c469c79d321b0b172c06f02fdf",
+      "before_bytes": 12059,
+      "before_sha256": "8941cee53538006ef14bf1c235e397ba4a8113c469c79d321b0b172c06f02fdf",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "0a4e9c0d707990e9ab88b5adfe217d18fa417903abe3b6b8617e4237f3b013e5",
+        "before": "0a4e9c0d707990e9ab88b5adfe217d18fa417903abe3b6b8617e4237f3b013e5"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_07_cloud_identity.py",
+      "physical_lines": 285,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 10406,
+      "after_sha256": "aff97a78d70901f5db52ac1983a1d27bf6f1725ef1668161181952ad138f37dc",
+      "before_bytes": 10406,
+      "before_sha256": "aff97a78d70901f5db52ac1983a1d27bf6f1725ef1668161181952ad138f37dc",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "477841ee6253a71c38c74d4b6acad5e256a5a2ac8d0283060222f719ff4b36bd",
+        "before": "477841ee6253a71c38c74d4b6acad5e256a5a2ac8d0283060222f719ff4b36bd"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_08_cloud_recovery.py",
+      "physical_lines": 252,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 8758,
+      "after_sha256": "ebc503dea605f4540f90b02a7c7ab2db42a1cd8792847807bdc2e843f102915a",
+      "before_bytes": 8758,
+      "before_sha256": "ebc503dea605f4540f90b02a7c7ab2db42a1cd8792847807bdc2e843f102915a",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "1a963e1b69fa026f82a7a8eaeefc00cf587d51bc270d9829449732da6c82c73a",
+        "before": "1a963e1b69fa026f82a7a8eaeefc00cf587d51bc270d9829449732da6c82c73a"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_09_hook_responses_idle.py",
+      "physical_lines": 207,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 18564,
+      "after_sha256": "9f7e6c858f23c493e4859b85ba236ac627fccaf2a4972222265672a98294b24e",
+      "before_bytes": 18564,
+      "before_sha256": "9f7e6c858f23c493e4859b85ba236ac627fccaf2a4972222265672a98294b24e",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "30a6fd7dedd79e90ce987851cb12f127916fe86d7e74a49cd48d410348bb49b9",
+        "before": "30a6fd7dedd79e90ce987851cb12f127916fe86d7e74a49cd48d410348bb49b9"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_10_surface_contracts.py",
+      "physical_lines": 435,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 20934,
+      "after_sha256": "50d6918f8fdb70642a80da3f797fc3d57279ba0b56daa246aa40e059a85de32b",
+      "before_bytes": 20934,
+      "before_sha256": "50d6918f8fdb70642a80da3f797fc3d57279ba0b56daa246aa40e059a85de32b",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "250d55a2c4492105c1218513925f859a22f2f71efaa33c3afdf7e2db4558f7fd",
+        "before": "250d55a2c4492105c1218513925f859a22f2f71efaa33c3afdf7e2db4558f7fd"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_11_surface_operations.py",
+      "physical_lines": 488,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 15419,
+      "after_sha256": "f596c737ca75fd787274eaf114df47c29e672be5887481ab6fdf2e58eb3322a7",
+      "before_bytes": 15419,
+      "before_sha256": "f596c737ca75fd787274eaf114df47c29e672be5887481ab6fdf2e58eb3322a7",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "8f323138739eb6bed99356deb3be2040f5bd3b08f56cde7e256e31bf2a5bb549",
+        "before": "8f323138739eb6bed99356deb3be2040f5bd3b08f56cde7e256e31bf2a5bb549"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_12_approval_browser.py",
+      "physical_lines": 362,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 6106,
+      "after_sha256": "78ca0b2f1aee9196e504210527547f747ba77f6d90170f07969ba43e0f1ecd0b",
+      "before_bytes": 6106,
+      "before_sha256": "78ca0b2f1aee9196e504210527547f747ba77f6d90170f07969ba43e0f1ecd0b",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "e422817931f31c1adec53289703fd97acab93d51304aad88d8f6fd245705052c",
+        "before": "e422817931f31c1adec53289703fd97acab93d51304aad88d8f6fd245705052c"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_13_surface_clients.py",
+      "physical_lines": 157,
+      "within_500_physical_lines": true
+    },
+    {
+      "actual_imports_or_execution_performed": false,
+      "after_bytes": 16535,
+      "after_sha256": "70c48b5e7221d4718cc80a342fd652a47e94231e0ad3d84bfe8c1ccd5c88d1f7",
+      "before_bytes": 16535,
+      "before_sha256": "70c48b5e7221d4718cc80a342fd652a47e94231e0ad3d84bfe8c1ccd5c88d1f7",
+      "canonical_tokens_equal": true,
+      "comments_and_statement_token_anchors_equal": true,
+      "full_ast_equal_including_type_comments_and_type_ignore_line_fields": true,
+      "full_ast_sha256": {
+        "after": "87e3f76fa63adfa3f42a66c6eeac62d6a41998d458c49cea7cef7a8d016022fc",
+        "before": "87e3f76fa63adfa3f42a66c6eeac62d6a41998d458c49cea7cef7a8d016022fc"
+      },
+      "passed": true,
+      "path": "tests/test_guard_surface_server_14_fast_hook_path.py",
+      "physical_lines": 399,
+      "within_500_physical_lines": true
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 10581626667,
+      "name": "pr2974-partition-format-4e359014d548c61e32ae4ad0606b6c4c3138a2c2-35433509845-1",
+      "size_in_bytes": 3580899,
+      "digest": "sha256:dc7ba3629a929fbb6065c8a0abeb35684c67002c8fde6882a27df1e3b785c760",
+      "expired": false
+    }
+  ],
+  "fresh_immutable_formatted_source_commit_pending": true,
+  "project_imports_or_tests_or_types_performed": false,
+  "qualification_complete": false,
+  "scope": "Source-only formatter harvest for four disjoint partitions. No project imports, tests, types, package, Gitleaks, installed, native, performance, release, or human-approval qualification. A new immutable formatted source commit and fresh validation remain required."
+}

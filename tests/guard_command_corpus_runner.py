@@ -190,6 +190,9 @@ def _coordinator_report() -> dict[str, object]:
 
 
 if __name__ == "__main__":
+    from tests.guard_corpus_failure_diagnostic import install_terminal_hook
+
+    install_terminal_hook(globals())
     if len(sys.argv) == 3 and sys.argv[1] == "--worker":
         print(json.dumps(_worker_report(int(sys.argv[2]), EVALUATION_SHARD_COUNT), sort_keys=True))
     elif len(sys.argv) == 1:

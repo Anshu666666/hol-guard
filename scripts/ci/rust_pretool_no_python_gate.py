@@ -6,8 +6,14 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import sys
 from pathlib import Path
 from typing import Final
+
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.ci.python_static_bindings import function_node as bound_function_node
 
 SCHEMA: Final = "hol-guard-rust-pretool-no-python.v3"
 
@@ -25,6 +31,8 @@ def required_tokens(path: Path, tokens: tuple[str, ...]) -> list[str]:
 
 
 def function_node(path: Path, name: str, *, class_name: str | None = None) -> ast.FunctionDef:
+    if path.name == "server.py":
+        return bound_function_node(path, name, class_name)
     tree = ast.parse(read(path), filename=path.as_posix())
     candidates: list[ast.FunctionDef] = []
     for node in tree.body:

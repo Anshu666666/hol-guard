@@ -30,6 +30,7 @@ SELF_PROTECTED_PATHS: Final = frozenset(
         "scripts/ci/hook_data_plane_ownership_contract.py",
         "scripts/ci/native_approval_contract_gate.py",
         "scripts/ci/python_hook_semantic_callgraph_gate.py",
+        "scripts/ci/python_static_bindings.py",
         "scripts/ci/rust_authority_ownership_gate.py",
         "scripts/ci/authority_workflow_contract.py",
         ".github/workflows/publish.yml",
@@ -223,7 +224,6 @@ def _pretool_gate() -> None:
     semantic_graph_failures = _python_semantic_graph_failures(Path("."))
     if semantic_graph_failures:
         raise RuntimeError("; ".join(semantic_graph_failures))
-
     pretool = Path("src/codex_plugin_scanner/guard/native_pretool.py")
     if _python_imports_function(pretool, "command_evaluation", "evaluate_command"):
         raise RuntimeError("native PreToolUse transport imports the Python command evaluator")
@@ -254,7 +254,6 @@ def _pretool_gate() -> None:
         )
         if shadow_only is None:
             raise RuntimeError("PreToolUse unavailable path still falls through to Python")
-
     command_model = Path("src/codex_plugin_scanner/guard/native_command_model.py")
     if command_model.exists():
         model = _read(command_model)

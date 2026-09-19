@@ -115,11 +115,6 @@ export function applyPresentationMode(
 }
 
 export function presentationModeStatus(presentation: ResolvedGuardPresentationMode): string {
-  if (presentation.source === "migrated") {
-    return presentation.explicit
-      ? "Chosen on this device. Your previous display preference was migrated."
-      : "Recommended default. Your previous display preference was migrated.";
-  }
   return presentation.explicit ? "Chosen on this device." : "Recommended default.";
 }
 

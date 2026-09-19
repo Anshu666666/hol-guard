@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.ci.python_static_bindings import StaticBindings
+
 SCHEMA: Final = "hol-guard.python-hook-semantic-callgraph.v1"
 _SRC_PACKAGE = "codex_plugin_scanner.guard"
 _PRODUCTION_FILES: Final = (
@@ -132,7 +137,20 @@ def _load_modules(root: Path) -> dict[str, _Module]:
         path = root / relative
         if not path.is_file():
             continue
-        tree = ast.parse(_read(path), filename=str(path))
+        if path.name == "server.py":
+            resolver = StaticBindings(path)
+            tree = resolver.logical_tree()
+            for dependency, dependency_tree in resolver.trees.items():
+                dependency_name = _full_module_name(root, dependency)
+                modules[dependency_name] = _Module(
+                    dependency_name,
+                    dependency,
+                    dependency_tree,
+                    _functions(dependency_tree),
+                    _imports(dependency_name, dependency_tree),
+                )
+        else:
+            tree = ast.parse(_read(path), filename=str(path))
         name = _full_module_name(root, path)
         modules[name] = _Module(name, path, tree, _functions(tree), _imports(name, tree))
     return modules
@@ -241,17 +259,14 @@ def _reachable_functions(module: _Module, root: ast.AST) -> tuple[ast.AST, ...]:
 def _graph_failures(root: Path) -> list[str]:
     """Return production hook entrypoints that can reach semantic Python code."""
 
+    root = root.resolve()
     modules = _load_modules(root)
     failures: list[str] = []
     for relative in _PRODUCTION_FILES:
-        path = root / relative
-        if not path.is_file():
+        if not (root / relative).is_file():
             failures.append(f"required production hook source is missing: {relative}")
-            continue
-        module = modules.get(_full_module_name(root, path))
-        if module is None:
-            failures.append(f"could not parse production hook source: {relative}")
-            continue
+    for module in modules.values():
+        relative = module.path.relative_to(root).as_posix()
         for child in module.tree.body:
             if isinstance(child, ast.ImportFrom):
                 target = _resolve_import(module.name, child.level, child.module)
@@ -276,6 +291,13 @@ def _graph_failures(root: Path) -> list[str]:
             for failure in _semantic_references(reachable, module.name, module.imports):
                 failures.append(f"{relative}:{function_name}: {failure}")
     return list(dict.fromkeys(failures))
+
+
+def production_source_paths(root: Path) -> tuple[str, ...]:
+    root = root.resolve()
+    resolver = StaticBindings(root / "src/codex_plugin_scanner/guard/daemon/server.py")
+    resolver.logical_tree()
+    return tuple(dict.fromkeys((*_PRODUCTION_FILES, *(p.relative_to(root).as_posix() for p in resolver.trees))))
 
 
 def run(root: Path) -> dict[str, object]:

@@ -241,12 +241,15 @@ const harnessDetectionSource = readFileSync(new URL("./harness-detection.ts", im
 const reviewStatesSource = readFileSync(new URL("./review-states.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("./home-dashboard.tsx", import.meta.url), "utf8");
 const protectionHealthSource = readFileSync(new URL("./protection-health.ts", import.meta.url), "utf8");
-assert.match(appSource, /const handleRepairProtection = useCallback/);
+const appActionsSource = readFileSync(new URL("./use-app-actions.ts", import.meta.url), "utf8");
+assert.match(appSource, /import \{ useAppActions \} from "\.\/use-app-actions"/);
+assert.match(appSource, /\} = useAppActions\(data\)/);
+assert.match(appActionsSource, /const handleRepairProtection = useCallback/);
 assert.match(appSource, /onRepairProtection=\{handleRepairProtection\}/);
 assert.match(readFileSync(new URL("./protection-repair-flow.ts", import.meta.url), "utf8"), /remainingProtectionRepairMessage\(remainingHealth, input\.displayName\)/);
 assert.match(protectionHealthSource, /Command evidence still needs repair/);
 assert.match(protectionHealthSource, /Connect an AI app to start local protection/);
-assert.doesNotMatch(appSource, /app\.checks\.some\(\(check\) => check\.status === "fail"\)/);
+assert.doesNotMatch(appActionsSource, /app\.checks\.some\(\(check\) => check\.status === "fail"\)/);
 
 const evidenceOnlyHealth = normalizeProtectionHealth({
   ...payload(decisionFailure),

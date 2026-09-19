@@ -2,25 +2,35 @@
 
 from __future__ import annotations
 
-import bisect
-import ipaddress
-import json
-import os
-import re
-import stat
-from itertools import pairwise
-from pathlib import Path
-from urllib.parse import urlparse
+# Keep dependency imports and facade bindings in their original evaluation order.
+# ruff: noqa: I001
 
-from ..models import CheckResult, Finding, Severity
-from ..path_support import path_entry_exists, read_text_file_within_root, resolves_within_root
-from .security_failures import ScanInputUnreadableError, unreadable_scan_input_failure
+import bisect as bisect
+import ipaddress as ipaddress
+import json as json
+import os as os
+import re as re
+import stat as stat
+from itertools import pairwise as pairwise
+from pathlib import Path as Path
+from urllib.parse import urlparse as urlparse
+
+from ..models import CheckResult as CheckResult, Finding as Finding, Severity as Severity
+from ..path_support import (
+    path_entry_exists as path_entry_exists,
+    read_text_file_within_root as read_text_file_within_root,
+    resolves_within_root as resolves_within_root,
+)
+from .security_failures import (
+    ScanInputUnreadableError as ScanInputUnreadableError,
+    unreadable_scan_input_failure as unreadable_scan_input_failure,
+)
 from .security_secret_patterns import (
-    DOCUMENTATION_EXTS,
-    SECRET_PATTERNS,
-    SecretPattern,
-    _field_name_map_spans,
-    _is_generated_token_expression,
+    DOCUMENTATION_EXTS as DOCUMENTATION_EXTS,
+    SECRET_PATTERNS as SECRET_PATTERNS,
+    SecretPattern as SecretPattern,
+    _field_name_map_spans as _field_name_map_spans,
+    _is_generated_token_expression as _is_generated_token_expression,
 )
 
 EXCLUDED_DIRS = {"node_modules", ".git", "dist", ".next", "coverage", ".turbo", "__pycache__", ".venv", "venv"}
@@ -138,91 +148,19 @@ class ScanBudgetExceededError(RuntimeError):
     """Raised when analysis would be incomplete because a scan budget was exhausted."""
 
 
-def _raise_walk_error(error: OSError) -> None:
-    reason = error.strerror or type(error).__name__
-    raise ScanInputUnreadableError(f"filesystem traversal failed: {reason}") from error
+from .security_content import _raise_walk_error as _raise_walk_error  # noqa: E402
 
 
-def _scan_all_files(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> list[Path]:
-    """Recursively find all files, skipping excluded dirs."""
-    if files is not None:
-        discovered = []
-        try:
-            for path in files:
-                metadata = path.lstat()
-                if (
-                    stat.S_ISREG(metadata.st_mode)
-                    and path.suffix.lower() not in BINARY_EXTS
-                    and resolves_within_root(plugin_dir, path, require_exists=True)
-                ):
-                    discovered.append(path.resolve(strict=True))
-        except OSError as error:
-            reason = error.strerror or type(error).__name__
-            raise ScanInputUnreadableError(f"explicit scan input unavailable: {reason}") from error
-    else:
-        discovered = []
-        entries_seen = 0
-        try:
-            resolved_root = plugin_dir.resolve(strict=True)
-        except OSError as error:
-            reason = error.strerror or type(error).__name__
-            raise ScanInputUnreadableError(f"plugin directory unavailable: {reason}") from error
-        for root, dirs, names in os.walk(
-            resolved_root,
-            topdown=True,
-            onerror=_raise_walk_error,
-            followlinks=False,
-        ):
-            current = Path(root)
-            depth = len(current.relative_to(resolved_root).parts)
-            if depth > MAX_SCAN_DEPTH:
-                raise ScanBudgetExceededError(f"directory depth exceeded {MAX_SCAN_DEPTH}")
-            dirs[:] = sorted(name for name in dirs if name not in EXCLUDED_DIRS and not (current / name).is_symlink())
-            entries_seen += len(dirs) + len(names)
-            if entries_seen > MAX_SCAN_ENTRIES:
-                raise ScanBudgetExceededError(f"filesystem entries exceeded {MAX_SCAN_ENTRIES}")
-            for name in sorted(names):
-                path = current / name
-                if path.is_symlink() or not path.is_file() or path.suffix.lower() in BINARY_EXTS:
-                    continue
-                if not resolves_within_root(resolved_root, path, require_exists=True):
-                    continue
-                discovered.append(path)
-
-    if len(discovered) > MAX_SCAN_FILES:
-        raise ScanBudgetExceededError(f"scannable files exceeded {MAX_SCAN_FILES}")
-    total_bytes = 0
-    for path in discovered:
-        try:
-            size = path.stat().st_size
-        except OSError:
-            continue
-        if size > MAX_SCAN_FILE_BYTES:
-            raise ScanBudgetExceededError(f"{path.name} exceeded {MAX_SCAN_FILE_BYTES} bytes")
-        total_bytes += size
-        if total_bytes > MAX_SCAN_TOTAL_BYTES:
-            raise ScanBudgetExceededError(f"aggregate input exceeded {MAX_SCAN_TOTAL_BYTES} bytes")
-    return discovered
+from .security_content import _scan_all_files as _scan_all_files  # noqa: E402
 
 
-def _is_example_surface(relative_path: Path) -> bool:
-    path_parts = {part.lower() for part in relative_path.parts}
-    return (
-        relative_path.suffix.lower() in DOCUMENTATION_EXTS
-        or bool(path_parts & EXAMPLE_PATH_HINTS)
-        or bool(TEST_FILE_RE.search(relative_path.name))
-    )
+from .security_secret_detection import _is_example_surface as _is_example_surface  # noqa: E402
 
 
-def _extract_secret_candidate(detector: SecretPattern, match: re.Match[str]) -> str:
-    return match.group(detector.value_group).strip()
+from .security_secret_detection import _extract_secret_candidate as _extract_secret_candidate  # noqa: E402
 
 
-def _normalize_secret_candidate(value: str) -> str:
-    normalized = value.strip().strip("\"'`")
-    if normalized.lower().startswith("bearer "):
-        normalized = normalized[7:].strip()
-    return normalized
+from .security_secret_detection import _normalize_secret_candidate as _normalize_secret_candidate  # noqa: E402
 
 
 _PURE_SHELL_EXPANSION_RE = re.compile(
@@ -233,714 +171,102 @@ _PURE_SHELL_EXPANSION_RE = re.compile(
 _PURE_TEMPLATE_EXPANSION_RE = re.compile(r"^\{\{[^}]+\}\}$")
 
 
-def _looks_like_interpolated_secret(value: str) -> bool:
-    """True only for complete env/template references with no literal payload."""
-    normalized = _normalize_secret_candidate(value)
-    return bool(_PURE_SHELL_EXPANSION_RE.fullmatch(normalized) or _PURE_TEMPLATE_EXPANSION_RE.fullmatch(normalized))
+from .security_secret_detection import _looks_like_interpolated_secret as _looks_like_interpolated_secret  # noqa: E402
 
 
-def _looks_like_placeholder_secret(value: str) -> bool:
-    normalized = _normalize_secret_candidate(value)
-    lowered = normalized.lower()
-    if not normalized:
-        return True
-    if _looks_like_interpolated_secret(normalized) or normalized.startswith(("<", "[")):
-        return True
-    if "..." in normalized or "…" in normalized:
-        return True
-    if lowered.startswith(("your-", "your_", "your", "example-", "sample-", "demo-")):
-        return True
-    if lowered.endswith(("-here", "_here", "example", "sample")):
-        return True
-    if lowered in PLACEHOLDER_MARKERS:
-        return True
-    return bool(re.search(r"(?i)(?:^|[-_])(x{4,}|\*{3,})(?:[-_]|$)", normalized))
+from .security_secret_detection import _looks_like_placeholder_secret as _looks_like_placeholder_secret  # noqa: E402
 
 
-def _normalized_alnum(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", _normalize_secret_candidate(value).lower())
+from .security_secret_detection import _normalized_alnum as _normalized_alnum  # noqa: E402
 
 
-def _ascending_run_stats(value: str) -> tuple[int, int]:
-    if not value:
-        return 0, 0
-    longest = 1
-    current = 1
-    coverage = 0
-    for previous, token in pairwise(value):
-        if ord(token) == ord(previous) + 1:
-            current += 1
-            longest = max(longest, current)
-        else:
-            if current >= 4:
-                coverage += current
-            current = 1
-    if current >= 4:
-        coverage += current
-    return longest, coverage
+from .security_secret_detection import _ascending_run_stats as _ascending_run_stats  # noqa: E402
 
 
-def _provider_payload(value: str) -> tuple[str, int] | None:
-    normalized = _normalize_secret_candidate(value)
-    for pattern, minimum_length in PROVIDER_PREFIX_PATTERNS:
-        match = pattern.fullmatch(normalized)
-        if match:
-            return match.group("payload"), minimum_length
-    return None
+from .security_secret_detection import _provider_payload as _provider_payload  # noqa: E402
 
 
-def _looks_like_synthetic_provider_candidate(value: str) -> bool:
-    provider_payload = _provider_payload(value)
-    if provider_payload is None:
-        return False
-    payload, _minimum_length = provider_payload
-    normalized = _normalized_alnum(payload)
-    if len(normalized) < 8:
-        return False
-    longest_run, coverage = _ascending_run_stats(normalized)
-    return longest_run >= 8 and coverage / len(normalized) >= 0.6
+from .security_secret_detection import (  # noqa: E402
+    _looks_like_synthetic_provider_candidate as _looks_like_synthetic_provider_candidate,
+)
 
 
-def _looks_like_incomplete_provider_candidate(value: str) -> bool:
-    provider_payload = _provider_payload(value)
-    if provider_payload is None:
-        return False
-    payload, minimum_length = provider_payload
-    normalized = _normalized_alnum(payload)
-    return len(normalized) < minimum_length
+from .security_secret_detection import (  # noqa: E402
+    _looks_like_incomplete_provider_candidate as _looks_like_incomplete_provider_candidate,
+)
 
 
-def _looks_like_example_generic_secret(value: str) -> bool:
-    normalized = _normalize_secret_candidate(value).lower()
-    return normalized in EXAMPLE_GENERIC_VALUES
+from .security_secret_detection import _looks_like_example_generic_secret as _looks_like_example_generic_secret  # noqa: E402
 
 
-def _newline_offsets(content: str) -> tuple[int, ...]:
-    return tuple(match.start() for match in re.finditer("\n", content))
+from .security_secret_detection import _newline_offsets as _newline_offsets  # noqa: E402
 
 
-def _line_number_for_offset(content: str, offset: int, offsets: tuple[int, ...] | None = None) -> int:
-    newline_offsets = offsets if offsets is not None else _newline_offsets(content)
-    return bisect.bisect_left(newline_offsets, offset) + 1
+from .security_secret_detection import _line_number_for_offset as _line_number_for_offset  # noqa: E402
 
 
-def _has_illustrative_context(
-    relative_path: Path,
-    content: str,
-    offset: int,
-    *,
-    lines: list[str] | None = None,
-    offsets: tuple[int, ...] | None = None,
-) -> bool:
-    if {part.lower() for part in relative_path.parts} & ILLUSTRATIVE_PATH_HINTS:
-        return True
-    context_lines = lines if lines is not None else content.splitlines()
-    line_number = _line_number_for_offset(content, offset, offsets)
-    start = max(0, line_number - 3)
-    end = min(len(context_lines), line_number + 2)
-    context = "\n".join(context_lines[start:end])
-    return any(pattern.search(context) for pattern in ILLUSTRATIVE_CONTEXT_PATTERNS)
+from .security_secret_detection import _has_illustrative_context as _has_illustrative_context  # noqa: E402
 
 
-def _private_key_looks_like_placeholder(body_lines: list[str]) -> bool:
-    body_text = "\n".join(body_lines)
-    if _looks_like_placeholder_secret(body_text):
-        return True
-    placeholder_lines = {"mii...", "[redacted]", "redacted", "secret-key-material"}
-    lowered_lines = [line.lower() for line in body_lines]
-    return any(line in placeholder_lines or "redacted" in line for line in lowered_lines)
+from .security_secret_detection import _private_key_looks_like_placeholder as _private_key_looks_like_placeholder  # noqa: E402
 
 
-def _extract_inline_private_key_body(line: str, header: str) -> list[str]:
-    header_index = line.find(header)
-    if header_index == -1:
-        return []
-    tail = line[header_index + len(header) :]
-    if "\\n" not in tail:
-        return []
-    body_lines: list[str] = []
-    for fragment in tail.split("\\n")[1:]:
-        cleaned = fragment.strip().strip("\"'`),;}]")
-        if cleaned:
-            body_lines.append(cleaned)
-    return body_lines
+from .security_secret_detection import _extract_inline_private_key_body as _extract_inline_private_key_body  # noqa: E402
 
 
-def _first_private_key_line(
-    relative_path: Path,
-    content: str,
-    *,
-    lines: list[str] | None = None,
-    offsets: tuple[int, ...] | None = None,
-) -> int | None:
-    content_lines = lines if lines is not None else content.splitlines()
-    example_surface = _is_example_surface(relative_path)
-    for match in PRIVATE_KEY_HEADER_RE.finditer(content):
-        line_number = _line_number_for_offset(content, match.start(), offsets)
-        label = match.group("label")
-        footer = PRIVATE_KEY_FOOTER_TEMPLATE.format(label=label)
-        header = match.group(0)
-        body_lines = _extract_inline_private_key_body(content_lines[line_number - 1], header)
-        has_footer = False
-        for candidate_line in content_lines[line_number:]:
-            stripped = candidate_line.strip()
-            if not stripped:
-                if body_lines:
-                    break
-                continue
-            if stripped == footer:
-                has_footer = True
-                break
-            if stripped.startswith("-----END ") or stripped.startswith("-----BEGIN ") or stripped == "```":
-                break
-            body_lines.append(stripped)
-        if not body_lines:
-            continue
-        body_text = "".join(body_lines)
-        if example_surface and _private_key_looks_like_placeholder(body_lines):
-            continue
-        if len(body_text) >= 32:
-            return line_number
-        if has_footer:
-            return line_number
-    return None
+from .security_secret_detection import _first_private_key_line as _first_private_key_line  # noqa: E402
 
 
-def _should_skip_secret_match(
-    relative_path: Path,
-    content: str,
-    detector: SecretPattern,
-    match: re.Match[str],
-    *,
-    lines: list[str] | None = None,
-    offsets: tuple[int, ...] | None = None,
-    field_name_spans: tuple[tuple[int, int], ...] = (),
-) -> bool:
-    """Decide whether a match qualifies for a scoped non-secret or example exemption."""
-    candidate = _extract_secret_candidate(detector, match)
-    if _looks_like_interpolated_secret(candidate):
-        return True
-    if detector.kind == "generic" and _provider_payload(candidate) is None:
-        if _is_generated_token_expression(relative_path, content, match):
-            return True
-        span_index = bisect.bisect_right(field_name_spans, (match.start(), len(content))) - 1
-        if span_index >= 0:
-            start, end = field_name_spans[span_index]
-            if start <= match.start() and match.end() <= end:
-                return True
-    if not _is_example_surface(relative_path):
-        return False
-    if _looks_like_placeholder_secret(candidate):
-        return True
-    effective_kind = detector.kind
-    if effective_kind == "generic" and _provider_payload(candidate) is not None:
-        effective_kind = "provider"
-    if effective_kind == "generic":
-        return _looks_like_example_generic_secret(candidate)
-    if effective_kind == "provider":
-        if not _has_illustrative_context(relative_path, content, match.start(), lines=lines, offsets=offsets):
-            return False
-        return _looks_like_synthetic_provider_candidate(candidate) or _looks_like_incomplete_provider_candidate(
-            candidate
-        )
-    return False
+from .security_secret_detection import _should_skip_secret_match as _should_skip_secret_match  # noqa: E402
 
 
-def _first_hardcoded_secret_line(relative_path: Path, content: str) -> int | None:
-    """Find the first retained secret line while enforcing the per-file match budget."""
-    offsets = _newline_offsets(content)
-    lines = content.splitlines()
-    field_name_spans = _field_name_map_spans(relative_path, content)
-    first_line = _first_private_key_line(relative_path, content, lines=lines, offsets=offsets)
-    first_offset: int | None = None
-    matches_seen = 0
-    for detector in SECRET_PATTERNS:
-        if detector.kind == "private_key":
-            continue
-        for match in detector.pattern.finditer(content):
-            matches_seen += 1
-            if matches_seen > MAX_SECRET_MATCHES_PER_FILE:
-                raise ScanBudgetExceededError(
-                    f"secret matches exceeded {MAX_SECRET_MATCHES_PER_FILE} in {relative_path}"
-                )
-            if first_offset is not None and match.start() >= first_offset:
-                break
-            if _should_skip_secret_match(
-                relative_path,
-                content,
-                detector,
-                match,
-                lines=lines,
-                offsets=offsets,
-                field_name_spans=field_name_spans,
-            ):
-                continue
-            first_offset = match.start()
-            line_number = _line_number_for_offset(content, match.start(), offsets)
-            if first_line is None or line_number < first_line:
-                first_line = line_number
-    return first_line
+from .security_secret_detection import _first_hardcoded_secret_line as _first_hardcoded_secret_line  # noqa: E402
 
 
-def _has_canonical_apache_license_reference(content: str) -> bool:
-    for candidate in LICENSE_URL_RE.findall(content):
-        parsed = urlparse(candidate.rstrip(".,;:"))
-        hostname = (parsed.hostname or "").lower()
-        path = parsed.path.rstrip("/")
-        if hostname == "www.apache.org" and path == "/licenses/LICENSE-2.0":
-            return True
-    return False
+from .security_content import _has_canonical_apache_license_reference as _has_canonical_apache_license_reference  # noqa: E402
 
 
-def _resource_budget_failure(name: str, *, max_points: int, reason: str) -> CheckResult:
-    return CheckResult(
-        name=name,
-        passed=False,
-        points=0,
-        max_points=max_points,
-        message=f"Security analysis incomplete: {reason}.",
-        findings=(
-            Finding(
-                rule_id="SCAN_RESOURCE_BUDGET_EXCEEDED",
-                severity=Severity.MEDIUM,
-                category="security",
-                title="Security scan resource budget exceeded",
-                description=f"The scanner stopped before complete analysis because {reason}.",
-                remediation="Reduce generated or vendored scan input, or scan the intended plugin directory directly.",
-            ),
-        ),
-    )
+from .security_content import _resource_budget_failure as _resource_budget_failure  # noqa: E402
 
 
-def check_security_md(plugin_dir: Path) -> CheckResult:
-    exists = (plugin_dir / "SECURITY.md").exists()
-    return CheckResult(
-        name="SECURITY.md found",
-        passed=exists,
-        points=3 if exists else 0,
-        max_points=3,
-        message="SECURITY.md found" if exists else "SECURITY.md not found",
-        findings=()
-        if exists
-        else (
-            Finding(
-                rule_id="SECURITY_MD_MISSING",
-                severity=Severity.LOW,
-                category="security",
-                title="SECURITY.md is missing",
-                description=(
-                    "Plugins should publish a SECURITY.md file for responsible disclosure and support guidance."
-                ),
-                remediation="Add a SECURITY.md file with reporting guidance and supported versions.",
-                file_path="SECURITY.md",
-            ),
-        ),
-    )
+from .security_content import check_security_md as check_security_md  # noqa: E402
 
 
-def check_license(plugin_dir: Path) -> CheckResult:
-    lp = plugin_dir / "LICENSE"
-    if not lp.exists():
-        return CheckResult(
-            name="LICENSE found",
-            passed=False,
-            points=0,
-            max_points=3,
-            message="LICENSE file not found",
-            findings=(
-                Finding(
-                    rule_id="LICENSE_MISSING",
-                    severity=Severity.LOW,
-                    category="security",
-                    title="LICENSE file is missing",
-                    description="Plugins should ship a LICENSE file so consumers can review usage rights.",
-                    remediation="Add a LICENSE file that matches the manifest license metadata.",
-                    file_path="LICENSE",
-                ),
-            ),
-        )
-    try:
-        content = read_text_file_within_root(
-            plugin_dir.resolve(strict=True),
-            lp,
-            max_bytes=MAX_SCAN_FILE_BYTES,
-            errors="ignore",
-        )
-        if "apache" in content.lower() and (
-            APACHE_LICENSE_VERSION_RE.search(content) or _has_canonical_apache_license_reference(content)
-        ):
-            return CheckResult(
-                name="LICENSE found", passed=True, points=3, max_points=3, message="LICENSE found (Apache-2.0)"
-            )
-        if "MIT" in content and "Permission is hereby granted" in content:
-            return CheckResult(name="LICENSE found", passed=True, points=3, max_points=3, message="LICENSE found (MIT)")
-        return CheckResult(name="LICENSE found", passed=True, points=3, max_points=3, message="LICENSE found")
-    except OSError:
-        return CheckResult(
-            name="LICENSE found", passed=False, points=0, max_points=3, message="LICENSE exists but could not be read"
-        )
+from .security_content import check_license as check_license  # noqa: E402
 
 
-def _hardcoded_secret_result(findings: list[tuple[str, int]]) -> CheckResult:
-    if not findings:
-        return CheckResult(
-            name="No hardcoded secrets", passed=True, points=7, max_points=7, message="No hardcoded secrets detected"
-        )
-    shown = [path for path, _line_number in findings[:5]]
-    suffix = f" and {len(findings) - 5} more" if len(findings) > 5 else ""
-    return CheckResult(
-        name="No hardcoded secrets",
-        passed=False,
-        points=0,
-        max_points=7,
-        message=f"Hardcoded secrets found in: {', '.join(shown)}{suffix}",
-        findings=tuple(
-            Finding(
-                rule_id="HARDCODED_SECRET",
-                severity=Severity.HIGH,
-                category="security",
-                title="Hardcoded secret detected",
-                description=f"Potential secret material was detected in {path}.",
-                remediation="Remove the secret from source control and load it securely at runtime.",
-                file_path=path,
-                line_number=line_number,
-            )
-            for path, line_number in findings
-        ),
-    )
+from .security_content import _hardcoded_secret_result as _hardcoded_secret_result  # noqa: E402
 
 
-def check_no_dangerous_mcp(plugin_dir: Path) -> CheckResult:
-    mcp_path = plugin_dir / ".mcp.json"
-    if not path_entry_exists(mcp_path):
-        return CheckResult(
-            name="No dangerous MCP commands",
-            passed=True,
-            points=0,
-            max_points=0,
-            message="No .mcp.json found, skipping check",
-            applicable=False,
-        )
-    try:
-        content = read_text_file_within_root(
-            plugin_dir.resolve(strict=True),
-            mcp_path,
-            max_bytes=MAX_SCAN_FILE_BYTES,
-        )
-    except (OSError, UnicodeError):
-        return CheckResult(
-            name="No dangerous MCP commands",
-            passed=False,
-            points=0,
-            max_points=4,
-            message="Could not safely read .mcp.json",
-            findings=(
-                Finding(
-                    rule_id="MCP_CONFIG_UNREADABLE",
-                    severity=Severity.MEDIUM,
-                    category="security",
-                    title="MCP configuration could not be safely read",
-                    description="The MCP configuration is not a bounded regular file inside the plugin.",
-                    remediation="Replace links or special files with a regular, repository-contained .mcp.json file.",
-                    file_path=".mcp.json",
-                ),
-            ),
-        )
-    found: list[str] = []
-    for pattern in DANGEROUS_MCP_PATTERNS:
-        if pattern.search(content):
-            found.append(pattern.pattern)
-    if not found:
-        return CheckResult(
-            name="No dangerous MCP commands",
-            passed=True,
-            points=4,
-            max_points=4,
-            message="No dangerous commands found in .mcp.json",
-        )
-    return CheckResult(
-        name="No dangerous MCP commands",
-        passed=False,
-        points=0,
-        max_points=4,
-        message=f"Dangerous patterns in .mcp.json: {', '.join(found)}",
-        findings=tuple(
-            Finding(
-                rule_id="DANGEROUS_MCP_COMMAND",
-                severity=Severity.HIGH,
-                category="security",
-                title="Dangerous MCP command pattern detected",
-                description=f'The MCP configuration matches the risky pattern "{pattern}".',
-                remediation="Remove destructive commands and require explicit user approval before high-risk actions.",
-                file_path=".mcp.json",
-            )
-            for pattern in found
-        ),
-    )
+from .security_mcp import check_no_dangerous_mcp as check_no_dangerous_mcp  # noqa: E402
 
 
 IGNORED_MCP_URL_CONTEXT = {"metadata", "description", "homepage", "website", "docs", "documentation"}
 MCP_URL_KEYS = {"url", "endpoint", "server_url"}
 
 
-def _collect_mcp_urls(node: object, urls: list[str], path: tuple[str, ...] = ()) -> None:
-    if isinstance(node, dict):
-        for key, value in node.items():
-            lowered_key = key.lower()
-            next_path = (*path, lowered_key)
-            if lowered_key in IGNORED_MCP_URL_CONTEXT:
-                continue
-            if isinstance(value, str) and lowered_key in MCP_URL_KEYS:
-                urls.append(value)
-                continue
-            if isinstance(value, (dict, list)):
-                _collect_mcp_urls(value, urls, next_path)
-        return
-    if isinstance(node, list):
-        for item in node:
-            _collect_mcp_urls(item, urls, path)
+from .security_mcp import _collect_mcp_urls as _collect_mcp_urls  # noqa: E402
 
 
-def _extract_mcp_urls(payload: object) -> list[str]:
-    urls: list[str] = []
-    if isinstance(payload, dict):
-        targeted = False
-        for key in ("mcpServers", "servers"):
-            value = payload.get(key)
-            if isinstance(value, (dict, list)):
-                targeted = True
-                _collect_mcp_urls(value, urls, (key.lower(),))
-        if targeted:
-            return urls
-    _collect_mcp_urls(payload, urls)
-    return urls
+from .security_mcp import _extract_mcp_urls as _extract_mcp_urls  # noqa: E402
 
 
-def _is_loopback_host(hostname: str | None) -> bool:
-    if hostname is None:
-        return False
-    if hostname == "localhost":
-        return True
-    try:
-        return ipaddress.ip_address(hostname).is_loopback
-    except ValueError:
-        return False
+from .security_mcp import _is_loopback_host as _is_loopback_host  # noqa: E402
 
 
-def check_mcp_transport_security(plugin_dir: Path) -> CheckResult:
-    mcp_path = plugin_dir / ".mcp.json"
-    if not path_entry_exists(mcp_path):
-        return CheckResult(
-            name="MCP remote transports are hardened",
-            passed=True,
-            points=0,
-            max_points=0,
-            message="No .mcp.json found, skipping transport hardening checks.",
-            applicable=False,
-        )
-
-    try:
-        payload = json.loads(
-            read_text_file_within_root(
-                plugin_dir.resolve(strict=True),
-                mcp_path,
-                max_bytes=MAX_SCAN_FILE_BYTES,
-            )
-        )
-    except (json.JSONDecodeError, OSError, UnicodeError, ValueError):
-        return CheckResult(
-            name="MCP remote transports are hardened",
-            passed=False,
-            points=0,
-            max_points=4,
-            message="Could not parse .mcp.json for transport URLs.",
-            findings=(
-                Finding(
-                    rule_id="MCP_CONFIG_INVALID_JSON",
-                    severity=Severity.MEDIUM,
-                    category="security",
-                    title="MCP configuration is not valid JSON",
-                    description="The .mcp.json file exists but could not be parsed.",
-                    remediation="Fix the .mcp.json syntax so transport settings can be validated.",
-                    file_path=".mcp.json",
-                ),
-            ),
-        )
-
-    urls = _extract_mcp_urls(payload)
-    if not urls:
-        return CheckResult(
-            name="MCP remote transports are hardened",
-            passed=True,
-            points=0,
-            max_points=0,
-            message="No remote MCP URLs declared; stdio-only configuration is not applicable here.",
-            applicable=False,
-        )
-
-    issues = []
-    for url in urls:
-        parsed = urlparse(url)
-        if parsed.scheme == "https":
-            continue
-        if parsed.scheme == "http" and _is_loopback_host(parsed.hostname):
-            continue
-        issues.append(url)
-
-    if not issues:
-        return CheckResult(
-            name="MCP remote transports are hardened",
-            passed=True,
-            points=4,
-            max_points=4,
-            message="Remote MCP URLs use hardened transports or stay on loopback for local development.",
-        )
-
-    return CheckResult(
-        name="MCP remote transports are hardened",
-        passed=False,
-        points=0,
-        max_points=4,
-        message=f"Insecure MCP remote URLs detected: {', '.join(issues)}",
-        findings=tuple(
-            Finding(
-                rule_id="MCP_REMOTE_URL_INSECURE",
-                severity=Severity.HIGH,
-                category="security",
-                title="MCP remote transport uses an insecure URL",
-                description=f'The remote MCP endpoint "{url}" is not HTTPS or loopback-only HTTP.',
-                remediation="Use HTTPS for remote MCP servers and reserve plain HTTP for localhost development only.",
-                file_path=".mcp.json",
-            )
-            for url in issues
-        ),
-    )
+from .security_mcp import check_mcp_transport_security as check_mcp_transport_security  # noqa: E402
 
 
-def _approval_bypass_result(findings: list[str]) -> CheckResult:
-    if not findings:
-        return CheckResult(
-            name="No approval bypass defaults",
-            passed=True,
-            points=3,
-            max_points=3,
-            message="No risky approval or sandbox defaults detected.",
-        )
-
-    return CheckResult(
-        name="No approval bypass defaults",
-        passed=False,
-        points=0,
-        max_points=3,
-        message=f"Risky approval defaults found in: {', '.join(findings)}",
-        findings=tuple(
-            Finding(
-                rule_id="RISKY_APPROVAL_DEFAULT",
-                severity=Severity.MEDIUM,
-                category="security",
-                title="Risky approval or sandbox default detected",
-                description=f"{path} contains a dangerous approval or sandbox default.",
-                remediation=(
-                    "Avoid shipping configurations that default to bypassed approvals or unrestricted sandboxes."
-                ),
-                file_path=path,
-            )
-            for path in findings
-        ),
-    )
+from .security_content import _approval_bypass_result as _approval_bypass_result  # noqa: E402
 
 
-def _scan_content_checks(
-    plugin_dir: Path,
-    files: tuple[Path, ...] | None = None,
-    *,
-    scan_secrets: bool = True,
-    scan_bypass: bool = True,
-) -> tuple[CheckResult, CheckResult]:
-    """Enumerate once and give both checks the same bounded immutable text.
-
-    Content is retained for one file only. A failure remains attached to its
-    check while the other check finishes its applicable input. Independent
-    callers can select a single check without changing read/exclusion behavior.
-    """
-
-    resolved_plugin_dir = plugin_dir.resolve()
-    secret_findings: list[tuple[str, int]] = []
-    bypass_findings: list[str] = []
-    failures: dict[str, CheckResult] = {}
-    checks = {
-        "secrets": ("No hardcoded secrets", 7, scan_secrets),
-        "bypass": ("No approval bypass defaults", 3, scan_bypass),
-    }
-    try:
-        for file_path in _scan_all_files(resolved_plugin_dir, files):
-            relative_path = file_path.relative_to(resolved_plugin_dir)
-            wants_secrets = scan_secrets and "secrets" not in failures
-            wants_bypass = (
-                scan_bypass
-                and "bypass" not in failures
-                and file_path.name.endswith((".json", ".md", ".yaml", ".yml", ".toml"))
-            )
-            if not wants_secrets and not wants_bypass:
-                continue
-            try:
-                content = read_text_file_within_root(
-                    resolved_plugin_dir,
-                    file_path,
-                    max_bytes=MAX_SCAN_FILE_BYTES,
-                    errors="ignore",
-                )
-            except (OSError, UnicodeError):
-                for key, wanted in (("secrets", wants_secrets), ("bypass", wants_bypass)):
-                    if wanted:
-                        name, points, _enabled = checks[key]
-                        failures[key] = unreadable_scan_input_failure(
-                            name, max_points=points, path=relative_path.as_posix()
-                        )
-                continue
-            if wants_secrets:
-                try:
-                    line_number = _first_hardcoded_secret_line(relative_path, content)
-                    if line_number is not None:
-                        secret_findings.append((relative_path.as_posix(), line_number))
-                except ScanBudgetExceededError as error:
-                    failures["secrets"] = _resource_budget_failure(
-                        "No hardcoded secrets", max_points=7, reason=str(error)
-                    )
-            if wants_bypass and any(pattern.search(content) for pattern in RISKY_APPROVAL_PATTERNS):
-                bypass_findings.append(relative_path.as_posix())
-    except (ScanInputUnreadableError, ScanBudgetExceededError) as error:
-        for key, (name, points, enabled) in checks.items():
-            if enabled and key not in failures:
-                failure = (
-                    _resource_budget_failure
-                    if isinstance(error, ScanBudgetExceededError)
-                    else unreadable_scan_input_failure
-                )
-                failures[key] = failure(name, max_points=points, reason=str(error))
-    return (
-        failures.get("secrets") or _hardcoded_secret_result(secret_findings),
-        failures.get("bypass") or _approval_bypass_result(bypass_findings),
-    )
+from .security_content import _scan_content_checks as _scan_content_checks  # noqa: E402
 
 
-def check_no_hardcoded_secrets(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
-    return _scan_content_checks(plugin_dir, files, scan_bypass=False)[0]
+from .security_content import check_no_hardcoded_secrets as check_no_hardcoded_secrets  # noqa: E402
 
 
-def check_no_approval_bypass_defaults(plugin_dir: Path, files: tuple[Path, ...] | None = None) -> CheckResult:
-    return _scan_content_checks(plugin_dir, files, scan_secrets=False)[1]
+from .security_content import check_no_approval_bypass_defaults as check_no_approval_bypass_defaults  # noqa: E402
 
 
-def run_security_checks(plugin_dir: Path) -> tuple[CheckResult, ...]:
-    security_md = check_security_md(plugin_dir)
-    license_result = check_license(plugin_dir)
-    secrets, approval_defaults = _scan_content_checks(plugin_dir)
-    return (
-        security_md,
-        license_result,
-        secrets,
-        check_no_dangerous_mcp(plugin_dir),
-        check_mcp_transport_security(plugin_dir),
-        approval_defaults,
-    )
+from .security_content import run_security_checks as run_security_checks  # noqa: E402

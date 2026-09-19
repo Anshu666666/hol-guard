@@ -221,6 +221,25 @@ def cloud_client_profile(samples):
     return rows
 
 
+def _profile_source_sha256(root: Path) -> dict[str, str]:
+    package_root = root / "src/codex_plugin_scanner"
+    runtime_root = package_root / "guard/runtime"
+    runner_sources = sorted(
+        (
+            runtime_root / "runner.py",
+            *(path for path in runtime_root.glob("runner*.py") if path.name != "runner.py" and path.is_file()),
+        )
+    )
+    sources = (
+        "guard/inventory_cisco.py",
+        "integrations/scanner_subprocess.py",
+        "integrations/cisco_mcp_scanner.py",
+        "integrations/cisco_skill_scanner.py",
+        *(path.relative_to(package_root).as_posix() for path in runner_sources),
+    )
+    return {name: hashlib.sha256((package_root / name).read_bytes()).hexdigest() for name in sources}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -230,22 +249,12 @@ def main():
     if not 1 <= args.samples <= 10:
         parser.error("samples must be 1..10")
     root = Path(__file__).resolve().parents[1]
-    sources = (
-        "guard/inventory_cisco.py",
-        "integrations/scanner_subprocess.py",
-        "integrations/cisco_mcp_scanner.py",
-        "integrations/cisco_skill_scanner.py",
-        "guard/runtime/runner.py",
-    )
     report = {
         "schema": "guard.inventory-wait-profile.v1",
         "python": sys.version,
         "platform": platform.platform(),
         "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
-        "source_sha256": {
-            name: hashlib.sha256((root / "src/codex_plugin_scanner" / name).read_bytes()).hexdigest()
-            for name in sources
-        },
+        "source_sha256": _profile_source_sha256(root),
         "scope": "offline component fixture; controlled transport wait is not actual cloud latency",
         "process": process_profile(args.samples) if args.section in {"all", "process"} else [],
         "cisco": cisco_profile(args.samples) if args.section in {"all", "cisco"} else {},

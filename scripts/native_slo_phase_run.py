@@ -28,6 +28,7 @@ from scripts.native_slo_workloads import (
     _post_expected,
     _validate_projection,
     corpus_manifest,
+    oracle_source_digest,
     validate_native_result,
     validate_setup,
 )
@@ -411,7 +412,7 @@ def measure_installed_phases(session: Any, count: int, evidence_file: Path) -> d
     if getattr(session, "setup", None) != "normal":
         raise ValueError("qualification phase requires isolated normal capture fixture")
     cases = phase_cases()
-    oracle_digest = hashlib.sha256(Path(__file__).with_name("native_slo_workloads.py").read_bytes()).hexdigest()
+    oracle_digest = oracle_source_digest()
     with _Journal(evidence_file) as journal:
         journal.append(
             {

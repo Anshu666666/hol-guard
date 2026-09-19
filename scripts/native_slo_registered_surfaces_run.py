@@ -36,6 +36,7 @@ from scripts.native_slo_workloads import (
     _validate_projection,
     build_cases,
     installed_response_expectation,
+    oracle_source_digest,
     validate_native_result,
     validate_setup,
 )
@@ -331,6 +332,7 @@ def _run_registered_surface_corpus(
         "full_host_activation": False,
         "qualification_complete": False,
         "oracle_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "workload_oracle_sha256": oracle_source_digest(),
         "validated_cases": len(reports),
         "cases": reports,
         "unsupported": unavailable,

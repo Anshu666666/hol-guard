@@ -44,7 +44,7 @@ def declared_pair(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         definition = {
             "matrix": workload_matrix((("pi", "PostToolUse"),), contract, runtime=runtime),
             "manifest_digest": hashlib.sha256(json.dumps(workloads.corpus_manifest()).encode()).hexdigest(),
-            "oracle_digest": hashlib.sha256(Path(workloads.__file__).read_bytes()).hexdigest(),
+            "oracle_digest": workloads.oracle_source_digest(),
             "oracle_selection_digest": hashlib.sha256(Path(witness.__file__).read_bytes()).hexdigest(),
             "validated_digest": hashlib.sha256(json.dumps(ids).encode()).hexdigest(),
             "launcher_validated_digest": "c" * 64,

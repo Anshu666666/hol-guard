@@ -65,7 +65,9 @@ def test_separate_collector_records_commit_tree_and_unchanged_contract(binding: 
     assert _git(binding.candidate, "status", "--porcelain") == ""
 
 
-@pytest.mark.parametrize("change", ["wrong_commit", "tracked", "untracked", "contract", "driver_alias"])
+@pytest.mark.parametrize(
+    "change", ["wrong_commit", "tracked", "untracked", "contract", "workload_cases", "driver_alias"]
+)
 def test_untrusted_or_changed_collector_never_runs(binding: CollectorBinding, change: str) -> None:
     if change == "wrong_commit":
         binding.expected_sha = "0" * 40
@@ -75,6 +77,9 @@ def test_untrusted_or_changed_collector_never_runs(binding: CollectorBinding, ch
         (binding.root / "scripts/untracked_observer.py").write_text("untracked\n")
     elif change == "contract":
         (binding.root / FROZEN_CONTRACT_FILES["sampling"]).write_text("changed\n")
+        binding.expected_sha = _commit(binding.root)
+    elif change == "workload_cases":
+        (binding.root / FROZEN_CONTRACT_FILES["workload_cases"]).write_text("changed\n")
         binding.expected_sha = _commit(binding.root)
     elif change == "driver_alias":
         driver = binding.root / FROZEN_CONTRACT_FILES["driver"]

@@ -22,7 +22,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 def _copy_sources(root: Path) -> None:
-    for relative in MODULE._PRODUCTION_FILES:
+    for relative in MODULE.production_source_paths(ROOT):
         source = ROOT / relative
         destination = root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -31,6 +31,12 @@ def _copy_sources(root: Path) -> None:
 
 def test_production_hook_callgraph_has_no_python_semantic_reachability() -> None:
     assert MODULE._graph_failures(ROOT) == []
+
+
+def test_relative_production_root_resolves_same_sources(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    assert MODULE._graph_failures(Path(".")) == []
+    assert MODULE.production_source_paths(Path(".")) == MODULE.production_source_paths(ROOT)
 
 
 def test_callgraph_rejects_semantic_import_in_worker(tmp_path: Path) -> None:

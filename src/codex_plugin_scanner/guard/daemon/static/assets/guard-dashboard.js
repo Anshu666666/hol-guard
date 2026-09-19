@@ -12537,62 +12537,72 @@ const __vitePreload = function preload(baseModule, deps, importerUrl) {
     return baseModule().catch(handlePreloadError);
   });
 };
-const GUARD_ACTIONS$1 = [
-  "allow",
-  "warn",
-  "review",
-  "require-reapproval",
-  "sandbox-required",
-  "block"
+const GITHUB_ISSUE_BASE_URL = "https://github.com/hashgraph-online/hol-guard/issues/new";
+const DEFAULT_ISSUE_BODY = [
+  "## What happened?",
+  "",
+  "",
+  "## Expected behavior",
+  "",
+  "",
+  "## Steps to reproduce",
+  "1.",
+  "2.",
+  "3.",
+  "",
+  "## Environment",
+  "- HOL Guard version:",
+  "- OS:",
+  "- AI app or harness:",
+  "",
+  "## Anything else?",
+  ""
+].join("\n");
+const GITHUB_ISSUE_BUTTON_LABEL = "Report a bug";
+function buildGitHubIssueUrl(options) {
+  const url = new URL(GITHUB_ISSUE_BASE_URL);
+  url.searchParams.set("title", "[Bug]: ");
+  url.searchParams.set("body", DEFAULT_ISSUE_BODY);
+  url.searchParams.set("labels", ["bug", "needs-triage"].join(","));
+  return url.toString();
+}
+const GITHUB_ISSUE_LINK = buildGitHubIssueUrl();
+const SHELL_FOOTER_LICENSE_HREF = "https://github.com/hashgraph-online/hol-guard/blob/main/LICENSE";
+const SHELL_FOOTER_RESOURCE_LINKS = [
+  { href: "https://hol.org/guard/docs", label: "Docs" },
+  { href: "https://hol.org/guard", label: "Guard Cloud" },
+  { href: "https://github.com/hashgraph-online/hol-guard", label: "GitHub" },
+  { href: GITHUB_ISSUE_LINK, label: GITHUB_ISSUE_BUTTON_LABEL }
 ];
-const GUARD_ACTION_TYPES = [
-  "prompt",
-  "shell_command",
-  "file_read",
-  "file_write",
-  "mcp_tool",
-  "package_script",
-  "network_request",
-  "config_change",
-  "browser_action",
-  "harness_start"
-];
-const GUARD_DECISION_V2_ACTIONS = ["allow", "warn", "ask", "block"];
-const GUARD_DECISION_V2_CONFIDENCES = ["weak", "likely", "strong"];
-const GUARD_RISK_SIGNAL_V2_CATEGORIES = [
-  "secret",
-  "network",
-  "prompt",
-  "mcp",
-  "skill",
-  "supply_chain",
-  "encoded",
-  "persistence",
-  "bypass",
-  "false_positive",
-  "filesystem",
-  "execution",
-  "publisher",
-  "policy",
-  "provenance"
-];
-const GUARD_RISK_SIGNAL_V2_SEVERITIES = ["info", "low", "medium", "high", "critical"];
-const GUARD_RISK_SIGNAL_V2_REDACTION_LEVELS = ["none", "summary", "redacted"];
-const CODEX_RESUME_STATUSES = ["pending", "in_progress", "sent", "already_sent", "failed", "skipped"];
-function isScannerEvidenceRecord(value) {
-  return value !== null && typeof value === "object";
-}
-function isRiskSignalEvidence(signal) {
-  return isScannerEvidenceRecord(signal) && typeof signal.signal_id === "string";
-}
-function isSupplyChainScannerEvidence(value) {
-  return isScannerEvidenceRecord(value) && typeof value.operation === "string";
-}
-function isSupplyChainAuditEvidence(value) {
-  return isSupplyChainScannerEvidence(value) && value.operation === "audit";
-}
-function isPackageExecutionContextEvidence(value) {
-  return isScannerEvidenceRecord(value) && value.kind === "package_execution_context" && value.schema_version === 2 && typeof value.portable === "boolean" && typeof value.context_digest === "string";
+function ShellFooter() {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("footer", { className: "mt-auto border-t border-slate-200 bg-[#f8fafc]", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-[11px] font-medium text-slate-400", children: [
+      "HOL Guard is open source under",
+      " ",
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "a",
+        {
+          href: SHELL_FOOTER_LICENSE_HREF,
+          target: "_blank",
+          rel: "noreferrer",
+          className: "rounded-sm text-slate-500 no-underline transition-colors hover:text-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30",
+          children: "Apache-2.0"
+        }
+      ),
+      "."
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("nav", { "aria-label": "Guard resources", className: "flex flex-wrap gap-x-4 gap-y-1", children: SHELL_FOOTER_RESOURCE_LINKS.map((link) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "a",
+      {
+        href: link.href,
+        target: "_blank",
+        rel: "noreferrer",
+        className: "rounded-sm text-[11px] font-medium text-slate-500 no-underline transition-colors hover:text-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30",
+        children: link.label
+      },
+      link.href
+    )) })
+  ] }) });
 }
 var DefaultContext = {
   color: void 0,
@@ -12929,6 +12939,234 @@ function HiMiniArchiveBox(props) {
 }
 function HiMiniAdjustmentsHorizontal(props) {
   return GenIcon({ "attr": { "viewBox": "0 0 20 20", "fill": "currentColor", "aria-hidden": "true" }, "child": [{ "tag": "path", "attr": { "d": "M10 3.75a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM17.25 4.5a.75.75 0 0 0 0-1.5h-5.5a.75.75 0 0 0 0 1.5h5.5ZM5 3.75a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM4.25 17a.75.75 0 0 0 0-1.5h-1.5a.75.75 0 0 0 0 1.5h1.5ZM17.25 17a.75.75 0 0 0 0-1.5h-5.5a.75.75 0 0 0 0 1.5h5.5ZM9 10a.75.75 0 0 1-.75.75h-5.5a.75.75 0 0 1 0-1.5h5.5A.75.75 0 0 1 9 10ZM17.25 10.75a.75.75 0 0 0 0-1.5h-1.5a.75.75 0 0 0 0 1.5h1.5ZM14 10a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM10 16.25a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z" }, "child": [] }] })(props);
+}
+function formatEmailDisplay(email) {
+  const trimmed = email.trim();
+  if (trimmed.length <= 24) return trimmed;
+  const atIndex = trimmed.indexOf("@");
+  if (atIndex > 0 && atIndex < trimmed.length - 1) {
+    const localPart = trimmed.slice(0, atIndex);
+    const domain = trimmed.slice(atIndex);
+    if (localPart.length > 10) {
+      return `${localPart.slice(0, 8)}…${domain}`;
+    }
+  }
+  return `${trimmed.slice(0, 12)}…`;
+}
+function resolveInitials(name, email) {
+  const trimmed = name.trim();
+  if (trimmed) {
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return trimmed.slice(0, 2).toUpperCase();
+  }
+  return email.trim().slice(0, 2).toUpperCase();
+}
+function resolveDisplayName(profile) {
+  const name = profile.display_name?.trim();
+  if (name) return name;
+  return profile.email.split("@")[0];
+}
+function CloudUserMenu(props) {
+  const [open, setOpen] = reactExports.useState(false);
+  const [copied, setCopied] = reactExports.useState(false);
+  const containerRef = reactExports.useRef(null);
+  const copyTimeoutRef = reactExports.useRef(null);
+  const handleClickOutside = reactExports.useCallback((event) => {
+    if (containerRef.current && !containerRef.current.contains(event.target)) {
+      setOpen(false);
+      setCopied(false);
+    }
+  }, []);
+  reactExports.useEffect(() => {
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, handleClickOutside]);
+  reactExports.useEffect(() => {
+    return () => clearTimeout(copyTimeoutRef.current);
+  }, []);
+  const handleCopyWorkspaceId = reactExports.useCallback(async () => {
+    if (!props.workspaceId) return;
+    try {
+      await navigator.clipboard.writeText(props.workspaceId);
+      setCopied(true);
+      clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2e3);
+    } catch {
+    }
+  }, [props.workspaceId]);
+  if (!props.userProfile) {
+    if (props.collapsed) {
+      return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-center pb-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-8 w-8 items-center justify-center rounded-full bg-slate-200", children: /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCloud, { className: "h-4 w-4 text-slate-400" }) }) });
+    }
+    return null;
+  }
+  const displayName = resolveDisplayName(props.userProfile);
+  const initials = resolveInitials(props.userProfile.display_name || "", props.userProfile.email);
+  if (props.collapsed) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: containerRef, className: "relative flex justify-center pb-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          onClick: () => setOpen((prev) => !prev),
+          className: "relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-blue/30 transition hover:ring-brand-blue/60",
+          title: `${displayName} (${props.userProfile.email})`,
+          "aria-label": `Cloud user: ${displayName}`,
+          children: props.userProfile.avatar_url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "img",
+            {
+              src: props.userProfile.avatar_url,
+              alt: "",
+              className: "h-full w-full object-cover"
+            }
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-bold text-brand-blue", children: initials })
+        }
+      ),
+      open && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "absolute bottom-16 left-16 z-50 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-lg",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1 text-center", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold text-brand-dark", children: displayName }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] text-slate-500", children: formatEmailDisplay(props.userProfile.email) }),
+            props.workspaceId ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
+              {
+                type: "button",
+                onClick: handleCopyWorkspaceId,
+                className: "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-mono text-slate-600 transition hover:bg-slate-100",
+                children: [
+                  copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCheck, { className: "h-3 w-3 text-green-600" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniClipboardDocument, { className: "h-3 w-3" }),
+                  props.workspaceId.slice(0, 8),
+                  "…"
+                ]
+              }
+            ) : null,
+            props.planId ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-1 inline-flex items-center rounded-md bg-brand-blue/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize text-brand-blue", children: props.planId }) : null
+          ] })
+        }
+      )
+    ] });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: containerRef, className: "relative", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        type: "button",
+        onClick: () => setOpen((prev) => !prev),
+        className: "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-slate-100",
+        "aria-expanded": open,
+        "aria-label": `Cloud user: ${displayName}`,
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-blue/20", children: props.userProfile.avatar_url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "img",
+            {
+              src: props.userProfile.avatar_url,
+              alt: "",
+              className: "h-full w-full object-cover"
+            }
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-bold text-brand-blue", children: initials }) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-w-0 flex-1 flex-col", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-xs font-semibold text-brand-dark", children: displayName }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-[10px] text-slate-500", children: formatEmailDisplay(props.userProfile.email) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            HiMiniChevronDown,
+            {
+              className: `h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`
+            }
+          )
+        ]
+      }
+    ),
+    open && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-slate-200 bg-white p-3 shadow-lg", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCloud, { className: "h-3 w-3 text-brand-blue" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-mono text-[9px] font-semibold uppercase tracking-widest text-brand-blue", children: "HOL Guard Cloud" })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-slate-100 pt-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-medium uppercase tracking-wider text-slate-400", children: "Workspace ID" }),
+        props.workspaceId ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: handleCopyWorkspaceId,
+            className: "mt-1 flex w-full items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1.5 font-mono text-[10px] text-slate-600 transition hover:bg-slate-100",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: props.workspaceId }),
+              copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCheck, { className: "h-3 w-3 shrink-0 text-green-600" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniClipboardDocument, { className: "h-3 w-3 shrink-0 text-slate-400" })
+            ]
+          }
+        ) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-[10px] text-slate-400", children: "Not available" })
+      ] }),
+      props.planId ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-slate-100 pt-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-medium uppercase tracking-wider text-slate-400", children: "Plan" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 flex items-center gap-1.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center rounded-md bg-brand-blue/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize text-brand-blue", children: props.planId }) })
+      ] }) : null
+    ] }) })
+  ] });
+}
+const GUARD_ACTIONS$1 = [
+  "allow",
+  "warn",
+  "review",
+  "require-reapproval",
+  "sandbox-required",
+  "block"
+];
+const GUARD_ACTION_TYPES = [
+  "prompt",
+  "shell_command",
+  "file_read",
+  "file_write",
+  "mcp_tool",
+  "package_script",
+  "network_request",
+  "config_change",
+  "browser_action",
+  "harness_start"
+];
+const GUARD_DECISION_V2_ACTIONS = ["allow", "warn", "ask", "block"];
+const GUARD_DECISION_V2_CONFIDENCES = ["weak", "likely", "strong"];
+const GUARD_RISK_SIGNAL_V2_CATEGORIES = [
+  "secret",
+  "network",
+  "prompt",
+  "mcp",
+  "skill",
+  "supply_chain",
+  "encoded",
+  "persistence",
+  "bypass",
+  "false_positive",
+  "filesystem",
+  "execution",
+  "publisher",
+  "policy",
+  "provenance"
+];
+const GUARD_RISK_SIGNAL_V2_SEVERITIES = ["info", "low", "medium", "high", "critical"];
+const GUARD_RISK_SIGNAL_V2_REDACTION_LEVELS = ["none", "summary", "redacted"];
+const CODEX_RESUME_STATUSES = ["pending", "in_progress", "sent", "already_sent", "failed", "skipped"];
+function isScannerEvidenceRecord(value) {
+  return value !== null && typeof value === "object";
+}
+function isRiskSignalEvidence(signal) {
+  return isScannerEvidenceRecord(signal) && typeof signal.signal_id === "string";
+}
+function isSupplyChainScannerEvidence(value) {
+  return isScannerEvidenceRecord(value) && typeof value.operation === "string";
+}
+function isSupplyChainAuditEvidence(value) {
+  return isSupplyChainScannerEvidence(value) && value.operation === "audit";
+}
+function isPackageExecutionContextEvidence(value) {
+  return isScannerEvidenceRecord(value) && value.kind === "package_execution_context" && value.schema_version === 2 && typeof value.portable === "boolean" && typeof value.context_digest === "string";
 }
 const CATEGORIES = [
   {
@@ -18972,244 +19210,6 @@ async function resolveMcpPolicyRequest(input) {
     failureCode: typeof record2["failureCode"] === "string" ? record2["failureCode"] : null,
     message: typeof record2["message"] === "string" ? record2["message"] : void 0
   };
-}
-const GITHUB_ISSUE_BASE_URL = "https://github.com/hashgraph-online/hol-guard/issues/new";
-const DEFAULT_ISSUE_BODY = [
-  "## What happened?",
-  "",
-  "",
-  "## Expected behavior",
-  "",
-  "",
-  "## Steps to reproduce",
-  "1.",
-  "2.",
-  "3.",
-  "",
-  "## Environment",
-  "- HOL Guard version:",
-  "- OS:",
-  "- AI app or harness:",
-  "",
-  "## Anything else?",
-  ""
-].join("\n");
-const GITHUB_ISSUE_BUTTON_LABEL = "Report a bug";
-function buildGitHubIssueUrl(options) {
-  const url = new URL(GITHUB_ISSUE_BASE_URL);
-  url.searchParams.set("title", "[Bug]: ");
-  url.searchParams.set("body", DEFAULT_ISSUE_BODY);
-  url.searchParams.set("labels", ["bug", "needs-triage"].join(","));
-  return url.toString();
-}
-const GITHUB_ISSUE_LINK = buildGitHubIssueUrl();
-const SHELL_FOOTER_LICENSE_HREF = "https://github.com/hashgraph-online/hol-guard/blob/main/LICENSE";
-const SHELL_FOOTER_RESOURCE_LINKS = [
-  { href: "https://hol.org/guard/docs", label: "Docs" },
-  { href: "https://hol.org/guard", label: "Guard Cloud" },
-  { href: "https://github.com/hashgraph-online/hol-guard", label: "GitHub" },
-  { href: GITHUB_ISSUE_LINK, label: GITHUB_ISSUE_BUTTON_LABEL }
-];
-function ShellFooter() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("footer", { className: "mt-auto border-t border-slate-200 bg-[#f8fafc]", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-[11px] font-medium text-slate-400", children: [
-      "HOL Guard is open source under",
-      " ",
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "a",
-        {
-          href: SHELL_FOOTER_LICENSE_HREF,
-          target: "_blank",
-          rel: "noreferrer",
-          className: "rounded-sm text-slate-500 no-underline transition-colors hover:text-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30",
-          children: "Apache-2.0"
-        }
-      ),
-      "."
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("nav", { "aria-label": "Guard resources", className: "flex flex-wrap gap-x-4 gap-y-1", children: SHELL_FOOTER_RESOURCE_LINKS.map((link) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "a",
-      {
-        href: link.href,
-        target: "_blank",
-        rel: "noreferrer",
-        className: "rounded-sm text-[11px] font-medium text-slate-500 no-underline transition-colors hover:text-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30",
-        children: link.label
-      },
-      link.href
-    )) })
-  ] }) });
-}
-function formatEmailDisplay(email) {
-  const trimmed = email.trim();
-  if (trimmed.length <= 24) return trimmed;
-  const atIndex = trimmed.indexOf("@");
-  if (atIndex > 0 && atIndex < trimmed.length - 1) {
-    const localPart = trimmed.slice(0, atIndex);
-    const domain = trimmed.slice(atIndex);
-    if (localPart.length > 10) {
-      return `${localPart.slice(0, 8)}…${domain}`;
-    }
-  }
-  return `${trimmed.slice(0, 12)}…`;
-}
-function resolveInitials(name, email) {
-  const trimmed = name.trim();
-  if (trimmed) {
-    const parts = trimmed.split(/\s+/);
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-    }
-    return trimmed.slice(0, 2).toUpperCase();
-  }
-  return email.trim().slice(0, 2).toUpperCase();
-}
-function resolveDisplayName(profile) {
-  const name = profile.display_name?.trim();
-  if (name) return name;
-  return profile.email.split("@")[0];
-}
-function CloudUserMenu(props) {
-  const [open, setOpen] = reactExports.useState(false);
-  const [copied, setCopied] = reactExports.useState(false);
-  const containerRef = reactExports.useRef(null);
-  const copyTimeoutRef = reactExports.useRef(null);
-  const handleClickOutside = reactExports.useCallback((event) => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
-      setOpen(false);
-      setCopied(false);
-    }
-  }, []);
-  reactExports.useEffect(() => {
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, handleClickOutside]);
-  reactExports.useEffect(() => {
-    return () => clearTimeout(copyTimeoutRef.current);
-  }, []);
-  const handleCopyWorkspaceId = reactExports.useCallback(async () => {
-    if (!props.workspaceId) return;
-    try {
-      await navigator.clipboard.writeText(props.workspaceId);
-      setCopied(true);
-      clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2e3);
-    } catch {
-    }
-  }, [props.workspaceId]);
-  if (!props.userProfile) {
-    if (props.collapsed) {
-      return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-center pb-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-8 w-8 items-center justify-center rounded-full bg-slate-200", children: /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCloud, { className: "h-4 w-4 text-slate-400" }) }) });
-    }
-    return null;
-  }
-  const displayName = resolveDisplayName(props.userProfile);
-  const initials = resolveInitials(props.userProfile.display_name || "", props.userProfile.email);
-  if (props.collapsed) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: containerRef, className: "relative flex justify-center pb-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          onClick: () => setOpen((prev) => !prev),
-          className: "relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-blue/30 transition hover:ring-brand-blue/60",
-          title: `${displayName} (${props.userProfile.email})`,
-          "aria-label": `Cloud user: ${displayName}`,
-          children: props.userProfile.avatar_url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "img",
-            {
-              src: props.userProfile.avatar_url,
-              alt: "",
-              className: "h-full w-full object-cover"
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-bold text-brand-blue", children: initials })
-        }
-      ),
-      open && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          className: "absolute bottom-16 left-16 z-50 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-lg",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1 text-center", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold text-brand-dark", children: displayName }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] text-slate-500", children: formatEmailDisplay(props.userProfile.email) }),
-            props.workspaceId ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-              "button",
-              {
-                type: "button",
-                onClick: handleCopyWorkspaceId,
-                className: "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1.5 text-[10px] font-mono text-slate-600 transition hover:bg-slate-100",
-                children: [
-                  copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCheck, { className: "h-3 w-3 text-green-600" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniClipboardDocument, { className: "h-3 w-3" }),
-                  props.workspaceId.slice(0, 8),
-                  "…"
-                ]
-              }
-            ) : null,
-            props.planId ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-1 inline-flex items-center rounded-md bg-brand-blue/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize text-brand-blue", children: props.planId }) : null
-          ] })
-        }
-      )
-    ] });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: containerRef, className: "relative", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "button",
-      {
-        type: "button",
-        onClick: () => setOpen((prev) => !prev),
-        className: "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-slate-100",
-        "aria-expanded": open,
-        "aria-label": `Cloud user: ${displayName}`,
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-blue/20", children: props.userProfile.avatar_url ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "img",
-            {
-              src: props.userProfile.avatar_url,
-              alt: "",
-              className: "h-full w-full object-cover"
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-bold text-brand-blue", children: initials }) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-w-0 flex-1 flex-col", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-xs font-semibold text-brand-dark", children: displayName }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-[10px] text-slate-500", children: formatEmailDisplay(props.userProfile.email) })
-          ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            HiMiniChevronDown,
-            {
-              className: `h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`
-            }
-          )
-        ]
-      }
-    ),
-    open && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-slate-200 bg-white p-3 shadow-lg", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCloud, { className: "h-3 w-3 text-brand-blue" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-mono text-[9px] font-semibold uppercase tracking-widest text-brand-blue", children: "HOL Guard Cloud" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-slate-100 pt-2", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-medium uppercase tracking-wider text-slate-400", children: "Workspace ID" }),
-        props.workspaceId ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "button",
-          {
-            type: "button",
-            onClick: handleCopyWorkspaceId,
-            className: "mt-1 flex w-full items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1.5 font-mono text-[10px] text-slate-600 transition hover:bg-slate-100",
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: props.workspaceId }),
-              copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniCheck, { className: "h-3 w-3 shrink-0 text-green-600" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniClipboardDocument, { className: "h-3 w-3 shrink-0 text-slate-400" })
-            ]
-          }
-        ) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-[10px] text-slate-400", children: "Not available" })
-      ] }),
-      props.planId ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-t border-slate-100 pt-2", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-medium uppercase tracking-wider text-slate-400", children: "Plan" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 flex items-center gap-1.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center rounded-md bg-brand-blue/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize text-brand-blue", children: props.planId }) })
-      ] }) : null
-    ] }) })
-  ] });
 }
 const LOOPBACK_HOSTS = /* @__PURE__ */ new Set(["localhost", "127.0.0.1", "[::1]"]);
 function safeCloudConnectUrl(value) {
@@ -29453,13 +29453,12 @@ function ActionExplanationSummary({ explanation }) {
     redaction.truncated_fields.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-slate-500", children: "Some retained details are shortened. This explanation is not a complete copy of the action." }) : null
   ] });
 }
-const SOURCES = /* @__PURE__ */ new Set(["default", "local-explicit", "migrated", "session-preview", "cloud-profile", "read-error"]);
+const SOURCES = /* @__PURE__ */ new Set(["default", "local-explicit", "session-preview", "cloud-profile", "read-error"]);
 const DIAGNOSTICS = /* @__PURE__ */ new Set([
   "presentation_not_supported_by_core",
   "presentation_settings_unavailable",
   "unsupported_presentation_schema_fell_back_to_everyday",
-  "unknown_presentation_mode_fell_back_to_everyday",
-  "legacy_presentation_mode_migrated"
+  "unknown_presentation_mode_fell_back_to_everyday"
 ]);
 const READ_ONLY_DIAGNOSTICS = /* @__PURE__ */ new Set([
   "presentation_not_supported_by_core",
@@ -31711,181 +31710,6 @@ function ApprovalCenterLayout(props) {
     )
   ] });
 }
-function fieldIsNull(value) {
-  return value === null || value === void 0 || value === "";
-}
-function buildClearPayload(input) {
-  switch (input.scope) {
-    case "artifact":
-      return {
-        harness: input.harness,
-        scope: "artifact",
-        artifact_id: input.artifact_id ?? void 0,
-        artifact_hash: input.artifact_hash ?? void 0,
-        source: input.source ?? void 0
-      };
-    case "workspace":
-      return {
-        harness: input.harness,
-        scope: "workspace",
-        artifact_id: input.artifact_id ?? void 0,
-        artifact_hash: input.artifact_hash ?? void 0,
-        source: input.source ?? void 0,
-        workspace: input.workspace ?? void 0
-      };
-    case "publisher":
-      return {
-        harness: input.harness,
-        scope: "publisher",
-        publisher: input.publisher ?? void 0,
-        source: input.source ?? void 0
-      };
-    case "harness":
-      return {
-        scope: "harness",
-        harness: input.harness,
-        artifact_id: input.artifact_id ?? void 0,
-        artifact_hash: input.artifact_hash ?? void 0,
-        artifact_id_is_null: fieldIsNull(input.artifact_id) ? true : void 0,
-        artifact_hash_is_null: fieldIsNull(input.artifact_hash) ? true : void 0,
-        source: input.source ?? void 0
-      };
-    case "global":
-      return { scope: "global", all: true };
-  }
-}
-function policyIdentityKey(input) {
-  return JSON.stringify([
-    input.harness,
-    input.scope,
-    input.artifact_id ?? null,
-    input.artifact_hash ?? null,
-    input.workspace ?? null,
-    input.publisher ?? null,
-    input.action ?? null,
-    input.reason ?? null,
-    input.updated_at ?? null,
-    input.source ?? null
-  ]);
-}
-function clearLabelForScope(scope) {
-  switch (scope) {
-    case "artifact":
-      return "Clear exact decision";
-    case "workspace":
-      return "Clear project decision";
-    case "publisher":
-      return "Clear publisher decision";
-    case "harness":
-      return "Clear app decision";
-    case "global":
-      return "Clear global decision";
-  }
-}
-class ProtectionRepairFlowError extends Error {
-  failedHarnesses;
-  constructor(message, failedHarnesses) {
-    super(message);
-    this.name = "ProtectionRepairFlowError";
-    this.failedHarnesses = failedHarnesses;
-  }
-}
-function activeFailedHarnesses(failedHarnesses, repairHarnesses) {
-  const repairable = new Set(repairHarnesses);
-  return Array.from(new Set(failedHarnesses)).filter((harness) => repairable.has(harness));
-}
-async function runAutomaticProtectionRepair(input) {
-  const failures = [];
-  const failedHarnesses = /* @__PURE__ */ new Set();
-  try {
-    await repairApprovalCenter();
-  } catch {
-    failures.push("local runtime");
-  }
-  for (const harness of input.harnesses) {
-    try {
-      await runHarnessAction({ harness, action: "repair", dryRun: false });
-    } catch (error) {
-      failedHarnesses.add(harness);
-      failures.push(
-        error instanceof Error && error.message.trim() ? error.message : `${input.displayName(harness)} hooks`
-      );
-    }
-  }
-  try {
-    await repairProtectionCheck("all");
-  } catch (error) {
-    if (error instanceof GuardProtectionRepairError) {
-      for (const harness of error.failedHarnesses) failedHarnesses.add(harness);
-    }
-    failures.push(error instanceof Error ? error.message : "integrity protection");
-  }
-  const refreshedSnapshot = await input.refreshStateAfterAction();
-  if (refreshedSnapshot === null) {
-    const detail = failures.length > 0 ? ` Repair reported: ${failures.join(", ")}.` : "";
-    throw new ProtectionRepairFlowError(
-      `Guard could not recheck protection. Check again in a moment.${detail}`,
-      []
-    );
-  }
-  const remainingHealth = protectionHealthFor(refreshedSnapshot);
-  if (remainingHealth.state === "protected") {
-    return "Automatic repairs completed. Guard rechecked every protection layer below.";
-  }
-  if (!hasRepairableProtectionGap(remainingHealth.checks)) {
-    const hasUnsupportedGaps = remainingHealth.checks.some(isUnsupportedPlatformCheck);
-    if (hasUnsupportedGaps) {
-      return "Supported protection repairs completed. Containment remains unavailable on this platform; Guard remains fail-closed.";
-    }
-    return "Automatic repairs completed. Guard rechecked every repairable protection layer below.";
-  }
-  const remaining = remainingProtectionRepairMessage(remainingHealth, input.displayName);
-  throw new ProtectionRepairFlowError(
-    remaining.message,
-    [...failedHarnesses].filter((harness) => remaining.failedHookHarnesses.includes(harness))
-  );
-}
-function useRouteFocus(view, mainSelector = "main#main-content") {
-  const prevViewRef = reactExports.useRef(null);
-  reactExports.useEffect(() => {
-    if (prevViewRef.current === null) {
-      prevViewRef.current = view;
-      return;
-    }
-    if (prevViewRef.current === view) {
-      return;
-    }
-    prevViewRef.current = view;
-    const main = document.querySelector(mainSelector);
-    if (main) {
-      main.focus({ preventScroll: true });
-    }
-  }, [view, mainSelector]);
-}
-const HomeWorkspace = lazyWorkspace("home-dashboard", () => __vitePreload(() => import("./chunks/home-dashboard.js"), true ? __vite__mapDeps([0,1]) : void 0).then((m) => ({ default: m.HomeWorkspace })));
-const FleetWorkspace = lazyWorkspace("fleet-workspace", () => __vitePreload(() => import("./chunks/fleet-workspace.js"), true ? __vite__mapDeps([2,3,4,5]) : void 0).then((m) => ({ default: m.FleetWorkspace })));
-const SettingsWorkspace = lazyWorkspace("settings-workspace", () => __vitePreload(() => import("./chunks/settings-workspace.js"), true ? __vite__mapDeps([6,3,5]) : void 0).then((m) => ({ default: m.SettingsWorkspace })));
-const ExtensionsWorkspace = lazyWorkspace(
-  "extensions-workspace",
-  () => __vitePreload(() => import("./chunks/extensions-workspace.js"), true ? __vite__mapDeps([7,8]) : void 0).then((module) => ({ default: module.ExtensionsWorkspace }))
-);
-const AppDetailWorkspace = lazyWorkspace("app-detail-workspace", () => __vitePreload(() => import("./chunks/app-detail-workspace.js"), true ? __vite__mapDeps([9,8,4]) : void 0).then((m) => ({ default: m.AppDetailWorkspace })));
-const HelpModal = lazyWorkspace("help-modal", () => __vitePreload(() => import("./chunks/help-modal.js"), true ? [] : void 0).then((m) => ({ default: m.HelpModal })));
-const SupplyChainHubWorkspace = lazyWorkspace(
-  "supply-chain-hub-workspace",
-  () => __vitePreload(() => import("./chunks/supply-chain-hub-workspace.js").then((n) => n.d), true ? __vite__mapDeps([10,8]) : void 0).then((m) => ({ default: m.SupplyChainHubWorkspace }))
-);
-const PolicyWorkspacePage = lazyWorkspace(
-  "policy-workspace-page",
-  () => __vitePreload(() => import("./chunks/policy-workspace-page.js"), true ? __vite__mapDeps([11,5]) : void 0).then((m) => ({ default: m.PolicyWorkspacePage }))
-);
-const AboutWorkspace = lazyWorkspace(
-  "about-workspace",
-  () => __vitePreload(() => import("./chunks/about-workspace.js"), true ? [] : void 0).then((m) => ({ default: m.AboutWorkspace }))
-);
-function LazyFallback() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex min-h-[200px] items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "guard-skeleton h-8 w-48" }) });
-}
 function navigate(pathname) {
   commitDashboardLocation(guardAwareHref(pathname));
 }
@@ -31975,6 +31799,23 @@ function resolveView(pathname) {
   }
   return "home";
 }
+function useRouteFocus(view, mainSelector = "main#main-content") {
+  const prevViewRef = reactExports.useRef(null);
+  reactExports.useEffect(() => {
+    if (prevViewRef.current === null) {
+      prevViewRef.current = view;
+      return;
+    }
+    if (prevViewRef.current === view) {
+      return;
+    }
+    prevViewRef.current = view;
+    const main = document.querySelector(mainSelector);
+    if (main) {
+      main.focus({ preventScroll: true });
+    }
+  }, [view, mainSelector]);
+}
 async function loadDetail(requestId) {
   try {
     const item = await fetchRequest(requestId);
@@ -32015,7 +31856,7 @@ async function refreshStaleScopeContractSelection({
 function shouldFetchArtifactDiff(artifactType) {
   return (/* @__PURE__ */ new Set(["mcp_server", "skill", "skill_file"])).has(artifactType);
 }
-function App() {
+function useAppData() {
   const pathname = useDashboardPathname();
   const view = resolveView(pathname);
   useRouteFocus(view);
@@ -32250,6 +32091,197 @@ function App() {
       cancelled = true;
     };
   }, [view]);
+  return {
+    pathname,
+    view,
+    requestId,
+    appDetailHarness,
+    requests,
+    setRequests,
+    detail,
+    setDetail,
+    receipts,
+    setReceipts,
+    runtime,
+    setRuntime,
+    policies,
+    setPolicies,
+    inventory,
+    setInventory,
+    resolutionMessage,
+    setResolutionMessage,
+    codexResume,
+    setCodexResume,
+    resolvedRequestId,
+    setResolvedRequestId,
+    helpOpen,
+    setHelpOpen,
+    clearConfirm,
+    setClearConfirm,
+    approvalGate,
+    setApprovalGate,
+    guardVersion,
+    setGuardVersion,
+    resolutionInFlight,
+    bulkApproveInFlight,
+    queuedItems,
+    activeRequestId
+  };
+}
+function fieldIsNull(value) {
+  return value === null || value === void 0 || value === "";
+}
+function buildClearPayload(input) {
+  switch (input.scope) {
+    case "artifact":
+      return {
+        harness: input.harness,
+        scope: "artifact",
+        artifact_id: input.artifact_id ?? void 0,
+        artifact_hash: input.artifact_hash ?? void 0,
+        source: input.source ?? void 0
+      };
+    case "workspace":
+      return {
+        harness: input.harness,
+        scope: "workspace",
+        artifact_id: input.artifact_id ?? void 0,
+        artifact_hash: input.artifact_hash ?? void 0,
+        source: input.source ?? void 0,
+        workspace: input.workspace ?? void 0
+      };
+    case "publisher":
+      return {
+        harness: input.harness,
+        scope: "publisher",
+        publisher: input.publisher ?? void 0,
+        source: input.source ?? void 0
+      };
+    case "harness":
+      return {
+        scope: "harness",
+        harness: input.harness,
+        artifact_id: input.artifact_id ?? void 0,
+        artifact_hash: input.artifact_hash ?? void 0,
+        artifact_id_is_null: fieldIsNull(input.artifact_id) ? true : void 0,
+        artifact_hash_is_null: fieldIsNull(input.artifact_hash) ? true : void 0,
+        source: input.source ?? void 0
+      };
+    case "global":
+      return { scope: "global", all: true };
+  }
+}
+function policyIdentityKey(input) {
+  return JSON.stringify([
+    input.harness,
+    input.scope,
+    input.artifact_id ?? null,
+    input.artifact_hash ?? null,
+    input.workspace ?? null,
+    input.publisher ?? null,
+    input.action ?? null,
+    input.reason ?? null,
+    input.updated_at ?? null,
+    input.source ?? null
+  ]);
+}
+function clearLabelForScope(scope) {
+  switch (scope) {
+    case "artifact":
+      return "Clear exact decision";
+    case "workspace":
+      return "Clear project decision";
+    case "publisher":
+      return "Clear publisher decision";
+    case "harness":
+      return "Clear app decision";
+    case "global":
+      return "Clear global decision";
+  }
+}
+class ProtectionRepairFlowError extends Error {
+  failedHarnesses;
+  constructor(message, failedHarnesses) {
+    super(message);
+    this.name = "ProtectionRepairFlowError";
+    this.failedHarnesses = failedHarnesses;
+  }
+}
+function activeFailedHarnesses(failedHarnesses, repairHarnesses) {
+  const repairable = new Set(repairHarnesses);
+  return Array.from(new Set(failedHarnesses)).filter((harness) => repairable.has(harness));
+}
+async function runAutomaticProtectionRepair(input) {
+  const failures = [];
+  const failedHarnesses = /* @__PURE__ */ new Set();
+  try {
+    await repairApprovalCenter();
+  } catch {
+    failures.push("local runtime");
+  }
+  for (const harness of input.harnesses) {
+    try {
+      await runHarnessAction({ harness, action: "repair", dryRun: false });
+    } catch (error) {
+      failedHarnesses.add(harness);
+      failures.push(
+        error instanceof Error && error.message.trim() ? error.message : `${input.displayName(harness)} hooks`
+      );
+    }
+  }
+  try {
+    await repairProtectionCheck("all");
+  } catch (error) {
+    if (error instanceof GuardProtectionRepairError) {
+      for (const harness of error.failedHarnesses) failedHarnesses.add(harness);
+    }
+    failures.push(error instanceof Error ? error.message : "integrity protection");
+  }
+  const refreshedSnapshot = await input.refreshStateAfterAction();
+  if (refreshedSnapshot === null) {
+    const detail = failures.length > 0 ? ` Repair reported: ${failures.join(", ")}.` : "";
+    throw new ProtectionRepairFlowError(
+      `Guard could not recheck protection. Check again in a moment.${detail}`,
+      []
+    );
+  }
+  const remainingHealth = protectionHealthFor(refreshedSnapshot);
+  if (remainingHealth.state === "protected") {
+    return "Automatic repairs completed. Guard rechecked every protection layer below.";
+  }
+  if (!hasRepairableProtectionGap(remainingHealth.checks)) {
+    const hasUnsupportedGaps = remainingHealth.checks.some(isUnsupportedPlatformCheck);
+    if (hasUnsupportedGaps) {
+      return "Supported protection repairs completed. Containment remains unavailable on this platform; Guard remains fail-closed.";
+    }
+    return "Automatic repairs completed. Guard rechecked every repairable protection layer below.";
+  }
+  const remaining = remainingProtectionRepairMessage(remainingHealth, input.displayName);
+  throw new ProtectionRepairFlowError(
+    remaining.message,
+    [...failedHarnesses].filter((harness) => remaining.failedHookHarnesses.includes(harness))
+  );
+}
+function useAppActions(data) {
+  const {
+    requests,
+    setRequests,
+    setDetail,
+    setReceipts,
+    setRuntime,
+    setPolicies,
+    setInventory,
+    setResolutionMessage,
+    setCodexResume,
+    resolvedRequestId,
+    setResolvedRequestId,
+    setHelpOpen,
+    clearConfirm,
+    setClearConfirm,
+    resolutionInFlight,
+    bulkApproveInFlight,
+    activeRequestId
+  } = data;
   const handleOpenInbox = reactExports.useCallback(() => navigate("/inbox"), []);
   const handleOpenFleet = reactExports.useCallback(() => navigate(PROTECT_ROUTE), []);
   const handleOpenEvidence = reactExports.useCallback(() => navigate("/evidence"), []);
@@ -32258,7 +32290,7 @@ function App() {
   const handleOpenCommands = reactExports.useCallback(() => navigate("/evidence?view=commands"), [navigate]);
   const handleOpenSettings = reactExports.useCallback(() => navigate("/settings"), []);
   const handleOpenSupplyChain = reactExports.useCallback(() => navigate("/supply-chain"), []);
-  reactExports.useCallback(() => navigate("/policy"), []);
+  const handleOpenPolicy = reactExports.useCallback(() => navigate("/policy"), []);
   const handleOpenHelp = reactExports.useCallback(() => setHelpOpen(true), []);
   const handleCloseHelp = reactExports.useCallback(() => setHelpOpen(false), []);
   const handleGoHome = reactExports.useCallback(() => navigate("/"), []);
@@ -32516,6 +32548,120 @@ function App() {
       refreshStateAfterAction
     });
   }, [refreshStateAfterAction]);
+  return {
+    handleOpenInbox,
+    handleOpenFleet,
+    handleOpenEvidence,
+    handleOpenTodayEvidence,
+    handleOpenInsights,
+    handleOpenCommands,
+    handleOpenSettings,
+    handleOpenSupplyChain,
+    handleOpenPolicy,
+    handleOpenHelp,
+    handleCloseHelp,
+    handleGoHome,
+    handleOpenRequest,
+    handleOpenAppDetail,
+    refreshStateAfterAction,
+    refreshStateWithoutResult,
+    handleReconnectSession,
+    handleClearPolicies,
+    handleConfirmClear,
+    handleCancelClear,
+    handleClearAppPolicies,
+    handleRefreshPolicies,
+    handleClearPolicy,
+    handleClearEvidence,
+    handleResolve,
+    handleRetryResume,
+    handleBulkApprove,
+    handleRetry,
+    handleRepair,
+    handleConnectHarness,
+    handleTestHarness,
+    handleRepairHarness,
+    handleRepairProtection
+  };
+}
+const HomeWorkspace = lazyWorkspace("home-dashboard", () => __vitePreload(() => import("./chunks/home-dashboard.js"), true ? __vite__mapDeps([0,1]) : void 0).then((m) => ({ default: m.HomeWorkspace })));
+const FleetWorkspace = lazyWorkspace("fleet-workspace", () => __vitePreload(() => import("./chunks/fleet-workspace.js"), true ? __vite__mapDeps([2,3,4,5]) : void 0).then((m) => ({ default: m.FleetWorkspace })));
+const SettingsWorkspace = lazyWorkspace("settings-workspace", () => __vitePreload(() => import("./chunks/settings-workspace.js"), true ? __vite__mapDeps([6,3,5]) : void 0).then((m) => ({ default: m.SettingsWorkspace })));
+const ExtensionsWorkspace = lazyWorkspace(
+  "extensions-workspace",
+  () => __vitePreload(() => import("./chunks/extensions-workspace.js"), true ? __vite__mapDeps([7,8]) : void 0).then((module) => ({ default: module.ExtensionsWorkspace }))
+);
+const AppDetailWorkspace = lazyWorkspace("app-detail-workspace", () => __vitePreload(() => import("./chunks/app-detail-workspace.js"), true ? __vite__mapDeps([9,8,4]) : void 0).then((m) => ({ default: m.AppDetailWorkspace })));
+const HelpModal = lazyWorkspace("help-modal", () => __vitePreload(() => import("./chunks/help-modal.js"), true ? [] : void 0).then((m) => ({ default: m.HelpModal })));
+const SupplyChainHubWorkspace = lazyWorkspace(
+  "supply-chain-hub-workspace",
+  () => __vitePreload(() => import("./chunks/supply-chain-hub-workspace.js").then((n) => n.d), true ? __vite__mapDeps([10,8]) : void 0).then((m) => ({ default: m.SupplyChainHubWorkspace }))
+);
+const PolicyWorkspacePage = lazyWorkspace(
+  "policy-workspace-page",
+  () => __vitePreload(() => import("./chunks/policy-workspace-page.js"), true ? __vite__mapDeps([11,5]) : void 0).then((m) => ({ default: m.PolicyWorkspacePage }))
+);
+const AboutWorkspace = lazyWorkspace(
+  "about-workspace",
+  () => __vitePreload(() => import("./chunks/about-workspace.js"), true ? [] : void 0).then((m) => ({ default: m.AboutWorkspace }))
+);
+function LazyFallback() {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex min-h-[200px] items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "guard-skeleton h-8 w-48" }) });
+}
+function App() {
+  const data = useAppData();
+  const {
+    view,
+    appDetailHarness,
+    requests,
+    detail,
+    receipts,
+    runtime,
+    policies,
+    inventory,
+    resolutionMessage,
+    codexResume,
+    helpOpen,
+    clearConfirm,
+    approvalGate,
+    setApprovalGate,
+    guardVersion,
+    activeRequestId
+  } = data;
+  const {
+    handleOpenInbox,
+    handleOpenFleet,
+    handleOpenEvidence,
+    handleOpenTodayEvidence,
+    handleOpenInsights,
+    handleOpenCommands,
+    handleOpenSettings,
+    handleOpenSupplyChain,
+    handleOpenHelp,
+    handleCloseHelp,
+    handleGoHome,
+    handleOpenRequest,
+    handleOpenAppDetail,
+    refreshStateAfterAction,
+    refreshStateWithoutResult,
+    handleReconnectSession,
+    handleClearPolicies,
+    handleConfirmClear,
+    handleCancelClear,
+    handleClearAppPolicies,
+    handleRefreshPolicies,
+    handleClearPolicy,
+    handleClearEvidence,
+    handleResolve,
+    handleRetryResume,
+    handleBulkApprove,
+    handleRetry,
+    handleRepair,
+    handleConnectHarness,
+    handleTestHarness,
+    handleRepairHarness,
+    handleRepairProtection
+  } = useAppActions(data);
   const appDetailContent = reactExports.useMemo(() => {
     if (view !== "app-detail" || !appDetailHarness || runtime.kind !== "ready") {
       return null;
@@ -32688,25 +32834,25 @@ clientExports.createRoot(container).render(
 export {
   remainingProtectionRepairParts as $,
   ActionButton as A,
-  HiMiniSparkles as B,
-  HiMiniXMark as C,
-  DeviceProofCard as D,
+  Badge as B,
+  HiMiniSparkles as C,
+  HiMiniXMark as D,
   EvidenceInsightsShareButton as E,
-  HiMiniChevronUp as F,
+  HiMiniBolt as F,
   GuardStatMetric as G,
   HomeInsightsMetrics as H,
-  HiMiniChevronDown as I,
-  resolveCloudIntelCopy as J,
-  HiMiniCloud as K,
-  HiMiniQuestionMarkCircle as L,
-  useFocusTrap as M,
-  approvalProofRequiresPassword as N,
-  OperatorHealthCard as O,
-  HiMiniExclamationTriangle as P,
-  HiMiniBolt as Q,
-  Badge as R,
+  useReceiptAnalytics as I,
+  updateSettings as J,
+  useProtectionPresentationState as K,
+  protectionHealthFor as L,
+  unavailableProtectionHealth as M,
+  EvidenceInsightsShareModal as N,
+  GuardHero as O,
+  OperatorHealthCard as P,
+  formatNumber as Q,
+  HiMiniShieldCheck as R,
   SectionLabel as S,
-  HiMiniMinusCircle as T,
+  DeviceProofCard as T,
   readJson as U,
   HiMiniArrowPath as V,
   WatchProtectionBanner as W,
@@ -32726,22 +32872,22 @@ export {
   HiMiniWrenchScrewdriver as a7,
   HiMiniExclamationCircle as a8,
   ProofStrip as a9,
-  disableApprovalGateTotp as aA,
-  importSettings as aB,
-  resetSettings as aC,
-  enrollApprovalGateTotp as aD,
-  verifyApprovalGateTotp as aE,
-  clearEvidence as aF,
-  exportDiagnostics as aG,
-  repairApprovalCenter as aH,
-  exportSettings as aI,
-  setupDesktopNotifications as aJ,
-  WorkspacePageHeader as aK,
-  HiMiniMagnifyingGlass as aL,
-  isProtectionPosture as aM,
-  deriveProtectionPosture as aN,
-  Tag as aO,
-  approvalGateCooldownLabel as aP,
+  repairApprovalCenter as aA,
+  exportSettings as aB,
+  setupDesktopNotifications as aC,
+  usePresentationMode as aD,
+  TabBar as aE,
+  Tag as aF,
+  POSTURE_OUTCOME_COLUMNS as aG,
+  fetchCloudReviewSettings as aH,
+  isApprovalProofSubmitDisabled as aI,
+  ApprovalProofFieldInputs as aJ,
+  changeCloudReviewSettings as aK,
+  getDefaultExportFromCjs as aL,
+  React as aM,
+  approvalGateCooldownLabel as aN,
+  WorkspacePageHeader as aO,
+  HiMiniMagnifyingGlass as aP,
   fetchLocalCliApi as aQ,
   fetchExtensionControlApi as aR,
   useResolvedApprovalGate as aS,
@@ -32757,28 +32903,28 @@ export {
   HiMiniXCircle as ab,
   HiMiniClipboardDocumentCheck as ac,
   HiMiniClipboard as ad,
-  PROTECTION_POSTURE_COPY as ae,
-  POSTURE_OUTCOME_COLUMNS as af,
-  getDefaultExportFromCjs as ag,
-  React as ah,
-  HiMiniKey as ai,
-  usePresentationMode as aj,
-  HiMiniAdjustmentsHorizontal as ak,
-  HiMiniLockClosed as al,
-  HiMiniBellAlert as am,
-  HiMiniCircleStack as an,
-  TabBar as ao,
-  fetchCloudReviewSettings as ap,
-  isApprovalProofSubmitDisabled as aq,
-  ApprovalProofFieldInputs as ar,
-  changeCloudReviewSettings as as,
-  resolveProtectionLevelCopy as at,
-  fetchSettings as au,
-  fetchRuntimeSnapshot as av,
-  withoutPresentationSettings as aw,
-  clearPolicy as ax,
-  clearReviewQueue as ay,
-  revokeApprovalGateCooldown as az,
+  HiMiniAdjustmentsHorizontal as ae,
+  HiMiniLockClosed as af,
+  HiMiniBellAlert as ag,
+  HiMiniCircleStack as ah,
+  resolveProtectionLevelCopy as ai,
+  PROTECTION_POSTURE_COPY as aj,
+  isProtectionPosture as ak,
+  deriveProtectionPosture as al,
+  fetchSettings as am,
+  fetchRuntimeSnapshot as an,
+  withoutPresentationSettings as ao,
+  clearPolicy as ap,
+  clearReviewQueue as aq,
+  revokeApprovalGateCooldown as ar,
+  disableApprovalGateTotp as as,
+  importSettings as at,
+  resetSettings as au,
+  HiMiniKey as av,
+  enrollApprovalGateTotp as aw,
+  verifyApprovalGateTotp as ax,
+  clearEvidence as ay,
+  exportDiagnostics as az,
   HiMiniCommandLine as b,
   HiMiniClipboardDocument as b$,
   HiMiniArrowLeft as b0,
@@ -32875,26 +33021,26 @@ export {
   runAuditRemediation as cr,
   HiMiniSignal as cs,
   createCommandActivityClient as d,
-  updateSettings as e,
+  guardActionDisposition as e,
   fetchCommandActivityApi as f,
   getHeatmapLevel as g,
   homeCommandActivityModel as h,
-  harnessDisplayName as i,
+  formatRelativeTime as i,
   jsxRuntimeExports as j,
-  isConnectableAppHarness as k,
-  useProtectionPresentationState as l,
-  unavailableProtectionHealth as m,
-  EmptyState as n,
-  EvidenceInsightsShareModal as o,
-  protectionHealthFor as p,
+  guardActionActivityCopy as k,
+  harnessDisplayName as l,
+  isConnectableAppHarness as m,
+  approvalProofRequiresPassword as n,
+  HiMiniExclamationTriangle as o,
+  EmptyState as p,
   queueErrorIsUnauthorizedSession as q,
   reactExports as r,
   HiMiniCheckCircle as s,
-  GuardHero as t,
-  useReceiptAnalytics as u,
-  formatNumber as v,
-  HiMiniShieldCheck as w,
-  guardActionDisposition as x,
-  formatRelativeTime as y,
-  guardActionActivityCopy as z
+  HiMiniMinusCircle as t,
+  useFocusTrap as u,
+  HiMiniChevronUp as v,
+  HiMiniChevronDown as w,
+  resolveCloudIntelCopy as x,
+  HiMiniCloud as y,
+  HiMiniQuestionMarkCircle as z
 };

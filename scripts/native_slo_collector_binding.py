@@ -16,6 +16,7 @@ FROZEN_CONTRACT_FILES = {
     "contract": "scripts/native_slo_contract.py",
     "acceptance": "scripts/native_slo_acceptance.py",
     "workloads": "scripts/native_slo_workloads.py",
+    "workload_cases": "scripts/native_slo_workload_cases.py",
     "corpus": "tests/fixtures/guard-native-qualification/corpus.v1.json",
     "ownership": "docs/guard/contracts/hook-data-plane-ownership.v2.json",
 }

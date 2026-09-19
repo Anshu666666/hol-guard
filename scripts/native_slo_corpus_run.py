@@ -70,6 +70,7 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
     from scripts.native_slo_workloads import (
         build_cases,
         corpus_manifest,
+        oracle_source_digest,
         platform_scope_summary,
         validate_case,
         validate_native_result,
@@ -154,7 +155,7 @@ def run_contract_corpus(runtime: Path) -> dict[str, object]:
     return {
         "schema": "hol-guard.native-contract-corpus-run.v1",
         "boundary": "DAEMON_INGRESS",
-        "oracle_digest": hashlib.sha256(Path(__file__).with_name("native_slo_workloads.py").read_bytes()).hexdigest(),
+        "oracle_digest": oracle_source_digest(),
         "manifest_digest": hashlib.sha256(
             json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest(),

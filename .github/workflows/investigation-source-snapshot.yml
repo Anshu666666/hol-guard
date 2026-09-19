@@ -1,47 +1,111 @@
-name: Investigation source snapshot
-
+name: Required storage liveness acceptance
 on:
-  push:
-    branches:
-      - fix/extension-control-authority-stability
-  pull_request:
-    branches:
-      - release/3.0
-
+  workflow_dispatch:
 permissions:
+  actions: read
   contents: read
-
+concurrency:
+  group: storage-liveness-required-job-acceptance
+  cancel-in-progress: false
+env:
+  CI_UV_CACHE_DEPENDENCY_GLOB: |
+    pyproject.toml
+    uv.lock
+    requirements.txt
+    docker-requirements.txt
 jobs:
-  snapshot:
+  scheduling-sensitive:
+    if: github.ref == 'refs/heads/hgp/diagnostic-storage-required-job-20260919'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Check out pull request source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - name: Create pull request source archive
-        run: tar --exclude=.git -czf /tmp/hol-guard-source.tar.gz .
-      - name: Upload pull request source archive
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          name: hol-guard-source
-          path: /tmp/hol-guard-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
-
-  baseline:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out release baseline
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Bind unchanged required-job sources
+        shell: bash
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTIC_SHA"
+          test "$(git show -s --format=%P HEAD)" = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
+          test "$(git rev-parse HEAD^:)" = "8ca9c2df12566dc340a59f37f6e14ece267622fe"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = ".github/workflows/investigation-source-snapshot.yml"
+          test "$(git hash-object .github/workflows/ci.yml)" = "8f24e6786d5398eb2345ed92a68c6994b2bc846c"
+          test "$(git hash-object pyproject.toml)" = "64a0281ee6b4f57a74cab68ac992fec3d782a6bb"
+          test "$(git hash-object tests/conftest.py)" = "61e6d98609309fac99c9baae50fab5f47229fcde"
+          test "$(git hash-object tests/test_guard_continuation_contract.py)" = "cfcf0c1b40d9e208e5c38daec964ba35a3589c02"
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = "a866713f175f3011de12c4bb739519e4709ca746"
+          test "$(git hash-object tests/test_guard_extension_control_recovery.py)" = "f749ba99d91c5d9a2e0a20cdc3a3107c208035f0"
+          test "$(git hash-object tests/test_guard_hook_process_runner.py)" = "e14790ef856b5b50feed45fc5fa212b8017c3b48"
+          test "$(git hash-object tests/test_guard_js_lockfile_resolution_phase11.py)" = "fa77ebc6f7233b4d2b6b8165258af385dd516291"
+          test "$(git hash-object tests/test_guard_runtime_hook_scheduler.py)" = "d09d425285f074dccc03ea4450fef44e9801729d"
+          test "$(git hash-object tests/test_guard_sandbox.py)" = "f82197db49472fe4a76256e986f6195a543efcb2"
+          test "$(git hash-object uv.lock)" = "10e18a310e63ba3c5940e25b44269d48dfc7f2da"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          ref: release/3.0
-      - name: Create release baseline archive
-        run: tar --exclude=.git -czf /tmp/hol-guard-release-3.0.tar.gz .
-      - name: Upload release baseline archive
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          python-version: "3.12"
+      - name: Set up uv
+        id: setup-uv-primary
+        continue-on-error: true
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
-          name: hol-guard-release-3.0
-          path: /tmp/hol-guard-release-3.0.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          version: "0.9.26"
+          enable-cache: true
+          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
+          save-cache: false
+      - name: Retry uv setup after transient download failure
+        if: steps.setup-uv-primary.outcome == 'failure'
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
+          save-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify the ordinary untraced job environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${GUARD_PYTEST_UNDER_COVERAGE+x}"
+          test -z "${GUARD_PYTEST_DURATION_OUTPUT+x}"
+          test -z "${COVERAGE_PROCESS_START+x}"
+          test -z "${COVERAGE_FILE+x}"
+          test -z "${PYTEST_ADDOPTS+x}"
+      - name: Run scheduling-sensitive tests untraced
+        run: >-
+          uv run --no-sync pytest
+          tests/test_guard_extension_control_recovery.py
+          tests/test_guard_sandbox.py
+          tests/test_guard_js_lockfile_resolution_phase11.py
+          tests/test_guard_runtime_hook_scheduler.py
+          tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial
+          tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon
+          tests/test_guard_continuation_contract.py
+          --tb=short
+      - name: Verify unchanged required-job sources afterward
+        if: always()
+        shell: bash
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTIC_SHA"
+          test "$(git show -s --format=%P HEAD)" = "9c2c7cf99ae9d9a40c29ec90367bccecf9efbd12"
+          test "$(git rev-parse HEAD^:)" = "8ca9c2df12566dc340a59f37f6e14ece267622fe"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = ".github/workflows/investigation-source-snapshot.yml"
+          test "$(git hash-object .github/workflows/ci.yml)" = "8f24e6786d5398eb2345ed92a68c6994b2bc846c"
+          test "$(git hash-object pyproject.toml)" = "64a0281ee6b4f57a74cab68ac992fec3d782a6bb"
+          test "$(git hash-object tests/conftest.py)" = "61e6d98609309fac99c9baae50fab5f47229fcde"
+          test "$(git hash-object tests/test_guard_continuation_contract.py)" = "cfcf0c1b40d9e208e5c38daec964ba35a3589c02"
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = "a866713f175f3011de12c4bb739519e4709ca746"
+          test "$(git hash-object tests/test_guard_extension_control_recovery.py)" = "f749ba99d91c5d9a2e0a20cdc3a3107c208035f0"
+          test "$(git hash-object tests/test_guard_hook_process_runner.py)" = "e14790ef856b5b50feed45fc5fa212b8017c3b48"
+          test "$(git hash-object tests/test_guard_js_lockfile_resolution_phase11.py)" = "fa77ebc6f7233b4d2b6b8165258af385dd516291"
+          test "$(git hash-object tests/test_guard_runtime_hook_scheduler.py)" = "d09d425285f074dccc03ea4450fef44e9801729d"
+          test "$(git hash-object tests/test_guard_sandbox.py)" = "f82197db49472fe4a76256e986f6195a543efcb2"
+          test "$(git hash-object uv.lock)" = "10e18a310e63ba3c5940e25b44269d48dfc7f2da"
+          test -z "$(git status --porcelain --untracked-files=no)"

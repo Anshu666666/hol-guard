@@ -421,9 +421,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
 
     def _publish_due_initial_retry(
         self,
-        fingerprint: tuple[
-            tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]
-        ],
+        fingerprint: tuple[tuple[tuple[str, tuple[int, int, int, int] | None], ...], tuple[tuple[str, int, int], ...]],
     ) -> bool:
         """Take the already scheduled fresh attempt before duplicate observation."""
         with self._condition:

@@ -377,6 +377,7 @@ mod tests {
                 "guard-command-command-structured-matchers",
                 "guard-command-executable-flag-contract",
                 "guard-command-lib",
+                "guard-command-native-command-control-projection",
                 "guard-command-native-command-controls",
                 "guard-command-native-command-program",
                 "guard-command-native-command-program-admission",

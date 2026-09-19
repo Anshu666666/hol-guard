@@ -12,6 +12,8 @@ from codex_plugin_scanner.guard.daemon.hook_native_review_approval import queue_
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_launcher_approval import LauncherApprovalControl
 
+from .native_review_approval_support import _bound_review_evidence
+
 
 def _session(tmp_path):
     workspace = tmp_path / "workspace"
@@ -26,13 +28,28 @@ def _session(tmp_path):
 
 
 def _queue(session, harness="codex"):
+    payload: dict[str, object] = {}
+    native_result, receipt = _bound_review_evidence(
+        harness=harness,
+        payload=payload,
+        workspace=session.workspace,
+        native_result={
+            "decision": "deny",
+            "policy_action": "review",
+            "minimum_action": "review",
+            "reason_code": "native_pre_tool_unknown_review",
+            "reason": "Unknown input qualification",
+        },
+    )
     row = queue_native_pre_tool_review(
         session.store,
         harness=harness,
-        payload={},
-        native_result={"minimum_action": "review", "reason": "Unknown input qualification"},
+        payload=payload,
+        native_result=native_result,
+        native_receipt=receipt,
         workspace=session.workspace,
         guard_home=session.store.guard_home,
+        verified_receipt=receipt,
     )
     assert row is not None
     return row["request_id"]

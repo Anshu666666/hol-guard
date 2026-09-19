@@ -1,0 +1,229 @@
+name: PR2974 recovered source validation
+
+on:
+  push:
+    branches: [codex/pr2974-source-validation-20260919]
+    paths:
+      - '.github/workflows/pr2974-source-validation.yml'
+      - 'ci/pr2974_source_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-source-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  gitleaks:
+    name: Complete release-to-candidate Gitleaks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-gitleaks/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-gitleaks/scratch
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '44353b20262f1ca56b56204f4c764b047710454f',
+                     'source_tree': 'b60a25c740e817b8eb4966e89cfe3466364047fb',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout diagnostic harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable source candidate with complete history
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up CI Go toolchain
+        id: tool_setup
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version: '1.23'
+          cache: false
+      - name: Install the exact existing Gitleaks module
+        id: tool_install
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          set -euo pipefail
+          go version > "$VALIDATION_REPORT/go-version.log"
+          GOBIN="$VALIDATION_SCRATCH/bin" GOPATH="$VALIDATION_SCRATCH/gopath" \
+            GOMODCACHE="$VALIDATION_SCRATCH/go-modules" GOCACHE="$VALIDATION_SCRATCH/go-cache" \
+            go install github.com/zricethezav/gitleaks/v8@v8.24.2 \
+            > "$VALIDATION_REPORT/gitleaks-install.log" 2>&1
+          echo "GITLEAKS_BINARY=$VALIDATION_SCRATCH/bin/gitleaks" >> "$GITHUB_ENV"
+      - name: Verify source and scan the complete isolated release range
+        id: validation
+        shell: bash
+        run: python3 -I "$VALIDATION_HARNESS/ci/pr2974_source_validation/gitleaks.py"
+      - name: Preserve terminal workflow outcome
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in (
+              'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME')}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['workflow_gate_passed'] = passed
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'workflow_gate_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          raise SystemExit(0 if passed else 1)
+          PY
+      - name: Upload original reports and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-source-gitleaks-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-gitleaks/report/
+          if-no-files-found: error
+          retention-days: 30
+
+  finite-and-package:
+    name: Actual finite and package validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-finite/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-finite/scratch
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '44353b20262f1ca56b56204f4c764b047710454f',
+                     'source_tree': 'b60a25c740e817b8eb4966e89cfe3466364047fb',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout diagnostic harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable source candidate with complete history
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the exact CI collection Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up frozen-lock installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Run exact finite, source and package gates
+        id: validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I "$VALIDATION_HARNESS/ci/pr2974_source_validation/finite.py"
+      - name: Preserve terminal workflow outcome
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in (
+              'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME')}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['workflow_gate_passed'] = passed
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'workflow_gate_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          raise SystemExit(0 if passed else 1)
+          PY
+      - name: Upload original reports and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-source-finite-and-package-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-finite/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain the actual built distributions
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-source-distributions-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/pr2974-finite/scratch/dist/*.whl
+            ${{ runner.temp }}/pr2974-finite/scratch/dist/*.tar.gz
+          if-no-files-found: warn
+          retention-days: 30

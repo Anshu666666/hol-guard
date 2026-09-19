@@ -1,0 +1,110 @@
+name: Separate macOS Intel attribution of the retained 1cd wheel
+
+on:
+  push:
+    branches:
+      - diagnostic/macos-intel-attribution-1cd
+    paths:
+      - .github/workflows/macos-intel-attribution-diagnostic.yml
+      - ci/native_runtime/probe_macos_intel_attribution.py
+      - ci/native_runtime/macos_intel_attribution_observer.py
+      - ci/native_runtime/test_macos_intel_attribution.py
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: separate-macos-intel-attribution-1cd
+  cancel-in-progress: false
+
+jobs:
+  attribution:
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - name: Refuse replacement attempts
+        env:
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: test "$RUN_ATTEMPT" = 1
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 1cd7842c1da4f327b568065dd159c67e7bd0c92b
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: 3.12.10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.23.2
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: 0.9.26
+          enable-cache: false
+      - name: Verify finite controls before installing or invoking Guard
+        timeout-minutes: 2
+        env:
+          MACOS_ATTRIBUTION_SOURCE_ROOT: ${{ github.workspace }}/source
+        run: >-
+          python -I -B diagnostic/ci/native_runtime/test_macos_intel_attribution.py
+      - name: Download the exact existing artifact with read-only credentials
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python -I -B diagnostic/ci/native_runtime/probe_macos_intel_attribution.py download
+          --source-root "$GITHUB_WORKSPACE/source"
+          --output-directory "$RUNNER_TEMP/macos-attribution-artifact"
+      - name: Install the unchanged wheel and source-lock dependencies
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv export --project "$GITHUB_WORKSPACE/source" --frozen --no-dev --no-default-groups --no-emit-project \
+            --no-header --no-annotate --output-file "$RUNNER_TEMP/macos-attribution-requirements.txt"
+          uv venv --python 3.12.10 "$RUNNER_TEMP/macos-attribution-environment"
+          uv pip install --python "$RUNNER_TEMP/macos-attribution-environment/bin/python" \
+            --no-deps --require-hashes --only-binary=:all: \
+            -r "$RUNNER_TEMP/macos-attribution-requirements.txt"
+          uv pip install --python "$RUNNER_TEMP/macos-attribution-environment/bin/python" --no-deps \
+            "$RUNNER_TEMP/macos-attribution-artifact/hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl"
+          uv pip check --python "$RUNNER_TEMP/macos-attribution-environment/bin/python"
+      - name: Run the fixed ten-arm cohort once
+        id: cohort
+        timeout-minutes: 36
+        run: >-
+          "$RUNNER_TEMP/macos-attribution-environment/bin/python" -I -B
+          diagnostic/ci/native_runtime/probe_macos_intel_attribution.py cohort
+          --source-root "$GITHUB_WORKSPACE/source"
+          --wheel "$RUNNER_TEMP/macos-attribution-artifact/hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl"
+          --output-directory "$RUNNER_TEMP/macos-attribution-evidence"
+      - name: Retain explicit reports, never private homes or child streams
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: separate-macos-intel-attribution-1cd-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/macos-attribution-artifact/artifact-binding.json
+            ${{ runner.temp }}/macos-attribution-artifact/driver-failure.json
+            ${{ runner.temp }}/macos-attribution-requirements.txt
+            ${{ runner.temp }}/macos-attribution-evidence/environment-before.json
+            ${{ runner.temp }}/macos-attribution-evidence/environment-after.json
+            ${{ runner.temp }}/macos-attribution-evidence/cohort.json
+            ${{ runner.temp }}/macos-attribution-evidence/driver-failure.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/arm.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/driver-failure.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/process.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/slo.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/identity.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/default_auto.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/pi.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/environment-before.json
+            ${{ runner.temp }}/macos-attribution-evidence/arm-*/environment-after.json

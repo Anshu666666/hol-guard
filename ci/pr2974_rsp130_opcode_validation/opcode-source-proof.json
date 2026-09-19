@@ -1,0 +1,187 @@
+{
+  "schema": "pr2974.rsp130-opcode-first-registration-source-recovery.v2",
+  "status": "UNEXECUTED_HARNESS_ONLY_SOURCE_CORRECTION",
+  "original": {
+    "harness": "e6ed5cdae377adc408d5f7162f16bb9d2f8a482f",
+    "source": "f247649b98aef1ac3b56109b65d27618a384624d",
+    "run": 35460590225,
+    "job": 105943617934,
+    "probe_git_blob": "4698cf9418cfcce2926ad7f6dd9977a2031d76a9",
+    "probe_sha256": "df7a788aab154d2c30f714ef1b7d6a9da7da30c716fdf0da35fb6528f5bb2696",
+    "observed_first_cell": {
+      "snapshots": 1,
+      "sources": 0,
+      "original_key_loads": 0,
+      "expected_original_key_loads": 1,
+      "candidate_key_loads": 1,
+      "expected_candidate_key_loads": 1
+    },
+    "observed_outcome": "Original operation probe failed; 45 functional cases reported passed by owner, independent full execution audit remains separate.",
+    "original_failure_preserved": true,
+    "no45_case_replay": true
+  },
+  "primary_sources": {
+    "tag": "v3.12.13",
+    "annotated_tag": "082755cdf017defd58f2ff7ff0341569946d30e0",
+    "commit": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+    "files": [
+      {
+        "path": "Doc/library/sys.rst",
+        "commit": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+        "git_blob": "add1d53153c39df654a2d2dbcff30cf55c67fc4e",
+        "sha256": "a73b0d8cf8bf39aa954a6caf72c4548334380975a3a1fcf321811e5fe544c9a3",
+        "bytes": 79141,
+        "tag_to_immutable_readback": true
+      },
+      {
+        "path": "Python/legacy_tracing.c",
+        "commit": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+        "git_blob": "4a6565bebc1f14fafdc9bb76e7fb4ccf611bb18d",
+        "sha256": "01c2dafe8b84f352e4ba9fd5fc64d36368f163b681c8e141c39082636ceb9cd4",
+        "bytes": 17708,
+        "tag_to_immutable_readback": true
+      },
+      {
+        "path": "Objects/frameobject.c",
+        "commit": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+        "git_blob": "44f2726f2ccaf167a9ed1e2851185905d1d62177",
+        "sha256": "423f379926896ee9aba422ebdd18adf02ff9e09f8b176819850a21c726711ea7",
+        "bytes": 48493,
+        "tag_to_immutable_readback": true
+      }
+    ],
+    "official_doc_url": "https://docs.python.org/3.12/library/sys.html#sys.settrace",
+    "docs_current_page_version": "3.12.14; exact3.12.13 source was independently fetched and pinned",
+    "boundaries": [
+      {
+        "path": "Doc/library/sys.rst",
+        "line": 1680,
+        "fact": "Python3.12 requires a frame's opcode flag to be true before settrace registers opcode events; the document says3.13 restores the prior behavior."
+      },
+      {
+        "path": "Objects/frameobject.c",
+        "definition": "frame_settrace_opcodes",
+        "line": 120,
+        "fact": "Assigning True sets both frame.f_trace_opcodes and interpreter.f_opcode_trace_set; assigning False resets only the frame field."
+      },
+      {
+        "path": "Python/legacy_tracing.c",
+        "definition": "_PyEval_SetTrace",
+        "line": 445,
+        "fact": "Instruction events are included in the registered monitoring mask only when interpreter.f_opcode_trace_set is already true."
+      }
+    ]
+  },
+  "finding": {
+    "current_admission": "The first counted() registers sys.settrace before its target call-event callback requests opcode events. That first call sets the interpreter latch too late for the already registered event mask.",
+    "following_call": "The next counted() registers tracing after that latch has become true and can observe instructions.",
+    "inference_boundary": "This exact source behavior explains the observed first-original0/next-candidate1 pattern. The original run did not log the private interpreter latch, so no retrospective latch observation is claimed; fresh calibration is required.",
+    "no_product_wrong_result_claimed": true
+  },
+  "correction": {
+    "path": "ci/pr2974_rsp130_join_validation/operation_probe.py",
+    "git_blob": "f8019a2670c75022fc4ce82d754aa58c85ef9d43",
+    "sha256": "0abdee37c07d0c3d3e7b89a8b2b2c7015c95dfb704c464369e08f75fb3a22f3b",
+    "bytes": 9574,
+    "content": "\"\"\"Count exact join key-load opcodes; this is not a latency benchmark.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport ast\nimport dis\nimport hashlib\nimport importlib.util\nimport json\nimport sys\nfrom pathlib import Path\nfrom types import CodeType\n\n\ndef digest(path: Path) -> dict[str, object]:\n    content = path.read_bytes()\n    return {\"bytes\": len(content), \"sha256\": hashlib.sha256(content).hexdigest()}\n\n\ndef dump(node: ast.AST) -> str:\n    return ast.dump(node, include_attributes=False)\n\n\ndef function(module: ast.Module, name: str) -> ast.FunctionDef:\n    matches = [node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == name]\n    if len(matches) != 1:\n        raise ValueError(f\"Expected one complete-file function: {name}\")\n    return matches[0]\n\n\ndef original_join(module: ast.Module) -> list[ast.stmt]:\n    body = function(module, \"sync_aibom_snapshots\").body\n    matches = [\n        index for index, node in enumerate(body)\n        if isinstance(node, ast.AnnAssign)\n        and isinstance(node.target, ast.Name)\n        and node.target.id == \"content_sources_by_snapshot\"\n    ]\n    if len(matches) != 1:\n        raise ValueError(\"Original join boundary is ambiguous\")\n    index = matches[0]\n    if not isinstance(body[index + 1], ast.For):\n        raise ValueError(\"Original ordered nested loop is missing\")\n    return body[index:index + 2]\n\n\ndef codes(root: CodeType) -> list[CodeType]:\n    result = [root]\n    for item in root.co_consts:\n        if isinstance(item, CodeType):\n            result.extend(codes(item))\n    return result\n\n\ndef counted(callback, *args, **kwargs):\n    if sys.gettrace() is not None or sys.getprofile() is not None:\n        raise RuntimeError(\"Operation probe requires an otherwise untraced process\")\n    maps = {\n        code: {item.offset: item for item in dis.get_instructions(code)}\n        for code in codes(callback.__code__)\n    }\n    counts = {\"snapshot_id_load_attr\": 0, \"explicit_equal_comparisons\": 0}\n\n    def trace(frame, event, _arg):\n        instructions = maps.get(frame.f_code)\n        if instructions is None:\n            return None\n        if event == \"call\":\n            frame.f_trace_lines = False\n            frame.f_trace_opcodes = True\n        elif event == \"opcode\":\n            item = instructions[frame.f_lasti]\n            if item.opname == \"LOAD_ATTR\" and item.argval == \"snapshot_id\":\n                counts[\"snapshot_id_load_attr\"] += 1\n            if item.opname == \"COMPARE_OP\" and item.argval == \"==\":\n                counts[\"explicit_equal_comparisons\"] += 1\n        return trace\n\n    activation_frame = sys._getframe()\n    previous_opcode_flag = activation_frame.f_trace_opcodes\n    try:\n        # CPython 3.12 registers opcode events only after a frame requests them.\n        activation_frame.f_trace_opcodes = True\n        sys.settrace(trace)\n        result = callback(*args, **kwargs)\n    finally:\n        try:\n            sys.settrace(None)\n        finally:\n            activation_frame.f_trace_opcodes = previous_opcode_flag\n            del activation_frame\n    return result, counts\n\n\ndef main() -> int:\n    if sys.implementation.name != \"cpython\" or sys.version_info[:3] != (3, 12, 13):\n        raise RuntimeError(\"Opcode accounting is scoped to reviewed CPython 3.12.13\")\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--baseline-file\", type=Path, required=True)\n    parser.add_argument(\"--candidate-root\", type=Path, required=True)\n    parser.add_argument(\"--output\", type=Path, required=True)\n    parser.add_argument(\"--manifest\", type=Path, required=True)\n    args = parser.parse_args()\n    root = args.candidate_root.resolve(strict=True)\n    test = root / \"tests/test_aibom_primary_content_join_contract.py\"\n    cli = root / \"src/codex_plugin_scanner/guard/aibom_cli.py\"\n    helper = root / \"src/codex_plugin_scanner/guard/aibom_content_upload.py\"\n    output = args.output.resolve()\n    if output.is_relative_to(root):\n        raise ValueError(\"Operation evidence must remain outside the candidate checkout\")\n    manifest = json.loads(args.manifest.read_text(encoding=\"utf-8\"))\n    watched = [args.baseline_file.resolve(strict=True), cli, helper, test,\n               Path(__file__).resolve(), args.manifest.resolve(strict=True)]\n    before = {str(path): digest(path) for path in watched}\n    report = {\n        \"schema\": \"pr2974-rsp130-join-operation-probe.v1\",\n        \"operation_count_only\": True,\n        \"runtime_or_performance_qualification\": False,\n        \"before\": before,\n        \"cells\": [],\n    }\n    try:\n        if digest(args.baseline_file) != manifest[\"baseline_cli\"]:\n            raise ValueError(\"Baseline full source bytes differ from the reviewed join input\")\n        for path in (cli, helper, test):\n            if digest(path) != manifest[\"candidate_files\"][path.relative_to(root).as_posix()]:\n                raise ValueError(f\"Candidate full source bytes differ: {path.name}\")\n        baseline_ast = ast.parse(args.baseline_file.read_text(encoding=\"utf-8\"), type_comments=True)\n        test_ast = ast.parse(test.read_text(encoding=\"utf-8\"), type_comments=True)\n        wrapper = function(test_ast, \"_original_join\")\n        if list(map(dump, wrapper.body[:-1])) != list(map(dump, original_join(baseline_ast))):\n            raise ValueError(\"Original probe wrapper differs from actual production join AST\")\n        if not isinstance(wrapper.body[-1], ast.Return):\n            raise ValueError(\"Probe wrapper must return only the original join result\")\n        candidate_ast = ast.parse(cli.read_text(encoding=\"utf-8\"), type_comments=True)\n        body = function(candidate_ast, \"sync_aibom_snapshots\").body\n        branches = [\n            node for node in body if isinstance(node, ast.If)\n            and dump(node.test) == dump(ast.parse(\"indexed_content_sources is None\", mode=\"eval\").body)\n        ]\n        if len(branches) != 1 or list(map(dump, branches[0].body)) != list(map(dump, original_join(baseline_ast))):\n            raise ValueError(\"Candidate inline fallback differs from original ordered join AST\")\n        sys.path.insert(0, str(root / \"src\"))\n        spec = importlib.util.spec_from_file_location(\"rsp130_join_probe_contracts\", test)\n        if spec is None or spec.loader is None:\n            raise ValueError(\"Cannot bind exact test source\")\n        module = importlib.util.module_from_spec(spec)\n        sys.modules[spec.name] = module\n        spec.loader.exec_module(module)\n        actual_helper = module.upload._indexed_primary_content_sources\n        if Path(actual_helper.__code__.co_filename).resolve(strict=True) != helper:\n            raise ValueError(\"Loaded join helper is outside candidate source\")\n        product_origins = {}\n        for name, loaded in tuple(sys.modules.items()):\n            if not name.startswith(\"codex_plugin_scanner\"):\n                continue\n            location = getattr(loaded, \"__file__\", None)\n            if location is None:\n                continue\n            path = Path(location).resolve(strict=True)\n            path.relative_to(root / \"src\")\n            product_origins[name] = {\"path\": str(path), **digest(path)}\n        report[\"product_origins\"] = product_origins\n        cells = [(1, 0), (1, 1), (2, 4), (4, 32), (8, 128), (16, 512)]\n        for snapshot_count, source_count in cells:\n            snapshots = tuple(module._snapshot(f\"key-{index}\") for index in range(snapshot_count))\n            sources = [module._source(f\"key-{index % snapshot_count}\", index) for index in range(source_count)]\n            original, old_counts = counted(module._original_join, snapshots, sources)\n            indexed, new_counts = counted(actual_helper, snapshots, sources, tuple_factory=tuple)\n            if indexed is None:\n                raise ValueError(\"Stock plain records unexpectedly refused the proposed index\")\n            module._same(original, indexed)\n            expected_old = 2 * snapshot_count * source_count + snapshot_count\n            expected_new = snapshot_count + source_count\n            row = {\n                \"snapshots\": snapshot_count,\n                \"sources\": source_count,\n                \"original\": old_counts,\n                \"candidate\": new_counts,\n                \"expected_original_key_loads\": expected_old,\n                \"expected_candidate_key_loads\": expected_new,\n                \"exact_key_and_source_object_order_equal\": True,\n            }\n            report[\"cells\"].append(row)\n            if old_counts != {\"snapshot_id_load_attr\": expected_old, \"explicit_equal_comparisons\": snapshot_count * source_count}:\n                raise ValueError(\"Original actual opcode count differs from source-derived count\")\n            if new_counts != {\"snapshot_id_load_attr\": expected_new, \"explicit_equal_comparisons\": 0}:\n                raise ValueError(\"Candidate actual opcode count differs from source-derived count\")\n        report[\"passed\"] = True\n    except Exception as error:\n        report[\"passed\"] = False\n        report[\"error\"] = {\"type\": type(error).__name__, \"message\": str(error)}\n    finally:\n        report[\"after\"] = {str(path): digest(path) for path in watched}\n        report[\"sources_unchanged\"] = report[\"after\"] == before\n        report[\"passed\"] = bool(report.get(\"passed\")) and report[\"sources_unchanged\"]\n        args.output.parent.mkdir(parents=True, exist_ok=True)\n        args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + \"\\n\", encoding=\"utf-8\")\n    return 0 if report[\"passed\"] else 1\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "inverse": {
+      "before": "    sys.settrace(trace)\n    try:\n        result = callback(*args, **kwargs)\n    finally:\n        sys.settrace(None)\n    return result, counts\n",
+      "after": "    activation_frame = sys._getframe()\n    previous_opcode_flag = activation_frame.f_trace_opcodes\n    try:\n        # CPython 3.12 registers opcode events only after a frame requests them.\n        activation_frame.f_trace_opcodes = True\n        sys.settrace(trace)\n        result = callback(*args, **kwargs)\n    finally:\n        try:\n            sys.settrace(None)\n        finally:\n            activation_frame.f_trace_opcodes = previous_opcode_flag\n            del activation_frame\n    return result, counts\n",
+      "whole_original_recovered": true
+    },
+    "scope": "Only the trace activation/finalization block in counted(). Every six-cell declaration, full source/AST check, callback, equality check and original2SP+S/candidateS+P formula remains byte-identical.",
+    "activation": "Capture the owned current frame and its prior opcode flag, request opcodes before sys.settrace, then invoke the callback exactly once.",
+    "cleanup": "Always remove global tracing; in nested finally restore the activation frame's prior flag and release the local frame reference. The per-interpreter opcode latch is intentionally not claimed to reset; this disposable probe process owns its lifetime.",
+    "discarded_product_warmup": false
+  },
+  "calibration": {
+    "path": "ci/pr2974_rsp130_join_validation/opcode_calibration.py",
+    "git_blob": "375f659970b9a6481619ffe10dc049c3ccbc66d0",
+    "sha256": "53be2fa63a918ee693902df88be25b952ed03ed6e1e11c18a211817575e9f880",
+    "bytes": 7634,
+    "lines": 179,
+    "content": "\"\"\"Calibrate first-call opcode admission in four separate fresh CPython children.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport dis\nimport hashlib\nimport importlib.util\nimport json\nfrom pathlib import Path\nimport sys\n\nORIGINAL_SHA256 = \"df7a788aab154d2c30f714ef1b7d6a9da7da30c716fdf0da35fb6528f5bb2696\"\nCORRECTED_SHA256 = \"0abdee37c07d0c3d3e7b89a8b2b2c7015c95dfb704c464369e08f75fb3a22f3b\"\nCASES = (\"unprimed-negative\", \"first-load\", \"nested-comparison\", \"exception-cleanup\")\nUNRELATED_CALLS = []\n\n\nclass Record:\n    __slots__ = (\"snapshot_id\",)\n\n    def __init__(self):\n        self.snapshot_id = \"calibration-key\"\n\n\nclass OwnedFailure(Exception):\n    pass\n\n\ndef unrelated_read(value):\n    first = value.snapshot_id\n    second = value.snapshot_id\n    UNRELATED_CALLS.append((first, second))\n    return first\n\n\ndef one_load(value):\n    unrelated_read(value)\n    return value.snapshot_id\n\n\ndef nested_comparison(value):\n    def read():\n        return value.snapshot_id\n\n    return read() == value.snapshot_id\n\n\ndef load_then_fail(value):\n    observed = value.snapshot_id\n    raise OwnedFailure(observed)\n\n\ndef fingerprint(path):\n    raw = path.read_bytes()\n    return {\"path\": str(path), \"bytes\": len(raw), \"sha256\": hashlib.sha256(raw).hexdigest()}\n\n\ndef instruction_map(callback):\n    rows = []\n\n    def visit(code):\n        rows.append({\n            \"name\": code.co_qualname, \"filename\": code.co_filename,\n            \"instructions\": [\n                {\"offset\": item.offset, \"opname\": item.opname, \"argval\": str(item.argval)}\n                for item in dis.get_instructions(code)\n            ],\n        })\n        for constant in code.co_consts:\n            if isinstance(constant, type(code)):\n                visit(constant)\n\n    visit(callback.__code__)\n    return rows\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"--case\", choices=CASES, required=True)\n    parser.add_argument(\"--probe\", type=Path, required=True)\n    parser.add_argument(\"--output\", type=Path, required=True)\n    args = parser.parse_args()\n    report = {\n        \"schema\": \"pr2974-rsp130-opcode-calibration.v1\", \"case\": args.case, \"passed\": False,\n        \"fresh_process_required\": True, \"product_callbacks_executed\": 0,\n        \"discarded_product_warmup_calls\": 0, \"qualification_complete\": False,\n        \"timing_measurement\": False, \"interpreter_opcode_latch_reset_claimed\": False,\n    }\n    watched = []\n    try:\n        assert sys.implementation.name == \"cpython\" and sys.version_info[:3] == (3, 12, 13)\n        assert sys.gettrace() is None and sys.getprofile() is None\n        assert not any(name == \"codex_plugin_scanner\" or name.startswith(\"codex_plugin_scanner.\") for name in sys.modules)\n        source = args.probe.resolve(strict=True)\n        expected = ORIGINAL_SHA256 if args.case == \"unprimed-negative\" else CORRECTED_SHA256\n        watched = [source, Path(__file__).resolve()]\n        report[\"before\"] = [fingerprint(path) for path in watched]\n        assert report[\"before\"][0][\"sha256\"] == expected\n        report[\"python\"] = {\"version\": sys.version, \"executable\": fingerprint(Path(sys.executable).resolve(strict=True))}\n        spec = importlib.util.spec_from_file_location(\"rsp130_owned_opcode_calibration_probe\", source)\n        assert spec is not None and spec.loader is not None\n        module = importlib.util.module_from_spec(spec)\n        sys.modules[spec.name] = module\n        spec.loader.exec_module(module)\n        assert Path(module.counted.__code__.co_filename).resolve(strict=True) == source\n        assert sys.gettrace() is None and sys.getprofile() is None\n        callback = (\n            nested_comparison if args.case == \"nested-comparison\"\n            else load_then_fail if args.case == \"exception-cleanup\" else one_load\n        )\n        report[\"synthetic_instruction_map\"] = instruction_map(callback)\n        report[\"unrelated_instruction_map\"] = instruction_map(unrelated_read)\n        report[\"unrelated_code_is_not_a_nested_callback_constant\"] = unrelated_read.__code__ not in module.codes(callback.__code__)\n        assert report[\"unrelated_code_is_not_a_nested_callback_constant\"]\n        assert UNRELATED_CALLS == []\n        report[\"first_callback_only\"] = True\n        value = Record()\n        if args.case == \"exception-cleanup\":\n            caught = None\n            try:\n                module.counted(callback, value)\n            except OwnedFailure as error:\n                caught = error\n                trace = error.__traceback__\n                frames = []\n                while trace is not None:\n                    if trace.tb_frame.f_code is module.counted.__code__:\n                        frames.append(trace.tb_frame)\n                    trace = trace.tb_next\n                report[\"exception\"] = {\n                    \"type\": type(error).__name__, \"args\": list(error.args),\n                    \"counted_frames\": len(frames),\n                    \"activation_frame_opcode_flags_after\": [frame.f_trace_opcodes for frame in frames],\n                }\n                assert len(frames) == 1 and frames[0].f_trace_opcodes is False\n                assert error.args == (\"calibration-key\",)\n                del frames, trace\n            assert caught is not None, \"Expected synthetic callback failure was not propagated\"\n            del caught\n        else:\n            result, counts = module.counted(callback, value)\n            expected_counts = {\n                \"snapshot_id_load_attr\": 0 if args.case == \"unprimed-negative\" else 2 if args.case == \"nested-comparison\" else 1,\n                \"explicit_equal_comparisons\": 1 if args.case == \"nested-comparison\" else 0,\n            }\n            report.update(\n                result=result, counts=counts, expected_counts=expected_counts,\n                negative_control_observed=args.case == \"unprimed-negative\" and counts == expected_counts,\n            )\n            assert result == (True if args.case == \"nested-comparison\" else \"calibration-key\")\n            assert counts == expected_counts\n        report[\"unrelated_calls\"] = [list(values) for values in UNRELATED_CALLS]\n        expected_unrelated = [[\"calibration-key\", \"calibration-key\"]] if args.case in (\"unprimed-negative\", \"first-load\") else []\n        assert report[\"unrelated_calls\"] == expected_unrelated\n        report[\"trace_after_is_none\"] = sys.gettrace() is None\n        report[\"profile_after_is_none\"] = sys.getprofile() is None\n        assert report[\"trace_after_is_none\"] and report[\"profile_after_is_none\"]\n        assert not any(name == \"codex_plugin_scanner\" or name.startswith(\"codex_plugin_scanner.\") for name in sys.modules)\n        report[\"passed\"] = True\n    except BaseException as error:\n        report[\"error\"] = {\"type\": type(error).__name__, \"message\": str(error)}\n    finally:\n        try:\n            report[\"after\"] = [fingerprint(path) for path in watched]\n            report[\"sources_unchanged\"] = bool(watched) and report.get(\"before\") == report[\"after\"]\n        except BaseException as error:\n            report[\"sources_unchanged\"] = False\n            report[\"final_source_error\"] = {\"type\": type(error).__name__, \"message\": str(error)}\n        report[\"passed\"] = bool(report.get(\"passed\")) and report[\"sources_unchanged\"]\n        args.output.parent.mkdir(parents=True, exist_ok=True)\n        pending = args.output.with_suffix(\".pending\")\n        pending.write_text(json.dumps(report, sort_keys=True, indent=2) + \"\\n\", encoding=\"utf-8\")\n        pending.replace(args.output)\n    return 0 if report[\"passed\"] else 1\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "commands": [
+      {
+        "case": "unprimed-negative",
+        "probe": "exact original operation_probe.py copied with a .py filename",
+        "expected_loads": 0,
+        "expected_equal": 0
+      },
+      {
+        "case": "first-load",
+        "probe": "corrected operation_probe.py",
+        "expected_loads": 1,
+        "expected_equal": 0
+      },
+      {
+        "case": "nested-comparison",
+        "probe": "corrected operation_probe.py",
+        "expected_loads": 2,
+        "expected_equal": 1
+      },
+      {
+        "case": "exception-cleanup",
+        "probe": "corrected operation_probe.py",
+        "expected": "Owned callback exception propagated; global trace/profile None and counted activation-frame opcode flag restoredFalse"
+      }
+    ],
+    "fresh_child_per_case": true,
+    "same_owned_fixed_python_and_env_required": true,
+    "product_callbacks": 0,
+    "negative_then_positive_same_process_forbidden": true,
+    "all_failures_retained": true,
+    "source_and_interpreter_hashes_retained": true,
+    "full_synthetic_disassembly_retained": true,
+    "unrelated_global_function_called_while_traced": true,
+    "unrelated_snapshot_loads_per_first_call": 2,
+    "unrelated_loads_must_not_count": true,
+    "unrelated_actual_calls_and_disassembly_retained": true
+  },
+  "next_validation": "In a separately reviewed operations-only successor, run each of the four calibration modes in its own fresh owned Python3.12.13 -I -B process. Require all four retained reports and cleanup/source/environment bindings before a fresh fifth process executes the unchanged six real operation cells. Preserve the original failed probe and the independently audited45 functional cases; do not rerun or discard any product join as warmup.",
+  "validation": {
+    "Python_parser": false,
+    "imports": false,
+    "calibration_execution": false,
+    "operation_execution": false,
+    "product_edits": false,
+    "tests_modified": false,
+    "refs_changed": false,
+    "qualification_complete": false
+  },
+  "calibration_delta": {
+    "prior_packet": {
+      "git_blob": "847d5d81af7f0eff02df514a8b095d2cb95f94d1",
+      "bytes": 24752,
+      "sha256": "16b83fbf6eb50d45a9019959c94cf8a67f20aacdda5c32fb709049750708cdc0"
+    },
+    "prior_calibration": {
+      "git_blob": "ce8f38fbc40dbc24698928e77fee9efbab9f080d",
+      "sha256": "22a6900d3a6d85035ee5167343e602387f0bc5440882da060c6ebca131fffad7",
+      "bytes": 6841,
+      "lines": 163
+    },
+    "whole_calibration_inverse": [
+      {
+        "before": "CASES = (\"unprimed-negative\", \"first-load\", \"nested-comparison\", \"exception-cleanup\")\n",
+        "after": "CASES = (\"unprimed-negative\", \"first-load\", \"nested-comparison\", \"exception-cleanup\")\nUNRELATED_CALLS = []\n"
+      },
+      {
+        "before": "def one_load(value):\n    return value.snapshot_id\n",
+        "after": "def unrelated_read(value):\n    first = value.snapshot_id\n    second = value.snapshot_id\n    UNRELATED_CALLS.append((first, second))\n    return first\n\n\ndef one_load(value):\n    unrelated_read(value)\n    return value.snapshot_id\n"
+      },
+      {
+        "before": "        report[\"synthetic_instruction_map\"] = instruction_map(callback)\n        report[\"first_callback_only\"] = True\n",
+        "after": "        report[\"synthetic_instruction_map\"] = instruction_map(callback)\n        report[\"unrelated_instruction_map\"] = instruction_map(unrelated_read)\n        report[\"unrelated_code_is_not_a_nested_callback_constant\"] = unrelated_read.__code__ not in module.codes(callback.__code__)\n        assert report[\"unrelated_code_is_not_a_nested_callback_constant\"]\n        assert UNRELATED_CALLS == []\n        report[\"first_callback_only\"] = True\n"
+      },
+      {
+        "before": "        report[\"trace_after_is_none\"] = sys.gettrace() is None\n",
+        "after": "        report[\"unrelated_calls\"] = [list(values) for values in UNRELATED_CALLS]\n        expected_unrelated = [[\"calibration-key\", \"calibration-key\"]] if args.case in (\"unprimed-negative\", \"first-load\") else []\n        assert report[\"unrelated_calls\"] == expected_unrelated\n        report[\"trace_after_is_none\"] = sys.gettrace() is None\n"
+      }
+    ],
+    "whole_original_calibration_reconstructed": true,
+    "corrected_probe_f801_unchanged": true,
+    "purpose": "Add the requested falsification of accidental unrelated-code accounting, preserving four fresh cases and the same one owned first-load opcode.",
+    "no_execution": true
+  }
+}

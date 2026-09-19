@@ -60,12 +60,9 @@ def _service(store: GuardStore) -> tuple[ExtensionControlApiService, ExtensionCo
     return ExtensionControlApiService(store=store, registry=REGISTRY, runtime=runtime), runtime
 
 
-@pytest.mark.parametrize("damage", ["key", "catalog"])
-def test_api_never_installs_local_success_over_invalid_catalog(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str
-) -> None:
+def test_api_never_installs_local_success_over_invalid_catalog(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = _local_store(tmp_path, monkeypatch)
-    _damage(store, damage)
+    _damage(store, "catalog")
     service, runtime = _service(store)
     assert runtime.current().health is AuthorityHealth.TAMPERED
 
@@ -77,6 +74,36 @@ def test_api_never_installs_local_success_over_invalid_catalog(
     assert store.read_extension_control_authority_for_registry(REGISTRY).health is AuthorityHealth.TAMPERED
     assert runtime.current().health is AuthorityHealth.TAMPERED
     assert service.effective()["health"] == AuthorityHealth.TAMPERED.value
+
+
+def test_api_missing_key_recovery_requires_approval_and_rebuilds_authenticated_catalog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _local_store(tmp_path, monkeypatch)
+    old_key = store._secret_store().get_secret(store._key_ref())
+    assert old_key is not None
+    _damage(store, "key")
+    service, runtime = _service(store)
+    assert runtime.current().health is AuthorityHealth.TAMPERED
+    with pytest.raises(ExtensionControlApiError) as denied:
+        service.recover_authority({"session_nonce": "synthetic-unapproved"})
+    assert denied.value.status == 403
+    assert store._secret_store().get_secret(store._key_ref()) is None
+    assert runtime.current().health is AuthorityHealth.TAMPERED
+
+    # Explicit approved key recovery retires records authenticated by the lost
+    # key and rebuilds the trusted built-in catalog under the new key epoch.
+    response = service.recover_authority({"approval_password": _PASSWORD, "session_nonce": "synthetic-recovery"})
+    new_key = store._secret_store().get_secret(store._key_ref())
+    assert new_key is not None and new_key != old_key
+    assert response["health"] == AuthorityHealth.PROTECTED.value
+    assert runtime.current().health is AuthorityHealth.PROTECTED
+    assert store.read_extension_control_authority_for_registry(REGISTRY).health is AuthorityHealth.PROTECTED
+    store._secret_store().set_secret(store._key_ref(), old_key)
+    assert store.read_extension_control_authority_for_registry(REGISTRY).health in {
+        AuthorityHealth.TAMPERED,
+        AuthorityHealth.DEGRADED_UNACKNOWLEDGED,
+    }
 
 
 @pytest.mark.parametrize("lockdown", [False, True])
@@ -143,7 +170,7 @@ def test_cli_success_follows_complete_persisted_authority(
         output_stream=output,
     )
     composed = store.read_extension_control_authority_for_registry(REGISTRY)
-    if damage == "local":
+    if damage in {"local", "key"}:
         assert result == 0
         assert json.loads(output.getvalue())["health"] == composed.health.value == AuthorityHealth.PROTECTED.value
         assert capsys.readouterr().err == ""
@@ -154,7 +181,7 @@ def test_cli_success_follows_complete_persisted_authority(
         assert capsys.readouterr().err.strip() == "Error: Extension-control authority recovery is incomplete."
 
 
-@pytest.mark.parametrize("damage", ["key", "local"])
+@pytest.mark.parametrize("damage", ["key", "local", "catalog"])
 def test_authenticated_http_recovery_reports_complete_authority(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str
 ) -> None:
@@ -167,7 +194,7 @@ def test_authenticated_http_recovery_reports_complete_authority(
         assert token is not None
         client = GuardSurfaceDaemonClient(f"http://127.0.0.1:{daemon.port}", token)
         payload: dict[str, object] = {"approval_password": _PASSWORD, "session_nonce": "synthetic-http-recovery"}
-        if damage == "key":
+        if damage == "catalog":
             with pytest.raises(GuardDaemonRequestError) as denied:
                 client.recover_extension_control_authority(payload)
             assert denied.value.status == 503

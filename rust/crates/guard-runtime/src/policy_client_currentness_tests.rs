@@ -126,7 +126,12 @@ fn real_evaluation_then_completed_publication_or_withdrawal_refuses_old_response
                     Ok(response)
                 });
                 assert!(evaluated);
-                assert_eq!(result.unwrap_err(), MISMATCH);
+                // Real durable mutation may consume the unchanged 750 ms budget.
+                // Either refusal is safe; an old authoritative result never is.
+                assert!(matches!(
+                    result.unwrap_err().as_str(),
+                    MISMATCH | "native_client_deadline_exceeded"
+                ));
                 fs::remove_dir_all(root).unwrap();
             }
         }

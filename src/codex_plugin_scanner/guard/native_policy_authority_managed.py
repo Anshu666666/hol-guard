@@ -14,6 +14,7 @@ from .managed_controls_policy_bundle import (
     managed_controls_revision_from_state,
     parsed_managed_controls_from_validated_policy_bundle,
 )
+from .native_command_control_authority_io import NativeCommandControlMutationRequiredError
 from .native_policy_authority_compile import compile_native_managed_authority
 from .native_policy_authority_contract import NativeManagedPolicyAuthority
 from .native_policy_snapshot_constants import NativePolicySnapshotError
@@ -170,20 +171,29 @@ def read_frozen_native_managed_authority(
         anchor = store._read_anchor(key=key) if key is not None else None
         if connection is None and key is None and anchor is None:
             # A standalone source capture does not need a command manifest
-            # when controls have never been enrolled. The ordinary local
+            # when controls have never been enrolled. The captured local
             # reader can establish this preparatory absence without a target
             # manifest. The complete SQL capture below still checks managed
             # activation and fences any intervening enrollment. Publication
             # separately requires its packaged command binding.
-            absent = store.read_extension_control_authority(catalog_digest=_REGISTRY.catalog_digest)
+            # This is an observation, so it must coexist with native decision
+            # leases. The captured reader cannot migrate or repair state.
+            with store._extension_control_authority_lock(shared=True), store._connect() as observer:
+                observer.execute("begin")
+                observer.execute("pragma query_only=on")
+                absent = store._read_extension_control_authority_locked(_REGISTRY.catalog_digest, connection=observer)
             if absent.health is AuthorityHealth.UNENROLLED:
                 require_unenrolled_secrets(store)
                 return None
-        view = (
-            store.read_extension_control_authority_for_registry(_REGISTRY)
-            if connection is None
-            else store._read_captured_extension_control_authority(connection, _REGISTRY)
-        )
+        if connection is None:
+            try:
+                view = store.read_extension_control_authority_for_registry(_REGISTRY, read_only=True)
+            except NativeCommandControlMutationRequiredError:
+                # Release SH before preparing a real transition under EX.
+                # Stable authority never excludes a concurrent native review.
+                view = store.read_extension_control_authority_for_registry(_REGISTRY)
+        else:
+            view = store._read_captured_extension_control_authority(connection, _REGISTRY)
         if view.health is AuthorityHealth.UNENROLLED and anchor is None:
             require_unenrolled_secrets(store)
             return None

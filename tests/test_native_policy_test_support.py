@@ -316,3 +316,35 @@ def test_every_added_finite_error_has_an_exact_existing_source_literal() -> None
         literals.update(re.findall(r'"(native_[a-z0-9_]+)"', path.read_text()))
     added = support._PUBLISHER_FAILURE_CODES - support._DIAGNOSTIC_FAILURE_CODES
     assert added <= literals
+
+
+@pytest.mark.parametrize(
+    ("health", "transport", "expected"),
+    [
+        (
+            "native_command_control_mutation_in_progress",
+            None,
+            "health=native_command_control_mutation_in_progress; transport=missing",
+        ),
+        (
+            "native_resident_unavailable",
+            "native_client_timed_out",
+            "health=native_resident_unavailable; transport=native_client_timed_out",
+        ),
+        ("private-health-canary", "private-transport-canary", "health=other; transport=other"),
+    ],
+)
+def test_completed_review_diagnostic_uses_only_finite_codes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    health: str,
+    transport: str | None,
+    expected: str,
+) -> None:
+    from types import SimpleNamespace
+
+    from codex_plugin_scanner.guard import native_runtime
+
+    monkeypatch.setattr(native_runtime, "native_runtime_health", lambda _: SimpleNamespace(reason=health))
+    monkeypatch.setattr(support, "native_resident_client_failure_code", lambda: transport)
+    assert support.native_review_diagnostic(tmp_path) == expected

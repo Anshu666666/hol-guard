@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from copy import deepcopy
 from pathlib import Path
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -182,6 +182,9 @@ def test_post_worker_checks_live_binding_before_output_and_never_lowers_intrinsi
         metrics=SimpleNamespace(record_route=routes.append),
         activity_writer=None,
     )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
+    )
     actual = worker_module.HookWorker._review_native_edge(
         host,
         payload={"tool_name": "Read", "tool_response": "synthetic"},
@@ -253,6 +256,9 @@ def test_observe_policy_warning_does_not_request_approval_or_lower_intrinsic_blo
         _record_native_decision_receipt=lambda receipt: receipt,
         metrics=SimpleNamespace(record_route=lambda _route: None),
         activity_writer=None,
+    )
+    host._review_native_edge_with_snapshot = MethodType(
+        worker_module.HookWorker._review_native_edge_with_snapshot, host
     )
     actual = worker_module.HookWorker._review_native_edge(
         host,

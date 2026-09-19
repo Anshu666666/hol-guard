@@ -26,7 +26,7 @@ from codex_plugin_scanner.guard.native_resident_client import (
     close_native_residents,
     native_resident_client_failure_code,
 )
-from codex_plugin_scanner.guard.native_runtime import native_runtime_status
+from codex_plugin_scanner.guard.native_runtime import native_runtime_health, native_runtime_status
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
 from codex_plugin_scanner.guard.runtime.extension_control_authority import AuthorityHealth
 from codex_plugin_scanner.guard.runtime.extension_control_contract import (
@@ -184,6 +184,8 @@ def exercise(root: Path) -> dict[str, object]:
         if raw is None:
             # Capture the existing client's fixed diagnostic code immediately.
             # Do not retry, reset the deadline, or reinterpret a missing result.
+            failure_code = native_resident_client_failure_code()
+            health = native_runtime_health(home)
             print(
                 json.dumps(
                     {
@@ -192,7 +194,9 @@ def exercise(root: Path) -> dict[str, object]:
                         "completed_cases": len(rows),
                         "control_revision": revision,
                         "policy_generation": binding["generation"],
-                        "native_failure_code": native_resident_client_failure_code(),
+                        "native_failure_code": failure_code,
+                        "native_health_state": health.state,
+                        "native_health_reason": health.reason,
                     },
                     sort_keys=True,
                 ),

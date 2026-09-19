@@ -6,12 +6,23 @@ do not claim a managed native consumer or advertise a production feature.
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import pytest
 
+from codex_plugin_scanner.guard.native_command_control_binding import (
+    NativeCommandProgramMetadata,
+    build_native_command_control_binding,
+)
 from codex_plugin_scanner.guard.native_policy_authority_contract import NativeManagedPolicyAuthority
 from codex_plugin_scanner.guard.native_runtime import _decode_capabilities
+from codex_plugin_scanner.guard.runtime.extension_control_authority import (
+    AuthorityHealth,
+    ExtensionControlAuthorityView,
+)
+from codex_plugin_scanner.guard.runtime.extension_control_contract import ControlLayerKind, ExtensionControlLayer
+from codex_plugin_scanner.guard.runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
 from tests.test_native_policy_snapshot_v4_barrier import barrier as barrier
 
 _CATALOG = "c" * 64
@@ -46,7 +57,40 @@ def _managed(barrier, catalog, *, feature=True):
     managed = NativeManagedPolicyAuthority(
         revision=1, managed_revision=2, catalog_digest=_CATALOG, global_lockdown=True, controls=()
     )
-    state.inputs = replace(state.inputs, authority=replace(state.inputs.authority, managed=managed))
+    layer = ExtensionControlLayer(
+        schema_version="1.0.0",
+        kind=ControlLayerKind.SIGNED_CLOUD,
+        catalog_digest=_CATALOG,
+        global_lockdown=True,
+        controls=(),
+    )
+    state.command_extensions = build_native_command_control_binding(
+        ExtensionControlRuntimeSnapshot.from_authority_view(
+            ExtensionControlAuthorityView(AuthorityHealth.PROTECTED, 1, _CATALOG, (layer,), 2)
+        ),
+        NativeCommandProgramMetadata("a" * 64, _CATALOG, "c" * 64),
+    )
+    state.command_extensions["authority"] = {
+        "epoch": 1,
+        "mutation_revision": 1,
+        "authority_key_id": "a" * 64,
+        "recovery": None,
+    }
+    # The source capture and independently compiled command binding must
+    # describe the same managed authority before runtime negotiation begins.
+    source = {
+        "kind": "managed-controls",
+        "local_snapshot_digest": "b" * 64,
+        **{
+            field: state.command_extensions[field]
+            for field in ("revision", "managed_revision", "catalog_digest", "effective_digest")
+        },
+    }
+    state.inputs = replace(
+        state.inputs,
+        authority=replace(state.inputs.authority, managed=managed),
+        _sources_json=json.dumps([*state.inputs.sources, source], sort_keys=True, separators=(",", ":")),
+    )
     features = state.status.capabilities.features
     if feature:
         features += ("policy-managed-authority-v1",)

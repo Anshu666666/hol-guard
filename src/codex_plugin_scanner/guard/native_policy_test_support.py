@@ -25,6 +25,8 @@ _DIAGNOSTIC_FAILURE_CODES = FINITE_FAILURE_CODES | frozenset(
         "native_client_output_missing",
         "native_client_process_failed",
         "native_client_pool_exhausted",
+        "native_resident_invalid_response",
+        "native_resident_unavailable",
     }
 )
 
@@ -33,6 +35,15 @@ def _finite_failure(value: object) -> str:
     if value is None:
         return "missing"
     return value if type(value) is str and value in _DIAGNOSTIC_FAILURE_CODES else "other"
+
+
+def native_review_diagnostic(guard_home: Path) -> str:
+    """Describe a completed failed review using only finite diagnostic codes."""
+    from .native_runtime import native_runtime_health
+
+    health = _finite_failure(native_runtime_health(guard_home).reason)
+    transport = _finite_failure(native_resident_client_failure_code())
+    return f"health={health}; transport={transport}"
 
 
 # Exact source-defined publisher/startup outcomes only. Unknown values never

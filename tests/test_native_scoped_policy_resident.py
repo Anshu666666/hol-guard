@@ -68,7 +68,16 @@ def test_signed_exact_policy_is_consumed_by_actual_resident(
         assert publisher.is_ready(), publisher.last_error
         before = evaluate()
         assert before is not None
-        assert_review(before)
+        # Advertised capabilities do not create scoped authority. The empty
+        # baseline uses authenticated defaults until a signed source requires
+        # the scoped publication contract.
+        assert before["schema"] == "guard-hook-edge-result.v2" and before["authority"] == "rust"
+        assert before["result"]["decision"] == "deny" and before["result"]["policy_action"] == "review"
+        baseline_binding = publisher.current_snapshot_binding()
+        assert baseline_binding is not None and "source_input_digest" not in baseline_binding
+        assert before["receipt"]["policy_generation"] == baseline_binding["generation"]
+        assert before["receipt"]["policy_digest"] == baseline_binding["policy_digest"]
+        assert before["receipt"]["runtime_identity"] == baseline_binding["runtime_identity"]
         publish_source(store, source)
         assert not publisher.is_ready()
         assert publisher.current_snapshot_binding() is None

@@ -1,0 +1,276 @@
+name: Shell candidate validation
+
+on:
+  push:
+    branches: [codex/rsp-shell-candidate-a37a5df]
+    paths: [.github/workflows/rsp-shell-candidate.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.actor == 'kantorcodes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: a37a5df6e62d41dd99c25f3046752cf3db4eaef4
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Apply exact source-bound candidate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import subprocess
+          from pathlib import Path
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == 'a37a5df6e62d41dd99c25f3046752cf3db4eaef4'
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip() == '8797b3f984cd023db9b387c893fc911875d7cfa7'
+          changes = [
+              ('src/codex_plugin_scanner/guard/runtime/shell_structure.py',
+               '01fb4f0525876ab940cb5f3480254d112a46e3a4b823459a28247c9a005bb65e',
+               'a1cb4b7f33f986930bfcfefae7cfcc8daddb4048448fd0e49c0547a826f10398',
+               [('    if not command:\n        return ()\n    results: list[ShellHeredoc]',
+                 '    # Every supported heredoc contains this literal operator. Preserve the\n    # full scanner for all candidates, including quoted or escaped operators.\n    if not command or "<<" not in command:\n        return ()\n    results: list[ShellHeredoc]'),
+                ('        if self.quote != "\'" and command.startswith("$(", index):',
+                 '        if char == "$" and self.quote != "\'" and command.startswith("$(", index):')]),
+              ('src/codex_plugin_scanner/guard/runtime/data_flow.py',
+               '1963ed3cbdf06cd26685f6b07691bfa64397cb7a123276f89be894e8c1bf767e',
+               '5ca07808684480005a060c31d8834c2bc703884dc645d90a11fa57d2a62b4e7f',
+               [('    pipes: list[ShellPipe] = []\n    for segment in _split_top_level_commands(command):',
+                 '    # Quoting and logical-OR checks matter only when a pipe marker exists.\n    if "|" not in command:\n        return ()\n    pipes: list[ShellPipe] = []\n    for segment in _split_top_level_commands(command):')]),
+          ]
+          for name, before, after, replacements in changes:
+              path = Path(name)
+              original = path.read_bytes()
+              assert hashlib.sha256(original).hexdigest() == before, name
+              text = original.decode('utf-8')
+              for old, new in replacements:
+                  assert text.count(old) == 1, name
+                  text = text.replace(old, new, 1)
+              encoded = text.encode('utf-8')
+              assert hashlib.sha256(encoded).hexdigest() == after, name
+              path.write_bytes(encoded)
+          new_test = '''"""Cheap negative checks must preserve the shell scanner's source semantics."""
+
+          from __future__ import annotations
+
+          import pytest
+
+          from codex_plugin_scanner.guard.runtime import data_flow, shell_structure
+
+
+          @pytest.mark.parametrize(
+              "command",
+              (
+                  "",
+                  "printf hello",
+                  "printf '$(' && echo `id`",
+                  "cat < input.txt | grep value",
+                  "printf '< <'\\ncat < input.txt",
+                  "printf '\\\\\\"'\\n" * 1024,
+              ),
+          )
+          def test_marker_free_command_does_not_construct_heredoc_scanner(
+              command: str, monkeypatch: pytest.MonkeyPatch
+          ) -> None:
+              def unexpected_scanner() -> None:
+                  pytest.fail("a command without a heredoc operator needs no heredoc scanner")
+
+              monkeypatch.setattr(shell_structure, "ShellScanState", unexpected_scanner)
+              assert shell_structure.extract_heredocs(command) == ()
+
+
+          @pytest.mark.parametrize(
+              ("command", "expected_bodies"),
+              (
+                  ("cat <<EOF\\nbody\\nEOF", ("body\\n",)),
+                  ("cat <<'EOF'\\n$(printf literal)\\nEOF", ("$(printf literal)\\n",)),
+                  ("cat <<-EOF\\n\\tbody\\n\\tEOF", ("\\tbody\\n",)),
+                  ("cat <<ONE <<TWO\\nfirst\\nONE\\nsecond\\nTWO", ("first\\n", "second\\n")),
+                  ("echo '<<EOF'\\nbody\\nEOF", ()),
+                  ('echo "<<EOF"\\nbody\\nEOF', ()),
+                  ("echo \\\\<<EOF\\nbody\\nEOF", ()),
+                  ("cat <<EOF", ()),
+              ),
+          )
+          def test_possible_heredoc_always_keeps_full_source_scanning(
+              command: str, expected_bodies: tuple[str, ...], monkeypatch: pytest.MonkeyPatch
+          ) -> None:
+              calls = 0
+              original_scanner = shell_structure.ShellScanState
+
+              def counted_scanner() -> shell_structure.ShellScanState:
+                  nonlocal calls
+                  calls += 1
+                  return original_scanner()
+
+              monkeypatch.setattr(shell_structure, "ShellScanState", counted_scanner)
+              results = shell_structure.extract_heredocs(command)
+              assert calls > 0
+              assert tuple(item.body for item in results) == expected_bodies
+              for item in results:
+                  assert command[item.body_start : item.body_end] == item.body
+                  assert command[item.operator_start : item.operator_start + 2] == "<<"
+
+
+          @pytest.mark.parametrize(
+              ("command", "index", "quote", "expected_index", "expected_depth"),
+              (
+                  ("plain", 0, None, 1, 0),
+                  ("$(printf value) tail", 0, None, 15, 0),
+                  ("$(printf value) tail", 0, '"', 15, 0),
+                  ("$(printf value) tail", 0, "'", 1, 0),
+                  ("$value", 0, None, 1, 0),
+                  ("(value)", 0, None, 1, 1),
+                  ("\\\\$(value)", 0, None, 2, 0),
+              ),
+          )
+          def test_substitution_prefix_guard_preserves_scan_positions(
+              command: str, index: int, quote: str | None, expected_index: int, expected_depth: int
+          ) -> None:
+              state = shell_structure.ShellScanState()
+              state.quote = quote
+              assert state.advance(command, index) == expected_index
+              assert state.subshell_depth == expected_depth
+
+
+          @pytest.mark.parametrize("command", ("", "printf hello", "cat < input", "a && b", "a; b", "$(printf x)"))
+          def test_pipe_free_command_does_not_segment_source(command: str, monkeypatch: pytest.MonkeyPatch) -> None:
+              def unexpected_split(_command: str) -> tuple[str, ...]:
+                  pytest.fail("a command without a pipe marker needs no pipeline segmentation")
+
+              monkeypatch.setattr(data_flow, "_split_top_level_commands", unexpected_split)
+              assert data_flow.extract_pipes(command) == ()
+
+
+          @pytest.mark.parametrize(
+              ("command", "expected"),
+              (
+                  ("cat input | grep value", (("cat input", "grep value"),)),
+                  ("cat input |& grep value", (("cat input", "grep value"),)),
+                  ("cat input || printf empty", ()),
+                  ("printf 'a|b'", ()),
+                  ("printf \\"a|b\\"", ()),
+                  ("printf \\\\|", ()),
+                  ("printf $(cat input | grep value)", ()),
+              ),
+          )
+          def test_possible_pipe_keeps_full_lexical_scanning(command: str, expected: tuple[tuple[str, str], ...]) -> None:
+              assert tuple((pipe.left, pipe.right) for pipe in data_flow.extract_pipes(command)) == expected
+          '''
+          import textwrap
+          new_test = textwrap.dedent(new_test)
+          encoded = new_test.encode('utf-8')
+          assert hashlib.sha256(encoded).hexdigest() == '02ff353ad888fac291def2cc8784fe493ca2c204bbc85ab0fce931b40818601a', repr(new_test)
+          path = Path('tests/test_shell_structure_fast_negative.py')
+          assert not path.exists()
+          path.write_bytes(encoded)
+          Path('candidate-evidence').mkdir()
+          PY
+      - name: Regenerate the complete original corpus report
+        run: uv run --no-sync python tests/guard_command_decision_diff.py --write
+      - name: Verify candidate inventory and unchanged outcomes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import subprocess
+          from pathlib import Path
+          names = [
+              'src/codex_plugin_scanner/guard/runtime/shell_structure.py',
+              'src/codex_plugin_scanner/guard/runtime/data_flow.py',
+              'tests/test_shell_structure_fast_negative.py',
+              'tests/fixtures/guard-command-corpus/decision-diff-report.json',
+          ]
+          report = Path(names[-1])
+          old = json.loads(subprocess.check_output(['git', 'show', 'HEAD:' + names[-1]]))
+          new = json.loads(report.read_bytes())
+          for name in names[:2]:
+              key = 'source-' + hashlib.sha256(name.encode()).hexdigest()[:24]
+              digest = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              assert new['bindings']['sources_sha256'][key] == digest
+              old['bindings']['sources_sha256'][key] = digest
+          assert old == new, 'outcomes or unrelated source bindings changed'
+          assert hashlib.sha256(report.read_bytes()).hexdigest() == '60885462517effc86dd39d47be3250cbadc741b1f96c03a6ce3703286ace1124'
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          assert changed == set(names) - {names[2]}, changed
+          subprocess.run(['git', 'add', '--', *names], check=True)
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
+          assert tree == '3f1ee432fe5d27399cd5057f584b220c03998434', tree
+          receipt = {'parent': 'a37a5df6e62d41dd99c25f3046752cf3db4eaef4', 'tree': tree, 'paths': names, 'corpus_cases': 51000, 'outcomes_unchanged': True}
+          Path('candidate-evidence/source.json').write_text(json.dumps(receipt, sort_keys=True, indent=2) + '\n')
+          PY
+      - name: Run formatting and lint checks
+        run: |
+          uv run --no-sync ruff check src/codex_plugin_scanner/guard/runtime/shell_structure.py src/codex_plugin_scanner/guard/runtime/data_flow.py tests/test_shell_structure_fast_negative.py
+          uv run --no-sync ruff format --check src/codex_plugin_scanner/guard/runtime/shell_structure.py src/codex_plugin_scanner/guard/runtime/data_flow.py tests/test_shell_structure_fast_negative.py
+      - name: Run original and new behavior contracts
+        run: >-
+          uv run --no-sync pytest -q
+          tests/test_shell_structure_fast_negative.py tests/test_guard_data_flow.py
+          tests/test_guard_command_decision_diff.py tests/test_managed_controls_contract_docs.py
+          --tb=short --junitxml=candidate-evidence/contracts.xml
+      - name: Retain two fresh full-corpus measurements
+        run: |
+          PYTHONHASHSEED=1 TZ=UTC LC_ALL=C uv run --no-sync python tests/guard_command_decision_diff.py --metrics > candidate-evidence/metrics-1.json
+          PYTHONHASHSEED=8731 TZ=US/Pacific LC_ALL=C.UTF-8 uv run --no-sync python tests/guard_command_decision_diff.py --metrics > candidate-evidence/metrics-2.json
+      - name: Create only the verified unreferenced tree
+        env:
+          TREE_WRITE_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import urllib.request
+          from pathlib import Path
+          subprocess.run(['git', 'diff', '--exit-code'], check=True)
+          expected = '3f1ee432fe5d27399cd5057f584b220c03998434'
+          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == expected
+          manifest = json.loads(Path('tests/fixtures/guard-command-corpus/seed-manifest.json').read_bytes())
+          for i in (1, 2):
+              metric = json.loads(Path(f'candidate-evidence/metrics-{i}.json').read_bytes())
+              assert metric['elapsed_seconds'] < manifest['evaluation_budget_seconds'], metric
+              assert metric['rss_mib'] < manifest['evaluation_rss_budget_mib'], metric
+          receipt = json.loads(Path('candidate-evidence/source.json').read_bytes())
+          entries = [{'path': name, 'mode': '100644', 'type': 'blob', 'content': Path(name).read_text()} for name in receipt['paths']]
+          body = json.dumps({'base_tree': '8797b3f984cd023db9b387c893fc911875d7cfa7', 'tree': entries}).encode()
+          request = urllib.request.Request('https://api.github.com/repos/hashgraph-online/hol-guard/git/trees', data=body, method='POST', headers={'Authorization': 'Bearer ' + os.environ['TREE_WRITE_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              created = json.load(response)
+          assert created['sha'] == expected, created['sha']
+          receipt['created_tree'] = created['sha']
+          receipt['refs_modified'] = False
+          receipt['workflows_modified_in_candidate'] = False
+          Path('candidate-evidence/tree-created.json').write_text(json.dumps(receipt, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'created_tree': created['sha'], 'refs_modified': False}))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: shell-candidate-a37a5df
+          path: candidate-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: shell-candidate-contracts-a37a5df
+          path: candidate-evidence/contracts.xml
+          if-no-files-found: warn
+          retention-days: 14

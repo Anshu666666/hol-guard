@@ -1,39 +1,14 @@
-name: Rust runtime performance
+name: Native validation phase diagnostic
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "rust/**"
-      - "scripts/bench_guard_native_full_path.py"
-      - "scripts/bench_guard_native_release_gate.py"
-      - "scripts/bench_guard_native_installed_slo.py"
-      - "scripts/native_slo_adapter.py"
-      - "scripts/native_slo_contract.py"
-      - "scripts/stress_guard_daemon.py"
-      - "src/codex_plugin_scanner/guard/native_runtime.py"
-      - "src/codex_plugin_scanner/guard/native_resident_client.py"
-      - "src/codex_plugin_scanner/guard/native_runtime_resident.py"
-      - "src/codex_plugin_scanner/guard/daemon/server.py"
-      - "src/codex_plugin_scanner/guard/daemon/hook_process_*.py"
-      - ".github/workflows/rust-runtime-performance.yml"
-  push:
-    branches: [main]
-    paths:
-      - "rust/**"
-      - "scripts/bench_guard_native_full_path.py"
-      - "scripts/bench_guard_native_release_gate.py"
-      - "scripts/bench_guard_native_installed_slo.py"
-      - "scripts/native_slo_adapter.py"
-      - "scripts/native_slo_contract.py"
-      - "scripts/stress_guard_daemon.py"
-      - "src/codex_plugin_scanner/guard/native_runtime.py"
-      - "src/codex_plugin_scanner/guard/native_resident_client.py"
-      - "src/codex_plugin_scanner/guard/native_runtime_resident.py"
-      - "src/codex_plugin_scanner/guard/daemon/server.py"
-      - "src/codex_plugin_scanner/guard/daemon/hook_process_*.py"
-      - ".github/workflows/rust-runtime-performance.yml"
   workflow_dispatch:
+    inputs:
+      diagnostic_sha:
+        required: true
+        type: string
+      diagnostic_tree:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -44,12 +19,40 @@ concurrency:
 
 jobs:
   performance:
+    env:
+      EXPECTED_SHA: ${{ inputs.diagnostic_sha }}
+      EXPECTED_TREE: ${{ inputs.diagnostic_tree }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
+          ref: ${{ inputs.diagnostic_sha }}
+          fetch-depth: 2
           persist-credentials: false
+      - name: Verify immutable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_TREE" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$EXPECTED_TREE"
+          test "$(git show -s --format=%P HEAD)" = 04bed715f38b04cb75651fafdf566e86e1112da1
+          test "$(git rev-parse HEAD:src/codex_plugin_scanner/guard/native_runtime.py)" = 2f178f054924e49e55446d3428d8ee3bf36dde8b
+          test "$(git rev-parse HEAD:scripts/bench_guard_native_release_gate.py)" = 9dea514d9f1732045b1c671ec86c9394071e1e15
+          test "$(git rev-parse HEAD:scripts/bench_guard_native_phase_diagnostic.py)" = f183c9b136573e031c9c21399b7b3c08bf62ec07
+          test "$(git rev-parse HEAD:tests/test_native_performance_phase_diagnostic.py)" = e54d80d8fa64b10eb06506c4a3cb96e9331e325e
+          test "$(git rev-parse HEAD:scripts/bench_guard_native_validation_diagnostic.py)" = f39e2d60501bf8980e2b5ddcbe70ae8e1de17612
+          test "$(git rev-parse HEAD:tests/test_native_validation_phase_diagnostic.py)" = b3c3c8b2fbbd6acf7599ddebbd6be39a8842585e
+          test "$(git rev-parse HEAD:pyproject.toml)" = dd7ea7046ebb399bde94d1532dce9149437cab43
+          test "$(git rev-parse HEAD:uv.lock)" = 87a7e665302f34c6ae1100387425572bab6e7c51
+          git diff --exit-code
+          git diff --cached --exit-code
+          git diff --name-only HEAD^ HEAD | sort > "$RUNNER_TEMP/hash-changed.txt"
+          printf '%s\n' .github/workflows/rust-runtime-performance.yml scripts/bench_guard_native_phase_diagnostic.py scripts/bench_guard_native_validation_diagnostic.py tests/test_native_performance_phase_diagnostic.py tests/test_native_validation_phase_diagnostic.py > "$RUNNER_TEMP/hash-expected.txt"
+          cmp "$RUNNER_TEMP/hash-changed.txt" "$RUNNER_TEMP/hash-expected.txt"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
@@ -70,12 +73,27 @@ jobs:
           export HOL_GUARD_PACKAGE_VERSION="$VERSION"
           cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
           rust/target/release/hol-guard-runtime self-test --json
+      - name: Verify validation observer controls
+        run: |
+          uv run --no-sync ruff check \
+            scripts/bench_guard_native_validation_diagnostic.py \
+            scripts/bench_guard_native_phase_diagnostic.py \
+            tests/test_native_validation_phase_diagnostic.py \
+            tests/test_native_performance_phase_diagnostic.py
+          uv run --no-sync ruff format --check \
+            scripts/bench_guard_native_validation_diagnostic.py \
+            scripts/bench_guard_native_phase_diagnostic.py \
+            tests/test_native_validation_phase_diagnostic.py
+          uv run --no-sync pytest --tb=short \
+            tests/test_guard_native_release_gate_benchmark.py \
+            tests/test_native_performance_phase_diagnostic.py \
+            tests/test_native_validation_phase_diagnostic.py
       - name: Enforce native performance gates
         env:
           HOL_GUARD_NATIVE: force
           HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
         run: |
-          uv run --no-sync python scripts/bench_guard_native_release_gate.py \
+          uv run --no-sync python scripts/bench_guard_native_validation_diagnostic.py \
             --runtime "$HOL_GUARD_NATIVE_BINARY" \
             --warm-iterations 100 \
             --cold-iterations 3 \
@@ -90,3 +108,13 @@ jobs:
           name: hol-guard-native-performance
           path: native-performance.json
           if-no-files-found: warn
+      - name: Verify tracked source after execution
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$EXPECTED_TREE"
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo 'VALIDATOR_PHASE_TRACKED_SOURCE_UNCHANGED=true'

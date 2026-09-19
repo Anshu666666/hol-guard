@@ -316,9 +316,13 @@ class WorkspaceRequestObserver:
             if not self._frozen or not self._closed:
                 raise RuntimeError("close request observation before committed readback")
             selected = [f"mixed-policy-{index}" for index in declared_indexes]
-            rows = [json.loads(json.dumps(self._rows[attempt])) for attempt in selected if attempt in self._rows]
+            offered = list(self._rows)
+            declaration_complete = set(selected) == set(offered)
+            # Preserve every owned offer, including an undeclared failing one.
+            rows = [json.loads(json.dumps(row)) for row in self._rows.values()]
             complete = (
-                self._active_at_freeze == self._native_at_freeze == self._active == self._native_active == 0
+                declaration_complete
+                and self._active_at_freeze == self._native_at_freeze == self._active == self._native_active == 0
                 and self._faults == self._late_native_calls == self._refused_offers == 0 and self._restored
             )
         for row in rows:
@@ -349,6 +353,9 @@ class WorkspaceRequestObserver:
             declared_attempts=selected, observation_complete=complete,
         )
         result["actual_request_rows"] = rows
+        result["declared_attempts"] = selected
+        result["owned_offered_attempts"] = offered
+        result["undeclared_owned_attempts"] = [attempt for attempt in offered if attempt not in selected]
         result["receipt_witness"] = {key: report.get(key) for key in (
             "native_receipts", "committed", "missing", "binding_mismatches", "writer_rejected",
             "writer_admission_unobserved", "pre_receipts_without_program_binding", "observations",

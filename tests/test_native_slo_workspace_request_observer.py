@@ -184,3 +184,30 @@ def test_refused_offer_is_counted_and_never_sent_to_http(tmp_path, monkeypatch, 
     assert result["passed"] is False
     assert result["observation_lifecycle"]["refused_offers"] == 1
     assert len(state.http_calls) == 1
+
+
+def test_omitting_a_bad_owned_response_cannot_shrink_the_declared_join(tmp_path, monkeypatch):
+    state = control(tmp_path, monkeypatch)
+    denied = copy.deepcopy(state.response)
+    with ReceiptWitness(state.session, maximum=2) as witness:
+        with WorkspaceRequestObserver(state.session, witness, state.workspaces, maximum=2) as observer:
+            accepted = time.monotonic()
+            state.response = {
+                "hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow"},
+                "policy_action": "allow", "decision": "allow", "continue": True,
+            }
+            observer.probe(0, 0)
+            state.response = denied
+            observer.probe(1, 1)
+        result = finish(state, witness, observer, accepted, indexes=(1,))
+    assert len(state.calls) == len(state.http_calls) == state.session.store.native_decision_receipt_count() == 2
+    assert result["receipt_witness"]["native_receipts"] == result["receipt_witness"]["committed"] == 2
+    assert result["passed"] is False and result["observation_complete"] is False
+    assert result["exact_attempts"] is False
+    assert result["declared_attempts"] == ["mixed-policy-1"]
+    assert result["owned_offered_attempts"] == ["mixed-policy-0", "mixed-policy-1"]
+    assert result["undeclared_owned_attempts"] == ["mixed-policy-0"]
+    assert result["declared_requests"] == 1 and result["observed_requests"] == 2
+    assert result["actual_request_rows"][0]["delivered_decision"] == "allow"
+    assert result["rows"][0]["checks"]["delivery_matches"] is False
+    assert result["rows"][1]["passed"] is True

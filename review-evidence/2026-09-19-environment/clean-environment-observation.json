@@ -1,0 +1,50 @@
+{
+  "combined_head": "6c17b135a1a462f852e8b8346f54c54031541345",
+  "combined_receipt_sha256": "785c9990354102fe734390c849d7bc67f4d9355385165edd7e86b26ef620c9f1",
+  "combined_tree": "1c551084cffda3f73ec410b432f0455579502754",
+  "observation": {
+    "executable": "/workspace/scratch/c25672eb4c10/validation-clean-0200/bin/python",
+    "packages": {
+      "basedpyright": [
+        {
+          "metadata_path": "/workspace/scratch/c25672eb4c10/validation-clean-0200/lib/python3.12/site-packages/basedpyright-1.39.8.dist-info",
+          "version": "1.39.8"
+        }
+      ],
+      "mcp": [
+        {
+          "metadata_path": "/workspace/scratch/c25672eb4c10/validation-clean-0200/lib/python3.12/site-packages/mcp-1.28.1.dist-info",
+          "version": "1.28.1"
+        }
+      ],
+      "psutil": [
+        {
+          "metadata_path": "/workspace/scratch/c25672eb4c10/validation-clean-0200/lib/python3.12/site-packages/psutil-7.2.2.dist-info",
+          "version": "7.2.2"
+        }
+      ],
+      "pytest": [
+        {
+          "metadata_path": "/workspace/scratch/c25672eb4c10/validation-clean-0200/lib/python3.12/site-packages/pytest-9.0.3.dist-info",
+          "version": "9.0.3"
+        }
+      ],
+      "ruff": [
+        {
+          "metadata_path": "/workspace/scratch/c25672eb4c10/validation-clean-0200/lib/python3.12/site-packages/ruff-0.15.17.dist-info",
+          "version": "0.15.17"
+        }
+      ]
+    },
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]"
+  },
+  "observation_command": [
+    "/workspace/scratch/c25672eb4c10/validation-clean-0200/bin/python",
+    "-c",
+    "from importlib import metadata\nimport json,sys\nout={}\nfor name in ['basedpyright','mcp','pytest','ruff','psutil']:\n entries=[{'version':d.version,'metadata_path':str(d._path)} for d in metadata.distributions() if d.metadata.get('Name','').lower().replace('_','-')==name]\n assert len(entries)==1\n out[name]=entries\nprint(json.dumps({'python':sys.version,'executable':sys.executable,'packages':out},indent=2,sort_keys=True))\n"
+  ],
+  "observation_exit_code": 0,
+  "original_install_source_identity": "Original pip and uv logs both identify file:///workspace/scratch/c25672eb4c10/release-2974-resumed; those logs do not independently retain an exact commit or complete invocation, so no missing invocation or commit is reconstructed.",
+  "schema": "hol-guard.clean-environment-observation.v1",
+  "scope": "Fresh read-only metadata observation after combined validation; versions equal the retained combined receipt, with exactly one metadata record per selected distribution."
+}

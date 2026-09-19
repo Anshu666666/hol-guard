@@ -70,7 +70,10 @@ def _legacy_secret_fingerprint(value: str) -> str:
 
 @_preserve_module
 def _legacy_secret_sha256(value: str) -> str:
-    return _base.sha256(value.encode("utf-8")).hexdigest()  # codeql[py/weak-sensitive-data-hashing]
+    # Compatibility-only verification for legacy rows written before KDF fingerprints.
+    # New fingerprints use scrypt; this path does not create new SHA-256 credential records.
+    # codeql[py/weak-sensitive-data-hashing]
+    return _base.sha256(value.encode("utf-8")).hexdigest()
 
 
 @_preserve_module

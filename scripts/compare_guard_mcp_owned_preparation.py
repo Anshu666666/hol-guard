@@ -24,6 +24,10 @@ def harness_identity():
             "compare_guard_mcp_owned_preparation.py",
             "compare_guard_mcp_risk.py",
             "profile_guard_mcp_session.py",
+            "profile_guard_mcp_fixture.py",
+            "profile_guard_mcp_worker.py",
+            "profile_guard_mcp_case.py",
+            "profile_guard_mcp_matrix.py",
             "guard_mcp_owned_preparation_pilot.py",
         )
     }

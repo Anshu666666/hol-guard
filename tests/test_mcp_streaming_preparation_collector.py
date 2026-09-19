@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import ast
-import hashlib
 import importlib
 import inspect
 import json
@@ -34,70 +32,33 @@ def test_plan_is_the_entire_prior_e_schedule_with_only_the_arm_replaced(collecto
     assert fixed["plan"]["public_oracle_reference_sources_sha256"]
 
 
-class _NormalizeWorker(ast.NodeTransformer):
-    """Remove only the declared F import/flag, metadata and phase additions."""
-
-    def visit_Expr(self, node):
-        call = node.value
-        if isinstance(call, ast.Call):
-            values = [arg.value for arg in call.args if isinstance(arg, ast.Constant)]
-            if "--streaming-preparation-pilot" in values or "_binding_matches" in values:
-                return None
-        return self.generic_visit(node)
-
-    def visit_Assign(self, node):
-        if any(isinstance(target, ast.Name) and target.id == "loaded_adapter_sha256" for target in node.targets):
-            return None
-        return self.generic_visit(node)
-
-    def visit_If(self, node):
-        if isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.And):
-            attributes = [value.attr for value in node.test.values if isinstance(value, ast.Attribute)]
-            if attributes == ["matrix", "streaming_preparation_pilot"]:
-                return None
-        return self.generic_visit(node)
-
-    def visit_Dict(self, node):
-        pairs = [
-            (key, value)
-            for key, value in zip(node.keys, node.values, strict=True)
-            if not isinstance(key, ast.Constant) or key.value != "loaded_adapter_sha256"
-        ]
-        node.keys = [key for key, _value in pairs]
-        node.values = [value for _key, value in pairs]
-        return self.generic_visit(node)
-
-    def generic_visit(self, node):
-        node = super().generic_visit(node)
-        replacements = (
-            ("guard_mcp_streaming_preparation_pilot", "guard_mcp_owned_preparation_pilot"),
-            ("streaming_preparation_pilot", "owned_preparation_pilot"),
-            ("streaming_adapter", "owned_adapter"),
-            ("streaming_pilot", "owned_pilot"),
-            ("hol-guard-mcp-streaming-stdio", "hol-guard-mcp-stdio"),
-        )
-        for name, value in ast.iter_fields(node):
-            if isinstance(value, str):
-                for new, old in replacements:
-                    value = value.replace(new, old)
-                setattr(node, name, value)
-        return node
-
-
-def test_worker_preserves_all_prior_workload_deadline_quantile_and_resource_code(collector):
+def test_worker_uses_shared_orchestration_and_preserves_public_defaults(collector):
     root = Path(collector.__file__).parent
-    previous_bytes = (root / "profile_guard_mcp_session.py").read_bytes()
-    assert (
-        hashlib.sha256(previous_bytes).hexdigest() == "6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932"
-    )
-    previous = ast.parse(previous_bytes)
-    current = ast.parse((root / "profile_guard_mcp_streaming_session.py").read_bytes())
-    previous.body = previous.body[1:]  # Different module documentation only.
-    current.body = current.body[1:]
-    current = _NormalizeWorker().visit(current)
-    assert ast.dump(current) == ast.dump(previous)
     worker = importlib.import_module("profile_guard_mcp_streaming_session")
     prior_worker = importlib.import_module("profile_guard_mcp_session")
+    prior_collector = importlib.import_module("compare_guard_mcp_owned_preparation")
+    shared_modules = (
+        "profile_guard_mcp_fixture.py",
+        "profile_guard_mcp_worker.py",
+        "profile_guard_mcp_case.py",
+        "profile_guard_mcp_matrix.py",
+    )
+
+    streaming_identity = collector.harness_identity()
+    owned_identity = prior_collector.harness_identity()
+    for name in shared_modules:
+        assert streaming_identity[name] == owned_identity[name]
+        assert (root / name).is_file()
+        assert len((root / name).read_text().splitlines()) <= 500
+
+    shared_case = importlib.import_module("profile_guard_mcp_case")
+    shared_matrix = importlib.import_module("profile_guard_mcp_matrix")
+    shared_worker = importlib.import_module("profile_guard_mcp_worker")
+    assert worker.run_case_common is prior_worker.run_case_common is shared_case.run_case_common
+    assert worker.run_remote_case is prior_worker.run_remote_case is shared_matrix.run_remote_case
+    assert worker.performance_lock is prior_worker.performance_lock is shared_matrix.performance_lock
+    assert worker.run_worker is prior_worker.run_worker is shared_worker.run_worker
+
     old_defaults = {
         name: parameter.default for name, parameter in inspect.signature(prior_worker.run_case).parameters.items()
     }
@@ -107,6 +68,9 @@ def test_worker_preserves_all_prior_workload_deadline_quantile_and_resource_code
     new_defaults["owned_preparation_pilot"] = new_defaults.pop("streaming_preparation_pilot")
     assert new_defaults == old_defaults
     assert collector.run_case is worker.run_case
+    assert collector.plan_identity()["plan"]["prior_e_worker_sha256"] == (
+        "6223e0c599e91ef0ac76d2dc510010dab7bf7c22a868e7034055233518808932"
+    )
 
 
 def test_worker_rejects_matrix_flag_that_cannot_select_f(collector, monkeypatch, tmp_path, capsys):

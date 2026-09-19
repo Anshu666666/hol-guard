@@ -17,7 +17,9 @@ from .runtime_hook_evidence_journal import (
 )
 
 
-def persist_native_decision_receipt(*, store: GuardStore, receipt: Mapping[str, object]) -> bool:
+def persist_native_decision_receipt(
+    *, store: GuardStore, receipt: Mapping[str, object]
+) -> bool:
     """Persist a validated receipt through the control-plane store only."""
 
     recorder = getattr(store, "record_native_decision_receipt", None)
@@ -74,33 +76,50 @@ class RuntimeHookEvidenceWriterJournalMixin:
             return batch
 
     def _drain_expired(self) -> bool:
-        return self._stopping and self._drain_deadline is not None and time.monotonic() >= self._drain_deadline
+        return (
+            self._stopping
+            and self._drain_deadline is not None
+            and time.monotonic() >= self._drain_deadline
+        )
 
     def _recover_journal(self) -> None:
         try:
-            records, invalid_records = recover_journal_records(self._journal_path, max_bytes=self._max_bytes)
+            records, invalid_records = recover_journal_records(
+                self._journal_path, max_bytes=self._max_bytes
+            )
         except FileNotFoundError:
             return
         except OSError as error:
             self._degraded = True
             self._failures += 1
-            self._record_failure_diagnostics("journal_recovery", evidence_failure_code(error), 1)
+            self._record_failure_diagnostics(
+                "journal_recovery", evidence_failure_code(error), 1
+            )
             return
         if invalid_records:
             self._degraded = True
             self._failures += invalid_records
-            self._record_failure_diagnostics("journal_recovery", "invalid_record", invalid_records)
+            self._record_failure_diagnostics(
+                "journal_recovery", "invalid_record", invalid_records
+            )
         for record in records:
-            if len(self._records) >= self._max_records or self._queued_bytes + record.payload_bytes > self._max_bytes:
+            if (
+                len(self._records) >= self._max_records
+                or self._queued_bytes + record.payload_bytes > self._max_bytes
+            ):
                 self._degraded = True
                 self._failures += 1
-                self._record_failure_diagnostics("journal_recovery", "recovery_capacity", 1)
+                self._record_failure_diagnostics(
+                    "journal_recovery", "recovery_capacity", 1
+                )
                 continue
             if isinstance(record, _NativeDecisionReceiptRecord):
                 if record.record_id in self._receipt_seen:
                     self._degraded = True
                     self._failures += 1
-                    self._record_failure_diagnostics("journal_recovery", "recovery_duplicate", 1)
+                    self._record_failure_diagnostics(
+                        "journal_recovery", "recovery_duplicate", 1
+                    )
                     continue
                 self._receipt_seen[record.record_id] = None
             self._durable[record.record_id] = record
@@ -120,5 +139,6 @@ class RuntimeHookEvidenceWriterJournalMixin:
         if invalid_records:
             self._degraded = True
             self._failures += invalid_records
-            self._record_failure_diagnostics("journal_rewrite", "invalid_record", invalid_records)
-
+            self._record_failure_diagnostics(
+                "journal_rewrite", "invalid_record", invalid_records
+            )

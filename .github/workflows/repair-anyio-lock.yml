@@ -1,0 +1,48 @@
+name: Repair AnyIO lock
+
+on:
+  push:
+    branches:
+      - fix/mcp-fastmcp-annotation-scope
+    paths:
+      - pyproject.toml
+
+permissions:
+  contents: write
+
+jobs:
+  repair-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: fix/mcp-fastmcp-annotation-scope
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+      - name: Refresh AnyIO lock entry
+        run: uv lock --no-build --upgrade-package anyio
+      - name: Verify fixed AnyIO version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path("uv.lock").read_text()
+          block = text.split('name = "anyio"', 1)[1].split('[[package]]', 1)[0]
+          assert 'version = "4.14.2"' in block, block
+          PY
+      - name: Commit lockfile update
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "fix: update anyio past critical CVE"
+          git push origin HEAD:fix/mcp-fastmcp-annotation-scope

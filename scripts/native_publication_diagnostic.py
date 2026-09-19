@@ -9,6 +9,7 @@ from contextlib import contextmanager, suppress
 from typing import Any
 
 from codex_plugin_scanner.guard.native_approval_errors import FINITE_FAILURE_CODES
+from codex_plugin_scanner.guard.native_policy_test_support import PublicationLifecycleObservation
 from codex_plugin_scanner.guard.native_resident_client import (
     native_resident_client_failure_code,
     native_resident_client_request,
@@ -49,6 +50,7 @@ class PublicationObservation:
         self._completed = 0
         self._failure = "missing"
         self.attached = False
+        self.lifecycle = PublicationLifecycleObservation()
 
     def call(self, client: Callable[..., bytes | None], **kwargs: Any) -> bytes | None:
         __tracebackhide__ = True
@@ -88,7 +90,8 @@ def observe_publication(publisher: Any) -> Iterator[PublicationObservation]:
         publisher._client_request = client
         observation.attached = True
     try:
-        yield observation
+        with observation.lifecycle.attach(publisher):
+            yield observation
     finally:
         if observation.attached:
             publisher._client_request = previous
@@ -98,7 +101,10 @@ def report_publication_failure(observation: PublicationObservation, publisher: A
     """Best-effort finite evidence must never replace the original failure."""
     with suppress(BaseException):
         print(
-            "native_publication_observation: " + observation.describe(getattr(publisher, "last_error", None)),
+            "native_publication_observation: "
+            + observation.describe(getattr(publisher, "last_error", None))
+            + "; "
+            + observation.lifecycle.describe(publisher),
             file=sys.stderr,
         )
 

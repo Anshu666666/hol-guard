@@ -336,3 +336,60 @@ def test_failed_diagnostic_output_cannot_mask_original_exception(monkeypatch):
         diagnostic.report_publication_failure(diagnostic.PublicationObservation(), SimpleNamespace(last_error=None))
         raise original
     assert caught.value is original
+
+
+def test_installed_observer_retains_actual_publisher_error_after_reset(tmp_path, capsys):
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path))
+    original = publisher._record_error
+    try:
+        with diagnostic.observe_publication(publisher) as observation:
+            publisher._record_error("native_resident_start_timeout")
+            publisher.request_publish()
+            diagnostic.report_publication_failure(observation, publisher)
+            assert publisher.last_error is None and not publisher._started
+        assert publisher._record_error == original and publisher._client_request is None
+        output = capsys.readouterr().err
+        assert "window=after_daemon_construction" in output
+        assert "publisher=missing; transport=missing; started=0; completed=0" in output
+        assert "last_publisher=native_resident_start_timeout; error_epoch=0; epoch=1; error_events=1" in output
+    finally:
+        publisher.close()
+
+
+def test_actual_long_traceback_never_contains_retained_private_error(tmp_path):
+    source = tmp_path / "test_lifecycle_failure.py"
+    source.write_text(
+        "import os\nfrom types import SimpleNamespace\n"
+        "from scripts import native_publication_diagnostic as d\n"
+        "def test_failure():\n"
+        "    publisher=SimpleNamespace(_client_request=None,_epoch=0,last_error=None,_record_error=lambda value:None)\n"
+        "    with d.observe_publication(publisher) as observation:\n"
+        "        publisher._record_error(os.environ['SYNTHETIC_PRIVATE_VALUE'])\n"
+        "        publisher._epoch=1\n"
+        "        d.report_publication_failure(observation,publisher)\n"
+        "        assert False, 'synthetic finite readiness failure'\n",
+        encoding="utf-8",
+    )
+    config = tmp_path / "pytest.ini"
+    config.write_text("[pytest]\n", encoding="utf-8")
+    environment = dict(os.environ)
+    root = Path(__file__).resolve().parents[1]
+    environment["PYTHONPATH"] = os.pathsep.join([str(root / "src"), str(root)])
+    environment["SYNTHETIC_PRIVATE_VALUE"] = "synthetic-private-token-392a14"
+    environment.pop("PYTEST_ADDOPTS", None)
+    environment.pop("PYTEST_PLUGINS", None)
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "--tb=long", "-c", str(config), str(source)],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    output = result.stdout + result.stderr
+    assert result.returncode == 1 and "1 failed" in output
+    assert "last_publisher=other; error_epoch=0; epoch=1; error_events=1" in output
+    assert environment["SYNTHETIC_PRIVATE_VALUE"] not in output

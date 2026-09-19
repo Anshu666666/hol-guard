@@ -139,3 +139,180 @@ def test_original_client_is_restored_when_close_raises(tmp_path: Path, monkeypat
         pass
     assert caught.value is failure
     assert publisher.closed and publisher._client_request is None
+
+
+def test_actual_publisher_error_survives_original_epoch_reset(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path))
+    original = publisher._record_error
+    diagnostic = support.PublicationLifecycleObservation()
+    try:
+        with diagnostic.attach(publisher):
+            publisher._record_error("native_resident_start_timeout")
+            publisher.request_publish()
+            assert publisher.last_error is None and publisher._epoch == 1
+            report = diagnostic.describe(publisher)
+            assert "last_publisher=native_resident_start_timeout; error_epoch=0; epoch=1; error_events=1" in report
+            assert "initial_publisher=missing" in report
+            assert not publisher._started and publisher._thread is None
+        assert publisher._record_error == original
+        assert "_record_error" not in vars(publisher)
+    finally:
+        publisher.close()
+
+
+def test_initial_error_and_post_attach_error_are_distinct(tmp_path: Path) -> None:
+    from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+    from codex_plugin_scanner.guard.store import GuardStore
+
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path))
+    diagnostic = support.PublicationLifecycleObservation()
+    try:
+        publisher._record_error("native_policy_snapshot_integrity_key_unavailable")
+        with diagnostic.attach(publisher):
+            publisher.request_publish()
+            report = diagnostic.describe(publisher)
+            assert "initial_publisher=native_policy_snapshot_integrity_key_unavailable" in report
+            assert "last_publisher=missing; error_epoch=missing; epoch=1; error_events=0" in report
+    finally:
+        publisher.close()
+
+
+def test_lifecycle_delegates_exact_error_and_exception_and_restores_instance_override() -> None:
+    from types import SimpleNamespace
+
+    failure = RuntimeError("private-error-canary")
+    calls = []
+
+    def record(error):
+        calls.append(error)
+        raise failure
+
+    publisher = SimpleNamespace(_record_error=record, _epoch=4, last_error=None)
+    diagnostic = support.PublicationLifecycleObservation()
+    with pytest.raises(RuntimeError) as caught, diagnostic.attach(publisher):
+        publisher._record_error("private-publisher-canary")
+    assert caught.value is failure
+    assert calls == ["private-publisher-canary"]
+    assert publisher._record_error is record
+    assert "last_publisher=other; error_epoch=4; epoch=4; error_events=1" in diagnostic.describe(publisher)
+    assert "private-" not in diagnostic.describe(publisher)
+
+
+def test_lifecycle_preserves_injected_return_value() -> None:
+    from types import SimpleNamespace
+
+    result = object()
+    publisher = SimpleNamespace(_record_error=lambda error: result, _epoch=0, last_error=None)
+    with support.PublicationLifecycleObservation().attach(publisher):
+        assert publisher._record_error("native_resident_start_timeout") is result
+
+
+def test_lifecycle_captured_callback_can_complete_after_detachment() -> None:
+    from types import SimpleNamespace
+
+    started, release = threading.Event(), threading.Event()
+    calls = []
+
+    def record(error):
+        started.set()
+        assert release.wait(2)
+        calls.append(error)
+
+    publisher = SimpleNamespace(_record_error=record, _epoch=4, last_error=None)
+    diagnostic = support.PublicationLifecycleObservation()
+    with diagnostic.attach(publisher):
+        captured = publisher._record_error
+        worker = threading.Thread(target=lambda: captured("native_resident_start_timeout"))
+        worker.start()
+        assert started.wait(2)
+    assert publisher._record_error is record
+    release.set()
+    worker.join(2)
+    assert not worker.is_alive() and calls == ["native_resident_start_timeout"]
+    assert "last_publisher=native_resident_start_timeout" in diagnostic.describe(publisher)
+
+
+def test_lifecycle_does_not_replace_a_later_observer() -> None:
+    from types import SimpleNamespace
+
+    publisher = SimpleNamespace(_record_error=lambda error: None, _epoch=0, last_error=None)
+
+    def later(error):
+        return None
+
+    with support.PublicationLifecycleObservation().attach(publisher):
+        publisher._record_error = later
+    assert publisher._record_error is later
+
+
+def test_lifecycle_nested_attachment_restores_outer_then_original() -> None:
+    from types import SimpleNamespace
+
+    def original(error):
+        return None
+
+    publisher = SimpleNamespace(_record_error=original, _epoch=0, last_error=None)
+    outer, inner = support.PublicationLifecycleObservation(), support.PublicationLifecycleObservation()
+    with outer.attach(publisher):
+        outer_callback = publisher._record_error
+        with inner.attach(publisher):
+            publisher._record_error("native_resident_start_timeout")
+        assert publisher._record_error is outer_callback
+    assert publisher._record_error is original
+    assert "error_events=1" in outer.describe(publisher) and "error_events=1" in inner.describe(publisher)
+
+
+def test_lifecycle_unknown_values_do_not_invoke_conversion_or_hashing() -> None:
+    from types import SimpleNamespace
+
+    class Hostile(str):
+        def __hash__(self):
+            pytest.fail("Diagnostic value was hashed")
+
+        def __str__(self):
+            pytest.fail("Diagnostic value was rendered")
+
+    value = Hostile("native_resident_start_timeout")
+    publisher = SimpleNamespace(_record_error=lambda error: None, _epoch=value, last_error=value)
+    diagnostic = support.PublicationLifecycleObservation()
+    with diagnostic.attach(publisher):
+        publisher._record_error(value)
+    assert diagnostic.describe(publisher) == (
+        "lifecycle_attached=True; initial_publisher=other; last_publisher=other; "
+        "error_epoch=missing; epoch=missing; error_events=1"
+    )
+    assert support._finite_failure(value) == "other"
+
+
+def test_lifecycle_epochs_and_event_counts_are_bounded() -> None:
+    from types import SimpleNamespace
+
+    publisher = SimpleNamespace(_record_error=lambda error: None, _epoch=10_000, last_error=None)
+    diagnostic = support.PublicationLifecycleObservation()
+    with diagnostic.attach(publisher):
+        for _ in range(1001):
+            publisher._record_error("native_resident_start_timeout")
+    assert "error_epoch=999; epoch=999; error_events=999" in diagnostic.describe(publisher)
+
+
+def test_every_added_finite_error_has_an_exact_existing_source_literal() -> None:
+    import ast
+    import re
+
+    root = Path(__file__).resolve().parents[1]
+    literals = set()
+    for path in (root / "src/codex_plugin_scanner/guard").glob("native_policy*.py"):
+        if path.name == "native_policy_test_support.py":
+            continue
+        literals.update(
+            node.value
+            for node in ast.walk(ast.parse(path.read_text()))
+            if isinstance(node, ast.Constant) and type(node.value) is str
+        )
+    for path in (root / "rust/crates/guard-runtime/src").glob("managed_resident*.rs"):
+        literals.update(re.findall(r'"(native_[a-z0-9_]+)"', path.read_text()))
+    added = support._PUBLISHER_FAILURE_CODES - support._DIAGNOSTIC_FAILURE_CODES
+    assert added <= literals

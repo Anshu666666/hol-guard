@@ -2,21 +2,29 @@
 
 from __future__ import annotations
 
+import inspect
 import io
 import json
 import threading
+from collections.abc import Callable
 from pathlib import Path
 from types import CodeType, SimpleNamespace
 
 import pytest
 
+import codex_plugin_scanner.guard.native_policy_authority_managed as authority_managed
 import codex_plugin_scanner.guard.native_policy_authority_read as authority_read
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_context as context
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs as inputs
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_transport as transport
 import codex_plugin_scanner.guard.native_policy_snapshot_source_requirement as source_requirement
 import codex_plugin_scanner.guard.native_policy_test_support as support
+import codex_plugin_scanner.guard.store_base as store_base
+import codex_plugin_scanner.guard.store_connection_schema as connection_schema
+import codex_plugin_scanner.guard.store_policy_integrity_backend as integrity_backend
+import codex_plugin_scanner.guard.store_review_event_outbox_schema as outbox
 import codex_plugin_scanner.guard.store_secret_policy_integrity as secret_integrity
+import codex_plugin_scanner.guard.store_storage_lock as storage_lock
 
 
 class PublisherDouble:
@@ -385,3 +393,148 @@ def test_v3_recapture_calls_remain_finite_and_stop_at_the_known_frame(
     assert frame.parent_reads == 0
     assert "private-" not in output.getvalue()
     assert str(worker_ident) not in output.getvalue()
+
+
+_Connection = connection_schema.StoreConnectionSchemaMixin
+_Integrity = secret_integrity.StoreSecretPolicyIntegrityMixin
+_Vault = store_base.EncryptedFileSecretStore
+_Keyring = store_base.SystemKeyringSecretStore
+_capture = authority_read._capture_native_policy_authority_inputs
+
+
+class SourceSiteFrame(FrameProbe):
+    def __init__(self, module: str, code: CodeType, line: int) -> None:
+        super().__init__(module, code, ForbiddenOtherThreadFrame())
+        self.line = line
+
+    @property
+    def f_lineno(self) -> int:
+        return self.line
+
+
+def assert_nested_observation(monkeypatch: pytest.MonkeyPatch, frame: FrameProbe, phase: str) -> None:
+    worker = threading.current_thread()
+    worker_ident = worker.ident
+    assert worker_ident is not None
+    output = io.StringIO()
+    captures: list[str] = []
+
+    def current_frames() -> dict[int, object]:
+        captures.append("capture")
+        return {worker_ident: frame, worker_ident + 1: ForbiddenOtherThreadFrame()}
+
+    monkeypatch.setattr(support, "sys", SimpleNamespace(_current_frames=current_frames, stderr=output))
+    support._emit_publication_failure_observation(SimpleNamespace(_thread=worker))
+    result = read_observation(output)
+    assert result["phase"] == phase
+    assert result["worker_frame_present"] is True
+    assert result["frame_limit_reached"] is False
+    assert result["observation_failed"] is False
+    assert captures == ["capture"]
+    assert frame.parent_reads == 0
+    assert "private-" not in output.getvalue()
+    assert str(worker_ident) not in output.getvalue()
+
+
+@pytest.mark.parametrize(
+    ("function", "phase"),
+    [
+        (_Connection._connect, "connection_admission"),
+        (_Connection._connect_once, "connection_transaction"),
+        (_Connection._hold_storage_gate, "storage_gate"),
+        (_Connection._hold_advisory_file_lock, "advisory_gate"),
+        (_Connection.hold_oauth_credential_lock, "credential_gate"),
+        (storage_lock.hold_storage_file_lock, "storage_file_gate"),
+        (storage_lock._WindowsStorageLock.acquire, "storage_lock_acquire"),
+        (storage_lock._WindowsStorageLock.release, "storage_lock_release"),
+        (_Integrity._policy_integrity_cache_marker, "integrity_marker"),
+        (_Integrity._load_policy_integrity_state_cache_marker, "integrity_marker_sql"),
+        (_Integrity._get_policy_integrity_secret_from_store, "integrity_backend_read"),
+        (_Integrity._load_policy_integrity_control_state, "integrity_control"),
+        (_Integrity._repair_store_permissions, "store_permissions"),
+        (store_base._acquire_advisory_file_lock, "advisory_lock_acquire"),
+        (store_base._release_advisory_file_lock, "advisory_lock_release"),
+        (_Vault._ensure_ready, "vault_initialization"),
+        (_Vault.get_secret, "vault_read"),
+        (_Vault.set_secret, "vault_write"),
+        (_Vault._load_fernet_key, "vault_key_read"),
+        (_Vault._atomic_write_bytes, "vault_atomic_write"),
+        (_Vault._decrypt_fernet, "vault_decrypt"),
+        (_Keyring._backend_is_available, "keyring_selection"),
+        (_Keyring._load_keyring_module_or_none, "keyring_module"),
+        (_Keyring.get_secret, "keyring_read"),
+        (_Keyring.get_secret_with_timeout, "keyring_bounded_read"),
+        (_Keyring._get_macos_secret_in_isolated_process, "keyring_process_read"),
+        (integrity_backend.build_policy_integrity_secret_store, "integrity_backend_selection"),
+        (authority_read._capture_native_policy_authority_inputs, "authority_snapshot"),
+        (authority_managed.read_frozen_native_managed_authority, "managed_authority_read"),
+        (authority_managed.FrozenNativeManagedAuthority.require_current_secrets, "managed_secret_fence"),
+        (outbox.finalize_review_event_payload_hashes, "transaction_hashes"),
+        (outbox.commit_review_event_transaction, "transaction_commit"),
+        (outbox.notify_review_event_wake, "transaction_notification"),
+    ],
+)
+def test_nested_call_categories_bind_real_code_and_keep_finite_output(
+    monkeypatch: pytest.MonkeyPatch, function: Callable[..., object], phase: str
+) -> None:
+    code = inspect.unwrap(function).__code__
+    frame = SourceSiteFrame(function.__module__, code, -1)
+    assert_nested_observation(monkeypatch, frame, phase)
+
+
+@pytest.mark.parametrize(
+    ("function", "first", "start", "end", "needle", "phase"),
+    [
+        (_Connection._connect_once, 364, 370, 370, "connection = sqlite3.connect(", "sqlite_open"),
+        (_Connection._connect_once, 364, 382, 390, 'connection.execute(f"pragma busy_timeout=', "sqlite_setup"),
+        (_Connection._connect_once, 364, 410, 410, "connection.close()", "sqlite_close"),
+        (_Connection._hold_advisory_file_lock, 475, 493, 493, "time.sleep(poll_seconds)", "advisory_gate_wait"),
+        (_Vault._ensure_ready, 900, 908, 910, "with _ENCRYPTED_SECRET_INIT_LOCKS_GUARD:", "vault_thread_gate"),
+        (_Vault._ensure_ready, 900, 924, 924, "time.sleep(0.01)", "vault_file_gate_wait"),
+        (_capture, 130, 152, 152, 'connection.execute("begin")', "authority_transaction_begin"),
+        (_capture, 130, 154, 157, "state_rows = connection.execute(", "authority_state_sql"),
+        (_capture, 130, 166, 169, "controls = connection.execute(", "authority_controls_sql"),
+        (_capture, 130, 177, 179, "device_row = connection.execute(", "authority_device_sql"),
+        (_capture, 130, 187, 190, "for row in connection.execute(", "authority_source_sql"),
+        (_capture, 130, 201, 205, "local_rows = connection.execute(", "authority_rows_sql"),
+        (outbox.commit_review_event_transaction, 80, 88, 88, "connection.commit()", "sqlite_commit"),
+    ],
+)
+def test_nested_source_sites_bind_real_statements_without_exposing_locations(
+    monkeypatch: pytest.MonkeyPatch,
+    function: Callable[..., object],
+    first: int,
+    start: int,
+    end: int,
+    needle: str,
+    phase: str,
+) -> None:
+    code = inspect.unwrap(function).__code__
+    lines, source_start = inspect.getsourcelines(function)
+    assert code.co_firstlineno == first
+    assert needle in lines[start - source_start]
+    executable_lines = sorted({line for _, _, line in code.co_lines() if line is not None and start <= line <= end})
+    assert executable_lines
+    for line in (executable_lines[0], executable_lines[-1]):
+        frame = SourceSiteFrame(function.__module__, code, line)
+        assert_nested_observation(monkeypatch, frame, phase)
+
+
+def test_unmapped_qualified_call_does_not_read_source_position(monkeypatch: pytest.MonkeyPatch) -> None:
+    code = SimpleNamespace(co_name="private-function-canary", co_qualname="private-qualified-canary")
+    frame = FrameProbe(store_base.__name__, code)
+    output = io.StringIO()
+    worker = threading.current_thread()
+    monkeypatch.setattr(support, "sys", SimpleNamespace(_current_frames=lambda: {worker.ident: frame}, stderr=output))
+    support._emit_publication_failure_observation(SimpleNamespace(_thread=worker))
+    result = read_observation(output)
+    assert result["phase"] == "unknown"
+    assert result["observation_failed"] is False
+    assert "private-" not in output.getvalue()
+
+
+def test_unpinned_function_entry_never_uses_source_position(monkeypatch: pytest.MonkeyPatch) -> None:
+    original = inspect.unwrap(_Connection._connect_once).__code__
+    code = original.replace(co_firstlineno=original.co_firstlineno + 1)
+    frame = FrameProbe(connection_schema.__name__, code, ForbiddenOtherThreadFrame())
+    assert_nested_observation(monkeypatch, frame, "connection_transaction")

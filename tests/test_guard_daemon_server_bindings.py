@@ -33,6 +33,14 @@ def test_moved_instance_method_reads_current_dependency(monkeypatch: pytest.Monk
     assert calls == [(b"provided", b"expected")]
 
 
+def test_local_url_builder_rejects_non_loopback_hosts() -> None:
+    assert server._build_local_url("127.0.0.1", 42, "/healthz") == "http://127.0.0.1:42/healthz"
+    assert server._build_local_url("::1", 42, "/healthz") == "http://[::1]:42/healthz"
+    for host in ("0.0.0.0", "::", "192.0.2.1", "localhost"):
+        with pytest.raises(ValueError, match="loopback host"):
+            server._build_local_url(host, 42, "/healthz")
+
+
 def test_static_method_keeps_descriptor_semantics() -> None:
     descriptor = vars(server._GuardDaemonHandler)["_normalize_origin"]
     assert isinstance(descriptor, staticmethod)

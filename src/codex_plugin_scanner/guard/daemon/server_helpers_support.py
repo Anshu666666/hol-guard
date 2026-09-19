@@ -72,8 +72,10 @@ def _approval_center_browser_url(approval_center_url: str, auth_token: str) -> s
 
 
 def _build_local_url(host: str, port: int, path: str) -> str:
+    if host not in {"127.0.0.1", "::1"}:
+        raise ValueError("Guard local URLs require a loopback host.")
     host_part = f"[{host}]" if ":" in host else host
-    return f"http://{host_part}:{port}{path}"
+    return f"http://{host_part}:{port}{path}"  # NOSONAR(S5332) loopback-only authenticated local IPC
 
 
 def _build_resolution_copy(action: str, harness: str) -> dict[str, str]:

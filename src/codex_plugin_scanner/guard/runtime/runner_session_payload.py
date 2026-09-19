@@ -155,7 +155,7 @@ def _safe_hostname() -> str | None:
 
 def _safe_private_ip() -> str | None:
     with runner.suppress(OSError), runner.socket.socket(runner.socket.AF_INET, runner.socket.SOCK_DGRAM) as sock:
-        sock.connect(("8.8.8.8", 80))
+        sock.connect(("8.8.8.8", 80))  # NOSONAR(S1313) UDP route selection only; no payload is sent
         address = sock.getsockname()[0]
         if isinstance(address, str) and address and not address.startswith("127."):
             return address[:128]

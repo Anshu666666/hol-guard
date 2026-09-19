@@ -163,7 +163,7 @@ def _strict_loopback_origin(cls: type[_server._GuardDaemonHandler], value: objec
     if port is None or not 1 <= port <= 65535:
         return None
     canonical_host = "[::1]" if parsed.hostname == "::1" else "127.0.0.1"
-    canonical = f"http://{canonical_host}:{port}"
+    canonical = f"http://{canonical_host}:{port}"  # NOSONAR(S5332) strict loopback host validated above
     raw_origin = value.strip()
     return canonical if normalized == canonical and raw_origin in {canonical, f"{canonical}/"} else None
 

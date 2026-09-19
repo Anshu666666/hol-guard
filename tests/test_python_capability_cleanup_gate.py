@@ -20,9 +20,9 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
 
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
-    assert payload["scope_files"] == 106
+    assert payload["scope_files"] == 107
     assert payload["capabilities"] == {
-        "hook_control_and_transport": 82,
+        "hook_control_and_transport": 83,
         "python_reference_oracle": 17,
         "hook_evidence_persistence": 5,
         "legacy_python_resident_transport": 2,
@@ -53,6 +53,7 @@ def test_native_review_and_codex_continuation_files_have_explicit_control_owners
     contract, owners, scope = GATE._validate_contract(ROOT)
     classes = GATE._capability_classes(contract)
     expected = {
+        "adapters/codex_adapter_hook_writes.py",
         "native_runtime_identity.py",
         "daemon/hook_native_review_binding.py",
         "daemon/hook_native_review_fence.py",

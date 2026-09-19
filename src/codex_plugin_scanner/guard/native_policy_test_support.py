@@ -14,7 +14,6 @@ from types import FrameType
 from .native_policy_snapshot import get_native_policy_snapshot_publisher
 from .store import GuardStore
 
-
 _MAX_OBSERVED_FRAMES = 32
 _PUBLISHER_MODULE = "codex_plugin_scanner.guard.native_policy_snapshot_publisher"
 _PHASES = {
@@ -23,10 +22,12 @@ _PHASES = {
     (_PUBLISHER_MODULE, "_publication_context"): "context",
     ("codex_plugin_scanner.guard.native_policy_snapshot_publisher_context", "publication_context"): "context",
     (
-        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs", "_current_input_fingerprint",
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs",
+        "_current_input_fingerprint",
     ): "input_fingerprint",
     (
-        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs", "_compiled_effective_policy",
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs",
+        "_compiled_effective_policy",
     ): "configuration",
     ("codex_plugin_scanner.guard.native_policy_snapshot_publisher_transport", "_publish_snapshot_v3"): "v3_transport",
     ("codex_plugin_scanner.guard.native_policy_snapshot_publisher_scoped", "publish_scoped"): "scoped_publication",
@@ -91,8 +92,7 @@ def _emit_publication_failure_observation(publisher: object) -> None:
     try:
         observation = _publication_failure_observation(publisher)
         print(
-            "native_policy_readiness_observation="
-            + json.dumps(observation, sort_keys=True, separators=(",", ":")),
+            "native_policy_readiness_observation=" + json.dumps(observation, sort_keys=True, separators=(",", ":")),
             file=sys.stderr,
         )
     except Exception:

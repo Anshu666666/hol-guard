@@ -225,6 +225,29 @@ ERROR_DIGEST_CODES = {
 }
 MAX_FILE_BYTES = 4 * 1024 * 1024
 MAX_LOG_BYTES = 32768
+EVENT_KINDS = ("compile", "push", "transport_ack", "barrier")
+CACHE_CHECKS = (
+    "acknowledged_compilation_observed",
+    "registered_scopes_complete",
+    "compiled_cache_complete",
+    "load_records_valid",
+    "compile_load_counts_reconcile",
+    "all_scopes_loaded_once",
+    "unchanged_scopes_reused",
+    "only_stricter_scope_recompiled",
+    "all_changed_scopes_captured",
+)
+PHASE_TIMES = (
+    "mutation_ms",
+    "registration_ms",
+    "elapsed_ms",
+    "accepted_ms",
+    "acknowledgment_observed_ms",
+    "accept_to_ack_ms",
+    "accept_to_first_native_ms",
+    "accept_to_delivered_response_ms",
+    "readiness_deadline_ms",
+)
 
 
 class ProjectionError(ValueError):
@@ -388,6 +411,267 @@ def worker_receipt(value: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def milliseconds(value: Any, *, offset: bool = False) -> int | float | None:
+    low = -86400000 if offset else 0
+    require(value is None or (type(value) in (int, float) and low <= value <= 86400000))
+    return value
+
+
+def event_counts(value: Any, *, report: bool = False) -> dict[str, int | None] | None:
+    if value is None:
+        return None
+    counts = mapping(value)
+    names = (*EVENT_KINDS, "overflow", "scope_overflow") if report else EVENT_KINDS
+    return {name: integer(counts.get(name, 0), 0, 1048576 if report else 256) for name in names}
+
+
+def observer_report(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    report = mapping(value)
+    return {
+        "events": integer(report.get("events"), 0, 256),
+        "event_bound": integer(report.get("event_bound"), 256, 256),
+        "counts": event_counts(report.get("counts"), report=True),
+        "complete": flag(report.get("complete")),
+        "calls_in_flight_at_freeze": integer(report.get("calls_in_flight_at_freeze"), 0, 1048576),
+        "headline_timing_eligible": flag(report.get("headline_timing_eligible")),
+    }
+
+
+def phase_observation(phase: dict[str, Any], index: int) -> dict[str, Any]:
+    checks = mapping(phase.get("cache_feature_checks", {}))
+    return {
+        "offered_phase": PHASES[index],
+        "observer_counts_at_phase_return": event_counts(phase.get("observer_counts")),
+        "config_loads": integer(phase.get("config_loads")),
+        "offered_writes": integer(phase.get("offered_writes"), 0, 32),
+        "cache_feature_checks": {name: flag(checks[name]) for name in CACHE_CHECKS if name in checks},
+        "recorded_times": {
+            name: milliseconds(phase[name], offset=name == "accepted_ms") for name in PHASE_TIMES if name in phase
+        },
+    }
+
+
+def private_binding(value: Any) -> dict[str, Any] | None:
+    """Validate authority identifiers for equality only; never export their bytes."""
+    if value is None:
+        return None
+    binding = mapping(value)
+    require(set(binding) == {"generation", "policy_digest", "runtime_identity"})
+    require(integer(binding["generation"], 1, 2**64 - 1) is not None)
+    require(sha(binding["policy_digest"]) is not None and sha(binding["runtime_identity"]) is not None)
+    return binding
+
+
+def validate_event(value: Any, count: int) -> dict[str, Any]:
+    event = mapping(value)
+    kind = event.get("kind")
+    require(kind in EVENT_KINDS)
+    require(integer(event.get("phase"), 0, 5) is not None)
+    integer(event.get("publication"), 1, 1048576)
+    started, finished = milliseconds(event.get("started_ms")), milliseconds(event.get("finished_ms"))
+    require(started is not None and finished is not None and started <= finished)
+    require(milliseconds(event.get("thread_cpu_ms")) is not None)
+    state = {"compile": "succeeded", "push": "returned", "transport_ack": "validated", "barrier": "ready"}[kind]
+    require(flag(event.get(state)) is not None)
+    if kind == "compile":
+        scopes = event.get("scope_loads")
+        require(type(scopes) is list and len(scopes) == count + 1)
+        require(all(integer(load, 0, 255) is not None for load in scopes))
+        for name in ("config_loads", "unregistered_loads", "config_load_failures", "registered_workspaces"):
+            require(integer(event.get(name)) is not None)
+        integer(event.get("cache_entries"))
+        require(flag(event.get("scope_counts_overflow")) is not None)
+        for name in ("config_load_wall_ms", "config_load_thread_cpu_ms"):
+            require(milliseconds(event.get(name)) is not None)
+    else:
+        private_binding(event.get("binding"))
+    return event
+
+
+def completed_span(event: dict[str, Any], expected: Any, accepted: Any) -> dict[str, Any]:
+    """A completed observer span is not an accepted phase or a live-process check."""
+    kind = event["kind"]
+    state = {"compile": "succeeded", "push": "returned", "transport_ack": "validated", "barrier": "ready"}[kind]
+    result = {
+        "outcome": event[state],
+        "wall_ms": event["finished_ms"] - event["started_ms"],
+        "thread_cpu_ms": event["thread_cpu_ms"],
+        "started_after_accept_ms": None if accepted is None else event["started_ms"] - accepted,
+        "finished_after_accept_ms": None if accepted is None else event["finished_ms"] - accepted,
+        "has_publication_identity": event.get("publication") is not None,
+    }
+    if kind == "compile":
+        result.update(
+            {
+                name: event.get(name)
+                for name in (
+                    "config_loads",
+                    "config_load_failures",
+                    "unregistered_loads",
+                    "cache_entries",
+                    "registered_workspaces",
+                    "scope_counts_overflow",
+                    "config_load_wall_ms",
+                    "config_load_thread_cpu_ms",
+                )
+            }
+        )
+        result["scopes_with_loads"] = sum(load > 0 for load in event["scope_loads"])
+        result["scope_load_total"] = sum(event["scope_loads"])
+    else:
+        result["binding_present"] = event.get("binding") is not None
+        result["matches_phase_binding"] = None if expected is None else event.get("binding") == expected
+    return result
+
+
+def observed_chain(rows: list[dict[str, Any]], expected: Any, accepted: Any, final_compile: bool) -> dict[str, Any]:
+    """Replay only the recorded chain predicate, without its live deadline loop."""
+    if expected is None or accepted is None:
+        return {"state": "phase_binding_or_acceptance_unavailable"}
+    for barrier in reversed(rows):
+        attempt = barrier.get("publication")
+        if (
+            barrier["kind"] != "barrier"
+            or barrier["ready"] is not True
+            or attempt is None
+            or barrier.get("binding") != expected
+        ):
+            continue
+        current = [row for row in rows if row.get("publication") == attempt]
+        compiled = [row for row in current if row["kind"] == "compile" and row["succeeded"] is True]
+        pushed = [
+            row
+            for row in current
+            if row["kind"] == "push" and row["returned"] is True and row.get("binding") == expected
+        ]
+        acks = [
+            row
+            for row in current
+            if row["kind"] == "transport_ack" and row["validated"] is True and row.get("binding") == expected
+        ]
+        if not compiled or not pushed or not acks:
+            continue
+        compilation, push, ack = compiled[-1], pushed[-1], acks[-1]
+        if not (
+            compilation["started_ms"]
+            <= compilation["finished_ms"]
+            <= push["started_ms"]
+            <= push["finished_ms"]
+            <= ack["finished_ms"]
+            <= barrier["finished_ms"]
+        ) or (final_compile and compilation["started_ms"] < accepted):
+            continue
+        return {
+            "state": "ordered_matching_chain_observed",
+            "compile_started_after_accept_ms": compilation["started_ms"] - accepted,
+            "ack_finished_after_accept_ms": ack["finished_ms"] - accepted,
+            "barrier_finished_after_accept_ms": barrier["finished_ms"] - accepted,
+        }
+    return {"state": "no_ordered_matching_chain_in_retained_rows"}
+
+
+def publication_observation(rows: list[dict[str, Any]], count: int) -> dict[str, Any]:
+    """Inspect the final offered phase after collection; never alter its outcome.
+
+    Events are tagged at publication entry and may finish after a phase returns.
+    Missing spans establish only absence in retained rows, especially when the
+    observer reports overflow or calls still in flight at freeze.
+    """
+    selected = [row for row in rows if row.get("registered_workspaces") == count]
+    offers = [
+        row.get("phase")
+        for row in selected
+        if row.get("kind") == "control_offer" and row.get("operation") == "workspace_phase"
+    ]
+    require(len(offers) <= 6 and offers == list(PHASES[: len(offers)]))
+    if not offers:
+        return {"state": "no_phase_offered"}
+    terminals = [
+        mapping(row.get("result"))
+        for row in selected
+        if row.get("kind") == "control_terminal" and row.get("operation") == "workspace_phase"
+    ]
+    identities = [row for row in selected if row.get("kind") == "phase_identity"]
+    finishes = [
+        mapping(row.get("result"))
+        for row in selected
+        if row.get("kind") == "control_terminal" and row.get("operation") == "workspace_finish"
+    ]
+    require(len(terminals) == len(identities) == len(offers) and len(finishes) == 1)
+    for index, (terminal, identity) in enumerate(zip(terminals, identities, strict=True)):
+        require(terminal.get("phase") in (None, PHASES[index]) and identity.get("phase") == PHASES[index])
+        require(private_binding(terminal.get("binding")) == private_binding(identity.get("binding")))
+    raw_events = [mapping(row.get("event")) for row in selected if row.get("kind") == "publisher_event"]
+    require(len(raw_events) <= 256)
+    raw_report = mapping(finishes[0].get("observer"))
+    report = observer_report(raw_report)
+    encoded = json.dumps(raw_events, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    require(report is not None and report["events"] == len(raw_events) and report["event_bound"] == 256)
+    require(sha(raw_report.get("event_digest")) == hashlib.sha256(encoded).hexdigest())
+    events = [validate_event(event, count) for event in raw_events]
+    counts = report["counts"]
+    require(counts is not None and all(value is not None for value in counts.values()))
+    require(sum(counts[kind] for kind in EVENT_KINDS) == len(events) + counts["overflow"])
+    require(all(sum(event["kind"] == kind for event in events) <= counts[kind] for kind in EVENT_KINDS))
+    require(counts["scope_overflow"] <= counts["compile"])
+    require(
+        report["complete"]
+        is (counts["overflow"] == counts["scope_overflow"] == 0 and report["calls_in_flight_at_freeze"] in (None, 0))
+    )
+    require(report["headline_timing_eligible"] is False)
+    require(all(event["phase"] < len(offers) for event in events))
+    index = len(offers) - 1
+    phase = terminals[-1]
+    current = [event for event in events if event["phase"] == index]
+    expected = private_binding(phase.get("binding"))
+    accepted = milliseconds(phase.get("accepted_ms"), offset=True)
+    groups = {kind: [event for event in current if event["kind"] == kind] for kind in EVENT_KINDS}
+    outcomes = {"compile": "succeeded", "push": "returned", "transport_ack": "validated", "barrier": "ready"}
+    return {
+        "state": "retained_trace_digest_verified",
+        "scope": "post_attempt_final_offered_phase_not_live_acceptance",
+        "offered_phase": PHASES[index],
+        "observer": report,
+        "retained_counts_by_phase": [
+            {
+                "phase": name,
+                **{
+                    kind: sum(event["phase"] == ordinal and event["kind"] == kind for event in events)
+                    for kind in EVENT_KINDS
+                },
+            }
+            for ordinal, name in enumerate(PHASES[: len(offers)])
+        ],
+        "phase_binding_recorded": expected is not None,
+        "acceptance_time_recorded": accepted is not None,
+        "retained_publication_identities": len(
+            {event["publication"] for event in current if event.get("publication") is not None}
+        ),
+        "compiles_without_publication_identity": sum(event.get("publication") is None for event in groups["compile"]),
+        "completed_outcomes": {
+            kind: {
+                "true": sum(event[outcomes[kind]] is True for event in values),
+                "false": sum(event[outcomes[kind]] is False for event in values),
+            }
+            for kind, values in groups.items()
+        },
+        "last_completed_spans": {
+            kind: completed_span(values[-1], expected, accepted) if values else None for kind, values in groups.items()
+        },
+        "recorded_chain": observed_chain(current, expected, accepted, PHASES[index] == "coalesced_burst"),
+        "ack_predicate_bits_recorded": False,
+    }
+
+
+def bounded_publication_observation(rows: list[dict[str, Any]], count: int) -> dict[str, Any]:
+    try:
+        return publication_observation(rows, count)
+    except (ValueError, TypeError, KeyError):
+        return {"state": "unavailable_or_invalid"}
+
+
 def collector_receipt(value: dict[str, Any]) -> dict[str, Any]:
     require(value.get("scope") == "installed_workspace_publication_diagnostic")
     cells = value.get("cells", [])
@@ -446,6 +730,7 @@ def collector_receipt(value: dict[str, Any]) -> dict[str, Any]:
                     "failure": cell_failure(cell.get("failure")),
                 },
                 "phases": phase_rows,
+                "last_phase_observation": phase_observation(mapping(phases[-1]), len(phases) - 1) if phases else None,
                 "offered_phases": offered,
                 "unvisited_phases": unvisited,
                 "final": {
@@ -536,6 +821,8 @@ def publisher_ledger(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 }
         else:
             require(kind in ("publisher_event", "phase_identity"))
+    for count, cell in cells.items():
+        cell["publication_observation"] = bounded_publication_observation(rows, count)
     return {"records": len(rows), "cells": list(cells.values())}
 
 

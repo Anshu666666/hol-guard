@@ -1,0 +1,134 @@
+name: PR2974 macOS endpoint formatter harvest
+
+on:
+  push:
+    branches: [codex/pr2974-macos-endpoint-format-4b888052]
+    paths:
+      - '.github/workflows/pr2974-macos-endpoint-format.yml'
+      - 'ci/pr2974_macos_endpoint_format/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-macos-endpoint-format-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  formatter-harvest:
+    name: Retain exact import and formatter output with separate source bridges
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Initialize separate retained evidence and owned scratch
+        id: initialize
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-macos-endpoint-format-report
+          VALIDATION_SCRATCH: /tmp/pr2974-macos-endpoint-format-${{ github.run_id }}-${{ github.run_attempt }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os, pwd, stat
+          from pathlib import Path
+          report = Path(os.environ["VALIDATION_REPORT"])
+          scratch = Path(os.environ["VALIDATION_SCRATCH"])
+          assert scratch.parent.resolve() == Path("/tmp").resolve()
+          homes = [Path.home().resolve(strict=True),
+                   Path(pwd.getpwuid(os.getuid()).pw_dir).resolve(strict=True)]
+          assert all(not scratch.resolve().is_relative_to(home) for home in homes)
+          report.mkdir(mode=0o700, parents=True)
+          scratch.mkdir(mode=0o700)
+          info = scratch.lstat()
+          assert stat.S_ISDIR(info.st_mode) and info.st_uid == os.getuid()
+          assert stat.S_IMODE(info.st_mode) == 0o700 and not scratch.is_symlink()
+          (report / "job-outcome.json").write_text(json.dumps({
+              "source_sha": "4b888052964f03822d64bdcf8a2ff649d8a61f58",
+              "source_tree": "517a7aaf76dc46ac3b965df3d524f8d7d8135a16",
+              "harness_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"], "status": "not_run",
+              "passed": False, "qualification_complete": False,
+              "source_only_formatting": True,
+              "fresh_immutable_formatted_commit_and_validation_required": True}) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              stream.write("VALIDATION_REPORT=" + str(report) + "\n")
+              stream.write("VALIDATION_SCRATCH=" + str(scratch) + "\n")
+          PY
+      - name: Checkout immutable formatter harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact immutable endpoint diagnostic input
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '4b888052964f03822d64bdcf8a2ff649d8a61f58'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact parser Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up exact hash-locked installer
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Sort and format only ten isolated Python files and prove both source bridges
+        id: formatter
+        shell: bash
+        run: |
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_macos_endpoint_format/format.py"
+      - name: Frame every original formatter source and report byte
+        id: projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_macos_endpoint_format/project_reports.py"
+      - name: Retain all16 before, import-sorted and after sources plus failures
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-macos-endpoint-format-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-macos-endpoint-format-report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Gate actual outcomes after all evidence retention
+        if: always()
+        env:
+          INITIALIZE_OUTCOME: ${{ steps.initialize.outcome }}
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          UV_OUTCOME: ${{ steps.uv.outcome }}
+          FORMATTER_OUTCOME: ${{ steps.formatter.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["VALIDATION_REPORT"]) / "job-outcome.json"
+          report = json.loads(path.read_text()) if path.is_file() else {"passed": False}
+          names = ("INITIALIZE_OUTCOME", "HARNESS_OUTCOME", "SOURCE_OUTCOME", "PYTHON_OUTCOME",
+                   "UV_OUTCOME", "FORMATTER_OUTCOME", "PROJECTION_OUTCOME", "UPLOAD_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          passed = report.get("passed") is True and all(value == "success" for value in outcomes.values())
+          print(json.dumps({"endpoint_formatter_passed": passed, "step_outcomes": outcomes,
+                            "all_original_diagnostic_evidence_preserved": True, "qualification_complete": False,
+                            "fresh_immutable_formatted_commit_and_validation_required": True}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

@@ -12,6 +12,7 @@ from codex_plugin_scanner.guard.daemon.hook_native_review_binding import NATIVE_
 from codex_plugin_scanner.guard.store_native_review_approvals import consume_native_review_approval
 
 _BINDING = f"native-review-v4:{'a' * 64}:deny:review:review:native_sensitive_access_review"
+_POLICY_BINDING = {"schema": "guard.native-review-policy-binding.v1", "policy_digest": "a" * 64}
 
 
 def _connection() -> sqlite3.Connection:
@@ -56,10 +57,16 @@ def _insert_resolution(
     connection.execute(
         """insert into approval_requests
            (request_id, status, harness, artifact_id, artifact_name, artifact_hash,
-            launch_target, workspace, resolved_at, resolution_action, resolution_scope)
+            launch_target, workspace, resolved_at, resolution_action, resolution_scope, action_envelope_json)
            values (?, 'resolved', 'cursor', 'cursor:native-pretool:Bash', 'Bash', ?,
-                   'cat .env', '/workspace', ?, ?, 'artifact')""",
-        (request_id, _BINDING, resolved_at, action),
+                   'cat .env', '/workspace', ?, ?, 'artifact', ?)""",
+        (
+            request_id,
+            _BINDING,
+            resolved_at,
+            action,
+            json.dumps({NATIVE_REVIEW_BINDING_FIELD: _POLICY_BINDING}),
+        ),
     )
 
 
@@ -68,7 +75,7 @@ def _consume(
     *,
     now: str,
     harness: str = "cursor",
-    policy_binding: Mapping[str, object] | None = None,
+    policy_binding: Mapping[str, object] | None = _POLICY_BINDING,
 ) -> bool:
     return consume_native_review_approval(
         connection,

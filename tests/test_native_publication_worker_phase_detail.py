@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from types import FunctionType
 from typing import NoReturn
@@ -41,8 +41,7 @@ def _invocation(
         monkeypatch.setattr(authority, "read_frozen_native_managed_authority", stop)
         return lambda: authority.read_native_policy_authority_inputs(store, now=0.0)
     if phase == "authority_sql_capture":
-        monkeypatch.setattr(store, "_connect", nullcontext)
-        monkeypatch.setattr(store, "_policy_integrity_secret_material", stop)
+        monkeypatch.setattr(authority, "_database_identity", stop)
         return lambda: authority._capture_native_policy_authority_inputs(store, now=0.0, managed=None)
     if phase == "managed_authority_capture":
         monkeypatch.setattr(store, "_authority_key", stop)
@@ -130,8 +129,7 @@ def test_deeper_actual_authority_frame_takes_precedence_over_its_public_caller(
         raise sentinel
 
     monkeypatch.setattr(authority, "read_frozen_native_managed_authority", lambda *args, **kwargs: None)
-    monkeypatch.setattr(store, "_connect", nullcontext)
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", stop)
+    monkeypatch.setattr(authority, "_database_identity", stop)
     with pytest.raises(_Observed) as caught:
         _ = authority.read_native_policy_authority_inputs(store, now=0.0)
     assert caught.value is sentinel

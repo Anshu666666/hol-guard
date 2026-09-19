@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -190,16 +191,33 @@ def test_store_gate_receives_original_deadline_and_default_call_stays_unchanged(
     store = GuardStore(tmp_path / "guard")
     lookup = _lookup(store)
     original = schema.hold_storage_file_lock
+    owner_thread = threading.get_ident()
     observed = []
+    other_threads = []
 
     def hold(*args, **kwargs):
-        observed.append(kwargs)
+        thread_id = threading.get_ident()
+        if thread_id == owner_thread:
+            observed.append(kwargs)
+        else:
+            other_threads.append((thread_id, kwargs))
         return original(*args, **kwargs)
 
     monkeypatch.setattr(schema, "hold_storage_file_lock", hold)
     deadline = time.monotonic() + 1
     with store_maintenance_scope(store.path, lookup, deadline_monotonic=deadline), store._connect():
         pass
+
+    # Unrelated observers can use the same module-level gate after this
+    # scoped call. Their default arguments are not this thread's deadline.
+    def read_on_worker():
+        return threading.get_ident(), store.get_device_metadata()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        worker_id, metadata = executor.submit(read_on_worker).result(timeout=1)
+    assert metadata
+    worker_calls = [call for thread_id, call in other_threads if thread_id == worker_id]
+    assert worker_calls and all("deadline_monotonic" not in call for call in worker_calls)
     assert observed[-1]["deadline_monotonic"] == deadline
     with store._connect():
         pass

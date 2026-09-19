@@ -265,7 +265,11 @@ from .discovery import (
 )
 from .extension_control_api import ExtensionControlApiError, ExtensionControlApiService
 from .extension_control_observation import read_observed_extension_control_authority
-from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_optional_publish
+from .first_cloud_sync import (
+    background_cloud_sync_is_dormant,
+    maybe_queue_first_cloud_sync,
+    queue_sync_with_optional_publish,
+)
 from .hook_health import hook_worker_health
 from .hook_native_policy_context import submit_native_review_receipt
 from .hook_process_runner import HookProcessRunner
@@ -7828,6 +7832,7 @@ class GuardDaemonServer:
 
     _quarantine_lock: ClassVar[threading.Lock] = threading.Lock()
     _quarantined_services: ClassVar[dict[str, GuardDaemonServer]] = {}
+    _initial_storage_maintenance_complete: bool | None = None
 
     @staticmethod
     def _quarantine_key(guard_home: Path) -> str:
@@ -8081,6 +8086,9 @@ class GuardDaemonServer:
         self._maintain_command_activity_best_effort()
         if not startup_generation_is_current(self, generation):
             raise RuntimeError("Guard daemon stopped during startup")
+        self._initial_storage_maintenance_complete = self._maintain_storage_best_effort()
+        if not startup_generation_is_current(self, generation):
+            raise RuntimeError("Guard daemon stopped during startup")
         self._persist_aibom_inventory_context()
 
         def start_post_listen_workers() -> None:
@@ -8235,8 +8243,11 @@ class GuardDaemonServer:
     def _command_activity_maintenance_loop(self) -> None:
         if self._shutdown_started.is_set():
             return
-        self._maintain_command_activity_best_effort()
-        storage_complete = self._maintain_storage_best_effort()
+        storage_complete = self._initial_storage_maintenance_complete
+        self._initial_storage_maintenance_complete = None
+        if storage_complete is None:
+            self._maintain_command_activity_best_effort()
+            storage_complete = self._maintain_storage_best_effort()
         while not self._shutdown_started.wait(3_600 if storage_complete else 5):
             self._maintain_command_activity_best_effort()
             storage_complete = self._maintain_storage_best_effort()
@@ -8468,6 +8479,10 @@ class GuardDaemonServer:
             else interval_seconds
         )
         while not self._shutdown_started.is_set():
+            if background_cloud_sync_is_dormant(self._server.store):
+                if self._shutdown_started.wait(backoff_seconds):
+                    return
+                continue
             summary = _run_headless_cloud_sync_with_optional_publish(
                 store=self._server.store,
                 managed_controls_publish=_managed_controls_publish_for(self._server),
@@ -8531,6 +8546,10 @@ class GuardDaemonServer:
             self._bundle_refresh_backoff_seconds if self._bundle_refresh_backoff_seconds > 0 else interval_seconds
         )
         while not self._shutdown_started.is_set():
+            if background_cloud_sync_is_dormant(self._server.store):
+                if self._shutdown_started.wait(backoff_seconds):
+                    return
+                continue
             refreshed_at = _now()
             try:
                 summary = sync_supply_chain_bundle(self._server.store)

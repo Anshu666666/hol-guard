@@ -12,6 +12,7 @@ GLOSSARY_PATH = ROOT / "docs" / "guard" / "managed-controls-glossary.md"
 NAVIGATION_PATH = ROOT / "dashboard" / "src" / "shell-navigation-model.ts"
 RULES_PAGE_PATH = ROOT / "dashboard" / "src" / "policy-workspace-page.tsx"
 APP_PATH = ROOT / "dashboard" / "src" / "app.tsx"
+APP_ROUTING_PATH = ROOT / "dashboard" / "src" / "app-routing.ts"
 APP_TITLE_TEST_PATH = ROOT / "dashboard" / "src" / "scrg171-172.test.ts"
 DASHBOARD_BUNDLE_PATH = (
     ROOT
@@ -183,6 +184,7 @@ def test_local_navigation_uses_product_language_without_breaking_routes() -> Non
     navigation = NAVIGATION_PATH.read_text(encoding="utf-8")
     rules_page = RULES_PAGE_PATH.read_text(encoding="utf-8")
     app = APP_PATH.read_text(encoding="utf-8")
+    app_routing = APP_ROUTING_PATH.read_text(encoding="utf-8")
     app_title_test = APP_TITLE_TEST_PATH.read_text(encoding="utf-8")
     assert 'href: "/policy"' in navigation
     assert 'label: "Rules & exceptions"' in navigation
@@ -192,7 +194,8 @@ def test_local_navigation_uses_product_language_without_breaking_routes() -> Non
     assert 'eyebrow="Rules & exceptions"' in rules_page
     assert 'title="Remembered decisions and exceptions"' in rules_page
     assert "Configure tools and capability posture in Extensions." in rules_page
-    assert 'if (view === "policy") return "Rules & exceptions";' in app
+    assert 'import { navigate, viewTitle } from "./app-routing";' in app
+    assert 'if (view === "policy") return "Rules & exceptions";' in app_routing
     assert 'viewTitle("policy") === "Rules & exceptions"' in app_title_test
     assert "Managed extensions and integrations" not in navigation
 

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-# pyright: reportAttributeAccessIssue=false
 from .workspace_preference_authority import reject_private_preference_key
+
+# pyright: reportAttributeAccessIssue=false
 
 
 _NATIVE_POLICY_AUTHORITY_SYNC_KEYS = frozenset(

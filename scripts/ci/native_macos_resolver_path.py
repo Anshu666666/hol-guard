@@ -49,6 +49,15 @@ SOURCES = (
     "tests/test_native_macos_resolver_evidence.py",
     "tests/test_native_macos_resolver_path.py",
     "tests/test_native_macos_resolver_tool_capture.py",
+    "scripts/ci/native_macos_dnssd_phase_probe.c",
+    "scripts/ci/native_macos_dnssd_phase_child.py",
+    "scripts/ci/native_macos_dnssd_phase_evidence.py",
+    "scripts/ci/native_macos_dnssd_phase_identity.py",
+    "scripts/ci/native_macos_dnssd_phase_path.py",
+    "tests/test_native_macos_dnssd_phase.py",
+    "tests/test_native_macos_dnssd_phase_path.py",
+    "tests/test_native_macos_dnssd_phase_forwarding.py",
+    "tests/test_native_macos_dnssd_phase_identity.py",
     ".github/workflows/native-macos-resolver-path.yml",
 )
 COMPILE_FLAGS = ("-std=c11", "-O0", "-Wall", "-Wextra", "-Werror")

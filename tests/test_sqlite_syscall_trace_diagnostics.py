@@ -103,3 +103,63 @@ def test_removing_only_observation_blocks_recovers_exact_original_parser_ast():
     stripped = RemoveObservations().visit(function)
     original_ast_sha256 = "c01d569fcfe2907c472f5724e89499f2e2e130669f9aa8da26383ef4c10db9b4"
     assert hashlib.sha256(ast.dump(stripped, include_attributes=False).encode()).hexdigest() == original_ast_sha256
+
+
+@pytest.mark.parametrize(
+    ("trace", "record_class"),
+    [
+        (b"\n", "empty_line"),
+        (b" \t\n", "whitespace_only"),
+        (b"<unfinished ...>\n", "standalone_unfinished_marker"),
+        (b"<unavailable>\n", "standalone_unavailable_marker"),
+        (b'[pid 11] openat(AT_FDCWD, "/private", O_RDONLY\n', "syscall_entry_fragment"),
+        (b") = 3\n", "closing_parenthesis_result"),
+        (b", 0600) = 3\n", "comma_continuation_result"),
+        (b"0x5) = 3\n", "numeric_continuation_result"),
+        (b"72) = 3\n", "numeric_continuation_result"),
+        (b"private-token) = 3\n", "unbound_result_fragment"),
+        (b"unrelated-token\n", "other"),
+        (b"<unfinished ...> extra\n", "other"),
+        (b"<unavailable> extra\n", "other"),
+        (b'private_syscall("/private") partial\n', "other"),
+        (b"0xprivate) = 3\n", "unbound_result_fragment"),
+    ],
+)
+def test_fixed_record_classes_distinguish_rejected_fragments_without_accepting_them(trace, record_class):
+    diagnostics = SyntaxDiagnostics()
+    calls, complete = parse_calls(trace, 10, diagnostics)
+    assert (calls, complete) == parse_calls(trace, 10) == ([], False)
+    summary = diagnostics.summary()
+    assert summary["signatures"][0]["record_class"] == record_class
+    assert summary["reason_counts"] == {"unrecognized_record": 1}
+    assert not summary["affects_parser_acceptance"]
+
+
+def test_previous_uninformative_hash_stays_exact_while_three_records_remain_distinct():
+    diagnostics = SyntaxDiagnostics()
+    for line in ("", "<unfinished ...>", "synthetic-other-token"):
+        diagnostics.record("unrecognized_record", line)
+    signatures = diagnostics.summary()["signatures"]
+    assert len(signatures) == 3
+    assert {entry["normalized_sha256"] for entry in signatures} == {
+        "fcac451e4875e35a63382d8337490484dcfb685e93d8df61d7dbad7bae1295ec"
+    }
+    assert {entry["record_class"] for entry in signatures} == {
+        "empty_line",
+        "standalone_unfinished_marker",
+        "other",
+    }
+    assert all(entry["count"] == 1 for entry in signatures)
+
+
+def test_lexical_class_and_signature_ignore_actual_pid_path_sql_and_numeric_values():
+    outputs = []
+    for pid, path, number in [("111111", "/private-alpha", "0x5"), ("929292", "/private-beta", "0x9")]:
+        diagnostics = SyntaxDiagnostics()
+        for line in (f'{pid} openat(AT_FDCWD, "{path}", O_RDONLY', f"{number}) = 3"):
+            diagnostics.record("unrecognized_record", line)
+        summary = diagnostics.summary()
+        encoded = json.dumps(summary)
+        assert all(value not in encoded for value in (pid, path, number))
+        outputs.append(summary)
+    assert outputs[0] == outputs[1]

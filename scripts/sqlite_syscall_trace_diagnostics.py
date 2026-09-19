@@ -72,13 +72,40 @@ def _shape(line: str) -> tuple[str, str, str]:
     return prefix, syscall, hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest()
 
 
+def _record_class(line: str) -> str:
+    """Fixed lexical classes only; fragments are never completed or accepted."""
+    match = re.match(r"^(?:\[pid\s+[0-9]+\]\s+|[0-9]+\s+)", line)
+    if match is not None:
+        line = line[match.end() :]
+    if line == "":
+        return "empty_line"
+    if line.isspace():
+        return "whitespace_only"
+    if line == "<unfinished ...>":
+        return "standalone_unfinished_marker"
+    if line == "<unavailable>":
+        return "standalone_unavailable_marker"
+    call = re.match(r"^([a-z][a-z0-9_]*)\(", line)
+    if call is not None and call[1] in SYSCALLS and " = " not in line:
+        return "syscall_entry_fragment"
+    if " = " in line and ")" in line and "(" not in line:
+        if line.startswith(")"):
+            return "closing_parenthesis_result"
+        if line.startswith(","):
+            return "comma_continuation_result"
+        if re.match(r"^-?(?:0x[0-9a-f]+|[0-9]+)(?:[,\s)]|$)", line) is not None:
+            return "numeric_continuation_result"
+        return "unbound_result_fragment"
+    return "other"
+
+
 class SyntaxDiagnostics:
     def __init__(self) -> None:
         self.events_retained = 0
         self.events_truncated = False
         self.signatures_truncated = False
         self.reasons: dict[str, int] = {}
-        self.signatures: dict[tuple[str, str, str, str], int] = {}
+        self.signatures: dict[tuple[str, str, str, str, str], int] = {}
 
     def record(self, reason: str, line: str) -> None:
         if reason not in REASONS:
@@ -89,7 +116,7 @@ class SyntaxDiagnostics:
         self.events_retained += 1
         self.reasons[reason] = self.reasons.get(reason, 0) + 1
         prefix, syscall, signature = _shape(line)
-        key = (reason, prefix, syscall, signature)
+        key = (reason, prefix, syscall, signature, _record_class(line))
         if key in self.signatures:
             self.signatures[key] += 1
         elif len(self.signatures) < MAX_SIGNATURES:
@@ -106,8 +133,15 @@ class SyntaxDiagnostics:
             "metadata_complete": not self.events_truncated and not self.signatures_truncated,
             "reason_counts": dict(sorted(self.reasons.items())),
             "signatures": [
-                {"reason": reason, "prefix": prefix, "syscall": syscall, "normalized_sha256": signature, "count": count}
-                for (reason, prefix, syscall, signature), count in sorted(self.signatures.items())
+                {
+                    "reason": reason,
+                    "prefix": prefix,
+                    "syscall": syscall,
+                    "normalized_sha256": signature,
+                    "record_class": record_class,
+                    "count": count,
+                }
+                for (reason, prefix, syscall, signature, record_class), count in sorted(self.signatures.items())
             ],
             "raw_text_retained": False,
             "affects_parser_acceptance": False,

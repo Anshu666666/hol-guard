@@ -21,7 +21,7 @@ FROZEN_HELPERS = {
     "scripts/probe_sqlite_syscall_observation.py": "0c044d4755e8696d884bbe64876b933b88b28093248bf9e266529a0050f6da2f",
     "scripts/sqlite_syscall_probe_child.py": "8952e4c1e2930f2ff18e20c921d57ac3ede7fea10115e081e7987605e9c15758",
     "scripts/sqlite_syscall_probe_supervision.py": "640c72b86482f4b7564e9c2d87988f6f08655c274790a6bb05d8b4d17e896f37",
-    "scripts/sqlite_syscall_trace_diagnostics.py": "41a7426caf762e779490f37041ec4640b0a8b594bc3fbb6dc13f6b0c411530e9",
+    "scripts/sqlite_syscall_trace_diagnostics.py": "a25bcfca8853b82dbea27c1713edced0a885a2fe58c2b0f18b99380350088385",
     "tests/test_sqlite_syscall_probe_parser.py": "a2c2644af09bd57e41a68c63ed182916ad6c51015a187d8914a4d612ca472447",
 }
 HOSTED_SOURCES = (

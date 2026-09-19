@@ -18,6 +18,7 @@ from codex_plugin_scanner.guard.models import GuardReceipt
 from codex_plugin_scanner.guard.runtime.runner import sync_guard_events, sync_receipts
 from codex_plugin_scanner.guard.schemas.guard_event_v1 import GuardEventV1
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.support.optional_uploads import assert_dpop_proof, seed_legacy_optional_uploads
 
 
 def _seed_guard_cloud(store, *, workspace_id=None, sync_url=None, token="demo-token", now="2026-05-19T00:00:00Z"):
@@ -80,6 +81,7 @@ class _EventIngestHandler(BaseHTTPRequestHandler):
                 "path": self.path,
                 "payload": payload,
                 "authorization": self.headers.get("Authorization"),
+                "dpop": self.headers.get("DPoP"),
             }
         )
         status_code = type(self).event_status if self.path.endswith("/api/v1/guard/events") else 200
@@ -230,7 +232,7 @@ def test_new_guard_cloud_event_types_are_contract_valid() -> None:
     assert all(event.to_dict()["schemaVersion"] == "guard.event.v1" for event in events)
 
 
-def test_sync_guard_events_posts_to_v1_ingest(tmp_path) -> None:
+def test_sync_guard_events_posts_to_v1_ingest(tmp_path, monkeypatch) -> None:
     store = GuardStore(tmp_path)
     store.add_receipt(_receipt())
     _EventIngestHandler.requests = []
@@ -238,10 +240,13 @@ def test_sync_guard_events_posts_to_v1_ingest(tmp_path) -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        _seed_guard_cloud(
+        key = seed_legacy_optional_uploads(
             store,
+            monkeypatch,
+            issuer=f"http://127.0.0.1:{server.server_port}",
             sync_url=f"http://127.0.0.1:{server.server_port}/api/guard/receipts/sync",
             token="token-1",
+            telemetry=True,
         )
 
         result = sync_guard_events(store)
@@ -252,11 +257,17 @@ def test_sync_guard_events_posts_to_v1_ingest(tmp_path) -> None:
     assert result["accepted"] == 1
     assert _EventIngestHandler.requests[0]["path"] == "/api/v1/guard/events"
     assert _EventIngestHandler.requests[0]["authorization"] == "Bearer token-1"
+    assert_dpop_proof(
+        _EventIngestHandler.requests[0]["dpop"],
+        key=key,
+        request_url=f"http://127.0.0.1:{server.server_port}/api/v1/guard/events",
+        token="token-1",
+    )
     assert _EventIngestHandler.requests[0]["payload"]["events"][0]["eventType"] == "receipt.created"
     assert store.list_guard_events_v1(uploaded=False, limit=10) == []
 
 
-def test_sync_guard_events_normalizes_registry_base_url(tmp_path) -> None:
+def test_sync_guard_events_normalizes_registry_base_url(tmp_path, monkeypatch) -> None:
     store = GuardStore(tmp_path)
     store.add_receipt(_receipt())
     _EventIngestHandler.requests = []
@@ -264,7 +275,14 @@ def test_sync_guard_events_normalizes_registry_base_url(tmp_path) -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        _seed_guard_cloud(store, sync_url=f"http://127.0.0.1:{server.server_port}/registry/api/v1", token="token-1")
+        seed_legacy_optional_uploads(
+            store,
+            monkeypatch,
+            issuer=f"http://127.0.0.1:{server.server_port}",
+            sync_url=f"http://127.0.0.1:{server.server_port}/registry/api/v1",
+            token="token-1",
+            telemetry=True,
+        )
 
         result = sync_guard_events(store)
     finally:
@@ -275,7 +293,7 @@ def test_sync_guard_events_normalizes_registry_base_url(tmp_path) -> None:
     assert _EventIngestHandler.requests[0]["path"] == "/api/v1/guard/events"
 
 
-def test_sync_receipts_uploads_pending_guard_events(tmp_path) -> None:
+def test_sync_receipts_uploads_pending_guard_events(tmp_path, monkeypatch) -> None:
     store = GuardStore(tmp_path)
     store.add_receipt(_receipt())
     _EventIngestHandler.requests = []
@@ -283,10 +301,13 @@ def test_sync_receipts_uploads_pending_guard_events(tmp_path) -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        _seed_guard_cloud(
+        seed_legacy_optional_uploads(
             store,
+            monkeypatch,
+            issuer=f"http://127.0.0.1:{server.server_port}",
             sync_url=f"http://127.0.0.1:{server.server_port}/api/guard/receipts/sync",
             token="token-1",
+            telemetry=True,
         )
 
         result = sync_receipts(store)
@@ -359,7 +380,7 @@ def test_sync_receipts_runs_aibom_when_deep_sync_is_requested(tmp_path, monkeypa
     }
 
 
-def test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing(tmp_path) -> None:
+def test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing(tmp_path, monkeypatch) -> None:
     store = GuardStore(tmp_path)
     store.add_receipt(_receipt())
     _EventIngestHandler.requests = []
@@ -368,10 +389,13 @@ def test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing(
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        _seed_guard_cloud(
+        seed_legacy_optional_uploads(
             store,
+            monkeypatch,
+            issuer=f"http://127.0.0.1:{server.server_port}",
             sync_url=f"http://127.0.0.1:{server.server_port}/api/guard/receipts/sync",
             token="token-1",
+            telemetry=True,
         )
 
         result = sync_receipts(store)
@@ -388,17 +412,20 @@ def test_sync_receipts_keeps_receipt_success_when_v1_events_endpoint_is_missing(
     assert len(pending) == 1  # The receipt.created event is still pending
 
 
-def test_sync_guard_events_marks_rejected_events_terminal(tmp_path) -> None:
+def test_sync_guard_events_marks_rejected_events_terminal(tmp_path, monkeypatch) -> None:
     store = GuardStore(tmp_path)
     store.add_receipt(_receipt())
     server = HTTPServer(("127.0.0.1", 0), _RejectedEventHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        _seed_guard_cloud(
+        seed_legacy_optional_uploads(
             store,
+            monkeypatch,
+            issuer=f"http://127.0.0.1:{server.server_port}",
             sync_url=f"http://127.0.0.1:{server.server_port}/api/guard/receipts/sync",
             token="token-1",
+            telemetry=True,
         )
 
         sync_guard_events(store)

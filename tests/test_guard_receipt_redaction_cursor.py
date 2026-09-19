@@ -41,6 +41,7 @@ from tests.policy_bundle_signing_helpers import (
     policy_bundle_test_verification_key,
     sign_policy_bundle,
 )
+from tests.support.receipt_transport import install_receipt_401_transport
 
 
 def _store_blocked_command_receipt(store: GuardStore, receipt_id: str = "guard-receipt-sync-auth") -> None:
@@ -467,35 +468,11 @@ def test_receipt_sync_401_forces_oauth_refresh_before_retry(
 ) -> None:
     store = GuardStore(tmp_path)
     _store_blocked_command_receipt(store)
-    refresh_flags: list[bool] = []
-    post_attempts = 0
-
-    def resolve_auth_context(
-        _store: GuardStore,
-        *,
-        allow_primary_repair: bool = True,
-        force_refresh: bool = False,
-    ) -> dict[str, object]:
-        refresh_flags.append(force_refresh)
-        return {
-            "sync_url": "https://hol.org/api/guard/receipts/sync",
-            "access_token": "fresh" if force_refresh else "stale",
-        }
-
-    def post_sync(**_kwargs: object) -> dict[str, object]:
-        nonlocal post_attempts
-        post_attempts += 1
-        if post_attempts == 1:
-            raise _sync_unauthorized_error()
-        return {
-            "syncedAt": "2026-04-15T00:01:00Z",
-            "receiptsStored": 1,
-        }
-
-    monkeypatch.setattr(runner, "_resolve_guard_sync_auth_context", resolve_auth_context)
-    monkeypatch.setattr(runner, "_urlopen_json_with_timeout_retry", post_sync)
+    transport = install_receipt_401_transport(store, monkeypatch, _sync_unauthorized_error)
 
     runner.sync_receipts(store)
+    refresh_flags = transport.refresh_flags
+    post_attempts = transport.post_attempts
 
     assert refresh_flags[:2] == [False, True]
     assert post_attempts >= 2
@@ -503,6 +480,8 @@ def test_receipt_sync_401_forces_oauth_refresh_before_retry(
         "last_rowid": 1,
         "synced_at": "2026-04-15T00:01:00Z",
     }
+    assert transport.token_requests == 1
+    assert transport.authorizations == ["Bearer stale", "Bearer fresh"]
 
 
 def test_forced_oauth_refresh_persists_same_refresh_token_access_token(

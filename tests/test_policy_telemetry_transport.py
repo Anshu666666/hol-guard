@@ -37,13 +37,14 @@ def test_real_pain_transport_failure_keeps_cursor_until_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int, reason: str
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     _add_signal(store, 1)
     failed = True
     uploads: list[bytes] = []
 
     def transport(*, request, **_kwargs):
+        _kwargs["prepare_request"](request)
         uploads.append(request.data)
         if failed:
             raise urllib.error.HTTPError(request.full_url, status, "telemetry unavailable", {}, None)
@@ -71,7 +72,7 @@ def test_later_page_failure_reports_completed_page_and_retries_only_pending_page
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     for index in range(501):
         _add_signal(store, index)
@@ -79,6 +80,7 @@ def test_later_page_failure_reports_completed_page_and_retries_only_pending_page
     failed = True
 
     def transport(*, request, **_kwargs):
+        _kwargs["prepare_request"](request)
         if len(completed) == 1 and failed:
             raise OSError("connection reset after first page")
         completed.append(request.data)
@@ -105,20 +107,21 @@ def test_real_guard_event_failure_records_current_progress_and_retries_pending_e
 ) -> None:
     upload = runner.sync_guard_events
     transport = runner._urlopen_json_with_timeout_retry
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_guard_events", upload)
     event = build_runtime_session_event(
         session_id="session-telemetry-test",
         occurred_at="2026-07-15T12:00:00Z",
         payload={"sessionId": "session-telemetry-test", "harness": "codex", "status": "active"},
         device_id="device-alpha",
-        workspace_id="workspace-alpha",
+        workspace_id=store.get_cloud_workspace_id(),
     )
     store.add_guard_event_v1(event)
     failed = True
 
     def response(*, request, **kwargs):
         if request.full_url.endswith("/guard/events"):
+            kwargs["prepare_request"](request)
             if failed:
                 raise urllib.error.HTTPError(request.full_url, 500, "service unavailable", {}, None)
             return {

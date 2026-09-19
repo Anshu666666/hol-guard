@@ -97,6 +97,8 @@ from tests.policy_bundle_signing_helpers import (
     sign_policy_bundle,
 )
 from tests.support.network import stub_authenticated_urlopen
+from tests.support.optional_uploads import SYNTHETIC_WORKSPACE_ID, seed_legacy_optional_uploads
+from tests.support.receipt_transport import ReceiptJsonResponse, confirm_existing_legacy_uploads
 
 COPILOT_NATIVE_DENY_COMMANDS = (
     """node -e "require('fs').unlinkSync('dangerous-marker.json')" """,
@@ -20551,6 +20553,14 @@ def test_sync_receipts_rejects_untrusted_sync_host_before_network(tmp_path, monk
 
 def test_sync_guard_events_rejects_untrusted_sync_host_before_network(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
+    seed_legacy_optional_uploads(store, monkeypatch, telemetry=True)
+    resolve_auth_context = guard_runner_module._resolve_guard_sync_auth_context
+
+    def _resolve_with_untrusted_url(current_store, **kwargs):
+        resolved = resolve_auth_context(current_store, **kwargs)
+        return {**resolved, "sync_url": "https://evil.example/api/guard/receipts/sync"}
+
+    monkeypatch.setattr(guard_runner_module, "_resolve_guard_sync_auth_context", _resolve_with_untrusted_url)
     attempted_request = False
 
     def _fake_urlopen(request, timeout):
@@ -20571,6 +20581,14 @@ def test_sync_guard_events_rejects_untrusted_sync_host_before_network(tmp_path, 
 
 def test_sync_pain_signals_rejects_untrusted_sync_host_before_network(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
+    seed_legacy_optional_uploads(store, monkeypatch, telemetry=True)
+    resolve_auth_context = guard_runner_module._resolve_guard_sync_auth_context
+
+    def _resolve_with_untrusted_url(current_store, **kwargs):
+        resolved = resolve_auth_context(current_store, **kwargs)
+        return {**resolved, "sync_url": "https://evil.example/api/guard/receipts/sync"}
+
+    monkeypatch.setattr(guard_runner_module, "_resolve_guard_sync_auth_context", _resolve_with_untrusted_url)
     attempted_request = False
 
     def _fake_urlopen(request, timeout):
@@ -20591,7 +20609,7 @@ def test_sync_pain_signals_rejects_untrusted_sync_host_before_network(tmp_path, 
 
 def test_sync_receipts_batches_large_local_history(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
-    _seed_guard_cloud(store)
+    seed_legacy_optional_uploads(store, monkeypatch)
     for index in range(65):
         store.add_receipt(
             GuardReceipt(
@@ -20651,7 +20669,7 @@ def test_sync_receipts_batches_large_local_history(tmp_path, monkeypatch):
 
 def test_sync_receipts_uses_rowid_cursor_and_sync_context(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
-    _seed_guard_cloud(store)
+    seed_legacy_optional_uploads(store, monkeypatch)
     for index in range(3):
         store.add_receipt(
             GuardReceipt(
@@ -20671,18 +20689,7 @@ def test_sync_receipts_uses_rowid_cursor_and_sync_context(tmp_path, monkeypatch)
 
     sync_payloads: list[dict[str, object]] = []
 
-    class _Response:
-        def __init__(self, payload: dict[str, object]) -> None:
-            self._payload = payload
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self) -> bytes:
-            return json.dumps(self._payload).encode("utf-8")
+    _Response = ReceiptJsonResponse
 
     def _fake_urlopen(request, timeout):
         payload = json.loads(request.data.decode("utf-8"))
@@ -20741,7 +20748,7 @@ def test_sync_receipts_uses_rowid_cursor_and_sync_context(tmp_path, monkeypatch)
 
 def test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
-    _seed_guard_cloud(store)
+    seed_legacy_optional_uploads(store, monkeypatch)
     for index in range(2):
         store.add_receipt(
             GuardReceipt(
@@ -20766,18 +20773,7 @@ def test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows(tmp_path, mo
 
     uploaded_sizes: list[int] = []
 
-    class _Response:
-        def __init__(self, payload: dict[str, object]) -> None:
-            self._payload = payload
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self) -> bytes:
-            return json.dumps(self._payload).encode("utf-8")
+    _Response = ReceiptJsonResponse
 
     def _fake_urlopen(request, timeout):
         payload = json.loads(request.data.decode("utf-8"))
@@ -20809,7 +20805,7 @@ def test_sync_receipts_backfills_when_cursor_is_ahead_of_local_rows(tmp_path, mo
 
 def test_sync_receipts_marks_latest_connect_first_sync_succeeded(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
-    _seed_guard_cloud(store)
+    seed_legacy_optional_uploads(store, monkeypatch)
     request_id = "connect-imported-state"
     with store._connect() as connection:
         connection.execute(
@@ -20939,8 +20935,10 @@ def test_sync_receipts_marks_latest_connect_first_sync_succeeded(tmp_path, monke
 
 def test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata(tmp_path, monkeypatch):
     store = GuardStore(tmp_path / "guard-home")
-    _seed_guard_cloud(store, workspace_id="workspace-1")
-    store.set_sync_payload("policy_bundle_keyring", policy_bundle_test_keyring(), "2026-04-19T00:00:00Z")
+    seed_legacy_optional_uploads(store, monkeypatch)
+    store.set_sync_payload(
+        "policy_bundle_keyring", policy_bundle_test_keyring(workspace_id=SYNTHETIC_WORKSPACE_ID), "2026-04-19T00:00:00Z"
+    )
     for index in range(65):
         store.add_receipt(
             GuardReceipt(
@@ -21065,22 +21063,11 @@ def test_sync_receipts_preserves_batch_metadata_and_reuses_device_metadata(tmp_p
     sync_payloads_list = list(sync_payloads)
     first_bundle = sync_payloads_list[0]["policyBundle"]
     if isinstance(first_bundle, dict):
-        first_bundle = sign_policy_bundle(first_bundle)
+        first_bundle = sign_policy_bundle(first_bundle, workspace_id=SYNTHETIC_WORKSPACE_ID)
         sync_payloads_list[0]["policyBundle"] = first_bundle
     sync_payloads = iter(sync_payloads_list)
 
-    class _Response:
-        def __init__(self, payload: dict[str, object]) -> None:
-            self._payload = payload
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self) -> bytes:
-            return json.dumps(self._payload).encode("utf-8")
+    _Response = ReceiptJsonResponse
 
     def _fake_urlopen(request, timeout):
         payload = json.loads(request.data.decode("utf-8"))
@@ -23957,9 +23944,10 @@ def test_sync_receipts_uses_distinct_dpop_proofs_per_batch(tmp_path, monkeypatch
         dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
         grant_id="grant-1",
         machine_id="machine-1",
-        workspace_id="workspace-1",
+        workspace_id=SYNTHETIC_WORKSPACE_ID,
         now="2026-06-01T00:00:00+00:00",
     )
+    confirm_existing_legacy_uploads(store, monkeypatch)
     for index in range(51):
         store.add_receipt(
             GuardReceipt(
@@ -23979,18 +23967,7 @@ def test_sync_receipts_uses_distinct_dpop_proofs_per_batch(tmp_path, monkeypatch
     token_requests: list[urllib.request.Request] = []
     receipt_dpop_headers: list[str] = []
 
-    class _Response:
-        def __init__(self, payload: dict[str, object]) -> None:
-            self._payload = payload
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self) -> bytes:
-            return json.dumps(self._payload).encode("utf-8")
+    _Response = ReceiptJsonResponse
 
     def _fake_urlopen(request, timeout):
         if request.full_url == "https://hol.org/api/guard/oauth/token":
@@ -24051,24 +24028,14 @@ def test_sync_local_guard_cloud_proof_refreshes_oauth_once(tmp_path, monkeypatch
         dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
         grant_id="grant-1",
         machine_id="machine-1",
-        workspace_id="workspace-1",
+        workspace_id=SYNTHETIC_WORKSPACE_ID,
         now="2026-06-01T00:00:00+00:00",
     )
+    confirm_existing_legacy_uploads(store, monkeypatch, telemetry=True)
     token_requests: list[urllib.request.Request] = []
     sync_requests: list[urllib.request.Request] = []
 
-    class _Response:
-        def __init__(self, payload: dict[str, object]) -> None:
-            self._payload = payload
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self) -> bytes:
-            return json.dumps(self._payload).encode("utf-8")
+    _Response = ReceiptJsonResponse
 
     def _fake_urlopen(request, timeout):
         if request.full_url == "https://hol.org/api/guard/oauth/token":

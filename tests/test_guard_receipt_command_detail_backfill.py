@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from datetime import datetime, timezone
 
 from codex_plugin_scanner.guard.models import GuardReceipt
@@ -12,6 +13,9 @@ from codex_plugin_scanner.guard.runtime.runner import (
     sync_receipts,
 )
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.support.network import stub_authenticated_urlopen
+from tests.support.optional_uploads import seed_legacy_optional_uploads
+from tests.support.receipt_transport import ReceiptJsonResponse
 
 
 def _decode_transport_command(envelope: dict[str, object]) -> str | None:
@@ -175,6 +179,10 @@ def test_sync_receipts_persists_command_detail_backfill_progress_after_partial_s
     tmp_path,
 ) -> None:
     store = GuardStore(tmp_path)
+    seed_legacy_optional_uploads(store, monkeypatch, token="token")
+    (store.guard_home / "config.toml").write_text(
+        'sync = true\ntelemetry = false\nreceipt_redaction_level = "none"\n', encoding="utf-8"
+    )
     for index in range(6):
         _store_command_receipt(
             store,
@@ -183,19 +191,20 @@ def test_sync_receipts_persists_command_detail_backfill_progress_after_partial_s
 
     monkeypatch.setattr(guard_runner, "_RECEIPT_COMMAND_DETAIL_BACKFILL_LIMIT", 6)
     monkeypatch.setattr(guard_runner, "_RECEIPT_SYNC_BATCH_SIZE", 2)
-    monkeypatch.setattr(guard_runner, "_resolve_cloud_receipt_redaction_level", lambda _store: "none")
-    monkeypatch.setattr(guard_runner, "_guard_sync_request", lambda *args, **kwargs: object())
     monkeypatch.setattr(guard_runner, "_receipt_sync_rows_for_upload", lambda _store, cursor_rowid: [])
 
     attempted_batches = {"count": 0}
 
-    def _fake_sync(**kwargs):
+    def _fake_sync(request, timeout):
+        assert request.full_url == "https://hol.org/api/guard/receipts/sync"
+        payload = json.loads(request.data)
+        assert len(payload["receipts"]) == 2
         attempted_batches["count"] += 1
         if attempted_batches["count"] == 1:
-            return {"syncedAt": "2026-07-04T00:00:00+00:00", "receiptsStored": 2}
+            return ReceiptJsonResponse({"syncedAt": "2026-07-04T00:00:00+00:00", "receiptsStored": 2})
         raise OSError("network down")
 
-    monkeypatch.setattr(guard_runner, "_urlopen_json_with_timeout_retry", _fake_sync)
+    stub_authenticated_urlopen(monkeypatch, _fake_sync)
 
     preview_rows, preview_marker = _receipt_sync_rows_with_command_detail_backfill(
         store,

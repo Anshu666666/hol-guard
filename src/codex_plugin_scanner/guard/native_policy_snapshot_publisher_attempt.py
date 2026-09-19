@@ -201,10 +201,9 @@ def publish_once(self: NativePolicySnapshotPublisher, *, renew_after_generation:
                     source_fingerprint = self._current_input_fingerprint()[0]
                     if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
                         raise _publication_error("native_cloud_policy_changed_during_publish")
-                    if (
-                        current_cloud_inputs.input_digest != cloud_inputs.input_digest
-                        or api._policy_fingerprint(current_config) != (snapshot["config_digest"], snapshot["mode"])
-                    ):
+                    if current_cloud_inputs.input_digest != cloud_inputs.input_digest or api._policy_fingerprint(
+                        current_config
+                    ) != (snapshot["config_digest"], snapshot["mode"]):
                         raise _publication_error("native_policy_authority_changed_during_publish")
                     if (
                         not api._capture_metadata_equal(

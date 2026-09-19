@@ -21,9 +21,8 @@ import pytest
 from codex_plugin_scanner.guard import aibom_cli, store_connection_schema
 from codex_plugin_scanner.guard.daemon import server
 from codex_plugin_scanner.guard.runtime import runner
-from tests.test_aibom_operation_authority import _selected
+from tests.support.inventory_receipt_fixture import inventory_receipt_fixture, selected_receipt_inventory
 from tests.test_guard_receipt_redaction_cursor import _store_blocked_command_receipt
-from tests.test_inventory_consumer_authority import _fixture
 from tests.test_oauth_connection_authority import NOW
 
 
@@ -43,9 +42,12 @@ def denied(*args, **kwargs):
 
 
 def _trial(boundary: str, deny_receipts: bool) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="inventory-scheduling-") as temp:
-        store, _inputs, context = _fixture(Path(temp))
-        store.set_sync_payload("aibom_inventory_context", _selected(context), NOW)
+    with (
+        tempfile.TemporaryDirectory(prefix="inventory-scheduling-") as temp,
+        pytest.MonkeyPatch.context() as monkeypatch,
+    ):
+        store, _inputs, context = inventory_receipt_fixture(Path(temp), monkeypatch)
+        store.set_sync_payload("aibom_inventory_context", selected_receipt_inventory(context), NOW)
         _store_blocked_command_receipt(store, "synthetic-receipt")
         daemon = cast(Any, object.__new__(server.GuardDaemonServer))
         daemon._server = SimpleNamespace(store=store)
@@ -225,8 +227,8 @@ def test_receipts_progress_while_inventory_waits_and_stale_inventory_cannot_comm
     from tests.test_aibom_sync_admission import _finish, _start
     from tests.test_inventory_daemon_consumers import _daemon
 
-    store, inputs, context = _fixture(tmp_path)
-    store.set_sync_payload("aibom_inventory_context", _selected(context), NOW)
+    store, inputs, context = inventory_receipt_fixture(tmp_path, monkeypatch)
+    store.set_sync_payload("aibom_inventory_context", selected_receipt_inventory(context), NOW)
     _store_blocked_command_receipt(store, "synthetic-receipt")
     sentinel = {"status": "prior"}
     store.set_sync_payload("aibom_inventory_daemon", sentinel, NOW)

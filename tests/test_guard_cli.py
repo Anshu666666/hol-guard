@@ -48,6 +48,7 @@ from codex_plugin_scanner.guard.runtime import runner as guard_runner_module
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.cloud_exception_bundle_fixtures import build_cloud_exception_policy_bundle
 from tests.policy_bundle_signing_helpers import policy_bundle_test_keyring, sign_policy_bundle
+from tests.support.guard_cli_upload_case import run_login_and_sync_posts_receipts
 from tests.support.network import stub_authenticated_urlopen
 from tests.update_context_test_support import build_legacy_update_context, stage_legacy_wheel
 
@@ -7099,88 +7100,8 @@ url = http://127.0.0.1:8787/guard-canary
         assert rc == 2
         assert "Pass either a harness or --all, not both." in stderr
 
-    def test_guard_login_and_sync_posts_receipts(self, tmp_path, capsys):
-        home_dir = tmp_path / "home"
-        workspace_dir = tmp_path / "workspace"
-        _build_stable_guard_fixture(home_dir, workspace_dir)
-        _write_text(home_dir / "config.toml", 'changed_hash_action = "allow"\n')
-        _SyncRequestHandler.response_payload = {
-            "syncedAt": "2026-04-09T00:00:00Z",
-            "receiptsStored": 1,
-        }
-        _SyncRequestHandler.captured_bodies = []
-        _SyncRequestHandler.captured_paths = []
-
-        server = HTTPServer(("127.0.0.1", 0), _SyncRequestHandler)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
-            _seed_sync_credentials(
-                home_dir,
-                f"http://127.0.0.1:{server.server_port}/receipts",
-                "demo-token",
-            )
-            login_rc = 0
-
-            run_rc = main(
-                [
-                    "guard",
-                    "run",
-                    "codex",
-                    "--home",
-                    str(home_dir),
-                    "--workspace",
-                    str(workspace_dir),
-                    "--dry-run",
-                    "--default-action",
-                    "allow",
-                    "--json",
-                ]
-            )
-            json.loads(capsys.readouterr().out)
-
-            sync_rc = main(
-                [
-                    "guard",
-                    "sync",
-                    "--home",
-                    str(home_dir),
-                    "--json",
-                ]
-            )
-            sync_output = json.loads(capsys.readouterr().out)
-            status_rc = main(["guard", "status", "--home", str(home_dir), "--workspace", str(workspace_dir), "--json"])
-            status_output = json.loads(capsys.readouterr().out)
-        finally:
-            server.shutdown()
-            thread.join(timeout=5)
-
-        assert login_rc == 0
-        assert run_rc == 0
-        assert sync_rc == 0
-        assert status_rc == 0
-        assert sync_output["receipts_stored"] == 1
-        assert sync_output["inventory"] == 0
-        assert sync_output["inventory_tracked"] >= 1
-        assert status_output["cloud_state"] == "paired_active"
-        assert status_output["last_sync_at"] == "2026-04-09T00:00:00Z"
-        assert _SyncRequestHandler.captured_headers["authorization"] == "Bearer demo-token"
-        receipt_body = next(
-            body
-            for body in _SyncRequestHandler.captured_bodies
-            if isinstance(body.get("receipts"), list) and len(body["receipts"]) >= 1
-        )
-        event_body = next(body for body in _SyncRequestHandler.captured_bodies if "events" in body)
-        assert len(receipt_body["receipts"]) >= 1
-        assert "inventory" not in receipt_body
-        assert len(event_body["events"]) >= 1
-        first_receipt = receipt_body["receipts"][0]
-        assert "artifactId" in first_receipt
-        assert "artifact_id" not in first_receipt
-        assert "receiptId" in first_receipt
-        assert "artifactSlug" in first_receipt
-        assert "artifactHash" in first_receipt
-        assert "recommendation" in first_receipt
+    def test_guard_login_and_sync_posts_receipts(self, tmp_path, capsys, monkeypatch):
+        run_login_and_sync_posts_receipts(tmp_path, capsys, monkeypatch)
 
     def test_guard_sync_persists_cloud_policy_bundle_for_manual_sync(self, tmp_path, capsys):
         home_dir = tmp_path / "home"

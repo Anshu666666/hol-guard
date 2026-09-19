@@ -41,7 +41,7 @@ def _add_guard_event(store):
         occurred_at="2026-07-15T12:00:00Z",
         payload={"sessionId": "session-telemetry-review", "harness": "codex", "status": "active"},
         device_id="device-alpha",
-        workspace_id="workspace-alpha",
+        workspace_id=store.get_cloud_workspace_id(),
     )
     store.add_guard_event_v1(event)
     return event
@@ -52,7 +52,7 @@ def test_invalid_guard_event_response_is_recorded_without_aborting_applied_polic
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, body: bytes
 ) -> None:
     upload = runner.sync_guard_events
-    store, bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_guard_events", upload)
     event = _add_guard_event(store)
 
@@ -84,7 +84,7 @@ def test_permanent_telemetry_request_rejection_propagates(
 ) -> None:
     upload = getattr(runner, f"sync_{lane}")
     original_response = runner._urlopen_json_with_timeout_retry
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, f"sync_{lane}", upload)
     _add_signal(store, 1)
     _add_guard_event(store)
@@ -93,6 +93,7 @@ def test_permanent_telemetry_request_rejection_propagates(
     def transport(*, request, **kwargs):
         if request.full_url.endswith("/guard/receipts/sync"):
             return original_response(request=request, **kwargs)
+        kwargs["prepare_request"](request)
         requests.append(request)
         raise urllib.error.HTTPError(request.full_url, status, "permanent rejection", {}, None)
 
@@ -113,11 +114,16 @@ def test_accepted_pain_page_cursor_failure_propagates_completed_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error_class: type[Exception]
 ) -> None:
     upload = runner.sync_pain_signals
-    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch)
+    store, _bundle, _requests = _connected_policy(tmp_path, monkeypatch, optional_uploads=True)
     monkeypatch.setattr(runner, "sync_pain_signals", upload)
     _add_signal(store, 1)
     accepted = []
-    monkeypatch.setattr(runner, "_urlopen_with_timeout_retry", lambda **kwargs: accepted.append(kwargs["request"]))
+
+    def accept_request(*, request, **kwargs):
+        kwargs["prepare_request"](request)
+        accepted.append(request)
+
+    monkeypatch.setattr(runner, "_urlopen_with_timeout_retry", accept_request)
     persist = store.set_sync_payload
 
     def failing_cursor(key, payload, synced_at):

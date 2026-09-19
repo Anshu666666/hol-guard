@@ -16,6 +16,7 @@ from codex_plugin_scanner.guard.store import GuardStore
 from tests.support.native_policy_application import controlled_policy_publisher
 from tests.support.native_policy_application import native_policy_consumer as native_policy_consumer
 from tests.support.network import stub_authenticated_urlopen
+from tests.support.optional_uploads import SYNTHETIC_WORKSPACE_ID, seed_legacy_optional_uploads
 from tests.test_policy_bundle_v2 import _signed_bundle, _verification_key
 from tests.test_policy_bundle_v2_runtime_admission import (
     _generic_v2_payload,
@@ -33,17 +34,21 @@ pytestmark = pytest.mark.usefixtures("native_policy_consumer")
 
 
 def _connected_policy(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, optional_uploads: bool = False
 ) -> tuple[GuardStore, dict[str, object], list[dict[str, object]]]:
     monkeypatch.setenv("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT", "1")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    key = _verification_key(private_key, workspace_id="workspace-alpha")
+    workspace_id = SYNTHETIC_WORKSPACE_ID if optional_uploads else "workspace-alpha"
+    key = _verification_key(private_key, workspace_id=workspace_id)
     bundle = _signed_bundle(
         private_key,
         key,
         payload_base=_generic_v2_payload(rule_id="block.outage", artifact_id="command:outage"),
+        workspace_id=workspace_id,
     )
     store = _seed_v2_admission_store(tmp_path, key)
+    if optional_uploads:
+        seed_legacy_optional_uploads(store, monkeypatch, workspace_id=workspace_id, token="test-token", telemetry=True)
     requests: list[dict[str, object]] = []
 
     def response(request, timeout):

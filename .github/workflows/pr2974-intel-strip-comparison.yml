@@ -1,0 +1,102 @@
+name: PR2974 Intel strip comparison
+
+on:
+  push:
+    branches:
+      - codex/pr2974-intel-strip-comparison-startup-repair
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-intel-strip-comparison
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    name: One original Intel none and symbols pair
+    runs-on: macos-15-intel
+    timeout-minutes: 75
+    env:
+      INTEL_HARNESS: ${{ github.workspace }}/harness
+      INTEL_SOURCE: ${{ github.workspace }}/source
+    steps:
+      - name: Bind the runner temporary experiment path
+        shell: bash
+        run: |
+          printf 'INTEL_EXPERIMENT_ROOT=%s/pr2974-intel-strip-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      - name: Checkout exact runner
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: harness
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout frozen investigated source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: source
+          ref: 9d37172d6bc1e1febeb9c7611a5a050ef5ea798a
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: 3.12.10
+      - name: Select uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: 0.9.26
+          enable-cache: false
+      - name: Execute frozen diagnostic pair once
+        id: pair
+        continue-on-error: true
+        shell: bash
+        run: python -I -B "$INTEL_HARNESS/ci/pr2974_intel_strip_comparison/entry.py" validate
+      - name: Emit complete bounded original report projection
+        id: projection
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: python -I -B "$INTEL_HARNESS/ci/pr2974_intel_strip_comparison/entry.py" projection
+      - name: Retain all original reports
+        id: reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-intel-strip-original-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.INTEL_EXPERIMENT_ROOT }}/reports/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain full binary wheel source and environment archives
+        id: originals
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-intel-strip-complete-originals-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.INTEL_EXPERIMENT_ROOT }}/artifacts/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Require original gates and complete retention
+        if: always()
+        shell: bash
+        env:
+          PAIR_OUTCOME: ${{ steps.pair.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          REPORT_OUTCOME: ${{ steps.reports.outcome }}
+          ORIGINAL_OUTCOME: ${{ steps.originals.outcome }}
+        run: |
+          python -I -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          terminal = Path(os.environ["INTEL_EXPERIMENT_ROOT"]) / "reports/terminal.json"
+          outcomes = [os.environ[name] for name in (
+              "PAIR_OUTCOME", "PROJECTION_OUTCOME", "REPORT_OUTCOME", "ORIGINAL_OUTCOME")]
+          assert all(value == "success" for value in outcomes), outcomes
+          assert terminal.is_file(), "Missing original terminal receipt"
+          result = json.loads(terminal.read_bytes())
+          assert result["passed"] is True, result.get("failures")
+          assert result["qualification_complete"] is False
+          assert result["production_candidate_eligible"] is False
+          PY

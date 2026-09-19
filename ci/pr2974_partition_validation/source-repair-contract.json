@@ -1,0 +1,208 @@
+{
+  "schema": "pr2974-reviewed-source-repair-bridge-v1",
+  "candidate_commit": "1578e609636cf0460b23dfbe083759097a635be0",
+  "candidate_tree": "4a7ea105c53d0eb68ed8a037e3e38288b32ff407",
+  "candidate_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+  "candidate_files": 4575,
+  "historical_formatted_commit": "e655b80b2d81610a925d08051c061f4c23eb9f0b",
+  "historical_formatted_tree": "79341eeb7fdb9684685beffbdcf6852d33fd54b6",
+  "historical_formatted_files": 4574,
+  "original_formatter_receipt_sha256": "c0573d781b5e95c4e085287a8f172d35b56e05706a3e2f488c480eca416f0256",
+  "changes": [
+    {
+      "path": "src/codex_plugin_scanner/guard/protect.py",
+      "before": {
+        "sha256": "62a162672b0f526bf75482208c2b88718ed49f96e4401c4826df5d88621a457a",
+        "git_blob": "c21f9120780091601918976739a585ee6e45d7da",
+        "mode": "100644",
+        "bytes": 11869
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 11855,
+        "sha256": "aad33acf21d300f472511b2a78c26970df0f97e848d6d2b1dc352037d4c4145c",
+        "git_blob": "e6a591f92e2ea1eca98085e23eb620cdb8d3f5e6"
+      },
+      "kind": "comment_only",
+      "inverse_operations": [
+        {
+          "current": "from .collections_support import dedupe_preserving_order\n",
+          "reconstructed": "from .collections_support import dedupe_preserving_order  # noqa: F401\n",
+          "expected_occurrences": 1
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_surface_server.py",
+      "before": {
+        "sha256": "d244b5e261e9282556cc67fc0c1d084674632faff500022c6f8ce0698284b483",
+        "git_blob": "5696a7738c4ea6ca8705bbeeff2542191021ceb4",
+        "mode": "100644",
+        "bytes": 20817
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 20831,
+        "sha256": "6cdcdd33e2b48068e6f01577fb627baf15f9484677433c18fb64bd2ac8bb99e9",
+        "git_blob": "65945be7caa2186beaac471b90155df3d4ed0730"
+      },
+      "kind": "comment_only",
+      "inverse_operations": [
+        {
+          "current": "from codex_plugin_scanner.guard.local_dashboard_session import (\n    LOCAL_DASHBOARD_SESSION_AUDIENCE,  # noqa: F401\n    LOCAL_DASHBOARD_SESSION_VERSION,  # noqa: F401\n    build_local_dashboard_session_token,\n)\n",
+          "reconstructed": "from codex_plugin_scanner.guard.local_dashboard_session import (\n    LOCAL_DASHBOARD_SESSION_AUDIENCE,\n    LOCAL_DASHBOARD_SESSION_VERSION,\n    build_local_dashboard_session_token,\n)  # noqa: F401\n",
+          "expected_occurrences": 1
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_surface_server_01_dashboard.py",
+      "before": {
+        "sha256": "c8fec1debfa654a7ecbbdcbb40fe0e2c3ecd713a33fad7245fa54f66de04083e",
+        "git_blob": "1a7971c1eaea81271083921b9fbdba9e5e0ba96c",
+        "mode": "100644",
+        "bytes": 8880
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 8880,
+        "sha256": "98d17ca3d0621e60bed246f994f336156d6c1ab499708c75a1ddd8d09a4dc937",
+        "git_blob": "edb9f90cb3db35bde7c5673c53590ec3df508fe1"
+      },
+      "kind": "reviewed_import_header",
+      "inverse_operations": [
+        {
+          "current": "from tests.test_guard_surface_server import (\n    LOCAL_DASHBOARD_SESSION_AUDIENCE,\n    LOCAL_DASHBOARD_SESSION_VERSION,\n    GuardApprovalRequest,\n    GuardDaemonServer,\n    GuardStore,\n    _decode_dashboard_session_claims,\n    build_local_dashboard_session_token,\n    daemon_server_module,\n    json,\n    urllib,\n)\n",
+          "reconstructed": "from tests.test_guard_surface_server import (\n    GuardApprovalRequest,\n    GuardDaemonServer,\n    GuardStore,\n    LOCAL_DASHBOARD_SESSION_AUDIENCE,\n    LOCAL_DASHBOARD_SESSION_VERSION,\n    _decode_dashboard_session_claims,\n    build_local_dashboard_session_token,\n    daemon_server_module,\n    json,\n    urllib,\n)\n",
+          "expected_occurrences": 1
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_surface_server_14_fast_hook_path.py",
+      "before": {
+        "sha256": "70c48b5e7221d4718cc80a342fd652a47e94231e0ad3d84bfe8c1ccd5c88d1f7",
+        "git_blob": "4403c8dfb70660a6ecd553b1de63373da6e14232",
+        "mode": "100644",
+        "bytes": 16535
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 16526,
+        "sha256": "e2aa9bc0af59298752543d68a8f219fb22ad88687aa10fafe311ff7a8c23d539",
+        "git_blob": "36981feb3c3b8c595e5195759dd38d3303e2577c"
+      },
+      "kind": "reviewed_import_header",
+      "inverse_operations": [
+        {
+          "current": "from tests.test_guard_surface_server import GuardDaemonServer, GuardStore, daemon_server_module, json, urllib\n",
+          "reconstructed": "from tests.test_guard_surface_server import GuardDaemonServer, GuardStore, daemon_server_module, hashlib, json, urllib\n",
+          "expected_occurrences": 1
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_surface_server_07_cloud_identity.py",
+      "before": {
+        "sha256": "8941cee53538006ef14bf1c235e397ba4a8113c469c79d321b0b172c06f02fdf",
+        "git_blob": "18fe791da9a00e971c594711b7e9f949dade969d",
+        "mode": "100644",
+        "bytes": 12059
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 11942,
+        "sha256": "bae3b9d83689715acafc3bac5716687f9224468d8e6d120f800452aee439e5d5",
+        "git_blob": "96b01c573333e6bca8dae180f5f2db19d4f5144f"
+      },
+      "kind": "eight_verified_test_value_sites",
+      "inverse_operations": [
+        {
+          "current": "from tests.guard_surface_fixture_support import SYNTHETIC_DPOP_PRIVATE_KEY_PEM\n",
+          "reconstructed": "",
+          "expected_occurrences": 1
+        },
+        {
+          "current": "dpop_private_key_pem=SYNTHETIC_DPOP_PRIVATE_KEY_PEM,",
+          "reconstructed": "dpop_private_key_pem=\"-----BEGIN PRIVATE KEY-----\\nsecret-key-material\\n-----END PRIVATE KEY-----\\n\",",
+          "expected_occurrences": 4
+        }
+      ]
+    },
+    {
+      "path": "tests/test_guard_surface_server_08_cloud_recovery.py",
+      "before": {
+        "sha256": "aff97a78d70901f5db52ac1983a1d27bf6f1725ef1668161181952ad138f37dc",
+        "git_blob": "9c621992287f41a7d3e0cd55f6fbefe304655573",
+        "mode": "100644",
+        "bytes": 10406
+      },
+      "after": {
+        "mode": "100644",
+        "bytes": 10289,
+        "sha256": "50a1be6a061603b379b0e29c19c6fd7e85ce1384175be3095ad07cd1b2ac500e",
+        "git_blob": "1d93dc66a89f9f2dd300fc8131c932c85e1ea23f"
+      },
+      "kind": "eight_verified_test_value_sites",
+      "inverse_operations": [
+        {
+          "current": "from tests.guard_surface_fixture_support import SYNTHETIC_DPOP_PRIVATE_KEY_PEM\n",
+          "reconstructed": "",
+          "expected_occurrences": 1
+        },
+        {
+          "current": "dpop_private_key_pem=SYNTHETIC_DPOP_PRIVATE_KEY_PEM,",
+          "reconstructed": "dpop_private_key_pem=\"-----BEGIN PRIVATE KEY-----\\nsecret-key-material\\n-----END PRIVATE KEY-----\\n\",",
+          "expected_occurrences": 4
+        }
+      ]
+    }
+  ],
+  "added_files": [
+    {
+      "path": "tests/guard_surface_fixture_support.py",
+      "record": {
+        "mode": "100644",
+        "bytes": 185,
+        "sha256": "296db67a4086ca7b9958a85883f5a373ceae4fe5d3996387afac7d5c786ccb5f",
+        "git_blob": "66431a68a35db77e24ae845f0d54a268f4e15879"
+      },
+      "binding": "SYNTHETIC_DPOP_PRIVATE_KEY_PEM",
+      "value_sha256": "ad46fa6e7bd524f2a35f4d8a32828cd31fda394ac70a2115e5adba4d7cd301c8",
+      "value_bytes": 74
+    }
+  ],
+  "historical_failure": {
+    "run": 35435665346,
+    "attempt": 1,
+    "harness": "25f0318f3ed4cdf43f2191953fc5a9903924778e",
+    "preserved_outcomes": {
+      "command": "75 passed",
+      "protect": "32 passed",
+      "codex": "one field comparison failed; no bodies executed",
+      "source": "9 Ruff diagnostics; other source/package gates passed",
+      "gitleaks": "4 private-key findings",
+      "surface": "112 passed, 2 failed, 1 declared Darwin skip"
+    }
+  },
+  "source_evidence": {
+    "ruff_owner": {
+      "blob": "01f33220d8061b96b6b36792ab06b8bb5935a30a",
+      "sha256": "8c6976bc7f9a9b1173585ace84d5a392db9fccb0a492dd74b8839e057789d641"
+    },
+    "ruff_peer": {
+      "blob": "aaf6ac1a106f2050d5eecdb753fa2f969db6cb18",
+      "sha256": "5e499a783834c07cc9b223e129053d9eda9ebb90e21752d003efc0498a96efda"
+    },
+    "fixture_owner": {
+      "blob": "bbeff0f6dc17109b36d5e8e6c995b4b6fb954063",
+      "sha256": "d167b97ad3fc9ed9c95bb06595c9b08f1527ae48991e17d3c9932754fcbf03a4"
+    },
+    "fixture_peer": {
+      "blob": "9225273c37fb7cac6b6f16efd6bbee7c36be23b4",
+      "sha256": "89463b9cfad4e31fefd32a1b949b9739bd57945dab5083e985059dff4251143e"
+    }
+  },
+  "scope": "Exact inverse of six reviewed whole-file edits and deletion of one hash-bound support file; reconstruct the complete historical formatted Git tree. Historical formatting and failures remain separately attributed; current source requires fresh checks.",
+  "qualification_complete": false
+}

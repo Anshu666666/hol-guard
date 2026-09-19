@@ -1,0 +1,486 @@
+{
+  "schema": 1,
+  "source_sha": "1578e609636cf0460b23dfbe083759097a635be0",
+  "source_tree": "4a7ea105c53d0eb68ed8a037e3e38288b32ff407",
+  "source_parent": "44353b20262f1ca56b56204f4c764b047710454f",
+  "tracked_files": 4575,
+  "baseline_sha": "44353b20262f1ca56b56204f4c764b047710454f",
+  "baseline_tree": "b60a25c740e817b8eb4966e89cfe3466364047fb",
+  "baseline_parent": "b5c43e72fbb9d81ec4074579e0a05f7098afc5b0",
+  "baseline_tracked_files": 4546,
+  "branch": "codex/pr2974-partition-corrected-validation-20260919",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "backend_versions": {
+    "build": "1.5.0",
+    "hatchling": "1.30.1",
+    "packaging": "26.0",
+    "pyproject-hooks": "1.2.0",
+    "pluggy": "1.6.0",
+    "pathspec": "1.1.1",
+    "trove-classifiers": "2026.6.1.19"
+  },
+  "release_base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "source_inputs": {
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "fixed_files": {
+    "tests/test_guard_cli.py": "0cdd8932a13bc45845376b4a2f5026332a601ab141371ff874c197870858dad2",
+    "tests/test_guard_cli_21_doctor.py": "53250b9ba44151eb1ab0e9d7b92204271b8830c4a3cf10d0509168440296d591",
+    "tests/test_guard_cli_32_connect_flows.py": "c786a75da2bbcdc18fda3e2285ceb798ce714ce1f91a9c7b64e340ffc846daea",
+    "tests/test_guard_cli_33_status_oauth.py": "1b53250f8533888ab18144bb897072ff0ebf67650c3e5766e8e49ba0b6cf3e12",
+    "tests/test_guard_runtime_060_codex_read_only_source_inspection_external_targets.py": "462c6641cb504d2cdde07b4671cf8466088357e0ef9ccb438db35065789d3557"
+  },
+  "partition_input_files": {
+    "docs/guard/all-harness-hook-review.md": {
+      "mode": "100644",
+      "bytes": 6362,
+      "sha256": "7f6283de189eebb43b837bef63fc276e615ae33426aec2c1a5b87ab5d638095e",
+      "git_blob": "5d2344fad70c713a07f166ed87bccbbe18235a0c"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex.py": {
+      "mode": "100644",
+      "bytes": 17012,
+      "sha256": "60da52cc19c9fe98f03375bf805ad57418a75b4d198255e3efa40cf665d1158d",
+      "git_blob": "8128205cdcbdbc5638e5598da9d4b99ab367d16a"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py": {
+      "mode": "100644",
+      "bytes": 6717,
+      "sha256": "d3f880d693ef16658ccc76eeacf19785f87ba98b6a20a4b4b53945f9235a3627",
+      "git_blob": "c96d4b32c374315ad69192926abf53554b15527e"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py": {
+      "mode": "100644",
+      "bytes": 8667,
+      "sha256": "d35cd3230683ad47c1d1606843e550f9d3a8e887d0a1321d9ce738b1da75e7ad",
+      "git_blob": "72058a4b3e2c9a5b9e3ab71ca8c8a14dbd51525c"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py": {
+      "mode": "100644",
+      "bytes": 8390,
+      "sha256": "46af588b0f0583e9e1570ebc9397e8093597cc32b35e39aa63f15b10ca31cfd9",
+      "git_blob": "98d15fd63338a321726085e8d99f1c1eab08394d"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py": {
+      "mode": "100644",
+      "bytes": 10206,
+      "sha256": "0d45e858055182b7aafe66d7f3b4d7f3222c29b3fef5983b7c24e7f253cf516d",
+      "git_blob": "a8d8a1a2f6cb1a9da31a91a6b73e52be10663da4"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py": {
+      "mode": "100644",
+      "bytes": 14294,
+      "sha256": "fe227d4c3bdae91612f9ec5ca72ad9a1de30e1c8cf4d0376868791ba601a3219",
+      "git_blob": "ede8e18cd13cf197a03b7cf066cddc30bbb3cd6a"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py": {
+      "mode": "100644",
+      "bytes": 7800,
+      "sha256": "f7d2d929331059ca2ce88c91da394b0d3b28a3a7e6ab1f61d85f92716711a15d",
+      "git_blob": "fb07ad708b1897b50e30d143257104dd6c9ec653"
+    },
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py": {
+      "mode": "100644",
+      "bytes": 9550,
+      "sha256": "45d16bd4b6f82fd5ffb6e5bde5d91a2458b3dbabdccfbbfc1f2812d4517b21ff",
+      "git_blob": "7258ca9c419587e48a684d1062417387a3736c36"
+    },
+    "src/codex_plugin_scanner/guard/protect.py": {
+      "mode": "100644",
+      "bytes": 11855,
+      "sha256": "aad33acf21d300f472511b2a78c26970df0f97e848d6d2b1dc352037d4c4145c",
+      "git_blob": "e6a591f92e2ea1eca98085e23eb620cdb8d3f5e6"
+    },
+    "src/codex_plugin_scanner/guard/protect_command_parsing.py": {
+      "mode": "100644",
+      "bytes": 11811,
+      "sha256": "343e55b923ed33f6361e00063d13dc897a55d4ad275e598ccab87c6dffc1d4d3",
+      "git_blob": "022f8ef4f436a286d455b4dd520bae061e7d6636"
+    },
+    "src/codex_plugin_scanner/guard/protect_execution.py": {
+      "mode": "100644",
+      "bytes": 16416,
+      "sha256": "afc4e02c51d8b106afeae6f683b0c2b68ecbfafa2e5815fcdff9a24438d11ad2",
+      "git_blob": "c460bf2297b55b1c7dd552b5a29b7a57f1447bc7"
+    },
+    "src/codex_plugin_scanner/guard/protect_receipts.py": {
+      "mode": "100644",
+      "bytes": 2541,
+      "sha256": "6d59e11e30bb32e10dcd316c4f4d1a5168efca2dc29e9c50b1a47eaa9ec90776",
+      "git_blob": "e7f1f14901c4befc2a2339ec114b24d2fa81a0d1"
+    },
+    "src/codex_plugin_scanner/guard/protect_target_parsing.py": {
+      "mode": "100644",
+      "bytes": 8123,
+      "sha256": "6a62038b98eaad1b3fcc24db6011d3e672161200db3339d90df18eed2be38afe",
+      "git_blob": "8895f0ed683f5286e898a90b1a395440db34c53a"
+    },
+    "tests/test_guard_command_extensions.py": {
+      "mode": "100644",
+      "bytes": 14570,
+      "sha256": "c81327d674e09e49d1b111a3a6dab67fbaa56a66e609706873bfeccbc4c193c4",
+      "git_blob": "d281362c94e2c00ee353fcadaa9ced564477f31f"
+    },
+    "tests/test_guard_command_extensions_runtime.py": {
+      "mode": "100644",
+      "bytes": 7049,
+      "sha256": "30a77f8f86a928cd9600eb4c2b081ed571501cea9175e46d123f8eb562b75b61",
+      "git_blob": "5e4602eaa363b747492719ae346b6078bed9af7c"
+    },
+    "tests/test_guard_command_extensions_runtime_policy.py": {
+      "mode": "100644",
+      "bytes": 16886,
+      "sha256": "68db528bd1d8d14d46c7df51d81d5bceed5ee68866cb845e8345209910bd5dc7",
+      "git_blob": "ad18d49ecbb8aab50ee0d48d3c9b6abc1b35b4b0"
+    },
+    "tests/test_guard_protect_partition_boundaries.py": {
+      "mode": "100644",
+      "bytes": 5727,
+      "sha256": "1529bbb23e5a39a403cedf696d4c1a7f967a91e76c3013439fcda8d40347a3b9",
+      "git_blob": "60da5a4d0e285dbfa26f7a5e20545b653aaca31e"
+    },
+    "tests/test_guard_surface_server.py": {
+      "mode": "100644",
+      "bytes": 20831,
+      "sha256": "6cdcdd33e2b48068e6f01577fb627baf15f9484677433c18fb64bd2ac8bb99e9",
+      "git_blob": "65945be7caa2186beaac471b90155df3d4ed0730"
+    },
+    "tests/test_guard_surface_server_01_dashboard.py": {
+      "mode": "100644",
+      "bytes": 8880,
+      "sha256": "98d17ca3d0621e60bed246f994f336156d6c1ab499708c75a1ddd8d09a4dc937",
+      "git_blob": "edb9f90cb3db35bde7c5673c53590ec3df508fe1"
+    },
+    "tests/test_guard_surface_server_02_settings.py": {
+      "mode": "100644",
+      "bytes": 12917,
+      "sha256": "4d3d245f4f9b93dad55161a2be6dd2252d4867bb630b400a4e309e77055f9887",
+      "git_blob": "857d886f37643b483339882294bfff65f7a3da5a"
+    },
+    "tests/test_guard_surface_server_03_hook_requests.py": {
+      "mode": "100644",
+      "bytes": 15199,
+      "sha256": "51a988f5478f0c7a0f6b005cd126eeaa8fb05fb474b18220e2f4792b163b935c",
+      "git_blob": "fe0443f82aa12017d196ba0c32905f5ba6c5d4ac"
+    },
+    "tests/test_guard_surface_server_04_hook_temporary_workspaces.py": {
+      "mode": "100644",
+      "bytes": 10781,
+      "sha256": "01772b1b8bdf01eb7ff195c41806e7bd490db5e77695dfef95768c18c771c67a",
+      "git_blob": "4c4ae3273c4b760406547f970796c67002280422"
+    },
+    "tests/test_guard_surface_server_05_hook_capacity.py": {
+      "mode": "100644",
+      "bytes": 20250,
+      "sha256": "a9b9e145889970c68c387cef827f4fa4914148795771a381c5e28cb90cf3e73a",
+      "git_blob": "5e85a5c6eb79822d633d90f56517aa3e8e97af0b"
+    },
+    "tests/test_guard_surface_server_06_hook_authority.py": {
+      "mode": "100644",
+      "bytes": 10164,
+      "sha256": "814a026e0387a4bfd14ed4741ed16c9969e6d798b1f3e03380a084ce497d7479",
+      "git_blob": "6e7d7eb4f2b52b7b7e0682c9510fd11d7f548280"
+    },
+    "tests/test_guard_surface_server_07_cloud_identity.py": {
+      "mode": "100644",
+      "bytes": 11942,
+      "sha256": "bae3b9d83689715acafc3bac5716687f9224468d8e6d120f800452aee439e5d5",
+      "git_blob": "96b01c573333e6bca8dae180f5f2db19d4f5144f"
+    },
+    "tests/test_guard_surface_server_08_cloud_recovery.py": {
+      "mode": "100644",
+      "bytes": 10289,
+      "sha256": "50a1be6a061603b379b0e29c19c6fd7e85ce1384175be3095ad07cd1b2ac500e",
+      "git_blob": "1d93dc66a89f9f2dd300fc8131c932c85e1ea23f"
+    },
+    "tests/test_guard_surface_server_09_hook_responses_idle.py": {
+      "mode": "100644",
+      "bytes": 8758,
+      "sha256": "ebc503dea605f4540f90b02a7c7ab2db42a1cd8792847807bdc2e843f102915a",
+      "git_blob": "32301e09b93fd9df3e604b2f27c54ddd9c83d5e5"
+    },
+    "tests/test_guard_surface_server_10_surface_contracts.py": {
+      "mode": "100644",
+      "bytes": 18564,
+      "sha256": "9f7e6c858f23c493e4859b85ba236ac627fccaf2a4972222265672a98294b24e",
+      "git_blob": "c677c9f6f70850d83f9914d5c4b6edf1abb5e43c"
+    },
+    "tests/test_guard_surface_server_11_surface_operations.py": {
+      "mode": "100644",
+      "bytes": 20934,
+      "sha256": "50d6918f8fdb70642a80da3f797fc3d57279ba0b56daa246aa40e059a85de32b",
+      "git_blob": "7125009e87514657589bbc42157c19fbaad43458"
+    },
+    "tests/test_guard_surface_server_12_approval_browser.py": {
+      "mode": "100644",
+      "bytes": 15419,
+      "sha256": "f596c737ca75fd787274eaf114df47c29e672be5887481ab6fdf2e58eb3322a7",
+      "git_blob": "c1dde20a5ed3a3436b6cc54e5c08c7591d4aa6ad"
+    },
+    "tests/test_guard_surface_server_13_surface_clients.py": {
+      "mode": "100644",
+      "bytes": 6106,
+      "sha256": "78ca0b2f1aee9196e504210527547f747ba77f6d90170f07969ba43e0f1ecd0b",
+      "git_blob": "20e7a4ef804a15fa75c119addd1328a378d635de"
+    },
+    "tests/test_guard_surface_server_14_fast_hook_path.py": {
+      "mode": "100644",
+      "bytes": 16526,
+      "sha256": "e2aa9bc0af59298752543d68a8f219fb22ad88687aa10fafe311ff7a8c23d539",
+      "git_blob": "36981feb3c3b8c595e5195759dd38d3303e2577c"
+    },
+    "tests/guard_surface_fixture_support.py": {
+      "mode": "100644",
+      "bytes": 185,
+      "sha256": "296db67a4086ca7b9958a85883f5a373ceae4fe5d3996387afac7d5c786ccb5f",
+      "git_blob": "66431a68a35db77e24ae845f0d54a268f4e15879"
+    }
+  },
+  "format_paths": [
+    "src/codex_plugin_scanner/guard/adapters/codex.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py",
+    "src/codex_plugin_scanner/guard/protect.py",
+    "src/codex_plugin_scanner/guard/protect_command_parsing.py",
+    "src/codex_plugin_scanner/guard/protect_execution.py",
+    "src/codex_plugin_scanner/guard/protect_receipts.py",
+    "src/codex_plugin_scanner/guard/protect_target_parsing.py",
+    "tests/guard_surface_fixture_support.py",
+    "tests/test_guard_command_extensions.py",
+    "tests/test_guard_command_extensions_runtime.py",
+    "tests/test_guard_command_extensions_runtime_policy.py",
+    "tests/test_guard_protect_partition_boundaries.py",
+    "tests/test_guard_surface_server.py",
+    "tests/test_guard_surface_server_01_dashboard.py",
+    "tests/test_guard_surface_server_02_settings.py",
+    "tests/test_guard_surface_server_03_hook_requests.py",
+    "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+    "tests/test_guard_surface_server_05_hook_capacity.py",
+    "tests/test_guard_surface_server_06_hook_authority.py",
+    "tests/test_guard_surface_server_07_cloud_identity.py",
+    "tests/test_guard_surface_server_08_cloud_recovery.py",
+    "tests/test_guard_surface_server_09_hook_responses_idle.py",
+    "tests/test_guard_surface_server_10_surface_contracts.py",
+    "tests/test_guard_surface_server_11_surface_operations.py",
+    "tests/test_guard_surface_server_12_approval_browser.py",
+    "tests/test_guard_surface_server_13_surface_clients.py",
+    "tests/test_guard_surface_server_14_fast_hook_path.py"
+  ],
+  "production_paths": [
+    "src/codex_plugin_scanner/guard/adapters/codex.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_config_migration.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_inventory.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_manifest.py",
+    "src/codex_plugin_scanner/guard/adapters/codex_adapter_migration.py",
+    "src/codex_plugin_scanner/guard/protect.py",
+    "src/codex_plugin_scanner/guard/protect_command_parsing.py",
+    "src/codex_plugin_scanner/guard/protect_execution.py",
+    "src/codex_plugin_scanner/guard/protect_receipts.py",
+    "src/codex_plugin_scanner/guard/protect_target_parsing.py"
+  ],
+  "unchanged_test_source_hashes": {
+    "tests/test_guard_protect_package_spec_parsing.py": {
+      "sha256": "b3e38ce40e2b28264494c14c55d499b6a38f0fa01091ad5a800244e9399adaa0",
+      "git_blob": "d80c3beeda65d3ffaeb5a74927e7f2803a1f3253"
+    },
+    "tests/test_guard_protect_harness_attribution.py": {
+      "sha256": "c8cc1f6c0d69579be99784be5a78a2cd9d13f53803fe376d93094784cf510fe7",
+      "git_blob": "bbd715d4bc0651e5071b770a15e8a8ec5e95f5cb"
+    },
+    "tests/test_guard_protect.py": {
+      "sha256": "28d9e3c5f0ecd511d893e4765be88a977ac243a0022cdb76194382acb692841a",
+      "git_blob": "5c6417e1565afa2a3cbc1114165884ca987ed727"
+    },
+    "tests/test_guard_package_shims.py": {
+      "sha256": "f1b44141020f381992ce2c43ad89db55cc9982c21d29e1417b29025e94c96274",
+      "git_blob": "52e88357f7cbf910e3b4678d7200ec04215ca46d"
+    },
+    "tests/test_codex_hook_repair_compatibility.py": {
+      "sha256": "8e2cf67d01d7bc173ccb03c1b2eca06e6e665337ea83852349a68ec74f90bccf",
+      "git_blob": "f7366b4e9ccf31bc2fddcad5a5bc3f5e4befc4f4"
+    },
+    "tests/test_guard_codex_install.py": {
+      "sha256": "c33b4d09346881fa8fc88c070c6e7f6edf8fa2216fd47401f168651cde96b8e5",
+      "git_blob": "e559f19dbe30ef69213e3bdc3e0afc42b5a7b8f2"
+    },
+    "tests/test_guard_codex_interpreter_migration.py": {
+      "sha256": "85de204a2aa2362a75de2fe1f4b98fdad84fe663b00fe36daf4afe61a46bab76",
+      "git_blob": "d7092546f2cd5d3625dadbf04cc1c8124f6e0fb5"
+    }
+  },
+  "format_reconstruction_receipt_sha256": "c0573d781b5e95c4e085287a8f172d35b56e05706a3e2f488c480eca416f0256",
+  "corpus_closure_receipt_sha256": "ec1ef8c529246227c5e8dd3f2c26d001ca36b67c5c5ec04da002c179e290ec47",
+  "expected_project_cases": {
+    "protect": 32,
+    "codex": 21,
+    "command": 75,
+    "surface": 115
+  },
+  "expected_existing_cases": {
+    "protect": 22,
+    "codex": 21,
+    "command": 75,
+    "surface": 115
+  },
+  "expected_project_cases_total": 243,
+  "expected_baseline_cases_total": 233,
+  "command_paths": [
+    "tests/test_guard_command_extensions.py",
+    "tests/test_guard_command_extensions_runtime.py",
+    "tests/test_guard_command_extensions_runtime_policy.py"
+  ],
+  "surface_paths": [
+    "tests/test_guard_surface_server.py",
+    "tests/test_guard_surface_server_01_dashboard.py",
+    "tests/test_guard_surface_server_02_settings.py",
+    "tests/test_guard_surface_server_03_hook_requests.py",
+    "tests/test_guard_surface_server_04_hook_temporary_workspaces.py",
+    "tests/test_guard_surface_server_05_hook_capacity.py",
+    "tests/test_guard_surface_server_06_hook_authority.py",
+    "tests/test_guard_surface_server_07_cloud_identity.py",
+    "tests/test_guard_surface_server_08_cloud_recovery.py",
+    "tests/test_guard_surface_server_09_hook_responses_idle.py",
+    "tests/test_guard_surface_server_10_surface_contracts.py",
+    "tests/test_guard_surface_server_11_surface_operations.py",
+    "tests/test_guard_surface_server_12_approval_browser.py",
+    "tests/test_guard_surface_server_13_surface_clients.py",
+    "tests/test_guard_surface_server_14_fast_hook_path.py"
+  ],
+  "surface_expected_skip_qualified": "TestGuardSurfaceServer.test_guard_daemon_accepts_darwin_workspace_after_sanitized_restart",
+  "codex_seam_cases": [
+    "commands",
+    "manifest",
+    "inventory",
+    "migration",
+    "config_migration",
+    "hook_writes",
+    "installation",
+    "descriptors",
+    "super_dispatch"
+  ],
+  "scope": "Fresh hosted validation of immutable corrected four-partition source 1578e609. Preserve 233 existing baseline cases, 243 candidate project cases and the single existing Darwin-specific Surface skip; 9 separate Codex controls remain separate. The exact six-file inverse and one support-file deletion bind historical formatting without transferring earlier runtime passes. All original failed attempts remain retained. The 433-file corpus closure is unchanged; no corpus regeneration or new 51,000-case execution. No native, installed-baseline, performance, release or human-approval qualification.",
+  "qualification_complete": false,
+  "surface_expected_skip_node": "tests/test_guard_surface_server_04_hook_temporary_workspaces.py::TestGuardSurfaceServer::test_guard_daemon_accepts_darwin_workspace_after_sanitized_restart",
+  "surface_expected_skip_reason": "Darwin user temp root contract",
+  "harness_paths": [
+    ".github/workflows/pr2974-partition-validation.yml",
+    "ci/pr2974_partition_validation/assert_partition_source.py",
+    "ci/pr2974_partition_validation/codex_partition_seams.py",
+    "ci/pr2974_partition_validation/collect_contract.py",
+    "ci/pr2974_partition_validation/collect_product_contract.py",
+    "ci/pr2974_partition_validation/common.py",
+    "ci/pr2974_partition_validation/corpus-closure-receipt.json",
+    "ci/pr2974_partition_validation/environment.py",
+    "ci/pr2974_partition_validation/environment_setup.py",
+    "ci/pr2974_partition_validation/finite.py",
+    "ci/pr2974_partition_validation/format-reconstruction-receipt.json",
+    "ci/pr2974_partition_validation/gitleaks.py",
+    "ci/pr2974_partition_validation/manifest.json",
+    "ci/pr2974_partition_validation/packages.py",
+    "ci/pr2974_partition_validation/product-collection-manifest.json",
+    "ci/pr2974_partition_validation/report_projection.py",
+    "ci/pr2974_partition_validation/source-repair-contract.json",
+    "ci/pr2974_partition_validation/source_definition_contract.py",
+    "ci/pr2974_partition_validation/source_entry.py",
+    "ci/pr2974_partition_validation/source_gates.py",
+    "ci/pr2974_partition_validation/source_repair_bridge.py",
+    "ci/pr2974_partition_validation/surface_fixture_bridge.py"
+  ],
+  "observer_payloads": {
+    "collect_contract.py": "99d364c34510f2aa1285a8e6725b94476357f7701f7eb43500109157ade4f5f4",
+    "collect_product_contract.py": "0e2df79ff725f5dc5874d0db44eb4383b44233b76a120e6cc08c7d582008d8de",
+    "product-collection-manifest.json": "26891ba28ca61516f910cd81821ca9bda1dd98359a609cc0264211b84cb5b999",
+    "source_definition_contract.py": "273a0f96c5f5474bde91c58240596e8f9607135f8ee39330f1fd29e051413adb",
+    "assert_partition_source.py": "f230db09709207d745dc834de09e3b5a3484bd5fe6086389237775e86c538c24",
+    "codex_partition_seams.py": "0a7901af4d19c35149455fd6fa699537fa47f8636fa8df6cc4f5877e35c74fb1",
+    "source_repair_bridge.py": "5d6817f048802a1b1221dffde9b7012893adba3ba1b6ae80073bb39d0097d525",
+    "source-repair-contract.json": "9a17be0af6a7fe8d74fdfc03e04cf5a8bf4fcdfdaf1d50e5f48b315fc8e3fad3",
+    "surface_fixture_bridge.py": "258fe2228f41fcdd4ed0b0721bae084b9760ffe8af1bfffe7829a1acc03380fe"
+  },
+  "source_repair_contract_sha256": "9a17be0af6a7fe8d74fdfc03e04cf5a8bf4fcdfdaf1d50e5f48b315fc8e3fad3",
+  "historical_formatted_source_sha": "e655b80b2d81610a925d08051c061f4c23eb9f0b",
+  "historical_formatted_source_tree": "79341eeb7fdb9684685beffbdcf6852d33fd54b6"
+}

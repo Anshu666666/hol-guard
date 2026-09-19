@@ -11,6 +11,7 @@ import pytest
 from codex_plugin_scanner.guard import native_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
+_REAL_NATIVE_STATUS = native_runtime.native_runtime_status
 
 
 def _load_script(name: str):
@@ -181,3 +182,116 @@ def test_main_preserves_original_arguments_exit_and_exception(actual_adapter, mo
     assert report["complete"] is False
     assert "private-main-error-canary" not in output
     assert "private-artifact-canary" not in output
+
+
+@pytest.fixture
+def status_details(actual_adapter, tmp_path, monkeypatch):
+    calls, snapshot, _response = actual_adapter
+    ticks = [0.0]
+    executable = tmp_path / "private-validation-path-canary"
+    identity = SimpleNamespace(path=executable, size=17, mtime_ns=31, sha256="b" * 64)
+    candidates = (executable,)
+    calls["discovery"] = []
+    calls["validation"] = []
+
+    def discover():
+        calls["discovery"].append(candidates)
+        ticks[0] += 0.002
+        return candidates
+
+    def validate(path):
+        calls["validation"].append(path)
+        ticks[0] += 0.003
+        return identity
+
+    capabilities = SimpleNamespace(
+        protocol_version=native_runtime._NATIVE_PROTOCOL_VERSION,
+        runtime_version="fixture-version",
+        features=frozenset({"resident-protocol-v2"}),
+    )
+    monkeypatch.setattr(native_runtime, "native_runtime_status", _REAL_NATIVE_STATUS)
+    monkeypatch.setattr(native_runtime, "native_mode", lambda: "force")
+    monkeypatch.setattr(native_runtime, "_runtime_candidates", discover)
+    monkeypatch.setattr(native_runtime, "_validate_binary", validate)
+    monkeypatch.setattr(native_runtime, "_is_bundled_candidate", lambda _path: False)
+    monkeypatch.setattr(native_runtime, "_capabilities_for_identity", lambda *_args: capabilities)
+    monkeypatch.setattr(native_runtime, "_python_package_version", lambda: "fixture-version")
+    return calls, snapshot, ticks, executable, identity
+
+
+def test_real_status_nested_phases_forward_exact_values_and_restore(status_details, tmp_path):
+    calls, snapshot, ticks, executable, _identity = status_details
+    originals = (native_runtime._runtime_candidates, native_runtime._validate_binary)
+    observer = diagnostic.ProductionPhaseObserver(clock=lambda: ticks[0])
+    values = _run(observer, tmp_path, snapshot)
+    assert len(values) == 2
+    assert calls["discovery"] == [(executable,), (executable,)]
+    assert calls["validation"] == [executable, executable]
+    assert all(sent["executable"] is executable for sent in calls["request"])
+    assert originals == (native_runtime._runtime_candidates, native_runtime._validate_binary)
+    report = observer.report()
+    assert report["complete"] is True
+    assert report["status_detail_complete"] is True
+    sample = report["adapter_p95_sample"]
+    assert sample["discovery_ms"] == pytest.approx(2.0)
+    assert sample["validation_ms"] == pytest.approx(3.0)
+    assert sample["status_ms"] == sample["adapter_ms"] == pytest.approx(5.0)
+    assert sample["status_remaining_ms"] == pytest.approx(0.0)
+    assert sample["discovery_calls"] == sample["validation_calls"] == 1
+    assert report["acceptance_adjusted"] is False
+    assert "private-validation-path-canary" not in json.dumps(report)
+    assert str(tmp_path) not in json.dumps(report)
+
+
+@pytest.mark.parametrize("dependency", ["_runtime_candidates", "_validate_binary"])
+def test_nested_status_exception_identity_and_all_bindings_survive(
+    status_details, tmp_path, monkeypatch, dependency
+):
+    _calls, snapshot, ticks, _executable, _identity = status_details
+    error = RuntimeError("private-validation-error-canary")
+
+    def fail(*_args, **_kwargs):
+        raise error
+
+    monkeypatch.setattr(native_runtime, dependency, fail)
+    originals = (
+        benchmark.review_post_tool_native, native_runtime.native_runtime_status,
+        native_runtime.native_resident_client_request, native_runtime._runtime_candidates,
+        native_runtime._validate_binary,
+    )
+    observer = diagnostic.ProductionPhaseObserver(clock=lambda: ticks[0])
+    with pytest.raises(RuntimeError) as caught:
+        _run(observer, tmp_path, snapshot)
+    assert caught.value is error
+    assert originals == (
+        benchmark.review_post_tool_native, native_runtime.native_runtime_status,
+        native_runtime.native_resident_client_request, native_runtime._runtime_candidates,
+        native_runtime._validate_binary,
+    )
+    report = observer.report()
+    assert report["complete"] is False
+    assert report["status_detail_complete"] is False
+    assert report["adapter_p95_sample"]["raised"] is True
+    assert "private-validation-error-canary" not in json.dumps(report)
+
+
+def test_dependency_calls_outside_status_do_not_enter_nested_totals(status_details, tmp_path, monkeypatch):
+    calls, snapshot, ticks, executable, identity = status_details
+    original_request = native_runtime.native_resident_client_request
+
+    def request(**kwargs):
+        assert native_runtime._runtime_candidates() == (executable,)
+        assert native_runtime._validate_binary(executable) is identity
+        return original_request(**kwargs)
+
+    monkeypatch.setattr(native_runtime, "native_resident_client_request", request)
+    observer = diagnostic.ProductionPhaseObserver(clock=lambda: ticks[0])
+    _run(observer, tmp_path, snapshot)
+    assert len(calls["discovery"]) == len(calls["validation"]) == 4
+    sample = observer.report()["adapter_p95_sample"]
+    assert sample["discovery_calls"] == sample["validation_calls"] == 1
+    assert sample["discovery_ms"] == pytest.approx(2.0)
+    assert sample["validation_ms"] == pytest.approx(3.0)
+    assert sample["status_ms"] == sample["request_ms"] == pytest.approx(5.0)
+    assert sample["adapter_ms"] == pytest.approx(10.0)
+    assert sample["remaining_ms"] == sample["status_remaining_ms"] == pytest.approx(0.0)

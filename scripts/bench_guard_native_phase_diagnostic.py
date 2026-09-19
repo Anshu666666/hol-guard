@@ -63,18 +63,26 @@ class ProductionPhaseObserver:
         original_review = benchmark.review_post_tool_native
         original_status = native.native_runtime_status
         original_request = native.native_resident_client_request
+        original_candidates = native._runtime_candidates
+        original_validation = native._validate_binary
         current: dict[str, Any] | None = None
+        status_depth = 0
 
         def phase(name: str, original: Callable[..., Any]) -> Callable[..., Any]:
             def measured(*args: Any, **kwargs: Any) -> Any:
+                nonlocal status_depth
+                if name == "status":
+                    status_depth += 1
                 started = self._clock()
                 try:
                     return original(*args, **kwargs)
                 finally:
                     elapsed = (self._clock() - started) * 1_000.0
-                    if current is not None:
+                    if current is not None and (name in {"status", "request"} or status_depth > 0):
                         current[name + "_ms"] += elapsed
                         current[name + "_calls"] += 1
+                    if name == "status":
+                        status_depth -= 1
 
             return measured
 
@@ -85,6 +93,10 @@ class ProductionPhaseObserver:
                 "request_ms": 0.0,
                 "status_calls": 0,
                 "request_calls": 0,
+                "discovery_ms": 0.0,
+                "validation_ms": 0.0,
+                "discovery_calls": 0,
+                "validation_calls": 0,
                 "raised": False,
             }
             current = row
@@ -99,6 +111,9 @@ class ProductionPhaseObserver:
                 row["remaining_ms"] = max(
                     0.0, row["adapter_ms"] - row["status_ms"] - row["request_ms"]
                 )
+                row["status_remaining_ms"] = max(
+                    0.0, row["status_ms"] - row["discovery_ms"] - row["validation_ms"]
+                )
                 self._seen += 1
                 if len(self._rows) < _MAX_SAMPLES:
                     self._rows.append(row)
@@ -107,12 +122,16 @@ class ProductionPhaseObserver:
         benchmark.review_post_tool_native = review
         native.native_runtime_status = phase("status", original_status)
         native.native_resident_client_request = phase("request", original_request)
+        native._runtime_candidates = phase("discovery", original_candidates)
+        native._validate_binary = phase("validation", original_validation)
         try:
             yield
         finally:
             benchmark.review_post_tool_native = original_review
             native.native_runtime_status = original_status
             native.native_resident_client_request = original_request
+            native._runtime_candidates = original_candidates
+            native._validate_binary = original_validation
 
     def report(self) -> dict[str, Any]:
         complete = (
@@ -133,9 +152,14 @@ class ProductionPhaseObserver:
                 for key, value in row.items()
             }
         return {
-            "schema": "hol-guard-native-production-phases.v1",
+            "schema": "hol-guard-native-production-phases.v2",
             "scope": "original-production-warm-calls",
             "complete": complete,
+            "status_detail_complete": complete and all(
+                row["discovery_calls"] == 1 and row["validation_calls"] >= 1
+                for row in self._rows
+            ),
+            "status_detail_scope": "nested-within-status-not-additive-to-adapter",
             "iterations_requested": self._requested,
             "samples_seen": self._seen,
             "samples_retained": len(self._rows),
@@ -145,7 +169,10 @@ class ProductionPhaseObserver:
             "acceptance_adjusted": False,
             "timings": {
                 name: _summary([row[name + "_ms"] for row in self._rows])
-                for name in ("adapter", "status", "request", "remaining")
+                for name in (
+                    "adapter", "status", "request", "remaining",
+                    "discovery", "validation", "status_remaining",
+                )
             },
             "adapter_p95_sample": p95_sample,
         }

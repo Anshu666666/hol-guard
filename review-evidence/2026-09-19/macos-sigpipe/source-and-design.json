@@ -1,0 +1,188 @@
+{
+  "schema": "pr2974-macos-sigpipe-source-and-design.v1",
+  "status": "source_grounded_falsification_design_not_executed",
+  "original_source": "2ee9e33a4bd85f9c8ac9734ca8386555aa11b7db",
+  "original_run": 35455096616,
+  "original_reader": 35456830917,
+  "original_full_audit": {
+    "git_blob": "bac35ef61c66aa36aeaa5368b2bb554274e77672",
+    "sha256": "8dfcc04f63af80259bc141b906ce5ae57f3a7ea50f9eaebd3880d34b2a5fd9f5",
+    "bytes": 650821
+  },
+  "observed_condition": "All four successful native children reported SIG_DFL; both Python children reported SIG_IGN and reached query return 0 then a pending poll. This is correlation in the admitted original ARM run, not a causal diagnosis.",
+  "actual_original_callers": [
+    {
+      "path": "scripts/ci/native_macos_dnssd_endpoint_probe.c",
+      "git_blob": "c4d3c771008cdd5e5a772fe44dda8c32ba5ba49e",
+      "sha256": "6425db21c8642fde71f6dff36136e96f6a551fd1e260b294c061631ba411726b",
+      "bytes": 6373
+    },
+    {
+      "path": "scripts/ci/native_macos_dnssd_dlopen_host.c",
+      "git_blob": "3ee36208de2a73bb06cd484f2d833ec0f451aa37",
+      "sha256": "196a14c5f84aa836fd5c3ed22812b76d71700706858bd44e42d3ab51c4db946e",
+      "bytes": 3011
+    },
+    {
+      "path": "scripts/ci/native_macos_dnssd_endpoint_child.py",
+      "git_blob": "d11c1c133498a7af3b97bb861b2ea2231cb30ca9",
+      "sha256": "cdbf78c278d1f44609f422473f2d4074f001c6387362276c727c24d333b36d47",
+      "bytes": 3283
+    },
+    {
+      "path": "scripts/ci/native_macos_dnssd_endpoint_evidence.py",
+      "git_blob": "a668385b36eeb9a1a3362b374e94ff0070b75de9",
+      "sha256": "c3dc5f9206fa8f9f40813b17e0d197cd3a4a2343aa615a7b472d7d35a7d32330",
+      "bytes": 6412
+    },
+    {
+      "path": "scripts/ci/native_macos_dnssd_endpoint_record.py",
+      "git_blob": "e783ee27971086074676291f26ed5b4d15c70a59",
+      "sha256": "cde44fdd07fc210af439e518eae7021ad4e0b313ad05cec23a2089cfb4c057af",
+      "bytes": 6860
+    }
+  ],
+  "primary_sources": [
+    {
+      "repository": "python/cpython",
+      "commit": "0cc81280367df838c4b199f8f0378837165071c2",
+      "path": "Modules/signalmodule.c",
+      "url": "https://github.com/python/cpython/blob/0cc81280367df838c4b199f8f0378837165071c2/Modules/signalmodule.c",
+      "git_blob": "4f4e6a39683cc4d464ccb1ead0cc8fb8701b546c",
+      "sha256": "1ee7d53d23d44277d0472b3459bfc18d2839ccc0f5f5890a37d104998b28520c",
+      "bytes": 54708,
+      "finding": "signal_install_handlers installs SIGPIPE ignore; the pinned v3.12.10 source agrees with the observed original Python child disposition."
+    },
+    {
+      "repository": "python/cpython",
+      "commit": "0cc81280367df838c4b199f8f0378837165071c2",
+      "path": "Python/pylifecycle.c",
+      "url": "https://github.com/python/cpython/blob/0cc81280367df838c4b199f8f0378837165071c2/Python/pylifecycle.c",
+      "git_blob": "f5bea14b16b401d9bfcbcc5ccd7f4c906ac9ff7f",
+      "sha256": "5e4702fe18b90dacea8f57c6b0643bc408ad0d63ddce55338937ba89afd08cfd",
+      "bytes": 92627,
+      "finding": "PyOS_setsig constructs a new action with an empty mask and SA_ONSTACK. The experiment therefore uses the same narrow C setter for both contexts, rather than changing unrelated action fields through this Python path."
+    },
+    {
+      "repository": "python/cpython",
+      "commit": "0cc81280367df838c4b199f8f0378837165071c2",
+      "path": "Lib/ctypes/__init__.py",
+      "url": "https://github.com/python/cpython/blob/0cc81280367df838c4b199f8f0378837165071c2/Lib/ctypes/__init__.py",
+      "git_blob": "6cedee74236ea5a3edb908bd8748a818f36e288f",
+      "sha256": "e0db1242e78267cba0124ee9fe5963b72d1c8a1832bb51a88abcf012a9cbce76",
+      "bytes": 18210,
+      "finding": "CDLL keeps the existing GIL-release call policy and passes explicit flags to dlopen; no PyDLL arm is introduced."
+    },
+    {
+      "repository": "apple-oss-distributions/mDNSResponder",
+      "commit": "d4658af3f5f291311c6aee4210aa6d39bda82bbe",
+      "path": "mDNSShared/dnssd_clientstub.c",
+      "url": "https://github.com/apple-oss-distributions/mDNSResponder/blob/d4658af3f5f291311c6aee4210aa6d39bda82bbe/mDNSShared/dnssd_clientstub.c",
+      "git_blob": "7f4647c5bf5472f97dd42220ff37c1d958b710bd",
+      "sha256": "60e18253ac0a303999967e52e2898236b333ba58ddcabc21f42cd7ccdd734f49",
+      "bytes": 120789,
+      "finding": "The public implementation sets SO_NOSIGPIPE on a newly created socket; shared operations reuse the primary connection. QueryRecordInternal calls ConnectToServer and deliver_request. This does not supply a demonstrated process-wide SIGPIPE mechanism for the observed pending poll."
+    },
+    {
+      "repository": "apple-oss-distributions/xnu",
+      "commit": "f6217f891ac0bb64f3d375211650a4c1ff8ca1ea",
+      "path": "bsd/kern/uipc_socket.c",
+      "url": "https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/uipc_socket.c",
+      "git_blob": "d117de42d3ef5489d67ad71b6587887d14f50841",
+      "sha256": "68d5a0dfb22ad62bca963b3bc3b1c08ed28549f3c7679789a549eae428fa60bc",
+      "bytes": 209727,
+      "finding": "The default SOL_SOCKET getter for SO_NOSIGPIPE reads the SOF_NOSIGPIPE flag into an int and copies it out; it does not clear the flag. Socket filters/protocol admission may still refuse the operation, which must be retained as observed failure."
+    },
+    {
+      "repository": "apple-oss-distributions/xnu",
+      "commit": "f6217f891ac0bb64f3d375211650a4c1ff8ca1ea",
+      "path": "bsd/sys/socket.h",
+      "url": "https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/sys/socket.h",
+      "git_blob": "2dcc0c0bde60a4776c310dd406affdeca2d3b23b",
+      "sha256": "38e9e2b003df33b5cc924b57c20a85ec082c90a41efe21cfb07d9258db2451d4",
+      "bytes": 34931,
+      "finding": "Public getsockopt declaration uses int,int,int,void*,socklen_t*. The platform header defines SOL_SOCKET and SO_NOSIGPIPE; source will use those names and sizeof(int), not a Python ABI cast."
+    }
+  ],
+  "documentation": [
+    {
+      "url": "https://docs.python.org/3.12/library/signal.html",
+      "observed_page_version": "3.12.14",
+      "finding": "Python documents its default SIGPIPE ignore behavior and main-thread handler-setting restriction. Installed original Python was 3.12.10; its exact tag source is separately bound above."
+    },
+    {
+      "url": "https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getsockopt.2.html",
+      "finding": "Archived public socket option ABI documentation; current installed implementation is not proven by this page."
+    },
+    {
+      "url": "https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/sigaction.2.html",
+      "finding": "Archived public signal action read/set API documentation; actual installed action values must be observed."
+    }
+  ],
+  "source_attribution_limit": "These independently fetched primary source versions support the design. No Apple repository commit is claimed to be the exact source of the installed macOS 15.7.9 SDK/runtime libraries.",
+  "design": {
+    "cells": [
+      {
+        "context": "native_dlopen",
+        "disposition": "SIG_DFL",
+        "mode": "dns_simple"
+      },
+      {
+        "context": "native_dlopen",
+        "disposition": "SIG_DFL",
+        "mode": "dns_shared"
+      },
+      {
+        "context": "native_dlopen",
+        "disposition": "SIG_IGN",
+        "mode": "dns_simple"
+      },
+      {
+        "context": "native_dlopen",
+        "disposition": "SIG_IGN",
+        "mode": "dns_shared"
+      },
+      {
+        "context": "python",
+        "disposition": "SIG_DFL",
+        "mode": "dns_simple"
+      },
+      {
+        "context": "python",
+        "disposition": "SIG_DFL",
+        "mode": "dns_shared"
+      },
+      {
+        "context": "python",
+        "disposition": "SIG_IGN",
+        "mode": "dns_simple"
+      },
+      {
+        "context": "python",
+        "disposition": "SIG_IGN",
+        "mode": "dns_shared"
+      }
+    ],
+    "installation_boundary": "Same C export in the held, same newly built phase image, called after dlopen/configure on the owned child main thread and before the unchanged query entrypoint. This tests query-time disposition, not image-initialization behavior.",
+    "setter": "Read complete prior sigaction, require a default/ignored original handler, copy it and change only sa_handler. Read back requested handler and unchanged flags/action mask/blocked mask. Restore exact prior action on returning paths and record every failed/readback/restore result.",
+    "socket_observation": "One read-only getsockopt(fd,SOL_SOCKET,SO_NOSIGPIPE,int*,socklen_t*) after the existing exact endpoint record and before original poll. Record return/errno/length/raw integer. Do not set the option, read SO_ERROR, duplicate the descriptor, or infer daemon/OFD identity.",
+    "protocol": "Separately versioned result and strict adapter; validate exact inserted record order/condition before passing the remaining original records to unchanged endpoint/phase parsers.",
+    "bounds": {
+      "child_seconds": 5,
+      "child_output_bytes": 16384,
+      "trace_limit": 32,
+      "callback_record_limit": 16,
+      "fresh_direct_children": 8,
+      "no_prior_83_or_475_replay": true
+    },
+    "cleanup": "Same existing capture retirement rules. Missing post-query or restoration observations after SIGKILL are unavailable, never inferred from process retirement. Always-run final source/image/runtime witness must retain unavailable inputs.",
+    "interpretation": "Compare actual eight same-host cells only; failures, unsupported getters, altered action fields, output limits, missing identities or incomplete cleanup prevent admission. No expected fix or causal mechanism is asserted."
+  },
+  "unresolved": {
+    "implementation_and_focused_controls": "Not yet frozen",
+    "formatter_compiler_parser_and_native_execution": false,
+    "Intel": "The repeated original five-second xcrun compiler-discovery timeout remains a separate environment admission failure; no retry or compiler-path substitution is authorized here.",
+    "qualification_complete": false,
+    "original_tasks_promoted": false
+  }
+}

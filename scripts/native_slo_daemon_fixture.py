@@ -69,6 +69,7 @@ class DaemonFixture:
         setup: str | None = None,
         policy: str | None = None,
         workspace_count: int | None = None,
+        _native_phase_environment: Mapping[str, str] | None = None,
     ) -> None:
         if workspace_count is not None and (type(workspace_count) is not int or workspace_count not in {1, 10, 100}):
             raise ValueError("workspace count outside declared matrix")
@@ -76,6 +77,7 @@ class DaemonFixture:
         self.setup = setup
         self.policy = policy
         self.workspace_count = workspace_count
+        self._native_phase_environment = _native_phase_environment
         self.process: subprocess.Popen[bytes] | None = None
         self._job: Any = None
         self._lock = threading.Lock()
@@ -173,6 +175,8 @@ class DaemonFixture:
     def __enter__(self) -> DaemonFixture:
         environment = dict(os.environ)
         clear_proof_environment(environment)
+        if self._native_phase_environment is not None:
+            environment.update(self._native_phase_environment)
         started = time.perf_counter()
         self.process, self._job, _ = _spawn_hook_process(
             (

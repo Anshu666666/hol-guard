@@ -245,11 +245,12 @@ fn handle_pending_request(
             crate::resident_protocol::error_response("native_request_digest_mismatch", false)
         } else {
             match catch_unwind(AssertUnwindSafe(|| {
-                crate::resident_protocol::evaluate_resident_bytes_started(
-                    &request,
-                    policy_store,
-                    pending.accepted_at,
-                )
+                crate::observe_native_phase!(ResidentEvaluate,
+                    crate::resident_protocol::evaluate_resident_bytes_started(
+                        &request,
+                        policy_store,
+                        pending.accepted_at,
+                    ))
             })) {
                 Ok(Ok(evaluation)) => {
                     disposition = evaluation.disposition;

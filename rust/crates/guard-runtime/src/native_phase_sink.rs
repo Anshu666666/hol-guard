@@ -87,7 +87,8 @@ pub(crate) struct Exporter {
 impl Exporter {
     pub(crate) fn finished(self, returned_ok: bool) {
         // Memory only. The original process is neither held open nor joined.
-        self.run_state.store(if returned_ok { 1 } else { 2 }, Ordering::Relaxed);
+        self.run_state
+            .store(if returned_ok { 1 } else { 2 }, Ordering::Relaxed);
     }
 }
 
@@ -106,7 +107,12 @@ fn send_frame(socket: &UnixDatagram, frame: &Frame) -> bool {
     )
 }
 
-fn export_loop(socket: UnixDatagram, role: Role, sender_start_ticks: u64, run_state: Arc<AtomicU8>) {
+fn export_loop(
+    socket: UnixDatagram,
+    role: Role,
+    sender_start_ticks: u64,
+    run_state: Arc<AtomicU8>,
+) {
     let sender_pid = std::process::id();
     let mut loss_observed = false;
     for ordinal in 1..=MAX_EXPORT_ATTEMPTS {

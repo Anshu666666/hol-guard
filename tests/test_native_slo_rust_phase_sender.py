@@ -22,7 +22,7 @@ def test_owned_sender_failure_preserves_bounded_original_stderr(
         "raise SystemExit(7)\n"
     )
     monkeypatch.setattr(sender_support, "SENDER", script)
-    with pytest.raises(AssertionError, match="stderr") as failure:
+    with pytest.raises(AssertionError, match="stderr") as failure:  # noqa: SIM117
         with sender_support.sender(tmp_path, tmp_path / "unused-endpoint") as process:
             sender_support.line(process, b"sent\n")
     assert process.returncode == 7

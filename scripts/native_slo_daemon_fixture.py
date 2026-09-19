@@ -24,7 +24,6 @@ from typing import Any, cast
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
-
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
@@ -369,6 +368,7 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
     configuration = None
     if setup != "none" or policy != "none":
         from scripts.native_slo_workloads import configuration_text
+
         configuration = configuration_text(setup if setup != "none" else policy)
     with ExitStack() as lifetime:
         workspace_fixture = None
@@ -378,6 +378,7 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
             try:
                 if workspace_count is not None:
                     from scripts.native_slo_workspace_server import WorkspaceScenarioFixture
+
                     workspace_fixture = WorkspaceScenarioFixture(adapter, workspace_count)
                     lifetime.enter_context(workspace_fixture.observer)
                     lifetime.callback(workspace_fixture.close)
@@ -431,8 +432,7 @@ def _serve_session(session: Any, fault: Any, workspace_fixture: Any = None) -> N
                 break
             request = json.loads(raw)
             operation = request.get("op")
-            if operation == "snapshot":
-                # Only the bounded route counters are required by this fixture.
+            if operation == "snapshot":  # Only the bounded route counters are required by this fixture.
                 _emit({"routes": dict(route_counts(session.daemon._server.hook_worker.metrics.snapshot()))})
             elif operation == "case_before" and fault is not None:
                 fault.before_case()

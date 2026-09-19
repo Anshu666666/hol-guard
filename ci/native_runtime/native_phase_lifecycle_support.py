@@ -7,6 +7,7 @@ shutdown implementation. Failure cleanup targets retained pidfds only.
 
 from __future__ import annotations
 
+import errno
 import json
 import os
 import select
@@ -14,6 +15,8 @@ import signal
 import socket
 import subprocess
 import time
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -50,16 +53,169 @@ def statistics(report: dict[str, Any], role: str, phase: str) -> list[dict[str, 
     ]
 
 
-def fill_owned_receiver(receiver: NativePhaseReceiver) -> None:
-    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as filler:
-        filler.setblocking(False)
-        filler.connect(str(receiver.path))
-        for _ in range(1024):
+@contextmanager
+def fill_owned_receiver(receiver: NativePhaseReceiver, evidence: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    """Require refusal on a distinct fresh sender, within the original send cap."""
+    payload = b"controlled diagnostic backpressure"
+    flags = socket.MSG_DONTWAIT | socket.MSG_NOSIGNAL
+    evidence.update(
+        {
+            "send_attempt_cap": 1024,
+            "live_socket_cap": 16,
+            "payload_bytes": len(payload),
+            "total_attempts": 0,
+            "accepted": 0,
+            "senders": [],
+            "fresh_first_send_refused": False,
+            "all_fillers_closed": False,
+            "queue_limit": None,
+            "queue_limit_error": None,
+            "queue_limit_errno": None,
+            "stage": "queue_limit_metadata",
+            "sender_index": None,
+            "terminal_error": None,
+            "terminal_errno": None,
+            "terminal_stage": None,
+            "terminal_sender_index": None,
+            "operation_failure": None,
+        }
+    )
+    try:
+        with Path("/proc/sys/net/unix/max_dgram_qlen").open("rb") as stream:
+            raw_limit = stream.read(129)
+        if len(raw_limit) > 128 or not raw_limit.strip().isdigit():
+            raise ValueError("bounded queue-limit metadata is not decimal")
+        evidence["queue_limit"] = int(raw_limit)
+    except (OSError, ValueError) as exc:
+        evidence["queue_limit_error"] = type(exc).__name__
+        evidence["queue_limit_errno"] = getattr(exc, "errno", None)
+    fillers: list[socket.socket] = []
+    identities: set[tuple[int, int]] = set()
+    operation_error: BaseException | None = None
+    try:
+        with ExitStack() as owned:
             try:
-                filler.send(b"controlled diagnostic backpressure", socket.MSG_DONTWAIT | socket.MSG_NOSIGNAL)
+                for index in range(16):
+                    evidence["sender_index"] = index
+                    evidence["stage"] = "socket_create"
+                    filler = owned.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM))
+                    fillers.append(filler)
+                    evidence["stage"] = "set_nonblocking"
+                    filler.setblocking(False)
+                    evidence["stage"] = "connect"
+                    filler.connect(str(receiver.path))
+                    evidence["stage"] = "socket_identity"
+                    metadata = os.fstat(filler.fileno())
+                    identity = metadata.st_dev, metadata.st_ino
+                    assert identity not in identities, "fresh filler socket identity was reused"
+                    identities.add(identity)
+                    evidence["stage"] = "send_buffer_metadata"
+                    row: dict[str, Any] = {
+                        "index": index,
+                        "socket_device": identity[0],
+                        "socket_inode": identity[1],
+                        "send_buffer_bytes": filler.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
+                        "attempts": 0,
+                        "accepted": 0,
+                        "blocked_errno": None,
+                        "blocked_on_first_send": False,
+                    }
+                    evidence["senders"].append(row)
+                    while evidence["total_attempts"] < 1024:
+                        row["attempts"] += 1
+                        evidence["total_attempts"] += 1
+                        try:
+                            evidence["stage"] = "send"
+                            sent = filler.send(payload, flags)
+                        except BlockingIOError as exc:
+                            row["blocked_errno"] = exc.errno
+                            row["blocked_on_first_send"] = row["attempts"] == 1
+                            assert exc.errno in (errno.EAGAIN, errno.EWOULDBLOCK)
+                            if row["blocked_on_first_send"]:
+                                assert index > 0 and evidence["accepted"] > 0
+                                evidence["fresh_first_send_refused"] = True
+                                evidence["stage"] = "control_body"
+                                yield evidence
+                                return
+                            break
+                        assert sent == len(payload), "controlled datagram send was partial"
+                        row["accepted"] += 1
+                        evidence["accepted"] += 1
+                    else:
+                        raise AssertionError("original 1024-send cap reached before fresh-sender refusal")
+                raise AssertionError("bounded live-socket cap reached before fresh-sender refusal")
+            except BaseException as exc:
+                operation_error = exc
+                evidence["operation_failure"] = {
+                    "stage": evidence["stage"],
+                    "sender_index": evidence["sender_index"],
+                    "error": type(exc).__name__,
+                    "errno": getattr(exc, "errno", None),
+                }
+                raise
+            finally:
+                evidence["stage"] = "owned_cleanup"
+                evidence["sender_index"] = None
+    except BaseException as exc:
+        evidence["terminal_error"] = type(exc).__name__
+        evidence["terminal_errno"] = getattr(exc, "errno", None)
+        evidence["terminal_stage"] = (
+            evidence["operation_failure"]["stage"] if exc is operation_error else evidence["stage"]
+        )
+        evidence["terminal_sender_index"] = (
+            evidence["operation_failure"]["sender_index"] if exc is operation_error else None
+        )
+        raise
+    finally:
+        evidence["all_fillers_closed"] = all(filler.fileno() == -1 for filler in fillers)
+
+
+def retain_native_stderr(descriptor: int) -> dict[str, Any]:
+    """Read an owned duplicate after original cleanup, without a wait or retry."""
+    result: dict[str, Any] = {
+        "scope": "owned_stderr_duplicate_after_original_cleanup",
+        "limit_bytes": 4096,
+        "bytes": 0,
+        "content_hex": "",
+        "eof": False,
+        "overflow": False,
+        "would_block": False,
+        "error_errno": None,
+        "descriptor_closed": False,
+        "complete": False,
+    }
+    captured = bytearray()
+    try:
+        os.set_blocking(descriptor, False)
+        while len(captured) < 4097:
+            try:
+                chunk = os.read(descriptor, 4097 - len(captured))
             except BlockingIOError:
-                return
-    raise AssertionError("bounded diagnostic queue-fill control did not reach backpressure")
+                result["would_block"] = True
+                break
+            if not chunk:
+                result["eof"] = True
+                break
+            captured.extend(chunk)
+        result["overflow"] = len(captured) > 4096
+    except OSError as exc:
+        result["error_errno"] = exc.errno
+    finally:
+        try:
+            os.close(descriptor)
+            result["descriptor_closed"] = True
+        except OSError as exc:
+            result["close_errno"] = exc.errno
+        result["bytes"] = len(captured)
+        result["content_hex"] = captured.hex()
+        result["complete"] = (
+            result["eof"]
+            and not result["overflow"]
+            and not result["would_block"]
+            and result["error_errno"] is None
+            and result["descriptor_closed"]
+        )
+    return result
 
 
 def _read_exact(stream: BinaryIO, length: int, deadline: float) -> bytes:

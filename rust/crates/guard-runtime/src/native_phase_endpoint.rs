@@ -57,14 +57,19 @@ fn decimal_env(name: &str) -> Option<u64> {
 fn acquire(path: &Path, device: u64, inode: u64) -> Option<UnixDatagram> {
     if !path.is_absolute()
         || path.as_os_str().as_encoded_bytes().len() >= 108
-        || !path.components().all(|part| matches!(part, Component::RootDir | Component::Normal(_)))
+        || !path
+            .components()
+            .all(|part| matches!(part, Component::RootDir | Component::Normal(_)))
         || path.file_name()? != "phase.sock"
     {
         return None;
     }
     let parent = path.parent()?;
     if parent.parent()? != Path::new("/tmp")
-        || !parent.file_name()?.to_str()?.starts_with("guard-native-phase-")
+        || !parent
+            .file_name()?
+            .to_str()?
+            .starts_with("guard-native-phase-")
         || fs::canonicalize(parent).ok()? != parent
     {
         return None;
@@ -105,7 +110,11 @@ fn parse_start_ticks(bytes: &[u8], expected_pid: u32) -> Option<u64> {
 
 pub(super) fn self_start_ticks() -> Option<u64> {
     let mut bytes = Vec::with_capacity(4097);
-    fs::File::open("/proc/self/stat").ok()?.take(4097).read_to_end(&mut bytes).ok()?;
+    fs::File::open("/proc/self/stat")
+        .ok()?
+        .take(4097)
+        .read_to_end(&mut bytes)
+        .ok()?;
     if bytes.len() > 4096 {
         return None;
     }

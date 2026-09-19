@@ -19,6 +19,7 @@ from ci.native_runtime.native_phase_lifecycle_support import (
     OwnedNativeStream,
     fill_owned_receiver,
     keep_record,
+    retain_native_stderr,
     statistics,
     wait_report,
 )
@@ -173,25 +174,40 @@ def test_real_exporter_backpressure_is_reported_without_blocking_the_original_pr
 ) -> None:
     runtime = phase_binaries["diagnostic"]
     receiver = NativePhaseReceiver(runtime)
-    fill_owned_receiver(receiver)
-    client = _client(runtime, tmp_path / "backpressure", receiver, receiver.environment())
+    admission: dict[str, Any] = {}
     try:
-        _responses(client)
-        # This pause belongs only to the synthetic receiver control. It neither
-        # holds a native request open nor changes any original native deadline.
-        time.sleep(0.2)
-        receiver.attach(client.process.pid)
-        report = wait_report(
-            receiver,
-            lambda value: (
-                _all_boundaries(value) and any(row["prior_export_loss_observed"] for row in value["processes"])
-            ),
-        )
-        assert report["receiver_loss_observed"] is True
-        assert report["counts"]["refused"] > 0
-        assert _responses(client) == (HEALTH_RESPONSE, INVALID_RESPONSE)
+        with fill_owned_receiver(receiver, admission):
+            client = _client(runtime, tmp_path / "backpressure", receiver, receiver.environment())
+            stderr_duplicate: int | None = None
+            try:
+                assert client.process.stderr is not None
+                stderr_duplicate = os.dup(client.process.stderr.fileno())
+                _responses(client)
+                # This pause belongs only to the synthetic receiver control. It neither
+                # holds a native request open nor changes any original native deadline.
+                time.sleep(0.2)
+                receiver.attach(client.process.pid)
+                report = wait_report(
+                    receiver,
+                    lambda value: (
+                        _all_boundaries(value) and any(row["prior_export_loss_observed"] for row in value["processes"])
+                    ),
+                )
+                assert report["receiver_loss_observed"] is True
+                assert report["counts"]["refused"] > 0
+                assert _responses(client) == (HEALTH_RESPONSE, INVALID_RESPONSE)
+            finally:
+                try:
+                    _close(client, receiver, record_property)
+                finally:
+                    if stderr_duplicate is not None:
+                        stderr = retain_native_stderr(stderr_duplicate)
+                        keep_record(record_property, "native_backpressure_stderr", stderr)
+                        assert stderr["descriptor_closed"] is True
     finally:
-        _close(client, receiver, record_property)
+        receiver.close()
+        keep_record(record_property, "native_backpressure_admission", admission)
+        assert admission.get("all_fillers_closed") is True
 
 
 def test_real_exporter_stops_at_its_unchanged_cap_while_the_native_client_keeps_working(

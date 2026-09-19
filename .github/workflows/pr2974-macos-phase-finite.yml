@@ -1,0 +1,152 @@
+name: PR2974 macOS phase portable finite
+
+on:
+  push:
+    branches: [codex/rsp-macos-phase-finite-20260919]
+    paths:
+      - '.github/workflows/pr2974-macos-phase-finite.yml'
+      - 'ci/pr2974_macos_phase_finite/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-macos-phase-finite-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  portable:
+    name: Exact source and thirteen finite modules
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-macos-phase-finite/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-macos-phase-finite/scratch
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(mode=0o700, parents=True, exist_ok=False)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=False)
+          value = {'source_sha': 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c',
+                   'source_tree': '2af6c4254b375682fb487af2b3322c59d64040f4',
+                   'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                   'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                   'passed': False, 'native_qualification_credit': False,
+                   'installed_qualification_credit': False, 'qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(value, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              for name in ('VALIDATION_REPORT', 'VALIDATION_SCRATCH'):
+                  stream.write(name + '=' + os.environ[name] + '\n')
+          PY
+      - name: Checkout isolated harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable corrected Mac source and public parent
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up exact dependency installer
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Check exact source and execute the complete portable finite cohort
+        id: validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -B -I "$VALIDATION_HARNESS/ci/pr2974_macos_phase_finite/driver.py"
+      - name: Retain original outcomes before artifact upload
+        id: retained
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          PYTHON_SETUP: ${{ steps.python.outcome }}
+          UV_SETUP: ${{ steps.uv.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in (
+              'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'PYTHON_SETUP', 'UV_SETUP', 'DRIVER_OUTCOME')}
+          value['qualification_complete'] = False
+          value['native_qualification_credit'] = False
+          value['installed_qualification_credit'] = False
+          value['pre_upload_gate_passed'] = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          manifest = {}
+          for item in sorted(report.rglob('*')):
+              if item.is_file() and item.name != 'artifact-manifest.json':
+                  data = item.read_bytes()
+                  manifest[str(item.relative_to(report))] = {
+                      'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+          (report / 'artifact-manifest.json').write_text(json.dumps(manifest, sort_keys=True, indent=2) + '\n')
+          print(json.dumps(value, sort_keys=True))
+          print(json.dumps({'artifact_manifest_sha256': hashlib.sha256(
+              (report / 'artifact-manifest.json').read_bytes()).hexdigest(), 'files': len(manifest)}))
+          PY
+      - name: Upload exact source evidence and actual finite outcomes
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-macos-phase-finite-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-macos-phase-finite/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Apply final gate after evidence retention
+        if: always()
+        env:
+          RETAINED_OUTCOME: ${{ steps.retained.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.artifact.outcome }}
+        shell: bash
+        run: |
+          python3 -B -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['VALIDATION_REPORT']) / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {}
+          passed = (value.get('pre_upload_gate_passed') is True
+                    and os.environ['RETAINED_OUTCOME'] == 'success'
+                    and os.environ['ARTIFACT_OUTCOME'] == 'success')
+          print(json.dumps({'final_workflow_gate_passed': passed,
+                            'retention_outcome': os.environ['RETAINED_OUTCOME'],
+                            'artifact_outcome': os.environ['ARTIFACT_OUTCOME'],
+                            'source_sha': 'c5e2c8eb722d577dcb36b2ce7e3db0eac88dcb6c',
+                            'native_qualification_credit': False,
+                            'installed_qualification_credit': False, 'qualification_complete': False}))
+          raise SystemExit(0 if passed else 1)
+          PY

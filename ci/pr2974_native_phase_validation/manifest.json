@@ -1,0 +1,456 @@
+{
+  "schema": "pr2974-native-phase-validation.v1",
+  "source_sha": "717e16cde8b66a4d2bfcbf37163a898e4b3ed18d",
+  "source_tree": "feaa571551174c2745c73587d56ac791563d6588",
+  "source_parent": "770326278bd983fce70ef5e06da06703c7c20155",
+  "tracked_files": 4640,
+  "branch": "codex/pr2974-native-phase-validation-fixed-20260919",
+  "workflow_name": "PR2974 native phase corrected diagnostics validation",
+  "harness_directory": "ci/pr2974_native_phase_validation",
+  "harness_paths": [
+    ".github/workflows/pr2974-native-phase-validation.yml",
+    "ci/pr2974_native_phase_validation/collect_controls.py",
+    "ci/pr2974_native_phase_validation/common.py",
+    "ci/pr2974_native_phase_validation/environment.py",
+    "ci/pr2974_native_phase_validation/environment_setup.py",
+    "ci/pr2974_native_phase_validation/finite_controls.py",
+    "ci/pr2974_native_phase_validation/format_bridge.py",
+    "ci/pr2974_native_phase_validation/historical_controls.py",
+    "ci/pr2974_native_phase_validation/manifest.json",
+    "ci/pr2974_native_phase_validation/preparation_contract.py",
+    "ci/pr2974_native_phase_validation/prepared-source.json",
+    "ci/pr2974_native_phase_validation/prior-python/collect.json",
+    "ci/pr2974_native_phase_validation/prior-python/run.json",
+    "ci/pr2974_native_phase_validation/prior-python/run.xml",
+    "ci/pr2974_native_phase_validation/repair-source.json",
+    "ci/pr2974_native_phase_validation/report_projection.py",
+    "ci/pr2974_native_phase_validation/rust_environment.py",
+    "ci/pr2974_native_phase_validation/rust_validation.py",
+    "ci/pr2974_native_phase_validation/source_entry.py",
+    "ci/pr2974_native_phase_validation/source_gates.py",
+    "ci/pr2974_native_phase_validation/source_repair_contract.py",
+    "ci/pr2974_native_phase_validation/validate.py"
+  ],
+  "observer_payloads": {
+    "common.py": "2dd0ffac8190d78d54611ce09a4ffd88af18cbd4b7b5e183e0f774ca6ff2b6a4",
+    "environment_setup.py": "404d966945ed3023c95154696a363666245fba23f0fca5ec971fe84a6bd41dbe",
+    "environment.py": "8943a501d021a5401592f184546225055d8de36a1481200c50349f7e5dc77185",
+    "preparation_contract.py": "57a7118d9c2542c6222c4ff4957bec6f9069d341b15418816917764be9417e45",
+    "rust_environment.py": "b6007924c668f27886d9cabd45a9168379b681a852b0307e0d040e87ba722adb",
+    "rust_validation.py": "668f377d672983a3eaee08413c49f3a5d0cf0e5131c16363592a142abfd489ad",
+    "source_gates.py": "bdc4643d08be1d16c4aeecd064f4c60c20ccfa852f900e643a889c14292677d3",
+    "validate.py": "cb46a9d07c7e7a3b4554301b14f090bf5c5f8690c5ae7e58bf4e339a98a2db7f",
+    "report_projection.py": "25ffbe9b87e1295312581097fddd82e1e447d70364e19d8538c26e7647bfa572",
+    "source_entry.py": "f8e3719d2db2a32bf959f735b34dfa36b2079a9347762a2dea850b7e8b42593d",
+    "collect_controls.py": "a5d72c30e00f3099d4873ebd08c00077e4fc9c681dfdc329b3b881ebf25e4928",
+    "finite_controls.py": "48242739aa9e69f6094fbe056e64238eb03e2c74550ac90a91b9928832e7ff1f",
+    "prepared-source.json": "041f050012bb2cd84c97949a28c6299e8c23f1693a279f5c18e967ffd47e9438",
+    "source_repair_contract.py": "ab322f1e8442604e13df9940b225725efa7511510414fbe39fc7c0906d66ca02",
+    "format_bridge.py": "e6f493424d3afe40cca3e3d040b33a24e7bf2e5b4c1b0550e8e1f3e245d818ca",
+    "repair-source.json": "604f3f6b8545436d250b36122ba90a0200a2885b4d474c130e7a29673361ae3c",
+    "historical_controls.py": "8e353775bae3874ce9abfec6d4f7da65bfde1a1ab66f8bed6100a4203ce419db",
+    "prior-python/collect.json": "47f83d88896353c34ebcf393f8e94450f88aaff9ad6d1f5d97395cea20aa10cc",
+    "prior-python/run.json": "fa1aee216754fc34113ef7d816e3a9a3053fc7a673e0921358ca8da26a4764e9",
+    "prior-python/run.xml": "9310c7c14806deba741ebde9f4ae2e010e29f38f2b15d01ec5064eb7727de3c2"
+  },
+  "source_inputs": {
+    "rust/crates/guard-runtime/Cargo.toml": "7fde37d8b47a3d259f96880db19c39676da6a6af46f67c0718840df8a87eea7e",
+    "rust/crates/guard-runtime/src/main.rs": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8",
+    "rust/crates/guard-runtime/src/resident_client.rs": "b2ab01b07ca19ddb3dccb8c51cff04aaf8d834901d5c66effe086a8acdf57b3d",
+    "rust/crates/guard-runtime/src/resident_transport.rs": "03f4b2c9a2830bad553a06bbce7b8523084f8ff736635f2bb823db09ec577762",
+    "rust/crates/guard-runtime/src/native_phase_observation.rs": "cb023fe9aa8e8250653d0065cf065932d99b23fde3b3c918bae73403ab4844d5",
+    "rust/crates/guard-runtime/src/native_phase_endpoint.rs": "71a41e9e9a810d73773eb8caa074be49c49ff9ef10a11627b1aca8217bc333e6",
+    "rust/crates/guard-runtime/src/native_phase_sink.rs": "5f8b97dc8050b6531c086e2dbd9e0d44e1fc93f9e2f23ce6b40228d37f967e13",
+    "rust/crates/guard-runtime/src/native_phase_observation_tests.rs": "0d43527eeb534538c2f586f9f9b82eca81fab0eb9e539171c6a75eb93ad39d0d",
+    "rust/crates/guard-runtime/src/native_phase_macro_tests.rs": "e7d85fcc686b319475e920719cf1aef983e2b11339dcc2194edb7a622a7dee90",
+    "rust/crates/guard-runtime/src/native_phase_sink_tests.rs": "52d016f1fcafce9f4d6c0f5f54b65e569061e2046bddb44f7672ab71d9527c0b",
+    "rust/crates/guard-runtime/src/native_phase_endpoint_tests.rs": "7edc2c685f33bead4f8d7ffa976df24eb413c3298558b93ac9c1a4be02a713eb",
+    "scripts/native_slo_daemon_fixture.py": "0354c4148ccc49fa9c9948f4b5846cfd240af78dbd0eafaf2a22d4506276985a",
+    "scripts/native_slo_rust_phase_schema.py": "9f07461f7fbc743fdb0462d4f4f5dd135aaf21ec8fa4d6534d866ba8a4f8f84b",
+    "scripts/native_slo_rust_phase_process.py": "e08d2bea4f4fe1bf1f0a39a86ed1bb16380f03e7f7aa38b84cab96523e465682",
+    "scripts/native_slo_rust_phase_receiver.py": "6792e5bca67bc411e2937d3ac186f6d6c9577e43d47adf2f5dd9090d2f4b2685",
+    "scripts/native_slo_rust_phase_run.py": "902fb3c4a4f9b4908dce420d70f382cfb63db30d71e0c7e6329b17c4f1921a75",
+    "tests/native_slo_rust_phase_test_support.py": "da1ba39737eb08a87568ff97c1864a1db2c410b4716d243064d4df8bf379b108",
+    "tests/test_native_slo_rust_phase_schema.py": "9022b3f56da60e5099e74c88ef657ebde0ef662c30091c19f3a1bab88e420597",
+    "tests/test_native_slo_rust_phase_receiver.py": "38d91dc364e33d4eadaa64529b4f4350c721c842ce1e5857a86f069434ca66e1",
+    "tests/test_native_slo_rust_phase_run.py": "cf9de5bfa3a72c505e0a1608caa9935a4436dfbc4e940f314af211f46b1f6d3b",
+    "ci/native_runtime/native_phase_lifecycle_support.py": "f17687ee36e326575040a20b70bcf85f950ea7c5e7c3e41274464e4e2212ab97",
+    "ci/native_runtime/test_native_phase_lifecycle.py": "756b4aed57953ab8c835895fb3a92411100b7562d2a83ec9a6ec7d2870ba221a",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "tests/conftest.py": "ad53c2c93e24e27d284ce02461f5d1badd22b2a7c75a413bd0fb7b6f21858c92",
+    "tests/test_native_slo_daemon_fixture.py": "ad11301c7eee508096741c6cf3809b4729ad01caaf543e645ca1ddd36e754399",
+    "tests/test_native_slo_phase_run.py": "7b051d25d959c875e518885dcd3641627e9443a56e8fe30ab5a433f9cec3c7a4",
+    "rust/crates/guard-runtime/src/resident_client_tests.rs": "913f4d7d59e8017a2216ef284e45adc359223826d03a0f29b05f943bcce1b0b0",
+    "rust/crates/guard-runtime/src/managed_resident_tests.rs": "e0f8d63b06d536650f5f1c0c454d1bf06bf184e97388da9d839639e9424c4f2a",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d",
+    "scripts/ci/rust_io_ownership_gate.py": "ca94e9bda8c980ca0ef79dc541bfeca7a065b4f568a1260bb93b651833ec988b",
+    "scripts/ci/rust_authority_ownership_gate.py": "93767a35eb2431d096a5db4187d9600f550e9cd71499d59d1ab5dee7aa0209b4",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c",
+    "tests/test_native_slo_rust_phase_sender.py": "ed07852ce4e06eeca6701fe50d88091980fb706a64f4de4effbfd8ad45018e22"
+  },
+  "fixed_files": {
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "tests/conftest.py": "ad53c2c93e24e27d284ce02461f5d1badd22b2a7c75a413bd0fb7b6f21858c92",
+    "tests/test_native_slo_daemon_fixture.py": "ad11301c7eee508096741c6cf3809b4729ad01caaf543e645ca1ddd36e754399",
+    "tests/test_native_slo_phase_run.py": "7b051d25d959c875e518885dcd3641627e9443a56e8fe30ab5a433f9cec3c7a4",
+    "rust/crates/guard-runtime/src/resident_client_tests.rs": "913f4d7d59e8017a2216ef284e45adc359223826d03a0f29b05f943bcce1b0b0",
+    "rust/crates/guard-runtime/src/managed_resident_tests.rs": "e0f8d63b06d536650f5f1c0c454d1bf06bf184e97388da9d839639e9424c4f2a",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d",
+    "scripts/ci/rust_io_ownership_gate.py": "ca94e9bda8c980ca0ef79dc541bfeca7a065b4f568a1260bb93b651833ec988b",
+    "scripts/ci/rust_authority_ownership_gate.py": "93767a35eb2431d096a5db4187d9600f550e9cd71499d59d1ab5dee7aa0209b4",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c"
+  },
+  "preparation_sha256": "041f050012bb2cd84c97949a28c6299e8c23f1693a279f5c18e967ffd47e9438",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "rust_toolchain": "1.88.0",
+  "project_version": "3.0.1",
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "python_source_paths": [
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py",
+    "tests/native_slo_rust_phase_test_support.py",
+    "tests/test_native_slo_rust_phase_schema.py",
+    "tests/test_native_slo_rust_phase_receiver.py",
+    "tests/test_native_slo_rust_phase_run.py",
+    "ci/native_runtime/native_phase_lifecycle_support.py",
+    "ci/native_runtime/test_native_phase_lifecycle.py",
+    "tests/test_native_slo_rust_phase_sender.py"
+  ],
+  "python_production_paths": [
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py"
+  ],
+  "python_cohorts": [
+    {
+      "name": "python_inventory",
+      "selectors": [
+        "tests/test_native_slo_rust_phase_schema.py",
+        "tests/test_native_slo_rust_phase_receiver.py",
+        "tests/test_native_slo_rust_phase_run.py",
+        "tests/test_native_slo_daemon_fixture.py",
+        "tests/test_native_slo_phase_run.py",
+        "tests/test_native_slo_rust_phase_sender.py"
+      ],
+      "expected_cases": 75,
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_rust_phase_schema.py",
+          "expected_cases": 17
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py",
+          "expected_cases": 11
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_run.py",
+          "expected_cases": 15
+        },
+        {
+          "selector": "tests/test_native_slo_daemon_fixture.py",
+          "expected_cases": 6
+        },
+        {
+          "selector": "tests/test_native_slo_phase_run.py",
+          "expected_cases": 24
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_sender.py",
+          "expected_cases": 2
+        }
+      ],
+      "timeout": 240,
+      "collect_only": true
+    },
+    {
+      "name": "python",
+      "selectors": [
+        "tests/test_native_slo_rust_phase_receiver.py::test_live_owned_sender_binds_actual_process_and_exports_only_aggregate_fields",
+        "tests/test_native_slo_rust_phase_receiver.py::test_sender_identity_mismatches_are_refused",
+        "tests/test_native_slo_rust_phase_receiver.py::test_same_user_same_executable_outside_owned_fixture_tree_is_refused",
+        "tests/test_native_slo_rust_phase_receiver.py::test_replayed_frame_cannot_replace_the_last_valid_snapshot",
+        "tests/test_native_slo_rust_phase_receiver.py::test_data_cap_stops_before_another_receive",
+        "tests/test_native_slo_rust_phase_sender.py"
+      ],
+      "expected_cases": 9,
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py::test_live_owned_sender_binds_actual_process_and_exports_only_aggregate_fields",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py::test_sender_identity_mismatches_are_refused",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py::test_same_user_same_executable_outside_owned_fixture_tree_is_refused",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py::test_replayed_frame_cannot_replace_the_last_valid_snapshot",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_receiver.py::test_data_cap_stops_before_another_receive",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_rust_phase_sender.py",
+          "expected_cases": 2
+        }
+      ],
+      "timeout": 240
+    },
+    {
+      "name": "native",
+      "selectors": [
+        "ci/native_runtime/test_native_phase_lifecycle.py"
+      ],
+      "expected_cases": 7,
+      "selection_counts": [
+        {
+          "selector": "ci/native_runtime/test_native_phase_lifecycle.py",
+          "expected_cases": 7
+        }
+      ],
+      "timeout": 180
+    }
+  ],
+  "rust_variants": {
+    "default": {
+      "features": [],
+      "selected_tests": [
+        "resident_client::tests::rejects_non_loopback_tcp_endpoint",
+        "resident_client::tests::rejects_response_bound_to_another_request",
+        "resident_client::tests::rejects_response_digest_mismatch",
+        "resident_client::tests::response_teardown_after_flushed_request_is_never_retryable",
+        "resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence",
+        "resident_client::tests::truncated_server_proof_is_never_retryable",
+        "resident_client::tests::response_eof_and_reset_are_never_retryable",
+        "resident_client::tests::partial_or_flush_request_write_is_never_retryable",
+        "managed_resident::tests::client_deadline_is_bounded",
+        "managed_resident::tests::client_stream_eof_is_clean_and_partial_headers_fail_closed",
+        "managed_resident::tests::client_stream_frames_are_bounded_and_big_endian",
+        "managed_resident::tests::stale_transport_retry_allowlist_preserves_auth_and_integrity_failures",
+        "managed_resident::tests::stale_process_identity_errors_are_platform_scoped",
+        "native_phase_observation::macro_tests::observation_macro_returns_original_values_and_evaluates_once",
+        "native_phase_observation::macro_tests::propagation_remains_outside_the_observed_call",
+        "native_phase_observation::macro_tests::default_macros_erase_phase_and_export_dependencies"
+      ]
+    },
+    "diagnostic": {
+      "features": [
+        "diagnostic-phases"
+      ],
+      "selected_tests": [
+        "resident_client::tests::rejects_non_loopback_tcp_endpoint",
+        "resident_client::tests::rejects_response_bound_to_another_request",
+        "resident_client::tests::rejects_response_digest_mismatch",
+        "resident_client::tests::response_teardown_after_flushed_request_is_never_retryable",
+        "resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence",
+        "resident_client::tests::truncated_server_proof_is_never_retryable",
+        "resident_client::tests::response_eof_and_reset_are_never_retryable",
+        "resident_client::tests::partial_or_flush_request_write_is_never_retryable",
+        "managed_resident::tests::client_deadline_is_bounded",
+        "managed_resident::tests::client_stream_eof_is_clean_and_partial_headers_fail_closed",
+        "managed_resident::tests::client_stream_frames_are_bounded_and_big_endian",
+        "managed_resident::tests::stale_transport_retry_allowlist_preserves_auth_and_integrity_failures",
+        "managed_resident::tests::stale_process_identity_errors_are_platform_scoped",
+        "native_phase_observation::enabled::tests::disabled_collector_preserves_missing_phases",
+        "native_phase_observation::enabled::tests::successful_failed_abandoned_and_unwound_spans_are_distinct",
+        "native_phase_observation::enabled::tests::contention_refuses_observation_without_waiting_or_inventing_zero",
+        "native_phase_observation::enabled::tests::retention_and_duration_caps_remain_explicit",
+        "native_phase_observation::enabled::tests::maximum_fixed_report_remains_bounded",
+        "native_phase_observation::macro_tests::observation_macro_returns_original_values_and_evaluates_once",
+        "native_phase_observation::macro_tests::propagation_remains_outside_the_observed_call",
+        "native_phase_sink::tests::one_datagram_preserves_the_fixed_diagnostic_frame",
+        "native_phase_sink::tests::closed_receiver_is_a_failed_diagnostic_send_without_sigpipe",
+        "native_phase_sink::tests::full_receiver_never_waits_for_a_reader_or_retries",
+        "native_phase_sink::tests::run_completion_records_only_a_fixed_outcome",
+        "native_phase_sink::endpoint::tests::private_endpoint_requires_exact_owned_socket_identity",
+        "native_phase_sink::endpoint::tests::directory_and_socket_modes_are_admission_boundaries",
+        "native_phase_sink::endpoint::tests::symlink_endpoint_and_unadmitted_path_shapes_are_refused",
+        "native_phase_sink::endpoint::tests::regular_file_cannot_stand_in_for_the_diagnostic_socket",
+        "native_phase_sink::endpoint::tests::startup_identity_parser_handles_comm_delimiters_and_refuses_ambiguity"
+      ]
+    }
+  },
+  "diagnostic_limits": {
+    "default_rust_macro_erasure": true,
+    "linux_feature_only": true,
+    "four_guard_outcomes": [
+      "returned_ok",
+      "returned_err",
+      "unwound",
+      "abandoned"
+    ],
+    "request_thread_transport_io": false,
+    "exporter_attempts": 256,
+    "export_interval_ms": 50,
+    "max_datagram_bytes": 8192,
+    "exporter_detached_no_join_or_retry": true,
+    "run_completion_memory_only": true,
+    "sender_pid_and_start_ticks_internal_admission_only": true,
+    "receiver_live_ancestry_and_owned_root": true,
+    "receiver_executable_identity_and_actual_role": true,
+    "kernel_scm_credentials_required": true,
+    "unknown_ancillary_refused_and_received_rights_closed": true,
+    "receiver_reports_omit_pid_start_tick_paths_tokens": true,
+    "default_fixture_environment_unchanged": true,
+    "diagnostic_fixture_environment_explicit_after_existing_cleanup": true,
+    "native_ingress_or_binary_selection_unchanged": true,
+    "existing_installed_phase_workload_and_deadlines_unchanged": true,
+    "tail_delivery_guaranteed": false,
+    "complete_run_always": false,
+    "qualification_complete_always": false,
+    "headline_timing_eligible_always": false
+  },
+  "scope": "Correct the first retained diagnostic validation failure. Collect all75 current Python cases, rebind only66 prior passes through exact source inverses without repeating their bodies, execute7 affected receiver controls plus2 new bounded-stderr controls, and perform the still-unexecuted45 Rust unit controls and7 real compiled-binary lifecycle cases. Retain both attempts and every source/compiler/body failure. No installed SLO workload, performance, cross-platform, full-run completeness, corpus or PRD qualification claim.",
+  "qualification_complete": false,
+  "observer_source_preparation": {
+    "blob": "88afb4641abad7f2b873c237b53f2f598d65d6a3",
+    "bytes": 58452,
+    "sha256": "6d45571ad7ec80a0b6bf27606b055ad62efe134279ad01018679db14757ba2f5"
+  },
+  "observer_independent_source_peer": {
+    "blob": "4a162ec551b1a13cb6acaf364e388ee855147045",
+    "bytes": 6502,
+    "sha256": "8e282c868db76b928ca177cad4b726eafd69ae2c9adda546d6fdc712a709bd0c"
+  },
+  "original_source_sha": "7045fb862de4245cf7740fa16f36d4d511e78fc1",
+  "rust_host": "x86_64-unknown-linux-gnu",
+  "repair_source_sha256": "604f3f6b8545436d250b36122ba90a0200a2885b4d474c130e7a29673361ae3c",
+  "prior_python": {
+    "source_sha": "770326278bd983fce70ef5e06da06703c7c20155",
+    "source_tree": "c5f0d2b5ab10adfc7d00c2d0c3f288fce6fdd9f7",
+    "collect": {
+      "path": "prior-python/collect.json",
+      "bytes": 2855134,
+      "sha256": "47f83d88896353c34ebcf393f8e94450f88aaff9ad6d1f5d97395cea20aa10cc"
+    },
+    "run": {
+      "path": "prior-python/run.json",
+      "bytes": 2953818,
+      "sha256": "fa1aee216754fc34113ef7d816e3a9a3053fc7a673e0921358ca8da26a4764e9"
+    },
+    "junit": {
+      "path": "prior-python/run.xml",
+      "bytes": 25579,
+      "sha256": "9310c7c14806deba741ebde9f4ae2e010e29f38f2b15d01ec5064eb7727de3c2"
+    }
+  },
+  "retained_first_attempt": {
+    "run_id": 35455515138,
+    "job_id": 105929966184,
+    "source_sha": "770326278bd983fce70ef5e06da06703c7c20155",
+    "harness_sha": "ea7fb52735c135f29da5e99585614e36aa6babf5",
+    "terminal": {
+      "blob": "7c19c0f9b6ac6fa1327e26648d7aa40501bf1370",
+      "bytes": 450571,
+      "sha256": "227f036d45e471354bb450bdf763ee60221cf573bcd8b1d718458d0f99b3747a"
+    },
+    "python_passed": 66,
+    "python_failed": 7,
+    "rust_controls_executed": 0,
+    "native_controls_executed": 0
+  },
+  "bootstrap_component_source_review": {
+    "blob": "b82692c02f8d8cf97c31bf5b5129921656dbaa6b",
+    "bytes": 287249,
+    "sha256": "e3dc7eddefdd3a49e06a608ed5dc6fcfc5fa48c803820f5f94dc6ffc319619e6"
+  },
+  "source_repair_contract": {
+    "path": "source_repair_contract.py",
+    "blob": "cdd5d885f007bf59e2cd2352bdcaf4257b4cf4ba",
+    "sha256": "ab322f1e8442604e13df9940b225725efa7511510414fbe39fc7c0906d66ca02"
+  },
+  "original_formatter_bridge": {
+    "blob": "519d3d754a00092501a6947c4cf3947207e6a0c9",
+    "sha256": "e6f493424d3afe40cca3e3d040b33a24e7bf2e5b4c1b0550e8e1f3e245d818ca",
+    "scope": "exact executed strict AST/token/comment helper, applied freshly to ten actual formatter outputs"
+  }
+}

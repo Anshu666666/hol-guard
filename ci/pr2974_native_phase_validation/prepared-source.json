@@ -1,0 +1,1741 @@
+{
+  "schema": "pr2974-native-phase-prepared-source.v1",
+  "source_sha": "717e16cde8b66a4d2bfcbf37163a898e4b3ed18d",
+  "source_tree": "feaa571551174c2745c73587d56ac791563d6588",
+  "source_parent": "770326278bd983fce70ef5e06da06703c7c20155",
+  "source_parent_tree": "c5f0d2b5ab10adfc7d00c2d0c3f288fce6fdd9f7",
+  "originals": {
+    "rust/crates/guard-runtime/Cargo.toml": {
+      "content": "[package]\nname = \"hol-guard-runtime\"\nversion.workspace = true\nedition.workspace = true\nlicense.workspace = true\nrust-version.workspace = true\n\n[[bin]]\nname = \"hol-guard-runtime\"\npath = \"src/main.rs\"\n\n[features]\ndefault = []\n# Allocation counting is opt-in and the allocator is installed only in tests.\ndiagnostic-allocations = [\"dep:stats_alloc\"]\n\n[dependencies]\nguard-command = { path = \"../guard-command\" }\nguard-contracts = { path = \"../guard-contracts\" }\nguard-hook-core = { path = \"../guard-hook-core\" }\nguard-policy-snapshot = { path = \"../guard-policy-snapshot\" }\nguard-rule-contract = { path = \"../guard-rule-contract\" }\nguard-runtime-windows-process = { path = \"../guard-runtime-windows-process\" }\ngetrandom.workspace = true\nhex.workspace = true\nfs2.workspace = true\nlibc.workspace = true\nring.workspace = true\nguard-secure-fs = { path = \"../guard-secure-fs\" }\nserde.workspace = true\nserde_json.workspace = true\nsha2.workspace = true\nsysinfo.workspace = true\nstats_alloc = { version = \"=0.1.10\", optional = true }\n\n[target.'cfg(unix)'.dependencies]\nnix = { workspace = true, features = [\"signal\", \"time\", \"user\"] }\n\n[target.'cfg(target_os = \"macos\")'.dependencies]\nlibproc = \"0.14.11\"\nsecurity-framework = \"3.7.0\"\n\n[target.'cfg(windows)'.dependencies]\nwindows-permissions.workspace = true\n\n[lints]\nworkspace = true\n",
+      "blob": "7968fbbcca08d800dc99a897d74f3f5b25d84d45",
+      "sha256": "76ac620b6ee9d7101518611fa3e97506c037dc31a8427fd298e2f5737b282c11",
+      "bytes": 1324
+    },
+    "rust/crates/guard-runtime/src/main.rs": {
+      "content": "#![forbid(unsafe_code)]\n\nmod approval;\nmod claude_launcher_pilot;\nmod edge;\nmod hardening;\nmod managed_resident;\nmod native_hook_receipt;\nmod oneshot;\nmod policy_enforcement;\nmod policy_store;\nmod resident_client;\nmod resident_process_identity;\nmod resident_protocol;\nmod resident_state;\nmod resident_state_encoding;\nmod resident_transport;\nmod resident_transport_service;\nmod strict_json;\n\n#[cfg(all(test, feature = \"diagnostic-allocations\"))]\nmod native_allocation_diagnostic;\n\npub(crate) use resident_protocol::{capabilities, encode_response, strict_json_value};\npub(crate) use resident_transport::{\n    constant_time_eq, hmac_sha256, BoxedResidentStream, ResidentStream,\n};\npub(crate) use resident_transport_service::{\n    read_resident_auth_token, resident_stdin_liveness, serve, serve_loopback,\n};\n\npub(crate) use guard_contracts::{MAX_NATIVE_REQUEST_BYTES, MAX_NATIVE_RESPONSE_BYTES};\nuse std::env;\nuse std::io::{self, Read, Write};\nuse std::time::Duration;\n\nconst BUILD_SHA: &str = match option_env!(\"HOL_GUARD_BUILD_SHA\") {\n    Some(value) => value,\n    None => \"unknown\",\n};\nconst PACKAGE_VERSION: &str = match option_env!(\"HOL_GUARD_PACKAGE_VERSION\") {\n    Some(value) => value,\n    None => env!(\"CARGO_PKG_VERSION\"),\n};\nconst RESIDENT_PROTOCOL_VERSION: u8 = 2;\nconst REQUEST_MAGIC: &[u8; 4] = b\"HGR2\";\nconst RESPONSE_MAGIC: &[u8; 4] = b\"HGS2\";\nconst FRAME_REQUEST_ID_BYTES: usize = 32;\nconst FRAME_DIGEST_BYTES: usize = 32;\nconst FRAME_HEADER_BYTES: usize = 4 + FRAME_REQUEST_ID_BYTES + FRAME_DIGEST_BYTES + 4;\nconst AUTH_TOKEN_BYTES: usize = 32;\nconst AUTH_NONCE_BYTES: usize = 32;\nconst AUTH_PROOF_BYTES: usize = 32;\nconst AUTH_WORKERS: usize = 4;\nconst AUTH_QUEUE_CAPACITY: usize = 16;\nconst EVALUATION_WORKERS: usize = 16;\nconst EVALUATION_QUEUE_CAPACITY: usize = 32;\nconst AUTHENTICATED_PREFETCH_BYTES: usize = 64 * 1024;\nconst AUTH_TIMEOUT: Duration = Duration::from_millis(250);\nconst HEADER_TIMEOUT: Duration = Duration::from_millis(250);\nconst PAYLOAD_TIMEOUT: Duration = Duration::from_secs(2);\nconst RESPONSE_TIMEOUT: Duration = Duration::from_secs(1);\nconst SERVER_PROOF_LABEL: &[u8] = b\"hol-guard-resident-server-v1\\0\";\nconst CLIENT_PROOF_LABEL: &[u8] = b\"hol-guard-resident-client-v1\\0\";\n#[cfg(unix)]\nconst PARENT_LIVENESS_FD_ENV: &str = \"HOL_GUARD_PARENT_LIVENESS_FD\";\n\nfn read_stdin_bounded() -> Result<Vec<u8>, String> {\n    let mut bytes = Vec::new();\n    io::stdin()\n        .take(MAX_NATIVE_REQUEST_BYTES as u64 + 1)\n        .read_to_end(&mut bytes)\n        .map_err(|error| hardening::read_error(&error, \"native_request_read_failed\"))?;\n    if bytes.len() > MAX_NATIVE_REQUEST_BYTES {\n        return Err(\"native_request_too_large\".into());\n    }\n    Ok(bytes)\n}\n\nfn write_json<T: serde::Serialize>(value: &T) -> Result<(), String> {\n    serde_json::to_writer(io::stdout().lock(), value)\n        .map_err(|_| \"native_response_encode_failed\".to_owned())?;\n    println!();\n    Ok(())\n}\n\nfn write_bytes_response(response: &[u8]) -> Result<(), String> {\n    io::stdout()\n        .write_all(response)\n        .map_err(|error| hardening::write_error(&error, \"native_response_write_failed\"))?;\n    io::stdout()\n        .write_all(b\"\\n\")\n        .map_err(|error| hardening::write_error(&error, \"native_response_write_failed\"))?;\n    Ok(())\n}\n\nfn run() -> Result<(), String> {\n    let args: Vec<String> = env::args().skip(1).collect();\n    match args.as_slice() {\n        [command, registration_flag, registration, event_flag, event]\n            if command == \"claude-hook-pilot\" && registration_flag == \"--registration\" && event_flag == \"--event\" =>\n        {\n            claude_launcher_pilot::run(std::path::Path::new(registration), event)\n        }\n        [command] if command == \"capabilities\" => write_json(&capabilities()),\n        [command, flag] if command == \"capabilities\" && flag == \"--json\" => {\n            write_json(&capabilities())\n        }\n        [command] if command == \"rule-contract\" => write_json(&guard_rule_contract::rule_contract()),\n        [command, flag] if command == \"rule-contract\" && flag == \"--json\" => {\n            write_json(&guard_rule_contract::rule_contract())\n        }\n        [command] if command == \"self-test\" => {\n            write_json(&serde_json::json!({\"ok\": true, \"capabilities\": capabilities()}))\n        }\n        [command, flag] if command == \"self-test\" && flag == \"--json\" => {\n            write_json(&serde_json::json!({\"ok\": true, \"capabilities\": capabilities()}))\n        }\n        [command, flag] if command == \"hook\" && flag == \"--stdin\" => {\n            let bytes = read_stdin_bounded()?;\n            let response = oneshot::evaluate_hook_bytes(&bytes)?;\n            write_bytes_response(&response)\n        }\n        [command, state_flag, state_dir]\n            if command == \"migrate-policy\"\n                && state_flag == \"--state-dir\" =>\n        {\n            let runtime_identity = resident_state::runtime_digest()?;\n            policy_store::PolicySnapshotStore::migrate_legacy_state(\n                std::path::Path::new(state_dir),\n                &runtime_identity,\n            )\n        }\n        [command, state_flag, state_dir, record_flag, record_path]\n            if command == \"enroll-approval-authority\"\n                && state_flag == \"--state-dir\"\n                && record_flag == \"--record\" =>\n        {\n            policy_store::approval_authority::install_record(\n                std::path::Path::new(state_dir),\n                std::path::Path::new(record_path),\n            )\n        }\n        [command, state_flag, state_dir, record_flag, record_path]\n            if command == \"enroll-approval-v4-authority\"\n                && state_flag == \"--state-dir\"\n                && record_flag == \"--record\" =>\n        {\n            policy_store::approval_v4_authority::install_record(\n                std::path::Path::new(state_dir),\n                std::path::Path::new(record_path),\n            )\n        }\n        [command, state_flag, state_dir, rp_flag, rp_id, origin_flag, origin]\n            if command == \"prepare-approval-v4-enrollment\"\n                && state_flag == \"--state-dir\"\n                && rp_flag == \"--rp-id\"\n                && origin_flag == \"--origin\" =>\n        {\n            let request = policy_store::approval_v4_authority::prepare_enrollment(\n                std::path::Path::new(state_dir),\n                rp_id,\n                origin,\n            )?;\n            write_bytes_response(&request)\n        }\n        [command, state_flag, state_dir]\n            if command == \"prepare-approval-enrollment\" && state_flag == \"--state-dir\" =>\n        {\n            let request = policy_store::approval_authority::prepare_enrollment(\n                std::path::Path::new(state_dir),\n            )?;\n            write_bytes_response(&request)\n        }\n        [command, flag, state_dir]\n            if matches!(command.as_str(), \"hook-client\" | \"resident-client\")\n                && flag == \"--stdin\" =>\n        {\n            let bytes = read_stdin_bounded()?;\n            let started_at = std::time::Instant::now();\n            let timeout = managed_resident::client_timeout(&bytes);\n            let response = managed_resident::client_request_at_deadline(\n                std::path::Path::new(state_dir),\n                &bytes,\n                started_at + timeout,\n            )?;\n            write_bytes_response(&response)\n        }\n        [command, flag, state_dir]\n            if command == \"resident-client-stream\" && flag == \"--stdin\" =>\n        {\n            managed_resident::client_stream(std::path::Path::new(state_dir))\n        }\n        [command, flag, state_dir] if command == \"resident-stop\" && flag == \"--state-dir\" => {\n            managed_resident::stop_managed(std::path::Path::new(state_dir))\n        }\n        [command, flag] if command == \"command-model\" && flag == \"--stdin\" => {\n            let bytes = read_stdin_bounded()?;\n            let response = oneshot::evaluate_command_model_bytes(&bytes)?;\n            write_bytes_response(&response)\n        }\n        [command, flag] if command == \"pre-tool\" && flag == \"--stdin\" => {\n            let bytes = read_stdin_bounded()?;\n            let response = oneshot::evaluate_pre_tool_bytes(&bytes)?;\n            write_bytes_response(&response)\n        }\n        [command, flag, path] if command == \"serve\" && flag == \"--socket\" => serve(path),\n        [command, flag, address] if command == \"serve\" && flag == \"--tcp-loopback\" => {\n            serve_loopback(address)\n        }\n        [\n            command,\n            state_flag,\n            state_dir,\n            generation_flag,\n            generation,\n            owner_flag,\n            owner_process_id,\n            digest_flag,\n            digest,\n        ]\n            if command == \"serve-managed\"\n                && state_flag == \"--state-dir\"\n                && generation_flag == \"--generation\"\n                && owner_flag == \"--owner-process-id\"\n                && digest_flag == \"--runtime-sha256\" =>\n        {\n            managed_resident::serve_managed(\n                std::path::Path::new(state_dir),\n                managed_resident::parse_generation(generation)?,\n                managed_resident::parse_process_id(owner_process_id)?,\n                digest,\n            )\n        }\n        [command, state_flag, state_dir, generation_flag, generation, digest_flag, digest]\n            if command == \"supervise-managed\"\n                && state_flag == \"--state-dir\"\n                && generation_flag == \"--generation\"\n                && digest_flag == \"--runtime-sha256\" =>\n        {\n            managed_resident::supervise_managed(\n                std::path::Path::new(state_dir),\n                managed_resident::parse_generation(generation)?,\n                digest,\n            )\n        }\n        [\n            command,\n            state_flag,\n            state_dir,\n            generation_flag,\n            generation,\n            owner_flag,\n            owner_process_id,\n            digest_flag,\n            digest,\n        ]\n            if command == \"supervise-managed\"\n                && state_flag == \"--state-dir\"\n                && generation_flag == \"--generation\"\n                && owner_flag == \"--owner-process-id\"\n                && digest_flag == \"--runtime-sha256\" =>\n        {\n            managed_resident::supervise_managed_for_owner(\n                std::path::Path::new(state_dir),\n                managed_resident::parse_generation(generation)?,\n                digest,\n                managed_resident::parse_process_id(owner_process_id)?,\n            )\n        }\n        _ => Err(\n            \"usage: hol-guard-runtime capabilities --json | rule-contract --json | self-test --json | hook --stdin | migrate-policy --state-dir STATE_DIR | prepare-approval-enrollment --state-dir STATE_DIR | enroll-approval-authority --state-dir STATE_DIR --record RECORD | prepare-approval-v4-enrollment --state-dir STATE_DIR --rp-id RP_ID --origin ORIGIN | enroll-approval-v4-authority --state-dir STATE_DIR --record RECORD | hook-client --stdin STATE_DIR | resident-client --stdin STATE_DIR | resident-client-stream --stdin STATE_DIR | command-model --stdin | pre-tool --stdin | serve --socket PATH | serve --tcp-loopback 127.0.0.1:PORT | resident-stop --state-dir STATE_DIR | serve-managed --state-dir STATE_DIR --generation N --owner-process-id PID --runtime-sha256 SHA | supervise-managed --state-dir STATE_DIR --generation N --owner-process-id PID --runtime-sha256 SHA\"\n                .into(),\n        ),\n    }\n}\n\nfn main() {\n    std::panic::set_hook(Box::new(|_| eprintln!(\"native_runtime_panicked\")));\n    if let Err(code) = run() {\n        eprintln!(\"{code}\");\n        std::process::exit(2);\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn resident_hmac_matches_cross_language_vectors() {\n        let token = [7u8; AUTH_TOKEN_BYTES];\n        let nonce = [9u8; AUTH_NONCE_BYTES];\n        let server = hmac_sha256(&token, SERVER_PROOF_LABEL, &nonce);\n        let client = hmac_sha256(&token, CLIENT_PROOF_LABEL, &nonce);\n        assert_eq!(\n            server,\n            [\n                0xb8, 0x19, 0x89, 0x8f, 0x11, 0x87, 0x8c, 0x1c, 0x14, 0x84, 0x23, 0xd0, 0x36, 0x1a,\n                0x9d, 0xe2, 0x0d, 0x9e, 0xca, 0x3b, 0xb8, 0x6c, 0xe1, 0x21, 0x4c, 0xee, 0x95, 0x7f,\n                0x95, 0xbb, 0x06, 0xc4,\n            ]\n        );\n        assert_eq!(\n            client,\n            [\n                0xfe, 0xf8, 0x3d, 0x9f, 0xf5, 0x98, 0x89, 0x22, 0xef, 0x5c, 0x4c, 0x7b, 0x54, 0xd9,\n                0xc6, 0x66, 0xab, 0xf4, 0x2f, 0xdf, 0xa8, 0x39, 0x44, 0x8b, 0x57, 0x9f, 0x65, 0x07,\n                0x41, 0xd0, 0x6d, 0x97,\n            ]\n        );\n        assert_ne!(server, client);\n        assert!(constant_time_eq(&server, &server));\n        assert!(!constant_time_eq(&server, &client));\n    }\n\n    #[test]\n    fn strict_json_rejects_duplicate_keys_and_trailing_values() {\n        assert!(strict_json_value(br#\"{\"a\":1,\"a\":2}\"#).is_err());\n        assert!(strict_json_value(br#\"{\"a\":1} {}\"#).is_err());\n    }\n\n    #[test]\n    fn strict_json_rejects_deep_and_wide_values() {\n        let deep = format!(\n            \"{}0{}\",\n            \"[\".repeat(strict_json::TEST_MAX_JSON_DEPTH + 2),\n            \"]\".repeat(strict_json::TEST_MAX_JSON_DEPTH + 2)\n        );\n        assert!(strict_json_value(deep.as_bytes()).is_err());\n        let wide = format!(\n            \"[{}]\",\n            std::iter::repeat_n(\"0\", strict_json::TEST_MAX_JSON_COLLECTION_ITEMS + 1)\n                .collect::<Vec<_>>()\n                .join(\",\")\n        );\n        assert!(strict_json_value(wide.as_bytes()).is_err());\n    }\n\n    #[test]\n    fn overload_response_is_constant_and_retryable() {\n        assert_eq!(\n            resident_protocol::error_response(\"native_overloaded\", true),\n            b\"{\\\"error\\\":\\\"native_overloaded\\\",\\\"retryable\\\":true}\".to_vec()\n        );\n    }\n\n    #[test]\n    fn resident_hmac_changes_with_nonce() {\n        let token = [3u8; AUTH_TOKEN_BYTES];\n        let mut first_nonce = [1u8; AUTH_NONCE_BYTES];\n        let second_nonce = [2u8; AUTH_NONCE_BYTES];\n        let first = hmac_sha256(&token, SERVER_PROOF_LABEL, &first_nonce);\n        let second = hmac_sha256(&token, SERVER_PROOF_LABEL, &second_nonce);\n        assert_ne!(first, second);\n        first_nonce[0] ^= 1;\n        assert_ne!(first, hmac_sha256(&token, SERVER_PROOF_LABEL, &first_nonce));\n    }\n}\n",
+      "blob": "45b58d979b471bfbe73dfebd4cbf56a6783912db",
+      "sha256": "a4cdadc0cb23bb3ef0b6c6ceb026be4edb7a02523c7011f3a34cede36ef2d22d",
+      "bytes": 14410
+    },
+    "rust/crates/guard-runtime/src/resident_client.rs": {
+      "content": "#![forbid(unsafe_code)]\n\nuse sha2::{Digest, Sha256};\nuse std::io;\nuse std::net::{Ipv4Addr, SocketAddr, TcpStream};\n#[cfg(unix)]\nuse std::path::Path;\nuse std::time::Duration;\n\nuse crate::{\n    constant_time_eq, hmac_sha256, BoxedResidentStream, AUTH_NONCE_BYTES, AUTH_PROOF_BYTES,\n    AUTH_TIMEOUT, CLIENT_PROOF_LABEL, FRAME_DIGEST_BYTES, FRAME_HEADER_BYTES,\n    FRAME_REQUEST_ID_BYTES, MAX_NATIVE_RESPONSE_BYTES, REQUEST_MAGIC, RESPONSE_MAGIC,\n    SERVER_PROOF_LABEL,\n};\n\npub(crate) struct ExpectedProcessIdentity<'a> {\n    pub(crate) process_id: u32,\n    pub(crate) start_marker: &'a str,\n    pub(crate) digest: Option<&'a str>,\n}\n\n#[derive(Debug, PartialEq, Eq)]\npub(crate) struct ResidentClientError {\n    pub(crate) code: String,\n    pub(crate) retryable_teardown: bool,\n}\n\nimpl ResidentClientError {\n    fn fatal(code: String) -> Self {\n        Self {\n            code,\n            retryable_teardown: false,\n        }\n    }\n}\n\nimpl From<String> for ResidentClientError {\n    fn from(code: String) -> Self {\n        Self::fatal(code)\n    }\n}\n\nfn is_retryable_teardown_io_error(error: &io::Error) -> bool {\n    matches!(\n        crate::hardening::classify_io_error(error),\n        crate::hardening::IoFailureClass::ClientAbort\n            | crate::hardening::IoFailureClass::NetworkChange\n    )\n}\n\nfn read_exact(\n    stream: &mut dyn crate::ResidentStream,\n    output: &mut [u8],\n) -> Result<(), ResidentClientError> {\n    stream\n        .read_exact(output)\n        .map_err(|_| ResidentClientError::fatal(\"native_client_frame_read_failed\".to_owned()))\n}\n\nfn authenticate(\n    stream: &mut dyn crate::ResidentStream,\n    token: &[u8],\n    timeout: Duration,\n) -> Result<[u8; AUTH_NONCE_BYTES], ResidentClientError> {\n    stream\n        .set_resident_read_timeout(Some(timeout.min(AUTH_TIMEOUT)))\n        .map_err(|_| \"native_client_auth_timeout_failed\".to_owned())?;\n    stream\n        .set_resident_write_timeout(Some(timeout.min(AUTH_TIMEOUT)))\n        .map_err(|_| \"native_client_auth_timeout_failed\".to_owned())?;\n    let _ = stream.configure_low_latency();\n    let mut nonce = [0u8; AUTH_NONCE_BYTES];\n    getrandom::fill(&mut nonce).map_err(|_| \"native_client_random_failed\".to_owned())?;\n    stream\n        .write_all(&nonce)\n        .map_err(|error| ResidentClientError {\n            code: \"native_client_auth_nonce_failed\".to_owned(),\n            retryable_teardown: is_retryable_teardown_io_error(&error),\n        })?;\n    let mut server_proof = [0u8; AUTH_PROOF_BYTES];\n    // A server-proof read happens after the client has sent its nonce.  Even\n    // an EOF that looks like a transport teardown at this phase is not safe\n    // to replay: the peer has not completed authentication.\n    read_exact(stream, &mut server_proof).map_err(|error| ResidentClientError {\n        code: error.code,\n        retryable_teardown: false,\n    })?;\n    let expected = hmac_sha256(token, SERVER_PROOF_LABEL, &nonce);\n    if !constant_time_eq(&server_proof, &expected) {\n        return Err(\"native_client_auth_rejected\".to_owned().into());\n    }\n    Ok(nonce)\n}\n\nfn validate_runtime_owner(identity: &ExpectedProcessIdentity<'_>) -> Result<(), String> {\n    match identity.digest {\n        Some(digest) => crate::resident_state::validate_runtime_process_identity(\n            identity.process_id,\n            identity.start_marker,\n            digest,\n        ),\n        None => crate::resident_state::validate_package_process_identity(\n            identity.process_id,\n            identity.start_marker,\n        ),\n    }\n}\n\nfn connect_loopback_with_digest(\n    endpoint: &str,\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<BoxedResidentStream, String> {\n    let address: SocketAddr = endpoint\n        .parse()\n        .map_err(|_| \"native_client_endpoint_invalid\".to_owned())?;\n    if address.ip() != Ipv4Addr::LOCALHOST || address.port() == 0 {\n        return Err(\"native_client_endpoint_invalid\".to_owned());\n    }\n    validate_runtime_owner(identity)?;\n    let stream = TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT))\n        .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n    validate_runtime_owner(identity)?;\n    Ok(Box::new(stream))\n}\n\n#[cfg(unix)]\nfn connect_unix_with_digest(\n    endpoint: &str,\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<BoxedResidentStream, String> {\n    use nix::errno::Errno;\n    use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};\n    use nix::poll::{poll, PollFd, PollFlags, PollTimeout};\n    use nix::sys::socket::{\n        connect, getsockopt, socket, sockopt, AddressFamily, SockFlag, SockType, UnixAddr,\n    };\n    use std::os::fd::{AsFd, AsRawFd};\n    use std::os::unix::net::UnixStream;\n    let address = UnixAddr::new(Path::new(endpoint))\n        .map_err(|_| \"native_client_endpoint_invalid\".to_owned())?;\n    let descriptor = socket(\n        AddressFamily::Unix,\n        SockType::Stream,\n        SockFlag::empty(),\n        None,\n    )\n    .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n    fcntl(&descriptor, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))\n        .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n    fcntl(&descriptor, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC))\n        .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n    match connect(descriptor.as_raw_fd(), &address) {\n        Ok(()) | Err(Errno::EISCONN) => {}\n        Err(Errno::EINPROGRESS) => {\n            let poll_timeout = PollTimeout::try_from(timeout)\n                .map_err(|_| \"native_client_deadline_invalid\".to_owned())?;\n            let mut descriptors = [PollFd::new(descriptor.as_fd(), PollFlags::POLLOUT)];\n            if poll(&mut descriptors, poll_timeout)\n                .map_err(|_| \"native_client_connect_failed\".to_owned())?\n                == 0\n            {\n                return Err(\"native_client_deadline_exceeded\".to_owned());\n            }\n            let socket_error = getsockopt(&descriptor, sockopt::SocketError)\n                .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n            if socket_error != 0 {\n                return Err(\"native_client_connect_failed\".to_owned());\n            }\n        }\n        Err(_) => return Err(\"native_client_connect_failed\".to_owned()),\n    }\n    let stream = UnixStream::from(descriptor);\n    stream\n        .set_nonblocking(false)\n        .map_err(|_| \"native_client_connect_failed\".to_owned())?;\n    #[cfg(any(target_os = \"macos\", target_os = \"ios\"))]\n    let peer_process_id =\n        nix::sys::socket::getsockopt(&stream, nix::sys::socket::sockopt::LocalPeerPid)\n            .map_err(|_| \"native_client_peer_identity_failed\".to_owned())? as u32;\n    #[cfg(any(target_os = \"linux\", target_os = \"android\"))]\n    let peer_process_id =\n        nix::sys::socket::getsockopt(&stream, nix::sys::socket::sockopt::PeerCredentials)\n            .map_err(|_| \"native_client_peer_identity_failed\".to_owned())?\n            .pid() as u32;\n    #[cfg(not(any(\n        target_os = \"macos\",\n        target_os = \"ios\",\n        target_os = \"linux\",\n        target_os = \"android\"\n    )))]\n    let peer_process_id = identity.process_id;\n    if peer_process_id != identity.process_id {\n        return Err(\"native_client_peer_identity_mismatch\".to_owned());\n    }\n    validate_runtime_owner(identity)?;\n    stream\n        .set_read_timeout(Some(timeout))\n        .map_err(|_| \"native_client_timeout_failed\".to_owned())?;\n    stream\n        .set_write_timeout(Some(timeout))\n        .map_err(|_| \"native_client_timeout_failed\".to_owned())?;\n    Ok(Box::new(stream))\n}\n\n#[cfg(not(unix))]\nfn connect_unix_with_digest(\n    endpoint: &str,\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<BoxedResidentStream, String> {\n    let _ = (endpoint, timeout, identity);\n    Err(\"native_client_unix_unavailable\".to_owned())\n}\n\nfn connect(\n    transport: &str,\n    endpoint: &str,\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<BoxedResidentStream, String> {\n    match transport {\n        \"unix\" => connect_unix_with_digest(endpoint, timeout, identity),\n        \"loopback\" => connect_loopback_with_digest(endpoint, timeout, identity),\n        _ => Err(\"native_client_transport_invalid\".to_owned()),\n    }\n}\n\nfn write_request(\n    stream: &mut dyn crate::ResidentStream,\n    token: &[u8],\n    nonce: &[u8; AUTH_NONCE_BYTES],\n    payload: &[u8],\n) -> Result<[u8; FRAME_REQUEST_ID_BYTES], ResidentClientError> {\n    if payload.is_empty() || payload.len() > crate::MAX_NATIVE_REQUEST_BYTES {\n        return Err(\"native_client_request_too_large\".to_owned().into());\n    }\n    let mut request_id = [0u8; FRAME_REQUEST_ID_BYTES];\n    getrandom::fill(&mut request_id).map_err(|_| \"native_client_random_failed\".to_owned())?;\n    let digest = Sha256::digest(payload);\n    let mut frame = Vec::with_capacity(AUTH_PROOF_BYTES + FRAME_HEADER_BYTES + payload.len());\n    frame.extend_from_slice(&hmac_sha256(token, CLIENT_PROOF_LABEL, nonce));\n    frame.extend_from_slice(REQUEST_MAGIC);\n    frame.extend_from_slice(&request_id);\n    frame.extend_from_slice(&digest);\n    frame.extend_from_slice(&(payload.len() as u32).to_be_bytes());\n    frame.extend_from_slice(payload);\n    stream\n        .write_all(&frame)\n        .and_then(|()| stream.flush())\n        .map_err(|_| ResidentClientError::fatal(\"native_client_frame_write_failed\".to_owned()))?;\n    Ok(request_id)\n}\n\nfn read_response(\n    stream: &mut dyn crate::ResidentStream,\n    request_id: &[u8; FRAME_REQUEST_ID_BYTES],\n) -> Result<Vec<u8>, ResidentClientError> {\n    let mut header = [0u8; FRAME_HEADER_BYTES];\n    read_exact(stream, &mut header)?;\n    if !constant_time_eq(&header[..4], RESPONSE_MAGIC)\n        || !constant_time_eq(&header[4..4 + FRAME_REQUEST_ID_BYTES], request_id)\n    {\n        return Err(\"native_client_response_binding_failed\".to_owned().into());\n    }\n    let digest_start = 4 + FRAME_REQUEST_ID_BYTES;\n    let digest = &header[digest_start..digest_start + FRAME_DIGEST_BYTES];\n    let length = u32::from_be_bytes(\n        header[FRAME_HEADER_BYTES - 4..]\n            .try_into()\n            .map_err(|_| \"native_client_frame_invalid\".to_owned())?,\n    ) as usize;\n    if length == 0 || length > MAX_NATIVE_RESPONSE_BYTES {\n        return Err(\"native_client_response_too_large\".to_owned().into());\n    }\n    let mut response = vec![0u8; length];\n    read_exact(stream, &mut response)?;\n    if !constant_time_eq(&Sha256::digest(&response), digest) {\n        return Err(\"native_client_response_digest_mismatch\".to_owned().into());\n    }\n    Ok(response)\n}\n\n// Once a request has been fully written and flushed, the peer may have\n// already applied it. Response-side teardown is therefore never replay-safe.\nfn read_committed_response(\n    stream: &mut dyn crate::ResidentStream,\n    request_id: &[u8; FRAME_REQUEST_ID_BYTES],\n) -> Result<Vec<u8>, ResidentClientError> {\n    read_response(stream, request_id).map_err(|error| ResidentClientError {\n        code: error.code,\n        retryable_teardown: false,\n    })\n}\n\npub(crate) fn send_request_for_digest_detailed(\n    transport: &str,\n    endpoint: &str,\n    token: &[u8],\n    payload: &[u8],\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<Vec<u8>, ResidentClientError> {\n    let started = std::time::Instant::now();\n    let mut stream =\n        connect(transport, endpoint, timeout, identity).map_err(ResidentClientError::fatal)?;\n    let remaining = timeout.saturating_sub(started.elapsed());\n    if remaining.is_zero() {\n        return Err(\"native_client_deadline_exceeded\".to_owned().into());\n    }\n    let nonce = authenticate(&mut *stream, token, remaining)?;\n    let remaining = timeout.saturating_sub(started.elapsed());\n    if remaining.is_zero() {\n        return Err(\"native_client_deadline_exceeded\".to_owned().into());\n    }\n    stream\n        .set_resident_read_timeout(Some(remaining))\n        .map_err(|_| \"native_client_timeout_failed\".to_owned())?;\n    stream\n        .set_resident_write_timeout(Some(remaining))\n        .map_err(|_| \"native_client_timeout_failed\".to_owned())?;\n    let request_id = write_request(&mut *stream, token, &nonce, payload)?;\n    if started.elapsed() >= timeout {\n        return Err(\"native_client_deadline_exceeded\".to_owned().into());\n    }\n    read_committed_response(&mut *stream, &request_id)\n}\n\npub(crate) fn send_request_for_digest(\n    transport: &str,\n    endpoint: &str,\n    token: &[u8],\n    payload: &[u8],\n    timeout: Duration,\n    identity: &ExpectedProcessIdentity<'_>,\n) -> Result<Vec<u8>, String> {\n    send_request_for_digest_detailed(transport, endpoint, token, payload, timeout, identity)\n        .map_err(|error| error.code)\n}\n\n#[cfg(test)]\n#[path = \"resident_client_tests.rs\"]\nmod tests;\n",
+      "blob": "aab7929cd152466aa7199b2176c61e0190ca8106",
+      "sha256": "f0701a5e3df1b0c868bc4ce6e392069abf326f64e8055981c7552fdf8bbf6b88",
+      "bytes": 12750
+    },
+    "rust/crates/guard-runtime/src/resident_transport.rs": {
+      "content": "use std::io::{self, Read, Write};\nuse std::net::TcpStream;\nuse std::panic::{catch_unwind, AssertUnwindSafe};\nuse std::sync::mpsc::{sync_channel, Receiver, SyncSender, TrySendError};\nuse std::sync::{Arc, Mutex};\nuse std::thread;\nuse std::time::{Duration, Instant};\n\nuse sha2::{Digest, Sha256};\n#[cfg(unix)]\nuse std::os::unix::net::UnixStream;\n\npub(crate) trait ResidentStream: Read + Write + Send {\n    fn set_resident_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;\n    fn set_resident_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;\n    fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()>;\n    fn try_read_available(&mut self, output: &mut [u8]) -> io::Result<usize> {\n        self.set_resident_nonblocking(true)?;\n        let result = self.read(output);\n        let restore = self.set_resident_nonblocking(false);\n        match (result, restore) {\n            (Err(error), Ok(())) if error.kind() == io::ErrorKind::WouldBlock => Ok(0),\n            (result, Ok(())) => result,\n            (_, Err(error)) => Err(error),\n        }\n    }\n    fn configure_low_latency(&self) -> io::Result<()> {\n        Ok(())\n    }\n}\n\nimpl ResidentStream for TcpStream {\n    fn set_resident_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {\n        TcpStream::set_read_timeout(self, timeout)\n    }\n\n    fn set_resident_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {\n        TcpStream::set_write_timeout(self, timeout)\n    }\n\n    fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()> {\n        self.set_nonblocking(nonblocking)\n    }\n\n    fn configure_low_latency(&self) -> io::Result<()> {\n        self.set_nodelay(true)\n    }\n}\n\n#[cfg(unix)]\nimpl ResidentStream for UnixStream {\n    fn set_resident_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {\n        UnixStream::set_read_timeout(self, timeout)\n    }\n\n    fn set_resident_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {\n        UnixStream::set_write_timeout(self, timeout)\n    }\n\n    fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()> {\n        self.set_nonblocking(nonblocking)\n    }\n}\n\npub(crate) type BoxedResidentStream = Box<dyn ResidentStream>;\n\npub(crate) struct PendingRequest {\n    pub(crate) stream: BoxedResidentStream,\n    pub(crate) request_id: [u8; crate::FRAME_REQUEST_ID_BYTES],\n    pub(crate) request_digest: [u8; crate::FRAME_DIGEST_BYTES],\n    pub(crate) length: usize,\n    pub(crate) payload_prefix: Vec<u8>,\n    pub(crate) accepted_at: Instant,\n}\n\npub(crate) fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {\n    if left.len() != right.len() {\n        return false;\n    }\n    let mut difference = 0u8;\n    for (left_byte, right_byte) in left.iter().zip(right) {\n        difference |= left_byte ^ right_byte;\n    }\n    difference == 0\n}\n\npub(crate) fn hmac_sha256(key: &[u8], label: &[u8], nonce: &[u8]) -> [u8; crate::AUTH_PROOF_BYTES] {\n    const BLOCK_BYTES: usize = 64;\n    let mut key_block = [0u8; BLOCK_BYTES];\n    if key.len() > BLOCK_BYTES {\n        let digest = Sha256::digest(key);\n        key_block[..digest.len()].copy_from_slice(&digest);\n    } else {\n        key_block[..key.len()].copy_from_slice(key);\n    }\n\n    let mut inner_pad = [0x36u8; BLOCK_BYTES];\n    let mut outer_pad = [0x5cu8; BLOCK_BYTES];\n    for index in 0..BLOCK_BYTES {\n        inner_pad[index] ^= key_block[index];\n        outer_pad[index] ^= key_block[index];\n    }\n\n    let mut inner = Sha256::new();\n    inner.update(inner_pad);\n    inner.update(label);\n    inner.update(nonce);\n    let inner_digest = inner.finalize();\n\n    let mut outer = Sha256::new();\n    outer.update(outer_pad);\n    outer.update(inner_digest);\n    let digest = outer.finalize();\n    let mut proof = [0u8; crate::AUTH_PROOF_BYTES];\n    proof.copy_from_slice(&digest);\n    proof\n}\n\nfn authenticate_resident_stream(\n    stream: &mut dyn ResidentStream,\n    token: &[u8; crate::AUTH_TOKEN_BYTES],\n) -> Result<(), String> {\n    stream\n        .set_resident_read_timeout(Some(crate::AUTH_TIMEOUT))\n        .map_err(|_| \"native_resident_auth_timeout_failed\".to_owned())?;\n    stream\n        .set_resident_write_timeout(Some(crate::AUTH_TIMEOUT))\n        .map_err(|_| \"native_resident_auth_timeout_failed\".to_owned())?;\n    let _ = stream.configure_low_latency();\n\n    let mut nonce = [0u8; crate::AUTH_NONCE_BYTES];\n    stream\n        .read_exact(&mut nonce)\n        .map_err(|_| \"native_resident_auth_nonce_failed\".to_owned())?;\n    let server_proof = hmac_sha256(token, crate::SERVER_PROOF_LABEL, &nonce);\n    stream\n        .write_all(&server_proof)\n        .map_err(|_| \"native_resident_auth_proof_failed\".to_owned())?;\n\n    let mut client_proof = [0u8; crate::AUTH_PROOF_BYTES];\n    stream\n        .read_exact(&mut client_proof)\n        .map_err(|_| \"native_resident_auth_client_failed\".to_owned())?;\n    let expected = hmac_sha256(token, crate::CLIENT_PROOF_LABEL, &nonce);\n    if !constant_time_eq(&client_proof, &expected) {\n        return Err(\"native_resident_auth_rejected\".into());\n    }\n    Ok(())\n}\n\nfn read_request_header(mut stream: BoxedResidentStream) -> Result<PendingRequest, String> {\n    stream\n        .set_resident_read_timeout(Some(crate::HEADER_TIMEOUT))\n        .map_err(|_| \"native_frame_timeout_failed\".to_owned())?;\n    let mut header = [0u8; crate::FRAME_HEADER_BYTES];\n    stream\n        .read_exact(&mut header)\n        .map_err(|_| \"native_frame_header_failed\".to_owned())?;\n    if !constant_time_eq(&header[..4], crate::REQUEST_MAGIC) {\n        return Err(\"native_frame_version_mismatch\".to_owned());\n    }\n    let mut request_id = [0u8; crate::FRAME_REQUEST_ID_BYTES];\n    request_id.copy_from_slice(&header[4..4 + crate::FRAME_REQUEST_ID_BYTES]);\n    let digest_start = 4 + crate::FRAME_REQUEST_ID_BYTES;\n    let mut request_digest = [0u8; crate::FRAME_DIGEST_BYTES];\n    request_digest.copy_from_slice(&header[digest_start..digest_start + crate::FRAME_DIGEST_BYTES]);\n    let length = u32::from_be_bytes(\n        header[crate::FRAME_HEADER_BYTES - 4..]\n            .try_into()\n            .map_err(|_| \"native_frame_header_failed\".to_owned())?,\n    ) as usize;\n    if length == 0 || length > crate::MAX_NATIVE_REQUEST_BYTES {\n        return Err(\"native_request_too_large\".to_owned());\n    }\n    Ok(PendingRequest {\n        stream,\n        request_id,\n        request_digest,\n        length,\n        payload_prefix: Vec::new(),\n        accepted_at: Instant::now(),\n    })\n}\n\nfn write_bound_response(\n    stream: &mut dyn ResidentStream,\n    request_id: &[u8; crate::FRAME_REQUEST_ID_BYTES],\n    response: &[u8],\n) -> Result<(), String> {\n    if response.is_empty() || response.len() > crate::MAX_NATIVE_RESPONSE_BYTES {\n        return Err(\"native_response_too_large\".to_owned());\n    }\n    stream\n        .set_resident_write_timeout(Some(crate::RESPONSE_TIMEOUT))\n        .map_err(|_| \"native_frame_timeout_failed\".to_owned())?;\n    let digest = Sha256::digest(response);\n    let mut header = Vec::with_capacity(crate::FRAME_HEADER_BYTES);\n    header.extend_from_slice(crate::RESPONSE_MAGIC);\n    header.extend_from_slice(request_id);\n    header.extend_from_slice(&digest);\n    header.extend_from_slice(&(response.len() as u32).to_be_bytes());\n    stream\n        .write_all(&header)\n        .map_err(|error| crate::hardening::write_error(&error, \"native_frame_write_failed\"))?;\n    stream\n        .write_all(response)\n        .map_err(|error| crate::hardening::write_error(&error, \"native_frame_write_failed\"))?;\n    stream\n        .flush()\n        .map_err(|error| crate::hardening::write_error(&error, \"native_frame_write_failed\"))?;\n    Ok(())\n}\n\nfn write_overload(pending: &mut PendingRequest) {\n    let response = crate::resident_protocol::error_response(\"native_overloaded\", true);\n    let _ = write_bound_response(&mut *pending.stream, &pending.request_id, &response);\n}\n\nfn handle_pending_request(\n    mut pending: PendingRequest,\n    policy_store: Option<&crate::policy_store::PolicySnapshotStore>,\n) {\n    if crate::hardening::request_expired(pending.accepted_at) {\n        let response =\n            crate::resident_protocol::error_response(\"native_request_deadline_exceeded\", true);\n        let _ = write_bound_response(&mut *pending.stream, &pending.request_id, &response);\n        return;\n    }\n    let _ = pending\n        .stream\n        .set_resident_read_timeout(Some(crate::PAYLOAD_TIMEOUT));\n    let prefix_length = pending.payload_prefix.len();\n    let mut request = vec![0u8; pending.length];\n    request[..prefix_length].copy_from_slice(&pending.payload_prefix);\n    let mut disposition = crate::resident_protocol::LifecycleDisposition::Continue;\n    let response = if pending\n        .stream\n        .read_exact(&mut request[prefix_length..])\n        .is_err()\n    {\n        crate::resident_protocol::error_response(\"native_frame_read_failed\", false)\n    } else {\n        let digest = Sha256::digest(&request);\n        if !constant_time_eq(&digest, &pending.request_digest) {\n            crate::resident_protocol::error_response(\"native_request_digest_mismatch\", false)\n        } else {\n            match catch_unwind(AssertUnwindSafe(|| {\n                crate::resident_protocol::evaluate_resident_bytes_started(\n                    &request,\n                    policy_store,\n                    pending.accepted_at,\n                )\n            })) {\n                Ok(Ok(evaluation)) => {\n                    disposition = evaluation.disposition;\n                    evaluation.response\n                }\n                Ok(Err(reason)) => crate::resident_protocol::safe_error_response(&reason, false),\n                Err(_panic) => {\n                    crate::resident_protocol::error_response(\"native_runtime_panicked\", false)\n                }\n            }\n        }\n    };\n    if disposition == crate::resident_protocol::LifecycleDisposition::Shutdown {\n        crate::managed_resident::request_shutdown();\n    }\n    let _ = write_bound_response(&mut *pending.stream, &pending.request_id, &response);\n    if disposition == crate::resident_protocol::LifecycleDisposition::Shutdown {\n        crate::managed_resident::shutdown_response_sent();\n    }\n}\n\nfn spawn_workers<T, F>(count: usize, receiver: Receiver<T>, handler: F)\nwhere\n    T: Send + 'static,\n    F: Fn(T) + Send + Sync + 'static,\n{\n    let receiver = Arc::new(Mutex::new(receiver));\n    let handler = Arc::new(handler);\n    for _ in 0..count {\n        let receiver = Arc::clone(&receiver);\n        let handler = Arc::clone(&handler);\n        thread::spawn(move || loop {\n            let next = match receiver.lock() {\n                Ok(guard) => guard.recv(),\n                Err(_) => return,\n            };\n            match next {\n                Ok(item) => handler(item),\n                Err(_) => return,\n            }\n        });\n    }\n}\n\npub(crate) fn start_resident_workers(\n    token: Arc<[u8; crate::AUTH_TOKEN_BYTES]>,\n    policy_store: Option<Arc<crate::policy_store::PolicySnapshotStore>>,\n) -> SyncSender<BoxedResidentStream> {\n    let (evaluation_sender, evaluation_receiver) =\n        sync_channel::<PendingRequest>(crate::EVALUATION_QUEUE_CAPACITY);\n    let evaluation_policy_store = policy_store.clone();\n    spawn_workers(\n        crate::EVALUATION_WORKERS,\n        evaluation_receiver,\n        move |pending| {\n            handle_pending_request(pending, evaluation_policy_store.as_deref());\n        },\n    );\n\n    let (authentication_sender, authentication_receiver) =\n        sync_channel::<BoxedResidentStream>(crate::AUTH_QUEUE_CAPACITY);\n    spawn_workers(\n        crate::AUTH_WORKERS,\n        authentication_receiver,\n        move |mut stream| {\n            if authenticate_resident_stream(&mut *stream, &token).is_err() {\n                return;\n            }\n            let mut pending = match read_request_header(stream) {\n                Ok(value) => value,\n                Err(_) => return,\n            };\n            pending\n                .payload_prefix\n                .resize(pending.length.min(crate::AUTHENTICATED_PREFETCH_BYTES), 0);\n            let available = match pending\n                .stream\n                .try_read_available(&mut pending.payload_prefix)\n            {\n                Ok(value) => value,\n                Err(_) => return,\n            };\n            pending.payload_prefix.truncate(available);\n            if available == pending.length {\n                handle_pending_request(pending, policy_store.as_deref());\n                return;\n            }\n            match evaluation_sender.try_send(pending) {\n                Ok(()) => {}\n                Err(TrySendError::Full(returned)) => {\n                    let mut pending = returned;\n                    write_overload(&mut pending);\n                }\n                Err(TrySendError::Disconnected(_returned)) => {}\n            }\n        },\n    );\n    authentication_sender\n}\n\npub(crate) fn admit_connection(\n    sender: &SyncSender<BoxedResidentStream>,\n    stream: BoxedResidentStream,\n) -> Result<(), String> {\n    match sender.try_send(stream) {\n        Ok(()) => Ok(()),\n        Err(TrySendError::Full(_stream)) => Ok(()),\n        Err(TrySendError::Disconnected(_stream)) => {\n            Err(\"native_resident_worker_pool_stopped\".to_owned())\n        }\n    }\n}\n",
+      "blob": "aa200d9df27cd059067813e4ce9f173650b9b08d",
+      "sha256": "5330756b59521d19f65c38d01805bc852bf810c7e70e18c8914512bcb4cf62e7",
+      "bytes": 13314
+    },
+    "scripts/native_slo_daemon_fixture.py": {
+      "content": "\"\"\"Private subprocess fixture for daemon-only resource and startup measurements.\n\nThe fixture runs production AdapterSession in an installed interpreter. Only a\nbounded private control pipe crosses into the load generator. Hook requests\nstill cross the production authenticated HTTP adapter, never that control pipe.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport os\nimport queue\nimport subprocess\nimport sys\nimport threading\nimport time\nfrom collections.abc import Mapping\nfrom contextlib import suppress\nfrom http.client import HTTPConnection\nfrom pathlib import Path\nfrom types import SimpleNamespace\nfrom typing import Any\n\n_ROOT = Path(__file__).resolve().parents[1]\nif str(_ROOT) not in sys.path:\n    sys.path.append(str(_ROOT))\n\nfrom codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402\nfrom codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402\nfrom scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402\nfrom scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402\nfrom scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402\nfrom scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402\nfrom scripts.native_slo_observation_failure import retain_failed_recovery_observation  # noqa: E402\nfrom scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402\nfrom scripts.native_slo_startup import PROGRESS_STAGES, StartupDiagnostic  # noqa: E402\n\n_CONTROL_LIMIT = 256 * 1024\n\n\ndef witnessed_route(before: Mapping[str, int], after: Mapping[str, int], *, expected: int = 1) -> str:\n    \"\"\"Require exact counter conservation; an engine bypass is its own outcome.\"\"\"\n    delta = {name: after.get(name, 0) - before.get(name, 0) for name in set(before) | set(after)}\n    if any(value < 0 for value in delta.values()):\n        raise RuntimeError(\"qualification route counters regressed\")\n    changed = {name: value for name, value in delta.items() if value}\n    if not changed:\n        return \"engine_bypassed\"\n    if len(changed) != 1 or sum(changed.values()) != expected:\n        raise RuntimeError(\"qualification route accounting was ambiguous\")\n    return next(iter(changed))\n\n\nclass _RemoteMetrics:\n    def __init__(self, session: DaemonFixture) -> None:\n        self.session = session\n\n    def snapshot(self) -> Mapping[str, object]:\n        return self.session.control(\"snapshot\")\n\n\nclass DaemonFixture:\n    \"\"\"Daemon/helper/resident tree independent of the benchmark load generator.\"\"\"\n\n    def __init__(\n        self,\n        runtime: Path,\n        *,\n        setup: str | None = None,\n        policy: str | None = None,\n        workspace_count: int | None = None,\n    ) -> None:\n        if workspace_count is not None and (type(workspace_count) is not int or workspace_count not in {1, 10, 100}):\n            raise ValueError(\"workspace count outside declared matrix\")\n        self.runtime = runtime\n        self.setup = setup\n        self.policy = policy\n        self.workspace_count = workspace_count\n        self.process: subprocess.Popen[bytes] | None = None\n        self._job: Any = None\n        self._lock = threading.Lock()\n        self._responses: queue.Queue[bytes | None] = queue.Queue(maxsize=1)\n        self._readers: list[threading.Thread] = []\n        self._connection: HTTPConnection | None = None\n        self._owner_thread_id = 0\n        self._closed = False\n        self.startup_ms = 0.0\n        self.readiness_ms = 0.0\n        self._stage = \"spawn\"\n        self._startup_stack: list[object] = []\n\n    @property\n    def pid(self) -> int:\n        if self.process is None:\n            raise RuntimeError(\"daemon fixture not started\")\n        return self.process.pid\n\n    def _read_stdout(self) -> None:\n        assert self.process is not None and self.process.stdout is not None\n        while True:\n            value = self.process.stdout.readline(_CONTROL_LIMIT + 1)\n            if not value or len(value) > _CONTROL_LIMIT:\n                with suppress(queue.Full):\n                    self._responses.put_nowait(None)\n                return\n            try:\n                self._responses.put(value, timeout=1.0)\n            except queue.Full:\n                return\n\n    def _drain_stderr(self) -> None:\n        assert self.process is not None and self.process.stderr is not None\n        while self.process.stderr.read(4096):\n            pass  # Never publish raw fixture diagnostics or retain unbounded bytes.\n\n    def _receive(self, timeout: float) -> Mapping[str, object]:\n        deadline = time.monotonic() + timeout\n        while True:\n            try:\n                line = self._responses.get(timeout=max(0, deadline - time.monotonic()))\n            except queue.Empty as error:\n                if self._startup_stack:\n                    detail = failure_evidence(RuntimeError(\"daemon fixture deadline at \" + self._stage))\n                    detail[\"startup_stack\"] = self._startup_stack\n                    raise FixtureFailureError(detail) from error\n                raise RuntimeError(\"daemon fixture deadline at \" + self._stage) from error\n            if line is None:\n                raise RuntimeError(\"daemon fixture stream unavailable at \" + self._stage)\n            result = json.loads(line)\n            if not isinstance(result, Mapping):\n                raise RuntimeError(\"daemon fixture operation failed\")\n            if result.get(\"state\") in {\"progress\", \"startup_diagnostic\"}:\n                stage = result.get(\"stage\")\n                if stage not in PROGRESS_STAGES:\n                    raise RuntimeError(\"daemon fixture invalid progress stage\")\n                self._stage = str(stage)\n                if result.get(\"state\") == \"startup_diagnostic\":\n                    stack = result.get(\"stack\")\n                    if (\n                        not isinstance(stack, list)\n                        or len(stack) > 8\n                        or any(\n                            not isinstance(item, dict)\n                            or set(item) != {\"origin\", \"line\"}\n                            or not isinstance(item[\"origin\"], str)\n                            or not isinstance(item[\"line\"], int)\n                            or isinstance(item[\"line\"], bool)\n                            for item in stack\n                        )\n                    ):\n                        raise RuntimeError(\"daemon fixture invalid startup evidence\")\n                    assert_privacy_safe({\"stack\": stack})\n                    self._startup_stack = list(stack)\n                continue  # Progress cannot extend the fixed operation deadline.\n            if result.get(\"error\"):\n                detail = result.get(\"detail\")\n                if not isinstance(detail, Mapping):\n                    raise RuntimeError(\"daemon fixture invalid failure evidence\")\n                raise FixtureFailureError(detail)\n            return result\n\n    def control(self, operation: str, **arguments: object) -> Mapping[str, object]:\n        with self._lock:\n            if self.process is None or self.process.stdin is None:\n                raise RuntimeError(\"daemon fixture unavailable\")\n            request = json.dumps({\"op\": operation, **arguments}, separators=(\",\", \":\")).encode() + b\"\\n\"\n            if len(request) > 4096:\n                raise ValueError(\"daemon fixture control request exceeded bound\")\n            self.process.stdin.write(request)\n            self.process.stdin.flush()\n            return self._receive(30.0)\n\n    def __enter__(self) -> DaemonFixture:\n        environment = dict(os.environ)\n        clear_proof_environment(environment)\n        started = time.perf_counter()\n        self.process, self._job, _ = _spawn_hook_process(\n            (\n                sys.executable,\n                \"-u\",\n                str(Path(__file__).resolve()),\n                \"--serve\",\n                str(self.runtime),\n                self.setup or \"none\",\n                self.policy or \"none\",\n                *((str(self.workspace_count),) if self.workspace_count is not None else ()),\n            ),\n            cwd=_ROOT,\n            environment=environment,\n            allow_windows_breakaway=False,\n            windows_kill_on_job_close=True,\n            parent_liveness=False,\n        )\n        for target in (self._read_stdout, self._drain_stderr):\n            thread = threading.Thread(target=target, daemon=True)\n            thread.start()\n            self._readers.append(thread)\n        try:\n            ready = self._receive(30.0)\n            if ready.get(\"state\") != \"ready\":\n                raise RuntimeError(\"daemon fixture did not acknowledge readiness\")\n            self.root = Path(str(ready[\"root\"]))\n            self.workspace = Path(str(ready[\"workspace\"]))\n            self.guard_home = Path(str(ready[\"guard_home\"]))\n            self.readiness_ms = float(ready[\"readiness_ms\"])\n            self.daemon = SimpleNamespace(\n                port=int(ready[\"port\"]),\n                _server=SimpleNamespace(\n                    auth_token=str(ready[\"auth_token\"]),\n                    hook_worker=SimpleNamespace(metrics=_RemoteMetrics(self)),\n                ),\n            )\n            self._connection = HTTPConnection(\"127.0.0.1\", self.daemon.port, timeout=5)\n            self._owner_thread_id = threading.get_ident()\n            self.startup_ms = (time.perf_counter() - started) * 1000\n        except BaseException:\n            self.close()\n            raise\n        return self\n\n    def request(self, harness: str, request_payload: Mapping[str, object]) -> tuple[Mapping[str, object], float]:\n        started = time.perf_counter()\n        response = _request(\n            self.daemon,\n            guard_home=self.guard_home,\n            workspace=self.workspace,\n            harness=harness,\n            request_payload=request_payload,\n            connection=self._connection if threading.get_ident() == self._owner_thread_id else None,\n        )\n        return response, (time.perf_counter() - started) * 1000\n\n    def observe(\n        self, harness: str, event: str, size_class: str, request_payload: Mapping[str, object] | None = None\n    ) -> Observation:\n        metrics = self.daemon._server.hook_worker.metrics\n        before = route_counts(metrics.snapshot())\n        response, latency = self.request(\n            harness, request_payload if request_payload is not None else payload(event, size_class)\n        )\n        after = route_counts(wait_for_route_corpus(metrics, expected=sum(before.values()) + 1))\n        observation = Observation(\n            harness,\n            event,\n            size_class,\n            latency,\n            witnessed_route(before, after),\n            is_allowed(event, response),\n            _is_explicit_capacity_response(response),\n        )\n        retain_failed_recovery_observation(observation, response, before, after)\n        return observation\n\n    def observe_unattributed(self, harness: str, event: str, size_class: str) -> Observation:\n        response, latency = self.request(harness, payload(event, size_class))\n        return Observation(\n            harness,\n            event,\n            size_class,\n            latency,\n            \"pending_batch_validation\",\n            is_allowed(event, response),\n            _is_explicit_capacity_response(response),\n        )\n\n    def stop_resident(self) -> bool:\n        return self.control(\"stop_resident\").get(\"contained\") is True\n\n    def native_overload_count(self) -> int:\n        return int(self.control(\"native_overloads\")[\"count\"])\n\n    def close(self) -> None:\n        if self._closed:\n            return\n        self._closed = True\n        if self._connection is not None:\n            self._connection.close()\n        if self.process is None:\n            return\n        acknowledged = False\n        try:\n            if self.process.poll() is None:\n                acknowledged = self.control(\"close\").get(\"closed\") is True\n                self.process.wait(timeout=5)\n        except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired):\n            pass\n        finally:\n            contained = _kill_hook_process(self.process, self._job)\n            with suppress(subprocess.TimeoutExpired):\n                self.process.wait(timeout=5)\n            for stream in (self.process.stdin, self.process.stdout, self.process.stderr):\n                if stream is not None:\n                    stream.close()\n            for thread in self._readers:\n                thread.join(timeout=1.0)\n            if self._job is not None:\n                close_windows_hook_job(self._job)\n                self._job = None\n        if not contained or self.process.poll() is None:\n            raise RuntimeError(\"daemon fixture process containment failed\")\n        if not acknowledged and self.startup_ms:\n            raise RuntimeError(\"daemon fixture cleanup was not acknowledged\")\n\n    def __exit__(self, *_args: object) -> None:\n        self.close()\n\n\ndef _emit(result: Mapping[str, object]) -> None:\n    encoded = json.dumps(result, separators=(\",\", \":\")).encode() + b\"\\n\"\n    if len(encoded) > _CONTROL_LIMIT:\n        raise RuntimeError(\"daemon fixture response exceeded bound\")\n    sys.stdout.buffer.write(encoded)\n    sys.stdout.buffer.flush()\n\n\ndef _native_samples(session: Any, count: int) -> dict[str, object]:\n    from codex_plugin_scanner.guard.native_hook_edge import review_raw_hook_native\n    from scripts.native_benchmark_oracle import synthetic_payload, validate_semantic_response\n\n    if not 1 <= count <= 100:\n        raise ValueError(\"native sample batch outside bound\")\n    values: list[float] = []\n    for index in range(-2, count):\n        case = \"secret\" if index == -1 else \"benign\"\n        snapshot = session.daemon._server.hook_worker.prepare_workspace_policy(\n            session.workspace, deadline=time.monotonic() + 0.4\n        )\n        if snapshot is None:\n            raise RuntimeError(\"native timing policy was not acknowledged\")\n        request = synthetic_payload(index, case=case)\n        started = time.perf_counter()\n        edge = review_raw_hook_native(\n            payload=request,\n            harness=\"claude-code\",\n            event=\"PostToolUse\",\n            guard_home=session.guard_home,\n            home_dir=session.root,\n            cwd=session.workspace,\n            source_ref_external_allowed=False,\n            observe_mode=False,\n            deadline=time.monotonic() + 5,\n            policy_snapshot=snapshot,\n        )\n        elapsed = (time.perf_counter() - started) * 1000\n        if not isinstance(edge, Mapping) or edge.get(\"authority\") != \"rust\":\n            raise RuntimeError(\"native timing did not return Rust authority\")\n        validate_semantic_response(\n            edge.get(\"result\"), route=\"native_resident\", expected_route=\"native_resident\", case=case\n        )\n        if index >= 0:\n            values.append(elapsed)\n    return {\"values\": values, \"benign_and_block_validated\": True}\n\n\ndef _serve(runtime: Path, setup: str = \"none\", policy: str = \"none\", workspace_count: int | None = None) -> int:\n    from contextlib import ExitStack, nullcontext\n\n    from scripts.native_slo_faults import FaultFixture\n    from scripts.native_slo_session import AdapterSession\n\n    configuration = None\n    if setup != \"none\" or policy != \"none\":\n        from scripts.native_slo_workloads import configuration_text\n\n        configuration = configuration_text(setup if setup != \"none\" else policy)\n    with ExitStack() as lifetime:\n        workspace_fixture = None\n        with StartupDiagnostic(_emit) as diagnostic:\n            diagnostic.progress(\"construct\")\n            adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)\n            try:\n                if workspace_count is not None:\n                    from scripts.native_slo_workspace_server import WorkspaceScenarioFixture\n\n                    workspace_fixture = WorkspaceScenarioFixture(adapter, workspace_count)\n                    lifetime.enter_context(workspace_fixture.observer)\n                    lifetime.callback(workspace_fixture.close)\n            except BaseException:\n                adapter.close()\n                raise\n            diagnostic.progress(\"start\")\n            try:\n                session = lifetime.enter_context(adapter)\n            except Exception as error:\n                if workspace_fixture is not None:\n                    raise FixtureFailureError(\n                        {\n                            **failure_evidence(error),\n                            \"workspace_observation\": workspace_fixture.startup_failure(),\n                        }\n                    ) from error\n                raise\n        _emit({\"state\": \"progress\", \"stage\": \"fault\"})\n        fault_context = FaultFixture(session, setup) if setup != \"none\" else nullcontext()\n        with fault_context as fault:\n            _serve_session(session, fault, workspace_fixture)\n    _emit({\"closed\": True})\n    return 0\n\n\ndef _serve_session(session: Any, fault: Any, workspace_fixture: Any = None) -> None:\n    from scripts.native_slo_launcher_review import LauncherReviewFixture\n    from scripts.native_slo_mixed_server import MixedScenarioFixture\n    from scripts.native_slo_phases import PhaseProfiler\n\n    profiler: PhaseProfiler | None = None\n    mixed = MixedScenarioFixture(session)\n    launcher_review = LauncherReviewFixture(session)\n    posture: Any = None\n    try:\n        _emit(\n            {\n                \"state\": \"ready\",\n                \"root\": str(session.root),\n                \"workspace\": str(session.workspace),\n                \"guard_home\": str(session.guard_home),\n                \"port\": session.daemon.port,\n                \"auth_token\": session.daemon._server.auth_token,\n                \"readiness_ms\": session.readiness_ms,\n            }\n        )\n        while True:\n            raw = sys.stdin.buffer.readline(4097)\n            if not raw or len(raw) > 4096:\n                break\n            request = json.loads(raw)\n            operation = request.get(\"op\")\n            if operation == \"snapshot\":\n                # Only the bounded route counters are required by this fixture.\n                _emit({\"routes\": dict(route_counts(session.daemon._server.hook_worker.metrics.snapshot()))})\n            elif operation == \"case_before\" and fault is not None:\n                fault.before_case()\n                _emit({\"reset\": True})\n            elif operation == \"case_result\" and fault is not None:\n                _emit(fault.result())\n            elif operation == \"native_samples\":\n                _emit(_native_samples(session, int(request[\"count\"])))\n            elif operation == \"stop_resident\":\n                _emit({\"contained\": session.stop_resident()})\n            elif operation == \"native_overloads\":\n                _emit({\"count\": session.native_overload_count()})\n            elif operation == \"phases_start\" and profiler is None:\n                profiler = PhaseProfiler()\n                profiler.__enter__()\n                _emit({\"started\": True})\n            elif operation == \"phases_finish\" and profiler is not None:\n                profiler.__exit__(None, None, None)\n                _emit(profiler.report())\n                profiler = None\n            elif isinstance(operation, str) and operation.startswith(\"mixed_\"):\n                _emit(mixed.dispatch(operation, request))\n            elif isinstance(operation, str) and operation.startswith(\"launcher_approval_\"):\n                _emit(launcher_review.dispatch(operation, request))\n            elif isinstance(operation, str) and operation.startswith(\"posture_\"):\n                if posture is None:\n                    from scripts.native_slo_posture_server import PostureScenarioFixture\n\n                    posture = PostureScenarioFixture(session)\n                _emit(posture.dispatch(operation, request))\n            elif isinstance(operation, str) and operation.startswith(\"workspace_\") and workspace_fixture is not None:\n                _emit(workspace_fixture.dispatch(operation, request))\n            elif operation == \"close\":\n                if profiler is not None:\n                    profiler.__exit__(None, None, None)\n                break\n            else:\n                raise RuntimeError(\"unsupported daemon fixture operation\")\n    finally:\n        try:\n            launcher_review.close()\n        finally:\n            try:\n                if posture is not None:\n                    posture.close()\n            finally:\n                mixed.close()\n                _emit({\"state\": \"progress\", \"stage\": \"cleanup\"})\n\n\nif __name__ == \"__main__\":\n    try:\n        if len(sys.argv) not in {5, 6} or sys.argv[1] != \"--serve\":\n            raise ValueError(\"private daemon fixture invocation required\")\n        raise SystemExit(\n            _serve(\n                Path(sys.argv[2]).resolve(strict=True),\n                sys.argv[3],\n                sys.argv[4],\n                int(sys.argv[5]) if len(sys.argv) == 6 else None,\n            )\n        )\n    except Exception as error:\n        _emit({\"error\": \"fixture_failed\", \"detail\": failure_evidence(error)})\n        raise SystemExit(1) from None\n",
+      "blob": "380369f5c3a8c6918babc623ff1cf10296ccf71d",
+      "sha256": "03a53becf8e93ee2a317a502bca3dab7a1b6f9c393330aaff78e61a33061c581",
+      "bytes": 21357
+    }
+  },
+  "whole_file_inverse_edits": [
+    {
+      "path": "rust/crates/guard-runtime/Cargo.toml",
+      "before": "diagnostic-allocations = [\"dep:stats_alloc\"]\n",
+      "after": "diagnostic-allocations = [\"dep:stats_alloc\"]\n# Native phase collection and bounded export are opt-in diagnostics only.\ndiagnostic-phases = []\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "before": "mod native_hook_receipt;\n",
+      "after": "mod native_hook_receipt;\nmod native_phase_observation;\n#[cfg(all(feature = \"diagnostic-phases\", target_os = \"linux\"))]\nmod native_phase_sink;\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "before": "    if let Err(code) = run() {\n",
+      "after": "    if let Err(code) = crate::with_native_phase_export!(run()) {\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "    let stream = TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT))\n",
+      "after": "    let stream = crate::observe_native_phase!(LoopbackConnectHandle,\n        TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT)))\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "    let descriptor = socket(\n        AddressFamily::Unix,\n        SockType::Stream,\n        SockFlag::empty(),\n        None,\n    )\n",
+      "after": "    let descriptor = crate::observe_native_phase!(UnixSocketCreation, socket(\n        AddressFamily::Unix,\n        SockType::Stream,\n        SockFlag::empty(),\n        None,\n    ))\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "        connect(transport, endpoint, timeout, identity).map_err(ResidentClientError::fatal)?;",
+      "after": "        crate::observe_native_phase!(ClientConnect, connect(transport, endpoint, timeout, identity))\n            .map_err(ResidentClientError::fatal)?;"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "    let nonce = authenticate(&mut *stream, token, remaining)?;",
+      "after": "    let nonce = crate::observe_native_phase!(ClientAuthenticate,\n        authenticate(&mut *stream, token, remaining))?;"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "    let request_id = write_request(&mut *stream, token, &nonce, payload)?;",
+      "after": "    let request_id = crate::observe_native_phase!(ClientRequestWriteFlush,\n        write_request(&mut *stream, token, &nonce, payload))?;"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "before": "    read_committed_response(&mut *stream, &request_id)\n",
+      "after": "    crate::observe_native_phase!(ClientCommittedResponseRead,\n        read_committed_response(&mut *stream, &request_id))\n"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "before": "                crate::resident_protocol::evaluate_resident_bytes_started(\n                    &request,\n                    policy_store,\n                    pending.accepted_at,\n                )\n",
+      "after": "                crate::observe_native_phase!(ResidentEvaluate,\n                    crate::resident_protocol::evaluate_resident_bytes_started(\n                        &request,\n                        policy_store,\n                        pending.accepted_at,\n                    ))\n"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "        workspace_count: int | None = None,\n",
+      "after": "        workspace_count: int | None = None,\n        _native_phase_environment: Mapping[str, str] | None = None,\n"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "        self.workspace_count = workspace_count\n",
+      "after": "        self.workspace_count = workspace_count\n        self._native_phase_environment = _native_phase_environment\n"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "        clear_proof_environment(environment)\n",
+      "after": "        clear_proof_environment(environment)\n        if self._native_phase_environment is not None:\n            environment.update(self._native_phase_environment)\n"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "from typing import Any\n",
+      "after": "from typing import Any, cast\n",
+      "why": "Import identity casts for source-bound JSON control fields."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "        self._readers: list[threading.Thread] = []\n",
+      "after": "        self._readers: list[threading.Thread] = []\n        self.root: Path\n        self.workspace: Path\n        self.guard_home: Path\n        self.daemon: Any\n",
+      "why": "Annotation-only __init__ declarations create no runtime attribute values; the daemon is the existing dynamic SimpleNamespace proxy."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "self.readiness_ms = float(ready[\"readiness_ms\"])",
+      "after": "self.readiness_ms = float(cast(float, ready[\"readiness_ms\"]))",
+      "why": "The serving readiness record emits the original floating duration."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "port=int(ready[\"port\"]),",
+      "after": "port=int(cast(int, ready[\"port\"])),",
+      "why": "The serving daemon record emits its integer port."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "return int(self.control(\"native_overloads\")[\"count\"])",
+      "after": "return int(cast(int, self.control(\"native_overloads\")[\"count\"]))",
+      "why": "The existing native-overloads response emits its integer count."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "        from scripts.native_slo_workloads import configuration_text\n\n        configuration =",
+      "after": "        from scripts.native_slo_workloads import configuration_text\n        configuration =",
+      "why": "Whitespace-only: keep the lazy import adjacent to its sole immediate use."
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "before": "                    from scripts.native_slo_workspace_server import WorkspaceScenarioFixture\n\n                    workspace_fixture =",
+      "after": "                    from scripts.native_slo_workspace_server import WorkspaceScenarioFixture\n                    workspace_fixture =",
+      "why": "Whitespace-only: keep the lazy import adjacent to its sole immediate use."
+    }
+  ],
+  "source_files": {
+    "rust/crates/guard-runtime/Cargo.toml": {
+      "sha256": "7fde37d8b47a3d259f96880db19c39676da6a6af46f67c0718840df8a87eea7e",
+      "git_blob": "21a086a49d5863df525a4fbda09b8d21ed66bccc",
+      "bytes": 1421,
+      "physical_lines": 49
+    },
+    "rust/crates/guard-runtime/src/main.rs": {
+      "sha256": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8",
+      "git_blob": "e02848425bdeaabccc6f52acb6f5092b5fb79781",
+      "bytes": 14561,
+      "physical_lines": 362
+    },
+    "rust/crates/guard-runtime/src/resident_client.rs": {
+      "sha256": "b2ab01b07ca19ddb3dccb8c51cff04aaf8d834901d5c66effe086a8acdf57b3d",
+      "git_blob": "28a18f5551bcd1ec1b61e646a97c6aa8212a4c42",
+      "bytes": 13107,
+      "physical_lines": 350
+    },
+    "rust/crates/guard-runtime/src/resident_transport.rs": {
+      "sha256": "03f4b2c9a2830bad553a06bbce7b8523084f8ff736635f2bb823db09ec577762",
+      "git_blob": "987a1b5b7d467f532fb9e3faadd820a55fbe4858",
+      "bytes": 13398,
+      "physical_lines": 365
+    },
+    "rust/crates/guard-runtime/src/native_phase_observation.rs": {
+      "sha256": "cb023fe9aa8e8250653d0065cf065932d99b23fde3b3c918bae73403ab4844d5",
+      "git_blob": "992ff298e9091167230d7a9064d173261a4f095e",
+      "bytes": 10436,
+      "physical_lines": 314
+    },
+    "rust/crates/guard-runtime/src/native_phase_endpoint.rs": {
+      "sha256": "71a41e9e9a810d73773eb8caa074be49c49ff9ef10a11627b1aca8217bc333e6",
+      "git_blob": "97ce78b770936e2021c31812b558a1a4401f08dc",
+      "bytes": 4164,
+      "physical_lines": 124
+    },
+    "rust/crates/guard-runtime/src/native_phase_sink.rs": {
+      "sha256": "5f8b97dc8050b6531c086e2dbd9e0d44e1fc93f9e2f23ce6b40228d37f967e13",
+      "git_blob": "37ab9723d5ca5557a1cf37d414a4a0ec18f00a89",
+      "bytes": 5084,
+      "physical_lines": 161
+    },
+    "rust/crates/guard-runtime/src/native_phase_observation_tests.rs": {
+      "sha256": "0d43527eeb534538c2f586f9f9b82eca81fab0eb9e539171c6a75eb93ad39d0d",
+      "git_blob": "1d4a098aeaa0d99aa026410ce070dc2df07895fa",
+      "bytes": 3936,
+      "physical_lines": 88
+    },
+    "rust/crates/guard-runtime/src/native_phase_macro_tests.rs": {
+      "sha256": "e7d85fcc686b319475e920719cf1aef983e2b11339dcc2194edb7a622a7dee90",
+      "git_blob": "e6ecd7d6ed17906db919b2395776ab76ecdbb57f",
+      "bytes": 1665,
+      "physical_lines": 46
+    },
+    "rust/crates/guard-runtime/src/native_phase_sink_tests.rs": {
+      "sha256": "52d016f1fcafce9f4d6c0f5f54b65e569061e2046bddb44f7672ab71d9527c0b",
+      "git_blob": "99298b9e57fcc13a852898dc03d1c7be52ccdf73",
+      "bytes": 2664,
+      "physical_lines": 71
+    },
+    "rust/crates/guard-runtime/src/native_phase_endpoint_tests.rs": {
+      "sha256": "7edc2c685f33bead4f8d7ffa976df24eb413c3298558b93ac9c1a4be02a713eb",
+      "git_blob": "412a70095a4376a9a48a9ac4af08650e5e3ff015",
+      "bytes": 5183,
+      "physical_lines": 126
+    },
+    "scripts/native_slo_daemon_fixture.py": {
+      "sha256": "0354c4148ccc49fa9c9948f4b5846cfd240af78dbd0eafaf2a22d4506276985a",
+      "git_blob": "6b72621660108bc995c8db241cece8b09f45f6da",
+      "bytes": 21757,
+      "physical_lines": 500
+    },
+    "scripts/native_slo_rust_phase_schema.py": {
+      "sha256": "9f07461f7fbc743fdb0462d4f4f5dd135aaf21ec8fa4d6534d866ba8a4f8f84b",
+      "git_blob": "fa43eacb300635ce2ca332560bd7e586078bfe34",
+      "bytes": 7857,
+      "physical_lines": 216
+    },
+    "scripts/native_slo_rust_phase_process.py": {
+      "sha256": "e08d2bea4f4fe1bf1f0a39a86ed1bb16380f03e7f7aa38b84cab96523e465682",
+      "git_blob": "46332ce1d5ddf25a2a6744684266ea3ae25fa506",
+      "bytes": 6954,
+      "physical_lines": 189
+    },
+    "scripts/native_slo_rust_phase_receiver.py": {
+      "sha256": "6792e5bca67bc411e2937d3ac186f6d6c9577e43d47adf2f5dd9090d2f4b2685",
+      "git_blob": "82f430655bf4e989bbed0150d817c4117f6f2fc9",
+      "bytes": 13510,
+      "physical_lines": 299
+    },
+    "scripts/native_slo_rust_phase_run.py": {
+      "sha256": "902fb3c4a4f9b4908dce420d70f382cfb63db30d71e0c7e6329b17c4f1921a75",
+      "git_blob": "1fd643f3ef2f8593889111dc64e582f984731429",
+      "bytes": 6038,
+      "physical_lines": 153
+    },
+    "tests/native_slo_rust_phase_test_support.py": {
+      "sha256": "da1ba39737eb08a87568ff97c1864a1db2c410b4716d243064d4df8bf379b108",
+      "git_blob": "c28a47ae524dcb190f8a4a2bb018254a94202c19",
+      "bytes": 6849,
+      "physical_lines": 202
+    },
+    "tests/test_native_slo_rust_phase_schema.py": {
+      "sha256": "9022b3f56da60e5099e74c88ef657ebde0ef662c30091c19f3a1bab88e420597",
+      "git_blob": "0c50bc85293359fa219821b54cc3facb1086cac0",
+      "bytes": 3253,
+      "physical_lines": 84
+    },
+    "tests/test_native_slo_rust_phase_receiver.py": {
+      "sha256": "38d91dc364e33d4eadaa64529b4f4350c721c842ce1e5857a86f069434ca66e1",
+      "git_blob": "ba7b494261aff77a23fb2865d0fb26c36a4fa60f",
+      "bytes": 9405,
+      "physical_lines": 229
+    },
+    "tests/test_native_slo_rust_phase_run.py": {
+      "sha256": "cf9de5bfa3a72c505e0a1608caa9935a4436dfbc4e940f314af211f46b1f6d3b",
+      "git_blob": "9cf325b8fcdf69555e50bd62d2143d8e62bc880f",
+      "bytes": 7843,
+      "physical_lines": 175
+    },
+    "ci/native_runtime/native_phase_lifecycle_support.py": {
+      "sha256": "f17687ee36e326575040a20b70bcf85f950ea7c5e7c3e41274464e4e2212ab97",
+      "git_blob": "b9c05f3d2f4d665e870f4de060f85b75a3c2832e",
+      "bytes": 12821,
+      "physical_lines": 292
+    },
+    "ci/native_runtime/test_native_phase_lifecycle.py": {
+      "sha256": "756b4aed57953ab8c835895fb3a92411100b7562d2a83ec9a6ec7d2870ba221a",
+      "git_blob": "ee5477d610e5da3b26a7604893400b7eebf0adae",
+      "bytes": 9497,
+      "physical_lines": 251
+    },
+    "tests/test_native_slo_rust_phase_sender.py": {
+      "sha256": "ed07852ce4e06eeca6701fe50d88091980fb706a64f4de4effbfd8ad45018e22",
+      "git_blob": "05738fa54eae9e3130f8fbf37a186ff5e5f1d77e",
+      "bytes": 1523,
+      "physical_lines": 39
+    }
+  },
+  "source_packet": {
+    "blob": "080ccc9f0877e2ffce2ff5d6464b16dd610f20f1",
+    "bytes": 296104,
+    "sha256": "604f3f6b8545436d250b36122ba90a0200a2885b4d474c130e7a29673361ae3c"
+  },
+  "source_peers": [
+    {
+      "blob": "8bfd5dbb297127c63ddbacb21611112c45e60e2e",
+      "sha256": "29934ff975829cb3df613a1ad0ec1f86e8ae4b86bdec03a1a0f66bb9960d5240",
+      "bytes": 19277,
+      "scope": "exact491e9 Rust production and existing controls; all 11 Rust files remain unchanged in this packet"
+    },
+    {
+      "blob": "6ec774d3448c52b92b79056e791988023136459e",
+      "sha256": "797ff556c9b61f9d3fca1b7a85dc061c135233ce8f254b8f7db5617c6cd773ad",
+      "bytes": 13479,
+      "scope": "receiver and three Python-control source peer at7fb; flagged ancillary assertion is corrected explicitly"
+    },
+    {
+      "blob": "3490e941ce468253827a7492fa4c53f031349061",
+      "sha256": "a4aae9f9d7d82b59441d5997addd9971bff0d1972a6490d9cae795ec77d563b8",
+      "bytes": 74307
+    },
+    {
+      "blob": "964dfe9647219fbe36d55fbe5a7c781830c9ba58",
+      "sha256": "a636674057481523b93ea93b926307c30e63086bb471187f3356dde0c409258d",
+      "bytes": 32642,
+      "scope": "sender-only observed failure repair; existing broader source peers remain attributed in previous source packet"
+    }
+  ],
+  "claims": {
+    "original_runtime_response_deadline_shutdown_expression_inverses_preserved": true,
+    "explicit_new_fixture_type_identity_repairs": 7,
+    "all_original_rust_source_bytes_unchanged_since_first_attempt": true,
+    "actual_first_attempt_preserved": true,
+    "source_repair_and_formatter_bridges_require_fresh_execution": true,
+    "no66body_replay": true,
+    "qualification_complete": false
+  },
+  "original_source_sha": "7045fb862de4245cf7740fa16f36d4d511e78fc1",
+  "original_source_tree": "e8feeff99998434cab7ad852bbede3190fba948e",
+  "baseline_rust_and_native_slo_inputs": [
+    {
+      "path": "rust/Cargo.lock",
+      "mode": "100644",
+      "blob": "afa8eb8ec869ec9c9ade8b9ee21f6593cd9d363d"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "mode": "100644",
+      "blob": "a4782eafffedc8a1dfae59db03740fe74937b9df"
+    },
+    {
+      "path": "rust/crates/guard-command/Cargo.toml",
+      "mode": "100644",
+      "blob": "295799e0ea7b1667724431124cc4e6ed9c33d4a2"
+    },
+    {
+      "path": "rust/crates/guard-command/README.md",
+      "mode": "100644",
+      "blob": "3f22bdb7b3ef63379e38027e5bfad23840428bdc"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_argument_semantics.rs",
+      "mode": "100644",
+      "blob": "3429e9736571713c092ce211a0ace7abbbddb84e"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_ascii_comparison.rs",
+      "mode": "100644",
+      "blob": "78a49d3d3ea6a6e82f39ce89d61c5f987cde4087"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_common_cli_matcher_values.rs",
+      "mode": "100644",
+      "blob": "f9e0f6e4e7bebeb0e696f7154f084e8358081fd5"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_common_cli_matchers.rs",
+      "mode": "100644",
+      "blob": "19855437d6880e692203285fc2408cce998cbc4f"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_common_cli_matchers_tests.rs",
+      "mode": "100644",
+      "blob": "54748b56d3968c394ec0c42f6557e8a56798dd33"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility.rs",
+      "mode": "100644",
+      "blob": "4cc8d7ccdaa97ad49cb7a4e0bdae6dee04930431"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/catalog.rs",
+      "mode": "100644",
+      "blob": "60b572bfc1e99ea31a2882e8b5839d4b0d237c2f"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/domains.rs",
+      "mode": "100644",
+      "blob": "9b3e5b7dfa3c418ac4710fdfc143adf6a54f23d8"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/git.rs",
+      "mode": "100644",
+      "blob": "12d088858e8e37cc2e85b12a2f1f26e045009751"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/github.rs",
+      "mode": "100644",
+      "blob": "0f7c32c741bb0fee2ff9fcf98b58246033b4cac9"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/github_api.rs",
+      "mode": "100644",
+      "blob": "75fd2586532698a8c6bdbb6cbbcc06c6096ef31f"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_compatibility/github_options.rs",
+      "mode": "100644",
+      "blob": "ce73a55f9dd46a1d7ef3b4e7a9b0ef0674f74bd3"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_curl_operations.rs",
+      "mode": "100644",
+      "blob": "17d2e5d2b06238712eefb90625d262a49c7eca7e"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_curl_targets.rs",
+      "mode": "100644",
+      "blob": "97fafa6a058594850a46d294c15474a58f5c64f8"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_database_matchers.rs",
+      "mode": "100644",
+      "blob": "36a2329d05e266bb10d98a7e27a8a590e36b0002"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_operand_matchers.rs",
+      "mode": "100644",
+      "blob": "3a95f0920c52829b7a7b2cbfe64f90f0bd98e2f8"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_option_parsing.rs",
+      "mode": "100644",
+      "blob": "1088dee6717e4beb216a1d62de6d71e5730589f5"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_option_parsing_tests.rs",
+      "mode": "100644",
+      "blob": "0a6e1fb6998700cf5a7780b6bafe13ccc978a2e4"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_option_unicode.rs",
+      "mode": "100644",
+      "blob": "b8681e19bce10fa450c6dbd8e3f5be8ded30bda7"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_reviewed_literal.rs",
+      "mode": "100644",
+      "blob": "8fafbb1679e4e8afd920f0688e7269ded51922cc"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_specialized_matchers.rs",
+      "mode": "100644",
+      "blob": "a0a2df1f55611470480b4c3fa258f5394bc8e485"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_specialized_matchers_tests.rs",
+      "mode": "100644",
+      "blob": "1053d888b8d5bc3b0316c8a17e01fd901543f494"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_specialized_unicode_tests.rs",
+      "mode": "100644",
+      "blob": "5d0119578814648f383681e0db48d36560bfcbdf"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_structured_matchers.rs",
+      "mode": "100644",
+      "blob": "7a08e957f0d71091546c0f39fac8d300faab75a3"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_structured_matchers/grammar.rs",
+      "mode": "100644",
+      "blob": "89264a903afa81e38566bb1ae6a0ec66a0505764"
+    },
+    {
+      "path": "rust/crates/guard-command/src/command_structured_matchers/tests.rs",
+      "mode": "100644",
+      "blob": "2924e54a3d2d62b790789cb26e5f69d3cfffa2ea"
+    },
+    {
+      "path": "rust/crates/guard-command/src/executable_flag_contract.rs",
+      "mode": "100644",
+      "blob": "442c041f03ae873a59ab869147f081bfcc5eb2eb"
+    },
+    {
+      "path": "rust/crates/guard-command/src/lib.rs",
+      "mode": "100644",
+      "blob": "f6573c3eee41722a47059c2bc48942964bfc85fa"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_control_projection.rs",
+      "mode": "100644",
+      "blob": "69c451884f7bf755a489e9a8c479e98472db71fd"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_control_projection_tests.rs",
+      "mode": "100644",
+      "blob": "a05342d3cfcf8864125ad0bbd6d590f52f17be77"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_controls.rs",
+      "mode": "100644",
+      "blob": "9ffd3ccbb5f92b1616798f0c4497f94631ac0dde"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program.rs",
+      "mode": "100644",
+      "blob": "ec2dbab910572eac8002a9322dc2a3bb6d7855dc"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_admission.rs",
+      "mode": "100644",
+      "blob": "e6eeb233ce13d723627fd16141421c358aee9ce9"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_bench.rs",
+      "mode": "100644",
+      "blob": "30e564c9d14a719639ca90c6f21cf028ba1e50aa"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_compile.rs",
+      "mode": "100644",
+      "blob": "9bcfb3ccfe6000e508062dab3432083339038247"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_evaluation.rs",
+      "mode": "100644",
+      "blob": "e979c3ab7731812a7d15e379f16043a7a9bdb211"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_matrix.rs",
+      "mode": "100644",
+      "blob": "4bd10b14f67cdd050f6412562cc9558d42d0135b"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_observations.rs",
+      "mode": "100644",
+      "blob": "6d6aa1028de740be7c15109ca45022b5ca9fc19e"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_tests.rs",
+      "mode": "100644",
+      "blob": "b88c2682f902e9ab400301753029eeb29af1aa6c"
+    },
+    {
+      "path": "rust/crates/guard-command/src/native_command_program_wire.rs",
+      "mode": "100644",
+      "blob": "69eba65e6e89691d86c036f845bc8eaa243cc227"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool.rs",
+      "mode": "100644",
+      "blob": "4003226ed7923a692f0a42b70208549e2040c5b3"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/generic.rs",
+      "mode": "100644",
+      "blob": "96be2e9a1e5d5b071bc1f094456cc65fc31dec31"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/generic_extract.rs",
+      "mode": "100644",
+      "blob": "c11029b9f33ca0b24f2d661df86576f0d90e8132"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/generic_result.rs",
+      "mode": "100644",
+      "blob": "31db85a8f223cf265461fd2efdaf01e540efaa0e"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/search.rs",
+      "mode": "100644",
+      "blob": "c48b7160ca724cb27121dd47bf79f6656ffacb16"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/search/glob_class.rs",
+      "mode": "100644",
+      "blob": "b45baad1ab7d383c3ace3731c95742bb09f09e3a"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/search/hint.rs",
+      "mode": "100644",
+      "blob": "3f994613afb94cbee93dd3c1c842941784e9a161"
+    },
+    {
+      "path": "rust/crates/guard-command/src/pretool/search/options.rs",
+      "mode": "100644",
+      "blob": "283005015ecc171368375e97ccbece9f0e22abbb"
+    },
+    {
+      "path": "rust/crates/guard-command/testdata/generate_remaining_matcher_fixtures.py",
+      "mode": "100644",
+      "blob": "1ee5700a4dea01a8e84a495de5eca103d89132ac"
+    },
+    {
+      "path": "rust/crates/guard-command/testdata/generate_specialized_fixtures.py",
+      "mode": "100644",
+      "blob": "c26fb9503b574d321bec6c7025fd45a8a4b0cefe"
+    },
+    {
+      "path": "rust/crates/guard-command/testdata/remaining-matchers.md",
+      "mode": "100644",
+      "blob": "add3569374b14701154d591506eab1e1df38f056"
+    },
+    {
+      "path": "rust/crates/guard-command/testdata/remaining-matchers.v1.json",
+      "mode": "100644",
+      "blob": "54e074dd042b43bfc9a564e16c05ae6594b8dcb9"
+    },
+    {
+      "path": "rust/crates/guard-command/testdata/specialized-matchers.v1.json",
+      "mode": "100644",
+      "blob": "5d8de604ac13075f68094bcaf0adcb56166c0093"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/command_compatibility.rs",
+      "mode": "100644",
+      "blob": "f7a99ca8a7dea8d7cd1f09ec0eac8cb3422aa22d"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/fixtures/command-option-parsing-v1.json",
+      "mode": "100644",
+      "blob": "74ef42816904f4f01fa332d4f0745559df813220"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/fixtures/common-cli-matchers-v1.json",
+      "mode": "100644",
+      "blob": "e04fba6255588f764c93cd41d903be007fe64758"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/fixtures/native-command-compatibility-v1.json",
+      "mode": "100644",
+      "blob": "b90efe20ca15370bc338d7407f77196031a9f965"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/fixtures/native-command-observations-v1.json",
+      "mode": "100644",
+      "blob": "595fb26f62f4dfa327dc9a9606f02745a595209b"
+    },
+    {
+      "path": "rust/crates/guard-command/tests/pretool_generic.rs",
+      "mode": "100644",
+      "blob": "00f3fb80857f59fdf4de398e8ecbfd77c5219a85"
+    },
+    {
+      "path": "rust/crates/guard-contracts/Cargo.toml",
+      "mode": "100644",
+      "blob": "630b28dd34f3afca4330c69ec7544c4473015338"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/approval_contracts.rs",
+      "mode": "100644",
+      "blob": "29ca0aa1a36e3b38783745df05118490c35d8448"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/approval_contracts_lifecycle_errors.rs",
+      "mode": "100644",
+      "blob": "03948f9cc8caf9c47409ea8096df909980258166"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/approval_v4_contracts.rs",
+      "mode": "100644",
+      "blob": "bb004f00ab0a537733924919a2900b936de660dd"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/lib.rs",
+      "mode": "100644",
+      "blob": "ff30c1e2ec368e20e9259a62f060a8b687f50617"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/native_command_controls.rs",
+      "mode": "100644",
+      "blob": "2ad35f2919619ba3239c9e5df99074695b5dc842"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/native_command_observations.rs",
+      "mode": "100644",
+      "blob": "05a52b63fa331a86d22a7e0192c06d9c47916aef"
+    },
+    {
+      "path": "rust/crates/guard-contracts/src/native_hook_receipt.rs",
+      "mode": "100644",
+      "blob": "7e18a9fa769651526232964ccfcb0af41e341d24"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/Cargo.toml",
+      "mode": "100644",
+      "blob": "df93bbf654478bcc0ed34653a2ccb011c8c11b41"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/src/lib.rs",
+      "mode": "100644",
+      "blob": "e5e781f616821aa4c775ad037f9b44ecff277c3f"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/src/output.rs",
+      "mode": "100644",
+      "blob": "4474ab3a83365d4edea43f4a439af606bd95f4d9"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/src/output_reference_tests.rs",
+      "mode": "100644",
+      "blob": "18c124d379ec15589ad74cbb13073824f56aa103"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/tests/decision_io.rs",
+      "mode": "100644",
+      "blob": "e5908c8945ccca37d21fc95e96c1519a784f2bf2"
+    },
+    {
+      "path": "rust/crates/guard-hook-core/tests/windows_source.rs",
+      "mode": "100644",
+      "blob": "bc16c9d3446fecd3496f4f7a3ab0fa346bb67055"
+    },
+    {
+      "path": "rust/crates/guard-offline-regex-pilot/Cargo.toml",
+      "mode": "100644",
+      "blob": "288cd9284fb901859b098dc12236e7b850bea29d"
+    },
+    {
+      "path": "rust/crates/guard-offline-regex-pilot/src/main.rs",
+      "mode": "100644",
+      "blob": "a5cb5156138f51b45e111add5adde647205e94db"
+    },
+    {
+      "path": "rust/crates/guard-policy-snapshot/Cargo.toml",
+      "mode": "100644",
+      "blob": "0176a420147e59f33691bcc753f9d4b6ec612034"
+    },
+    {
+      "path": "rust/crates/guard-policy-snapshot/src/lib.rs",
+      "mode": "100644",
+      "blob": "420fdf62d5291a722ed5304bcf54f49f7dbb5bc3"
+    },
+    {
+      "path": "rust/crates/guard-policy-snapshot/src/policy_snapshot_canonical.rs",
+      "mode": "100644",
+      "blob": "b35def7c5e2efc5f9dcdb33847b6bb6ea5619d4d"
+    },
+    {
+      "path": "rust/crates/guard-policy-snapshot/src/policy_snapshot_crypto.rs",
+      "mode": "100644",
+      "blob": "238fab4043d737ca45cb9cceb3d67ae40b908cb1"
+    },
+    {
+      "path": "rust/crates/guard-policy-snapshot/src/policy_snapshot_tests.rs",
+      "mode": "100644",
+      "blob": "fd33bbd5fa6fb37191a8650d0268d0cd4d6d57d4"
+    },
+    {
+      "path": "rust/crates/guard-rule-contract/Cargo.toml",
+      "mode": "100644",
+      "blob": "7184f47b0a8f3f666af2a1521fdc04193ee0c9e7"
+    },
+    {
+      "path": "rust/crates/guard-rule-contract/src/lib.rs",
+      "mode": "100644",
+      "blob": "401d51d2558657ffa3e6e453420f24e263f61101"
+    },
+    {
+      "path": "rust/crates/guard-rules/Cargo.toml",
+      "mode": "100644",
+      "blob": "aea2ec8118b20b439621baf6aba45bd9adc80624"
+    },
+    {
+      "path": "rust/crates/guard-rules/src/lib.rs",
+      "mode": "100644",
+      "blob": "b2b167c25b8e7449404051c0bf3893825052804d"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/Cargo.toml",
+      "mode": "100644",
+      "blob": "c0429e8648fd29bde14a5600f002aa0366c9d0c5"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/directory_binding.rs",
+      "mode": "100644",
+      "blob": "be876a57d1f799db97f0d1c1eff21e97ab9c427d"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/job_retirement.rs",
+      "mode": "100644",
+      "blob": "2c22425a6e391a2e83966593d53f0adb2d311dfd"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/job_retirement_tests.rs",
+      "mode": "100644",
+      "blob": "1b1d57e53de4cde970deddf8317e47e48bfe69ca"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/lib.rs",
+      "mode": "100644",
+      "blob": "7588ff583a65b22cd3fe90ddf3c7fe0717cae939"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/private_files.rs",
+      "mode": "100644",
+      "blob": "3f6a95599d2768f0bb59c457ec674bae9c415dcd"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/process_cleanup.rs",
+      "mode": "100644",
+      "blob": "ed2818e2d1efe30578dd3acf2c76ceb3c799ccfb"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/process_cleanup_tests.rs",
+      "mode": "100644",
+      "blob": "602a65051ebf20b30454b5d7c7a2b103f1a4c935"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/process_lifecycle.rs",
+      "mode": "100644",
+      "blob": "69e2ecd2a6d0e41c2b9c5e0409451dd709197b08"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/source_drive_alias_tests.rs",
+      "mode": "100644",
+      "blob": "963462ddcd78741612063412ed14d7fee2349151"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/source_files.rs",
+      "mode": "100644",
+      "blob": "131330049e25d9cf25eb60f53227e7745553cda3"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/source_files_tests.rs",
+      "mode": "100644",
+      "blob": "516fab5b935d1f7763ab9c32df85cbd333b25fcb"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/source_relative_open.rs",
+      "mode": "100644",
+      "blob": "666aba2e694f5d5ff59486a01bdba0621a74bab6"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/spawn_setup.rs",
+      "mode": "100644",
+      "blob": "aaac0ed51bd3800738e750e4b3fbad53451f6e28"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/spawn_setup_tests.rs",
+      "mode": "100644",
+      "blob": "e6a3d303a7d7012443b5a030f1dee15508fe5f76"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/windows.rs",
+      "mode": "100644",
+      "blob": "9d117bc6482bfa6cfd7cdfd3ffd1389bbdd79254"
+    },
+    {
+      "path": "rust/crates/guard-runtime/Cargo.toml",
+      "mode": "100644",
+      "blob": "7968fbbcca08d800dc99a897d74f3f5b25d84d45"
+    },
+    {
+      "path": "rust/crates/guard-runtime/PERFORMANCE.md",
+      "mode": "100644",
+      "blob": "70b0a43017655343be64bec34145df66b69c9d28"
+    },
+    {
+      "path": "rust/crates/guard-runtime/examples/package_lock_pilot.rs",
+      "mode": "100644",
+      "blob": "52422928100816ac1c265fe9873fb13faa97d021"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval.rs",
+      "mode": "100644",
+      "blob": "4adb06e3b9315f7fd7fdef15bc70ad623b3e8c59"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_authority.rs",
+      "mode": "100644",
+      "blob": "49261bb9dfac1a340e1a077717dd04376a4eff11"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_authority_tests.rs",
+      "mode": "100644",
+      "blob": "1b8b5de4f2726c92f039ceacc752688c5a0fdfd8"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_context.rs",
+      "mode": "100644",
+      "blob": "f8293cfa9e5b23d19d0845046f0e448595aa1a3b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_enrollment.rs",
+      "mode": "100644",
+      "blob": "54448b288b6ae951d8380728319ffbae0ec9c6a0"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_enrollment_platform.rs",
+      "mode": "100644",
+      "blob": "0b745ea78b7599ecd7ef26296dba3a83e6f645d1"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_replay_memory.rs",
+      "mode": "100644",
+      "blob": "91510e4fd6da72e8a8e88a5b26a17228c3b4d937"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_replay_memory_transition_tests.rs",
+      "mode": "100644",
+      "blob": "42f58f906c8c38e7ed163d348c314c1d2f7d9220"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v3_lifecycle_tests.rs",
+      "mode": "100644",
+      "blob": "1eaa9ed1dc3bb10a7f32be42b17eaa9e46a00c0c"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v3_tests.rs",
+      "mode": "100644",
+      "blob": "74f7c12557734ec0877835fef5714225cb00e5de"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4.rs",
+      "mode": "100644",
+      "blob": "f4380edde9e5ec4f3a25a670263373673a238691"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_assertion_state.rs",
+      "mode": "100644",
+      "blob": "ca1ad290a3cf2d61057c91b09404c4e49a1fdfd3"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_authority.rs",
+      "mode": "100644",
+      "blob": "2e1b1e65471eac53963556ffbb6db2dc69524831"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_authority_tests.rs",
+      "mode": "100644",
+      "blob": "db308cc65db909a16c5a950f8ac8868210dacc31"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_crypto.rs",
+      "mode": "100644",
+      "blob": "881246f4c19fbe0bb1606e3844bec36732d0d48a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_enrollment.rs",
+      "mode": "100644",
+      "blob": "65090de20065bc4bfa96cbdc633f0fe62bdae66b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_negative_tests.rs",
+      "mode": "100644",
+      "blob": "ff723446f49e7d27b5d74e95c64c36f7b25c0be1"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_secure_state.rs",
+      "mode": "100644",
+      "blob": "85851ab088f61ff548ed248a93116ca983cddb3c"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/approval_v4_tests.rs",
+      "mode": "100644",
+      "blob": "f58848caf5aba8b94017e2dce5fef63ad809a88a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot.rs",
+      "mode": "100644",
+      "blob": "1041e96a43b3c6fb7ab95d8b926a0dbbb2eeb8e0"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_auth.rs",
+      "mode": "100644",
+      "blob": "b0c9151f1af6b425e1d54abce2e5668403032740"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_files.rs",
+      "mode": "100644",
+      "blob": "bcbdb454973eae4b7346438d48b9187e41c4e16c"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_files_tests.rs",
+      "mode": "100644",
+      "blob": "8225cd92d3d166e3395da1de9e948f88e0f93b9b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_http.rs",
+      "mode": "100644",
+      "blob": "864ff2ace992427861bca563d26a3085f2ae1393"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_http_tests.rs",
+      "mode": "100644",
+      "blob": "bb1932feed6ee07adb11dbf7d885dee72fa6b66f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_identity.rs",
+      "mode": "100644",
+      "blob": "1f70ec5815821d2ec42f9cbbdc54e826d080fb8e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_linux.rs",
+      "mode": "100644",
+      "blob": "ae74c77ac30599feb7dd95598e008262376712b2"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_stdin.rs",
+      "mode": "100644",
+      "blob": "d0adb53dbd6794b5de00fd7291d72762240f718b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/claude_launcher_pilot_tests.rs",
+      "mode": "100644",
+      "blob": "bcc2cbf8a8f56acc5d96deb5358855538597cf89"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge.rs",
+      "mode": "100644",
+      "blob": "9c0b90a4790d3a7b0134c126270cc2d486d2b33e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_allocation_diagnostic.rs",
+      "mode": "100644",
+      "blob": "c192e32e54cbd45dbf35f24a07fb9ad208cfb032"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_identity.rs",
+      "mode": "100644",
+      "blob": "c1d839d353784df8798b54c9bd36648b90924fa6"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_identity_tests.rs",
+      "mode": "100644",
+      "blob": "02166a09c053405cd5e325a562123dd8535ae03e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_serialization.rs",
+      "mode": "100644",
+      "blob": "466df9a8193c82edd4562f9aab7b23b468dff394"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_serialization_tests.rs",
+      "mode": "100644",
+      "blob": "ea2f81242941144be2783d3d5633409174bb69b0"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_tests.rs",
+      "mode": "100644",
+      "blob": "89c9df4d2c897c50d91d2dd786aa15d3cf17e1f2"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/hardening.rs",
+      "mode": "100644",
+      "blob": "a0e7ddee2912256af0476b26cb1ea3c79ae82ae0"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "mode": "100644",
+      "blob": "45b58d979b471bfbe73dfebd4cbf56a6783912db"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "mode": "100644",
+      "blob": "ccbbc7df454768fac17173f80a34fb01d30ba8a1"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_client_stream.rs",
+      "mode": "100644",
+      "blob": "5fd98c29158ad4d7980bd321de2016aa6571b58e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "mode": "100644",
+      "blob": "b6eff7320b62faad4e9fd9ef50e917e844aba449"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_lease.rs",
+      "mode": "100644",
+      "blob": "07adb7c5de4b1ea09f16aa55b4e9691cf256d680"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_lease_identity.rs",
+      "mode": "100644",
+      "blob": "4ce03e615f499f2beacadd5480371f625dbf680a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_lease_tests.rs",
+      "mode": "100644",
+      "blob": "e1692066eb571a73217d2491c47873e739c3343e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_owner_lock.rs",
+      "mode": "100644",
+      "blob": "93eb4a4453651613c9b821069c2659b350f91086"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_stop.rs",
+      "mode": "100644",
+      "blob": "a2daa0cd64a2b195f7c74d55b36dd9f5000db962"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_supervisor.rs",
+      "mode": "100644",
+      "blob": "042ab1ac25a4da3aff2fd5e3b4341ed2e457a631"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_tests.rs",
+      "mode": "100644",
+      "blob": "29bf81c31219d1526243a851b6acf35c7f5a6c4b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_transport.rs",
+      "mode": "100644",
+      "blob": "b15266d6c8f18962e65e4783b9547fd21f1f262a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_windows.rs",
+      "mode": "100644",
+      "blob": "243e00c02bb62bde0f9d9e99dda427370f80315b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_windows_handoff.rs",
+      "mode": "100644",
+      "blob": "ddc92c89eebe00bf72d99349a66d98bc59712bc1"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_windows_wait_tests.rs",
+      "mode": "100644",
+      "blob": "aabb1558ef0d0db3afabbf739ca29861efefb28f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_allocation_diagnostic.rs",
+      "mode": "100644",
+      "blob": "58680e3204ff635a9c006d07607fae012ab91fdd"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_hook_receipt.rs",
+      "mode": "100644",
+      "blob": "e1488ae0da22ed86577925d1d4e6513cf42c51de"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/oneshot.rs",
+      "mode": "100644",
+      "blob": "0d8b81c839767842d6ed6e00f2192b649d347c49"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement.rs",
+      "mode": "100644",
+      "blob": "2966ea915a4366835c0a0f6d02466be5d66bf769"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_admission.rs",
+      "mode": "100644",
+      "blob": "ff550151e4315854a54edcd6b524b012b7d2ac0f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_diagnostic.rs",
+      "mode": "100644",
+      "blob": "0fc64d4a2e37254ccdf03dc62b07251b94cb33d5"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_facts.rs",
+      "mode": "100644",
+      "blob": "f7cd00ba86aaea78e9767eda2b22b23253d8da5b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_facts_tools.rs",
+      "mode": "100644",
+      "blob": "ddc9928c23336c55e76ac831b813d79702786eaa"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_policy.rs",
+      "mode": "100644",
+      "blob": "bdb731b0331f0a09e976192d386b1c18983c37f9"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement_tests.rs",
+      "mode": "100644",
+      "blob": "59aaff2f8d126e584cea9aa3dd9c044829f4b3f6"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store.rs",
+      "mode": "100644",
+      "blob": "5aee3e804afcf07972677cdfd371c6a82fbd9860"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_approval.rs",
+      "mode": "100644",
+      "blob": "5a42d20d68dc7f109f1e5731b7d0a6376984bf83"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_authority.rs",
+      "mode": "100644",
+      "blob": "7c690405f6a9544b42e2306ef9df26555d1cce63"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_authority_tests.rs",
+      "mode": "100644",
+      "blob": "d134b51ebdedd8a78f94e0980e261d6007ab1495"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_command_authority.rs",
+      "mode": "100644",
+      "blob": "7ab3307f978f5b2607aa3655587cc188c1c70a6a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_command_authority_tests.rs",
+      "mode": "100644",
+      "blob": "b89e7eaa5e0f610c3ca94498f77effb20dd356fc"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_command_floor.rs",
+      "mode": "100644",
+      "blob": "b38dbec46cec97e51b376e7f6edfa0603e0b3632"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_command_floor_tests.rs",
+      "mode": "100644",
+      "blob": "5afeb37c5b9352d2c504202e1a3378a7f7aeb0a3"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_fault_tests.rs",
+      "mode": "100644",
+      "blob": "822781b16a87ca3450a6b6fd6c58039636eeaa07"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_fixture_tests.rs",
+      "mode": "100644",
+      "blob": "c8abe21a947dd85469aab63a7295a991419db5a8"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_migration.rs",
+      "mode": "100644",
+      "blob": "51d2b0b9c1610b3adf459581c88dd7ce5ec34b91"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_migration_tests.rs",
+      "mode": "100644",
+      "blob": "8fb862cb0107747494698aa70d33208b00220445"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_persistence.rs",
+      "mode": "100644",
+      "blob": "d6ea11934c5c061e915761c8a308530cc24d954e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_request.rs",
+      "mode": "100644",
+      "blob": "60bc705c5e7aa724e8bb0e2102e617c08a20138f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_tests.rs",
+      "mode": "100644",
+      "blob": "3365d58b8f7480a5e077bf042816efb608ec1f7c"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_store_validation.rs",
+      "mode": "100644",
+      "blob": "dd1868a2b968c215262b079240c8914c3cf5ae7d"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "mode": "100644",
+      "blob": "aab7929cd152466aa7199b2176c61e0190ca8106"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_tests.rs",
+      "mode": "100644",
+      "blob": "24c9e2f6b48f909bb99daf7dbb975bf6e0a7ff3f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_process_identity.rs",
+      "mode": "100644",
+      "blob": "1f3acbd8bb84a0b0cad1f95f100b680230912007"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_protocol.rs",
+      "mode": "100644",
+      "blob": "6372d238b51397703f066bc8632e96d418eac8da"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_restart_budget.rs",
+      "mode": "100644",
+      "blob": "7cad4e5decf27021dbce501a9dc135451d54674a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_lock.rs",
+      "mode": "100644",
+      "blob": "22c90a17ad5f0ccb5d45714454190e7d757ef960"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state.rs",
+      "mode": "100644",
+      "blob": "c0169a949dd2acff5a96de27555fce1cdbdc7fd9"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+      "mode": "100644",
+      "blob": "102457cbb84f862af8643902295462c7479e2a48"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_encoding.rs",
+      "mode": "100644",
+      "blob": "c4338ed95a25a80d3ec222c4370cb6a9558d7ab5"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_files.rs",
+      "mode": "100644",
+      "blob": "ef1f27e84ad660d701a6f696f395d3e2d5c796f9"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_identity.rs",
+      "mode": "100644",
+      "blob": "6e87e77d9d9dba1534d60346e2b5e41119bd2d96"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_retirement.rs",
+      "mode": "100644",
+      "blob": "b61417982ba2e3ec5c23eeee4858475ffe0c41d6"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_tests.rs",
+      "mode": "100644",
+      "blob": "5eba30d9010420ffc204d4d1b6155053c8126617"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_windows.rs",
+      "mode": "100644",
+      "blob": "737b5f32b627007a88a1f919a45790578fb31425"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "mode": "100644",
+      "blob": "aa200d9df27cd059067813e4ce9f173650b9b08d"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport_service.rs",
+      "mode": "100644",
+      "blob": "20f8cfe319563e37efcba223c1e6d7dea18ca87b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/strict_json.rs",
+      "mode": "100644",
+      "blob": "f95318dee95136b83369550a6cae2c1d06495433"
+    },
+    {
+      "path": "rust/crates/guard-scanner/Cargo.toml",
+      "mode": "100644",
+      "blob": "ab1dcbfedfc09df1a4002a5c81a0e8fbbc311246"
+    },
+    {
+      "path": "rust/crates/guard-scanner/examples/mcp_text_facts_pilot.rs",
+      "mode": "100644",
+      "blob": "64476b41cb6b743b52a93ce740779ac60237399b"
+    },
+    {
+      "path": "rust/crates/guard-scanner/src/lib.rs",
+      "mode": "100644",
+      "blob": "5a0b0f5035ba6f83b16ff324b3423b974e689b0b"
+    },
+    {
+      "path": "rust/crates/guard-scanner/src/prefilter_bench_tests.rs",
+      "mode": "100644",
+      "blob": "e2b9b073670bdfda655980c08051fcaa26276d8b"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/Cargo.toml",
+      "mode": "100644",
+      "blob": "2912079f733c5cdb323b28b40a7c43c5ce2f5e92"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/src/lib.rs",
+      "mode": "100644",
+      "blob": "3064778cc1020aa3da9f4539ddd32bbf36d2df07"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/src/lib_tests.rs",
+      "mode": "100644",
+      "blob": "0d9cebc8c6d7ac53072a7fc6cdfdb9de0c3784f9"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/src/secure_open.rs",
+      "mode": "100644",
+      "blob": "68c9333e27fc7549687b786a3e8fa45cb6ce077b"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/src/source_path.rs",
+      "mode": "100644",
+      "blob": "52f1c58bcee8b92c65f021a39b2039fd46e6a6df"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/src/windows.rs",
+      "mode": "100644",
+      "blob": "e101ccfdd6fdeefd47981bbbcb9a7feec714d106"
+    },
+    {
+      "path": "rust/crates/guard-secure-fs/tests/decision_io.rs",
+      "mode": "100644",
+      "blob": "1826749f2541fd34e5e973f5b039de339c42db7e"
+    },
+    {
+      "path": "rust/rust-toolchain.toml",
+      "mode": "100644",
+      "blob": "079e4082dbfc7a499fa02af05f7f16e875c13ecb"
+    },
+    {
+      "path": "scripts/native_slo_acceptance.py",
+      "mode": "100644",
+      "blob": "781e7ca43c6df9e75c748ca5908f84b427dc41ae"
+    },
+    {
+      "path": "scripts/native_slo_adapter.py",
+      "mode": "100644",
+      "blob": "b8a4146b2ea4859db27b8f3d5e1a967b1a05cd44"
+    },
+    {
+      "path": "scripts/native_slo_approval_fault_fixture.py",
+      "mode": "100644",
+      "blob": "b05e0e40cd5aaf489d6db1354493fc800c09dc8e"
+    },
+    {
+      "path": "scripts/native_slo_artifact.py",
+      "mode": "100644",
+      "blob": "06944719f554590466e4a4819159508554320279"
+    },
+    {
+      "path": "scripts/native_slo_baseline.py",
+      "mode": "100644",
+      "blob": "91071a65e7c1b09aaa7206f3b30ce5624fcde71b"
+    },
+    {
+      "path": "scripts/native_slo_batch.py",
+      "mode": "100644",
+      "blob": "23f1f856a8721b44c9902a011d2e49d6c3c09a51"
+    },
+    {
+      "path": "scripts/native_slo_capacity.py",
+      "mode": "100644",
+      "blob": "ce2a8a1353529e5bfc72fcdce9118ee912cd6a06"
+    },
+    {
+      "path": "scripts/native_slo_capacity_diagnostic.py",
+      "mode": "100644",
+      "blob": "be1d956af13fa993e4518357692382d5cae858b9"
+    },
+    {
+      "path": "scripts/native_slo_collector_binding.py",
+      "mode": "100644",
+      "blob": "58c4cb714dfc9967e129d3d856087aee9ef24cff"
+    },
+    {
+      "path": "scripts/native_slo_command_fixture.py",
+      "mode": "100644",
+      "blob": "f0a812db41380ce712a5356b7e1dae412d908861"
+    },
+    {
+      "path": "scripts/native_slo_config_observer.py",
+      "mode": "100644",
+      "blob": "e36c436d0ba1db483a18152fb434fa36784b97f3"
+    },
+    {
+      "path": "scripts/native_slo_contract.py",
+      "mode": "100644",
+      "blob": "b39fa73328ac2dd0f1c19d2875d9b25d9b79d4a3"
+    },
+    {
+      "path": "scripts/native_slo_corpus_identity.py",
+      "mode": "100644",
+      "blob": "a7cd447170417d9245855fe91f7bae7d82d5f877"
+    },
+    {
+      "path": "scripts/native_slo_corpus_run.py",
+      "mode": "100644",
+      "blob": "413de49cbd931d241066997bfc100783e561c248"
+    },
+    {
+      "path": "scripts/native_slo_daemon_fixture.py",
+      "mode": "100644",
+      "blob": "380369f5c3a8c6918babc623ff1cf10296ccf71d"
+    },
+    {
+      "path": "scripts/native_slo_edge_diagnostic.py",
+      "mode": "100644",
+      "blob": "4cf362ba2901e182027a7f89cc0330cbdfcbe51e"
+    },
+    {
+      "path": "scripts/native_slo_expiry.py",
+      "mode": "100644",
+      "blob": "633b7decf4fa2269b36939bc4c84081e68668f7a"
+    },
+    {
+      "path": "scripts/native_slo_failure.py",
+      "mode": "100644",
+      "blob": "796d3f9bdb8ccb3ed3024981083ba498ecb93576"
+    },
+    {
+      "path": "scripts/native_slo_faults.py",
+      "mode": "100644",
+      "blob": "0ae50328cad0d311b58f7467a09f3da878d9e2f8"
+    },
+    {
+      "path": "scripts/native_slo_launcher.py",
+      "mode": "100644",
+      "blob": "59a02c231e8ef096f74476b42f25ba254bfd592e"
+    },
+    {
+      "path": "scripts/native_slo_launcher_approval.py",
+      "mode": "100644",
+      "blob": "5eab75e98e9e5a231ff78bbc572d7e2e8b4a49e7"
+    },
+    {
+      "path": "scripts/native_slo_launcher_corpus.py",
+      "mode": "100644",
+      "blob": "867e7444d70962d375036fc90470e678af0231f2"
+    },
+    {
+      "path": "scripts/native_slo_launcher_input.py",
+      "mode": "100644",
+      "blob": "8c3bc8ad22d7891751a6441198364adb59ce56e5"
+    },
+    {
+      "path": "scripts/native_slo_launcher_review.py",
+      "mode": "100644",
+      "blob": "a1eb49bbdf69153877e9df01a5951063c9622916"
+    },
+    {
+      "path": "scripts/native_slo_load_profiles.py",
+      "mode": "100644",
+      "blob": "fac4d47258df4e0487b57527e2b260a0611cf062"
+    },
+    {
+      "path": "scripts/native_slo_mixed.py",
+      "mode": "100644",
+      "blob": "342c2bb01d2d38f8893f00a9cd493453ab765e31"
+    },
+    {
+      "path": "scripts/native_slo_mixed_load.py",
+      "mode": "100644",
+      "blob": "a73b346ac0821f299f6429857c927213ab667448"
+    },
+    {
+      "path": "scripts/native_slo_mixed_receipt_reader.py",
+      "mode": "100644",
+      "blob": "68119079a457a53af7abcb2ed28854083458b01e"
+    },
+    {
+      "path": "scripts/native_slo_mixed_response.py",
+      "mode": "100644",
+      "blob": "8d557c7c8c6220866d93c9c890253eaba84d1fc0"
+    },
+    {
+      "path": "scripts/native_slo_mixed_server.py",
+      "mode": "100644",
+      "blob": "1c03d0982c7aca325c4b160aa35790a1032ccf77"
+    },
+    {
+      "path": "scripts/native_slo_mixed_witness.py",
+      "mode": "100644",
+      "blob": "cafa311314dc31fc3c4bb0e65504cacca7a4d95d"
+    },
+    {
+      "path": "scripts/native_slo_native_diagnostic.py",
+      "mode": "100644",
+      "blob": "191df4338ce40c061dadba2b3b07c4a3fababbba"
+    },
+    {
+      "path": "scripts/native_slo_observation_failure.py",
+      "mode": "100644",
+      "blob": "3be1d15b90f53ec3d664648e7ad08e00bb614386"
+    },
+    {
+      "path": "scripts/native_slo_offered_load.py",
+      "mode": "100644",
+      "blob": "78a24578b1a8876b3cbb0f7c2407d18cdf6b6443"
+    },
+    {
+      "path": "scripts/native_slo_phase_calls.py",
+      "mode": "100644",
+      "blob": "161239ed883fb863b5b385fe26df66736c885d09"
+    },
+    {
+      "path": "scripts/native_slo_phase_io.py",
+      "mode": "100644",
+      "blob": "cb41ee1f96ab30ae015f99ad5e69ccc86d0ab386"
+    },
+    {
+      "path": "scripts/native_slo_phase_run.py",
+      "mode": "100644",
+      "blob": "86bb4d3735bbb4c863ea7d396d4df6adf9cf79b4"
+    },
+    {
+      "path": "scripts/native_slo_phase_waits.py",
+      "mode": "100644",
+      "blob": "d334e0e056780b48f169ed3671bcf28a8b8d3f20"
+    },
+    {
+      "path": "scripts/native_slo_phases.py",
+      "mode": "100644",
+      "blob": "744957992cbe516cc6f512c643587f30e06f6681"
+    },
+    {
+      "path": "scripts/native_slo_posture.py",
+      "mode": "100644",
+      "blob": "dfd0a51975d7c6e09dd3754b9b5a8a9cfff3dd41"
+    },
+    {
+      "path": "scripts/native_slo_posture_controls.py",
+      "mode": "100644",
+      "blob": "ea8f11177b6858146ca037e34ee371ec56a28fbb"
+    },
+    {
+      "path": "scripts/native_slo_posture_server.py",
+      "mode": "100644",
+      "blob": "bbd478e5b7a5514b0e4318e3f245acbeecb29e23"
+    },
+    {
+      "path": "scripts/native_slo_posture_witness.py",
+      "mode": "100644",
+      "blob": "6b16570f1ba97a448b08a65f1c406a5dcf27989f"
+    },
+    {
+      "path": "scripts/native_slo_priority_approval.py",
+      "mode": "100644",
+      "blob": "93705305989508c5b332ce764aab9c686f6134f0"
+    },
+    {
+      "path": "scripts/native_slo_priority_launchers.py",
+      "mode": "100644",
+      "blob": "a77b2b5d30c949c06ab8ebf24b5cee09bda0e82d"
+    },
+    {
+      "path": "scripts/native_slo_publisher_diagnostic.py",
+      "mode": "100644",
+      "blob": "37dde0053f90350f55bc89294b9c7dd7a81a3224"
+    },
+    {
+      "path": "scripts/native_slo_qualification.py",
+      "mode": "100644",
+      "blob": "d7430354ef41e8fe4f7a0f61934ff41275917040"
+    },
+    {
+      "path": "scripts/native_slo_qualification_run.py",
+      "mode": "100644",
+      "blob": "5e3a0173060389f50009557e82e12e8490af40cd"
+    },
+    {
+      "path": "scripts/native_slo_qualification_scenarios.py",
+      "mode": "100644",
+      "blob": "72a15693cca9690350eb75eee1f3a2bcaa6ab9c2"
+    },
+    {
+      "path": "scripts/native_slo_registered_surfaces.py",
+      "mode": "100644",
+      "blob": "31a76b789bce63a58c373d47ad6449798dcf09a7"
+    },
+    {
+      "path": "scripts/native_slo_registered_surfaces_evidence.py",
+      "mode": "100644",
+      "blob": "85230039dfdebb0c3f494f1de7da6ece8b864431"
+    },
+    {
+      "path": "scripts/native_slo_registered_surfaces_run.py",
+      "mode": "100644",
+      "blob": "f4b9031b96609e91c3301e0a35edccdabb1eef1a"
+    },
+    {
+      "path": "scripts/native_slo_reporting.py",
+      "mode": "100644",
+      "blob": "2f11072b62c483fe9b0719c6a2bc19a8bfacb952"
+    },
+    {
+      "path": "scripts/native_slo_resources.py",
+      "mode": "100644",
+      "blob": "6c1ea8ac99753f2eaf0a2a4609ca1b94c7db5a6b"
+    },
+    {
+      "path": "scripts/native_slo_revocation.py",
+      "mode": "100644",
+      "blob": "4d3aeca7a0af276c8b70922fe698da45e56efd7c"
+    },
+    {
+      "path": "scripts/native_slo_semantic_diagnostic.py",
+      "mode": "100644",
+      "blob": "3acf73de6bdd9028ffa0d45a7c0b0f71b10bcd83"
+    },
+    {
+      "path": "scripts/native_slo_session.py",
+      "mode": "100644",
+      "blob": "a0361155e660c790dca693772639247cca173ea9"
+    },
+    {
+      "path": "scripts/native_slo_source_witness.py",
+      "mode": "100644",
+      "blob": "62aec07593997cf64812047d03c3ef261266db0c"
+    },
+    {
+      "path": "scripts/native_slo_startup.py",
+      "mode": "100644",
+      "blob": "ec7b11d41a9115ef8abaf62f524bb91ab7515474"
+    },
+    {
+      "path": "scripts/native_slo_surface_failure.py",
+      "mode": "100644",
+      "blob": "8e26bcadcd8a26f8fe5bd4aac3d6111d501ac0fb"
+    },
+    {
+      "path": "scripts/native_slo_workload_cases.py",
+      "mode": "100644",
+      "blob": "0bb80b92f78f595e5cc16bd3c3e22e5b9781b8d1"
+    },
+    {
+      "path": "scripts/native_slo_workloads.py",
+      "mode": "100644",
+      "blob": "5d2b8a8b4e88308d86055b1e942bc6a586ff9fa3"
+    },
+    {
+      "path": "scripts/native_slo_workspace.py",
+      "mode": "100644",
+      "blob": "0048bed6b5ff33460ee575979b041e798deca57c"
+    },
+    {
+      "path": "scripts/native_slo_workspace_observer.py",
+      "mode": "100644",
+      "blob": "ea382d142d37e9de784c590e5130b332f0133202"
+    },
+    {
+      "path": "scripts/native_slo_workspace_scopes.py",
+      "mode": "100644",
+      "blob": "4253a9b8329953ab324b5771e54392136d72c8bf"
+    },
+    {
+      "path": "scripts/native_slo_workspace_server.py",
+      "mode": "100644",
+      "blob": "e5de68b4664dd064277efa7695733878b89d881d"
+    },
+    {
+      "path": "scripts/native_slo_workspace_trace.py",
+      "mode": "100644",
+      "blob": "2a918caa7f4d1db032be34a14ceeb75857a07913"
+    }
+  ],
+  "retained_first_attempt": {
+    "blob": "7c19c0f9b6ac6fa1327e26648d7aa40501bf1370",
+    "bytes": 450571,
+    "sha256": "227f036d45e471354bb450bdf763ee60221cf573bcd8b1d718458d0f99b3747a"
+  }
+}

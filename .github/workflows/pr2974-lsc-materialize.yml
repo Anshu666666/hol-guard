@@ -1,0 +1,113 @@
+name: PR2974 local supply-chain source materializer
+
+on:
+  push:
+    branches: [codex/pr2974-lsc-source-materialize-20260919]
+    paths:
+      - '.github/workflows/pr2974-lsc-materialize.yml'
+      - 'ci/pr2974_lsc_materialize/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-lsc-materialize-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  LSC_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source-materializer:
+    name: Exact historical source materialization and static consumer census
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Initialize retained outcome
+        env:
+          LSC_REPORT: ${{ runner.temp }}/pr2974-lsc-materialize/report
+          LSC_SCRATCH: ${{ runner.temp }}/pr2974-lsc-materialize/scratch
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ["LSC_REPORT"])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ["LSC_SCRATCH"]).mkdir(mode=0o700, parents=True, exist_ok=True)
+          (report / "outcome.json").write_text(json.dumps({
+              "passed": False, "status": "not_run", "qualification_complete": False,
+              "harness_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"]}) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              for name in ("LSC_REPORT", "LSC_SCRATCH"):
+                  stream.write(name + "=" + os.environ[name] + "\n")
+          PY
+      - name: Checkout separate diagnostic harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout exact source input
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact original Python version
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up frozen installer
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Materialize exact source and retain the separate static consumer census
+        id: diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          export LSC_UV="$(command -v uv)"
+          python3 -I "$LSC_HARNESS/ci/pr2974_lsc_materialize/materialize.py"
+      - name: Retain all source payloads, static reports and failures
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-lsc-materialize-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-lsc-materialize/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve actual final source-only status
+        if: always()
+        env:
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          UV_OUTCOME: ${{ steps.uv.outcome }}
+          DIAGNOSTIC_OUTCOME: ${{ steps.diagnostic.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["LSC_REPORT"]) / "outcome.json"
+          value = json.loads(path.read_text()) if path.is_file() else {"passed": False}
+          names = ("HARNESS_OUTCOME", "SOURCE_OUTCOME",
+                   "PYTHON_OUTCOME", "UV_OUTCOME", "DIAGNOSTIC_OUTCOME", "UPLOAD_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          passed = value.get("passed") is True and all(item == "success" for item in outcomes.values())
+          print(json.dumps({"lsc_source_gate": passed, "workflow_step_outcomes": outcomes,
+                            "qualification_complete": False}))
+          raise SystemExit(0 if passed else 1)
+          PY

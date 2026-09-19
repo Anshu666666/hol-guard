@@ -1,0 +1,263 @@
+from __future__ import annotations
+
+import ast
+import collections
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import symtable
+
+ROOT = Path("/home/user/pr2974-recovery-lips")
+WORKTREE = ROOT / "local-supply-chain-recovery"
+EVIDENCE = ROOT / "local-supply-chain-recovery-evidence"
+BASE = "cb18d4dfd1c76049357bed127f2b4895a5335bfa"
+SOURCE_PATH = "src/codex_plugin_scanner/guard/local_supply_chain.py"
+assert Path("/proc/sys/kernel/random/boot_id").read_text().strip() == "c6aba711-75f6-4cbb-90b1-d991ba91b54e"
+assert hashlib.sha256((ROOT / "recovery-identity.json").read_bytes()).hexdigest() == "8821ba35cb03690c2b0c7e01fa3662db8490de682ba8ce633d0f764d2706b974"
+SOURCE = subprocess.check_output(["git", "show", BASE + ":" + SOURCE_PATH], cwd=WORKTREE)
+assert hashlib.sha256(SOURCE).hexdigest() == "7d6e7f3e310a67b563b37bd4575e917115433e77ea08fe0e0dec96aec17549f3"
+LINES = SOURCE.splitlines(keepends=True)
+OFFSETS = [0]
+for line in LINES:
+    OFFSETS.append(OFFSETS[-1] + len(line))
+TREE = ast.parse(SOURCE.decode("utf-8"))
+SYMBOLS = symtable.symtable(SOURCE.decode("utf-8"), SOURCE_PATH, "exec")
+MODULE_NAMES = {
+    symbol.get_name()
+    for symbol in SYMBOLS.get_symbols()
+    if symbol.is_imported() or symbol.is_assigned()
+}
+ANNOTATED_NAMES = set()
+for node in ast.walk(TREE):
+    annotation = getattr(node, "annotation", None)
+    if annotation is not None:
+        ANNOTATED_NAMES.update(id(value) for value in ast.walk(annotation) if isinstance(value, ast.Name))
+    returns = getattr(node, "returns", None)
+    if returns is not None:
+        ANNOTATED_NAMES.update(id(value) for value in ast.walk(returns) if isinstance(value, ast.Name))
+
+KEPT = {
+    "_runtime_runner_module",
+    "__getattr__",
+    "_package_firewall_entitlement_module",
+    "_package_intent_parser_module",
+    "_supply_chain_package_eval_module",
+}
+RANGES = (
+    (267, 518, "posture"),
+    (519, 677, "audit_discovery"),
+    (678, 824, "advisories"),
+    (825, 987, "audit_receipts"),
+    (988, 1218, "audit_evaluation"),
+    (1246, 1380, "archive_binding"),
+    (1381, 1770, "protect_authority"),
+    (1771, 1883, "protect_projection"),
+    (1884, 2118, "protect_execution"),
+    (2119, 2474, "stored_policy"),
+    (2475, 2714, "policy_evaluation"),
+    (2715, 3070, "policy_identity"),
+    (3071, 3129, "policy_evaluation"),
+    (3130, 3168, "protect_projection"),
+    (3169, 3210, "posture"),
+    (3211, 3240, "audit_evaluation"),
+    (3241, 3272, "audit_discovery"),
+    (3273, 3643, "inventory"),
+    (3644, 3898, "cloud_audit"),
+    (3899, 4011, "cloud_requests"),
+    (4012, 4138, "cloud_sync"),
+    (4139, 4162, "cloud_requests"),
+    (4163, 4323, "cloud_sync"),
+    (4324, 4362, "audit_discovery"),
+    (4363, 4424, "protect_projection"),
+    (4425, 4502, "posture"),
+    (4503, 4545, "values"),
+)
+
+def owner(node):
+    matches = [name for start, end, name in RANGES if start <= node.lineno <= end]
+    assert len(matches) == 1, (node.name, node.lineno, matches)
+    return matches[0]
+
+class Globals(ast.NodeVisitor):
+    def __init__(self):
+        self.table = SYMBOLS
+        self.positions = {}
+
+    def enter(self, node, name):
+        matches = [
+            table
+            for table in self.table.get_children()
+            if table.get_name() == name and table.get_lineno() == node.lineno
+        ]
+        assert len(matches) == 1, (name, node.lineno, matches)
+        previous = self.table
+        self.table = matches[0]
+        return previous
+
+    def visit_Name(self, node):
+        if not isinstance(node.ctx, ast.Load) or node.id not in MODULE_NAMES:
+            return
+        try:
+            symbol = self.table.lookup(node.id)
+        except KeyError:
+            assert id(node) in ANNOTATED_NAMES, (node.id, node.lineno, self.table.get_name())
+            symbol = SYMBOLS.lookup(node.id)
+        if self.table is SYMBOLS or symbol.is_global():
+            self.positions[OFFSETS[node.lineno - 1] + node.col_offset] = node.id
+
+    def visit_FunctionDef(self, node):
+        for decorator in node.decorator_list:
+            self.visit(decorator)
+        for default in node.args.defaults:
+            self.visit(default)
+        for default in node.args.kw_defaults:
+            if default is not None:
+                self.visit(default)
+        arguments = node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+        if node.args.vararg is not None:
+            arguments.append(node.args.vararg)
+        if node.args.kwarg is not None:
+            arguments.append(node.args.kwarg)
+        for argument in arguments:
+            if argument.annotation is not None:
+                self.visit(argument.annotation)
+        if node.returns is not None:
+            self.visit(node.returns)
+        previous = self.enter(node, node.name)
+        for statement in node.body:
+            self.visit(statement)
+        self.table = previous
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_Lambda(self, node):
+        for default in node.args.defaults:
+            self.visit(default)
+        for default in node.args.kw_defaults:
+            if default is not None:
+                self.visit(default)
+        previous = self.enter(node, "lambda")
+        self.visit(node.body)
+        self.table = previous
+
+    def visit_GeneratorExp(self, node):
+        self.visit(node.generators[0].iter)
+        previous = self.enter(node, "genexpr")
+        for index, generator in enumerate(node.generators):
+            if index:
+                self.visit(generator.iter)
+            self.visit(generator.target)
+            for condition in generator.ifs:
+                self.visit(condition)
+        self.visit(node.elt)
+        self.table = previous
+
+assert not any(isinstance(node, (ast.Global, ast.Nonlocal)) for node in ast.walk(TREE))
+for node in ast.walk(TREE):
+    if isinstance(node, (ast.ListComp, ast.DictComp, ast.SetComp)):
+        targets = {
+            target.id
+            for generator in node.generators
+            for target in ast.walk(generator.target)
+            if isinstance(target, ast.Name)
+        }
+        assert not (targets & MODULE_NAMES), targets & MODULE_NAMES
+
+groups = collections.OrderedDict()
+mapping = {}
+occurrences = []
+for node in TREE.body:
+    if not isinstance(node, ast.FunctionDef) or node.name in KEPT:
+        continue
+    assert not node.decorator_list, node.name
+    visitor = Globals()
+    visitor.visit(node)
+    start = OFFSETS[node.lineno - 1]
+    data = b"".join(LINES[node.lineno - 1 : node.end_lineno])
+    for offset in sorted(visitor.positions, reverse=True):
+        relative = offset - start
+        data = data[:relative] + b"_api." + data[relative:]
+    group = owner(node)
+    groups.setdefault(group, []).append(data.decode("utf-8").rstrip())
+    mapping[node.name] = group
+    occurrences.extend(
+        {"function": node.name, "name": name, "source_offset": offset}
+        for offset, name in sorted(visitor.positions.items())
+    )
+
+facade = WORKTREE / SOURCE_PATH
+for name, chunks in groups.items():
+    content = (
+        '"""' + name.replace("_", " ").capitalize()
+        + ' helpers using the original live supply-chain namespace."""\n\n'
+        + "from __future__ import annotations\n\n\n"
+        + "\n\n\n".join(chunks)
+        + "\n\n\n"
+        + "# Bind after declarations so importing this owner directly preserves the facade cycle.\n"
+        + "from . import local_supply_chain as _api  # noqa: E402\n"
+    )
+    facade.with_name("local_supply_chain_" + name + ".py").write_text(content, encoding="utf-8")
+
+out = []
+imports_added = False
+previous = None
+for node in TREE.body:
+    if not imports_added and not isinstance(node, (ast.Expr, ast.Import, ast.ImportFrom)):
+        out.append(
+            "\n# Preserve the original dependency import order before loading function owners.\n"
+            "# Imports marked F401 remain live facade dependencies for these owners.\n"
+            "# isort: split\n"
+        )
+        out.extend(
+            "from . import local_supply_chain_" + name + " as _" + name + "\n"
+            for name in sorted(groups)
+        )
+        out.append("\n")
+        imports_added = True
+    if isinstance(node, ast.FunctionDef) and node.name not in KEPT:
+        out.append(node.name + " = _" + mapping[node.name] + "." + node.name + "\n")
+        previous = "alias"
+        continue
+    start = min([node.lineno] + [d.lineno for d in getattr(node, "decorator_list", [])])
+    content = b"".join(LINES[start - 1 : node.end_lineno]).decode("utf-8")
+    if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+        out.append("\n\n")
+        out.append(content)
+        out.append("\n\n")
+    else:
+        if previous in ("alias", "declaration") or isinstance(node, ast.Expr):
+            out.append("\n")
+        out.append(content)
+    previous = "declaration" if isinstance(node, (ast.FunctionDef, ast.ClassDef)) else "statement"
+facade.write_text("".join(out).rstrip() + "\n", encoding="utf-8")
+EVIDENCE.mkdir(parents=True, exist_ok=True)
+receipt = {
+    "source_sha256": hashlib.sha256(SOURCE).hexdigest(),
+    "source_bytes": len(SOURCE),
+    "source_physical_lines": len(LINES),
+    "generator_python": subprocess.check_output(
+        ["/home/user/pr2974-recovery-lips/validation-venv-ci-repair/bin/python", "--version"], text=True
+    ).strip(),
+    "base": BASE,
+    "mapping": mapping,
+    "kept": sorted(KEPT),
+    "module_names": sorted(MODULE_NAMES),
+    "live_facade_lookup_count": len(occurrences),
+    "occurrences": occurrences,
+    "files_before_format": {
+        str(path.relative_to(WORKTREE)): {
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "physical_lines": len(path.read_bytes().splitlines()),
+        }
+        for path in sorted(facade.parent.glob("local_supply_chain*.py"))
+    },
+}
+(EVIDENCE / "generation-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+print(json.dumps({
+    "moved_functions": len(mapping),
+    "helper_files": len(groups),
+    "live_facade_lookups": len(occurrences),
+    "source_sha256": receipt["source_sha256"],
+    "files": receipt["files_before_format"],
+}))

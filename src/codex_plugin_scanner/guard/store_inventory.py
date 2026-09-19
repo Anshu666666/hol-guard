@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 from .action_lattice import normalize_guard_action_result
+from .config_mutation import notify_native_policy_mutation
 from .models import GuardAction
+from .native_policy_publication_lock import hold_policy_publication_mutation
+from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
 from .runtime.decisions import AUTHORITATIVE_DECISION_INCONSISTENT
 
 # ruff: noqa: F403,F405
@@ -413,16 +416,24 @@ class StoreInventoryMixin:
 
     def rotate_installation_id(self, now: str) -> dict[str, str]:
         new_installation_id = uuid4().hex
-        with self._connect() as connection:
-            self._ensure_local_device(connection)
-            connection.execute(
-                """
-                update guard_devices
-                set installation_id = ?, updated_at = ?
-                where device_key = ?
-                """,
-                (new_installation_id, now, _DEVICE_ROW_KEY),
-            )
+        with hold_policy_publication_mutation(self.guard_home):
+            with self._connect() as connection:
+                connection.execute("begin immediate")
+                self._ensure_local_device(connection)
+                connection.execute(
+                    """
+                    update guard_devices
+                    set installation_id = ?, updated_at = ?
+                    where device_key = ?
+                    """,
+                    (new_installation_id, now, _DEVICE_ROW_KEY),
+                )
+                # A new installation must freshly admit its signed source and ACK.
+                connection.execute(
+                    "delete from sync_state where state_key in (?, ?)",
+                    (POLICY_BUNDLE_MATERIALIZATION_KEY, "policy_bundle_ack"),
+                )
+            notify_native_policy_mutation(self.guard_home, require_source_authority=True)
         return self.get_device_metadata()
 
     def get_device_metadata(self) -> dict[str, str]:

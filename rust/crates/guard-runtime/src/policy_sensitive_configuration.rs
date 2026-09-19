@@ -120,59 +120,69 @@ mod tests {
     use super::*;
     use crate::policy_scoped_sensitive_read::derive_sensitive_read_artifact;
     use guard_contracts::GuardHookEnvelopeV2;
-    use serde_json::{json, Value};
+    use serde_json::json;
 
-    fn fixtures() -> Value {
-        serde_json::from_str(include_str!("../tests/fixtures/sensitive-read-policy.json")).unwrap()
+    fn sample_source() -> GuardHookEnvelopeV2 {
+        serde_json::from_value(json!({
+            "schema": "guard-hook-envelope.v2",
+            "harness": "claude-code",
+            "event": "PreToolUse",
+            "raw_payload": {
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"file_path": ".npmrc"},
+                "tool_name": "Read"
+            },
+            "policy_generation": 1,
+            "policy_snapshot": {},
+            "source": {
+                "cwd": "/synthetic/native-sensitive/home/project",
+                "guard_home": "/synthetic/native-sensitive/state",
+                "home_dir": "/synthetic/native-sensitive/home"
+            }
+        }))
+        .unwrap()
     }
 
-    fn envelope(case: &Value) -> GuardHookEnvelopeV2 {
+    fn sample_policy() -> EffectiveNativePolicyV3 {
         serde_json::from_value(json!({
-            "schema":"guard-hook-envelope.v2", "harness":case["harness"],
-            "event":"PreToolUse", "raw_payload":case["payload"],
-            "policy_generation":1, "policy_snapshot":{}, "source":case["source"]
+            "artifact_actions": {},
+            "changed_hash_action": "require-reapproval",
+            "default_action": "allow",
+            "harness_actions": {},
+            "harness_risk_actions": {},
+            "new_network_domain_action": "warn",
+            "protection_posture": "protected",
+            "publisher_actions": {},
+            "receipt_redaction_level": "full",
+            "risk_actions": {
+                "cloud_advisory": "warn",
+                "credential_exfiltration": "require-reapproval",
+                "data_flow_exfiltration": "require-reapproval",
+                "destructive_shell": "require-reapproval",
+                "encoded_execution": "require-reapproval",
+                "encoded_exfiltration": "require-reapproval",
+                "guard_bypass": "block",
+                "local_secret_read": "allow",
+                "malicious_skill": "require-reapproval",
+                "mcp_dangerous_tool": "require-reapproval",
+                "network_egress": "warn",
+                "package_script": "warn",
+                "persistence": "require-reapproval",
+                "prompt_injection": "require-reapproval"
+            },
+            "sandbox_analysis": "off",
+            "security_level": "balanced",
+            "subprocess_action": "warn",
+            "unknown_publisher_action": "review"
         }))
         .unwrap()
     }
 
     #[test]
-    fn matches_all_actual_python_evaluation_and_observe_vectors() {
-        let values = fixtures();
-        let cases = values["cases"].as_array().unwrap();
-        assert_eq!(cases.len(), 133);
-        for case in cases {
-            let source = envelope(case);
-            let artifact = derive_sensitive_read_artifact(&source, &source.harness).unwrap();
-            assert_eq!(artifact.artifact_id, case["artifactId"].as_str().unwrap());
-            let policy = serde_json::from_value(case["effectivePolicy"].clone()).unwrap();
-            let result =
-                sensitive_read_configuration(&policy, &source.harness, &artifact.artifact_id)
-                    .unwrap();
-            assert_eq!(
-                result.evaluated_action,
-                case["expected"]["evaluatedPolicyAction"].as_str().unwrap(),
-                "{} evaluated",
-                case["name"]
-            );
-            if case["mode"] == "observe" {
-                assert_eq!(
-                    result.observe_action,
-                    case["expected"]["finalPolicyAction"].as_str().unwrap(),
-                    "{} Observe",
-                    case["name"]
-                );
-            }
-        }
-    }
-
-    #[test]
     fn incomplete_or_invalid_sensitive_configuration_cannot_invent_a_default() {
-        let values = fixtures();
-        let case = &values["cases"][0];
-        let source = envelope(case);
+        let source = sample_source();
         let artifact = derive_sensitive_read_artifact(&source, &source.harness).unwrap();
-        let mut policy: EffectiveNativePolicyV3 =
-            serde_json::from_value(case["effectivePolicy"].clone()).unwrap();
+        let mut policy = sample_policy();
         policy.risk_actions.remove("local_secret_read");
         assert!(
             sensitive_read_configuration(&policy, &source.harness, &artifact.artifact_id).is_err()

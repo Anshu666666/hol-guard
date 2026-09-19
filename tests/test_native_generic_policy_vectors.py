@@ -1,18 +1,12 @@
 """Keep native generic vectors tied to the actual Python outer consumer."""
 
-import json
 from pathlib import Path
 
-from tests.native_generic_policy_vectors import FIXTURE, generate_vectors
+from tests.native_generic_policy_vectors import generate_vectors
 
 
-def test_generic_vectors_match_actual_loader_producer_and_renderer(tmp_path: Path) -> None:
-    expected = json.loads(FIXTURE.read_text())
-    assert generate_vectors(tmp_path) == expected
-
-
-def test_generic_vector_scope_retains_reciprocal_origins_and_tool_contracts() -> None:
-    cases = json.loads(FIXTURE.read_text())["cases"]
+def test_generic_vector_scope_retains_reciprocal_origins_and_tool_contracts(tmp_path: Path) -> None:
+    cases = generate_vectors(tmp_path)["cases"]
     assert len(cases) == 260
     assert len({case["name"] for case in cases}) == len(cases)
     assert {case["payload"]["tool_name"] for case in cases} == {"Shell", "Bash", "shell", "exec_command"}

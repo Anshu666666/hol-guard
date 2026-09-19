@@ -28,7 +28,7 @@ from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_n
 from codex_plugin_scanner.guard.native_runtime import NativeRuntimeStatus
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_session import stop_native_resident
-from tests.native_generic_policy_vectors import FIXTURE
+from tests.native_generic_policy_vectors import generate_vectors
 from tests.native_managed_source_support import managed_store
 from tests.native_scoped_resident_fixtures import prepare_store
 from tests.native_sensitive_resident_fixtures import sensitive_test_status as source_built_auto_status
@@ -36,8 +36,8 @@ from tests.test_generic_managed_origin_outer import _toml
 from tests.test_native_sensitive_policy_resident import _clean_mode
 
 
-def _cases() -> list[dict[str, Any]]:
-    result = cast(list[dict[str, Any]], json.loads(FIXTURE.read_text())["cases"])
+def _cases(tmp_path: Path) -> list[dict[str, Any]]:
+    result = cast(list[dict[str, Any]], generate_vectors(tmp_path / "generated-vectors")["cases"])
     assert len(result) == 260 and len({case["name"] for case in result}) == 260
     return result
 
@@ -106,7 +106,7 @@ def test_generic_resident_fixture_preserves_all_actual_origin_projections(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source = _source(tmp_path, monkeypatch)
-    for case in _cases():
+    for case in _cases(tmp_path):
         _ = source.select(case)
 
 
@@ -122,7 +122,7 @@ def test_generic_origins_reach_actual_auto_resident(tmp_path: Path, monkeypatch:
     completed: list[str] = []
     previous_binding = None
     try:
-        for case in _cases():
+        for case in _cases(tmp_path):
             _ = source.select(case)
             publisher.request_publish()
             assert publisher.current_snapshot_binding() is None

@@ -24,7 +24,6 @@ from codex_plugin_scanner.guard.store import GuardStore
 from tests.test_native_sensitive_read_sources import FIXTURE as SOURCE_FIXTURE
 from tests.test_native_sensitive_read_sources import produce_sensitive_read
 
-FIXTURE = SOURCE_FIXTURE.with_name("sensitive-read-policy.json")
 ACTIONS: tuple[GuardAction, ...] = ("allow", "warn", "review", "require-reapproval", "sandbox-required", "block")
 Mode = Literal["enforce", "observe"]
 

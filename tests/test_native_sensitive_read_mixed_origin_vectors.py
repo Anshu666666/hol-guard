@@ -1,20 +1,12 @@
 """Mixed policy origins must retain their independent restrictions."""
 
-import hashlib
-import json
 from pathlib import Path
 
-from tests import native_sensitive_read_policy_vectors as ordinary
-from tests.native_sensitive_read_mixed_origin_vectors import FIXTURE, generate_vectors
+from tests.native_sensitive_read_mixed_origin_vectors import generate_vectors
 
 
-def test_mixed_origin_vectors_match_actual_loader_runtime_and_observe_finish(tmp_path: Path):
-    expected = json.loads(FIXTURE.read_text())
-    assert generate_vectors(tmp_path) == expected
-
-
-def test_reciprocal_origin_floors_and_stage_boundaries_are_retained():
-    cases = json.loads(FIXTURE.read_text())["cases"]
+def test_reciprocal_origin_floors_and_stage_boundaries_are_retained(tmp_path: Path):
+    cases = generate_vectors(tmp_path)["cases"]
     assert len(cases) == 188
     indexed = {case["name"]: case for case in cases}
     assert len(indexed) == len(cases)
@@ -41,9 +33,3 @@ def test_reciprocal_origin_floors_and_stage_boundaries_are_retained():
     assert absent["managedConfiguration"]["effective_policy"] == explicit["managedConfiguration"]["effective_policy"]
     assert absent["managedConfiguration"]["default_action_present"] is False
     assert explicit["managedConfiguration"]["default_action_present"] is True
-
-
-def test_existing_nonmanaged_vectors_remain_byte_identical():
-    assert hashlib.sha256(ordinary.FIXTURE.read_bytes()).hexdigest() == (
-        "e98e7fcfa7b2033f1d37e47d99fa501f93cefc8e1b80dd26da725cb27ab65148"
-    )

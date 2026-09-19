@@ -25,8 +25,6 @@ from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_n
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.test_generic_managed_origin_outer import CASES, COMMANDS, PUBLISHER, Case, Mode, _toml
 
-FIXTURE = Path(__file__).parents[1] / "rust/crates/guard-runtime/tests/fixtures/generic-origin-policy.json"
-
 
 @dataclass(frozen=True)
 class GenericCase:

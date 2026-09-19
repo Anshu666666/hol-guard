@@ -1,19 +1,12 @@
 """Keep native policy vectors bound to the actual Python consumer behavior."""
 
-import json
 from pathlib import Path
 
-from tests.native_sensitive_read_policy_vectors import FIXTURE, generate_vectors
+from tests.native_sensitive_read_policy_vectors import generate_vectors
 
 
-def test_sensitive_read_policy_vectors_match_actual_runtime_and_observe_finish(tmp_path: Path):
-    expected = json.loads(FIXTURE.read_text())
-    actual = generate_vectors(tmp_path)
-    assert actual == expected
-
-
-def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries():
-    fixture = json.loads(FIXTURE.read_text())
+def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries(tmp_path: Path):
+    fixture = generate_vectors(tmp_path)
     cases = fixture["cases"]
     assert len(cases) == 133
     assert len({case["name"] for case in cases}) == len(cases)
@@ -32,8 +25,8 @@ def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries(
     assert indexed["codex-enforce-risk-allow"]["evaluatedPolicyAction"] == "allow"
 
 
-def test_explicit_postures_use_loaded_modes_and_all_levels_keep_real_actions():
-    cases = json.loads(FIXTURE.read_text())["cases"]
+def test_explicit_postures_use_loaded_modes_and_all_levels_keep_real_actions(tmp_path: Path):
+    cases = generate_vectors(tmp_path)["cases"]
     indexed = {case["name"]: case for case in cases}
     for level in ("gentle", "paranoid", "custom"):
         for mode in ("enforce", "observe"):

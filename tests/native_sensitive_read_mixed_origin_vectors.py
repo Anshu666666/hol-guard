@@ -18,7 +18,6 @@ from tests import native_sensitive_read_policy_vectors as ordinary
 from tests.test_native_sensitive_read_sources import FIXTURE as SOURCE_FIXTURE
 from tests.test_native_sensitive_read_sources import produce_sensitive_read
 
-FIXTURE = SOURCE_FIXTURE.with_name("sensitive-read-mixed-origin-policy.json")
 SELECTORS = ("default", "harness", "artifact", "risk", "harness-risk")
 
 

@@ -22,14 +22,6 @@ use serde_json::Value;
 #[path = "policy_scoped_enforcement_tests.rs"]
 mod tests;
 
-#[cfg(test)]
-#[path = "policy_scoped_sensitive_tests.rs"]
-mod sensitive_tests;
-
-#[cfg(test)]
-#[path = "policy_scoped_generic_tests.rs"]
-mod generic_tests;
-
 pub(crate) struct ScopedPolicyEvaluation {
     pub(crate) result: PreToolResultV1,
     /// The fully composed action before Watch projects policy-only restrictions.

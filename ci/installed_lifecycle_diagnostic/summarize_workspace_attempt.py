@@ -93,8 +93,17 @@ ERROR_ORIGINS = frozenset(
             "close",
         ),
         "native_slo_resources": ("_psutil", "__init__", "__enter__", "_sample", "_inventory"),
-        "native_slo_session": ("__init__", "__enter__", "start", "close"),
-        "native_slo_workspace_server": ("__init__", "dispatch", "startup_failure"),
+        "native_slo_session": ("__init__", "__enter__", "start", "close", "_request"),
+        "native_slo_workspace_server": (
+            "__init__",
+            "dispatch",
+            "startup_failure",
+            "phase",
+            "_ack",
+            "_chain",
+            "_probe",
+            "_overlay",
+        ),
         "native_slo_mixed_witness": ("__init__", "__enter__"),
         "native_slo_mixed_receipt_reader": ("__init__",),
         "native_slo_qualification_scenarios": ("validate_receipt_profile",),
@@ -147,6 +156,24 @@ ERROR_MESSAGES = {
         "RuntimeError",
         "native_installed_slo_failed: native readiness exceeded budget",
     ): "native_readiness_budget_exceeded",
+    **{
+        ("RuntimeError", message): message.replace(" ", "_")
+        for message in (
+            "workspace phase starting authority unavailable",
+            "workspace resident containment failed",
+            "workspace unnotified reconciliation deadline",
+            "workspace authenticated acknowledgment deadline",
+            "workspace observed publication chain deadline",
+            "workspace observed compilation count invalid",
+            "adapter request failed",
+            "adapter response exceeded bound",
+            "adapter response was not JSON",
+        )
+    },
+    (
+        "RuntimeError",
+        "native_installed_slo_failed: adapter response was not an object",
+    ): "adapter_response_not_object",
     **{
         ("RuntimeError", message): message.replace(" ", "_")
         for message in (
@@ -385,6 +412,7 @@ def collector_receipt(value: dict[str, Any]) -> dict[str, Any]:
                     "offered_phase": PHASES[index],
                     "label_present": phase.get("phase") is not None,
                     "failure_present": phase.get("failure") is not None,
+                    "failure": error_detail(phase.get("failure")),
                     **{
                         name: flag(phase.get(name))
                         for name in (

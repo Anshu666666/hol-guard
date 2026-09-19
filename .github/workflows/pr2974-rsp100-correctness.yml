@@ -1,0 +1,133 @@
+name: PR2974 RSP100 risk dependency correctness witnesses
+
+on:
+  push:
+    branches: [codex/rsp100-risk-dependency-correctness-8afb03a2]
+    paths:
+      - '.github/workflows/pr2974-rsp100-correctness.yml'
+      - 'ci/pr2974_rsp100_correctness_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-rsp100-correctness-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_BASELINE: ${{ github.workspace }}/baseline
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  four-serial-witnesses:
+    name: Bind unchanged B and run the four dependency witnesses serially
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-rsp100-correctness-report
+          VALIDATION_SCRATCH: /tmp/pr2974-rsp100-correctness-${{ github.run_id }}-${{ github.run_attempt }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ["VALIDATION_REPORT"])
+          scratch = Path(os.environ["VALIDATION_SCRATCH"])
+          report.mkdir(mode=0o700)
+          assert scratch.parent.resolve() == Path("/tmp").resolve()
+          assert not scratch.resolve().is_relative_to(Path.home().resolve())
+          scratch.mkdir(mode=0o700)
+          (report / "job-outcome.json").write_text(json.dumps({
+              "passed": False, "status": "not_run", "qualification_complete": False,
+              "source_sha": "8afb03a2636c4efa246583e01e105afac0a40be3",
+              "harness_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"]}) + "\n")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as stream:
+              stream.write("VALIDATION_REPORT=" + str(report) + "\n")
+              stream.write("VALIDATION_SCRATCH=" + str(scratch) + "\n")
+          PY
+      - name: Checkout exact observer harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable prepared witness source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '8afb03a2636c4efa246583e01e105afac0a40be3'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable original source
+        id: baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '44353b20262f1ca56b56204f4c764b047710454f'
+          path: baseline
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up exact Python
+        id: python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up pinned environment installer
+        id: uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Run only the four unchanged witnesses against selected B
+        id: validation
+        shell: bash
+        run: |
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rsp100_correctness_validation/driver.py"
+      - name: Project bounded exact reports after any outcome
+        id: projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rsp100_correctness_validation/project_reports.py"
+      - name: Retain complete source, fixture, phase, JUnit and environment receipts
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rsp100-correctness-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-rsp100-correctness-report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve actual validation status
+        if: always()
+        env:
+          HARNESS_OUTCOME: ${{ steps.harness.outcome }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          BASELINE_OUTCOME: ${{ steps.baseline.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          UV_OUTCOME: ${{ steps.uv.outcome }}
+          VALIDATION_OUTCOME: ${{ steps.validation.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["VALIDATION_REPORT"]) / "job-outcome.json"
+          report = json.loads(path.read_text()) if path.is_file() else {"passed": False}
+          names = ("HARNESS_OUTCOME", "SOURCE_OUTCOME", "BASELINE_OUTCOME", "PYTHON_OUTCOME",
+                   "UV_OUTCOME", "VALIDATION_OUTCOME", "PROJECTION_OUTCOME", "UPLOAD_OUTCOME")
+          outcomes = {name: os.environ[name] for name in names}
+          passed = report.get("passed") is True and all(value == "success" for value in outcomes.values())
+          print(json.dumps({"rsp100_four_witnesses_passed": passed,
+                            "step_outcomes": outcomes, "qualification_complete": False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

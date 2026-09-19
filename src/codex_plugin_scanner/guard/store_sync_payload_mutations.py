@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
+from .workspace_preference_authority import reject_private_preference_key
+
 
 class StoreSyncPayloadMutationsMixin:
     def reserve_sync_sequence(
@@ -19,6 +21,7 @@ class StoreSyncPayloadMutationsMixin:
         from . import store_cloud_events as _cloud_events_api
 
         _cloud_events_api.reject_private_inventory_key(state_key)
+        reject_private_preference_key(state_key)
         if state_key == _cloud_events_api.INVENTORY_CONTEXT_KEY:
             raise ValueError("Inventory selection is not a sequence counter.")
         with self._connect() as connection:
@@ -57,6 +60,7 @@ class StoreSyncPayloadMutationsMixin:
         from . import store_cloud_events as _cloud_events_api
 
         _cloud_events_api.reject_private_inventory_key(state_key)
+        reject_private_preference_key(state_key)
         if state_key == _cloud_events_api.INVENTORY_CONTEXT_KEY:
             with self.hold_oauth_credential_lock():
                 self._set_sync_payload_unlocked(state_key, payload, now)
@@ -92,6 +96,7 @@ class StoreSyncPayloadMutationsMixin:
         from . import store_cloud_events as _cloud_events_api
 
         _cloud_events_api.reject_private_inventory_key(state_key)
+        reject_private_preference_key(state_key)
         if state_key == _cloud_events_api.INVENTORY_CONTEXT_KEY:
             # Metadata and the public row must consume the same immutable copy,
             # even if the caller mutates its dictionary while this write runs.
@@ -136,6 +141,7 @@ class StoreSyncPayloadMutationsMixin:
         state_keys = list(state_keys)
         for key in state_keys:
             _cloud_events_api.reject_private_inventory_key(key)
+            reject_private_preference_key(key)
         if any(
             _cloud_events_api.is_oauth_credential_key(key) or key == _cloud_events_api.INVENTORY_CONTEXT_KEY
             for key in state_keys
@@ -150,6 +156,7 @@ class StoreSyncPayloadMutationsMixin:
         state_keys = list(state_keys)
         for key in state_keys:
             _cloud_events_api.reject_private_inventory_key(key)
+            reject_private_preference_key(key)
         if not state_keys:
             return 0
         credential_keys = {key for key in state_keys if _cloud_events_api.is_oauth_credential_key(key)}

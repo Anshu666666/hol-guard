@@ -10,6 +10,7 @@ import json
 import os
 import re
 import socket
+import sqlite3
 import subprocess
 import threading
 import time
@@ -98,6 +99,12 @@ from ..policy_document_io import PolicyCompilationError
 from ..policy_lane_capabilities import source_runtime_lane_observation
 from ..policy_memory_source import attach_disclosed_policy_source
 from ..policy_sync_outcomes import policy_sync_outcomes
+from ..receipt_sync_authority import (
+    ReceiptBackfillMarker,
+    ReceiptProgressCandidate,
+    ReceiptSyncCapture,
+    _capture_receipt_sync_state_with_credential_lock,
+)
 from ..redaction import redact_sensitive_text
 from ..review_contracts import validated_review_verification_keys_from_sync
 from ..shims import package_shim_cloud_coverage
@@ -162,7 +169,19 @@ from .policy_bundle_selection import (
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
 from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
-from .receipt_sync_cursor import _receipt_sync_cursor_rowid, _receipt_sync_rows_for_upload
+from .receipt_sync_cursor import (
+    _receipt_sync_cursor_rowid as _receipt_sync_cursor_rowid,
+)
+from .receipt_sync_cursor import (
+    _receipt_sync_cursor_rowid_from_payload,
+    _receipt_sync_rows_for_upload,
+)
+from .receipt_upload import (
+    OptionalUploadPausedError,
+    ReceiptUploadPreparation,
+    optional_upload_settings,
+    require_optional_telemetry,
+)
 from .session_observation import cloud_local_identity_source_payload as _cloud_local_identity_source_payload
 from .signals import RiskSignalV2
 from .supply_chain_bundle import (
@@ -2554,6 +2573,47 @@ def simulate_policy_bundle_receipts(
     }
 
 
+def _resolve_optional_upload_auth_context(
+    store: GuardStore,
+    provided_context: dict[str, object] | None,
+) -> tuple[dict[str, object], OAuthConnectionSnapshot | None]:
+    observed: list[OAuthConnectionSnapshot] = []
+    try:
+        resolved = _resolve_guard_sync_auth_context(store, connection_observer=observed.append)
+    except GuardSyncNotConfiguredError:
+        if provided_context is None:
+            raise
+        return provided_context, None
+    return resolved, observed[-1] if observed else None
+
+
+def _prepare_optional_receipt_selection(
+    store: GuardStore,
+    connection: OAuthConnectionSnapshot | None,
+    *,
+    synced_at: str,
+) -> tuple[ReceiptSyncCapture | None, bool, str]:
+    if connection is None:
+        return None, False, "full"
+    try:
+        with store.hold_oauth_credential_lock():
+            captured = _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
+            allowed, level = optional_upload_settings(store, captured.preference_state)
+            if not allowed:
+                return captured, False, level
+            _ensure_relaxed_receipt_redaction_resync(store, level=level, synced_at=synced_at)
+            _persist_cloud_receipt_redaction_level(store, level=level, synced_at=synced_at)
+            _ensure_cloud_review_privacy_projection(store, level=level, synced_at=synced_at)
+            if level == "full":
+                store.delete_sync_payload(_RELAXED_RECEIPT_REDACTION_RESYNC_MARKER)
+                store.delete_sync_payload(_RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER)
+            captured = _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
+            current_allowed, current_level = optional_upload_settings(store, captured.preference_state)
+            return captured, current_allowed and current_level == level, level
+    except (OSError, RuntimeError, ValueError, TypeError, sqlite3.Error):
+        return None, False, "full"
+
+
 def sync_receipts(
     store: GuardStore,
     *,
@@ -2568,21 +2628,26 @@ def sync_receipts(
 ) -> dict[str, object]:
     """Push local receipts to the configured sync endpoint."""
 
-    resolved_auth_context = auth_context if auth_context is not None else _resolve_guard_sync_auth_context(store)
+    resolved_auth_context, auth_connection = _resolve_optional_upload_auth_context(store, auth_context)
     sync_url = _normalized_receipts_sync_url(_validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context)))
     local_guard_online_at = _now()
-    redaction_level = _resolve_cloud_receipt_redaction_level(store)
-    _ensure_cloud_review_privacy_projection(store, level=redaction_level, synced_at=local_guard_online_at)
-    _ensure_relaxed_receipt_redaction_resync(store, level=redaction_level, synced_at=local_guard_online_at)
-    prior_receipt_cursor = _receipt_sync_cursor_rowid(store)
-    receipts = _receipt_sync_rows_for_upload(store, cursor_rowid=prior_receipt_cursor)
-    cursor_receipt_ids = {item.get("receipt_id") for item in receipts if isinstance(item.get("receipt_id"), str)}
-    receipts, command_detail_backfill_marker = _receipt_sync_rows_with_command_detail_backfill(
-        store,
-        receipts=receipts,
-        redaction_level=redaction_level,
-        synced_at=local_guard_online_at,
+    selection_capture, optional_allowed, redaction_level = _prepare_optional_receipt_selection(
+        store, auth_connection, synced_at=local_guard_online_at
     )
+    cursor_row = None if selection_capture is None else selection_capture.rows.cursor
+    prior_receipt_cursor = _receipt_sync_cursor_rowid_from_payload(None if cursor_row is None else cursor_row.payload())
+    receipts = _receipt_sync_rows_for_upload(store, cursor_rowid=prior_receipt_cursor) if optional_allowed else []
+    cursor_receipt_ids = {item.get("receipt_id") for item in receipts if isinstance(item.get("receipt_id"), str)}
+    backfill_row = None if selection_capture is None else selection_capture.rows.backfill
+    command_detail_backfill_marker: dict[str, object] | None = None
+    if optional_allowed:
+        receipts, command_detail_backfill_marker = _receipt_sync_rows_with_command_detail_backfill_from_marker(
+            store,
+            receipts=receipts,
+            redaction_level=redaction_level,
+            synced_at=local_guard_online_at,
+            marker=None if backfill_row is None else backfill_row.payload(),
+        )
     inventory = store.list_inventory()
     payload: dict[str, object] = {}
     receipts_stored_total = 0
@@ -2604,26 +2669,37 @@ def sync_receipts(
         device_name=device_name,
     )
     latest_uploaded_rowid: int | None = None
+    receipt_rows_uploaded = 0
     auth_refresh_retried = False
     persisted_command_detail_backfill_marker = command_detail_backfill_marker
-    for receipt_batch in _iter_receipt_sync_batches(receipts):
-        body = json.dumps(
-            {
-                "receipts": _cloud_sync_receipts_payload(
-                    receipt_batch,
-                    store=store,
-                    device_id=device_id,
-                    device_name=device_name,
-                    redaction_level=redaction_level,
-                ),
-                "syncContext": sync_context,
-            }
-        ).encode("utf-8")
+    receipt_batches = _iter_receipt_sync_batches(receipts)
+    for batch_index, receipt_batch in enumerate(receipt_batches):
+        preparation = ReceiptUploadPreparation(
+            store,
+            connection=auth_connection,
+            selection=selection_capture,
+            redaction_level=redaction_level,
+            receipt_batch=receipt_batch,
+            sync_context=sync_context,
+            serialize=lambda batch, level: _cloud_sync_receipts_payload(
+                list(batch),
+                store=store,
+                device_id=device_id,
+                device_name=device_name,
+                redaction_level=level,
+            ),
+            authorized_empty_exhaustion=(
+                optional_allowed
+                and not receipts
+                and command_detail_backfill_marker is not None
+                and command_detail_backfill_marker.get("queried") == 0
+            ),
+        )
         request = _guard_sync_request(
             resolved_auth_context,
             request_url=sync_url,
             method="POST",
-            data=body,
+            data=None,
             extra_headers=None,
         )
         try:
@@ -2631,12 +2707,22 @@ def sync_receipts(
                 request=request,
                 timeout_seconds=_SYNC_HTTP_TIMEOUT_SECONDS,
                 retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
+                prepare_request=preparation.prepare,
             )
         except urllib.error.HTTPError as error:
             if error.code == 401:
                 if auth_context is None and not auth_refresh_retried:
                     auth_refresh_retried = True
-                    resolved_auth_context = _resolve_guard_sync_auth_context(store, force_refresh=True)
+                    refreshed_sources: list[OAuthConnectionSnapshot] = []
+                    resolved_auth_context = _resolve_guard_sync_auth_context(
+                        store,
+                        force_refresh=True,
+                        required_connection=auth_connection,
+                        connection_observer=refreshed_sources.append,
+                    )
+                    if refreshed_sources:
+                        auth_connection = refreshed_sources[-1]
+                        preparation.connection = auth_connection
                     sync_url = _normalized_receipts_sync_url(
                         _validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context))
                     )
@@ -2644,7 +2730,7 @@ def sync_receipts(
                         resolved_auth_context,
                         request_url=sync_url,
                         method="POST",
-                        data=body,
+                        data=None,
                         extra_headers=None,
                     )
                     try:
@@ -2652,6 +2738,7 @@ def sync_receipts(
                             request=request,
                             timeout_seconds=_SYNC_HTTP_TIMEOUT_SECONDS,
                             retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
+                            prepare_request=preparation.prepare,
                         )
                     except urllib.error.HTTPError as retry_error:
                         if retry_error.code == 401:
@@ -2677,35 +2764,46 @@ def sync_receipts(
                 raise RuntimeError(_sync_http_error_message(error)) from error
         except OSError as error:
             raise RuntimeError(_sync_url_error_message(error)) from error
-        cursor_batch_rowids = _receipt_sync_cursor_rowids_from_batch(
-            receipt_batch,
-            cursor_receipt_ids=cursor_receipt_ids,
-        )
-        for rowid in cursor_batch_rowids:
-            if isinstance(rowid, int) and (latest_uploaded_rowid is None or rowid > latest_uploaded_rowid):
-                latest_uploaded_rowid = rowid
-        batch_synced_at = _sync_timestamp(payload)
-        updated_command_detail_backfill_marker = _advance_command_detail_backfill_marker(
-            persisted_command_detail_backfill_marker,
-            receipt_batch=receipt_batch,
-            synced_at=batch_synced_at,
-        )
-        if updated_command_detail_backfill_marker is not None:
-            persisted_command_detail_backfill_marker = updated_command_detail_backfill_marker
-            store.set_sync_payload(
-                _RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER,
+        sent_batch = preparation.sent_batch
+        cursor_batch_rowids = _receipt_sync_cursor_rowids_from_batch(sent_batch, cursor_receipt_ids=cursor_receipt_ids)
+        valid_cursor_rowids = [value for value in cursor_batch_rowids if type(value) is int and value > 0]
+        candidate_rowid = max(valid_cursor_rowids) if valid_cursor_rowids else None
+        batch_synced_at = _receipt_progress_timestamp(payload)
+        updated_marker: dict[str, object] | None = None
+        if sent_batch:
+            updated_marker = _advance_command_detail_backfill_marker(
                 persisted_command_detail_backfill_marker,
-                batch_synced_at,
-            )
-        if latest_uploaded_rowid is not None:
-            _persist_receipt_sync_cursor(
-                store=store,
-                latest_uploaded_rowid=latest_uploaded_rowid,
+                receipt_batch=sent_batch,
                 synced_at=batch_synced_at,
             )
-        batch_receipts_stored = payload.get("receiptsStored")
-        if isinstance(batch_receipts_stored, int):
-            receipts_stored_total += batch_receipts_stored
+            if updated_marker is not None:
+                updated_marker["complete"] = False
+        final_selected_batch = batch_index == len(receipt_batches) - 1
+        if (
+            final_selected_batch
+            and command_detail_backfill_marker is not None
+            and preparation.attempt is not None
+            and (preparation.attempt.rows_sent > 0 or preparation.attempt.authorized_empty_exhaustion)
+        ):
+            updated_marker = {**command_detail_backfill_marker, "updated_at": batch_synced_at}
+        progress_candidate = ReceiptProgressCandidate(
+            candidate_rowid,
+            None if updated_marker is None else ReceiptBackfillMarker.from_payload(updated_marker),
+            batch_synced_at,
+        )
+        completion = preparation.complete(payload, candidate=progress_candidate)
+        progress_committed = completion is not None and completion.progress_committed
+        if completion is not None:
+            selection_capture = completion.capture
+        if progress_committed:
+            if candidate_rowid is not None:
+                latest_uploaded_rowid = candidate_rowid
+            if updated_marker is not None:
+                persisted_command_detail_backfill_marker = updated_marker
+            receipt_rows_uploaded += len(sent_batch)
+            batch_receipts_stored = payload.get("receiptsStored")
+            if type(batch_receipts_stored) is int and batch_receipts_stored >= 0:
+                receipts_stored_total += min(batch_receipts_stored, len(sent_batch))
         advisories = payload.get("advisories")
         if isinstance(advisories, list):
             advisories_payload.extend(item for item in advisories if isinstance(item, dict))
@@ -2725,6 +2823,8 @@ def sync_receipts(
             alert_preferences_payload = alert_preferences
         if "reviewVerificationKeys" in payload:
             review_verification_keys_payload = payload.get("reviewVerificationKeys")
+        if not progress_committed:
+            break
     now = _sync_timestamp(payload)
     aibom_context: dict[str, object] = {}
     if home_dir is not None:
@@ -2736,18 +2836,7 @@ def sync_receipts(
             aibom_context["workspace_id"] = workspace_id
     if aibom_context:
         store.set_sync_payload("aibom_inventory_context", aibom_context, now)
-    if persisted_command_detail_backfill_marker is not None:
-        store.set_sync_payload(
-            _RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER,
-            persisted_command_detail_backfill_marker,
-            now,
-        )
     persisted_cursor_rowid = latest_uploaded_rowid if latest_uploaded_rowid is not None else prior_receipt_cursor
-    _persist_receipt_sync_cursor(
-        store=store,
-        latest_uploaded_rowid=persisted_cursor_rowid,
-        synced_at=now,
-    )
     deduped_advisories = _dedupe_sync_payload_items(advisories_payload)
     # Top-level ``policy``, ``teamPolicyPack``, and ``exceptions`` fields are
     # legacy unsigned siblings. They may be present on an authenticated HTTPS
@@ -3011,7 +3100,6 @@ def sync_receipts(
                 policy_bundle_last_error=activation_last_error,
                 managed_controls_publish=managed_controls_publish,
             )
-            _reset_cloud_receipt_redaction_authority(store, synced_at=now)
     else:
         remote_decisions.update(selected_policy_decisions)
         if native_policy_required:
@@ -3110,15 +3198,6 @@ def sync_receipts(
                         },
                         now,
                     )
-                cloud_redaction_level = non_empty_string(effective_policy_bundle.get("receiptRedactionLevel"))
-                if cloud_redaction_level in VALID_RECEIPT_REDACTION_LEVELS:
-                    _persist_cloud_receipt_redaction_level(
-                        store,
-                        level=cloud_redaction_level,
-                        synced_at=now,
-                    )
-                else:
-                    _reset_cloud_receipt_redaction_authority(store, synced_at=now)
         except ApprovalGateError as error:
             cloud_exception_items = []
             remote_policy_sync_blocked = True
@@ -3190,7 +3269,7 @@ def sync_receipts(
         "cloud_exceptions_stored": len(cloud_exception_items),
         "remote_policies_stored": remote_policies_stored,
         **telemetry,
-        "receipts": len(receipts),
+        "receipts": receipt_rows_uploaded,
         "receipt_cursor_rowid": persisted_cursor_rowid,
         "receipt_cursor_backfill": bool(
             prior_receipt_cursor is not None
@@ -3554,7 +3633,17 @@ def sync_guard_events(
 ) -> dict[str, object]:
     """Push pending GuardEventV1 envelopes to Guard Cloud."""
 
-    resolved_auth_context = auth_context if auth_context is not None else _resolve_guard_sync_auth_context(store)
+    resolved_auth_context, auth_connection = _resolve_optional_upload_auth_context(store, auth_context)
+    try:
+        require_optional_telemetry(store, auth_connection)
+    except OptionalUploadPausedError:
+        return {
+            "synced_at": _now(),
+            "events": 0,
+            "accepted": 0,
+            "sync_skipped": True,
+            "sync_reason": "optional_upload_paused",
+        }
     sync_url = _guard_events_sync_url(_validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context)))
     previous_summary = store.get_sync_payload("guard_events_v1_summary")
     total_events = 0
@@ -3584,7 +3673,16 @@ def sync_guard_events(
                 request=request,
                 timeout_seconds=_SYNC_HTTP_TIMEOUT_SECONDS,
                 retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
+                prepare_request=lambda _request: require_optional_telemetry(store, auth_connection),
             )
+        except OptionalUploadPausedError:
+            return {
+                "synced_at": synced_at,
+                "events": total_events,
+                "accepted": total_accepted,
+                "sync_skipped": True,
+                "sync_reason": "optional_upload_paused",
+            }
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 pending_count = len(pending_events)
@@ -3665,6 +3763,16 @@ def sync_guard_events(
                 retry_timeout_seconds=_SYNC_HTTP_RETRY_TIMEOUT_SECONDS,
             )
             raise
+        try:
+            require_optional_telemetry(store, auth_connection)
+        except OptionalUploadPausedError:
+            return {
+                "synced_at": synced_at,
+                "events": total_events,
+                "accepted": total_accepted,
+                "sync_skipped": True,
+                "sync_reason": "optional_upload_paused",
+            }
         completed_ids = _completed_guard_event_ids(payload)
         synced_at = _sync_timestamp(payload)
         uploaded = store.mark_guard_events_v1_uploaded(completed_ids, synced_at)
@@ -3913,10 +4021,14 @@ def sync_pain_signals(
     auth_context: dict[str, object] | None = None,
 ) -> int:
     try:
-        resolved_auth_context = auth_context or _resolve_guard_sync_auth_context(store)
+        resolved_auth_context, auth_connection = _resolve_optional_upload_auth_context(store, auth_context)
     except GuardSyncAuthorizationExpiredError:
         raise
     except GuardSyncNotConfiguredError:
+        return 0
+    try:
+        require_optional_telemetry(store, auth_connection)
+    except OptionalUploadPausedError:
         return 0
     normalized_sync_url = _normalized_receipts_sync_url(
         _validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context))
@@ -3959,12 +4071,23 @@ def sync_pain_signals(
                     request=request,
                     timeout_seconds=_PAIN_SIGNAL_TIMEOUT_SECONDS,
                     retry_timeout_seconds=_PAIN_SIGNAL_RETRY_TIMEOUT_SECONDS,
+                    prepare_request=lambda _request: require_optional_telemetry(store, auth_connection),
                 )
+            except OptionalUploadPausedError:
+                return uploaded_count
             except urllib.error.HTTPError as error:
                 raise PainSignalSyncError(_sync_http_error_message(error), uploaded_count=uploaded_count) from error
             except OSError as error:
                 raise PainSignalSyncError(_sync_url_error_message(error), uploaded_count=uploaded_count) from error
+            try:
+                require_optional_telemetry(store, auth_connection)
+            except OptionalUploadPausedError:
+                return uploaded_count
             uploaded_count += len(signal_items)
+        try:
+            require_optional_telemetry(store, auth_connection)
+        except OptionalUploadPausedError:
+            return uploaded_count
         current_event_id = last_processed_event_id
         persist_pain_signal_cursor(store, event_id=current_event_id, uploaded_count=uploaded_count, now=_now())
         if len(candidates) < 500:
@@ -4638,6 +4761,7 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
     expected_connection: OAuthConnectionSnapshot | None = None,
     required_connection: OAuthConnectionSnapshot | None = None,
     validate_request: Callable[[], None] | None = None,
+    connection_observer: Callable[[OAuthConnectionSnapshot], None] | None = None,
 ) -> dict[str, object]:
     return oauth_refresh_context.resolve_sync_auth_context(
         store,
@@ -4647,6 +4771,7 @@ def _resolve_guard_sync_auth_context_from_oauth_credentials(
         expected_connection=expected_connection,
         required_connection=required_connection,
         validate_request=validate_request,
+        connection_observer=connection_observer,
     )
 
 
@@ -4759,6 +4884,7 @@ def _resolve_guard_sync_auth_context(
     force_refresh: bool = False,
     required_connection: OAuthConnectionSnapshot | None = None,
     validate_request: Callable[[], None] | None = None,
+    connection_observer: Callable[[OAuthConnectionSnapshot], None] | None = None,
 ) -> dict[str, object]:
     if _test_sync_auth_context_override is not None and required_connection is None:
         override = dict(_test_sync_auth_context_override)
@@ -4778,6 +4904,7 @@ def _resolve_guard_sync_auth_context(
                     force_refresh=force_refresh,
                     required_connection=required_connection,
                     validate_request=validate_request,
+                    connection_observer=connection_observer,
                 )
             except GuardSyncAuthorizationExpiredError as error:
                 if not _oauth_authorization_error_requires_fresh_sign_in(error):
@@ -4794,6 +4921,7 @@ def _resolve_guard_sync_auth_context(
                     force_refresh=force_refresh,
                     required_connection=required_connection,
                     validate_request=validate_request,
+                    connection_observer=connection_observer,
                 )
         if bool(oauth_health.get("configured")):
             recoverable_credentials = store.get_recoverable_oauth_local_credentials()
@@ -4805,6 +4933,7 @@ def _resolve_guard_sync_auth_context(
                     force_refresh=force_refresh,
                     required_connection=required_connection,
                     validate_request=validate_request,
+                    connection_observer=connection_observer,
                 )
             raise GuardSyncAuthorizationExpiredError(_guard_oauth_reauthorization_message())
         raise GuardSyncNotConfiguredError("Guard is not logged in.")
@@ -5044,6 +5173,7 @@ def _urlopen_with_sync_retries(
     parse_json_response: bool,
     nonce_fast_path: bool,
     validate_request: Callable[[], None] | None = None,
+    prepare_request: Callable[[urllib.request.Request], None] | None = None,
 ) -> object:
     """Drive one Guard Cloud request through the shared sync retry policies.
 
@@ -5066,6 +5196,8 @@ def _urlopen_with_sync_retries(
     rate_limit_retry_count = 0
     gateway_retry_count = 0
     while True:
+        if prepare_request is not None:
+            prepare_request(current_request)
         # The validator is outside the transport try/except: a failed local
         # authority check must never be mistaken for a retryable network error.
         if validate_request is not None:
@@ -5148,6 +5280,7 @@ def _urlopen_json_with_timeout_retry(
     timeout_seconds: int,
     retry_timeout_seconds: int,
     validate_request: Callable[[], None] | None = None,
+    prepare_request: Callable[[urllib.request.Request], None] | None = None,
 ) -> dict[str, object]:
     return read_sync_object(
         lambda: _urlopen_with_sync_retries(
@@ -5157,6 +5290,7 @@ def _urlopen_json_with_timeout_retry(
             parse_json_response=True,
             nonce_fast_path=False,
             validate_request=validate_request,
+            prepare_request=prepare_request,
         )
     )
 
@@ -5167,6 +5301,7 @@ def _urlopen_with_timeout_retry(
     timeout_seconds: int,
     retry_timeout_seconds: int,
     validate_request: Callable[[], None] | None = None,
+    prepare_request: Callable[[urllib.request.Request], None] | None = None,
 ) -> None:
     _urlopen_with_sync_retries(
         request=request,
@@ -5175,6 +5310,7 @@ def _urlopen_with_timeout_retry(
         parse_json_response=False,
         nonce_fast_path=True,
         validate_request=validate_request,
+        prepare_request=prepare_request,
     )
 
 
@@ -5627,7 +5763,25 @@ def _receipt_sync_rows_with_command_detail_backfill(
 ) -> tuple[list[dict[str, object]], dict[str, object] | None]:
     if _receipt_redaction_level_rank(redaction_level) <= _receipt_redaction_level_rank("full"):
         return receipts, None
-    marker = store.get_sync_payload(_RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER)
+    return _receipt_sync_rows_with_command_detail_backfill_from_marker(
+        store,
+        receipts=receipts,
+        redaction_level=redaction_level,
+        synced_at=synced_at,
+        marker=store.get_sync_payload(_RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER),
+    )
+
+
+def _receipt_sync_rows_with_command_detail_backfill_from_marker(
+    store: GuardStore,
+    *,
+    receipts: list[dict[str, object]],
+    redaction_level: str,
+    synced_at: str,
+    marker: object,
+) -> tuple[list[dict[str, object]], dict[str, object] | None]:
+    if _receipt_redaction_level_rank(redaction_level) <= _receipt_redaction_level_rank("full"):
+        return receipts, None
     before_rowid = _receipt_command_detail_backfill_before_rowid(marker, redaction_level=redaction_level)
     if isinstance(marker, dict) and marker.get("level") == redaction_level and marker.get("complete") is True:
         return receipts, None
@@ -6356,6 +6510,16 @@ def _record_synced_alert_events(
             },
             now,
         )
+
+
+def _receipt_progress_timestamp(payload: dict[str, object]) -> str:
+    parsed = _parse_iso_timestamp(_sync_timestamp(payload))
+    if parsed is not None:
+        try:
+            return parsed.astimezone(timezone.utc).isoformat()
+        except (OverflowError, ValueError):
+            pass
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _sync_timestamp(payload: dict[str, object]) -> str:

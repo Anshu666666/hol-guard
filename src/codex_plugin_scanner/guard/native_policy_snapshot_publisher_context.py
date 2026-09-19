@@ -296,6 +296,7 @@ def capture_for_reservation(
                         with publisher._condition:
                             retry_capture = (
                                 capture_attempt == 0
+                                and isinstance(inputs, CapturedV3PublicationInputs)
                                 and not publisher._closed
                                 and publisher._epoch == publish_epoch
                                 and not publisher._acked

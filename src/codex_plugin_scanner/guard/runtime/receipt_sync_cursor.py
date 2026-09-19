@@ -9,7 +9,10 @@ _RECEIPT_SYNC_CURSOR_BACKFILL_ROWS = 200
 
 
 def _receipt_sync_cursor_rowid(store: GuardStore) -> int | None:
-    payload = store.get_sync_payload("receipt_sync_cursor")
+    return _receipt_sync_cursor_rowid_from_payload(store.get_sync_payload("receipt_sync_cursor"))
+
+
+def _receipt_sync_cursor_rowid_from_payload(payload: object) -> int | None:
     if not isinstance(payload, dict):
         return None
     value = payload.get("last_rowid")
@@ -24,7 +27,7 @@ def _receipt_sync_cursor_rowid(store: GuardStore) -> int | None:
 
 def _receipt_sync_rows_for_upload(store: GuardStore, *, cursor_rowid: int | None) -> list[dict[str, object]]:
     if cursor_rowid is None:
-        return store.list_receipts(limit=_RECEIPT_SYNC_CURSOR_PAGE_SIZE)
+        return store.list_receipts_since_rowid(after_rowid=None, limit=_RECEIPT_SYNC_CURSOR_PAGE_SIZE)
     latest_rowid = store.latest_receipt_rowid()
     if latest_rowid is None:
         return []

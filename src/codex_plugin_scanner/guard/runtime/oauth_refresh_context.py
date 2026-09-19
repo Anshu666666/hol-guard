@@ -130,6 +130,7 @@ def resolve_sync_auth_context(
     expected_connection: OAuthConnectionSnapshot | None = None,
     required_connection: OAuthConnectionSnapshot | None = None,
     validate_request: Callable[[], None] | None = None,
+    connection_observer: Callable[[OAuthConnectionSnapshot], None] | None = None,
 ) -> dict[str, object]:
     from . import runner as api
 
@@ -166,6 +167,8 @@ def resolve_sync_auth_context(
         api._require_guard_oauth_connection(store, captured)
         if validate_request is not None:
             validate_request()
+        if connection_observer is not None:
+            connection_observer(captured)
         return {
             "sync_url": sync_url,
             "access_token": cached_access_token,
@@ -230,6 +233,8 @@ def resolve_sync_auth_context(
     api._require_guard_oauth_connection(store, committed_connection)
     if validate_request is not None:
         validate_request()
+    if connection_observer is not None:
+        connection_observer(committed_connection)
     return {
         "sync_url": sync_url,
         "access_token": str(refreshed["access_token"]),

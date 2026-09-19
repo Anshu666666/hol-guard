@@ -66,7 +66,9 @@ def test_publisher_startup_ack_and_mutation_push(tmp_path: Path, monkeypatch: py
                 break
             time.sleep(0.01)
         current = publisher.current_snapshot()
-        assert current is not None and current["mode"] == "observe"
+        assert current is not None and current["mode"] == "observe", _publisher_failure_state(
+            publisher, request_count=len(calls)
+        )
         assert isinstance(current["generation"], int)
         assert isinstance(first["generation"], int)
         assert current["generation"] > first["generation"]
@@ -256,7 +258,7 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
     publisher.start()
     try:
         assert not publisher.wait_until_ready(time.monotonic() + 0.5)
-        assert publisher.last_error == "native_policy_snapshot_ack_mismatch"
+        assert publisher.last_error == "native_policy_snapshot_ack_mismatch", _publisher_failure_state(publisher)
         assert not publisher.is_ready()
     finally:
         publisher.close()
@@ -484,3 +486,73 @@ def test_same_generation_retries_reuse_exact_signed_snapshot_bytes(
     assert snapshot_bytes_v3(second) == first_bytes
     assert cache_path.read_bytes() == first_bytes
     assert build_calls == 1
+
+
+def _publisher_failure_state(publisher: NativePolicySnapshotPublisher, *, request_count: int | None = None) -> str:
+    """Sample bounded scalar state only after an existing assertion fails."""
+    import sys
+
+    namespace = "codex_plugin_scanner.guard."
+    frame_labels = {
+        ("threading", "wait"): "thread_wait",
+        (namespace + "native_policy_publication_lock", "hold_policy_publication_mutation"): "mutation_lock",
+        (namespace + "native_policy_snapshot_publisher", "_run"): "publisher_run",
+        (namespace + "native_policy_snapshot_publisher", "_publish_once"): "publication",
+        (namespace + "native_policy_snapshot_publisher_inputs", "_policy_input_changed"): "input_observer",
+        (namespace + "native_policy_snapshot_publisher_inputs", "_compiled_effective_policy"): "config_compile",
+        (namespace + "native_policy_snapshot_publisher_context", "publication_context"): "context_capture",
+        (namespace + "native_policy_snapshot_publisher_context", "capture_for_reservation"): "reservation_capture",
+        (namespace + "native_policy_snapshot_publisher_context", "compiled_v3_compatible_policy"): "v3_compile",
+        (namespace + "native_policy_snapshot_publisher_scoped", "compiled_scoped_policy"): "scoped_compile",
+        (namespace + "native_policy_snapshot_publisher_transport", "_publish_snapshot_v3"): "v3_publish",
+        (namespace + "native_policy_snapshot_generation", "native_policy_snapshot_v3"): "v3_generation",
+        (namespace + "native_policy_authority_read", "read_native_policy_authority_inputs"): "authority_read",
+        (namespace + "native_policy_authority_read", "_capture_native_policy_authority_inputs"): "authority_capture",
+        (namespace + "native_policy_snapshot_source_requirement", "refresh_source_requirement"): "source_presence",
+        (namespace + "config", "load_guard_config"): "config_load",
+        (namespace + "store_connection_schema", "_connect"): "store_connect",
+        (namespace + "store_connection_schema", "_connect_once"): "store_connect_once",
+        (namespace + "store_connection_schema", "_hold_storage_gate"): "store_gate",
+        (namespace + "store_connection_schema", "_hold_advisory_file_lock"): "store_advisory_lock",
+        (namespace + "store_storage_lock", "hold_storage_file_lock"): "storage_lock",
+        (namespace + "native_policy_snapshot_storage", "_v3_generation_lock"): "generation_lock",
+        (namespace + "store_secret_policy_integrity", "_policy_integrity_secret_material"): "key_material",
+        (namespace + "native_policy_authority_managed", "read_frozen_native_managed_authority"): "managed_authority",
+        (namespace + "native_policy_authority_managed", "require_unenrolled_secrets"): "managed_key_absence",
+        (namespace + "store_extension_control_authority_support", "_authority_key"): "control_authority_key",
+        (namespace + "store_secret_policy_integrity", "_load_policy_integrity_control_state"): "key_control_state",
+        (namespace + "store_base", "get_secret"): "secret_backend",
+    }
+    thread = publisher._thread
+    snapshot = publisher._snapshot
+    state: dict[str, object] = {
+        "last_error": publisher._last_error,
+        "epoch": publisher._epoch,
+        "failure_count": publisher._failure_count,
+        "closed": publisher._closed,
+        "acked": publisher._acked,
+        "thread_alive": thread is not None and thread.is_alive(),
+        "retry_pending": publisher._retry_not_before_monotonic is not None,
+        "event_set": publisher._publish_event.is_set(),
+        "snapshot_present": snapshot is not None,
+        "snapshot_is_observe": snapshot is not None and snapshot.get("mode") == "observe",
+        "scoped": publisher._scoped_publication_enabled,
+        "source_required": publisher._source_authority_required,
+        "source_memory_required": publisher._source_memory_required,
+        "observed_policy": publisher._observed_policy_fingerprint is not None,
+        "request_count": request_count,
+    }
+    stack: list[tuple[str, int]] = []
+    frame = sys._current_frames().get(thread.ident) if thread is not None and thread.ident is not None else None
+    try:
+        for _ in range(32):
+            if frame is None:
+                break
+            label = frame_labels.get((frame.f_globals.get("__name__"), frame.f_code.co_name))
+            if label is not None:
+                stack.append((label, frame.f_lineno))
+            frame = frame.f_back
+    finally:
+        frame = None
+    state["worker_stack"] = tuple(stack)
+    return json.dumps(state, sort_keys=True, separators=(",", ":"))

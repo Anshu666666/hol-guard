@@ -178,3 +178,4 @@ def test_benchmark_keeps_autonomous_and_rearmed_sessions_separate(monkeypatch: p
     assert sessions[1].events == ["observe", "stop", "observe", "observe"]
     assert sessions[2].events == ["observe", "stop", "rearm", "observe"]
     assert len(measurements.recovery) == len(measurements.rearmed_recovery) == 1
+    assert [report["mode"] for report in measurements.recovery_diagnostics] == ["autonomous", "explicitly_rearmed"]

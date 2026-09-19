@@ -56,6 +56,9 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         guard_contracts::NATIVE_COMMAND_PROGRAM_CAPABILITY.into(),
         guard_contracts::NATIVE_COMMAND_CONTROL_FENCE_CAPABILITY.into(),
         "policy-snapshot-v3".into(),
+        "policy-snapshot-v4".into(),
+        "policy-scoped-authority-v1".into(),
+        "hook-envelope-v3".into(),
         "policy-snapshot-push-v1".into(),
         "policy-snapshot-control-v1".into(),
         "policy-snapshot-resident-generation-v1".into(),
@@ -86,7 +89,7 @@ pub(crate) fn capabilities() -> RuntimeCapabilitiesV1 {
         build_sha: crate::BUILD_SHA.to_owned(),
         target: format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS),
         features,
-        // Describes the source catalog only; scoped/managed activation is not advertised.
+        // Catalog identity does not advertise the separate managed-authority contract.
         extension_catalog_digest: Some(crate::policy_scoped_managed::catalog_digest().to_owned()),
     }
 }
@@ -284,6 +287,25 @@ pub(crate) fn safe_error_response(code: &str, retryable: bool) -> Vec<u8> {
 mod tests {
     use super::{evaluate_resident_bytes, safe_error_response};
     use serde_json::Value;
+
+    #[test]
+    fn scoped_capabilities_do_not_advertise_unsupported_authority_variants() {
+        let advertised = super::capabilities();
+        for supported in [
+            "policy-snapshot-v4",
+            "policy-scoped-authority-v1",
+            "hook-envelope-v3",
+        ] {
+            assert!(advertised.features.iter().any(|value| value == supported));
+        }
+        for unsupported in [
+            "policy-managed-authority-v1",
+            "policy-command-expressions-v1",
+            "policy-managed-config-floor-v1",
+        ] {
+            assert!(!advertised.features.iter().any(|value| value == unsupported));
+        }
+    }
 
     #[test]
     fn approval_error_transport_is_finite() {

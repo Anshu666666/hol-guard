@@ -280,12 +280,18 @@ def publication_context(
         # Both publication contracts carry the same command binding. A
         # concurrent writer must not pair an earlier command projection with
         # a later complete managed capture, even before the post-ACK fence.
-        _ = _v3_sources_with_command_binding(inputs, command_extensions)
+        residual_sources = _v3_sources_with_command_binding(inputs, command_extensions)
+        # The native command contract already consumes these exact controls.
+        # Advertising scoped rows must not force lossless V3 controls/defaults
+        # through the separate, possibly unavailable managed-authority contract.
+        bound_controls_without_v4 = (
+            len(residual_sources) < len(inputs.sources) and "policy-managed-authority-v1" not in features
+        )
         scoped = requires_scoped_publication(self, inputs)
         compatible_v3 = (
             scoped
             and not self._scoped_publication_enabled
-            and not features.intersection(SCOPED_PUBLISH_FEATURES)
+            and (not features.intersection(SCOPED_PUBLISH_FEATURES) or bound_controls_without_v4)
             and not inputs.authority.rows
             and not inputs.authority.command_expressions
             and inputs.authority.managed_config is None

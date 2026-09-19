@@ -233,11 +233,16 @@ def test_source_change_after_complete_recapture_cannot_commit_v3_ack(tmp_path, m
         publisher.close()
 
 
-@pytest.mark.parametrize("features", [(), tuple(SCOPED_PUBLISH_FEATURES)])
-def test_actual_loaded_managed_configuration_never_flattens_to_v3(tmp_path, monkeypatch, features):
+@pytest.mark.parametrize("features", [(), ("policy-snapshot-v4",), tuple(SCOPED_PUBLISH_FEATURES)])
+@pytest.mark.parametrize("bound_controls", [False, True])
+def test_actual_loaded_managed_configuration_never_flattens_to_v3(tmp_path, monkeypatch, features, bound_controls):
     from tests.test_native_generic_policy_resident import _source
 
     source = _source(tmp_path, monkeypatch)
+    if bound_controls:
+        from ci.native_runtime.probe_installed_native_extensions import provision
+
+        provision(source.store)
     source.profile.write_text(
         json.dumps(
             {

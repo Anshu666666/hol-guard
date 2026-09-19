@@ -36,6 +36,7 @@ class SloMeasurements:
     rss_baseline: int
     rss_peak: int
     rearmed_recovery: list[float] = field(default_factory=list)
+    recovery_diagnostics: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -273,6 +274,7 @@ def slo_result(
         "python_semantic_decisions": summary.route_counts["python_semantic"],
         "errors_16": measurements.errors_16,
         "errors_64": measurements.errors_64,
+        "recovery_diagnostics": measurements.recovery_diagnostics[:16],
         "latency": {
             "warm_all_harnesses": summarize(summary.warm_values),
             "warm_by_event": {event: summarize(values) for event, values in summary.event_values.items() if values},

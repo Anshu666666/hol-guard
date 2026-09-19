@@ -39,8 +39,8 @@ def _delegated_controls():
     )
 
 
-@pytest.fixture
-def local_controls(tmp_path: Path):
+@pytest.fixture(params=[(), ("policy-snapshot-v4",), tuple(SCOPED_PUBLISH_FEATURES)])
+def local_controls(tmp_path: Path, request: pytest.FixtureRequest):
     store = GuardStore(tmp_path / "guard")
     update_settings(
         store.guard_home,
@@ -54,7 +54,9 @@ def local_controls(tmp_path: Path):
         calls.append(json.loads(kwargs["payload"])["request"]["snapshot"])
         return _ack(kwargs["payload"])
 
-    publisher = NativePolicySnapshotPublisher(store=store, status_provider=_status, client_request=client)
+    status = _status()
+    status.capabilities.features += request.param
+    publisher = NativePolicySnapshotPublisher(store=store, status_provider=lambda: status, client_request=client)
     try:
         publisher._publish_once()
         assert publisher.is_ready(), publisher.last_error

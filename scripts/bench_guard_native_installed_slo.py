@@ -202,6 +202,7 @@ def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
             f"resident stop failed during recovery sample {index}",
         )
         started = time.perf_counter()
+        session.rearm_policy_after_resident_stop()
         observation = session.observe("claude-code", "PostToolUse", "1k")
         values.append((time.perf_counter() - started) * 1_000.0)
         _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")

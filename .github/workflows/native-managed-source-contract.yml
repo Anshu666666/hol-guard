@@ -1,0 +1,432 @@
+name: Diagnose current authority baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact test-only source commit
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Exact diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Exact diagnostic tree
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-authority-baseline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authority-baseline:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-refresh-shared-reader-baseline-20260919' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      EXPECTED_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      EXPECTED_DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      EXPECTED_DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+      MATRIX_PYTHON: ${{ matrix.python }}
+      PYTEST_ADDOPTS: ""
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        id: checkout
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact test-only source before execution
+        id: source_guard
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "c9aa05547b7d1a6058955c72950d1c42b19fe561"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-refresh-shared-reader-baseline-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          parent = "36c15f07d47cc431bd69884a62028b58a7408628"
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, parent]
+          assert git("rev-parse", source + "^{tree}") == "a18df41b0d68eb332bc201f1919c5f7e4b06aea9"
+          assert git("rev-parse", parent + "^{tree}") == "00da983ef0b708f39243fa06c6200fcf609b8a60"
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          tests = {
+              "tests/test_daemon_extension_control_refresh_leases.py",
+              "tests/test_native_policy_snapshot_default_capture_worker.py",
+          }
+          workflow = ".github/workflows/native-managed-source-contract.yml"
+          assert set(git("diff", "--name-status", "--no-renames", parent, source).splitlines()) == {
+              "A\t" + path for path in tests
+          }
+          for path in tests:
+              assert git("ls-tree", parent, "--", path) == ""
+          assert git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines() == ["A\t" + workflow]
+          assert git("ls-tree", source, "--", workflow) == ""
+          assert git("ls-tree", parent, "--", workflow) == ""
+          pins = [
+              [".github/workflows/ci.yml","100644","2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["ci/native_runtime/probe_installed_native_extensions.py","100644","aa1d544ba1569e49b1dd2554f43faf7a90c0f246"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],
+              ["rust/crates/guard-runtime/src/policy_store_command_authority.rs","100644","3a0c76fa872b48137dd1cda0780cf9328b07cf6b"],
+              ["src/codex_plugin_scanner/guard/daemon/server.py","100644","2792f7cf919da55d02435b8fb3295ae2d514a6f5"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority_io.py","100644","2cac3afea3edde0ae906c83668c20fda99636c74"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority_store.py","100644","49a7b169419838bf60c84e4d17a94c0dc6befea0"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority.py","100644","7f7aa8dd4d27931b8cce50a748a9b4eed4f16e61"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_managed.py","100644","0db51ba94840286f266c8459088b05b68bba9cfc"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_read.py","100644","daed1462f4494ef49d523333c4c7236126ea6969"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","afb888ee46939730c04380142ea550c4b11fa74a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py","100644","d132b361c3b718deb5cf3bbee34af03893dbba07"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","2037838cc13a03c807038d64c4c0752e02c2bb3a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","3d1282e0fb0d187d76a5a454097bd08c3290a310"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","5cb393fba684873addfcaa97e4342a404fb317c0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","753417df5724a88db5359aa58236981f87ddd88e"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_source_requirement.py","100644","417c3066e8e413eecab52d9e989b01e37854baaa"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py","100644","e68f5a3f534f9677a05b8590d3fd4e74f2b1d092"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_v3_renewal.py","100644","65df0c5b6da3cfa19856cc3a7423c6bc0feb71d6"],
+              ["src/codex_plugin_scanner/guard/runtime/extension_control_runtime.py","100644","618e4d87b771afd475fe91912352025def78ca3d"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_schema.py","100644","99d1a5dd9d62f4ace3d241a09b0dfbc1c8a53e40"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_support.py","100644","92584abb06e39e636a7d59b9354aaa80cb995431"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_transitions.py","100644","ce13704ebbe013f41022b53faa37bdd25042f6e7"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority.py","100644","e8087b79e944bce60e15d399db174686360ffa7d"],
+              ["src/codex_plugin_scanner/guard/store_sync_payload_mutations.py","100644","4cba562fb67a2fe20ee741cd0ec8b903efef02d8"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","831e1e9dfa438241720a973fa6308bfaaa7093a5"],
+              ["tests/test_daemon_extension_control_refresh_leases.py","100644","3141cae08877a1b2fa6fdf37c2026ca575615ead"],
+              ["tests/test_guard_extension_control_authority.py","100644","dd62103f2d9267cc29fa32fb44929a031a701092"],
+              ["tests/test_native_policy_authority_read.py","100644","afcb4618f05b0b987b9fa685b44f6609d71110db"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","915b648d205aa205b7e6b303f37e504bd6b6f193"],
+              ["tests/test_native_policy_snapshot_default_capture_worker.py","100644","447531327220b05b8ae0d995fbe41cbd64187149"],
+              ["tests/test_native_policy_snapshot_publisher.py","100644","c4ad2122cc3aa021ee9ae836f119e2c24bc12ad6"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","a663d5014bc62822c0c86d970b0ce056f4e97cd3"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          for path, mode, sha in pins:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              assert git("hash-object", "--", path) == sha
+              if path not in tests:
+                  assert git("ls-tree", parent, "--", path) == expected
+          assert len(git("ls-tree", "-r", "--name-only", parent).splitlines()) == 4433
+          assert len(git("ls-tree", "-r", "--name-only", source).splitlines()) == 4435
+          assert len(git("ls-tree", "-r", "--name-only", "HEAD").splitlines()) == 4436
+          subprocess.run(["git", "diff", "--cached", "--exit-code"], check=True)
+          subprocess.run(["git", "diff", "--exit-code", "HEAD"], check=True)
+          print(json.dumps({
+              "record": "native-baseline-source-guard",
+              "source": source,
+              "pins": len(pins),
+              "testOnlySource": True,
+              "workflowOnlyDiagnostic": True,
+              "productionUnchanged": True,
+          }, sort_keys=True))
+          PY
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
+        run: |
+          python -I - <<'PY'
+          import pathlib
+          import venv
+
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
+      - run: uv sync --frozen --extra dev --python ${{ matrix.python }}
+      - name: Verify installation fixture interpreter provenance
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
+
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
+      - name: Run complete refresh and signed mutation controls
+        id: refresh_tests
+        run: |
+          uv run --no-sync python -m pytest -q --tb=short --strict-markers -o addopts= \
+            tests/test_daemon_extension_control_refresh_leases.py \
+            --junitxml="$RUNNER_TEMP/refresh-lease-${{ matrix.python }}.xml"
+      - name: Run complete default capture characterization
+        id: capture_tests
+        if: ${{ always() && steps.refresh_tests.outcome != 'skipped' }}
+        run: |
+          uv run --no-sync python -m pytest -q --tb=short --strict-markers -o addopts= \
+            tests/test_native_policy_snapshot_default_capture_worker.py \
+            --junitxml="$RUNNER_TEMP/default-capture-${{ matrix.python }}.xml"
+      - name: Report exact refresh baseline outcomes
+        if: ${{ always() && steps.refresh_tests.outcome != 'skipped' }}
+        run: |
+          python -I - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          report = Path(os.environ["RUNNER_TEMP"]) / ("refresh-lease-" + os.environ["MATRIX_PYTHON"] + ".xml")
+          root = ET.parse(report).getroot()
+          cases = list(root.iter("testcase"))
+          module = "tests.test_daemon_extension_control_refresh_leases"
+          positive = "test_unchanged_daemon_refresh_admits_independent_native_reader"
+          control = "test_signed_control_mutation_still_excludes_independent_native_reader"
+          expected = Counter((module, name) for name in (positive, control))
+          actual = Counter((case.get("classname"), case.get("name")) for case in cases)
+          observed = {}
+          for case in cases:
+              name = case.get("name")
+              known = case.get("classname") == module and name in (positive, control)
+              tags = [tag for tag in ("failure", "error", "skipped") for _ in case.findall(tag)]
+              lines = set()
+              for failure in case.findall("failure"):
+                  for value in re.findall(
+                      r"(?:tests/)?test_daemon_extension_control_refresh_leases\.py:(\d+):",
+                      failure.text or "",
+                  ):
+                      number = int(value)
+                      if 1 <= number <= 131:
+                          lines.add(number)
+              print(json.dumps({
+                  "record": "refresh-lease-case",
+                  "case": name if known else "unexpected",
+                  "knownIdentity": known,
+                  "tags": tags,
+                  "testFailureLines": sorted(lines),
+                  "intendedRefreshBoundary": known and name == positive and 104 in lines,
+              }, sort_keys=True))
+              if known:
+                  observed[name] = (tags, lines)
+          assert actual == expected
+          assert not list(root.iter("skipped"))
+          assert not list(root.iter("error"))
+          assert len(list(root.iter("failure"))) == 1
+          assert observed[positive] == (["failure"], {104})
+          assert observed[control] == ([], set())
+          print(json.dumps({
+              "record": "refresh-lease-baseline",
+              "cases": 2,
+              "intendedFailures": 1,
+              "passingMutationControls": 1,
+              "pytestExitPreserved": True,
+          }, sort_keys=True))
+          PY
+      - name: Report all default capture observations
+        if: ${{ always() && steps.capture_tests.outcome != 'skipped' }}
+        run: |
+          python -I - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          report = Path(os.environ["RUNNER_TEMP"]) / ("default-capture-" + os.environ["MATRIX_PYTHON"] + ".xml")
+          root = ET.parse(report).getroot()
+          cases = list(root.iter("testcase"))
+          module = "tests.test_native_policy_snapshot_default_capture_worker"
+          function = "test_default_worker_admits_workspace_after_startup_status_writes"
+          names = {function + "[" + suffix + "]" for suffix in ("none", "twice", "continuous")}
+          expected = Counter((module, name) for name in names)
+          actual = Counter((case.get("classname"), case.get("name")) for case in cases)
+          observed = {}
+          for case in cases:
+              name = case.get("name")
+              known = case.get("classname") == module and name in names
+              tags = [tag for tag in ("failure", "error", "skipped") for _ in case.findall(tag)]
+              lines = set()
+              for failure in case.findall("failure"):
+                  for value in re.findall(
+                      r"(?:tests/)?test_native_policy_snapshot_default_capture_worker\.py:(\d+):",
+                      failure.text or "",
+                  ):
+                      number = int(value)
+                      if 1 <= number <= 159:
+                          lines.add(number)
+              print(json.dumps({
+                  "record": "default-capture-case",
+                  "case": name if known else "unexpected",
+                  "knownIdentity": known,
+                  "tags": tags,
+                  "testFailureLines": sorted(lines),
+                  "readinessBoundary": known and 156 in lines,
+                  "deadlineBoundary": known and 157 in lines,
+              }, sort_keys=True))
+              if known:
+                  observed[name] = tags
+          assert actual == expected
+          assert not list(root.iter("skipped"))
+          assert not list(root.iter("error"))
+          assert observed[function + "[none]"] == []
+          assert observed[function + "[continuous]"] == []
+          assert observed[function + "[twice]"] in ([], ["failure"])
+          print(json.dumps({
+              "record": "default-capture-characterization",
+              "cases": 3,
+              "failedCases": len(list(root.iter("failure"))),
+              "passingCases": sum(not tags for tags in observed.values()),
+              "pytestExitPreserved": True,
+              "productionRepairProven": False,
+              "specificWriterIdentified": False,
+          }, sort_keys=True))
+          PY
+      - name: Verify exact source after both baselines
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        run: |
+          python -I - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          def git(*arguments):
+              return subprocess.check_output(["git", *arguments], text=True).strip()
+
+          source = os.environ["EXPECTED_SOURCE_COMMIT"]
+          head = os.environ["EXPECTED_DIAGNOSTIC_COMMIT"]
+          tree = os.environ["EXPECTED_DIAGNOSTIC_TREE"]
+          for value in (source, head, tree):
+              assert re.fullmatch(r"[0-9a-f]{40}", value)
+          assert source == "c9aa05547b7d1a6058955c72950d1c42b19fe561"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-refresh-shared-reader-baseline-20260919"
+          assert os.environ["GITHUB_SHA"] == head == git("rev-parse", "HEAD")
+          assert git("rev-parse", "HEAD^{tree}") == tree
+          assert git("rev-list", "--parents", "-n", "1", "HEAD").split() == [head, source]
+          parent = "36c15f07d47cc431bd69884a62028b58a7408628"
+          assert git("rev-list", "--parents", "-n", "1", source).split() == [source, parent]
+          assert git("rev-parse", source + "^{tree}") == "a18df41b0d68eb332bc201f1919c5f7e4b06aea9"
+          assert git("rev-parse", parent + "^{tree}") == "00da983ef0b708f39243fa06c6200fcf609b8a60"
+          identity = "--format=%an%n%ae%n%cn%n%ce"
+          assert git("show", "-s", identity, "HEAD") == git("show", "-s", identity, source)
+          tests = {
+              "tests/test_daemon_extension_control_refresh_leases.py",
+              "tests/test_native_policy_snapshot_default_capture_worker.py",
+          }
+          workflow = ".github/workflows/native-managed-source-contract.yml"
+          assert set(git("diff", "--name-status", "--no-renames", parent, source).splitlines()) == {
+              "A\t" + path for path in tests
+          }
+          for path in tests:
+              assert git("ls-tree", parent, "--", path) == ""
+          assert git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines() == ["A\t" + workflow]
+          assert git("ls-tree", source, "--", workflow) == ""
+          assert git("ls-tree", parent, "--", workflow) == ""
+          pins = [
+              [".github/workflows/ci.yml","100644","2c7b353bc21952db0adcb05ddcb8363d109e6883"],
+              ["ci/native_runtime/probe_installed_native_extensions.py","100644","aa1d544ba1569e49b1dd2554f43faf7a90c0f246"],
+              ["conftest.py","100644","9e1408c12fe951ad2f1541b1c2c0508f3c35b41a"],
+              ["pyproject.toml","100644","876066431cbe958a77a85edddff95a829394cfbc"],
+              ["rust/crates/guard-runtime/src/policy_store_command_authority.rs","100644","3a0c76fa872b48137dd1cda0780cf9328b07cf6b"],
+              ["src/codex_plugin_scanner/guard/daemon/server.py","100644","2792f7cf919da55d02435b8fb3295ae2d514a6f5"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority_io.py","100644","2cac3afea3edde0ae906c83668c20fda99636c74"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority_store.py","100644","49a7b169419838bf60c84e4d17a94c0dc6befea0"],
+              ["src/codex_plugin_scanner/guard/native_command_control_authority.py","100644","7f7aa8dd4d27931b8cce50a748a9b4eed4f16e61"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_managed.py","100644","0db51ba94840286f266c8459088b05b68bba9cfc"],
+              ["src/codex_plugin_scanner/guard/native_policy_authority_read.py","100644","daed1462f4494ef49d523333c4c7236126ea6969"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","100644","afb888ee46939730c04380142ea550c4b11fa74a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_generation.py","100644","d132b361c3b718deb5cf3bbee34af03893dbba07"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","100644","2037838cc13a03c807038d64c4c0752e02c2bb3a"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py","100644","3d1282e0fb0d187d76a5a454097bd08c3290a310"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scheduling.py","100644","0a500224add718d93aa989258125a35790746400"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_transport.py","100644","5cb393fba684873addfcaa97e4342a404fb317c0"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","100644","753417df5724a88db5359aa58236981f87ddd88e"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_source_requirement.py","100644","417c3066e8e413eecab52d9e989b01e37854baaa"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py","100644","e68f5a3f534f9677a05b8590d3fd4e74f2b1d092"],
+              ["src/codex_plugin_scanner/guard/native_policy_snapshot_v3_renewal.py","100644","65df0c5b6da3cfa19856cc3a7423c6bc0feb71d6"],
+              ["src/codex_plugin_scanner/guard/runtime/extension_control_runtime.py","100644","618e4d87b771afd475fe91912352025def78ca3d"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_schema.py","100644","99d1a5dd9d62f4ace3d241a09b0dfbc1c8a53e40"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_support.py","100644","92584abb06e39e636a7d59b9354aaa80cb995431"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority_transitions.py","100644","ce13704ebbe013f41022b53faa37bdd25042f6e7"],
+              ["src/codex_plugin_scanner/guard/store_extension_control_authority.py","100644","e8087b79e944bce60e15d399db174686360ffa7d"],
+              ["src/codex_plugin_scanner/guard/store_sync_payload_mutations.py","100644","4cba562fb67a2fe20ee741cd0ec8b903efef02d8"],
+              ["tests/conftest.py","100644","61e6d98609309fac99c9baae50fab5f47229fcde"],
+              ["tests/native_policy_snapshot_test_fixtures.py","100644","831e1e9dfa438241720a973fa6308bfaaa7093a5"],
+              ["tests/test_daemon_extension_control_refresh_leases.py","100644","3141cae08877a1b2fa6fdf37c2026ca575615ead"],
+              ["tests/test_guard_extension_control_authority.py","100644","dd62103f2d9267cc29fa32fb44929a031a701092"],
+              ["tests/test_native_policy_authority_read.py","100644","afcb4618f05b0b987b9fa685b44f6609d71110db"],
+              ["tests/test_native_policy_snapshot_capture_retry.py","100644","915b648d205aa205b7e6b303f37e504bd6b6f193"],
+              ["tests/test_native_policy_snapshot_default_capture_worker.py","100644","447531327220b05b8ae0d995fbe41cbd64187149"],
+              ["tests/test_native_policy_snapshot_publisher.py","100644","c4ad2122cc3aa021ee9ae836f119e2c24bc12ad6"],
+              ["tests/test_native_policy_snapshot_reservation_capture.py","100644","a663d5014bc62822c0c86d970b0ce056f4e97cd3"],
+              ["uv.lock","100644","45bf8a2dcf7b1f70c4387508a94348ba54f20022"],
+          ]
+          for path, mode, sha in pins:
+              assert re.fullmatch(r"[0-9a-f]{40}", sha)
+              expected = f"{mode} blob {sha}\t{path}"
+              assert git("ls-tree", source, "--", path) == expected
+              assert git("ls-tree", "HEAD", "--", path) == expected
+              assert git("hash-object", "--", path) == sha
+              if path not in tests:
+                  assert git("ls-tree", parent, "--", path) == expected
+          assert len(git("ls-tree", "-r", "--name-only", parent).splitlines()) == 4433
+          assert len(git("ls-tree", "-r", "--name-only", source).splitlines()) == 4435
+          assert len(git("ls-tree", "-r", "--name-only", "HEAD").splitlines()) == 4436
+          subprocess.run(["git", "diff", "--cached", "--exit-code"], check=True)
+          subprocess.run(["git", "diff", "--exit-code", "HEAD"], check=True)
+          print(json.dumps({
+              "record": "native-baseline-source-guard",
+              "source": source,
+              "pins": len(pins),
+              "testOnlySource": True,
+              "workflowOnlyDiagnostic": True,
+              "productionUnchanged": True,
+          }, sort_keys=True))
+          PY

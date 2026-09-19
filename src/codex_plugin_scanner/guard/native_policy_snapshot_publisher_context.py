@@ -17,6 +17,7 @@ from .native_policy_authority_blocked import command_controls_blocked
 from .native_policy_authority_read import NativeVerifiedPolicyInputs, read_native_policy_authority_inputs
 from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_constants import _REQUIRED_PUBLISH_FEATURES, NativePolicySnapshotError
+from .policy_document_types import PolicyCompilationError
 from .native_policy_snapshot_publisher_scoped import SCOPED_PUBLISH_FEATURES, compiled_scoped_policy
 from .native_policy_snapshot_source_requirement import refresh_source_requirement
 
@@ -259,20 +260,23 @@ def publication_context(
         v3_only = not self._scoped_publication_enabled and not features.intersection(SCOPED_PUBLISH_FEATURES)
         if v3_only and not _REQUIRED_PUBLISH_FEATURES.issubset(features):
             raise NativePolicySnapshotError("native_policy_snapshot_protocol_unsupported")
-        if v3_only:
-            # Refuse signed Cloud semantics through the established V3
-            # representability contract before the general scoped compiler can
-            # collapse that refusal into an unrelated compilation error. This
-            # preflight never authorizes publication; the complete capture and
-            # reservation fences below still authenticate the selected source.
-            _ = read_native_cloud_policy_inputs(
-                self.store,
-                now=self._wall_clock(),
-                command_controls_bound=command_extensions.get("health") == "protected",
-            )
         # Capabilities describe what a runtime can consume, not the authority
         # selected for this publication. Authenticate the complete input next.
-        config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
+        try:
+            config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
+        except PolicyCompilationError:
+            if v3_only:
+                # A V3-only runtime must surface signed Cloud representability
+                # failures through the finite Cloud-policy contract. Keep the
+                # secondary read off the successful source-free path; it is
+                # only a diagnostic preflight after canonical compilation has
+                # already refused the complete capture.
+                _ = read_native_cloud_policy_inputs(
+                    self.store,
+                    now=self._wall_clock(),
+                    command_controls_bound=command_extensions.get("health") == "protected",
+                )
+            raise
         # Both publication contracts carry the same command binding. A
         # concurrent writer must not pair an earlier command projection with
         # a later complete managed capture, even before the post-ACK fence.

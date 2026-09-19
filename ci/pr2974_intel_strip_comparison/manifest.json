@@ -1,0 +1,262 @@
+{
+  "schema": "hol-guard.pr2974.intel-strip-comparison-plan.v1",
+  "status": "FROZEN_PLAN_NO_RESULTS",
+  "source_sha": "9d37172d6bc1e1febeb9c7611a5a050ef5ea798a",
+  "source_tree": "1e5d43e1d6d3364a6e863a4c3c52e24222542f39",
+  "source_parent": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+  "tracked_files": 4675,
+  "branch": "codex/pr2974-intel-strip-comparison",
+  "workflow_name": "PR2974 Intel strip comparison",
+  "runner_label": "macos-15-intel",
+  "python_version": "3.12.10",
+  "uv_version": "0.9.26",
+  "project_version": "3.0.1",
+  "rust_host": "x86_64-apple-darwin",
+  "target": "x86_64-apple-darwin",
+  "installed_platform_tag": "macosx_13_0_x86_64",
+  "design": {
+    "git_blob": "a6d01711f81437f24117627efc180fb37ac6821e",
+    "bytes": 71674,
+    "sha256": "d90886bc1a7ba5446669c1e6640ff25a017b416e1e23f91054a35d813f843530"
+  },
+  "research": {
+    "git_blob": "b29d12b4b30c02297c3b2d5605bca18f9237c4d8",
+    "bytes": 12832,
+    "sha256": "49587ba4886999445c900545d182959d17f634aa102f8ef79b8960816bd6d597"
+  },
+  "variants": [
+    {
+      "id": "baseline",
+      "order": 1,
+      "profile_environment": {
+        "CARGO_PROFILE_RELEASE_STRIP": "none"
+      },
+      "target_directory": "<EXPERIMENT_ROOT>/targets/baseline",
+      "wheel_directory": "<EXPERIMENT_ROOT>/wheels/baseline",
+      "runtime_environment": "<EXPERIMENT_ROOT>/venvs/baseline",
+      "attempts": 1
+    },
+    {
+      "id": "candidate",
+      "order": 2,
+      "profile_environment": {
+        "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+      },
+      "target_directory": "<EXPERIMENT_ROOT>/targets/candidate",
+      "wheel_directory": "<EXPERIMENT_ROOT>/wheels/candidate",
+      "runtime_environment": "<EXPERIMENT_ROOT>/venvs/candidate",
+      "attempts": 1
+    }
+  ],
+  "bounds": {
+    "job_minutes": 75,
+    "environment_setup_seconds": 600,
+    "pure_wheel_seconds": 180,
+    "each_build_seconds": 600,
+    "each_inventory_set_seconds": 60,
+    "each_selftest_and_capabilities_seconds": 60,
+    "each_wheel_assembly_and_install_seconds": 120,
+    "identity_probe_seconds": 120,
+    "default_auto_probe_seconds": 180,
+    "pi_probe_seconds": 180,
+    "original_smoke_seconds": 480,
+    "term_grace_seconds": 5,
+    "kill_grace_seconds": 5,
+    "projection_files": 256,
+    "projection_per_file_bytes": 33554432,
+    "projection_raw_bytes": 100663296,
+    "projection_gzip_bytes": 16777216,
+    "base64_chunk_characters": 6000,
+    "complete_binary_or_wheel_member_bytes": 67108864,
+    "complete_artifact_archive_bytes": 536870912
+  },
+  "source_inputs": {
+    ".github/workflows/native-wheel-ci.yml": {
+      "git_blob": "396716400a0360ac123986505a0b0c35e823ba27",
+      "bytes": 23306,
+      "sha256": "0bd708e1aec09b534eb160f6def24c661e8cbd58752b3624cd3a404af85e16cf"
+    },
+    "ci/native_runtime/probe_installed_pi_output.py": {
+      "git_blob": "2351b319b4874c20f0b52b0ec53b9d1e9c4d9c4a",
+      "bytes": 12444,
+      "sha256": "649afc8be47f24aca89aa3e40c87c1ea245d3064cf9d44d5adf00b08a924c5b2"
+    },
+    "ci/native_runtime/probe_installed_runtime_identity.py": {
+      "git_blob": "cbc2b324f770c39ae7a863599a9d150ccba53618",
+      "bytes": 13420,
+      "sha256": "72da3feb3b7bd647130638133a548484e198c743144521e7e3fda9f004e90a60"
+    },
+    "ci/native_runtime/probe_native_default_auto.py": {
+      "git_blob": "aa84a007fa02dd43bb4a1663af1e8119297b45b3",
+      "bytes": 20084,
+      "sha256": "e1a0812cb91cf0f419f22cba2a889372d98edaf49d0ac025f0e2ba3b4d5c2d8c"
+    },
+    "pyproject.toml": {
+      "git_blob": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+      "bytes": 8647,
+      "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+    },
+    "rust/Cargo.lock": {
+      "git_blob": "afa8eb8ec869ec9c9ade8b9ee21f6593cd9d363d",
+      "bytes": 23842,
+      "sha256": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5"
+    },
+    "rust/Cargo.toml": {
+      "git_blob": "a4782eafffedc8a1dfae59db03740fe74937b9df",
+      "bytes": 1017,
+      "sha256": "73bb63b12d2f54b641ea3cf43cf8c065fac0238c7d5759a721da575fb088c869"
+    },
+    "rust/crates/guard-runtime/src/main.rs": {
+      "git_blob": "e02848425bdeaabccc6f52acb6f5092b5fb79781",
+      "bytes": 14561,
+      "sha256": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8"
+    },
+    "scripts/bench_guard_native_installed_slo_runtime.py": {
+      "git_blob": "a2042f01eb83cdb7dad312bdf56186ae4431a307",
+      "bytes": 3846,
+      "sha256": "6f0d95f44526dbc856dc3a2385f6226c7c05326745f1d054e6925864a57f2020"
+    },
+    "scripts/bench_guard_native_installed_slo.py": {
+      "git_blob": "d2bbb5d777db1851ddba0090b37b5c8460fc88ce",
+      "bytes": 18142,
+      "sha256": "e25003e8a615bfc7270164e3af1a0210a99a3adafddeb30644ccaa4d568c0d5f"
+    },
+    "scripts/build_native_hol_guard_wheel.py": {
+      "git_blob": "5ece449c233fd43043ef83e4df2a7e6ebb529824",
+      "bytes": 19800,
+      "sha256": "1ce90e6724af019556be94624db543f679e0f17885c223fc55392f4da4d9f7c6"
+    },
+    "scripts/native_qualification_process.py": {
+      "git_blob": "d3053676b32e213aba8c6cded9008c702a229859",
+      "bytes": 2710,
+      "sha256": "4f63c52378e68fa38872171c8f07a8cc7aeacb05511d1d87cb5aaee012412d08"
+    },
+    "scripts/native_slo_observation_failure.py": {
+      "git_blob": "3be1d15b90f53ec3d664648e7ad08e00bb614386",
+      "bytes": 6103,
+      "sha256": "191730fe37fcd9495b5984598b00e49455d85034c22737abdfa2113f786704d9"
+    },
+    "scripts/native_slo_session.py": {
+      "git_blob": "a0361155e660c790dca693772639247cca173ea9",
+      "bytes": 21955,
+      "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72"
+    },
+    "scripts/sync_repo_version.py": {
+      "git_blob": "6b0e7252e82f22a5d78a24314ca407661df4d127",
+      "bytes": 9570,
+      "sha256": "016b0a25ce4a61e7eab96876f5f939d89077c43a01926a5f32781439165ee268"
+    },
+    "src/codex_plugin_scanner/guard/native_runtime_identity.py": {
+      "git_blob": "12eb238fbc97d282293d32dfa71611eaeded2df9",
+      "bytes": 14311,
+      "sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe"
+    },
+    "src/codex_plugin_scanner/guard/native_runtime.py": {
+      "git_blob": "0f90c8673a26c43051cb9ae13b79845d951f86af",
+      "bytes": 25122,
+      "sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55"
+    },
+    "tests/test_native_runtime_live_identity.py": {
+      "git_blob": "221b8f51e3a57a80440453a8a628d8e40c75e12d",
+      "bytes": 18686,
+      "sha256": "ab58d93c11a88897df02bcd5f4840d1383d6c1be19d4d6bf786a9e4852177be1"
+    },
+    "tests/test_native_runtime_unsupported_inspection.py": {
+      "git_blob": "6d445d306b3cec5f70fb8e3b308933f5afb4f2d3",
+      "bytes": 13175,
+      "sha256": "4210723b2e3296c2dcc9fdafbb368bb40a73748ad93d49f5c214704e98f6ea18"
+    },
+    "uv.lock": {
+      "git_blob": "791b2efebdd6774bf7f1b5bd2504dd8cea3cac46",
+      "bytes": 961060,
+      "sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+    }
+  },
+  "helper_sha256": {
+    "common.py": "3b9e74abb624046028e78bb21092321b17385ab9d97847fbb3f2537a9fdc4f64",
+    "entry.py": "533aee65ec7b2730f50a06f41e2c88ab94be6b208e391e75e5e39145b2b39abb",
+    "darwin_process.py": "182e14d8747a01264cf6ce1f5c4ce462f753e766189eb7e4056fc58aedfce137",
+    "owned_process.py": "006435e045f010b8c53b9c46ce28e9f508d66457d0363a58251a14e692cfd276",
+    "admission.py": "3b5acb7daa489dd23e2271af0cbd7bcaeb7798877f167f17b3ab15a251d55b3d",
+    "setup.py": "644ae121db4bfb32e24a44e0bfd5cda43371f83b5703b40b376c6e113f127ff5",
+    "wheels.py": "185de177244faf603da93fc778817be682480000d207edebadf515f150bc2bb5",
+    "environment.py": "c9acc2ade46a0ca323d84e53ffd09e105725e3dd3a804157ab949bbe4697f903",
+    "lock_environment.py": "8698ebe285c2a7ec7e76258b584e6fa43871372de48f3e86df6480950da40a63",
+    "dependency_pair.py": "1d21162204b668fb27a1aec30da10823a6e07e8df3e8099c5fd5f1b850950aaf",
+    "macho.py": "abdc44e42b0c2458e8ca87ba9f9802421412f4a9068822eec77527e762a702b7",
+    "inventory.py": "1bd4c06554e8d8242095297a529f011341ca044ffac8ab37850635183c60b206",
+    "stop_capture.py": "687f738e24738b174c4a5a4ad277c4a3a8f3190e0e51bfdab51d903dd8e229ea",
+    "build_variants.py": "252c060a9dfc6a80c64472ea53cb5bbee4b4ec99bb8d5ac7a9f284a8c3fb4d98",
+    "probes.py": "0b43ea37ea8511e37a2ed7a8ce8f609bd91c0ea4f6424d8fea36142a12feb6bc",
+    "parser_controls.py": "470f066785881925c074a20e11925a0d92dd3a4036fc4b4c9b68fee3e3e29f74",
+    "archives.py": "e58466d4752515bf935b7f9cb4c75ada0731b0b2ecbcef991999a9650a990b17",
+    "projection.py": "caa14f196b9c794c3d546768c55ad10bb4ac6c2fd87c20c9e93a9d22465e43e9",
+    "process_controls.py": "820ad426f2ff6dc17a2cdcc358c1f0bfbb28d859b448c0025b693e4e519c9d11",
+    "tool_environment.py": "a41b620550066cb8f827dd4e1a291517b6bfe09cdd914ca62d8a01dd6cd732ac",
+    "validate.py": "f50f14fedf21305492d469feee86ba7ea4623bcd04f0c1502283c609c870bd12",
+    "source-support.json": "6c563ed8367e0a62793f112388d15ba7c1ef96af26caacf5ffd8842b17e6590d"
+  },
+  "workflow_sha256": "b42dfcb3c2da7d28e078a24c7f22bf369418b62eadff2bea4b6aa55a62b82a7a",
+  "harness_paths": [
+    ".github/workflows/pr2974-intel-strip-comparison.yml",
+    "ci/pr2974_intel_strip_comparison/admission.py",
+    "ci/pr2974_intel_strip_comparison/archives.py",
+    "ci/pr2974_intel_strip_comparison/build_variants.py",
+    "ci/pr2974_intel_strip_comparison/common.py",
+    "ci/pr2974_intel_strip_comparison/darwin_process.py",
+    "ci/pr2974_intel_strip_comparison/dependency_pair.py",
+    "ci/pr2974_intel_strip_comparison/entry.py",
+    "ci/pr2974_intel_strip_comparison/environment.py",
+    "ci/pr2974_intel_strip_comparison/inventory.py",
+    "ci/pr2974_intel_strip_comparison/lock_environment.py",
+    "ci/pr2974_intel_strip_comparison/macho.py",
+    "ci/pr2974_intel_strip_comparison/manifest.json",
+    "ci/pr2974_intel_strip_comparison/owned_process.py",
+    "ci/pr2974_intel_strip_comparison/parser_controls.py",
+    "ci/pr2974_intel_strip_comparison/probes.py",
+    "ci/pr2974_intel_strip_comparison/process_controls.py",
+    "ci/pr2974_intel_strip_comparison/projection.py",
+    "ci/pr2974_intel_strip_comparison/setup.py",
+    "ci/pr2974_intel_strip_comparison/source-support.json",
+    "ci/pr2974_intel_strip_comparison/stop_capture.py",
+    "ci/pr2974_intel_strip_comparison/tool_environment.py",
+    "ci/pr2974_intel_strip_comparison/validate.py",
+    "ci/pr2974_intel_strip_comparison/wheels.py"
+  ],
+  "planned_controls": {
+    "parser": 36,
+    "real_darwin_held_zombie": 1,
+    "synthetic_performance_probes": 0
+  },
+  "transport": {
+    "single_ascii_gzip_member": true,
+    "originals": "Every command has bounded stdout/stderr plus process and terminal originals; every raw command stream is also retained in a complete read-back archive.",
+    "fifo": "New external FIFO retains all emitted stop diagnostics; no non-emitted in-memory object claim.",
+    "administrative_limits": {
+      "process_history_compact_bytes": 4194304,
+      "one_process_snapshot_bytes": 1048576,
+      "inline_combined_stream_bytes": 16777216,
+      "native_stop_stream_bytes": 16777216,
+      "native_stop_objects": 65536,
+      "native_stop_reads": 65536
+    },
+    "bound_failure": "Failed/incomplete receipt; original captured extent and archives retained; no completion credit."
+  },
+  "automatic_decision": {
+    "production_candidate_eligible": false,
+    "qualification_complete": false,
+    "release_equivalence": false,
+    "review_all_changed_loader_commands": true,
+    "first_native_stop_failure_preserved": true,
+    "original_thresholds_unchanged": true
+  },
+  "source_scope": "Explicit immutable investigated 9d source selected by root; no later/final source qualification is claimed.",
+  "source_selection": {
+    "authority": "Root explicitly selected reviewed 9d37172d on 2026-09-19",
+    "prior_design_source": "3cc4fe16c42ac19dc854a4cd971fa23bb9bc7efc",
+    "corrected_source_owner": "729426f7009b476e00d1ee67fa04b73a1c33b293",
+    "original_design_preserved": true
+  },
+  "source_support_sha256": "6c563ed8367e0a62793f112388d15ba7c1ef96af26caacf5ffd8842b17e6590d",
+  "source_index_scope": "The 20 direct input pins and 73 support-provider pins form the same complete 93-path index; every source leaf is independently checked against the frozen Git tree."
+}

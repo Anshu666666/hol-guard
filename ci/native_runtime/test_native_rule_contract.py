@@ -147,6 +147,10 @@ _COMPONENTS = (
         Path("rust/crates/guard-command/src/lib.rs"),
     ),
     (
+        "guard-command-native-command-control-projection",
+        Path("rust/crates/guard-command/src/native_command_control_projection.rs"),
+    ),
+    (
         "guard-command-native-command-controls",
         Path("rust/crates/guard-command/src/native_command_controls.rs"),
     ),

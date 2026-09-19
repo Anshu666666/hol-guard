@@ -11,7 +11,8 @@ import json
 import math
 import re
 from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from itertools import pairwise
+from typing import Any, TypeGuard, cast
 
 from scripts.native_slo_workspace_observer import public_binding
 
@@ -27,7 +28,7 @@ _COMMAND_FIELDS = {
 }
 
 
-def finite_time(value: object) -> bool:
+def finite_time(value: object) -> TypeGuard[int | float]:
     if type(value) not in (int, float):
         return False
     try:
@@ -102,7 +103,7 @@ def _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -
         )
     ]
     ordered = all(finite_time(stamp) and 0 <= stamp < 2**63 for stamp in stamps) and all(
-        left <= right for left, right in zip(stamps, stamps[1:], strict=False)
+        left <= right for left, right in pairwise(cast(list[int | float], stamps))
     )
     wall_entered, wall_returned = row.get("review_entered_wall_ms"), row.get("review_returned_wall_ms")
     expected_decision = "allow" if action == "allow" else "deny"
@@ -220,7 +221,7 @@ def join_decisions(
     exact_attempts = (
         len(actual_attempts) == len(declared_attempts)
         and all(isinstance(value, str) for value in actual_attempts)
-        and sorted(actual_attempts) == sorted(declared_attempts)
+        and sorted(cast(list[str], actual_attempts)) == sorted(declared_attempts)
     )
     assessed = []
     for row in rows:

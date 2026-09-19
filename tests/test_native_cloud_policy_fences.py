@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,7 +71,11 @@ def test_untrusted_current_source_cannot_keep_a_ready_snapshot(tmp_path: Path, m
         publisher.close()
 
 
-def test_replacement_during_publication_does_not_accept_the_previous_source(tmp_path: Path) -> None:
+@pytest.mark.parametrize("notify_publisher", [False, True], ids=["same-epoch", "new-epoch"])
+def test_replacement_during_publication_does_not_accept_the_previous_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, notify_publisher: bool
+) -> None:
+    from codex_plugin_scanner.guard import store_policy
     from codex_plugin_scanner.guard.store import GuardStore
 
     store = GuardStore(tmp_path / "guard-home")
@@ -80,21 +85,72 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(tmp_
     replacement["bundleVersion"] = "policy-next"
     replacement["issuedAt"] = "2026-07-02T00:00:00Z"
     replacement = sign_policy_bundle(replacement)
+    requests: list[bytes] = []
+    notifications: list[tuple[Path, bool]] = []
+    notify = store_policy.notify_native_policy_mutation
+
+    def observe_notification(guard_home: Path, *, require_source_authority: bool = False) -> None:
+        notifications.append((guard_home, require_source_authority))
+        if notify_publisher:
+            notify(guard_home, require_source_authority=require_source_authority)
 
     def replace_during_publish(**kwargs: object) -> bytes:
         payload = kwargs["payload"]
         assert isinstance(payload, bytes)
-        _activate_defaults(store, replacement, keyring)
+        requests.append(payload)
+        assert len(requests) <= 2
+        if len(requests) == 1:
+            # Isolate notification delivery while retaining the real signed transaction.
+            with monkeypatch.context() as notification:
+                notification.setattr(store_policy, "notify_native_policy_mutation", observe_notification)
+                _activate_defaults(store, replacement, keyring)
+        # Neither the stale receipt nor an unsent replacement receipt may open the barrier.
+        assert not publisher.is_ready()
+        assert publisher.current_snapshot_binding() is None
+        assert publisher._snapshot is None
+        assert publisher._published_cloud_inputs.source_identity is None
         return _ack(payload)
 
     publisher = NativePolicySnapshotPublisher(
         store=store, status_provider=_status, client_request=replace_during_publish
     )
+    initial_epoch = publisher._epoch
     try:
         publisher._publish_once()
+        assert len(requests) == 1
+        assert notifications == [(store.guard_home, True)]
+        assert publisher._epoch == initial_epoch + int(notify_publisher)
+        assert publisher._publish_event.is_set() is notify_publisher
         assert not publisher.is_ready()
-        assert publisher.last_error == "native_cloud_policy_changed_during_publish"
+        assert publisher.current_snapshot() is None
+        assert publisher.current_snapshot_binding() is None
+        assert publisher._snapshot is None
+        assert publisher._published_cloud_inputs.source_identity is None
+        if notify_publisher:
+            assert publisher.last_error is None
+            assert publisher._failure_count == 0
+            assert publisher._retry_not_before_monotonic is None
+        else:
+            assert publisher.last_error == "native_cloud_policy_changed_during_publish"
+            assert publisher._failure_count == 1
+            assert publisher._retry_not_before_monotonic is not None
         assert store.get_sync_payload("policy_bundle")["bundleHash"] == replacement["bundleHash"]
+
+        publisher._publish_once()
+        assert len(requests) == 2
+        assert publisher.is_ready(), publisher.last_error
+        assert publisher.current_snapshot() == json.loads(requests[1])["request"]["snapshot"]
+        assert publisher.current_snapshot_binding() is not None
+        accepted_source = publisher._published_cloud_inputs.source_identity
+        assert accepted_source is not None
+        assert accepted_source[:3] == (
+            replacement["bundleVersion"],
+            replacement["bundleHash"],
+            replacement["workspaceId"],
+        )
+        assert publisher.last_error is None
+        assert publisher._failure_count == 0
+        assert publisher._retry_not_before_monotonic is None
     finally:
         publisher.close()
 

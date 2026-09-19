@@ -29,10 +29,8 @@ from .sqlite_recovery import (
 
 # ruff: noqa: F403,F405
 from .store_base import *
-from .store_base import (
-    _CLOUD_SYNC_LOCK_POLL_SECONDS as _CLOUD_SYNC_LOCK_POLL_SECONDS,
-    _OAUTH_REFRESH_LOCK_POLL_SECONDS as _OAUTH_REFRESH_LOCK_POLL_SECONDS,
-)
+from .store_base import _CLOUD_SYNC_LOCK_POLL_SECONDS as _CLOUD_SYNC_LOCK_POLL_SECONDS
+from .store_base import _OAUTH_REFRESH_LOCK_POLL_SECONDS as _OAUTH_REFRESH_LOCK_POLL_SECONDS
 from .store_command_activity_api_schema import ensure_command_activity_api_schema
 from .store_command_activity_display_schema import (
     COMMAND_ACTIVITY_DISPLAY_SCHEMA_MIGRATION_VERSION,

@@ -9,7 +9,10 @@ from contextlib import contextmanager, suppress
 from typing import Any
 
 from codex_plugin_scanner.guard.native_approval_errors import FINITE_FAILURE_CODES
-from codex_plugin_scanner.guard.native_policy_test_support import PublicationLifecycleObservation
+from codex_plugin_scanner.guard.native_policy_test_support import (
+    PublicationLifecycleObservation,
+    _finite_publisher_failure,
+)
 from codex_plugin_scanner.guard.native_resident_client import (
     native_resident_client_failure_code,
     native_resident_client_request,
@@ -70,7 +73,7 @@ class PublicationObservation:
         with self._lock:
             return (
                 "window=after_daemon_construction; "
-                f"attached={self.attached}; publisher={_finite_code(publisher_error)}; "
+                f"attached={self.attached}; publisher={_finite_publisher_failure(publisher_error)}; "
                 f"transport={self._failure}; started={self._started}; completed={self._completed}"
             )
 

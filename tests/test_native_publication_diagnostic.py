@@ -469,3 +469,11 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
         assert "private-" not in output
     finally:
         publisher.close()
+
+
+def test_publisher_description_uses_exact_existing_publisher_vocabulary():
+    observation = diagnostic.PublicationObservation()
+    known = "native_policy_snapshot_integrity_key_unavailable"
+    assert f"publisher={known};" in observation.describe(known)
+    assert "publisher=other;" in observation.describe(known + ":private-suffix-canary")
+    assert "private-suffix-canary" not in observation.describe(known + ":private-suffix-canary")

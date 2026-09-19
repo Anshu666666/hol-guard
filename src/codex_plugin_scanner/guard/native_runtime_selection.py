@@ -22,7 +22,9 @@ def select_native_runtime(
         check_continuation()
     mode = api.native_mode()
     if mode == "off":
-        return api.NativeRuntimeStatus(
+        from .native_runtime import NativeRuntimeStatus
+
+        return NativeRuntimeStatus(
             mode=mode,
             available=False,
             compatible=False,
@@ -45,7 +47,9 @@ def select_native_runtime(
         if api._is_bundled_candidate(candidate):
             manifest, manifest_error = api._manifest_for_bundled_identity(identity)
             if manifest_error is not None:
-                return api.NativeRuntimeStatus(
+                from .native_runtime import NativeRuntimeStatus
+
+                return NativeRuntimeStatus(
                     mode=mode,
                     available=True,
                     compatible=False,
@@ -64,7 +68,9 @@ def select_native_runtime(
         if capabilities is None:
             continue
         if capabilities.protocol_version != api._NATIVE_PROTOCOL_VERSION:
-            return api.NativeRuntimeStatus(
+            from .native_runtime import NativeRuntimeStatus
+
+            return NativeRuntimeStatus(
                 mode=mode,
                 available=True,
                 compatible=False,
@@ -84,7 +90,9 @@ def select_native_runtime(
             else:
                 reason = None
             if reason is not None:
-                return api.NativeRuntimeStatus(
+                from .native_runtime import NativeRuntimeStatus
+
+                return NativeRuntimeStatus(
                     mode=mode,
                     available=True,
                     compatible=False,
@@ -97,7 +105,9 @@ def select_native_runtime(
         expected_version = api._python_package_version()
         version_compatible = expected_version is None or capabilities.runtime_version == expected_version
         compatible = version_compatible or mode in {"shadow", "force"}
-        return api.NativeRuntimeStatus(
+        from .native_runtime import NativeRuntimeStatus
+
+        return NativeRuntimeStatus(
             mode=mode,
             available=True,
             compatible=compatible,
@@ -105,7 +115,9 @@ def select_native_runtime(
             identity=identity,
             capabilities=capabilities,
         )
-    return api.NativeRuntimeStatus(
+    from .native_runtime import NativeRuntimeStatus
+
+    return NativeRuntimeStatus(
         mode=mode,
         available=False,
         compatible=False,

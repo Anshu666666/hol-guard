@@ -63,8 +63,11 @@ def authority_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         if not valid:
             raise ValueError("workspace request command identity invalid")
     return {
-        **binding, "rule_digest": rule, "mode": "enforce",
-        "issued_at_ms": issued, "expires_at_ms": expires,
+        **binding,
+        "rule_digest": rule,
+        "mode": "enforce",
+        "issued_at_ms": issued,
+        "expires_at_ms": expires,
         "command_controls": controls,
     }
 
@@ -88,9 +91,14 @@ def _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -
     identity = receipt.get("decision_id") if isinstance(receipt, Mapping) else None
     command = receipt.get("command_extensions") if isinstance(receipt, Mapping) else None
     stamps = [
-        row.get(key) for key in (
-            "offered_ms", "review_entered_ms", "native_finished_ms",
-            "review_returned_ms", "delivered_ms", "commit_observed_ms",
+        row.get(key)
+        for key in (
+            "offered_ms",
+            "review_entered_ms",
+            "native_finished_ms",
+            "review_returned_ms",
+            "delivered_ms",
+            "commit_observed_ms",
         )
     ]
     ordered = all(finite_time(stamp) and 0 <= stamp < 2**63 for stamp in stamps) and all(
@@ -100,17 +108,18 @@ def _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -
     expected_decision = "allow" if action == "allow" else "deny"
     return {
         "one_completed_review": (
-            type(row.get("review_calls")) is int and row["review_calls"] == 1
-            and row.get("review_returned") is True
+            type(row.get("review_calls")) is int and row["review_calls"] == 1 and row.get("review_returned") is True
         ),
         "one_completed_request": row.get("request_returned") is True,
         "bounded_monotonic_order": ordered,
         "observed_wall_lifetime": (
-            finite_time(wall_entered) and finite_time(wall_returned)
+            finite_time(wall_entered)
+            and finite_time(wall_returned)
             and authority["issued_at_ms"] <= wall_entered <= wall_returned < authority["expires_at_ms"]
         ),
         "request_scope_matches": (
-            type(row.get("workspace_index")) is int and 0 <= row["workspace_index"] < 100
+            type(row.get("workspace_index")) is int
+            and 0 <= row["workspace_index"] < 100
             and row.get("request_scope_matches") is True
         ),
         "request_binding_matches": row.get("request_binding_matches") is True,
@@ -118,33 +127,42 @@ def _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -
             row.get("authority_readback_before") is True and row.get("authority_readback_after") is True
         ),
         "validated_native_receipt": validated is not None and row.get("native_receipt_validated") is True,
-        "receipt_authority_matches": isinstance(receipt, Mapping) and all(
+        "receipt_authority_matches": isinstance(receipt, Mapping)
+        and all(
             receipt.get(receipt_key) == authority[source_key]
             for receipt_key, source_key in (
-                ("policy_generation", "generation"), ("policy_digest", "policy_digest"),
-                ("runtime_identity", "runtime_identity"), ("rule_digest", "rule_digest"),
+                ("policy_generation", "generation"),
+                ("policy_digest", "policy_digest"),
+                ("runtime_identity", "runtime_identity"),
+                ("rule_digest", "rule_digest"),
             )
         ),
-        "receipt_command_controls_match": isinstance(command, Mapping) and all(
-            command.get(key) == value for key, value in authority["command_controls"].items()
-        ),
+        "receipt_command_controls_match": isinstance(command, Mapping)
+        and all(command.get(key) == value for key, value in authority["command_controls"].items()),
         "receipt_semantics_match": (
-            isinstance(receipt, Mapping) and receipt.get("event_name") == "PreToolUse"
-            and receipt.get("harness") == "claude-code" and receipt.get("workspace_bound") is True
-            and receipt.get("observe_mode") is False and receipt.get("policy_action") == action
+            isinstance(receipt, Mapping)
+            and receipt.get("event_name") == "PreToolUse"
+            and receipt.get("harness") == "claude-code"
+            and receipt.get("workspace_bound") is True
+            and receipt.get("observe_mode") is False
+            and receipt.get("policy_action") == action
             and receipt.get("decision") == expected_decision
             and receipt.get("model_output_action") == "not_applicable"
         ),
         "delivery_matches": row.get("delivered_decision") == expected_decision,
         "original_witness_matches": (
-            isinstance(identity, str) and row.get("witness_decision_id") == identity
+            isinstance(identity, str)
+            and row.get("witness_decision_id") == identity
             and row.get("writer_admitted") is True
-            and row.get("witness_committed") is True and row.get("witness_commit_binding_valid") is True
+            and row.get("witness_committed") is True
+            and row.get("witness_commit_binding_valid") is True
         ),
         "unique_committed_readback": (
-            type(row.get("committed_row_count")) is int and row["committed_row_count"] == 1
+            type(row.get("committed_row_count")) is int
+            and row["committed_row_count"] == 1
             and row.get("committed_receipt_validated") is True
-            and validated_committed is not None and validated_committed == validated
+            and validated_committed is not None
+            and validated_committed == validated
         ),
         "capture_faults_absent": type(row.get("capture_faults")) is int and row["capture_faults"] == 0,
     }
@@ -174,26 +192,34 @@ def join_decisions(
 ) -> dict[str, object]:
     """Require every declared request; never discard a failed earlier sample."""
     if (
-        not finite_time(accepted_ms) or not 0 <= accepted_ms < 2**63 or action not in {"allow", "block"}
+        not finite_time(accepted_ms)
+        or not 0 <= accepted_ms < 2**63
+        or action not in {"allow", "block"}
         or not 1 <= len(declared_attempts) <= MAX_REQUESTS
-        or any(not isinstance(value, str) or re.fullmatch(r"mixed-policy-(?:[0-9]|[12][0-9]|3[01])", value) is None
-               for value in declared_attempts)
+        or any(
+            not isinstance(value, str) or re.fullmatch(r"mixed-policy-(?:[0-9]|[12][0-9]|3[01])", value) is None
+            for value in declared_attempts
+        )
         or len(set(declared_attempts)) != len(declared_attempts)
-        or len(rows) > MAX_REQUESTS or any(not isinstance(row, Mapping) for row in rows)
+        or len(rows) > MAX_REQUESTS
+        or any(not isinstance(row, Mapping) for row in rows)
     ):
         raise ValueError("workspace request join outside declared bounds")
     controls = authority.get("command_controls")
     if not isinstance(controls, Mapping):
         raise ValueError("workspace request join authority invalid")
-    reconstructed = authority_projection({
-        **authority,
-        "command_extensions": {source: controls.get(target) for target, source in _COMMAND_FIELDS.items()},
-    })
+    reconstructed = authority_projection(
+        {
+            **authority,
+            "command_extensions": {source: controls.get(target) for target, source in _COMMAND_FIELDS.items()},
+        }
+    )
     if reconstructed != authority:
         raise ValueError("workspace request join authority invalid")
     actual_attempts = [row.get("attempt") for row in rows]
     exact_attempts = (
-        len(actual_attempts) == len(declared_attempts) and all(isinstance(value, str) for value in actual_attempts)
+        len(actual_attempts) == len(declared_attempts)
+        and all(isinstance(value, str) for value in actual_attempts)
         and sorted(actual_attempts) == sorted(declared_attempts)
     )
     assessed = []
@@ -202,48 +228,58 @@ def join_decisions(
         receipt = row.get("native_receipt")
         native_finished = row.get("native_finished_ms")
         after_acceptance = (
-            finite_time(row.get("offered_ms")) and finite_time(row.get("review_entered_ms"))
-            and row["offered_ms"] >= accepted_ms and row["review_entered_ms"] >= accepted_ms
+            finite_time(row.get("offered_ms"))
+            and finite_time(row.get("review_entered_ms"))
+            and row["offered_ms"] >= accepted_ms
+            and row["review_entered_ms"] >= accepted_ms
         )
-        assessed.append({
-            "attempt": row.get("attempt"), "workspace_index": row.get("workspace_index"),
-            "decision_id": receipt.get("decision_id") if isinstance(receipt, Mapping) else None,
-            "request_id": receipt.get("request_id") if isinstance(receipt, Mapping) else None,
-            "native_finished_ms": native_finished,
-            "request_offered_after_acceptance": after_acceptance,
-            "accepted_to_offer_ms": row["offered_ms"] - accepted_ms if finite_time(row.get("offered_ms")) else None,
-            "accepted_to_native_finish_ms": native_finished - accepted_ms if finite_time(native_finished) else None,
-            "checks": checks, "passed": all(checks.values()),
-        })
+        assessed.append(
+            {
+                "attempt": row.get("attempt"),
+                "workspace_index": row.get("workspace_index"),
+                "decision_id": receipt.get("decision_id") if isinstance(receipt, Mapping) else None,
+                "request_id": receipt.get("request_id") if isinstance(receipt, Mapping) else None,
+                "native_finished_ms": native_finished,
+                "request_offered_after_acceptance": after_acceptance,
+                "accepted_to_offer_ms": row["offered_ms"] - accepted_ms if finite_time(row.get("offered_ms")) else None,
+                "accepted_to_native_finish_ms": native_finished - accepted_ms if finite_time(native_finished) else None,
+                "checks": checks,
+                "passed": all(checks.values()),
+            }
+        )
     identities = [row["decision_id"] for row in assessed]
-    unique_identities = (
-        all(isinstance(value, str) and _DIGEST.fullmatch(value) is not None for value in identities)
-        and len(set(identities)) == len(identities)
-    )
+    unique_identities = all(
+        isinstance(value, str) and _DIGEST.fullmatch(value) is not None for value in identities
+    ) and len(set(identities)) == len(identities)
     request_ids = [row["request_id"] for row in assessed]
-    unique_request_ids = (
-        all(isinstance(value, str) and re.fullmatch(r"[a-z0-9][a-z0-9_.:-]{0,255}", value) for value in request_ids)
-        and len(set(request_ids)) == len(request_ids)
-    )
-    eligible = [
-        row for row in assessed
-        if row["passed"] and row["native_finished_ms"] >= accepted_ms
-    ]
+    unique_request_ids = all(
+        isinstance(value, str) and re.fullmatch(r"[a-z0-9][a-z0-9_.:-]{0,255}", value) for value in request_ids
+    ) and len(set(request_ids)) == len(request_ids)
+    eligible = [row for row in assessed if row["passed"] and row["native_finished_ms"] >= accepted_ms]
     first_native = _first(eligible)
     first_post_acceptance = _first([row for row in eligible if row["request_offered_after_acceptance"]])
     complete = (
-        observation_complete is True and exact_attempts and unique_identities and unique_request_ids
-        and all(row["passed"] for row in assessed) and first_post_acceptance is not None
+        observation_complete is True
+        and exact_attempts
+        and unique_identities
+        and unique_request_ids
+        and all(row["passed"] for row in assessed)
+        and first_post_acceptance is not None
         and first_post_acceptance["unique_observed_first"] is True
     )
     return {
-        "passed": complete, "observation_complete": observation_complete is True,
-        "declared_requests": len(declared_attempts), "observed_requests": len(rows),
-        "exact_attempts": exact_attempts, "unique_receipt_identities": unique_identities,
+        "passed": complete,
+        "observation_complete": observation_complete is True,
+        "declared_requests": len(declared_attempts),
+        "observed_requests": len(rows),
+        "exact_attempts": exact_attempts,
+        "unique_receipt_identities": unique_identities,
         "unique_native_request_ids": unique_request_ids,
-        "rows": assessed, "first_native_completion_after_acceptance": first_native,
+        "rows": assessed,
+        "first_native_completion_after_acceptance": first_native,
         "first_completion_of_post_acceptance_request": first_post_acceptance,
-        "accepted_ms": accepted_ms, "authority": json.loads(json.dumps(authority, allow_nan=False)),
+        "accepted_ms": accepted_ms,
+        "authority": json.loads(json.dumps(authority, allow_nan=False)),
         "timing_scope": "owned Python wrapper endpoints including diagnostic overhead",
         "first_scope": "only the complete declared request set, not all daemon traffic",
         "commit_scope": "validated SQLite readback time, not transaction commit time",

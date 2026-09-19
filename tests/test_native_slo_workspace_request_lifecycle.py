@@ -31,11 +31,19 @@ def test_http_timeout_does_not_hide_native_call_still_in_flight(tmp_path, monkey
     def request(_daemon, **kwargs):
         nonlocal thread
         arguments = {
-            "payload": kwargs["request_payload"], "harness": kwargs["harness"], "event": "PreToolUse",
-            "guard_home": kwargs["guard_home"], "home_dir": state.session.root, "cwd": kwargs["workspace"],
-            "source_ref_external_allowed": False, "observe_mode": False, "deadline": time.monotonic() + 1,
+            "payload": kwargs["request_payload"],
+            "harness": kwargs["harness"],
+            "event": "PreToolUse",
+            "guard_home": kwargs["guard_home"],
+            "home_dir": state.session.root,
+            "cwd": kwargs["workspace"],
+            "source_ref_external_allowed": False,
+            "observe_mode": False,
+            "deadline": time.monotonic() + 1,
             "policy_snapshot": {
-                **public_binding(state.snapshot), "mode": "enforce", "command_extensions_bound": True,
+                **public_binding(state.snapshot),
+                "mode": "enforce",
+                "command_extensions_bound": True,
             },
         }
 
@@ -120,6 +128,7 @@ def test_late_retained_wrapper_call_is_forwarded_and_explicitly_incomplete(tmp_p
 
 def test_close_preserves_later_wrapper_owner_and_refuses_complete_result(tmp_path, monkeypatch):
     state = control(tmp_path, monkeypatch)
+
     def later(**_kwargs):
         return None
 
@@ -226,9 +235,7 @@ def test_readback_scope_never_wraps_original_native_or_receipt_write(tmp_path, m
         assert scopes[0] == 2 and depth[0] == 0
         witness.reconcile(verify_all=True)
         before_join = scopes[0]
-        result = observer.join(
-            accepted=accepted, snapshot=state.snapshot, action="block", declared_indexes=(0,)
-        )
+        result = observer.join(accepted=accepted, snapshot=state.snapshot, action="block", declared_indexes=(0,))
         assert scopes[0] == before_join + 1 and depth[0] == 0
     assert result["passed"] is True
     assert state.session.store.native_decision_receipt_count() == 1

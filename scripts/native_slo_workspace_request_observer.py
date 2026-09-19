@@ -41,19 +41,32 @@ class WorkspaceRequestObserver:
         wall_clock: Callable[[], float] | None = None,
     ) -> None:
         if (
-            type(maximum) is not int or not 1 <= maximum <= MAX_REQUESTS
-            or not 1 <= len(workspaces) <= 100 or len(set(workspaces)) != len(workspaces)
-            or witness.session is not session or type(witness.maximum) is not int or witness.maximum < maximum
-            or witness.reader.legacy or witness.reader.profile != "candidate"
+            type(maximum) is not int
+            or not 1 <= maximum <= MAX_REQUESTS
+            or not 1 <= len(workspaces) <= 100
+            or len(set(workspaces)) != len(workspaces)
+            or witness.session is not session
+            or type(witness.maximum) is not int
+            or witness.maximum < maximum
+            or witness.reader.legacy
+            or witness.reader.profile != "candidate"
         ):
             raise ValueError("workspace request observer scope invalid")
         root = session.root
         if (
-            not isinstance(root, Path) or not root.is_absolute() or root.resolve(strict=True) != root
-            or not isinstance(session.guard_home, Path) or not session.guard_home.is_relative_to(root)
+            not isinstance(root, Path)
+            or not root.is_absolute()
+            or root.resolve(strict=True) != root
+            or not isinstance(session.guard_home, Path)
+            or not session.guard_home.is_relative_to(root)
             or session.guard_home.resolve(strict=True) != session.guard_home
-            or any(not isinstance(path, Path) or not path.is_relative_to(root)
-                   or path.resolve(strict=True) != path or not path.is_dir() for path in workspaces)
+            or any(
+                not isinstance(path, Path)
+                or not path.is_relative_to(root)
+                or path.resolve(strict=True) != path
+                or not path.is_dir()
+                for path in workspaces
+            )
         ):
             raise ValueError("workspace request paths outside owned canonical root")
         self.session, self.witness, self.workspaces = session, witness, workspaces
@@ -132,7 +145,8 @@ class WorkspaceRequestObserver:
             row["request_scope_matches"] = (
                 kwargs.get("cwd") == self.workspaces[row["workspace_index"]]
                 and kwargs.get("guard_home") == self.session.guard_home
-                and kwargs.get("harness") == "claude-code" and kwargs.get("event") == "PreToolUse"
+                and kwargs.get("harness") == "claude-code"
+                and kwargs.get("event") == "PreToolUse"
                 and kwargs.get("observe_mode") is False
             )
 
@@ -199,8 +213,10 @@ class WorkspaceRequestObserver:
         from scripts.native_slo_session import _request
 
         if (
-            type(index) is not int or not 0 <= index < self.maximum
-            or type(workspace_index) is not int or not 0 <= workspace_index < len(self.workspaces)
+            type(index) is not int
+            or not 0 <= index < self.maximum
+            or type(workspace_index) is not int
+            or not 0 <= workspace_index < len(self.workspaces)
         ):
             with self._lock:
                 self._refused_offers += 1
@@ -208,15 +224,21 @@ class WorkspaceRequestObserver:
         attempt = f"mixed-policy-{index}"
         with self._lock:
             if (
-                not self._installed or self._closed or self._frozen or attempt in self._rows
+                not self._installed
+                or self._closed
+                or self._frozen
+                or attempt in self._rows
                 or self.session.daemon._server.hook_worker is not self.worker
                 or getattr(self.worker, "_review_raw_hook_native", None) is not self._wrapper
             ):
                 self._refused_offers += 1
                 raise RuntimeError("workspace request offer lifecycle invalid")
             self._rows[attempt] = {
-                "attempt": attempt, "workspace_index": workspace_index,
-                "review_calls": 0, "review_returned": False, "request_returned": False,
+                "attempt": attempt,
+                "workspace_index": workspace_index,
+                "review_calls": 0,
+                "review_returned": False,
+                "request_returned": False,
                 "capture_faults": 0,
             }
             self._active += 1
@@ -225,14 +247,20 @@ class WorkspaceRequestObserver:
             self._guard(attempt, lambda: row.update(authority_before=self._authority()))
             self._guard(attempt, lambda: row.update(offered_ms=self._stamp()))
             response = _request(
-                self.session.daemon, guard_home=self.session.guard_home,
-                workspace=self.workspaces[workspace_index], harness="claude-code",
+                self.session.daemon,
+                guard_home=self.session.guard_home,
+                workspace=self.workspaces[workspace_index],
+                harness="claude-code",
                 request_payload={**payload("PreToolUse"), "tool_use_id": attempt},
             )
-            self._guard(attempt, lambda: row.update(
-                delivered_ms=self._stamp(), request_returned=True,
-                delivered_decision=delivered_decision("PreToolUse", response),
-            ))
+            self._guard(
+                attempt,
+                lambda: row.update(
+                    delivered_ms=self._stamp(),
+                    request_returned=True,
+                    delivered_decision=delivered_decision("PreToolUse", response),
+                ),
+            )
             self._guard(attempt, lambda: row.update(authority_after=self._authority()))
             return response
         finally:
@@ -290,9 +318,11 @@ class WorkspaceRequestObserver:
                 ).fetchone()[0]
         projected = receipt_projection(stored)
         row.update(
-            committed_receipt=projected, committed_receipt_validated=projected is not None,
+            committed_receipt=projected,
+            committed_receipt_validated=projected is not None,
             committed_row_count=before if type(before) is int and type(after) is int and before == after else None,
-            committed_row_count_before=before, committed_row_count_after=after,
+            committed_row_count_before=before,
+            committed_row_count_after=after,
             commit_observed_ms=self._stamp(),
         )
 
@@ -307,7 +337,8 @@ class WorkspaceRequestObserver:
         """Read committed identity only after the caller's original bounded drain."""
         authority = authority_projection(snapshot)
         if (
-            not finite_time(accepted) or not 1 <= len(declared_indexes) <= self.maximum
+            not finite_time(accepted)
+            or not 1 <= len(declared_indexes) <= self.maximum
             or any(type(index) is not int or not 0 <= index < self.maximum for index in declared_indexes)
             or len(set(declared_indexes)) != len(declared_indexes)
         ):
@@ -323,14 +354,16 @@ class WorkspaceRequestObserver:
             complete = (
                 declaration_complete
                 and self._active_at_freeze == self._native_at_freeze == self._active == self._native_active == 0
-                and self._faults == self._late_native_calls == self._refused_offers == 0 and self._restored
+                and self._faults == self._late_native_calls == self._refused_offers == 0
+                and self._restored
             )
         for row in rows:
             try:
                 self._committed(row)
                 row["request_binding_matches"] = (
                     row.get("request_binding") == public_binding(authority)
-                    and row.get("request_mode") == "enforce" and row.get("request_command_bound") is True
+                    and row.get("request_mode") == "enforce"
+                    and row.get("request_command_bound") is True
                 )
                 row["authority_readback_before"] = row.get("authority_before") == authority
                 row["authority_readback_after"] = row.get("authority_after") == authority
@@ -340,26 +373,51 @@ class WorkspaceRequestObserver:
         report = self.witness.report()
         complete = complete and (
             report.get("native_receipts") == len(self._rows) == report.get("committed")
-            and not any(report.get(key) for key in (
-                "missing", "binding_mismatches", "writer_rejected", "writer_admission_unobserved",
-                "pre_receipts_without_program_binding",
-            ))
-            and not any(report.get("observations", {}).get(key) for key in (
-                "duplicate_observations", "witness_overflow", "invalid_receipt_identity", "native_without_receipt",
-            ))
+            and not any(
+                report.get(key)
+                for key in (
+                    "missing",
+                    "binding_mismatches",
+                    "writer_rejected",
+                    "writer_admission_unobserved",
+                    "pre_receipts_without_program_binding",
+                )
+            )
+            and not any(
+                report.get("observations", {}).get(key)
+                for key in (
+                    "duplicate_observations",
+                    "witness_overflow",
+                    "invalid_receipt_identity",
+                    "native_without_receipt",
+                )
+            )
         )
         result = join_decisions(
-            rows, authority=authority, action=action, accepted_ms=(accepted - self.started) * 1000,
-            declared_attempts=selected, observation_complete=complete,
+            rows,
+            authority=authority,
+            action=action,
+            accepted_ms=(accepted - self.started) * 1000,
+            declared_attempts=selected,
+            observation_complete=complete,
         )
         result["actual_request_rows"] = rows
         result["declared_attempts"] = selected
         result["owned_offered_attempts"] = offered
         result["undeclared_owned_attempts"] = [attempt for attempt in offered if attempt not in selected]
-        result["receipt_witness"] = {key: report.get(key) for key in (
-            "native_receipts", "committed", "missing", "binding_mismatches", "writer_rejected",
-            "writer_admission_unobserved", "pre_receipts_without_program_binding", "observations",
-        )}
+        result["receipt_witness"] = {
+            key: report.get(key)
+            for key in (
+                "native_receipts",
+                "committed",
+                "missing",
+                "binding_mismatches",
+                "writer_rejected",
+                "writer_admission_unobserved",
+                "pre_receipts_without_program_binding",
+                "observations",
+            )
+        }
         result["unowned_native_calls_excluded"] = self._unowned_calls
         result["observation_lifecycle"] = {
             "http_requests_in_flight_at_freeze": self._active_at_freeze,

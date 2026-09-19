@@ -17,8 +17,12 @@ from tests.native_workspace_request_fixtures import row, snapshot
 
 def _join(rows, authority, *, accepted=10.0, declared=None, complete=True):
     return join_decisions(
-        rows, authority=authority_projection(authority), action="block", accepted_ms=accepted,
-        declared_attempts=declared or [value["attempt"] for value in rows], observation_complete=complete,
+        rows,
+        authority=authority_projection(authority),
+        action="block",
+        accepted_ms=accepted,
+        declared_attempts=declared or [value["attempt"] for value in rows],
+        observation_complete=complete,
     )
 
 
@@ -91,8 +95,11 @@ def test_duplicate_causal_identities_are_not_unique_requests(duplicate):
         _reseal(second)
     result = _join([first, second], authority, declared=["mixed-policy-0", "mixed-policy-1"])
     assert result["passed"] is False
-    key = {"attempt": "exact_attempts", "decision_id": "unique_receipt_identities",
-           "request_id": "unique_native_request_ids"}[duplicate]
+    key = {
+        "attempt": "exact_attempts",
+        "decision_id": "unique_receipt_identities",
+        "request_id": "unique_native_request_ids",
+    }[duplicate]
     assert result[key] is False
 
 
@@ -101,7 +108,8 @@ def test_equal_completion_stamps_retain_both_ties_without_claiming_unique_first(
     result = _join([row(authority), row(authority, 1)], authority)
     assert result["passed"] is False
     assert result["first_completion_of_post_acceptance_request"]["attempts"] == [
-        "mixed-policy-0", "mixed-policy-1",
+        "mixed-policy-0",
+        "mixed-policy-1",
     ]
     assert result["first_completion_of_post_acceptance_request"]["unique_observed_first"] is False
 
@@ -136,8 +144,12 @@ def test_valid_but_wrong_receipt_authority_or_semantics_cannot_join(field, repla
 @pytest.mark.parametrize(
     "field,replacement",
     [
-        ("program_digest", "4" * 64), ("catalog_digest", "4" * 64), ("trust_digest", "4" * 64),
-        ("control_revision", 5), ("managed_control_revision", 3), ("control_effective_digest", "4" * 64),
+        ("program_digest", "4" * 64),
+        ("catalog_digest", "4" * 64),
+        ("trust_digest", "4" * 64),
+        ("control_revision", 5),
+        ("managed_control_revision", 3),
+        ("control_effective_digest", "4" * 64),
     ],
 )
 def test_each_valid_changed_command_authority_field_is_rejected(field, replacement):
@@ -251,8 +263,12 @@ def test_join_rejects_unbounded_extra_authority_fields():
     expected["extra"] = "not admitted"
     with pytest.raises(ValueError, match="join authority invalid"):
         join_decisions(
-            [row(authority)], authority=expected, action="block", accepted_ms=10,
-            declared_attempts=["mixed-policy-0"], observation_complete=True,
+            [row(authority)],
+            authority=expected,
+            action="block",
+            accepted_ms=10,
+            declared_attempts=["mixed-policy-0"],
+            observation_complete=True,
         )
 
 

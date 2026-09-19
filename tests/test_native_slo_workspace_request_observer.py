@@ -88,9 +88,7 @@ def test_diagnostic_clock_fault_cannot_replace_original_result(tmp_path, monkeyp
         return float("nan") if fault == "nan" else True
 
     with ReceiptWitness(state.session, maximum=1) as witness:
-        with WorkspaceRequestObserver(
-            state.session, witness, state.workspaces, maximum=1, clock=clock
-        ) as observer:
+        with WorkspaceRequestObserver(state.session, witness, state.workspaces, maximum=1, clock=clock) as observer:
             accepted = time.monotonic()
             assert observer.probe(0, 1) is state.response
         result = finish(state, witness, observer, accepted)
@@ -194,7 +192,9 @@ def test_omitting_a_bad_owned_response_cannot_shrink_the_declared_join(tmp_path,
             accepted = time.monotonic()
             state.response = {
                 "hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow"},
-                "policy_action": "allow", "decision": "allow", "continue": True,
+                "policy_action": "allow",
+                "decision": "allow",
+                "continue": True,
             }
             observer.probe(0, 0)
             state.response = denied

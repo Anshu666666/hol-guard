@@ -1,721 +1,480 @@
-name: CI
+name: Bounded native source acceptance
 on:
-  push:
-    branches: [main, release/3.0, release/3.1, release/3.2]
-  pull_request:
-    branches: [main, release/3.0, release/3.2]
-  schedule:
-    - cron: "0 5 * * 1"
   workflow_dispatch:
-
+    inputs:
+      source_commit:
+        description: Reviewed source commit
+        required: true
+        type: string
+      diagnostic_commit:
+        description: Reviewed diagnostic commit
+        required: true
+        type: string
+      diagnostic_tree:
+        description: Reviewed diagnostic tree
+        required: true
+        type: string
 permissions:
-  actions: read
   contents: read
-
-env:
-  CI_UV_CACHE_DEPENDENCY_GLOB: |
-    pyproject.toml
-    uv.lock
-    requirements.txt
-    docker-requirements.txt
-
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
+  group: bounded-native-activation-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Validate protected test invariants
-        run: uv run --no-sync python scripts/ci/test_inventory.py --output test-inventory.json
-      - name: Publish test inventory
-        run: cat test-inventory.json
-      - name: Inventory required release collection and configured install checks
-        run: |
-          uv run --no-sync python scripts/ci/release_required_evidence.py \
-            --output release-required-evidence.json
-          cat release-required-evidence.json
-      - name: Publish exact test-body duplicate candidates
-        run: |
-          uv run --no-sync python scripts/ci/test_duplicate_candidates.py \
-            --output test-duplicate-candidates.json
-          cat test-duplicate-candidates.json
-      - name: Lint production sources
-        run: |
-          uv run --no-sync python -m ruff check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - name: Check formatting for production sources
-        run: |
-          uv run --no-sync python -m ruff format --check \
-            src/ \
-            tests/test_guard_durable_io.py \
-            tests/test_guard_managed_install_context.py \
-            tests/test_guard_node_semver.py \
-            tests/test_guard_private_file_io.py
-      - run: uv run --no-sync basedpyright --level error
-      - name: Dead-code scan (L329)
-        run: uv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/ --select=F401,F811,F841
-      - name: TODO/FIXME scan (L330)
-        run: |
-          count=$(grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore" | wc -l | tr -d ' ')
-          echo "Guard TODO/FIXME count: $count"
-          if [ "$count" -gt "0" ]; then
-            grep -rn "TODO\|FIXME\|HACK\|XXX" src/codex_plugin_scanner/guard/ --include="*.py" | grep -v "# type: ignore"
-            exit 1
-          fi
-
-  test-plan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Restore latest trusted duration telemetry
-        id: latest-duration-telemetry
-        continue-on-error: true
+  source-acceptance:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/hgp/diagnostic-bounded-native-activation-20260919' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TELEMETRY_BRANCH: ${{ github.event.pull_request.base.ref || github.ref_name }}
-        run: |
-          run_id=$(
-            gh api --method GET "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs" \
-              -f branch="$TELEMETRY_BRANCH" -f event=push -f status=success -f per_page=1 \
-              --jq '.workflow_runs[0].id // empty'
-          )
-          test -n "$run_id"
-          read -r event conclusion branch workflow_path < <(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" \
-              --jq '[.event, .conclusion, .head_branch, .path] | @tsv'
-          )
-          test "$event" = "push"
-          test "$conclusion" = "success"
-          test "$branch" = "$TELEMETRY_BRANCH"
-          test "$workflow_path" = ".github/workflows/ci.yml"
-          artifact_id=$(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?name=pytest-duration-manifest-candidate&per_page=100" \
-              --jq '.artifacts | map(select(.expired == false and .name == "pytest-duration-manifest-candidate")) | .[0].id // empty'
-          )
-          test -n "$artifact_id"
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > /tmp/duration-manifest.zip
-          unzip -p /tmp/duration-manifest.zip pytest-duration-manifest-candidate.json.gz \
-            > /tmp/pytest-duration-manifest.json.gz
-          gzip -t /tmp/pytest-duration-manifest.json.gz
-          mv /tmp/pytest-duration-manifest.json.gz pytest-duration-manifest.latest.json.gz
-      - name: Collect once and build 96 affinity-aware pytest shards
-        shell: bash
-        run: |
-          manifest=ci/pytest-duration-manifest.json.gz
-          if test -s pytest-duration-manifest.latest.json.gz; then
-            manifest=pytest-duration-manifest.latest.json.gz
-          fi
-          uv run --no-sync python scripts/ci/build_pytest_shard_plan.py \
-            --shard-count 96 \
-            --duration-manifest "$manifest" \
-            --max-manifest-age-days 28 \
-            --output-directory pytest-shards
-      - name: Publish pytest shard plan
-        run: cat pytest-shards/plan.json
-      - name: Upload pytest shard plan
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-          if-no-files-found: error
-          retention-days: 1
-
-  tests:
-    needs: test-plan
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
-        shard-index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95]
+    env:
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      DIAGNOSTIC_COMMIT: ${{ inputs.diagnostic_commit }}
+      DIAGNOSTIC_TREE: ${{ inputs.diagnostic_tree }}
+      HOL_GUARD_BUILD_SHA: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          # Every shard must collect under the same patch release or node assignments can overlap.
-          python-version: "3.12.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
-        run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Download pytest shard plan
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: pytest-shard-plan
-          path: pytest-shards
-      - name: Run pytest shard ${{ matrix.shard-index }}
-        shell: bash
-        run: |
-          shard_file=$(printf 'pytest-shards/shard-%02d.txt' "${{ matrix.shard-index }}")
-          test -s "$shard_file"
-          # This process-pool timing contract is owned by scheduling-sensitive, which runs it untraced.
-          PYTHONPATH=scripts/ci GUARD_PYTEST_DURATION_OUTPUT=pytest-durations.json GUARD_PYTEST_UNDER_COVERAGE=1 \
-            uv run --no-sync pytest -p pytest_duration_report "@$shard_file" --tb=short \
-            --deselect tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial \
-            --deselect tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon \
-            --cov --cov-branch --cov-report=
-      - name: Upload pytest coverage data artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-coverage-${{ matrix.shard-index }}
-          path: .coverage
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 1
-      - name: Upload pytest duration artifact
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-durations-${{ matrix.shard-index }}
-          path: pytest-durations.json
-          if-no-files-found: warn
-          retention-days: 7
-
-  duration-manifest-candidate:
-    if: needs.tests.result == 'success'
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - name: Download pytest duration reports
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-durations-*
-          path: duration-reports
-      - name: Build duration manifest candidate
-        shell: bash
-        run: |
-          shopt -s globstar nullglob
-          reports=(duration-reports/**/pytest-durations.json)
-          test "${#reports[@]}" -eq 96
-          python3 scripts/ci/build_pytest_duration_manifest.py \
-            --output pytest-duration-manifest-candidate.json.gz \
-            --observed-at "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
-            "${reports[@]}"
-      - name: Upload pytest duration manifest candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pytest-duration-manifest-candidate
-          path: pytest-duration-manifest-candidate.json.gz
-          if-no-files-found: error
-          retention-days: 90
-
-  sonar-guard:
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      has-token: ${{ steps.token-presence.outputs.has-token }}
-    steps:
-      - name: Check for SonarQube Cloud token
-        id: token-presence
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          if test -n "$SONAR_TOKEN"; then
-            echo "has-token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-token=false" >> "$GITHUB_OUTPUT"
-            echo "SONAR_TOKEN secret is not set; skipping SonarQube Cloud analysis"
-          fi
-
-  sonar:
-    needs: [sonar-guard, tests]
-    if: needs.sonar-guard.outputs.has-token == 'true' && vars.SONAR_CI_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - id: checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Download pytest coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: pytest-coverage-*
-          path: coverage-data
-      - name: Cache Sonar analyzer downloads
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ${{ runner.temp }}/sonar/cache
-          key: sonar-analyzers-${{ runner.os }}-${{ hashFiles('sonar-project.properties') }}
-      - name: Initialize pinned Rust analysis toolchain
-        shell: bash
-        run: bash scripts/ci/setup_sonar_rust.sh
-      - name: Cache Rust analysis dependencies
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-        with:
-          workspaces: rust
-          shared-key: sonar
-          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      - name: Prepare coverage and pinned Rust analysis
-        shell: bash
-        run: bash scripts/ci/prepare_sonar_analysis.sh
-      - name: Analyze with SonarQube Cloud
-        uses: sonarsource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
+      - name: Verify exact source before execution
+        id: source
         env:
-          SONAR_USER_HOME: ${{ runner.temp }}/sonar
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@7a5fffe8e523c40e0c740b6bc2712ab503e52efa
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  scheduling-sensitive:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.12"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run scheduling-sensitive tests untraced
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_extension_control_recovery.py
-          tests/test_guard_sandbox.py
-          tests/test_guard_js_lockfile_resolution_phase11.py
-          tests/test_guard_runtime_hook_scheduler.py
-          tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial
-          tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon
-          tests/test_guard_continuation_contract.py
-          --tb=short
-
-  compatibility:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-version compatibility contracts
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_cisco_install_surfaces.py
-          tests/test_policy.py
-          tests/test_policy_bundle_parser.py
-          --tb=short
-
-  deep-compatibility:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.13"]
-        shard-index: [0, 1, 2, 3]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Secure the CI virtualenv interpreter
-        shell: bash
+          GUARD_PHASE: before
         run: |
-          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
-          target="$(realpath "$interpreter")"
-          mode="$(stat -c '%a' "$target")"
-          if (( (8#$mode & 2) != 0 )); then
-            replacement="${interpreter}.guard-ci"
-            cp --dereference "$target" "$replacement"
-            chmod 0755 "$replacement"
-            mv "$replacement" "$target"
-          fi
-          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
-          (( (8#$secured_mode & 2) == 0 ))
-      - name: Run deep compatibility shard ${{ matrix.shard-index }}
-        shell: bash
-        run: |
-          uv run --no-sync python scripts/ci/pytest_shard.py \
-            --shard-index "${{ matrix.shard-index }}" \
-            --shard-count 4 \
-            --granularity file > pytest-files.txt
-          test -s pytest-files.txt
-          uv run --no-sync pytest @pytest-files.txt --tb=short
-
-  mutation-baseline:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-        with:
-          persist-credentials: false
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          
+          def tree(ref):
+              result = {}
+              for entry in subprocess.check_output(["git", "ls-tree", "-rz", "--full-tree", ref]).split(b"\0"):
+                  if entry:
+                      metadata, path = entry.split(b"\t", 1)
+                      result[path.decode()] = tuple(metadata.decode().split())
+              return result
+          
+          source = os.environ["SOURCE_COMMIT"]
+          head = os.environ["DIAGNOSTIC_COMMIT"]
+          diagnostic_tree = os.environ["DIAGNOSTIC_TREE"]
+          assert all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (source, head, diagnostic_tree))
+          assert source == "db4d8834f79c3101e870a736b42ce27ffb255b86"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-bounded-native-activation-20260919"
+          assert git("rev-parse", "HEAD") == head == os.environ["GITHUB_SHA"]
+          assert git("rev-parse", "HEAD^{tree}") == diagnostic_tree
+          assert git("show", "-s", "--format=%P", head) == source
+          assert git("show", "-s", "--format=%P", source) == "e814138f3246d79f57c45c8fc6224102cc8fbf0a"
+          assert git("show", "-s", "--format=%P", "e814138f3246d79f57c45c8fc6224102cc8fbf0a") == "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          approved_identity = git("show", "-s", "--format=%an%n%ae%n%cn%n%ce", "e814138f3246d79f57c45c8fc6224102cc8fbf0a").splitlines()
+          assert len(approved_identity) == 4 and approved_identity[:2] == approved_identity[2:]
+          for commit in (source, head):
+              assert git("show", "-s", "--format=%an%n%ae%n%cn%n%ce", commit).splitlines() == approved_identity
+          assert git("rev-parse", "e814138f3246d79f57c45c8fc6224102cc8fbf0a^{tree}") == "69390f1a0462e557aea7ff82e89e1dac4950ccbd"
+          assert git("rev-parse", source + "^{tree}") == "ef86a4934abc24737743332c0d96fedcfd05b1fd"
+          expected = tree("e814138f3246d79f57c45c8fc6224102cc8fbf0a")
+          assert len(expected) == 4313
+          changes = [["rust/crates/guard-runtime/src/resident_protocol.rs","f60b31b4e62f8e317364126491a004e31055f891","8f9fd6b945fb34be55c226de73b9b1f39fbd40d2"],["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","186102bbe8f52f8a4fd2ae50ba36235c7b628fde","93f0d9c6be38ce9ae46abbe402b3097bb1efe618"],["src/codex_plugin_scanner/guard/policy_lane_capabilities.py","601d541568575f0d470422e0f00268981fa42ec7","89253e79d259ce4cb6adda7ba6e3daffbd58e72f"],["tests/test_policy_lane_cli.py","17d4f81464cdd663e57affdbf25af5e0e93625e9","5edc3668a27e47f7131ba72c2535fa55131399ab"],["docs/guard/runtime-lane-capabilities.md","2659804aba6d2c42b15f781c29b2f849719b29a4","b36be5df87c034287c2d8514d6ac0d3aac2a32d9"],["tests/test_native_generic_sync_unstaged.py",None,"bb7bc3ec887ec188f8eb7ab8797c72ab0d598446"]]
+          for path, before, after in changes:
+              assert expected.get(path) == (("100644", "blob", before) if before else None)
+              expected[path] = ("100644", "blob", after)
+          assert len(expected) == 4314 and tree(source) == expected
+          assert expected["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py"][2] == "cd0749d72df7ab9a5328f57129ca1bf44c769e60"
+          workflow = git("rev-parse", "HEAD:.github/workflows/ci.yml")
+          expected[".github/workflows/ci.yml"] = ("100644", "blob", workflow)
+          assert tree(head) == expected
+          watched = ["rust/crates/guard-runtime/src/resident_protocol.rs","src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","src/codex_plugin_scanner/guard/policy_lane_capabilities.py","tests/test_policy_lane_cli.py","docs/guard/runtime-lane-capabilities.md","tests/test_native_generic_sync_unstaged.py","tests/test_native_defaults_edge.py","tests/test_native_scoped_result.py","tests/test_native_scoped_worker_fence.py","tests/test_native_source_authority_fence.py","tests/test_native_cloud_policy_capabilities.py","tests/test_policy_bundle_generic_ack_contract.py","tests/test_policy_bundle_generic_acknowledgement.py","scripts/ci/rust_authority_ownership_gate.py","scripts/ci/rust_io_ownership_gate.py","scripts/ci/native_approval_contract_gate.py","scripts/ci/python_hook_semantic_callgraph_gate.py","scripts/ci/native_receipt_persistence_gate.py","scripts/ci/python_capability_cleanup_gate.py","scripts/ci/test_inventory.py","scripts/sync_repo_version.py","scripts/build_native_hol_guard_wheel.py","tests/native_source_bundle.py","basedpyright.native-managed-source.json","pyproject.toml","uv.lock","rust/Cargo.toml","rust/Cargo.lock","conftest.py","tests/conftest.py","tests/test_guard_durable_io.py","tests/test_guard_managed_install_context.py","tests/test_guard_node_semver.py","tests/test_guard_private_file_io.py","src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","src/codex_plugin_scanner/guard/native_policy_bundle_acceptance.py","src/codex_plugin_scanner/guard/native_policy_bundle_ack.py","src/codex_plugin_scanner/guard/native_hook_edge.py","src/codex_plugin_scanner/guard/daemon/hook_worker.py","src/codex_plugin_scanner/guard/native_runtime.py","src/codex_plugin_scanner/guard/native_runtime_capabilities.py","src/codex_plugin_scanner/guard/native_runtime_selection.py"]
+          for path in [*watched, ".github/workflows/ci.yml"]:
+              content = Path(path).read_bytes()
+              actual = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+              assert actual == expected[path][2], path
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          report = {"schema": "native-activation-source-proof.v2", "source": source, "head": head,
+                    "sourceTree": "ef86a4934abc24737743332c0d96fedcfd05b1fd", "diagnosticTree": diagnostic_tree,
+                    "sourceLeaves": len(expected), "workingPins": len(watched) + 1, "phase": os.environ["GUARD_PHASE"]}
+          directory = Path("artifacts/native-activation")
+          directory.mkdir(parents=True, exist_ok=True)
+          (directory / ("source-" + os.environ["GUARD_PHASE"] + ".json")).write_text(json.dumps(report, sort_keys=True) + "\n")
+          print(json.dumps(report, sort_keys=True))
+          PY
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
         with:
           version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python 3.12
-      - name: Run command parser mutation baseline
-        run: uv run --no-sync mutmut run --max-children 4
-      - name: Validate mutation baseline
+          enable-cache: false
+      - name: Prepare an owned interpreter for installation fixtures
         run: |
-          uv run --no-sync mutmut export-cicd-stats
-          uv run --no-sync python scripts/ci/mutation_gate.py --target command-model
+          python -I - <<'PY'
+          import pathlib
+          import venv
 
-  ci-python-312:
-    name: ci (3.12)
-    if: always()
-    needs: [quality, test-plan, tests, compatibility, scheduling-sensitive]
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Verify Python CI dependencies
+          environment = pathlib.Path(".venv")
+          assert not environment.exists() and not environment.is_symlink()
+          venv.EnvBuilder(with_pip=False, symlinks=False).create(environment)
+          PY
+      - id: dependencies
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify installation fixture interpreter provenance
+        id: interpreter
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import stat
+          import subprocess
+          import sys
+
+          selected = pathlib.Path(sys.executable).resolve(strict=True)
+          expected = hashlib.sha256(selected.read_bytes()).hexdigest()
+          environment = pathlib.Path(".venv").resolve(strict=True)
+          interpreters = ("python", "python3", f"python{sys.version_info.major}.{sys.version_info.minor}")
+          for name in interpreters:
+              interpreter = environment / "bin" / name
+              metadata = interpreter.lstat()
+              assert stat.S_ISREG(metadata.st_mode) and not interpreter.is_symlink()
+              assert metadata.st_uid == os.getuid()
+              assert metadata.st_mode & 0o022 == 0 and metadata.st_mode & stat.S_IXUSR
+              assert hashlib.sha256(interpreter.read_bytes()).hexdigest() == expected
+          probe = subprocess.check_output(
+              [str(environment / "bin/python"), "-I", "-c",
+               "import json,sys; print(json.dumps([sys.prefix, list(sys.version_info[:3])]))"],
+              text=True,
+          )
+          prefix, version = json.loads(probe)
+          assert pathlib.Path(prefix).resolve(strict=True) == environment
+          assert version == list(sys.version_info[:3])
+          print(json.dumps({"ownedInterpreterVerified": True, "version": version, "sha256": expected}))
+          PY
+      - name: Validate protected test inventory
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/test_inventory.py --output artifacts/native-activation/test-inventory.json
+      - name: Check source lint
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python -m ruff check src/ tests/test_guard_durable_io.py tests/test_guard_managed_install_context.py tests/test_guard_node_semver.py tests/test_guard_private_file_io.py tests/test_policy_lane_cli.py tests/test_native_generic_sync_unstaged.py
+      - name: Check source formatting
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python -m ruff format --check src/ tests/test_guard_durable_io.py tests/test_guard_managed_install_context.py tests/test_guard_node_semver.py tests/test_guard_private_file_io.py tests/test_policy_lane_cli.py tests/test_native_generic_sync_unstaged.py
+      - name: Check unused production bindings
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/ --select=F401,F811,F841
+      - name: Check normal Python types
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync basedpyright --level error
+      - name: Check native source types
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python --pythonversion 3.12 --project basedpyright.native-managed-source.json
+      - name: Check the unchanged acceptance criterion types
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync basedpyright --pythonpath .venv/bin/python tests/test_native_generic_sync_unstaged.py
+      - name: Check Rust authority ownership
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/rust_authority_ownership_gate.py --root . --base-ref e814138f3246d79f57c45c8fc6224102cc8fbf0a --json artifacts/native-activation/rust-authority-ownership.json
+      - name: Check Rust IO ownership
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/rust_io_ownership_gate.py --root .
+      - name: Check native approval contracts
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/native_approval_contract_gate.py --root .
+      - name: Check Python hook semantic ownership
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/python_hook_semantic_callgraph_gate.py --root .
+      - name: Check native receipt persistence
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/native_receipt_persistence_gate.py --root . --json artifacts/native-activation/native-receipt-persistence.json
+      - name: Check Python capability cleanup
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          uv run --no-sync python scripts/ci/python_capability_cleanup_gate.py --root . --json artifacts/native-activation/python-capability-cleanup.json
+      - name: Prepare exact test collection and JUnit accounting
+        id: observer
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
+        run: |
+          cat > "$RUNNER_TEMP/native-activation-results.py" <<'PY'
+          import collections
+          import json
+          import sys
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import pytest
+          
+          group = sys.argv[1]
+          assert group in {"criterion", "components"}
+          control_functions = {"tests/test_policy_lane_cli.py":["test_cli_reports_static_profiles_separately_from_activation","test_cli_selects_real_validator_after_trusted_loading","test_cli_does_not_normalize_invalid_selector_into_global_scope","test_cli_expression_evaluation_cannot_claim_authenticated_admission","test_advertised_evaluator_effects_match_actual_trusted_loading","test_actual_evaluator_refuses_to_drop_additional_authority","test_trusted_loader_already_refuses_unpublished_network_extension"],"tests/test_native_defaults_edge.py":["test_post_defaults_require_exact_source_and_authenticated_receipt","test_post_defaults_refuse_malformed_typed_result","test_post_defaults_refuse_unknown_fields_missing_required_fields_and_cross_event_replay","test_post_result_matrix_cannot_be_repaired_with_only_a_new_receipt_hash","test_post_worker_checks_live_binding_before_output_and_never_lowers_intrinsic_block","test_post_admission_refusal_uses_terminal_post_shape","test_observe_policy_warning_does_not_request_approval_or_lower_intrinsic_block","test_post_action_output_matrix_rejects_self_consistent_but_impossible_results","test_post_projection_and_excerpt_fields_cannot_be_repaired_by_rehashing"],"tests/test_native_scoped_result.py":["test_scoped_result_requires_exact_published_identity","test_observe_without_projection_retains_authenticated_receipt_mode","test_optional_observe_projection_still_requires_finite_action","test_malformed_scoped_identity_is_not_authority","test_scoped_result_never_infers_missing_binding_or_receipt_fields","test_recomputed_receipt_hash_does_not_replace_snapshot_binding","test_scoped_transport_requires_complete_capability_and_unambiguous_response","test_scoped_protocol_versions_require_integers","test_scoped_expected_generation_requires_integer"],"tests/test_native_scoped_worker_fence.py":["test_worker_rechecks_scoped_publication_before_receipt_or_allow","test_worker_rejects_scoped_readiness_loss_before_transport","test_scoped_preparation_never_reuses_a_legacy_fallback","test_scoped_admission_does_not_use_emergency_safe_continuation","test_scoped_native_deny_cannot_be_lowered_by_python_watch","test_scoped_authority_refusal_preserves_post_tool_response_shape"],"tests/test_native_source_authority_fence.py":["test_default_v3_refuses_unrepresented_signed_source_before_hook_admission","test_required_source_failures_never_record_or_allow","test_queue_failure_cannot_override_existing_source_with_availability_or_watch","test_v3_does_not_admit_orphaned_remote_materialization","test_supported_signed_defaults_still_publish_but_mutation_fences_returned_result","test_source_arriving_during_ipc_invalidates_source_free_allow","test_retained_memory_version_requires_source_after_registry_and_rows_removed"],"tests/test_native_cloud_policy_capabilities.py":["test_canonical_requirements_preserve_active_authority","test_empty_extension_payload_still_requires_its_authority_contract","test_legacy_exceptions_require_native_authority","test_scoped_replacement_revokes_ready_defaults_without_sending_partial_snapshot","test_authenticated_canonical_rules_never_publish_as_defaults_only"],"tests/test_policy_bundle_generic_ack_contract.py":["test_generic_ack_has_no_managed_delivery_or_extension_proof","test_matching_applied_ack_survives_later_unverified_observation","test_generic_validator_accepts_the_existing_cloud_schema","test_generic_generator_rejects_invalid_bound_identity","test_continuity_source_never_mints_a_generic_ack"],"tests/test_policy_bundle_generic_acknowledgement.py":["test_generic_v2_ack_is_unverified_until_the_chosen_lane_applies","test_empty_acknowledgement_never_counts_as_applied","test_received_generic_ack_can_become_applied_after_the_lane_commits","test_retained_generic_bundle_does_not_reuse_extension_delivery_as_proof","test_applied_generic_ack_is_not_overwritten_when_rollout_later_disables","test_generic_ack_validator_rejects_managed_delivery_fields"]}
+          criterion = "tests/test_native_generic_sync_unstaged.py::test_ordinary_signed_sync_earns_unstaged_native_worker_acceptance"
+          expected = control_functions if group == "components" else {criterion.split("::")[0]: [criterion.split("::")[1]]}
+          paths = list(expected) if group == "components" else [criterion]
+          directory = Path("artifacts/native-activation")
+          directory.mkdir(parents=True, exist_ok=True)
+          xml_path = directory / (group + ".xml")
+          
+          class Observer:
+              def __init__(self):
+                  self.collected = []
+                  self.deselected = []
+          
+              def pytest_collection_finish(self, session):
+                  self.collected = [item.nodeid for item in session.items]
+          
+              def pytest_deselected(self, items):
+                  self.deselected.extend(item.nodeid for item in items)
+          
+          observer = Observer()
+          exit_code = int(pytest.main(["-q", "--tb=short", "-m", "" if group == "components" else "slow",
+                                      "--junitxml=" + str(xml_path), *paths], plugins=[observer]))
+          observed_functions = collections.defaultdict(set)
+          for node in observer.collected:
+              path, name = node.split("::", 1)
+              observed_functions[path].add(name.split("[", 1)[0])
+          expected_functions = {path: set(names) for path, names in expected.items()}
+          collection_ok = (dict(observed_functions) == expected_functions and not observer.deselected
+                           and len(observer.collected) == len(set(observer.collected)))
+          if group == "criterion":
+              collection_ok = collection_ok and observer.collected == [criterion]
+          xml_error = None
+          cases = []
+          try:
+              cases = ET.parse(xml_path).getroot().findall(".//testcase")
+          except (OSError, ET.ParseError) as error:
+              xml_error = type(error).__name__
+          collected_counts = collections.Counter((node.split("::", 1)[0][:-3].replace("/", "."),
+                                                  node.split("::", 1)[1]) for node in observer.collected)
+          xml_counts = collections.Counter((case.get("classname"), case.get("name")) for case in cases)
+          xml_ok = (xml_error is None and bool(cases) and xml_counts == collected_counts
+                    and all(not list(case.iter("failure")) and not list(case.iter("error"))
+                            and not list(case.iter("skipped")) for case in cases))
+          passed = exit_code == 0 and collection_ok and xml_ok
+          report = {"schema": "native-activation-tests.v1", "group": group, "originalPytestExitCode": exit_code,
+                    "collected": len(observer.collected), "junitCases": len(cases),
+                    "modules": {path: sum(node.startswith(path + "::") for node in observer.collected) for path in expected},
+                    "exactCollection": collection_ok, "junitCompleteAndAllPassed": xml_ok, "xmlError": xml_error,
+                    "allAssertionsPassed": passed, "stagedFeatureNegotiation": False if group == "criterion" else "controlled-fixtures",
+                    "defaultConsumerEvidence": passed and group == "criterion", "installedImageAcceptance": False,
+                    "allRoutesAcceptance": False}
+          (directory / (group + ".json")).write_text(json.dumps(report, sort_keys=True) + "\n")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(exit_code if exit_code else (0 if passed else 1))
+          PY
+      - name: Run complete component and CLI controls
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.observer.outcome == 'success'
         env:
-          QUALITY_RESULT: ${{ needs.quality.result }}
-          TEST_PLAN_RESULT: ${{ needs.test-plan.result }}
-          TESTS_RESULT: ${{ needs.tests.result }}
-          COMPATIBILITY_RESULT: ${{ needs.compatibility.result }}
-          SCHEDULING_SENSITIVE_RESULT: ${{ needs.scheduling-sensitive.result }}
+          PYTHONPATH: src
         run: |
-          test "$QUALITY_RESULT" = "success"
-          test "$TEST_PLAN_RESULT" = "success"
-          test "$TESTS_RESULT" = "success"
-          test "$COMPATIBILITY_RESULT" = "success"
-          test "$SCHEDULING_SENSITIVE_RESULT" = "success"
-
-  dashboard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: "1.3.14"
-      - run: cd dashboard && bun install --frozen-lockfile
-      - run: cd dashboard && bun run test
-      - name: Dashboard build and bundle-size report (L331)
+          uv run --no-sync python "$RUNNER_TEMP/native-activation-results.py" components
+      - name: Install the pinned Rust toolchain
+        id: rust
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success'
         run: |
-          cd dashboard && bun run build
-          git diff --exit-code -- ../src/codex_plugin_scanner/guard/daemon/static
-          js_size=$(du -sh dist/assets/*.js 2>/dev/null | awk '{print $1}' | head -1)
-          css_size=$(du -sh dist/assets/*.css 2>/dev/null | awk '{print $1}' | head -1)
-          echo "Bundle JS: ${js_size:-unknown}, CSS: ${css_size:-unknown}"
-
-  cisco-full:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: "3.13"
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          cache-suffix: cisco
-      - run: python3.13 -m pip install --dry-run --no-deps --require-hashes -r docker-requirements.txt
-      - run: uv sync --frozen --extra dev --extra cisco --group cisco-mcp --python 3.13
-      - run: uv run --no-sync pytest tests/test_cisco_install_surfaces.py tests/test_mcp_security.py tests/test_cli.py tests/test_action_runner.py tests/test_live_cisco_smoke.py --tb=short
-
-  cross-platform:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ["3.12"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run cross-platform Guard regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_cli.py
-          tests/test_verification.py
-          tests/test_action_runner.py
-          tests/test_guard_skill_directory_identity.py
-          tests/test_guard_skill_directory_identity_discovery.py
-          tests/test_guard_skill_directory_identity_downstream.py
-          tests/test_guard_skill_directory_identity_links.py
-          tests/test_guard_consumer_skill_directory_identity.py
-          tests/test_guard_runner_skill_directory_identity.py
-          tests/test_gemini_adapter.py
-          tests/test_gemini_skill_directory_identity.py
-          tests/test_antigravity_adapter.py
-          tests/test_guard_aibom_detection.py
-          tests/test_guard_aibom_content_upload_batches.py
-          tests/test_guard_aibom_skill_directory_identity.py
-          --tb=short
-      - name: Run Windows Codex hook process-tree regressions
-        if: runner.os == 'Windows'
-        run: >-
-          uv run --no-sync pytest
-          tests/test_codex_hook_fallback_isolation.py
-          -k "isolated_process_timeout_kills_descendants or isolated_process_closes_descendant_held_pipes_after_parent_exit"
-          --tb=short
-      - name: Build and exercise packaged Windows Core daemon gate
-        if: runner.os == 'Windows'
-        shell: pwsh
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+      - name: Validate the locked Rust workspace
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.rust.outcome == 'success'
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
-          $dist = Join-Path $env:RUNNER_TEMP "hol-guard-frozen"
-          $work = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-work"
-          $spec = Join-Path $env:RUNNER_TEMP "hol-guard-frozen-spec"
-          $versionFile = Join-Path $env:RUNNER_TEMP "hol-guard-version-info.txt"
-          New-Item -ItemType Directory -Force -Path $dist, $work, $spec | Out-Null
-          uv sync --frozen --extra dev --extra mdm-build --python ${{ matrix.python-version }}
-          $version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()
-          uv run --no-sync python scripts/mdm/windows/write-version-info.py `
-            --version $version --output $versionFile
-          uv run --no-sync python -I scripts/release/stage_guard_cloud_review_artifacts.py `
-            --source-root (Get-Location).Path
-          if ($LASTEXITCODE -ne 0) {
-            throw "Staging Guard cloud review artifacts failed with exit code $LASTEXITCODE"
-          }
-          uv run --no-sync pyinstaller --clean --noconfirm --onedir --name hol-guard `
-            --collect-submodules codex_plugin_scanner --collect-data codex_plugin_scanner `
-            --version-file $versionFile `
-            --distpath $dist --workpath $work --specpath $spec `
-            scripts/mdm/hol-guard-entry.py
-          if ($LASTEXITCODE -ne 0) {
-            throw "PyInstaller failed with exit code $LASTEXITCODE"
-          }
-          $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE = Join-Path $dist "hol-guard/hol-guard.exe"
-          if (-not (Test-Path -LiteralPath $env:HOL_GUARD_FROZEN_TEST_EXECUTABLE -PathType Leaf)) {
-            throw "Frozen hol-guard executable was not produced"
-          }
-          uv run --no-sync pytest tests/test_frozen_windows_daemon_bootstrap.py --tb=short
-
-  windows-updater:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.12"]
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+          cargo +1.88.0 metadata --manifest-path rust/Cargo.toml --locked --format-version 1 --no-deps > /dev/null
+      - name: Check Rust formatting
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.rust.outcome == 'success'
+        run: |
+          cargo +1.88.0 fmt --manifest-path rust/Cargo.toml --all --check
+      - name: Check every Rust workspace target
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.rust.outcome == 'success'
+        run: |
+          HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          export HOL_GUARD_PACKAGE_VERSION
+          cargo +1.88.0 clippy --manifest-path rust/Cargo.toml --locked --workspace --all-targets -- -D warnings
+      - name: Test every Rust workspace target
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.rust.outcome == 'success'
+        run: |
+          HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          export HOL_GUARD_PACKAGE_VERSION
+          cargo +1.88.0 test --manifest-path rust/Cargo.toml --locked --workspace --all-targets
+      - name: Build and self-test the exact release runtime
+        id: build
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.rust.outcome == 'success'
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          HOL_GUARD_PACKAGE_VERSION="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          export HOL_GUARD_PACKAGE_VERSION
+          cargo +1.88.0 build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+          rust/target/release/hol-guard-runtime self-test --json
+      - name: Stage the verified source build for native auto discovery
+        id: bundle
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.build.outcome == 'success'
+        run: |
+          proof_pure_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-pure.XXXXXX")"
+          proof_native_dir="$(mktemp -d "$RUNNER_TEMP/native-auto-bundle.XXXXXX")"
+          proof_runtime="$GITHUB_WORKSPACE/rust/target/release/hol-guard-runtime"
+          proof_version="$(uv run --no-sync python scripts/sync_repo_version.py --check)"
+          proof_rule_digest="$("$proof_runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')"
+          proof_target="$(rustc +1.88.0 -vV | sed -n 's/^host: //p')"
+          test "$proof_target" = "x86_64-unknown-linux-gnu"
+          uv build --wheel --out-dir "$proof_pure_dir"
+          proof_wheels=("$proof_pure_dir"/*.whl)
+          test "${#proof_wheels[@]}" -eq 1
+          test -f "${proof_wheels[0]}"
+          uv run --no-sync python -m tests.native_source_bundle \
+            --wheel "${proof_wheels[0]}" \
+            --runtime "$proof_runtime" \
+            --output-dir "$proof_native_dir" \
+            --version "$proof_version" \
+            --source-sha "$GITHUB_SHA" \
+            --rule-digest "$proof_rule_digest" \
+            --platform-tag linux_x86_64 \
+            --target "$proof_target"
+      - name: Verify actual capabilities and bundled auto discovery
+        id: capabilities
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.bundle.outcome == 'success'
+        env:
+          HOL_GUARD_NATIVE: auto
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+        run: |
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+          from codex_plugin_scanner.guard.native_runtime import native_runtime_status
+          
+          assert os.environ["HOL_GUARD_NATIVE"] == "auto"
+          for key in ("HOL_GUARD_TEST_MODE", "HOL_GUARD_PYTHON_ORACLE", "HOL_GUARD_NATIVE_DIAGNOSTIC"):
+              assert not os.environ.get(key), key
+          runtime = Path("rust/target/release/hol-guard-runtime").resolve()
+          bundled = Path("src/codex_plugin_scanner/_native/hol-guard-runtime").resolve()
+          actual = json.loads(subprocess.check_output([str(runtime), "capabilities", "--json"], text=True))
+          features = actual["features"]
+          assert isinstance(features, list) and all(isinstance(value, str) for value in features)
+          assert len(features) == len(set(features))
+          required = {"policy-snapshot-v4", "policy-scoped-authority-v1", "hook-envelope-v3",
+                      "policy-snapshot-resident-generation-v1", "native-policy-in-memory-v1",
+                      "native-resident-client-v1", "pre-tool-generic-authority-v1"}
+          optional = {"policy-managed-authority-v1", "policy-command-expressions-v1", "policy-managed-config-floor-v1"}
+          assert required <= set(features) and not optional.intersection(features)
+          version = subprocess.check_output(
+              ["uv", "run", "--no-sync", "python", "scripts/sync_repo_version.py", "--check"], text=True
+          ).strip()
+          assert actual["build_sha"] == os.environ["GITHUB_SHA"] and actual["runtime_version"] == version
+          digest = hashlib.sha256(runtime.read_bytes()).hexdigest()
+          assert hashlib.sha256(bundled.read_bytes()).hexdigest() == digest
+          status = native_runtime_status()
+          assert status.mode == "auto" and status.available and status.compatible
+          assert status.identity is not None and status.capabilities is not None
+          assert status.identity.path.resolve() == bundled and status.identity.sha256 == digest
+          assert status.capabilities.build_sha == actual["build_sha"]
+          assert status.capabilities.runtime_version == actual["runtime_version"]
+          assert status.capabilities.rule_digest == actual["rule_digest"]
+          assert set(status.capabilities.features) == set(features)
+          report = {"schema": "native-default-capability-proof.v1", "sourceSha": actual["build_sha"],
+                    "runtimeVersion": version, "runtimeSha256": digest, "ruleDigest": actual["rule_digest"],
+                    "featureCount": len(features), "scopedTrioAdvertised": True, "optionalAuthorityAdvertised": False,
+                    "actualAutoDiscovery": True, "installedImageAcceptance": False, "policyApplicationAcceptance": False}
+          Path("artifacts/native-activation/capabilities.json").write_text(json.dumps(report, sort_keys=True) + "\n")
+          print(json.dumps(report, sort_keys=True))
+          PY
+      - name: Require complete ordinary native application and ACK acceptance
+        id: criterion
+        if: always() && steps.source.outcome == 'success' && steps.dependencies.outcome == 'success' && steps.interpreter.outcome == 'success' && steps.bundle.outcome == 'success' && steps.capabilities.outcome == 'success' && steps.observer.outcome == 'success'
+        env:
+          HOL_GUARD_NATIVE: auto
+          HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
+          PYTHONPATH: src
+        run: |
+          uv run --no-sync python "$RUNNER_TEMP/native-activation-results.py" criterion
+      - name: Verify exact source after execution
+        if: always() && steps.checkout.outcome == 'success'
+        env:
+          GUARD_PHASE: after
+        run: |
+          python -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          
+          def tree(ref):
+              result = {}
+              for entry in subprocess.check_output(["git", "ls-tree", "-rz", "--full-tree", ref]).split(b"\0"):
+                  if entry:
+                      metadata, path = entry.split(b"\t", 1)
+                      result[path.decode()] = tuple(metadata.decode().split())
+              return result
+          
+          source = os.environ["SOURCE_COMMIT"]
+          head = os.environ["DIAGNOSTIC_COMMIT"]
+          diagnostic_tree = os.environ["DIAGNOSTIC_TREE"]
+          assert all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (source, head, diagnostic_tree))
+          assert source == "db4d8834f79c3101e870a736b42ce27ffb255b86"
+          assert os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          assert os.environ["GITHUB_REF"] == "refs/heads/hgp/diagnostic-bounded-native-activation-20260919"
+          assert git("rev-parse", "HEAD") == head == os.environ["GITHUB_SHA"]
+          assert git("rev-parse", "HEAD^{tree}") == diagnostic_tree
+          assert git("show", "-s", "--format=%P", head) == source
+          assert git("show", "-s", "--format=%P", source) == "e814138f3246d79f57c45c8fc6224102cc8fbf0a"
+          assert git("show", "-s", "--format=%P", "e814138f3246d79f57c45c8fc6224102cc8fbf0a") == "51d5684be15c03b979e145663e110ec5bfdc94ee"
+          approved_identity = git("show", "-s", "--format=%an%n%ae%n%cn%n%ce", "e814138f3246d79f57c45c8fc6224102cc8fbf0a").splitlines()
+          assert len(approved_identity) == 4 and approved_identity[:2] == approved_identity[2:]
+          for commit in (source, head):
+              assert git("show", "-s", "--format=%an%n%ae%n%cn%n%ce", commit).splitlines() == approved_identity
+          assert git("rev-parse", "e814138f3246d79f57c45c8fc6224102cc8fbf0a^{tree}") == "69390f1a0462e557aea7ff82e89e1dac4950ccbd"
+          assert git("rev-parse", source + "^{tree}") == "ef86a4934abc24737743332c0d96fedcfd05b1fd"
+          expected = tree("e814138f3246d79f57c45c8fc6224102cc8fbf0a")
+          assert len(expected) == 4313
+          changes = [["rust/crates/guard-runtime/src/resident_protocol.rs","f60b31b4e62f8e317364126491a004e31055f891","8f9fd6b945fb34be55c226de73b9b1f39fbd40d2"],["src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","186102bbe8f52f8a4fd2ae50ba36235c7b628fde","93f0d9c6be38ce9ae46abbe402b3097bb1efe618"],["src/codex_plugin_scanner/guard/policy_lane_capabilities.py","601d541568575f0d470422e0f00268981fa42ec7","89253e79d259ce4cb6adda7ba6e3daffbd58e72f"],["tests/test_policy_lane_cli.py","17d4f81464cdd663e57affdbf25af5e0e93625e9","5edc3668a27e47f7131ba72c2535fa55131399ab"],["docs/guard/runtime-lane-capabilities.md","2659804aba6d2c42b15f781c29b2f849719b29a4","b36be5df87c034287c2d8514d6ac0d3aac2a32d9"],["tests/test_native_generic_sync_unstaged.py",None,"bb7bc3ec887ec188f8eb7ab8797c72ab0d598446"]]
+          for path, before, after in changes:
+              assert expected.get(path) == (("100644", "blob", before) if before else None)
+              expected[path] = ("100644", "blob", after)
+          assert len(expected) == 4314 and tree(source) == expected
+          assert expected["src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py"][2] == "cd0749d72df7ab9a5328f57129ca1bf44c769e60"
+          workflow = git("rev-parse", "HEAD:.github/workflows/ci.yml")
+          expected[".github/workflows/ci.yml"] = ("100644", "blob", workflow)
+          assert tree(head) == expected
+          watched = ["rust/crates/guard-runtime/src/resident_protocol.rs","src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","src/codex_plugin_scanner/guard/policy_lane_capabilities.py","tests/test_policy_lane_cli.py","docs/guard/runtime-lane-capabilities.md","tests/test_native_generic_sync_unstaged.py","tests/test_native_defaults_edge.py","tests/test_native_scoped_result.py","tests/test_native_scoped_worker_fence.py","tests/test_native_source_authority_fence.py","tests/test_native_cloud_policy_capabilities.py","tests/test_policy_bundle_generic_ack_contract.py","tests/test_policy_bundle_generic_acknowledgement.py","scripts/ci/rust_authority_ownership_gate.py","scripts/ci/rust_io_ownership_gate.py","scripts/ci/native_approval_contract_gate.py","scripts/ci/python_hook_semantic_callgraph_gate.py","scripts/ci/native_receipt_persistence_gate.py","scripts/ci/python_capability_cleanup_gate.py","scripts/ci/test_inventory.py","scripts/sync_repo_version.py","scripts/build_native_hol_guard_wheel.py","tests/native_source_bundle.py","basedpyright.native-managed-source.json","pyproject.toml","uv.lock","rust/Cargo.toml","rust/Cargo.lock","conftest.py","tests/conftest.py","tests/test_guard_durable_io.py","tests/test_guard_managed_install_context.py","tests/test_guard_node_semver.py","tests/test_guard_private_file_io.py","src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py","src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_scoped.py","src/codex_plugin_scanner/guard/native_policy_bundle_acceptance.py","src/codex_plugin_scanner/guard/native_policy_bundle_ack.py","src/codex_plugin_scanner/guard/native_hook_edge.py","src/codex_plugin_scanner/guard/daemon/hook_worker.py","src/codex_plugin_scanner/guard/native_runtime.py","src/codex_plugin_scanner/guard/native_runtime_capabilities.py","src/codex_plugin_scanner/guard/native_runtime_selection.py"]
+          for path in [*watched, ".github/workflows/ci.yml"]:
+              content = Path(path).read_bytes()
+              actual = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+              assert actual == expected[path][2], path
+          assert not git("status", "--porcelain", "--untracked-files=no")
+          report = {"schema": "native-activation-source-proof.v2", "source": source, "head": head,
+                    "sourceTree": "ef86a4934abc24737743332c0d96fedcfd05b1fd", "diagnosticTree": diagnostic_tree,
+                    "sourceLeaves": len(expected), "workingPins": len(watched) + 1, "phase": os.environ["GUARD_PHASE"]}
+          directory = Path("artifacts/native-activation")
+          directory.mkdir(parents=True, exist_ok=True)
+          (directory / ("source-" + os.environ["GUARD_PHASE"] + ".json")).write_text(json.dumps(report, sort_keys=True) + "\n")
+          print(json.dumps(report, sort_keys=True))
+          PY
+      - name: Retain bounded source acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        id: setup-uv-primary
-        continue-on-error: true
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - name: Retry uv setup after transient download failure
-        if: steps.setup-uv-primary.outcome == 'failure'
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
-        with:
-          version: "0.9.26"
-          enable-cache: true
-          cache-dependency-glob: ${{ env.CI_UV_CACHE_DEPENDENCY_GLOB }}
-          save-cache: false
-      - run: uv sync --frozen --extra dev --python ${{ matrix.python-version }}
-      - name: Run trusted updater and daemon regressions
-        run: >-
-          uv run --no-sync pytest
-          tests/test_guard_update_artifact.py
-          tests/test_guard_update_subprocess.py
-          tests/test_guard_update_isolation.py
-          tests/test_guard_phase03_local_install.py
-          tests/test_guard_phase03_remainder.py
-          tests/test_dashboard_update.py
-          tests/test_guard_daemon_manager.py
-          tests/test_guard_mdm_policy.py
-          --tb=short
+          name: bounded-native-activation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/native-activation/
+          if-no-files-found: error
+          retention-days: 30

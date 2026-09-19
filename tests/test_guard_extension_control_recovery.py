@@ -181,3 +181,52 @@ def test_concurrent_recovery_is_idempotent(tmp_path: Path, monkeypatch: pytest.M
 
     assert {result["health"] for result in results} == {AuthorityHealth.PROTECTED.value}
     assert {result["revision"] for result in results} == {4}
+
+
+def test_authority_recovery_consumes_daemon_bound_approval_before_repair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = GuardStore(tmp_path / "guard-home")
+    tampered = ExtensionControlAuthorityView(
+        AuthorityHealth.TAMPERED,
+        4,
+        BUILT_IN_COMMAND_EXTENSION_REGISTRY.catalog_digest,
+        (),
+    )
+    protected = replace(tampered, health=AuthorityHealth.PROTECTED, revision=5)
+    service = ExtensionControlApiService(
+        store=store,
+        registry=BUILT_IN_COMMAND_EXTENSION_REGISTRY,
+        runtime=ExtensionControlRuntime(tampered),
+    )
+    calls: list[str] = []
+    current_view = [tampered]
+    monkeypatch.setattr(store, "read_extension_control_authority_for_registry", lambda _registry: current_view[0])
+
+    def recover(**_kwargs: object) -> ExtensionControlAuthorityView:
+        calls.append("recover")
+        current_view[0] = protected
+        return protected
+
+    monkeypatch.setattr(
+        store,
+        "recover_extension_control_authority",
+        recover,
+    )
+    monkeypatch.setattr(
+        extension_control_api_module,
+        "require_extension_control",
+        lambda *_args, **_kwargs: calls.append("require") or object(),
+    )
+    monkeypatch.setattr(
+        extension_control_api_module,
+        "consume_extension_control_grant",
+        lambda *_args, **_kwargs: calls.append("consume"),
+    )
+
+    effective = service.recover_authority({"approval_password": "secret", "session_nonce": "nonce"})
+
+    assert effective["health"] == AuthorityHealth.PROTECTED.value
+    assert effective["revision"] == 5
+    assert calls == ["require", "consume", "recover"]

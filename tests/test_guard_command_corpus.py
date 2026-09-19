@@ -437,7 +437,7 @@ def test_all_corpus_artifacts_and_generated_records_are_secret_and_pii_free() ->
         "xo" + "xb-",
         "AK" + "IA",
         "BEGIN " + "PRIVATE KEY",
-        "hashgraph-online" + "/points-portal",
+        "synthetic-private-org/private-repository",
     )
     patterns = (
         re.compile(r"\beyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b"),

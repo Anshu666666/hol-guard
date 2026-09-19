@@ -17,6 +17,11 @@ from typing import cast
 
 from .edge_events import build_policy_event
 from .extension_control_events import extension_control_change_payload
+from .managed_controls_policy_bundle import (
+    MANAGED_CONTROLS_ACTIVE_STATE_KEY,
+    MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
+    MANAGED_CONTROLS_REVISION_STATE_KEY,
+)
 from .runtime.extension_control_authority import (
     AuthorityAnchor,
     AuthorityHealth,
@@ -108,6 +113,44 @@ class _ExtensionControlAuthoritySupportMixin:
             return self._tampered_view(catalog_digest)
         except Exception:
             return self._degraded_view(catalog_digest)
+
+    def _read_extension_control_authority_records(self) -> tuple[sqlite3.Row | None, sqlite3.Row | None] | None:
+        with self._connect() as connection:
+            if not ensure_extension_control_authority_schema(connection, require_compatible=False):
+                return None
+            row = connection.execute(
+                "select * from extension_control_authority_snapshot where singleton = 1"
+            ).fetchone()
+            prior_authority = None
+            if row is None:
+                # Residue cannot authenticate a replacement snapshot, but it
+                # disqualifies the ordinary never-enrolled policy path.
+                prior_authority = connection.execute(
+                    """
+                    select 1 from extension_control_authority_transition
+                    union all select 1 from extension_control_authority_proof
+                    union all select 1 from extension_control_catalog_manifest
+                    union all select 1 from extension_control_authority_recovery_archive
+                    union all select 1 from sync_state where state_key in (?, ?, ?)
+                    limit 1
+                    """,
+                    (
+                        MANAGED_CONTROLS_ACTIVE_STATE_KEY,
+                        MANAGED_CONTROLS_REVISION_STATE_KEY,
+                        MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
+                    ),
+                ).fetchone()
+        return row, prior_authority
+
+    def _read_extension_control_secret_records(
+        self, *, snapshot_missing: bool
+    ) -> tuple[bytes | None, AuthorityAnchor | None, str | None]:
+        key = self._authority_key(required=False)
+        anchor = self._read_anchor(key=key) if key is not None else None
+        unverified_anchor = (
+            self._secret_store().get_secret(self._anchor_ref()) if snapshot_missing and key is None else None
+        )
+        return key, anchor, unverified_anchor
 
     def _authority_key(self, *, required: bool) -> bytes | None:
         try:

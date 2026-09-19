@@ -747,37 +747,12 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         *,
         migration_registry: CommandSafetyExtensionRegistry | None = None,
     ) -> ExtensionControlAuthorityView:
-        with self._connect() as connection:
-            if not ensure_extension_control_authority_schema(connection, require_compatible=False):
-                return self._degraded_view(catalog_digest)
-            row = connection.execute(
-                "select * from extension_control_authority_snapshot where singleton = 1"
-            ).fetchone()
-            prior_authority = None
-            if row is None:
-                # Residue cannot authenticate a replacement snapshot, but it
-                # disqualifies the ordinary never-enrolled policy path.
-                prior_authority = connection.execute(
-                    """
-                    select 1 from extension_control_authority_transition
-                    union all select 1 from extension_control_authority_proof
-                    union all select 1 from extension_control_catalog_manifest
-                    union all select 1 from extension_control_authority_recovery_archive
-                    union all select 1 from sync_state where state_key in (?, ?, ?)
-                    limit 1
-                    """,
-                    (
-                        MANAGED_CONTROLS_ACTIVE_STATE_KEY,
-                        MANAGED_CONTROLS_REVISION_STATE_KEY,
-                        MANAGED_CONTROLS_LAST_GOOD_STATE_KEY,
-                    ),
-                ).fetchone()
+        records = self._read_extension_control_authority_records()
+        if records is None:
+            return self._degraded_view(catalog_digest)
+        row, prior_authority = records
         try:
-            key = self._authority_key(required=False)
-            anchor = self._read_anchor(key=key) if key is not None else None
-            unverified_anchor = (
-                self._secret_store().get_secret(self._anchor_ref()) if row is None and key is None else None
-            )
+            key, anchor, unverified_anchor = self._read_extension_control_secret_records(snapshot_missing=row is None)
         except Exception:
             return self._degraded_view(catalog_digest)
         if row is None:

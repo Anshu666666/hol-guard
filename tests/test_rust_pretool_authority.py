@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -366,16 +367,16 @@ def test_hook_worker_fails_closed_when_forced_native_is_missing(
             reason="missing",
         ),
     )
-    worker = HookWorker(store=GuardStore(tmp_path / "guard-home"))
-    result = worker.review_http_payload(
-        payload={"hook_event_name": "PreToolUse", "tool_input": {"command": "git push"}},
-        params={},
-        default_harness="pi",
-        home_dir=tmp_path / "home",
-        guard_home=tmp_path / "guard-home",
-        workspace=tmp_path / "workspace",
-    )
-    assert result["decision"] == "allow" and result["reason_code"] == "native_pre_tool_unavailable"
+    with closing(HookWorker(store=GuardStore(tmp_path / "guard-home"))) as worker:
+        result = worker.review_http_payload(
+            payload={"hook_event_name": "PreToolUse", "tool_input": {"command": "git push"}},
+            params={},
+            default_harness="pi",
+            home_dir=tmp_path / "home",
+            guard_home=tmp_path / "guard-home",
+            workspace=tmp_path / "workspace",
+        )
+        assert result["decision"] == "allow" and result["reason_code"] == "native_pre_tool_unavailable"
 
 
 def test_hook_worker_fails_closed_when_auto_pretool_native_is_unavailable(
@@ -399,17 +400,17 @@ def test_hook_worker_fails_closed_when_auto_pretool_native_is_unavailable(
             reason="missing",
         ),
     )
-    worker = HookWorker(store=GuardStore(tmp_path / "guard-home"))
-    result = worker.review_http_payload(
-        payload={"hook_event_name": "PreToolUse", "tool_input": {"command": "git push"}},
-        params={},
-        default_harness="pi",
-        home_dir=tmp_path / "home",
-        guard_home=tmp_path / "guard-home",
-        workspace=tmp_path / "workspace",
-    )
-    assert result["decision"] == "allow"
-    assert result["reason_code"] == "native_pre_tool_unavailable"
+    with closing(HookWorker(store=GuardStore(tmp_path / "guard-home"))) as worker:
+        result = worker.review_http_payload(
+            payload={"hook_event_name": "PreToolUse", "tool_input": {"command": "git push"}},
+            params={},
+            default_harness="pi",
+            home_dir=tmp_path / "home",
+            guard_home=tmp_path / "guard-home",
+            workspace=tmp_path / "workspace",
+        )
+        assert result["decision"] == "allow"
+        assert result["reason_code"] == "native_pre_tool_unavailable"
 
 
 def test_hook_worker_falls_back_when_native_mode_is_off(
@@ -452,17 +453,17 @@ def test_hook_worker_uses_emergency_safe_floor_for_non_command_pretool_without_n
         "codex_plugin_scanner.guard.daemon.hook_worker.review_raw_hook_native",
         lambda *_args, **_kwargs: None,
     )
-    worker = HookWorker(store=GuardStore(tmp_path / "guard-home"))
-    result = worker.review_http_payload(
-        payload={"hook_event_name": "PreToolUse", "tool_name": "Read", "tool_input": {"file_path": "src/foo.ts"}},
-        params={},
-        default_harness="pi",
-        home_dir=tmp_path / "home",
-        guard_home=tmp_path / "guard-home",
-        workspace=tmp_path / "workspace",
-    )
-    assert result["decision"] == "allow"
-    assert result["reason_code"] == "native_pre_tool_unavailable"
+    with closing(HookWorker(store=GuardStore(tmp_path / "guard-home"))) as worker:
+        result = worker.review_http_payload(
+            payload={"hook_event_name": "PreToolUse", "tool_name": "Read", "tool_input": {"file_path": "src/foo.ts"}},
+            params={},
+            default_harness="pi",
+            home_dir=tmp_path / "home",
+            guard_home=tmp_path / "guard-home",
+            workspace=tmp_path / "workspace",
+        )
+        assert result["decision"] == "allow"
+        assert result["reason_code"] == "native_pre_tool_unavailable"
 
 
 def test_hook_worker_leaves_out_of_scope_events_to_existing_handling(
@@ -477,13 +478,13 @@ def test_hook_worker_leaves_out_of_scope_events_to_existing_handling(
         "codex_plugin_scanner.guard.daemon.hook_worker.review_raw_hook_native",
         lambda *_args, **_kwargs: None,
     )
-    worker = HookWorker(store=GuardStore(tmp_path / "guard-home"))
-    result = worker.review_http_payload(
-        payload={"hook_event_name": "PermissionRequest", "tool_input": {"command": "pwd"}},
-        params={},
-        default_harness="claude-code",
-        home_dir=tmp_path / "home",
-        guard_home=tmp_path / "guard-home",
-        workspace=tmp_path / "workspace",
-    )
-    assert result["reason_code"] == "native_hook_event_unavailable" and result["continue"] is True
+    with closing(HookWorker(store=GuardStore(tmp_path / "guard-home"))) as worker:
+        result = worker.review_http_payload(
+            payload={"hook_event_name": "PermissionRequest", "tool_input": {"command": "pwd"}},
+            params={},
+            default_harness="claude-code",
+            home_dir=tmp_path / "home",
+            guard_home=tmp_path / "guard-home",
+            workspace=tmp_path / "workspace",
+        )
+        assert result["reason_code"] == "native_hook_event_unavailable" and result["continue"] is True

@@ -23,7 +23,7 @@ import time
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from datetime import datetime, timedelta, timezone
-from hashlib import scrypt
+from hashlib import scrypt, sha256
 from pathlib import Path
 from typing import Any, Protocol, TypedDict, TypeVar, cast
 from urllib.parse import urlparse

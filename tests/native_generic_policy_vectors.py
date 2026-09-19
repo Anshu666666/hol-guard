@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
+from unittest.mock import patch
 
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli.commands_hook import _run_guard_hook_command
@@ -110,7 +112,18 @@ def evaluate_case(case: GenericCase, root: Path) -> dict[str, object]:
     )
     artifact_id = _artifact_id_from_event("codex", normalized)
     output = io.StringIO()
-    with redirect_stdout(output):
+    with (
+        patch.dict(
+            os.environ,
+            {
+                "HOL_GUARD_NATIVE": "off",
+                "HOL_GUARD_PYTHON_ORACLE": "1",
+                "HOL_GUARD_TEST_MODE": "1",
+            },
+            clear=False,
+        ),
+        redirect_stdout(output),
+    ):
         code = _run_guard_hook_command(
             argparse.Namespace(harness="codex", artifact_id=None, artifact_name=None, json=True, policy_action=None),
             guard_home=store.guard_home,

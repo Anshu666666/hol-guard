@@ -116,20 +116,20 @@ def _evaluate_shard(worker_index: int) -> DecisionDiffShard:
             "|".join((current.action, current.disposition.value, proposed.action, proposed.disposition.value))
         ].append(case.case_id)
         legacy_ids[f"{legacy_action}|{current.action}"].append(case.case_id)
-        lowered_count += guard_action_severity(proposed.action) < guard_action_severity(current.action)
-        legacy_lowered_count += guard_action_severity(current.action) < guard_action_severity(legacy_action)
+        proposed_rank = guard_action_severity(proposed.action)
+        current_rank = guard_action_severity(current.action)
+        legacy_rank = guard_action_severity(legacy_action)
+        lowered_count += proposed_rank < current_rank
+        legacy_lowered_count += current_rank < legacy_rank
         disposition_changed_count += current.disposition is not proposed.disposition
 
         reconciliation = _reconciliation_category(legacy_action, current.action, oracle.minimum_floor)
         reconciliation_ids[
             "|".join((reconciliation, legacy_action, current.action, oracle.minimum_floor, oracle.owner))
         ].append(case.case_id)
-        if guard_action_severity(current.action) != guard_action_severity(oracle.minimum_floor):
-            kind = (
-                "underclassified"
-                if guard_action_severity(current.action) < guard_action_severity(oracle.minimum_floor)
-                else "overclassified"
-            )
+        oracle_rank = guard_action_severity(oracle.minimum_floor)
+        if current_rank != oracle_rank:
+            kind = "underclassified" if current_rank < oracle_rank else "overclassified"
             actual_gap_ids["|".join((oracle.owner, kind, oracle.minimum_floor, current.action))].append(case.case_id)
 
     return DecisionDiffShard(

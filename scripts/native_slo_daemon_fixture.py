@@ -19,7 +19,7 @@ from contextlib import suppress
 from http.client import HTTPConnection
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -83,6 +83,10 @@ class DaemonFixture:
         self._lock = threading.Lock()
         self._responses: queue.Queue[bytes | None] = queue.Queue(maxsize=1)
         self._readers: list[threading.Thread] = []
+        self.root: Path
+        self.workspace: Path
+        self.guard_home: Path
+        self.daemon: Any
         self._connection: HTTPConnection | None = None
         self._owner_thread_id = 0
         self._closed = False
@@ -206,9 +210,9 @@ class DaemonFixture:
             self.root = Path(str(ready["root"]))
             self.workspace = Path(str(ready["workspace"]))
             self.guard_home = Path(str(ready["guard_home"]))
-            self.readiness_ms = float(ready["readiness_ms"])
+            self.readiness_ms = float(cast(float, ready["readiness_ms"]))
             self.daemon = SimpleNamespace(
-                port=int(ready["port"]),
+                port=int(cast(int, ready["port"])),
                 _server=SimpleNamespace(
                     auth_token=str(ready["auth_token"]),
                     hook_worker=SimpleNamespace(metrics=_RemoteMetrics(self)),
@@ -271,7 +275,7 @@ class DaemonFixture:
         return self.control("stop_resident").get("contained") is True
 
     def native_overload_count(self) -> int:
-        return int(self.control("native_overloads")["count"])
+        return int(cast(int, self.control("native_overloads")["count"]))
 
     def close(self) -> None:
         if self._closed:
@@ -365,7 +369,6 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
     configuration = None
     if setup != "none" or policy != "none":
         from scripts.native_slo_workloads import configuration_text
-
         configuration = configuration_text(setup if setup != "none" else policy)
     with ExitStack() as lifetime:
         workspace_fixture = None
@@ -375,7 +378,6 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
             try:
                 if workspace_count is not None:
                     from scripts.native_slo_workspace_server import WorkspaceScenarioFixture
-
                     workspace_fixture = WorkspaceScenarioFixture(adapter, workspace_count)
                     lifetime.enter_context(workspace_fixture.observer)
                     lifetime.callback(workspace_fixture.close)

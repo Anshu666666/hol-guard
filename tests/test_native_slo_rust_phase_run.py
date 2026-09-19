@@ -83,7 +83,8 @@ class LauncherControl:
 
 
 def test_native_launcher_returns_the_original_workload_object_with_incomplete_scope(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     control = LauncherControl(monkeypatch)
     runtime, evidence = tmp_path / "runtime", tmp_path / "evidence.jsonl"
@@ -93,14 +94,20 @@ def test_native_launcher_returns_the_original_workload_object_with_incomplete_sc
     assert report["workload_passed"] is True
     assert report["complete_run"] is report["qualification_complete"] is report["headline_timing_eligible"] is False
     assert control.events == [
-        ("receiver", runtime), ("fixture", runtime, "normal"), "fixture_enter",
-        ("attach", 271), ("measure", 271, 3, evidence), "fixture_exit",
-        "receiver_close", "receiver_report",
+        ("receiver", runtime),
+        ("fixture", runtime, "normal"),
+        "fixture_enter",
+        ("attach", 271),
+        ("measure", 271, 3, evidence),
+        "fixture_exit",
+        "receiver_close",
+        "receiver_report",
     ]
 
 
 def test_native_launcher_unsupported_platform_does_not_start_the_original_fixture(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     control = LauncherControl(monkeypatch)
     monkeypatch.setattr(launch, "supported", lambda: False)
@@ -111,7 +118,9 @@ def test_native_launcher_unsupported_platform_does_not_start_the_original_fixtur
 
 @pytest.mark.parametrize("mode", ["receiver_start", "attach", "fixture_start"])
 def test_native_launcher_setup_failure_does_not_run_or_claim_a_semantic_workload(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    mode: str,
 ) -> None:
     control = LauncherControl(monkeypatch, mode)
     report = launch.measure_native_phases(tmp_path / "runtime", 1, tmp_path / "journal")
@@ -126,7 +135,8 @@ def test_native_launcher_setup_failure_does_not_run_or_claim_a_semantic_workload
 
 
 def test_native_launcher_retains_original_failure_journal_and_closes_the_fixture(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     control = LauncherControl(monkeypatch, "workload")
     evidence = tmp_path / "journal"
@@ -140,7 +150,9 @@ def test_native_launcher_retains_original_failure_journal_and_closes_the_fixture
 
 @pytest.mark.parametrize("mode", ["receiver_close", "fixture_close", "missing_tail"])
 def test_native_launcher_diagnostic_or_shutdown_failure_preserves_the_original_result(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    mode: str,
 ) -> None:
     control = LauncherControl(monkeypatch, mode)
     report = launch.measure_native_phases(tmp_path / "runtime", 1, tmp_path / "journal")
@@ -153,7 +165,9 @@ def test_native_launcher_diagnostic_or_shutdown_failure_preserves_the_original_r
 
 @pytest.mark.parametrize("count", [True, False, 0, 101, -1, 1.0])
 def test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, count: object,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    count: object,
 ) -> None:
     control = LauncherControl(monkeypatch)
     with pytest.raises(ValueError, match="native_phase_count_outside_original_bound"):

@@ -157,7 +157,9 @@ def test_process_stat_parser_binds_the_real_generation_and_delimited_name() -> N
     actual = Path(f"/proc/{os.getpid()}/stat").read_bytes()
     identity = parse_stat(actual, os.getpid())
     assert identity.pid == os.getpid() and identity.parent == os.getppid()
-    controlled = f"{os.getpid()} (controlled ) name) S {os.getppid()} {os.getpgrp()} {os.getsid(0)} " + "0 " * 15 + "777"
+    controlled = (
+        f"{os.getpid()} (controlled ) name) S {os.getppid()} {os.getpgrp()} {os.getsid(0)} " + "0 " * 15 + "777"
+    )
     assert parse_stat(controlled.encode(), os.getpid()).start_ticks == 777
     with pytest.raises(ValueError):
         parse_stat(actual, os.getpid() + 1)

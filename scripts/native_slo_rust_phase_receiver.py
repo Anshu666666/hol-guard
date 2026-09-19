@@ -34,7 +34,8 @@ _RIGHTS_LIMIT = 64
 
 def supported() -> bool:
     return sys.platform == "linux" and all(
-        hasattr(socket, name) for name in ("SO_PASSCRED", "SCM_CREDENTIALS", "SCM_RIGHTS", "MSG_CMSG_CLOEXEC", "CMSG_SPACE")
+        hasattr(socket, name)
+        for name in ("SO_PASSCRED", "SCM_CREDENTIALS", "SCM_RIGHTS", "MSG_CMSG_CLOEXEC", "CMSG_SPACE")
     )
 
 
@@ -50,7 +51,7 @@ def _credentials(ancillary: list[tuple[int, int, bytes]]) -> tuple[int, int, int
     for level, kind, data in ancillary:
         if level == socket.SOL_SOCKET and kind == socket.SCM_RIGHTS:
             descriptors = array.array("i")
-            descriptors.frombytes(data[:len(data) - len(data) % descriptors.itemsize])
+            descriptors.frombytes(data[: len(data) - len(data) % descriptors.itemsize])
             for descriptor in descriptors:
                 try:
                     os.close(descriptor)
@@ -109,7 +110,10 @@ class NativePhaseReceiver:
     def environment(self) -> dict[str, str]:
         if self.directory is None or self.socket is None or self._status != "prepared":
             raise ValueError("native_phase_receiver_not_prepared")
-        if _path_identity(self.directory) != self._directory_identity or _path_identity(self.path) != self._socket_identity:
+        if (
+            _path_identity(self.directory) != self._directory_identity
+            or _path_identity(self.path) != self._socket_identity
+        ):
             raise ValueError("native_phase_endpoint_changed")
         device, inode, _uid = self._socket_identity
         return {
@@ -162,7 +166,9 @@ class NativePhaseReceiver:
 
     def _receive(self) -> None:
         deadline = time.monotonic() + MAX_RECEIVER_SECONDS
-        ancillary_bound = socket.CMSG_SPACE(_CREDENTIAL_BYTES) + socket.CMSG_SPACE(_RIGHTS_LIMIT * array.array("i").itemsize)
+        ancillary_bound = socket.CMSG_SPACE(_CREDENTIAL_BYTES) + socket.CMSG_SPACE(
+            _RIGHTS_LIMIT * array.array("i").itemsize
+        )
         try:
             while not self._stop.is_set():
                 if time.monotonic() >= deadline:
@@ -226,17 +232,19 @@ class NativePhaseReceiver:
             processes: list[dict[str, object]] = []
             for index, (key, frame) in enumerate(self._latest.items(), 1):
                 sample = self._latest_snapshot.get(key)
-                processes.append({
-                    "slot": index,
-                    "role": frame["role"],
-                    "last_frame_ordinal": frame["ordinal"],
-                    "snapshot_ordinal": None if sample is None else sample["ordinal"],
-                    "run_state_when_last_sampled": frame["run_state_when_sampled"],
-                    "export_window_exhausted": frame["last_allowed_attempt"],
-                    "prior_export_loss_observed": frame["prior_export_loss_observed"],
-                    "diagnostic_socket_opens": 1,
-                    "snapshot": None if sample is None else copy.deepcopy(sample["snapshot"]),
-                })
+                processes.append(
+                    {
+                        "slot": index,
+                        "role": frame["role"],
+                        "last_frame_ordinal": frame["ordinal"],
+                        "snapshot_ordinal": None if sample is None else sample["ordinal"],
+                        "run_state_when_last_sampled": frame["run_state_when_sampled"],
+                        "export_window_exhausted": frame["last_allowed_attempt"],
+                        "prior_export_loss_observed": frame["prior_export_loss_observed"],
+                        "diagnostic_socket_opens": 1,
+                        "snapshot": None if sample is None else copy.deepcopy(sample["snapshot"]),
+                    }
+                )
             return {
                 "schema": "hol-guard-native-phase-receiver.v1",
                 "scope": "diagnostic_instrumented_owned_live_process_observations",
@@ -252,8 +260,10 @@ class NativePhaseReceiver:
                 "receiver_loss_observed": self._loss,
                 "counts": dict(self._counts),
                 "bounds": {
-                    "processes": MAX_PROCESSES, "datagrams": MAX_RECEIVED_DATAGRAMS,
-                    "received_bytes": MAX_RECEIVED_BYTES, "seconds": MAX_RECEIVER_SECONDS,
+                    "processes": MAX_PROCESSES,
+                    "datagrams": MAX_RECEIVED_DATAGRAMS,
+                    "received_bytes": MAX_RECEIVED_BYTES,
+                    "seconds": MAX_RECEIVER_SECONDS,
                     "datagram_bytes": MAX_DATAGRAM_BYTES,
                 },
                 "processes": processes,

@@ -66,8 +66,12 @@ def parse_stat(value: bytes, expected_pid: int) -> ProcessIdentity:
 
 def _same_executable(metadata: os.stat_result) -> tuple[int, int, int, int, int, int]:
     return (
-        metadata.st_dev, metadata.st_ino, metadata.st_mode,
-        metadata.st_size, metadata.st_mtime_ns, metadata.st_ctime_ns,
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
     )
 
 
@@ -118,7 +122,8 @@ def read_process(pid: int, executable: Executable | None = None) -> tuple[Proces
         uid_rows = [line.split()[1:] for line in status.splitlines() if line.startswith("Uid:")]
         gid_rows = [line.split()[1:] for line in status.splitlines() if line.startswith("Gid:")]
         if (
-            len(uid_rows) != 1 or len(gid_rows) != 1
+            len(uid_rows) != 1
+            or len(gid_rows) != 1
             or uid_rows[0] != [str(os.geteuid())] * 4
             or gid_rows[0] != [str(os.getegid())] * 4
         ):

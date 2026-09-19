@@ -30,23 +30,55 @@ ROLES = {
     "serve-managed": "managed_resident",
 }
 OUTCOMES = ("returned_ok", "returned_err", "unwound", "abandoned")
-FRAME_FIELDS = frozenset({
-    "schema", "sender_pid", "sender_start_ticks", "role", "ordinal",
-    "max_export_attempts", "export_interval_ms", "max_datagram_bytes",
-    "diagnostic_socket_opens", "diagnostic_socket_in_request_counts",
-    "prior_export_loss_observed", "last_allowed_attempt", "run_state_when_sampled",
-    "complete_run", "headline_timing_eligible", "snapshot",
-})
-REPORT_FIELDS = frozenset({
-    "schema", "scope", "span_semantics", "headline_timing_eligible", "complete_run",
-    "snapshot_atomic", "collector_loss_observed", "active_observations_when_read",
-    "max_observations_per_phase", "max_duration_ns", "unobserved_phase",
-    "loopback_failed_internal_socket_creations", "all_platform_socket_opens", "phases",
-})
-STAT_FIELDS = frozenset({
-    "retained_count", *OUTCOMES, "duration_ns_sum", "duration_ns_min",
-    "duration_ns_max", "duration_clipped", "observations_discarded_at_cap",
-})
+FRAME_FIELDS = frozenset(
+    {
+        "schema",
+        "sender_pid",
+        "sender_start_ticks",
+        "role",
+        "ordinal",
+        "max_export_attempts",
+        "export_interval_ms",
+        "max_datagram_bytes",
+        "diagnostic_socket_opens",
+        "diagnostic_socket_in_request_counts",
+        "prior_export_loss_observed",
+        "last_allowed_attempt",
+        "run_state_when_sampled",
+        "complete_run",
+        "headline_timing_eligible",
+        "snapshot",
+    }
+)
+REPORT_FIELDS = frozenset(
+    {
+        "schema",
+        "scope",
+        "span_semantics",
+        "headline_timing_eligible",
+        "complete_run",
+        "snapshot_atomic",
+        "collector_loss_observed",
+        "active_observations_when_read",
+        "max_observations_per_phase",
+        "max_duration_ns",
+        "unobserved_phase",
+        "loopback_failed_internal_socket_creations",
+        "all_platform_socket_opens",
+        "phases",
+    }
+)
+STAT_FIELDS = frozenset(
+    {
+        "retained_count",
+        *OUTCOMES,
+        "duration_ns_sum",
+        "duration_ns_min",
+        "duration_ns_max",
+        "duration_clipped",
+        "observations_discarded_at_cap",
+    }
+)
 
 
 def _require(condition: bool) -> None:
@@ -145,9 +177,15 @@ def decode_frame(payload: bytes) -> dict[str, Any]:
     _integer(frame["sender_start_ticks"], 1, 2**64 - 1)
     _integer(frame["ordinal"], 1, MAX_EXPORT_ATTEMPTS)
     _require(type(frame["role"]) is str and frame["role"] in ROLES.values())
-    _require(type(frame["run_state_when_sampled"]) is str and frame["run_state_when_sampled"] in {
-        "running", "returned_ok", "returned_err",
-    })
+    _require(
+        type(frame["run_state_when_sampled"]) is str
+        and frame["run_state_when_sampled"]
+        in {
+            "running",
+            "returned_ok",
+            "returned_err",
+        }
+    )
     _require(type(frame["prior_export_loss_observed"]) is bool)
     _require(type(frame["last_allowed_attempt"]) is bool)
     _require(frame["last_allowed_attempt"] is (frame["ordinal"] == MAX_EXPORT_ATTEMPTS))

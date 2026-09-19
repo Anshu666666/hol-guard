@@ -88,16 +88,16 @@ class OwnedNativeStream:
             assert os.write(descriptor, bytes([7]) * 32) == 32
         finally:
             os.close(descriptor)
-        environment = {
-            key: value for key, value in os.environ.items()
-            if not key.startswith("HOL_GUARD_NATIVE_PHASE_")
-        }
+        environment = {key: value for key, value in os.environ.items() if not key.startswith("HOL_GUARD_NATIVE_PHASE_")}
         environment.update(diagnostic_environment)
         self.environment = environment
         self.process = subprocess.Popen(
             [str(runtime), "resident-client-stream", "--stdin", str(self.state)],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env=environment, start_new_session=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=environment,
+            start_new_session=True,
         )
         self.handles: dict[tuple[int, int], tuple[ProcessIdentity, int]] = {}
         self.closed = False
@@ -147,8 +147,12 @@ class OwnedNativeStream:
                 assert verified == row and row.start_ticks >= self.identity.start_ticks
                 metadata = os.stat(path / "exe")
                 identity = (
-                    metadata.st_dev, metadata.st_ino, metadata.st_mode,
-                    metadata.st_size, metadata.st_mtime_ns, metadata.st_ctime_ns,
+                    metadata.st_dev,
+                    metadata.st_ino,
+                    metadata.st_mode,
+                    metadata.st_size,
+                    metadata.st_mtime_ns,
+                    metadata.st_ctime_ns,
                 )
                 assert identity == self.executable.identity, "unrecognized binary in owned native session"
                 key = row.pid, row.start_ticks
@@ -190,12 +194,16 @@ class OwnedNativeStream:
         self.closed = True
         result: dict[str, Any] = {
             "scope": "existing_resident_stop_then_retained_owned_generation_pidfds",
-            "stop_returncode": None, "client_returncode": None,
+            "stop_returncode": None,
+            "client_returncode": None,
             "original_session_capture_failed": False,
-            "forced_signals": [], "no_live_retained_generations": False,
-            "state_files_remaining": None, "passed": False,
+            "forced_signals": [],
+            "no_live_retained_generations": False,
+            "state_files_remaining": None,
+            "passed": False,
             "never_started_partial_header_control": (
-                expected_returncode == 2 and self.completed_requests == 0
+                expected_returncode == 2
+                and self.completed_requests == 0
                 and set(self.handles) == {(self.identity.pid, self.identity.start_ticks)}
                 and not list(self.state.glob("resident-v3-*/generation-*.json"))
             ),
@@ -208,20 +216,22 @@ class OwnedNativeStream:
                 except Exception:
                     result["original_session_capture_failed"] = True
             stop_environment = {
-                key: value for key, value in self.environment.items()
-                if not key.startswith("HOL_GUARD_NATIVE_PHASE_")
+                key: value for key, value in self.environment.items() if not key.startswith("HOL_GUARD_NATIVE_PHASE_")
             }
             try:
                 stopped = subprocess.run(
                     [str(self.runtime), "resident-stop", "--state-dir", str(self.state)],
-                    env=stop_environment, capture_output=True, timeout=3, check=False,
+                    env=stop_environment,
+                    capture_output=True,
+                    timeout=3,
+                    check=False,
                 )
                 assert len(stopped.stdout) + len(stopped.stderr) <= 4096
                 result["stop_returncode"] = stopped.returncode
-                result["stop_response_expected"] = (
-                    (stopped.returncode, stopped.stdout, stopped.stderr)
-                    == ((2, b"", b"native_resident_stop_unavailable\n")
-                        if result["never_started_partial_header_control"] else (0, b"", b""))
+                result["stop_response_expected"] = (stopped.returncode, stopped.stdout, stopped.stderr) == (
+                    (2, b"", b"native_resident_stop_unavailable\n")
+                    if result["never_started_partial_header_control"]
+                    else (0, b"", b"")
                 )
             except (subprocess.TimeoutExpired, OSError):
                 result["stop_failed"] = True

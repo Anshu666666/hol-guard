@@ -11,7 +11,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -21,10 +21,15 @@ from scripts.native_slo_daemon_fixture import DaemonFixture  # noqa: E402
 from scripts.native_slo_phase_run import measure_installed_phases  # noqa: E402
 from scripts.native_slo_rust_phase_receiver import NativePhaseReceiver, supported  # noqa: E402
 
-_REQUIRED_PHASES = frozenset({
-    "client_connect_inclusive", "client_authenticate", "client_request_write_flush",
-    "client_committed_response_read", "resident_evaluate_inclusive",
-})
+_REQUIRED_PHASES = frozenset(
+    {
+        "client_connect_inclusive",
+        "client_authenticate",
+        "client_request_write_flush",
+        "client_committed_response_read",
+        "resident_evaluate_inclusive",
+    }
+)
 
 
 def _observed_phases(native: dict[str, Any]) -> set[str]:
@@ -94,7 +99,7 @@ def measure_native_phases(runtime: Path, count: int, evidence_file: Path) -> dic
                 result["native"] = receiver.report()
             except Exception:
                 result["native_phase_error_observed"] = True
-    native = result["native"]
+    native = cast(dict[str, Any] | None, result["native"])
     if result["existing_fixture_failure_observed"]:
         result["status"] = "existing_fixture_failed"
     elif result["workload_failure_observed"]:
@@ -103,10 +108,12 @@ def measure_native_phases(runtime: Path, count: int, evidence_file: Path) -> dic
         result["status"] = "diagnostic_setup_failed"
     elif native is None or result["native_phase_error_observed"]:
         result["status"] = "diagnostic_incomplete"
-    elif _REQUIRED_PHASES <= _observed_phases(native) and any(
+    elif _REQUIRED_PHASES <= _observed_phases(native) and any(  # noqa: SIM300 - preserve operand evaluation order
         phase["phase"] in {"unix_socket_creation", "loopback_connect_handle"}
-        and phase["statistics"] is not None and phase["statistics"]["returned_ok"] > 0
-        for process in native["processes"] if process["snapshot"] is not None
+        and phase["statistics"] is not None
+        and phase["statistics"]["returned_ok"] > 0
+        for process in native["processes"]
+        if process["snapshot"] is not None
         for phase in process["snapshot"]["phases"]
     ):
         result["status"] = "diagnostic_phases_observed"
@@ -128,12 +135,17 @@ def main() -> int:
         raise ValueError("native_phase_report_exceeded_bound")
     with arguments.json.open("x", encoding="utf-8") as output:
         output.write(rendered)
-    print(json.dumps({
-        "schema": report["schema"],
-        "status": report["status"],
-        "headline_timing_eligible": False,
-        "qualification_complete": False,
-    }, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "schema": report["schema"],
+                "status": report["status"],
+                "headline_timing_eligible": False,
+                "qualification_complete": False,
+            },
+            sort_keys=True,
+        )
+    )
     return 0 if report["status"] == "diagnostic_phases_observed" else 2
 
 

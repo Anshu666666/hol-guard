@@ -43,7 +43,10 @@ def phase_binaries() -> dict[str, Path]:
 
 
 def _client(
-    runtime: Path, root: Path, receiver: NativePhaseReceiver, environment: dict[str, str],
+    runtime: Path,
+    root: Path,
+    receiver: NativePhaseReceiver,
+    environment: dict[str, str],
 ) -> OwnedNativeStream:
     try:
         return OwnedNativeStream(runtime, root, environment)
@@ -63,19 +66,27 @@ def _responses(client: OwnedNativeStream) -> tuple[bytes, bytes]:
 def _all_boundaries(report: dict[str, Any]) -> bool:
     client = "persistent_client"
     phases = [
-        "client_connect_inclusive", "client_authenticate",
-        "client_request_write_flush", "client_committed_response_read",
+        "client_connect_inclusive",
+        "client_authenticate",
+        "client_request_write_flush",
+        "client_committed_response_read",
     ]
     return (
         all(any(row["returned_ok"] > 0 for row in statistics(report, client, phase)) for phase in phases)
         and any(row["returned_ok"] > 0 for row in statistics(report, client, "unix_socket_creation"))
-        and any(row["returned_ok"] > 0 and row["returned_err"] > 0
-                for row in statistics(report, "managed_resident", "resident_evaluate_inclusive"))
+        and any(
+            row["returned_ok"] > 0 and row["returned_err"] > 0
+            for row in statistics(report, "managed_resident", "resident_evaluate_inclusive")
+        )
     )
 
 
 def _close(
-    client: OwnedNativeStream, receiver: NativePhaseReceiver, record_property: Any, *, expected_returncode: int = 0,
+    client: OwnedNativeStream,
+    receiver: NativePhaseReceiver,
+    record_property: Any,
+    *,
+    expected_returncode: int = 0,
 ) -> None:
     cleanup: dict[str, Any] = {"passed": False, "close_did_not_return": True}
     try:
@@ -88,7 +99,9 @@ def _close(
 
 
 def test_real_enabled_macros_preserve_default_health_and_error_responses(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
 ) -> None:
     actual: dict[str, tuple[bytes, bytes]] = {}
     for variant, runtime in phase_binaries.items():
@@ -113,7 +126,10 @@ def test_real_enabled_macros_preserve_default_health_and_error_responses(
 
 @pytest.mark.parametrize("mode", ["missing", "wrong_inode"])
 def test_real_feature_build_with_unadmitted_endpoint_preserves_protocol_and_emits_nothing(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any, mode: str,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
+    mode: str,
 ) -> None:
     runtime = phase_binaries["diagnostic"]
     receiver = NativePhaseReceiver(runtime)
@@ -132,7 +148,9 @@ def test_real_feature_build_with_unadmitted_endpoint_preserves_protocol_and_emit
 
 
 def test_real_closed_diagnostic_receiver_does_not_change_requests_or_native_exit(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
 ) -> None:
     runtime = phase_binaries["diagnostic"]
     receiver = NativePhaseReceiver(runtime)
@@ -149,7 +167,9 @@ def test_real_closed_diagnostic_receiver_does_not_change_requests_or_native_exit
 
 
 def test_real_exporter_backpressure_is_reported_without_blocking_the_original_protocol(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
 ) -> None:
     runtime = phase_binaries["diagnostic"]
     receiver = NativePhaseReceiver(runtime)
@@ -161,10 +181,12 @@ def test_real_exporter_backpressure_is_reported_without_blocking_the_original_pr
         # holds a native request open nor changes any original native deadline.
         time.sleep(0.2)
         receiver.attach(client.process.pid)
-        report = wait_report(receiver, lambda value: (
-            _all_boundaries(value)
-            and any(row["prior_export_loss_observed"] for row in value["processes"])
-        ))
+        report = wait_report(
+            receiver,
+            lambda value: (
+                _all_boundaries(value) and any(row["prior_export_loss_observed"] for row in value["processes"])
+            ),
+        )
         assert report["receiver_loss_observed"] is True
         assert report["counts"]["refused"] > 0
         assert _responses(client) == (HEALTH_RESPONSE, INVALID_RESPONSE)
@@ -173,7 +195,9 @@ def test_real_exporter_backpressure_is_reported_without_blocking_the_original_pr
 
 
 def test_real_exporter_stops_at_its_unchanged_cap_while_the_native_client_keeps_working(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
 ) -> None:
     runtime = phase_binaries["diagnostic"]
     receiver = NativePhaseReceiver(runtime)
@@ -181,11 +205,15 @@ def test_real_exporter_stops_at_its_unchanged_cap_while_the_native_client_keeps_
     try:
         receiver.attach(client.process.pid)
         original = _responses(client)
-        report = wait_report(receiver, lambda value: (
-            _all_boundaries(value)
-            and len(value["processes"]) == 2
-            and all(row["export_window_exhausted"] for row in value["processes"])
-        ), seconds=20)
+        report = wait_report(
+            receiver,
+            lambda value: (
+                _all_boundaries(value)
+                and len(value["processes"]) == 2
+                and all(row["export_window_exhausted"] for row in value["processes"])
+            ),
+            seconds=20,
+        )
         assert all(row["last_frame_ordinal"] == 256 for row in report["processes"])
         assert all(row["run_state_when_last_sampled"] == "running" for row in report["processes"])
         accepted = report["counts"]["accepted"]
@@ -200,7 +228,9 @@ def test_real_exporter_stops_at_its_unchanged_cap_while_the_native_client_keeps_
 
 
 def test_real_partial_stream_header_keeps_the_original_error_and_exit_code_in_both_builds(
-    phase_binaries: dict[str, Path], tmp_path: Path, record_property: Any,
+    phase_binaries: dict[str, Path],
+    tmp_path: Path,
+    record_property: Any,
 ) -> None:
     observed: dict[str, tuple[int, bytes, bytes]] = {}
     for variant, runtime in phase_binaries.items():

@@ -20,16 +20,19 @@ def test_phase_schema_preserves_nulls_and_exact_bounded_aggregate_values() -> No
     assert observed["headline_timing_eligible"] is False
 
 
-@pytest.mark.parametrize("field,value", [
-    ("payload", "must never be admitted"),
-    ("sender_pid", True),
-    ("sender_start_ticks", 0),
-    ("ordinal", 257),
-    ("role", "unlisted role"),
-    ("complete_run", True),
-    ("diagnostic_socket_in_request_counts", True),
-    ("max_datagram_bytes", 8193),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("payload", "must never be admitted"),
+        ("sender_pid", True),
+        ("sender_start_ticks", 0),
+        ("ordinal", 257),
+        ("role", "unlisted role"),
+        ("complete_run", True),
+        ("diagnostic_socket_in_request_counts", True),
+        ("max_datagram_bytes", 8193),
+    ],
+)
 def test_phase_schema_refuses_extra_fields_and_false_authority(field: str, value: object) -> None:
     frame = sample_frame()
     frame[field] = value
@@ -37,14 +40,17 @@ def test_phase_schema_refuses_extra_fields_and_false_authority(field: str, value
         decode_frame(json.dumps(frame).encode())
 
 
-@pytest.mark.parametrize("field,value", [
-    ("retained_count", 0),
-    ("returned_ok", 2),
-    ("duration_ns_sum", 0),
-    ("duration_ns_min", 2),
-    ("duration_clipped", True),
-    ("observations_discarded_at_cap", True),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("retained_count", 0),
+        ("returned_ok", 2),
+        ("duration_ns_sum", 0),
+        ("duration_ns_min", 2),
+        ("duration_clipped", True),
+        ("observations_discarded_at_cap", True),
+    ],
+)
 def test_phase_schema_refuses_inconsistent_statistics(field: str, value: object) -> None:
     frame = sample_frame()
     frame["snapshot"]["phases"][0]["statistics"][field] = value

@@ -1,0 +1,147 @@
+name: PR2974 package evaluator read-only Ruff
+
+on:
+  push:
+    branches: [codex/pr2974-package-eval-lint-20260919]
+    paths:
+      - '.github/workflows/pr2974-package-eval-lint.yml'
+      - 'ci/pr2974_package_eval_lint/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-package-eval-lint-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  readonly-ruff:
+    name: Retain immutable source Ruff diagnostics
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-package-eval-lint/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-package-eval-lint/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '78634b0b3a15f756d0f96aff2d5b174d01501b78',
+                     'source_tree': 'e792454e43e8a694a9ed6442bbacb43920a0f346',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False, 'source_read_only': True}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout immutable diagnostic harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout immutable formatted source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '78634b0b3a15f756d0f96aff2d5b174d01501b78'
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Set up the exact bootstrap Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up the exact hash-locked installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Run read-only checks and retain every diagnostic
+        id: validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_package_eval_lint/lint.py"
+      - name: Preserve terminal workflow outcome
+        id: terminal
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in (
+              'HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME')}
+          value['qualification_complete'] = False
+          value['source_read_only'] = True
+          value['workflow_validation_passed'] = value.get('passed') is True and all(
+              result == 'success' for result in value['workflow_step_outcomes'].values())
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          PY
+      - name: Frame all original diagnostic and source witness bytes
+        id: projection
+        if: always() && steps.harness.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_package_eval_lint/report_projection.py"
+      - name: Upload every original diagnostic and failure record
+        id: artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-package-eval-lint-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-package-eval-lint/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Gate on actual check and retention outcomes
+        if: always()
+        env:
+          TERMINAL_OUTCOME: ${{ steps.terminal.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.artifacts.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['VALIDATION_REPORT']) / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False}
+          outcomes = {name: os.environ[name] for name in (
+              'TERMINAL_OUTCOME', 'PROJECTION_OUTCOME', 'ARTIFACT_OUTCOME')}
+          passed = value.get('workflow_validation_passed') is True and all(
+              outcome == 'success' for outcome in outcomes.values())
+          print(json.dumps({'workflow_gate_passed': passed, 'retention_outcomes': outcomes,
+                            'check_outcomes': value.get('workflow_step_outcomes'),
+                            'qualification_complete': False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

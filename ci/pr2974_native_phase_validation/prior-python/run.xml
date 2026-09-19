@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="73" time="21.023" timestamp="2026-09-19T16:38:41.765961+00:00" hostname="runnervmlun5p"><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_preserves_nulls_and_exact_bounded_aggregate_values" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[payload-must never be admitted]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[sender_pid-True]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[sender_start_ticks-0]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[ordinal-257]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[role-unlisted role]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[complete_run-True]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[diagnostic_socket_in_request_counts-True]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_extra_fields_and_false_authority[max_datagram_bytes-8193]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[retained_count-0]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[returned_ok-2]" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[duration_ns_sum-0]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[duration_ns_min-2]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[duration_clipped-True]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_inconsistent_statistics[observations_discarded_at_cap-True]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_phase_schema_refuses_duplicate_json_names_and_oversize_frames" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_schema" name="test_cumulative_progress_accepts_growth_and_refuses_replay_reset_or_role_change" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_live_owned_sender_binds_actual_process_and_exports_only_aggregate_fields" time="0.151"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_live_owned_sender_binds_a0')
+
+    def test_live_owned_sender_binds_actual_process_and_exports_only_aggregate_fields(tmp_path: Path) -&gt; None:
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            endpoint = receiver.path
+            with sender(tmp_path, endpoint) as process:
+                receiver.attach(process.pid)
+&gt;               transmit(process, [sample_frame(1, 1), sample_frame(2, 2)])
+
+tests/test_native_slo_rust_phase_receiver.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_sender_identity_mismatches_are_refused[kernel_pid]" time="0.153"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_sender_identity_mismatche0')
+mismatch = 'kernel_pid'
+
+    @pytest.mark.parametrize("mismatch", ["kernel_pid", "generation", "actual_role"])
+    def test_sender_identity_mismatches_are_refused(tmp_path: Path, mismatch: str) -&gt; None:
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(tmp_path, receiver.path) as process:
+                receiver.attach(process.pid)
+                frame = sample_frame()
+                changes = {}
+                if mismatch == "kernel_pid":
+                    changes["pid_delta"] = 1
+                elif mismatch == "generation":
+                    changes["start_delta"] = 1
+                else:
+                    frame["role"] = "managed_resident"
+&gt;               transmit(process, [frame], **changes)
+
+tests/test_native_slo_rust_phase_receiver.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_sender_identity_mismatches_are_refused[generation]" time="0.151"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_sender_identity_mismatche1')
+mismatch = 'generation'
+
+    @pytest.mark.parametrize("mismatch", ["kernel_pid", "generation", "actual_role"])
+    def test_sender_identity_mismatches_are_refused(tmp_path: Path, mismatch: str) -&gt; None:
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(tmp_path, receiver.path) as process:
+                receiver.attach(process.pid)
+                frame = sample_frame()
+                changes = {}
+                if mismatch == "kernel_pid":
+                    changes["pid_delta"] = 1
+                elif mismatch == "generation":
+                    changes["start_delta"] = 1
+                else:
+                    frame["role"] = "managed_resident"
+&gt;               transmit(process, [frame], **changes)
+
+tests/test_native_slo_rust_phase_receiver.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_sender_identity_mismatches_are_refused[actual_role]" time="0.150"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_sender_identity_mismatche2')
+mismatch = 'actual_role'
+
+    @pytest.mark.parametrize("mismatch", ["kernel_pid", "generation", "actual_role"])
+    def test_sender_identity_mismatches_are_refused(tmp_path: Path, mismatch: str) -&gt; None:
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(tmp_path, receiver.path) as process:
+                receiver.attach(process.pid)
+                frame = sample_frame()
+                changes = {}
+                if mismatch == "kernel_pid":
+                    changes["pid_delta"] = 1
+                elif mismatch == "generation":
+                    changes["start_delta"] = 1
+                else:
+                    frame["role"] = "managed_resident"
+&gt;               transmit(process, [frame], **changes)
+
+tests/test_native_slo_rust_phase_receiver.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_same_user_same_executable_outside_owned_fixture_tree_is_refused" time="0.246"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_same_user_same_executable0')
+
+    def test_same_user_same_executable_outside_owned_fixture_tree_is_refused(tmp_path: Path) -&gt; None:
+        first, second = tmp_path / "first", tmp_path / "second"
+        first.mkdir()
+        second.mkdir()
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(first, receiver.path) as owned, sender(second, receiver.path) as foreign:
+                receiver.attach(owned.pid)
+&gt;               transmit(owned, [])
+
+tests/test_native_slo_rust_phase_receiver.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_replayed_frame_cannot_replace_the_last_valid_snapshot" time="0.152"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_replayed_frame_cannot_rep0')
+
+    def test_replayed_frame_cannot_replace_the_last_valid_snapshot(tmp_path: Path) -&gt; None:
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(tmp_path, receiver.path) as process:
+                receiver.attach(process.pid)
+&gt;               transmit(process, [sample_frame(1, 1), sample_frame(1, 1)])
+
+tests/test_native_slo_rust_phase_receiver.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_data_cap_stops_before_another_receive" time="0.149"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pr2974-native-phase-tests-xwf24sru/native-controls-python-run/test_data_cap_stops_before_ano0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f60b3ff4cb0&gt;
+
+    def test_data_cap_stops_before_another_receive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+        monkeypatch.setattr(receiver_module, "MAX_RECEIVED_DATAGRAMS", 1)
+        receiver = NativePhaseReceiver(Path(sys.executable).resolve())
+        try:
+            with sender(tmp_path, receiver.path) as process:
+                receiver.attach(process.pid)
+&gt;               transmit(process, [sample_frame(1, 1), sample_frame(2, 2)])
+
+tests/test_native_slo_rust_phase_receiver.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/native_slo_rust_phase_test_support.py:128: in transmit
+    line(process, b"sent\n")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = &lt;Popen: returncode: 1 args: ['/home/runner/work/_temp/pr2974-native-phase-va...&gt;
+expected = b'sent\n'
+
+    def line(process: subprocess.Popen[bytes], expected: bytes) -&gt; None:
+        if process.stdout is None:
+            raise AssertionError("owned sender stdout unavailable")
+        deadline = time.monotonic() + 3
+        value = bytearray()
+        while time.monotonic() &lt; deadline and len(value) &lt;= 32:
+            if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+                break
+            chunk = os.read(process.stdout.fileno(), 1)
+            if not chunk:
+                break
+            value.extend(chunk)
+            if chunk == b"\n":
+                break
+&gt;       assert bytes(value) == expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/native_slo_rust_phase_test_support.py:88: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_unrequested_kernel_rights_are_closed_and_original_descriptor_survives" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_process_stat_parser_binds_the_real_generation_and_delimited_name" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_report_identity_io_stays_outside_lock_and_concurrent_close_keeps_last_result" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_receiver" name="test_unavailable_file_observation_is_null_without_losing_aggregate_report" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_returns_the_original_workload_object_with_incomplete_scope" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_unsupported_platform_does_not_start_the_original_fixture" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_setup_failure_does_not_run_or_claim_a_semantic_workload[receiver_start]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_setup_failure_does_not_run_or_claim_a_semantic_workload[attach]" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_setup_failure_does_not_run_or_claim_a_semantic_workload[fixture_start]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_retains_original_failure_journal_and_closes_the_fixture" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_diagnostic_or_shutdown_failure_preserves_the_original_result[receiver_close]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_diagnostic_or_shutdown_failure_preserves_the_original_result[fixture_close]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_diagnostic_or_shutdown_failure_preserves_the_original_result[missing_tail]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[True]" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[False]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[0]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[101]" time="0.002" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[-1]" time="0.003" /><testcase classname="tests.test_native_slo_rust_phase_run" name="test_native_launcher_rejects_invalid_count_before_fixture_or_filesystem_work[1.0]" time="0.002" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_private_fixture_control_uses_separate_process_and_acknowledged_cleanup" time="0.094" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_progress_does_not_extend_control_deadline" time="0.002" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_startup_stack_survives_fixed_deadline_without_paths_or_raw_output" time="0.003" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_startup_diagnostics_reject_paths_frame_data_and_unbounded_stacks[stack0]" time="0.003" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_startup_diagnostics_reject_paths_frame_data_and_unbounded_stacks[stack1]" time="0.002" /><testcase classname="tests.test_native_slo_daemon_fixture" name="test_startup_diagnostics_reject_paths_frame_data_and_unbounded_stacks[stack2]" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_four_fixed_cases_reach_exact_real_adapter_serialization_and_http_bound" time="0.023" /><testcase classname="tests.test_native_slo_phase_run" name="test_separate_reports_validate_every_actual_outcome_and_private_journal" time="0.042" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[wrong_delivery]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[wrong_native]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[missing_native]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[wrong_route]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[two_routes]" time="0.013" /><testcase classname="tests.test_native_slo_phase_run" name="test_failed_attempt_is_retained_with_available_native_route_and_delivery[request_failure]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[empty_spans]" time="0.015" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[missing_wire]" time="0.016" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[dropped_timings]" time="0.015" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[finish_failure]" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[start_ack_missing]" time="0.013" /><testcase classname="tests.test_native_slo_phase_run" name="test_missing_attribution_or_acknowledgment_cannot_return_success[reset_ack_missing]" time="0.013" /><testcase classname="tests.test_native_slo_phase_run" name="test_partial_setup_failure_has_terminal_record_and_no_stale_native_claim" time="0.013" /><testcase classname="tests.test_native_slo_phase_run" name="test_count_bound_rejects_before_file_or_fixture_work[0]" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_count_bound_rejects_before_file_or_fixture_work[101]" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_count_bound_rejects_before_file_or_fixture_work[True]" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_count_bound_rejects_before_file_or_fixture_work[1.5]" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_headline_session_without_native_tap_cannot_be_instrumented" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_journal_refuses_overwrite_and_reserves_terminal_space" time="0.011" /><testcase classname="tests.test_native_slo_phase_run" name="test_unexpected_semantic_strings_keep_identity_without_echoing_text" time="0.002" /><testcase classname="tests.test_native_slo_phase_run" name="test_engine_bypass_with_allow_shaped_delivery_cannot_pass" time="0.014" /><testcase classname="tests.test_native_slo_phase_run" name="test_changed_request_size_fails_before_an_http_attempt" time="0.013" /></testsuite></testsuites>

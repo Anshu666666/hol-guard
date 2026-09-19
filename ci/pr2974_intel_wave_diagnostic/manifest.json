@@ -1,0 +1,715 @@
+{
+  "schema": "pr2974.intel-original-wave-diagnostic-manifest.v1",
+  "repository": "hashgraph-online/hol-guard",
+  "source_sha": "2564d9a4dda22ff73e53e6dfae793ef95cbeb259",
+  "source_tree": "0e36e80fd4e2cd0666323b0cb2a5704f5b2b4c04",
+  "source_parent": "0dd6f65c01609ddb0cdd6a32675ddf8e73ae5f73",
+  "tracked_files": 4622,
+  "release_base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+  "original_build_sha": "ccce4c1597c4e2962a4b1400d3f83ae516ed7de6",
+  "original_run_id": 35454431191,
+  "original_job_id": 105927100035,
+  "artifact": {
+    "id": 10587427984,
+    "label": "original-intel",
+    "name": "hol-guard-native-wheel-x86_64-apple-darwin",
+    "bytes": 8368590,
+    "sha256": "dffa30f76ff46209e9b1e37d6491db130294ecfdc39e5c243faf784a9db5eb6f"
+  },
+  "branch": "codex/pr2974-intel-c16-phases-2564d9a4",
+  "workflow_name": "PR2974 Intel c16 phase diagnosis",
+  "python_version": "3.12.10",
+  "node_version": "22.23.2",
+  "uv_version": "0.9.26",
+  "original_slo": {
+    "concurrency": {
+      "sixteen": {
+        "deadline_ms": 1000,
+        "errors": 0,
+        "latency": {
+          "count": 16,
+          "max_ms": 1100.815,
+          "p50_ms": 1040.161,
+          "p95_ms": 1100.815,
+          "p99_ms": 1100.815
+        },
+        "native_overloads": 0,
+        "overloaded": 0,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "native_resident": 16
+        }
+      },
+      "sixty_four": {
+        "bounded": true,
+        "errors": 0,
+        "fail_safe": 0,
+        "latency": {
+          "count": 64,
+          "max_ms": 1440.369,
+          "p50_ms": 372.74,
+          "p95_ms": 1382.658,
+          "p99_ms": 1440.369
+        },
+        "latency_ceiling_ms": null,
+        "native_overloads": 0,
+        "overloaded": 32,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "engine_bypassed": 32,
+          "native_resident": 32
+        }
+      }
+    },
+    "corpus": {
+      "corpus_origin": "installed_wheel_ownership_contract",
+      "fail_safe_decisions": 0,
+      "fail_safe_rate": 0,
+      "harnesses": 13,
+      "installed": {
+        "fail_safe": 0,
+        "oneshot": 0,
+        "python_semantic": 0,
+        "python_semantic_decisions": 0,
+        "resident": 21,
+        "routes": 21
+      },
+      "observations": 146,
+      "oneshot_decisions": 0,
+      "python_fallback_decisions": 0,
+      "python_semantic_decisions": 0,
+      "resident_share": 1,
+      "route_corpus": "installed_routes",
+      "routes": 21,
+      "rss_baseline_bytes": 592322560,
+      "rss_growth": 0.006161,
+      "rss_peak_bytes": 595972096,
+      "safe_failure_rate": 0,
+      "safe_failures": 0,
+      "safe_failures_by_size": {},
+      "security_denials": 32,
+      "security_denials_by_size": {
+        "1k": 32
+      },
+      "warm_failures": 0
+    },
+    "errors_16": 0,
+    "errors_64": 0,
+    "evidence_class": "smoke",
+    "gates": {
+      "1m_latency": true,
+      "250k_latency": true,
+      "5m_latency": true,
+      "cold_latency": true,
+      "concurrency": false,
+      "concurrency_64_bounded": true,
+      "installed_corpus": true,
+      "python_fallback": true,
+      "readiness": true,
+      "recovery_latency": true,
+      "resident_share": true,
+      "rss": true,
+      "safe_corpus": true,
+      "warm_latency": true
+    },
+    "installed_launcher": {
+      "boundary": "INSTALLED_LAUNCHER",
+      "cases_validated": [
+        "benign",
+        "redacted"
+      ],
+      "configuration": "registered_argv",
+      "event": "PostToolUse",
+      "evidence_class": "smoke",
+      "harness": "claude-code",
+      "latency": {
+        "count": 2,
+        "max_ms": 558.242,
+        "p50_ms": 531.96,
+        "p95_ms": 558.242,
+        "p99_ms": 558.242
+      },
+      "process_startup_included": true,
+      "qualification_complete": false,
+      "remaining_routes": "not_measured",
+      "stdout_and_exit_checked": true
+    },
+    "latency": {
+      "boundary": "DAEMON_INGRESS",
+      "cold_native_oneshot": {
+        "count": 2,
+        "max_ms": 22.808,
+        "p50_ms": 22.463,
+        "p95_ms": 22.808,
+        "p99_ms": 22.808
+      },
+      "readiness": {
+        "count": 2,
+        "max_ms": 0.124,
+        "p50_ms": 0.116,
+        "p95_ms": 0.124,
+        "p99_ms": 0.124
+      },
+      "resident_recovery": {
+        "count": 2,
+        "max_ms": 930.082,
+        "p50_ms": 691.585,
+        "p95_ms": 930.082,
+        "p99_ms": 930.082
+      },
+      "size_classes": {
+        "1k": {
+          "count": 122,
+          "max_ms": 1440.369,
+          "p50_ms": 186.585,
+          "p95_ms": 1368.928,
+          "p99_ms": 1416.026
+        },
+        "1m": {
+          "count": 8,
+          "max_ms": 155.364,
+          "p50_ms": 127.891,
+          "p95_ms": 155.364,
+          "p99_ms": 155.364
+        },
+        "250k": {
+          "count": 8,
+          "max_ms": 126.333,
+          "p50_ms": 106.567,
+          "p95_ms": 126.333,
+          "p99_ms": 126.333
+        },
+        "5m": {
+          "count": 8,
+          "max_ms": 255.035,
+          "p50_ms": 233.91,
+          "p95_ms": 255.035,
+          "p99_ms": 255.035
+        }
+      },
+      "warm_all_harnesses": {
+        "count": 42,
+        "max_ms": 164.965,
+        "p50_ms": 100.823,
+        "p95_ms": 132.677,
+        "p99_ms": 164.965
+      },
+      "warm_by_event": {
+        "PostToolUse": {
+          "count": 16,
+          "max_ms": 164.965,
+          "p50_ms": 95.901,
+          "p95_ms": 164.965,
+          "p99_ms": 164.965
+        },
+        "PreToolUse": {
+          "count": 26,
+          "max_ms": 132.677,
+          "p50_ms": 102.615,
+          "p95_ms": 128.141,
+          "p99_ms": 132.677
+        }
+      },
+      "warm_by_route": {
+        "claude-code.PostToolUse": {
+          "count": 2,
+          "max_ms": 81.429,
+          "p50_ms": 76.449,
+          "p95_ms": 81.429,
+          "p99_ms": 81.429
+        },
+        "claude-code.PreToolUse": {
+          "count": 2,
+          "max_ms": 104.967,
+          "p50_ms": 100.59,
+          "p95_ms": 104.967,
+          "p99_ms": 104.967
+        },
+        "cline.PostToolUse": {
+          "count": 2,
+          "max_ms": 99.914,
+          "p50_ms": 97.044,
+          "p95_ms": 99.914,
+          "p99_ms": 99.914
+        },
+        "cline.PreToolUse": {
+          "count": 2,
+          "max_ms": 128.141,
+          "p50_ms": 122.644,
+          "p95_ms": 128.141,
+          "p99_ms": 128.141
+        },
+        "codex.PostToolUse": {
+          "count": 2,
+          "max_ms": 113.845,
+          "p50_ms": 106.534,
+          "p95_ms": 113.845,
+          "p99_ms": 113.845
+        },
+        "codex.PreToolUse": {
+          "count": 2,
+          "max_ms": 132.677,
+          "p50_ms": 110.02,
+          "p95_ms": 132.677,
+          "p99_ms": 132.677
+        },
+        "copilot.PostToolUse": {
+          "count": 2,
+          "max_ms": 164.965,
+          "p50_ms": 125.638,
+          "p95_ms": 164.965,
+          "p99_ms": 164.965
+        },
+        "copilot.PreToolUse": {
+          "count": 2,
+          "max_ms": 115.369,
+          "p50_ms": 108.971,
+          "p95_ms": 115.369,
+          "p99_ms": 115.369
+        },
+        "cursor.PostToolUse": {
+          "count": 2,
+          "max_ms": 133.357,
+          "p50_ms": 110.05,
+          "p95_ms": 133.357,
+          "p99_ms": 133.357
+        },
+        "cursor.PreToolUse": {
+          "count": 2,
+          "max_ms": 83.79,
+          "p50_ms": 82.053,
+          "p95_ms": 83.79,
+          "p99_ms": 83.79
+        },
+        "grok.PreToolUse": {
+          "count": 2,
+          "max_ms": 119.942,
+          "p50_ms": 108.404,
+          "p95_ms": 119.942,
+          "p99_ms": 119.942
+        },
+        "hermes.PreToolUse": {
+          "count": 2,
+          "max_ms": 114.719,
+          "p50_ms": 96.513,
+          "p95_ms": 114.719,
+          "p99_ms": 114.719
+        },
+        "kimi.PostToolUse": {
+          "count": 2,
+          "max_ms": 105.078,
+          "p50_ms": 94.469,
+          "p95_ms": 105.078,
+          "p99_ms": 105.078
+        },
+        "kimi.PreToolUse": {
+          "count": 2,
+          "max_ms": 116.603,
+          "p50_ms": 100.018,
+          "p95_ms": 116.603,
+          "p99_ms": 116.603
+        },
+        "omp.PostToolUse": {
+          "count": 2,
+          "max_ms": 97.628,
+          "p50_ms": 95.366,
+          "p95_ms": 97.628,
+          "p99_ms": 97.628
+        },
+        "omp.PreToolUse": {
+          "count": 2,
+          "max_ms": 103.392,
+          "p50_ms": 102.16,
+          "p95_ms": 103.392,
+          "p99_ms": 103.392
+        },
+        "openclaw.PreToolUse": {
+          "count": 2,
+          "max_ms": 102.658,
+          "p50_ms": 101.688,
+          "p95_ms": 102.658,
+          "p99_ms": 102.658
+        },
+        "opencode.PreToolUse": {
+          "count": 2,
+          "max_ms": 98.268,
+          "p50_ms": 85.235,
+          "p95_ms": 98.268,
+          "p99_ms": 98.268
+        },
+        "pi.PostToolUse": {
+          "count": 2,
+          "max_ms": 131.461,
+          "p50_ms": 97.454,
+          "p95_ms": 131.461,
+          "p99_ms": 131.461
+        },
+        "pi.PreToolUse": {
+          "count": 2,
+          "max_ms": 125.727,
+          "p50_ms": 113.515,
+          "p95_ms": 125.727,
+          "p99_ms": 125.727
+        },
+        "zcode.PreToolUse": {
+          "count": 2,
+          "max_ms": 112.409,
+          "p50_ms": 111.861,
+          "p95_ms": 112.409,
+          "p99_ms": 112.409
+        }
+      }
+    },
+    "passed": false,
+    "python_semantic_decisions": 0,
+    "qualification_complete": false,
+    "reference_review": {
+      "full_review_qualified": true,
+      "missing_scopes": [],
+      "platform_denial_cases": [],
+      "platform_denial_timing_eligible": false
+    },
+    "routes": {
+      "engine_bypassed": 32,
+      "native_resident": 114
+    },
+    "runtime": {
+      "architecture": "x86_64",
+      "build_sha": "ccce4c1597c4e2962a4b1400d3f83ae516ed7de6",
+      "installed_package_sha256": "ed9635b2ca37552058a7a0564d9634f0a9d52cb32ab27066a6fa6166cd1f584e",
+      "mode": "auto",
+      "package_origin": "installed",
+      "package_record_sha256": "279a29137d1828e20c20b909e720cb1448964fe18fdd48f02683764efc1c27ad",
+      "package_version": "3.0.1",
+      "protocol_version": 1,
+      "python_version": "3.12.10",
+      "rule_digest": "18e058ea6ee365ae7dff9547d91f26ac1b984f374896878e8698cd8b4705a41f",
+      "runtime_sha256": "7e3fdd72f103866502e5cce47172fa63afd6ada5ff4692bfce15c612413c15ee",
+      "runtime_version": "3.0.1",
+      "system": "Darwin",
+      "target": "x86_64-macos"
+    },
+    "schema": "hol-guard.native-installed-slo.v1",
+    "scope": "daemon_ingress_and_registered_launcher",
+    "thresholds": {
+      "direct_cold_p95_ms": 150,
+      "installed_adapter_concurrent_p99_ms": 1000,
+      "installed_adapter_p95_ms": 1000,
+      "readiness_p95_ms": 400
+    },
+    "timing_boundaries": {
+      "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+      "INSTALLED_LAUNCHER": "registered_argv",
+      "KERNEL": "not_measured",
+      "NATIVE_CLIENT": "cold_native_process"
+    }
+  },
+  "original_identity": {
+    "build_sha": "ccce4c1597c4e2962a4b1400d3f83ae516ed7de6",
+    "cases": [
+      {
+        "case": "steady_without_client",
+        "hashed_bytes": 33846036,
+        "result": "passed",
+        "validation_calls": 3
+      },
+      {
+        "case": "fresh_child",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "steady_with_client",
+        "hashed_bytes": 33846036,
+        "result": "passed",
+        "validation_calls": 3
+      },
+      {
+        "case": "death_before_restart",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "live_replacement",
+        "result": "replaced"
+      },
+      {
+        "case": "replacement_first_status",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "replacement_fresh_child",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "source_sha_mismatch",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "source_sha_restoration",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "source_sha_restoration_child",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "package_version_mismatch",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "package_version_restoration",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "package_version_restoration_child",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "same_size_restored_mtime_corruption",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "original_artifact_restoration",
+        "hashed_bytes": 11282012,
+        "result": "passed",
+        "validation_calls": 1
+      },
+      {
+        "case": "restoration_fresh_child",
+        "hashed_bytes": 0,
+        "result": "passed",
+        "validation_calls": 0
+      },
+      {
+        "case": "retired_client_status",
+        "hashed_bytes": 33846036,
+        "result": "passed",
+        "validation_calls": 3
+      }
+    ],
+    "cross_release_upgrade_rollback": "not_exercised",
+    "identity_module_sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe",
+    "machine": "x86_64",
+    "manifest_sha256": "b5eedbb2d9a3c1ea5fe357d35dfd59ff0b544d98d4443c72e390d889e4a0cb40",
+    "package_version": "3.0.1",
+    "platform": "darwin",
+    "runtime_module_sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55",
+    "runtime_sha256": "7e3fdd72f103866502e5cce47172fa63afd6ada5ff4692bfce15c612413c15ee",
+    "runtime_size": 11282012,
+    "schema": "hol-guard.installed-runtime-identity.v1",
+    "scope": "installed_status_and_real_stdio_child",
+    "signing_qualification": "not_exercised"
+  },
+  "source_inputs": {
+    "pyproject.toml": {
+      "git_blob": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+      "mode": "100644",
+      "bytes": 8647,
+      "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+    },
+    "uv.lock": {
+      "git_blob": "791b2efebdd6774bf7f1b5bd2504dd8cea3cac46",
+      "mode": "100644",
+      "bytes": 961060,
+      "sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+    },
+    ".github/workflows/native-wheel-ci.yml": {
+      "git_blob": "396716400a0360ac123986505a0b0c35e823ba27",
+      "mode": "100644",
+      "bytes": 23306,
+      "sha256": "0bd708e1aec09b534eb160f6def24c661e8cbd58752b3624cd3a404af85e16cf"
+    },
+    "scripts/bench_guard_native_installed_slo.py": {
+      "git_blob": "d2bbb5d777db1851ddba0090b37b5c8460fc88ce",
+      "mode": "100644",
+      "bytes": 18142,
+      "sha256": "e25003e8a615bfc7270164e3af1a0210a99a3adafddeb30644ccaa4d568c0d5f"
+    },
+    "scripts/bench_guard_native_installed_slo_runtime.py": {
+      "git_blob": "a2042f01eb83cdb7dad312bdf56186ae4431a307",
+      "mode": "100644",
+      "bytes": 3846,
+      "sha256": "6f0d95f44526dbc856dc3a2385f6226c7c05326745f1d054e6925864a57f2020"
+    },
+    "scripts/native_slo_artifact.py": {
+      "git_blob": "06944719f554590466e4a4819159508554320279",
+      "mode": "100644",
+      "bytes": 2769,
+      "sha256": "c14f92e411d6d6e5218f31989079e1285069a76326b09071861c4e8f04247f39"
+    },
+    "scripts/native_slo_adapter.py": {
+      "git_blob": "b8a4146b2ea4859db27b8f3d5e1a967b1a05cd44",
+      "mode": "100644",
+      "bytes": 9026,
+      "sha256": "e76d4e5ee20009a4469911ce398d823cd892f8788e879b4e464cbc5d2a118554"
+    },
+    "scripts/native_slo_capacity.py": {
+      "git_blob": "ce2a8a1353529e5bfc72fcdce9118ee912cd6a06",
+      "mode": "100644",
+      "bytes": 13510,
+      "sha256": "8558a2dc6ba6d19ca1188a40ee34747c7334d5f130ca14f83ea294f915966cfa"
+    },
+    "scripts/native_slo_capacity_diagnostic.py": {
+      "git_blob": "be1d956af13fa993e4518357692382d5cae858b9",
+      "mode": "100644",
+      "bytes": 7216,
+      "sha256": "dfa2750d430da224e07bf44d0bf6ed504d5882dd8f521dda74740f73df2161ae"
+    },
+    "scripts/native_slo_session.py": {
+      "git_blob": "a0361155e660c790dca693772639247cca173ea9",
+      "mode": "100644",
+      "bytes": 21955,
+      "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72"
+    },
+    "scripts/native_slo_contract.py": {
+      "git_blob": "b39fa73328ac2dd0f1c19d2875d9b25d9b79d4a3",
+      "mode": "100644",
+      "bytes": 12184,
+      "sha256": "81c352745f4205de3ac9cb7d51c58616e2f5340921722cacd0ce4dc584f68bb1"
+    },
+    "scripts/native_slo_reporting.py": {
+      "git_blob": "2f11072b62c483fe9b0719c6a2bc19a8bfacb952",
+      "mode": "100644",
+      "bytes": 17476,
+      "sha256": "de6a5691d006da0954d6fadd3eb5b218f60602c350fb5703c6a09fbc7f77bbbc"
+    },
+    "scripts/native_slo_phases.py": {
+      "git_blob": "744957992cbe516cc6f512c643587f30e06f6681",
+      "mode": "100644",
+      "bytes": 11354,
+      "sha256": "13260bc8d1c48e8e62085e714b171b12936065d3bb909baa429a880dbb50f6ed"
+    },
+    "scripts/native_slo_phase_calls.py": {
+      "git_blob": "161239ed883fb863b5b385fe26df66736c885d09",
+      "mode": "100644",
+      "bytes": 3549,
+      "sha256": "0590c1e2bde34707d79249a91255565544a8159ee0157339f3ff1d7e5f00afd2"
+    },
+    "scripts/native_slo_phase_waits.py": {
+      "git_blob": "d334e0e056780b48f169ed3671bcf28a8b8d3f20",
+      "mode": "100644",
+      "bytes": 7288,
+      "sha256": "7b6ee33271865aeb8f4d43467bf8434922cecd45d2b244560c5e271d87c95e5b"
+    },
+    "scripts/native_slo_phase_io.py": {
+      "git_blob": "cb41ee1f96ab30ae015f99ad5e69ccc86d0ab386",
+      "mode": "100644",
+      "bytes": 5281,
+      "sha256": "36d2620f48968f3d032e9dae251e6f8af496920d5040039c197446e2067a4349"
+    },
+    "scripts/native_slo_workspace_observer.py": {
+      "git_blob": "ea382d142d37e9de784c590e5130b332f0133202",
+      "mode": "100644",
+      "bytes": 13161,
+      "sha256": "ebce4c05e0ef84d445ccb991e0b1a6464c53998cef5477dd470ab0da26c7046d"
+    },
+    "scripts/native_slo_observation_failure.py": {
+      "git_blob": "3be1d15b90f53ec3d664648e7ad08e00bb614386",
+      "mode": "100644",
+      "bytes": 6103,
+      "sha256": "191730fe37fcd9495b5984598b00e49455d85034c22737abdfa2113f786704d9"
+    },
+    "src/codex_plugin_scanner/guard/store.py": {
+      "git_blob": "4edf1f65655e01fea4f634252d4242819ef92f52",
+      "mode": "100644",
+      "bytes": 4709,
+      "sha256": "1fe49b82841db80046092badcb72c7422c1d14d883b5d5b9f2b02584e1c09d4b"
+    },
+    "src/codex_plugin_scanner/guard/daemon/server_handler_hook_admission.py": {
+      "git_blob": "33c3f2499252f546f428a696bc31af304aebf220",
+      "mode": "100644",
+      "bytes": 13142,
+      "sha256": "1136578ff934cbebc76424121ff46008e15b31c0cfdbaca36b74531389204020"
+    },
+    "src/codex_plugin_scanner/guard/daemon/server_handler_hook_execution.py": {
+      "git_blob": "cf005d8b1396639ee5689e4aeada5d6727c8f4f0",
+      "mode": "100644",
+      "bytes": 10114,
+      "sha256": "42ec3cdcd335bb1146ace3fdfb556fa26ea179599301920063446274ab99a3e2"
+    },
+    "src/codex_plugin_scanner/guard/daemon/hook_worker.py": {
+      "git_blob": "8f8fa18249101ab0edd0cb2b472b4458528967e9",
+      "mode": "100644",
+      "bytes": 19320,
+      "sha256": "cc68db1ab6d11d40f9c0c08781aa61592451997c5c4e8805029450ecee66f786"
+    },
+    "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py": {
+      "git_blob": "55d514508f918e03abe505fc64327cee383cee56",
+      "mode": "100644",
+      "bytes": 20242,
+      "sha256": "f5fc3efa04d0609d92e6cc4399b9e487331d84b63229302f0d3c352c21f6c299"
+    },
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_fence.py": {
+      "git_blob": "7a35bfc21097bfa96e6a560d9796a257669c6280",
+      "mode": "100644",
+      "bytes": 1306,
+      "sha256": "b923b00337f08a2d7e29f5ad5af44fcd366a2448951b9261772911edc8cb1e94"
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py": {
+      "git_blob": "d7ab0183878dc520e63f1fe4243cb31c88f07980",
+      "mode": "100644",
+      "bytes": 25672,
+      "sha256": "0dafe976d8e905776e0e7aa129b24f38261f65aafeca5650d1c9ec092120eb09"
+    },
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py": {
+      "git_blob": "61d09b75a07fde9ff5c907cd79a1c5f7f07e6e4b",
+      "mode": "100644",
+      "bytes": 22828,
+      "sha256": "f4e224b8c5dedf50ea56a58aaac00214a134e2601aebedd64f4fde2cd76b290a"
+    }
+  },
+  "harness_paths": [
+    ".github/workflows/pr2974-intel-c16-phases.yml",
+    "ci/pr2974_intel_wave_diagnostic/common.py",
+    "ci/pr2974_intel_wave_diagnostic/controls.py",
+    "ci/pr2974_intel_wave_diagnostic/download.py",
+    "ci/pr2974_intel_wave_diagnostic/environment.py",
+    "ci/pr2974_intel_wave_diagnostic/inputs.py",
+    "ci/pr2974_intel_wave_diagnostic/manifest.json",
+    "ci/pr2974_intel_wave_diagnostic/observe.py",
+    "ci/pr2974_intel_wave_diagnostic/probes.py",
+    "ci/pr2974_intel_wave_diagnostic/run.py"
+  ],
+  "source_attribution_correction": {
+    "blob": "ea14ccd959d48e3723b528f2a751bf234c8285ad",
+    "sha256": "bab35a0ee5d4a8ce99d052c53783cf82ad921e7c48c6da9923408b2dc43bd2bd"
+  },
+  "scope": "one instrumented original installed-SLO schedule; observe only its existing first c16 wave; no rebuild, retry, warmup/order/budget change or qualification",
+  "original_observation_preservation": {
+    "c16_failed_99f_ms": 1032.589,
+    "c16_passed_0dd_ms": 629.634,
+    "c16_failed_2564_ms": 1100.815,
+    "limit_ms": 1000
+  },
+  "reuse": {
+    "phase_profiler": "744957992cbe516cc6f512c643587f30e06f6681",
+    "scoped_wait_probes": "d334e0e056780b48f169ed3671bcf28a8b8d3f20",
+    "publication_observer": "ea382d142d37e9de784c590e5130b332f0133202",
+    "download_parent": "6defb5ff503dc89791b921e7596610c351dd2e02"
+  },
+  "docs": {
+    "frozen_dependency_only_install": "https://docs.astral.sh/uv/concepts/projects/sync/#partial-installations"
+  },
+  "qualification_complete": false
+}

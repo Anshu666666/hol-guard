@@ -14,17 +14,19 @@ from tests.guard_test_invariants import TEST_INVARIANTS, invariant_markers_for_n
 
 pytest_plugins = ["tests.bundle_first_cloud"]
 
-SRC_PATH = Path(__file__).resolve().parents[1] / "src"
+ROOT_PATH = Path(__file__).resolve().parents[1]
+SRC_PATH = ROOT_PATH / "src"
 SUPPORT_PATH = Path(__file__).resolve().parent / "support"
 
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
-if str(SUPPORT_PATH) not in sys.path:
-    sys.path.insert(0, str(SUPPORT_PATH))
+for path in (ROOT_PATH, SRC_PATH, SUPPORT_PATH):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 existing_pythonpath = os.environ.get("PYTHONPATH", "")
 pythonpath_entries = [entry for entry in existing_pythonpath.split(os.pathsep) if entry]
-pythonpath_prefix = [str(path) for path in (SUPPORT_PATH, SRC_PATH) if str(path) not in pythonpath_entries]
+pythonpath_prefix = [
+    str(path) for path in (ROOT_PATH, SUPPORT_PATH, SRC_PATH) if str(path) not in pythonpath_entries
+]
 if pythonpath_prefix:
     os.environ["PYTHONPATH"] = os.pathsep.join([*pythonpath_prefix, *pythonpath_entries])
 

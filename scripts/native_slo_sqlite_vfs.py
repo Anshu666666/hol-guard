@@ -97,7 +97,12 @@ class SQLiteVFSObservation:
             self._control = sqlite3.connect(":memory:", check_same_thread=False)
             self._control.enable_load_extension(True)
             try:
-                self._control.load_extension(f"/proc/self/fd/{descriptor}", entrypoint="sqlite3_guardvfsext_init")
+                extension_path = f"/proc/self/fd/{descriptor}"
+                # Preserve the Python load audit while supporting its pre-3.12 API.
+                sys.audit("sqlite3.load_extension", self._control, extension_path)
+                self._control.execute(
+                    "select load_extension(?, ?)", (extension_path, "sqlite3_guardvfsext_init")
+                ).close()
             finally:
                 self._control.enable_load_extension(False)
             self.name = f"guard_rsp131_{uuid4().hex}"

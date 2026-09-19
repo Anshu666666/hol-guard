@@ -609,7 +609,6 @@ class TestPiInstall:
         assert json.loads(omp_settings_path.read_text(encoding="utf-8"))["extensions"] == [str(omp_extension_path)]
 
 
-
 class TestPiRuntime:
     def test_pi_payload_normalizes_like_other_harnesses(self, tmp_path: Path) -> None:
         envelope = normalize_harness_payload(

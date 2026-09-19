@@ -21,10 +21,16 @@ import time
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-from compare_guard_mcp_risk import source_identity, verify_facts
-from guard_mcp_text_facts_pilot import TextFactsPilot, executable_identity, install_adapter
-from profile_guard_mcp_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
+if TYPE_CHECKING:
+    from scripts.compare_guard_mcp_risk import source_identity, verify_facts
+    from scripts.guard_mcp_text_facts_pilot import TextFactsPilot, executable_identity, install_adapter
+    from scripts.profile_guard_mcp_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
+else:
+    from compare_guard_mcp_risk import source_identity, verify_facts
+    from guard_mcp_text_facts_pilot import TextFactsPilot, executable_identity, install_adapter
+    from profile_guard_mcp_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
 
 
 def harness_identity() -> dict[str, str]:
@@ -43,12 +49,12 @@ def harness_identity() -> dict[str, str]:
     }
 
 
-def facts_oracle(baseline: Path, executable: Path) -> tuple[dict, int]:
+def facts_oracle(baseline: Path, executable: Path) -> tuple[dict[str, Any], int]:
     from codex_plugin_scanner.guard import mcp_tool_calls as candidate
 
     pilot = TextFactsPilot(executable, minimum_characters=0)
     restore = install_adapter(candidate, pilot)
-    report = {
+    report: dict[str, Any] = {
         "matched_cases": 0,
         "attempted_cases": 0,
         "qualification": False,
@@ -78,7 +84,7 @@ def facts_oracle(baseline: Path, executable: Path) -> tuple[dict, int]:
     return report, status
 
 
-def schedule(samples: int) -> list[dict]:
+def schedule(samples: int) -> list[dict[str, Any]]:
     fixtures = [
         {"scope": "ordinary_B", "payload_bytes": size, "payload_kind": "ascii"} for size in (1024, 16384, 131072)
     ] + [
@@ -101,12 +107,12 @@ def schedule(samples: int) -> list[dict]:
     return cases
 
 
-def run_comparison(args) -> dict:
+def run_comparison(args) -> dict[str, Any]:
     roots = {"ordinary_B": args.ordinary_src.resolve(), "near_limit_text_D": args.text_src.resolve()}
     sources = {scope: source_identity(root) for scope, root in roots.items()}
     harness = harness_identity()
     executable = executable_identity(args.native_text_helper)
-    report = {
+    report: dict[str, Any] = {
         "schema": "hol-guard-mcp-native-text-comparison.v1",
         "qualification": False,
         "platform": platform.system(),
@@ -219,7 +225,7 @@ def run_comparison(args) -> dict:
                     if counts.get("native_failures", 0):
                         raise RuntimeError("native_mcp_comparison_hidden_helper_failure")
             except (Exception, KeyboardInterrupt) as error:
-                failure = (
+                failure: dict[str, Any] = (
                     error.evidence
                     if isinstance(error, BenchmarkCaseError)
                     else {

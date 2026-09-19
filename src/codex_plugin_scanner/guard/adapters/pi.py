@@ -603,7 +603,6 @@ class PiHarnessAdapter(_PiFamilyHarnessAdapter):
     fallback_hint = "Pi keeps the blocked request in Guard and shows the reason inline before you retry."
 
 
-
 class OmpHarnessAdapter(_PiFamilyHarnessAdapter):
     """Protect Oh My Pi independently from Pi."""
 
@@ -619,7 +618,6 @@ class OmpHarnessAdapter(_PiFamilyHarnessAdapter):
         "and uses a managed Oh My Pi extension to review prompts and tool calls inline."
     )
     fallback_hint = "Oh My Pi keeps the blocked request in Guard and shows the reason inline before you retry."
-
 
 
 __all__ = [

@@ -351,9 +351,7 @@ def test_secret_hash_rejects_retired_formats_without_derivation(
 
 
 @pytest.mark.parametrize("matches", [False, True])
-def test_secret_hash_uses_the_current_live_fingerprint(
-    matches: bool, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_secret_hash_uses_the_current_live_fingerprint(matches: bool, monkeypatch: pytest.MonkeyPatch) -> None:
     values: list[str] = []
 
     def current_fingerprint(value: str) -> str:

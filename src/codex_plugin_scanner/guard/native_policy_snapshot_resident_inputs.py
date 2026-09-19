@@ -116,5 +116,3 @@ class NativePolicySnapshotResidentInputsMixin:
         # when files are present, an ACK for anything other than the newest
         # resident is definitively stale.
         return not generations or max(generations) == resident_generation
-
-

@@ -30,10 +30,10 @@ def test_fixture_replacement_reaches_each_serialized_request(monkeypatch, module
     launches = []
     retired = []
 
-    class ObservedSecondRequest(Exception):
+    class ObservedSecondRequestError(Exception):
         pass
 
-    stopped = ObservedSecondRequest("controlled stop after the second serialized request")
+    stopped = ObservedSecondRequestError("controlled stop after the second serialized request")
 
     class Input(io.StringIO):
         def write(self, encoded):

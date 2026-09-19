@@ -9,9 +9,13 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-from profile_guard_mcp_fixture import Phases, _CHILD
+if TYPE_CHECKING:
+    from scripts.profile_guard_mcp_fixture import _CHILD, Phases
+else:
+    from profile_guard_mcp_fixture import _CHILD, Phases
+
 
 def run_worker(config_path: Path, *, preparation_variant: str) -> int:
     spec = json.loads(config_path.read_text())
@@ -33,17 +37,30 @@ def run_worker(config_path: Path, *, preparation_variant: str) -> int:
     pilot_key = f"{preparation_variant}_preparation_pilot"
     if spec.get(pilot_key):
         if preparation_variant == "owned":
-            import guard_mcp_owned_preparation_pilot as preparation_adapter
-            from guard_mcp_owned_preparation_pilot import OwnedPreparationPilot
-            from guard_mcp_owned_preparation_pilot import install_adapter as install_preparation_adapter
-        else:
-            import guard_mcp_streaming_preparation_pilot as preparation_adapter
-            from guard_mcp_streaming_preparation_pilot import OwnedPreparationPilot
-            from guard_mcp_streaming_preparation_pilot import install_adapter as install_preparation_adapter
-            loaded_adapter_sha256 = hashlib.sha256(Path(preparation_adapter.__file__).read_bytes()).hexdigest()
+            if TYPE_CHECKING:
+                from scripts import guard_mcp_owned_preparation_pilot as preparation_adapter
+                from scripts.guard_mcp_owned_preparation_pilot import OwnedPreparationPilot
+                from scripts.guard_mcp_owned_preparation_pilot import install_adapter as install_preparation_adapter
+            else:
+                import guard_mcp_owned_preparation_pilot as preparation_adapter
+                from guard_mcp_owned_preparation_pilot import OwnedPreparationPilot
+                from guard_mcp_owned_preparation_pilot import install_adapter as install_preparation_adapter
 
-        preparation_pilot = OwnedPreparationPilot()
-        install_preparation_adapter(runtime, preparation_pilot)
+            preparation_pilot = OwnedPreparationPilot()
+            install_preparation_adapter(runtime, preparation_pilot)
+        else:
+            if TYPE_CHECKING:
+                from scripts import guard_mcp_streaming_preparation_pilot as preparation_adapter
+                from scripts.guard_mcp_streaming_preparation_pilot import OwnedPreparationPilot
+                from scripts.guard_mcp_streaming_preparation_pilot import install_adapter as install_preparation_adapter
+            else:
+                import guard_mcp_streaming_preparation_pilot as preparation_adapter
+                from guard_mcp_streaming_preparation_pilot import OwnedPreparationPilot
+                from guard_mcp_streaming_preparation_pilot import install_adapter as install_preparation_adapter
+
+            loaded_adapter_sha256 = hashlib.sha256(Path(preparation_adapter.__file__).read_bytes()).hexdigest()
+            preparation_pilot = OwnedPreparationPilot()
+            install_preparation_adapter(runtime, preparation_pilot)
         if spec["profile"]:
             phases.wrap(preparation_pilot, "own_request", "owned_message_snapshot")
             phases.wrap(preparation_adapter, "_exact_binding", "owned_input_binding")
@@ -53,7 +70,10 @@ def run_worker(config_path: Path, *, preparation_variant: str) -> int:
             phases.wrap(calls, "_evaluate_current_tool_call_for_categories", "policy")
             phases.wrap(calls, "_evaluate_tool_call_with_current", "policy")
     if spec.get("native_text_helper"):
-        from guard_mcp_text_facts_pilot import TextFactsPilot, install_adapter
+        if TYPE_CHECKING:
+            from scripts.guard_mcp_text_facts_pilot import TextFactsPilot, install_adapter
+        else:
+            from guard_mcp_text_facts_pilot import TextFactsPilot, install_adapter
 
         native_pilot = TextFactsPilot(
             Path(spec["native_text_helper"]),
@@ -185,7 +205,7 @@ def run_worker(config_path: Path, *, preparation_variant: str) -> int:
                 "quiet_barrier_seconds": runtime._TOOLS_CALL_PREWRITE_QUIET_SECONDS,
                 "worker_peak_rss_bytes": worker_peak_rss_bytes,
                 "loaded_runtime_sha256": {
-                    name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
+                    name: hashlib.sha256(Path(cast(str, module.__file__)).read_bytes()).hexdigest()
                     for name, module in (
                         ("proxy/runtime_mcp.py", runtime),
                         ("mcp_tool_calls.py", calls),
@@ -215,8 +235,6 @@ def tree_sample(process: subprocess.Popen[str]) -> dict[str, float]:
         except psutil.NoSuchProcess:
             continue
     return {"rss_bytes": rss, "uss_bytes": uss, "cpu_ms": cpu * 1000, "processes": len(members)}
-
-
 
 
 def main() -> int:

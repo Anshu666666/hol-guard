@@ -8,22 +8,38 @@ import json
 import platform
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from profile_guard_mcp_case import run_case_common
-from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments, summarize as _summary
-from profile_guard_mcp_matrix import (
-    performance_lock,
-    run_matrix_common,
-    run_remote_case,
-    runtime_source_identity,
-    write_checkpoint,
-)
-from profile_guard_mcp_worker import run_worker, tree_sample as _tree_sample
+if TYPE_CHECKING:
+    from scripts.profile_guard_mcp_case import run_case_common
+    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401
+    from scripts.profile_guard_mcp_fixture import summarize as _summary  # noqa: F401
+    from scripts.profile_guard_mcp_matrix import (
+        performance_lock,
+        run_matrix_common,
+        run_remote_case,  # noqa: F401
+        runtime_source_identity,  # noqa: F401
+        write_checkpoint,  # noqa: F401
+    )
+    from scripts.profile_guard_mcp_worker import run_worker
+    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401
+else:
+    from profile_guard_mcp_case import run_case_common
+    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401
+    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401
+    from profile_guard_mcp_matrix import (
+        performance_lock,
+        run_matrix_common,
+        run_remote_case,  # noqa: F401
+        runtime_source_identity,  # noqa: F401
+        write_checkpoint,  # noqa: F401
+    )
+    from profile_guard_mcp_worker import run_worker
+    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401
 
 
 def _worker(config_path: Path) -> int:
@@ -113,16 +129,32 @@ def main() -> int:
     if args.resume:
         parser.error("--resume requires --matrix")
     with performance_lock(args.lock_file):
-        result = run_case(**{key: value for key, value in vars(args).items() if key not in {"worker", "matrix", "json", "resume", "lock_file"}})
-    result.update({
-        "schema": "hol-guard-mcp-stdio-profile.v1",
-        "platform": platform.system(),
-        "architecture": platform.machine(),
-        "python": platform.python_version(),
-        "percentile_estimator": "nearest_rank",
-        "remote_network": "not_measured_local_stdio_only",
-        "limitations": ["source_route_not_installed_cli", "c1_only", "single_host_diagnostic", "memory_samples_are_not_absolute_peak", "profile_timings_are_not_qualification", "human_wait_is_synthetic_client_delay", "uncached_is_counterfactual_not_release"],
-    })
+        result = run_case(
+            **{
+                key: value
+                for key, value in vars(args).items()
+                if key not in {"worker", "matrix", "json", "resume", "lock_file"}
+            }
+        )
+    result.update(
+        {
+            "schema": "hol-guard-mcp-stdio-profile.v1",
+            "platform": platform.system(),
+            "architecture": platform.machine(),
+            "python": platform.python_version(),
+            "percentile_estimator": "nearest_rank",
+            "remote_network": "not_measured_local_stdio_only",
+            "limitations": [
+                "source_route_not_installed_cli",
+                "c1_only",
+                "single_host_diagnostic",
+                "memory_samples_are_not_absolute_peak",
+                "profile_timings_are_not_qualification",
+                "human_wait_is_synthetic_client_delay",
+                "uncached_is_counterfactual_not_release",
+            ],
+        }
+    )
     encoded = json.dumps(result, indent=2) + "\n"
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)

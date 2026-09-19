@@ -29,6 +29,7 @@ from ..runtime.command_activity_privacy import InstallationCorrelationKey
 from ..sqlite_tuning import sqlite_connect_timeout_override
 from ..store import GuardStore
 from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase, evidence_failure_code
+
 # The journal mixin resolves these helpers through their live facade bindings.
 from .runtime_hook_evidence_journal import (
     _CommandActivityRecord,

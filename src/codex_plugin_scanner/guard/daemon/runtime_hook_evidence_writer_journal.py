@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Mapping
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from ..store import GuardStore
 from .runtime_hook_evidence_diagnostics import evidence_failure_code
@@ -12,6 +12,18 @@ from .runtime_hook_evidence_journal import (
     _EvidenceRecord,
     _NativeDecisionReceiptRecord,
 )
+
+if TYPE_CHECKING:
+    import threading
+    from abc import ABC as _WriterJournalHost
+    from abc import abstractmethod
+    from collections import OrderedDict, deque
+    from pathlib import Path
+
+    from .runtime_hook_evidence_diagnostics import EvidenceFailurePhase
+    from .runtime_hook_evidence_queue_observation import EvidenceQueueObservation
+else:
+    _WriterJournalHost = object
 
 
 def persist_native_decision_receipt(*, store: GuardStore, receipt: Mapping[str, object]) -> bool:
@@ -49,8 +61,36 @@ class RuntimeHookEvidenceWriterStats(TypedDict):
     checkpoint_pending: int
 
 
-class RuntimeHookEvidenceWriterJournalMixin:
+class RuntimeHookEvidenceWriterJournalMixin(_WriterJournalHost):
     """Bounded queue and durable-journal operations shared by the writer."""
+
+    if TYPE_CHECKING:
+        # The concrete writer initializes this state and implements both hooks.
+        _condition: threading.Condition
+        _records: deque[_EvidenceRecord]
+        _stopping: bool
+        _checkpoint_pending: set[str]
+        _batch_wait_seconds: float
+        _max_batch: int
+        _queue_observation: EvidenceQueueObservation | None
+        _queued_bytes: int
+        _drain_deadline: float | None
+        _journal_path: Path
+        _max_bytes: int
+        _degraded: bool
+        _failures: int
+        _max_records: int
+        _receipt_seen: OrderedDict[str, None]
+        _durable: OrderedDict[str, _EvidenceRecord]
+        _recovered: int
+
+        @abstractmethod
+        def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None: ...
+
+        @abstractmethod
+        def _record_failure_diagnostics(
+            self, phase: EvidenceFailurePhase, code: str, records: int, receipts: int = 0
+        ) -> None: ...
 
     def _next_batch(self) -> list[_EvidenceRecord]:
         with self._condition:

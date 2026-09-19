@@ -12,12 +12,22 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
-from compare_guard_mcp_risk import source_identity, verify_facts
-from profile_guard_mcp_streaming_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
+if TYPE_CHECKING:
+    from scripts.compare_guard_mcp_risk import source_identity, verify_facts
+    from scripts.profile_guard_mcp_streaming_session import (
+        BenchmarkCaseError,
+        performance_lock,
+        run_case,
+        write_checkpoint,
+    )
+else:
+    from compare_guard_mcp_risk import source_identity, verify_facts
+    from profile_guard_mcp_streaming_session import BenchmarkCaseError, performance_lock, run_case, write_checkpoint
 
 
-def plan_identity():
+def plan_identity() -> dict[str, Any]:
     path = Path(__file__).resolve().parents[1] / "docs/guard/rust-performance/mcp-streaming-preparation-plan.json"
     raw = path.read_bytes()
     plan = json.loads(raw)
@@ -55,7 +65,7 @@ def oracle_identity():
     from codex_plugin_scanner.guard.proxy import framing, runtime_mcp, tool_catalog
 
     return {
-        name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest()
+        name: hashlib.sha256(Path(cast(str, module.__file__)).read_bytes()).hexdigest()
         for name, module in (
             ("mcp_tool_calls.py", mcp_tool_calls),
             ("proxy/runtime_mcp.py", runtime_mcp),
@@ -99,7 +109,7 @@ def run_comparison(args):
         raise ValueError("streaming_mcp_fixed_plan_requires_30_samples")
     roots = {"B": args.runtime_src.resolve(), "F": args.runtime_src.resolve()}
     oracle_root = args.oracle_src.resolve()
-    report = {
+    report: dict[str, Any] = {
         "schema": "hol-guard-mcp-streaming-preparation-comparison.v1",
         "qualification": False,
         "production_activation": False,
@@ -219,7 +229,7 @@ def run_comparison(args):
                     ):
                         raise RuntimeError("streaming_mcp_unexpected_fallback_or_failure")
             except (Exception, KeyboardInterrupt) as error:
-                failure = (
+                failure: dict[str, Any] = (
                     dict(error.evidence)
                     if isinstance(error, BenchmarkCaseError)
                     else {

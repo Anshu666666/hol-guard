@@ -51,15 +51,11 @@ def test_pi_uninstall_preserves_separate_omp_extension_and_user_resources(
     source_harness: str,
     modified: bool,
 ) -> None:
-    context = HarnessContext(
-        home_dir=tmp_path / "home", guard_home=tmp_path / "guard-home", workspace_dir=None
-    )
+    context = HarnessContext(home_dir=tmp_path / "home", guard_home=tmp_path / "guard-home", workspace_dir=None)
     omp_extension, omp_settings, omp_user = _seed_extension(
         context, install_harness="omp", source_harness=source_harness, modified=modified
     )
-    pi_extension, pi_settings, pi_user = _seed_extension(
-        context, install_harness="pi", source_harness="pi"
-    )
+    pi_extension, pi_settings, pi_user = _seed_extension(context, install_harness="pi", source_harness="pi")
     preserved = {path: path.read_bytes() for path in (omp_extension, omp_settings, omp_user, pi_user)}
     shim_calls: list[str] = []
 
@@ -89,19 +85,13 @@ def test_update_does_not_migrate_untracked_omp_extension_from_pi_record(
     source_harness: str,
     modified: bool,
 ) -> None:
-    context = HarnessContext(
-        home_dir=tmp_path / "home", guard_home=tmp_path / "guard-home", workspace_dir=None
-    )
+    context = HarnessContext(home_dir=tmp_path / "home", guard_home=tmp_path / "guard-home", workspace_dir=None)
     store = GuardStore(context.guard_home)
     omp_extension, omp_settings, omp_user = _seed_extension(
         context, install_harness="omp", source_harness=source_harness, modified=modified
     )
-    pi_extension, _pi_settings, _pi_user = _seed_extension(
-        context, install_harness="pi", source_harness="pi"
-    )
-    store.set_managed_install(
-        "pi", True, None, {"config_path": str(pi_extension)}, "2026-08-05T00:00:00Z"
-    )
+    pi_extension, _pi_settings, _pi_user = _seed_extension(context, install_harness="pi", source_harness="pi")
+    store.set_managed_install("pi", True, None, {"config_path": str(pi_extension)}, "2026-08-05T00:00:00Z")
     preserved = {path: path.read_bytes() for path in (omp_extension, omp_settings, omp_user)}
     assert store.get_managed_install("omp") is None
 

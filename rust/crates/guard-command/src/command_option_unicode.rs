@@ -44,7 +44,9 @@ fn python_alphanumeric_kind(character: char) -> Option<u8> {
 // Generated with Python 3.12 / Unicode 15.0.0: group contiguous non-ASCII
 // codepoints by `1 if chr(c).isalpha() else 2 if chr(c).isalnum() else 0`.
 // Regenerate only with an explicit native string-semantics version decision.
+#[path = "command_option_unicode/ranges_high.rs"]
 mod ranges_high;
+#[path = "command_option_unicode/ranges_low.rs"]
 mod ranges_low;
 
 use ranges_high::PYTHON_ALNUM_RANGES_HIGH;

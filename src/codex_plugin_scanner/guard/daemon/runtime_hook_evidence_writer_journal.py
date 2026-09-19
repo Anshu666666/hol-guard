@@ -55,70 +55,70 @@ class RuntimeHookEvidenceWriterStats(TypedDict):
 class RuntimeHookEvidenceWriterJournalMixin:
     """Bounded queue and durable-journal operations shared by the writer."""
 
-        def _next_batch(self) -> list[_EvidenceRecord]:
-            with self._condition:
-                while not self._records and not self._stopping:
-                    if self._checkpoint_pending:
-                        self._condition.wait(timeout=0.1)
-                        break
-                    self._condition.wait()
-                if not self._records:
-                    return []
-                if not self._stopping and self._batch_wait_seconds:
-                    _ = self._condition.wait(timeout=self._batch_wait_seconds)
-                batch: list[_EvidenceRecord] = []
-                while self._records and len(batch) < self._max_batch:
-                    record = self._records.popleft()
-                    self._queued_bytes -= record.payload_bytes
-                    batch.append(record)
-                return batch
+    def _next_batch(self) -> list[_EvidenceRecord]:
+        with self._condition:
+            while not self._records and not self._stopping:
+                if self._checkpoint_pending:
+                    self._condition.wait(timeout=0.1)
+                    break
+                self._condition.wait()
+            if not self._records:
+                return []
+            if not self._stopping and self._batch_wait_seconds:
+                _ = self._condition.wait(timeout=self._batch_wait_seconds)
+            batch: list[_EvidenceRecord] = []
+            while self._records and len(batch) < self._max_batch:
+                record = self._records.popleft()
+                self._queued_bytes -= record.payload_bytes
+                batch.append(record)
+            return batch
 
-        def _drain_expired(self) -> bool:
-            return self._stopping and self._drain_deadline is not None and time.monotonic() >= self._drain_deadline
+    def _drain_expired(self) -> bool:
+        return self._stopping and self._drain_deadline is not None and time.monotonic() >= self._drain_deadline
 
-        def _recover_journal(self) -> None:
-            try:
-                records, invalid_records = recover_journal_records(self._journal_path, max_bytes=self._max_bytes)
-            except FileNotFoundError:
-                return
-            except OSError as error:
+    def _recover_journal(self) -> None:
+        try:
+            records, invalid_records = recover_journal_records(self._journal_path, max_bytes=self._max_bytes)
+        except FileNotFoundError:
+            return
+        except OSError as error:
+            self._degraded = True
+            self._failures += 1
+            self._record_failure_diagnostics("journal_recovery", evidence_failure_code(error), 1)
+            return
+        if invalid_records:
+            self._degraded = True
+            self._failures += invalid_records
+            self._record_failure_diagnostics("journal_recovery", "invalid_record", invalid_records)
+        for record in records:
+            if len(self._records) >= self._max_records or self._queued_bytes + record.payload_bytes > self._max_bytes:
                 self._degraded = True
                 self._failures += 1
-                self._record_failure_diagnostics("journal_recovery", evidence_failure_code(error), 1)
-                return
-            if invalid_records:
-                self._degraded = True
-                self._failures += invalid_records
-                self._record_failure_diagnostics("journal_recovery", "invalid_record", invalid_records)
-            for record in records:
-                if len(self._records) >= self._max_records or self._queued_bytes + record.payload_bytes > self._max_bytes:
+                self._record_failure_diagnostics("journal_recovery", "recovery_capacity", 1)
+                continue
+            if isinstance(record, _NativeDecisionReceiptRecord):
+                if record.record_id in self._receipt_seen:
                     self._degraded = True
                     self._failures += 1
-                    self._record_failure_diagnostics("journal_recovery", "recovery_capacity", 1)
+                    self._record_failure_diagnostics("journal_recovery", "recovery_duplicate", 1)
                     continue
-                if isinstance(record, _NativeDecisionReceiptRecord):
-                    if record.record_id in self._receipt_seen:
-                        self._degraded = True
-                        self._failures += 1
-                        self._record_failure_diagnostics("journal_recovery", "recovery_duplicate", 1)
-                        continue
-                    self._receipt_seen[record.record_id] = None
-                self._durable[record.record_id] = record
-                self._records.append(record)
-                self._queued_bytes += record.payload_bytes
-                self._recovered += 1
+                self._receipt_seen[record.record_id] = None
+            self._durable[record.record_id] = record
+            self._records.append(record)
+            self._queued_bytes += record.payload_bytes
+            self._recovered += 1
 
-        def _append_journal(self, record: _EvidenceRecord) -> None:
-            append_journal(self._journal_path, record)
+    def _append_journal(self, record: _EvidenceRecord) -> None:
+        append_journal(self._journal_path, record)
 
-        def _rewrite_journal(self, *, remove_record_id: str) -> None:
-            invalid_records = rewrite_journal(
-                self._journal_path,
-                remove_record_id=remove_record_id,
-                max_bytes=self._max_bytes,
-            )
-            if invalid_records:
-                self._degraded = True
-                self._failures += invalid_records
-                self._record_failure_diagnostics("journal_rewrite", "invalid_record", invalid_records)
+    def _rewrite_journal(self, *, remove_record_id: str) -> None:
+        invalid_records = rewrite_journal(
+            self._journal_path,
+            remove_record_id=remove_record_id,
+            max_bytes=self._max_bytes,
+        )
+        if invalid_records:
+            self._degraded = True
+            self._failures += invalid_records
+            self._record_failure_diagnostics("journal_rewrite", "invalid_record", invalid_records)
 

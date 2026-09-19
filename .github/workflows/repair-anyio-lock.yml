@@ -31,10 +31,10 @@ jobs:
       - name: Verify fixed AnyIO version
         run: |
           python - <<'PY'
+          import re
           from pathlib import Path
           text = Path("uv.lock").read_text()
-          block = text.split('name = "anyio"', 1)[1].split('[[package]]', 1)[0]
-          assert 'version = "4.14.2"' in block, block
+          assert re.search(r'\[\[package\]\]\nname = "anyio"\nversion = "4\.14\.2"', text), "anyio package was not resolved to 4.14.2"
           PY
       - name: Commit lockfile update
         run: |

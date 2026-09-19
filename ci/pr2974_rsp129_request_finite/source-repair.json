@@ -1,0 +1,262 @@
+{
+  "schema": "rsp129_first_finite_exact_source_correction_v1",
+  "source_parent": "b3c4c979d190997694a0c7a211cc43a466a11782",
+  "source_parent_tree": "8a84ca682b74fbd16cca8a670dcfbf8f7990bc26",
+  "expected_source_tree": "b2e85d99d6a3b73aa39bf06e840e8c20af9fde15",
+  "source_leaf_count": 4629,
+  "unchanged_other_leaves": 4628,
+  "original_terminal": {
+    "git_blob": "fbac927794bcb84e0608e31233940d8a4cb94f13",
+    "bytes": 3971540,
+    "sha256": "9dd4489911593acebd7d5f9c5ec770f2462f4cb180c4a37319f6cef563a3e999"
+  },
+  "original_run_id": 35463846688,
+  "original_job_id": 105952369650,
+  "original_case_execution": {
+    "admitted_rows": 0,
+    "phase_reports": 0,
+    "expected_unexecuted": 88
+  },
+  "original_diagnostics": {
+    "ruff": [
+      {
+        "cell": null,
+        "code": "RUF007",
+        "end_location": {
+          "column": 45,
+          "row": 105
+        },
+        "filename": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "fix": {
+          "applicability": "unsafe",
+          "edits": [
+            {
+              "content": "import itertools\n",
+              "end_location": {
+                "column": 1,
+                "row": 17
+              },
+              "location": {
+                "column": 1,
+                "row": 17
+              }
+            },
+            {
+              "content": "itertools.pairwise(stamps)",
+              "end_location": {
+                "column": 79,
+                "row": 105
+              },
+              "location": {
+                "column": 42,
+                "row": 105
+              }
+            }
+          ],
+          "message": "Replace `zip()` with `itertools.pairwise()`"
+        },
+        "location": {
+          "column": 42,
+          "row": 105
+        },
+        "message": "Prefer `itertools.pairwise()` over `zip()` when iterating over successive pairs",
+        "noqa_row": 105,
+        "severity": "error",
+        "url": "https://docs.astral.sh/ruff/rules/zip-instead-of-pairwise"
+      }
+    ],
+    "type_errors": [
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Operator \"<=\" not supported for types \"Literal[0]\" and \"Any | None\"\n  Operator \"<=\" not supported for types \"Literal[0]\" and \"None\" when expected type is \"object\"",
+        "range": {
+          "start": {
+            "line": 103,
+            "character": 41
+          },
+          "end": {
+            "line": 103,
+            "character": 59
+          }
+        },
+        "rule": "reportOperatorIssue"
+      },
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Operator \"<\" not supported for \"None\"",
+        "range": {
+          "start": {
+            "line": 103,
+            "character": 46
+          },
+          "end": {
+            "line": 103,
+            "character": 51
+          }
+        },
+        "rule": "reportOptionalOperand"
+      },
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Operator \"<=\" not supported for \"None\"",
+        "range": {
+          "start": {
+            "line": 104,
+            "character": 8
+          },
+          "end": {
+            "line": 104,
+            "character": 12
+          }
+        },
+        "rule": "reportOptionalOperand"
+      },
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Operator \"<=\" not supported for \"None\"",
+        "range": {
+          "start": {
+            "line": 117,
+            "character": 45
+          },
+          "end": {
+            "line": 117,
+            "character": 57
+          }
+        },
+        "rule": "reportOptionalOperand"
+      },
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Argument of type \"list[Any | None]\" cannot be assigned to parameter \"iterable\" of type \"Iterable[SupportsRichComparisonT@sorted]\" in function \"sorted\"\n  \"list[Any | None]\" is not assignable to \"Iterable[SupportsRichComparisonT@sorted]\"\n    Type parameter \"_T_co@Iterable\" is covariant, but \"Any | None\" is not a subtype of \"SupportsRichComparisonT@sorted\"\n      Type \"Any | None\" is not assignable to type \"SupportsRichComparison\"\n        Type \"Any | None\" is not assignable to type \"SupportsRichComparison\"\n          Type \"None\" is not assignable to type \"SupportsRichComparison\"",
+        "range": {
+          "start": {
+            "line": 222,
+            "character": 19
+          },
+          "end": {
+            "line": 222,
+            "character": 34
+          }
+        },
+        "rule": "reportArgumentType"
+      },
+      {
+        "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/native_slo_workspace_decision.py",
+        "severity": "error",
+        "message": "Operator \"-\" not supported for \"None\"",
+        "range": {
+          "start": {
+            "line": 244,
+            "character": 48
+          },
+          "end": {
+            "line": 244,
+            "character": 63
+          }
+        },
+        "rule": "reportOptionalOperand"
+      }
+    ],
+    "type_summary": {
+      "filesAnalyzed": 2,
+      "errorCount": 6,
+      "warningCount": 216,
+      "informationCount": 0,
+      "timeInSec": 0.884
+    }
+  },
+  "complete_one_file_change": {
+    "path": "scripts/native_slo_workspace_decision.py",
+    "before": "\"\"\"Join observed request boundaries to validated and committed native receipts.\n\nThese are observer endpoints in one owned Python process, not Rust decision\ntimestamps. A request offered before acceptance remains distinguishable from\none offered afterward even when both finish after the accepted mutation.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport math\nimport re\nfrom collections.abc import Mapping, Sequence\nfrom typing import Any, cast\n\nfrom scripts.native_slo_workspace_observer import public_binding\n\nMAX_REQUESTS = 32\n_DIGEST = re.compile(r\"[0-9a-f]{64}\")\n_COMMAND_FIELDS = {\n    \"program_digest\": \"program_digest\",\n    \"catalog_digest\": \"catalog_digest\",\n    \"trust_digest\": \"trust_digest\",\n    \"control_revision\": \"revision\",\n    \"managed_control_revision\": \"managed_revision\",\n    \"control_effective_digest\": \"effective_digest\",\n}\n\n\ndef finite_time(value: object) -> bool:\n    if type(value) not in (int, float):\n        return False\n    try:\n        return math.isfinite(cast(float, value))\n    except OverflowError:\n        return False\n\n\ndef authority_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:\n    \"\"\"Keep only bounded public identity, lifetime and command-control fields.\"\"\"\n    binding = public_binding(snapshot)\n    command = snapshot.get(\"command_extensions\")\n    issued, expires = snapshot.get(\"issued_at_ms\"), snapshot.get(\"expires_at_ms\")\n    rule = snapshot.get(\"rule_digest\")\n    if (\n        binding is None\n        or snapshot.get(\"mode\") != \"enforce\"\n        or type(issued) is not int\n        or type(expires) is not int\n        or not 0 <= issued < expires < 2**63\n        or not isinstance(rule, str)\n        or _DIGEST.fullmatch(rule) is None\n        or not isinstance(command, Mapping)\n    ):\n        raise ValueError(\"workspace request authority projection invalid\")\n    controls = {receipt_key: command.get(source_key) for receipt_key, source_key in _COMMAND_FIELDS.items()}\n    for key, value in controls.items():\n        valid = (\n            type(value) is int and 0 <= value < 2**64\n            if key in {\"control_revision\", \"managed_control_revision\"}\n            else isinstance(value, str) and _DIGEST.fullmatch(value) is not None\n        )\n        if not valid:\n            raise ValueError(\"workspace request command identity invalid\")\n    return {\n        **binding,\n        \"rule_digest\": rule,\n        \"mode\": \"enforce\",\n        \"issued_at_ms\": issued,\n        \"expires_at_ms\": expires,\n        \"command_controls\": controls,\n    }\n\n\ndef receipt_projection(receipt: object) -> dict[str, Any] | None:\n    from codex_plugin_scanner.guard.native_decision_receipt import validate_native_decision_receipt\n\n    valid = validate_native_decision_receipt(receipt)\n    if valid is None:\n        return None\n    # The product validator admits an exact privacy-bounded schema (at most\n    # 16 KiB). Retain all of it so an independent reader can recheck identity.\n    return json.loads(json.dumps(valid, allow_nan=False))\n\n\ndef _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -> dict[str, bool]:\n    receipt = row.get(\"native_receipt\")\n    committed = row.get(\"committed_receipt\")\n    validated = receipt_projection(receipt)\n    validated_committed = receipt_projection(committed)\n    identity = receipt.get(\"decision_id\") if isinstance(receipt, Mapping) else None\n    command = receipt.get(\"command_extensions\") if isinstance(receipt, Mapping) else None\n    stamps = [\n        row.get(key)\n        for key in (\n            \"offered_ms\",\n            \"review_entered_ms\",\n            \"native_finished_ms\",\n            \"review_returned_ms\",\n            \"delivered_ms\",\n            \"commit_observed_ms\",\n        )\n    ]\n    ordered = all(finite_time(stamp) and 0 <= stamp < 2**63 for stamp in stamps) and all(\n        left <= right for left, right in zip(stamps, stamps[1:], strict=False)\n    )\n    wall_entered, wall_returned = row.get(\"review_entered_wall_ms\"), row.get(\"review_returned_wall_ms\")\n    expected_decision = \"allow\" if action == \"allow\" else \"deny\"\n    return {\n        \"one_completed_review\": (\n            type(row.get(\"review_calls\")) is int and row[\"review_calls\"] == 1 and row.get(\"review_returned\") is True\n        ),\n        \"one_completed_request\": row.get(\"request_returned\") is True,\n        \"bounded_monotonic_order\": ordered,\n        \"observed_wall_lifetime\": (\n            finite_time(wall_entered)\n            and finite_time(wall_returned)\n            and authority[\"issued_at_ms\"] <= wall_entered <= wall_returned < authority[\"expires_at_ms\"]\n        ),\n        \"request_scope_matches\": (\n            type(row.get(\"workspace_index\")) is int\n            and 0 <= row[\"workspace_index\"] < 100\n            and row.get(\"request_scope_matches\") is True\n        ),\n        \"request_binding_matches\": row.get(\"request_binding_matches\") is True,\n        \"authenticated_readbacks_match\": (\n            row.get(\"authority_readback_before\") is True and row.get(\"authority_readback_after\") is True\n        ),\n        \"validated_native_receipt\": validated is not None and row.get(\"native_receipt_validated\") is True,\n        \"receipt_authority_matches\": isinstance(receipt, Mapping)\n        and all(\n            receipt.get(receipt_key) == authority[source_key]\n            for receipt_key, source_key in (\n                (\"policy_generation\", \"generation\"),\n                (\"policy_digest\", \"policy_digest\"),\n                (\"runtime_identity\", \"runtime_identity\"),\n                (\"rule_digest\", \"rule_digest\"),\n            )\n        ),\n        \"receipt_command_controls_match\": isinstance(command, Mapping)\n        and all(command.get(key) == value for key, value in authority[\"command_controls\"].items()),\n        \"receipt_semantics_match\": (\n            isinstance(receipt, Mapping)\n            and receipt.get(\"event_name\") == \"PreToolUse\"\n            and receipt.get(\"harness\") == \"claude-code\"\n            and receipt.get(\"workspace_bound\") is True\n            and receipt.get(\"observe_mode\") is False\n            and receipt.get(\"policy_action\") == action\n            and receipt.get(\"decision\") == expected_decision\n            and receipt.get(\"model_output_action\") == \"not_applicable\"\n        ),\n        \"delivery_matches\": row.get(\"delivered_decision\") == expected_decision,\n        \"original_witness_matches\": (\n            isinstance(identity, str)\n            and row.get(\"witness_decision_id\") == identity\n            and row.get(\"writer_admitted\") is True\n            and row.get(\"witness_committed\") is True\n            and row.get(\"witness_commit_binding_valid\") is True\n        ),\n        \"unique_committed_readback\": (\n            type(row.get(\"committed_row_count\")) is int\n            and row[\"committed_row_count\"] == 1\n            and row.get(\"committed_receipt_validated\") is True\n            and validated_committed is not None\n            and validated_committed == validated\n        ),\n        \"capture_faults_absent\": type(row.get(\"capture_faults\")) is int and row[\"capture_faults\"] == 0,\n    }\n\n\ndef _first(rows: list[dict[str, Any]]) -> dict[str, object] | None:\n    if not rows:\n        return None\n    stamp = min(row[\"native_finished_ms\"] for row in rows)\n    first = [row for row in rows if row[\"native_finished_ms\"] == stamp]\n    return {\n        \"native_finished_ms\": stamp,\n        \"attempts\": [row[\"attempt\"] for row in first],\n        \"decision_ids\": [row[\"decision_id\"] for row in first],\n        \"unique_observed_first\": len(first) == 1,\n    }\n\n\ndef join_decisions(\n    rows: Sequence[Mapping[str, Any]],\n    *,\n    authority: Mapping[str, Any],\n    action: str,\n    accepted_ms: float,\n    declared_attempts: Sequence[str],\n    observation_complete: bool,\n) -> dict[str, object]:\n    \"\"\"Require every declared request; never discard a failed earlier sample.\"\"\"\n    if (\n        not finite_time(accepted_ms)\n        or not 0 <= accepted_ms < 2**63\n        or action not in {\"allow\", \"block\"}\n        or not 1 <= len(declared_attempts) <= MAX_REQUESTS\n        or any(\n            not isinstance(value, str) or re.fullmatch(r\"mixed-policy-(?:[0-9]|[12][0-9]|3[01])\", value) is None\n            for value in declared_attempts\n        )\n        or len(set(declared_attempts)) != len(declared_attempts)\n        or len(rows) > MAX_REQUESTS\n        or any(not isinstance(row, Mapping) for row in rows)\n    ):\n        raise ValueError(\"workspace request join outside declared bounds\")\n    controls = authority.get(\"command_controls\")\n    if not isinstance(controls, Mapping):\n        raise ValueError(\"workspace request join authority invalid\")\n    reconstructed = authority_projection(\n        {\n            **authority,\n            \"command_extensions\": {source: controls.get(target) for target, source in _COMMAND_FIELDS.items()},\n        }\n    )\n    if reconstructed != authority:\n        raise ValueError(\"workspace request join authority invalid\")\n    actual_attempts = [row.get(\"attempt\") for row in rows]\n    exact_attempts = (\n        len(actual_attempts) == len(declared_attempts)\n        and all(isinstance(value, str) for value in actual_attempts)\n        and sorted(actual_attempts) == sorted(declared_attempts)\n    )\n    assessed = []\n    for row in rows:\n        checks = _checks(row, authority, action)\n        receipt = row.get(\"native_receipt\")\n        native_finished = row.get(\"native_finished_ms\")\n        after_acceptance = (\n            finite_time(row.get(\"offered_ms\"))\n            and finite_time(row.get(\"review_entered_ms\"))\n            and row[\"offered_ms\"] >= accepted_ms\n            and row[\"review_entered_ms\"] >= accepted_ms\n        )\n        assessed.append(\n            {\n                \"attempt\": row.get(\"attempt\"),\n                \"workspace_index\": row.get(\"workspace_index\"),\n                \"decision_id\": receipt.get(\"decision_id\") if isinstance(receipt, Mapping) else None,\n                \"request_id\": receipt.get(\"request_id\") if isinstance(receipt, Mapping) else None,\n                \"native_finished_ms\": native_finished,\n                \"request_offered_after_acceptance\": after_acceptance,\n                \"accepted_to_offer_ms\": row[\"offered_ms\"] - accepted_ms if finite_time(row.get(\"offered_ms\")) else None,\n                \"accepted_to_native_finish_ms\": native_finished - accepted_ms if finite_time(native_finished) else None,\n                \"checks\": checks,\n                \"passed\": all(checks.values()),\n            }\n        )\n    identities = [row[\"decision_id\"] for row in assessed]\n    unique_identities = all(\n        isinstance(value, str) and _DIGEST.fullmatch(value) is not None for value in identities\n    ) and len(set(identities)) == len(identities)\n    request_ids = [row[\"request_id\"] for row in assessed]\n    unique_request_ids = all(\n        isinstance(value, str) and re.fullmatch(r\"[a-z0-9][a-z0-9_.:-]{0,255}\", value) for value in request_ids\n    ) and len(set(request_ids)) == len(request_ids)\n    eligible = [row for row in assessed if row[\"passed\"] and row[\"native_finished_ms\"] >= accepted_ms]\n    first_native = _first(eligible)\n    first_post_acceptance = _first([row for row in eligible if row[\"request_offered_after_acceptance\"]])\n    complete = (\n        observation_complete is True\n        and exact_attempts\n        and unique_identities\n        and unique_request_ids\n        and all(row[\"passed\"] for row in assessed)\n        and first_post_acceptance is not None\n        and first_post_acceptance[\"unique_observed_first\"] is True\n    )\n    return {\n        \"passed\": complete,\n        \"observation_complete\": observation_complete is True,\n        \"declared_requests\": len(declared_attempts),\n        \"observed_requests\": len(rows),\n        \"exact_attempts\": exact_attempts,\n        \"unique_receipt_identities\": unique_identities,\n        \"unique_native_request_ids\": unique_request_ids,\n        \"rows\": assessed,\n        \"first_native_completion_after_acceptance\": first_native,\n        \"first_completion_of_post_acceptance_request\": first_post_acceptance,\n        \"accepted_ms\": accepted_ms,\n        \"authority\": json.loads(json.dumps(authority, allow_nan=False)),\n        \"timing_scope\": \"owned Python wrapper endpoints including diagnostic overhead\",\n        \"first_scope\": \"only the complete declared request set, not all daemon traffic\",\n        \"commit_scope\": \"validated SQLite readback time, not transaction commit time\",\n        \"lifetime_scope\": \"same-host wall-clock observations at wrapper boundaries\",\n        \"internal_rust_decision_time_observed\": False,\n        \"qualification_complete\": False,\n    }\n",
+    "after": "\"\"\"Join observed request boundaries to validated and committed native receipts.\n\nThese are observer endpoints in one owned Python process, not Rust decision\ntimestamps. A request offered before acceptance remains distinguishable from\none offered afterward even when both finish after the accepted mutation.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport math\nimport re\nfrom collections.abc import Mapping, Sequence\nfrom itertools import pairwise\nfrom typing import Any, TypeGuard, cast\n\nfrom scripts.native_slo_workspace_observer import public_binding\n\nMAX_REQUESTS = 32\n_DIGEST = re.compile(r\"[0-9a-f]{64}\")\n_COMMAND_FIELDS = {\n    \"program_digest\": \"program_digest\",\n    \"catalog_digest\": \"catalog_digest\",\n    \"trust_digest\": \"trust_digest\",\n    \"control_revision\": \"revision\",\n    \"managed_control_revision\": \"managed_revision\",\n    \"control_effective_digest\": \"effective_digest\",\n}\n\n\ndef finite_time(value: object) -> TypeGuard[int | float]:\n    if type(value) not in (int, float):\n        return False\n    try:\n        return math.isfinite(cast(float, value))\n    except OverflowError:\n        return False\n\n\ndef authority_projection(snapshot: Mapping[str, Any]) -> dict[str, Any]:\n    \"\"\"Keep only bounded public identity, lifetime and command-control fields.\"\"\"\n    binding = public_binding(snapshot)\n    command = snapshot.get(\"command_extensions\")\n    issued, expires = snapshot.get(\"issued_at_ms\"), snapshot.get(\"expires_at_ms\")\n    rule = snapshot.get(\"rule_digest\")\n    if (\n        binding is None\n        or snapshot.get(\"mode\") != \"enforce\"\n        or type(issued) is not int\n        or type(expires) is not int\n        or not 0 <= issued < expires < 2**63\n        or not isinstance(rule, str)\n        or _DIGEST.fullmatch(rule) is None\n        or not isinstance(command, Mapping)\n    ):\n        raise ValueError(\"workspace request authority projection invalid\")\n    controls = {receipt_key: command.get(source_key) for receipt_key, source_key in _COMMAND_FIELDS.items()}\n    for key, value in controls.items():\n        valid = (\n            type(value) is int and 0 <= value < 2**64\n            if key in {\"control_revision\", \"managed_control_revision\"}\n            else isinstance(value, str) and _DIGEST.fullmatch(value) is not None\n        )\n        if not valid:\n            raise ValueError(\"workspace request command identity invalid\")\n    return {\n        **binding,\n        \"rule_digest\": rule,\n        \"mode\": \"enforce\",\n        \"issued_at_ms\": issued,\n        \"expires_at_ms\": expires,\n        \"command_controls\": controls,\n    }\n\n\ndef receipt_projection(receipt: object) -> dict[str, Any] | None:\n    from codex_plugin_scanner.guard.native_decision_receipt import validate_native_decision_receipt\n\n    valid = validate_native_decision_receipt(receipt)\n    if valid is None:\n        return None\n    # The product validator admits an exact privacy-bounded schema (at most\n    # 16 KiB). Retain all of it so an independent reader can recheck identity.\n    return json.loads(json.dumps(valid, allow_nan=False))\n\n\ndef _checks(row: Mapping[str, Any], authority: Mapping[str, Any], action: str) -> dict[str, bool]:\n    receipt = row.get(\"native_receipt\")\n    committed = row.get(\"committed_receipt\")\n    validated = receipt_projection(receipt)\n    validated_committed = receipt_projection(committed)\n    identity = receipt.get(\"decision_id\") if isinstance(receipt, Mapping) else None\n    command = receipt.get(\"command_extensions\") if isinstance(receipt, Mapping) else None\n    stamps = [\n        row.get(key)\n        for key in (\n            \"offered_ms\",\n            \"review_entered_ms\",\n            \"native_finished_ms\",\n            \"review_returned_ms\",\n            \"delivered_ms\",\n            \"commit_observed_ms\",\n        )\n    ]\n    ordered = all(finite_time(stamp) and 0 <= stamp < 2**63 for stamp in stamps) and all(\n        left <= right for left, right in pairwise(cast(list[int | float], stamps))\n    )\n    wall_entered, wall_returned = row.get(\"review_entered_wall_ms\"), row.get(\"review_returned_wall_ms\")\n    expected_decision = \"allow\" if action == \"allow\" else \"deny\"\n    return {\n        \"one_completed_review\": (\n            type(row.get(\"review_calls\")) is int and row[\"review_calls\"] == 1 and row.get(\"review_returned\") is True\n        ),\n        \"one_completed_request\": row.get(\"request_returned\") is True,\n        \"bounded_monotonic_order\": ordered,\n        \"observed_wall_lifetime\": (\n            finite_time(wall_entered)\n            and finite_time(wall_returned)\n            and authority[\"issued_at_ms\"] <= wall_entered <= wall_returned < authority[\"expires_at_ms\"]\n        ),\n        \"request_scope_matches\": (\n            type(row.get(\"workspace_index\")) is int\n            and 0 <= row[\"workspace_index\"] < 100\n            and row.get(\"request_scope_matches\") is True\n        ),\n        \"request_binding_matches\": row.get(\"request_binding_matches\") is True,\n        \"authenticated_readbacks_match\": (\n            row.get(\"authority_readback_before\") is True and row.get(\"authority_readback_after\") is True\n        ),\n        \"validated_native_receipt\": validated is not None and row.get(\"native_receipt_validated\") is True,\n        \"receipt_authority_matches\": isinstance(receipt, Mapping)\n        and all(\n            receipt.get(receipt_key) == authority[source_key]\n            for receipt_key, source_key in (\n                (\"policy_generation\", \"generation\"),\n                (\"policy_digest\", \"policy_digest\"),\n                (\"runtime_identity\", \"runtime_identity\"),\n                (\"rule_digest\", \"rule_digest\"),\n            )\n        ),\n        \"receipt_command_controls_match\": isinstance(command, Mapping)\n        and all(command.get(key) == value for key, value in authority[\"command_controls\"].items()),\n        \"receipt_semantics_match\": (\n            isinstance(receipt, Mapping)\n            and receipt.get(\"event_name\") == \"PreToolUse\"\n            and receipt.get(\"harness\") == \"claude-code\"\n            and receipt.get(\"workspace_bound\") is True\n            and receipt.get(\"observe_mode\") is False\n            and receipt.get(\"policy_action\") == action\n            and receipt.get(\"decision\") == expected_decision\n            and receipt.get(\"model_output_action\") == \"not_applicable\"\n        ),\n        \"delivery_matches\": row.get(\"delivered_decision\") == expected_decision,\n        \"original_witness_matches\": (\n            isinstance(identity, str)\n            and row.get(\"witness_decision_id\") == identity\n            and row.get(\"writer_admitted\") is True\n            and row.get(\"witness_committed\") is True\n            and row.get(\"witness_commit_binding_valid\") is True\n        ),\n        \"unique_committed_readback\": (\n            type(row.get(\"committed_row_count\")) is int\n            and row[\"committed_row_count\"] == 1\n            and row.get(\"committed_receipt_validated\") is True\n            and validated_committed is not None\n            and validated_committed == validated\n        ),\n        \"capture_faults_absent\": type(row.get(\"capture_faults\")) is int and row[\"capture_faults\"] == 0,\n    }\n\n\ndef _first(rows: list[dict[str, Any]]) -> dict[str, object] | None:\n    if not rows:\n        return None\n    stamp = min(row[\"native_finished_ms\"] for row in rows)\n    first = [row for row in rows if row[\"native_finished_ms\"] == stamp]\n    return {\n        \"native_finished_ms\": stamp,\n        \"attempts\": [row[\"attempt\"] for row in first],\n        \"decision_ids\": [row[\"decision_id\"] for row in first],\n        \"unique_observed_first\": len(first) == 1,\n    }\n\n\ndef join_decisions(\n    rows: Sequence[Mapping[str, Any]],\n    *,\n    authority: Mapping[str, Any],\n    action: str,\n    accepted_ms: float,\n    declared_attempts: Sequence[str],\n    observation_complete: bool,\n) -> dict[str, object]:\n    \"\"\"Require every declared request; never discard a failed earlier sample.\"\"\"\n    if (\n        not finite_time(accepted_ms)\n        or not 0 <= accepted_ms < 2**63\n        or action not in {\"allow\", \"block\"}\n        or not 1 <= len(declared_attempts) <= MAX_REQUESTS\n        or any(\n            not isinstance(value, str) or re.fullmatch(r\"mixed-policy-(?:[0-9]|[12][0-9]|3[01])\", value) is None\n            for value in declared_attempts\n        )\n        or len(set(declared_attempts)) != len(declared_attempts)\n        or len(rows) > MAX_REQUESTS\n        or any(not isinstance(row, Mapping) for row in rows)\n    ):\n        raise ValueError(\"workspace request join outside declared bounds\")\n    controls = authority.get(\"command_controls\")\n    if not isinstance(controls, Mapping):\n        raise ValueError(\"workspace request join authority invalid\")\n    reconstructed = authority_projection(\n        {\n            **authority,\n            \"command_extensions\": {source: controls.get(target) for target, source in _COMMAND_FIELDS.items()},\n        }\n    )\n    if reconstructed != authority:\n        raise ValueError(\"workspace request join authority invalid\")\n    actual_attempts = [row.get(\"attempt\") for row in rows]\n    exact_attempts = (\n        len(actual_attempts) == len(declared_attempts)\n        and all(isinstance(value, str) for value in actual_attempts)\n        and sorted(cast(list[str], actual_attempts)) == sorted(declared_attempts)\n    )\n    assessed = []\n    for row in rows:\n        checks = _checks(row, authority, action)\n        receipt = row.get(\"native_receipt\")\n        native_finished = row.get(\"native_finished_ms\")\n        after_acceptance = (\n            finite_time(row.get(\"offered_ms\"))\n            and finite_time(row.get(\"review_entered_ms\"))\n            and row[\"offered_ms\"] >= accepted_ms\n            and row[\"review_entered_ms\"] >= accepted_ms\n        )\n        assessed.append(\n            {\n                \"attempt\": row.get(\"attempt\"),\n                \"workspace_index\": row.get(\"workspace_index\"),\n                \"decision_id\": receipt.get(\"decision_id\") if isinstance(receipt, Mapping) else None,\n                \"request_id\": receipt.get(\"request_id\") if isinstance(receipt, Mapping) else None,\n                \"native_finished_ms\": native_finished,\n                \"request_offered_after_acceptance\": after_acceptance,\n                \"accepted_to_offer_ms\": row[\"offered_ms\"] - accepted_ms if finite_time(row.get(\"offered_ms\")) else None,\n                \"accepted_to_native_finish_ms\": native_finished - accepted_ms if finite_time(native_finished) else None,\n                \"checks\": checks,\n                \"passed\": all(checks.values()),\n            }\n        )\n    identities = [row[\"decision_id\"] for row in assessed]\n    unique_identities = all(\n        isinstance(value, str) and _DIGEST.fullmatch(value) is not None for value in identities\n    ) and len(set(identities)) == len(identities)\n    request_ids = [row[\"request_id\"] for row in assessed]\n    unique_request_ids = all(\n        isinstance(value, str) and re.fullmatch(r\"[a-z0-9][a-z0-9_.:-]{0,255}\", value) for value in request_ids\n    ) and len(set(request_ids)) == len(request_ids)\n    eligible = [row for row in assessed if row[\"passed\"] and row[\"native_finished_ms\"] >= accepted_ms]\n    first_native = _first(eligible)\n    first_post_acceptance = _first([row for row in eligible if row[\"request_offered_after_acceptance\"]])\n    complete = (\n        observation_complete is True\n        and exact_attempts\n        and unique_identities\n        and unique_request_ids\n        and all(row[\"passed\"] for row in assessed)\n        and first_post_acceptance is not None\n        and first_post_acceptance[\"unique_observed_first\"] is True\n    )\n    return {\n        \"passed\": complete,\n        \"observation_complete\": observation_complete is True,\n        \"declared_requests\": len(declared_attempts),\n        \"observed_requests\": len(rows),\n        \"exact_attempts\": exact_attempts,\n        \"unique_receipt_identities\": unique_identities,\n        \"unique_native_request_ids\": unique_request_ids,\n        \"rows\": assessed,\n        \"first_native_completion_after_acceptance\": first_native,\n        \"first_completion_of_post_acceptance_request\": first_post_acceptance,\n        \"accepted_ms\": accepted_ms,\n        \"authority\": json.loads(json.dumps(authority, allow_nan=False)),\n        \"timing_scope\": \"owned Python wrapper endpoints including diagnostic overhead\",\n        \"first_scope\": \"only the complete declared request set, not all daemon traffic\",\n        \"commit_scope\": \"validated SQLite readback time, not transaction commit time\",\n        \"lifetime_scope\": \"same-host wall-clock observations at wrapper boundaries\",\n        \"internal_rust_decision_time_observed\": False,\n        \"qualification_complete\": False,\n    }\n",
+    "before_identity": {
+      "git_blob": "00b7897041a0a159fc73e486d23f44362927ca15",
+      "sha256": "ef9128437c2d87a5b8c358977a37686a68f7298f77e7a7edcea81bf3608734ff",
+      "bytes": 12560,
+      "lines": 289
+    },
+    "after_identity": {
+      "git_blob": "99a3def7bc4bb97148d450ff8b5623470c1918a4",
+      "sha256": "972f0c351316764ce9b1e4e67d00b5fd28a4be0cecb88db97363d276f7bf730b",
+      "bytes": 12641,
+      "lines": 290
+    },
+    "edits": [
+      {
+        "before": "from collections.abc import Mapping, Sequence\nfrom typing import Any, cast\n",
+        "after": "from collections.abc import Mapping, Sequence\nfrom itertools import pairwise\nfrom typing import Any, TypeGuard, cast\n",
+        "purpose": "Import adjacent-pair iterator and explicit positive type narrowing.",
+        "offset": 382
+      },
+      {
+        "before": "def finite_time(value: object) -> bool:\n",
+        "after": "def finite_time(value: object) -> TypeGuard[int | float]:\n",
+        "purpose": "Expose the existing exact int/float finite predicate to the type checker; predicate body unchanged.",
+        "offset": 902
+      },
+      {
+        "before": "left <= right for left, right in zip(stamps, stamps[1:], strict=False)",
+        "after": "left <= right for left, right in pairwise(cast(list[int | float], stamps))",
+        "purpose": "Read the same adjacent values only after every bounded finite timestamp check has succeeded.",
+        "offset": 3868
+      },
+      {
+        "before": "and sorted(actual_attempts) == sorted(declared_attempts)",
+        "after": "and sorted(cast(list[str], actual_attempts)) == sorted(declared_attempts)",
+        "purpose": "Describe values already proven strings by the preceding short-circuit check; no runtime coercion.",
+        "offset": 9180
+      }
+    ],
+    "full_inverse": true,
+    "parse_lint_types_bodies_executed": false,
+    "original_terminal": {
+      "git_blob": "fbac927794bcb84e0608e31233940d8a4cb94f13",
+      "bytes": 3971540,
+      "sha256": "9dd4489911593acebd7d5f9c5ec770f2462f4cb180c4a37319f6cef563a3e999"
+    }
+  },
+  "source_semantics": {
+    "finite_time_body_byte_identical": true,
+    "exact_int_float_type_rejection_preserved": true,
+    "finite_overflow_catch_preserved": true,
+    "existing_short_circuit_type_and_range_checks_preserved": true,
+    "cast_argument_objects_returned_unchanged": true,
+    "adjacent_pair_comparison_order_preserved_for_validated_local_six_item_list": true,
+    "no_receipt_or_authority_or_privacy_assertion_changed": true,
+    "diagnostic_annotation_reflection_changes_explicitly": true,
+    "all_tests_byte_identical": true,
+    "no_global_semantic_equivalence_or_runtime_claim": true
+  },
+  "primary_sources": [
+    {
+      "url": "https://docs.python.org/3.12/library/typing.html#typing.TypeGuard",
+      "supports": "Positive type narrowing from an existing boolean predicate."
+    },
+    {
+      "url": "https://docs.python.org/3.12/library/typing.html#typing.cast",
+      "supports": "cast returns its value unchanged and adds no validation."
+    },
+    {
+      "url": "https://docs.python.org/3.12/library/itertools.html#itertools.pairwise",
+      "supports": "The iterator supplies successive overlapping pairs."
+    }
+  ],
+  "separate_harness_source_finding": {
+    "git_blob": "91baea7723eda2aae8886f17bbf3cabd951d6a2b",
+    "sha256": "0fba7000445b87920bfa639076fef8370193703e3f11308c5ecec38db4327ce1",
+    "bytes": 7607,
+    "provider": "conftest.py",
+    "fix_scope": "Pin unchanged original root conftest; require all eight actual autouse names and retain partial collection rows before the exact admission comparison."
+  },
+  "validation_pending": [
+    "Fresh exact-source syntax, Ruff/format, diagnostic types",
+    "First actual body execution for the unchanged 62+16+10 controls after repaired fixture admission"
+  ],
+  "qualification_complete": false
+}

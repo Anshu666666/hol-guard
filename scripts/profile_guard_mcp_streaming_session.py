@@ -91,6 +91,8 @@ def main() -> int:
     parser.add_argument("--payload-kind", choices=("ascii", "unicode"), default="ascii")
     parser.add_argument("--json", type=Path)
     args = parser.parse_args()
+    if args.matrix and args.streaming_preparation_pilot:
+        parser.error("explicit F matrix requires compare_guard_mcp_streaming_preparation.py")
     if args.worker:
         return _worker(args.worker)
     payload_limit = 4 * 1024 * 1024 - 512 if args.compact_result else 131072

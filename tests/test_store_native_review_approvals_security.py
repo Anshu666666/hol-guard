@@ -197,12 +197,15 @@ def test_policy_mismatch_does_not_spend_the_atomic_retry() -> None:
     assert not _consume(connection, now="2026-09-10T16:05:30+00:00", policy_binding=recorded)
 
 
-@pytest.mark.parametrize("field,value", [
-    ("action_envelope_json", "malformed"),
-    ("action_envelope_json", "[]"),
-    ("continuation_snapshot_json", "malformed"),
-    ("continuation_snapshot_json", "[]"),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("action_envelope_json", "malformed"),
+        ("action_envelope_json", "[]"),
+        ("continuation_snapshot_json", "malformed"),
+        ("continuation_snapshot_json", "[]"),
+    ],
+)
 def test_invalid_stored_security_metadata_cannot_authorize_retry(field: str, value: str) -> None:
     connection = _connection()
     _insert_resolution(connection, request_id="invalid", resolved_at="2026-09-10T16:05:00+00:00", action="allow")

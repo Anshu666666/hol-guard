@@ -20,11 +20,7 @@ class NativePolicySnapshotResidentInputsMixin:
         state_dir = self.guard_home / NATIVE_RUNTIME_STATE_DIRECTORY
         try:
             resident_directories = sorted(
-                (
-                    entry
-                    for entry in state_dir.iterdir()
-                    if entry.name.startswith("resident-v3-")
-                ),
+                (entry for entry in state_dir.iterdir() if entry.name.startswith("resident-v3-")),
                 key=lambda entry: entry.name,
             )
         except OSError:
@@ -34,16 +30,10 @@ class NativePolicySnapshotResidentInputsMixin:
                 metadata = directory.stat()
             except OSError:
                 continue
-            resident_values.append(
-                (directory.name, metadata.st_mtime_ns, metadata.st_size)
-            )
+            resident_values.append((directory.name, metadata.st_mtime_ns, metadata.st_size))
             try:
                 generation_files = sorted(
-                    (
-                        entry
-                        for entry in directory.iterdir()
-                        if entry.name.startswith("generation-")
-                    ),
+                    (entry for entry in directory.iterdir() if entry.name.startswith("generation-")),
                     key=lambda entry: entry.name,
                 )
             except OSError:
@@ -82,9 +72,7 @@ class NativePolicySnapshotResidentInputsMixin:
                 metadata = (state_dir / path_key).lstat()
             except OSError:
                 return False
-            if not stat.S_ISREG(metadata.st_mode) and not stat.S_ISDIR(
-                metadata.st_mode
-            ):
+            if not stat.S_ISREG(metadata.st_mode) and not stat.S_ISDIR(metadata.st_mode):
                 return False
             if metadata.st_mtime_ns != mtime_ns or metadata.st_size != size:
                 return False
@@ -101,9 +89,7 @@ class NativePolicySnapshotResidentInputsMixin:
 
         if before and before != observed:
             return None
-        if not self._resident_fingerprint_matches_generation(
-            observed, resident_generation
-        ):
+        if not self._resident_fingerprint_matches_generation(observed, resident_generation):
             return None
         # Re-read only bounded metadata while the barrier is held. A changed
         # state-directory identity or sampled path means a resident restarted
@@ -111,10 +97,7 @@ class NativePolicySnapshotResidentInputsMixin:
         if observed_directory is None:
             if observed:
                 return None
-        elif (
-            self._resident_directory_fingerprint() != observed_directory
-            or not self._resident_paths_match(observed)
-        ):
+        elif self._resident_directory_fingerprint() != observed_directory or not self._resident_paths_match(observed):
             return None
         return observed
 

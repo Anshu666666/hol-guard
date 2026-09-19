@@ -318,7 +318,20 @@ def test_same_source_republication_retains_wire_ack_but_requires_fresh_native_to
 
 
 @pytest.mark.parametrize(
-    "mutation", ["missing", "source", "ack", "binding", "epoch", "generation_bool", "digest_null", "mode_invalid"]
+    "mutation",
+    [
+        "missing",
+        "source",
+        "ack",
+        "binding",
+        "epoch",
+        "generation_bool",
+        "digest_null",
+        "mode_invalid",
+        "command_flag_false",
+        "command_flag_number",
+        "command_flag_null",
+    ],
 )
 def test_fresh_publication_does_not_reuse_unbound_or_mismatched_historical_ack(accepted, mutation):
     store, publisher, token, bundle, _ = accepted
@@ -345,6 +358,9 @@ def test_fresh_publication_does_not_reuse_unbound_or_mismatched_historical_ack(a
                 "generation_bool": ("generation", True),
                 "digest_null": ("policy_digest", None),
                 "mode_invalid": ("mode", "unknown"),
+                "command_flag_false": ("command_extensions_bound", False),
+                "command_flag_number": ("command_extensions_bound", 1),
+                "command_flag_null": ("command_extensions_bound", None),
             }[mutation]
             retained_binding = record["binding"]
             assert isinstance(retained_binding, dict)

@@ -114,7 +114,9 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
     publisher = NativePolicySnapshotPublisher(
         store=store, status_provider=_status, client_request=replace_during_publish
     )
+    publisher._compiled_command_extensions()
     initial_epoch = publisher._epoch
+    publisher._publish_event.clear()
     try:
         publisher._publish_once()
         assert len(requests) == 1
@@ -185,7 +187,13 @@ def test_cloud_expiry_shortens_an_identical_cached_policy_and_closes_readiness(t
         publisher._publish_once()
         after = publisher.current_snapshot()
         assert after is not None, publisher.last_error
-        assert after["policy_digest"] == before["policy_digest"]
+        # Enrollment changes authenticated command provenance even when the
+        # effective default policy is identical; the signed identity binds both.
+        assert after["config_digest"] == before["config_digest"]
+        assert after["effective_policy"] == before["effective_policy"]
+        assert after["scope_contract"] == before["scope_contract"]
+        assert after["command_extensions"] != before["command_extensions"]
+        assert after["policy_digest"] != before["policy_digest"]
         assert after["generation"] > before["generation"]
         assert after["expires_at_ms"] == expires_at * 1_000
         clock[0] = expires_at + 1

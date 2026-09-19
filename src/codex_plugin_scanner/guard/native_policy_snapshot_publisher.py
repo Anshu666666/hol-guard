@@ -7,47 +7,53 @@ import sqlite3
 import threading
 import time
 from collections.abc import Callable, Mapping
-from contextlib import ExitStack
+from contextlib import ExitStack as ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from .mdm.policy import managed_policy_cache_read_only
-from .native_cloud_policy_inputs import NativeCloudPolicyInputs, read_native_cloud_policy_inputs
-from .native_policy_authority_read import NativeVerifiedPolicyInputs
+from .mdm.policy import managed_policy_cache_read_only as managed_policy_cache_read_only
+from .native_cloud_policy_inputs import (
+    NativeCloudPolicyInputs,
+    read_native_cloud_policy_inputs as read_native_cloud_policy_inputs,
+)
+from .native_policy_authority_read import NativeVerifiedPolicyInputs as NativeVerifiedPolicyInputs
 from .native_policy_decision_context import NativePolicyDecisionContext
-from .native_policy_snapshot_codec import _digest_v3
+from .native_policy_snapshot_codec import _digest_v3 as _digest_v3
 from .native_policy_snapshot_constants import (
     _PUBLISH_RETRY_SECONDS,
     _PUBLISH_TIMEOUT_SECONDS,
     NativePolicySnapshotError,
 )
 from .native_policy_snapshot_publisher_context import (
-    CapturedV3PublicationInputs,
+    CapturedV3PublicationInputs as CapturedV3PublicationInputs,
     PublicationContext,
-    compiled_v3_compatible_policy,
+    compiled_v3_compatible_policy as compiled_v3_compatible_policy,
     publication_context,
 )
 from .native_policy_snapshot_publisher_inputs import NativePolicySnapshotPublisherInputs
 from .native_policy_snapshot_publisher_scheduling import (
     mark_expired_locked,
     record_error,
-    record_publication_error,
+    record_publication_error as record_publication_error,
     renewal_jitter_seconds,
     schedule_renewal_locked,
 )
 from .native_policy_snapshot_publisher_scoped import (
     ScopedSnapshotBinding,
-    _capture_metadata_equal,
-    _policy_fingerprint,
+    _capture_metadata_equal as _capture_metadata_equal,
+    _policy_fingerprint as _policy_fingerprint,
     capture_scoped_decision,
-    publish_scoped,
+    publish_scoped as publish_scoped,
     scoped_binding,
     scoped_result_is_current,
     scoped_rule_identity,
 )
-from .native_policy_snapshot_publisher_transport import _decode_ack_v3, _publish_snapshot_v3
+from .native_policy_snapshot_publisher_transport import (
+    _decode_ack_v3,
+    _publish_snapshot_v3 as _publish_snapshot_v3,
+)
 from .native_policy_snapshot_source_requirement import refresh_source_requirement
-from .native_policy_snapshot_v3_renewal import _external_source_metadata
+from .native_policy_snapshot_v3_renewal import _external_source_metadata as _external_source_metadata
 from .native_policy_snapshot_v4_transport import NativeV4Publication
 from .native_policy_snapshot_windows_key import provision_native_policy_verifier_key
 
@@ -420,175 +426,9 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         record_error(self, error)
 
     def _publish_once(self, *, renew_after_generation: int | None = None) -> None:
-        with self._condition:
-            if self._closed:
-                return
-            if renew_after_generation is None:
-                renew_after_generation = self._renewal_after_generation
-            publish_epoch = self._epoch
-            unready_at_entry = not self._acked
-        v3_capture_active = False
-        v3_transport_active = False
-        v3_postack_database_race = False
-        try:
-            # A first verified read may migrate authenticated catalog state.
-            # Recapture once only when that operation changes the epoch; an old
-            # capture never inherits the newer mutation barrier.
-            for _ in range(2):
-                with self._condition:
-                    publish_epoch = self._epoch
-                context = self._publication_context(publish_epoch=publish_epoch)
-                with self._condition:
-                    if self._closed:
-                        return
-                    if self._epoch == publish_epoch:
-                        break
-                context = None
-            else:
-                return
-            if context is None:
-                return
-            cloud_inputs = context[5]
-            v3_capture_active = isinstance(cloud_inputs, CapturedV3PublicationInputs)
-            if isinstance(cloud_inputs, NativeVerifiedPolicyInputs):
-                try:
-                    publish_scoped(self, context, publish_epoch, renew_after_generation)
-                finally:
-                    context = None
-                return
-            resident_fingerprint_before = self._current_input_fingerprint()[1]
-            try:
-                v3_transport_active = True
-                snapshot, resident_generation, cloud_inputs = _publish_snapshot_v3(
-                    publisher=self,
-                    context=context,
-                    publish_epoch=publish_epoch,
-                    renew_after_generation=renew_after_generation,
-                )
-                v3_transport_active = False
-            finally:
-                # The master is only an ephemeral input to derivation/signing;
-                # never retain it in publisher state or an exception context.
-                context = None
-            resident_fingerprint = self._current_input_fingerprint()[1]
-            resident_directory_fingerprint = self._resident_directory_fingerprint()
-            with managed_policy_cache_read_only(), ExitStack() as capture:
-                source_observer = None
-                source_version = None
-                source_fingerprint = None
-                if isinstance(cloud_inputs, CapturedV3PublicationInputs):
-                    source_observer = capture.enter_context(self.store._connect())
-                    source_version = source_observer.execute("pragma data_version").fetchone()[0]
-                    before_source = self._current_input_fingerprint()[0]
-                    current_command_extensions = self._compiled_command_extensions()
-                    if current_command_extensions != snapshot.get("command_extensions", {}):
-                        raise NativePolicySnapshotError("native_command_control_binding_changed")
-                    current_config, current_cloud_inputs = compiled_v3_compatible_policy(
-                        self,
-                        allow_signed_defaults=cloud_inputs.source_identity is not None,
-                        command_extensions=current_command_extensions,
-                    )
-                    source_fingerprint = self._current_input_fingerprint()[0]
-                    if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
-                        raise NativePolicySnapshotError("native_cloud_policy_changed_during_publish")
-                    if (
-                        current_cloud_inputs.input_digest != cloud_inputs.input_digest
-                        or _policy_fingerprint(current_config) != (snapshot["config_digest"], snapshot["mode"])
-                        or not _capture_metadata_equal(
-                            before_source, source_fingerprint, str(self.guard_home / "guard.db")
-                        )
-                        or source_observer.execute("pragma data_version").fetchone()[0] != source_version
-                    ):
-                        # Discard this ACK even when the captured policy matches
-                        # and only database observations changed. A fresh publication may retry;
-                        # these equalities never make the old attempt ready.
-                        database = str(self.store.path)
-                        v3_postack_database_race = (
-                            current_cloud_inputs.input_digest == cloud_inputs.input_digest
-                            and _policy_fingerprint(current_config) == (snapshot["config_digest"], snapshot["mode"])
-                            and _external_source_metadata(before_source, database)
-                            == _external_source_metadata(source_fingerprint, database)
-                        )
-                        raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
-                else:
-                    if self._compiled_command_extensions() != snapshot.get("command_extensions", {}):
-                        raise NativePolicySnapshotError("native_command_control_binding_changed")
-                    current_cloud_inputs = read_native_cloud_policy_inputs(self.store, now=self._wall_clock())
-                    if current_cloud_inputs.source_identity != cloud_inputs.source_identity:
-                        raise NativePolicySnapshotError("native_cloud_policy_changed_during_publish")
-                with self._condition:
-                    # A mutation may have invalidated the barrier while this
-                    # request was in flight. Do not let an older ACK make that
-                    # newer policy appear ready.
-                    if self._closed or self._epoch != publish_epoch:
-                        return
-                    # Bind the ACK to the resident observed before publication,
-                    # after publication, and at the barrier commit point.
-                    resident_fingerprint_confirmed = self._confirm_resident_fingerprint(
-                        resident_fingerprint_before,
-                        resident_fingerprint,
-                        resident_generation,
-                        resident_directory_fingerprint,
-                    )
-                    if resident_fingerprint_confirmed is None:
-                        self._acked = False
-                        raise NativePolicySnapshotError("native_policy_snapshot_resident_changed")
-                    # Resident confirmation performs filesystem reads. Source
-                    # authority must still match after that observation completes.
-                    if self._closed or self._epoch != publish_epoch:
-                        return
-                    if source_observer is not None and (
-                        self._current_input_fingerprint()[0] != source_fingerprint
-                        or source_observer.execute("pragma data_version").fetchone()[0] != source_version
-                    ):
-                        self._acked = False
-                        raise NativePolicySnapshotError("native_policy_authority_changed_during_publish")
-                    # The first client request may create the resident generation
-                    # state files. Treat those files as the state of this ACK,
-                    # otherwise the observer loop immediately mistakes its own
-                    # startup for a resident restart and withdraws the barrier
-                    # under a concurrent hook. Keep the policy-input half from
-                    # before publication so a config change observed during the
-                    # request still forces a republish on the next poll.
-                    if self._input_fingerprint is not None:
-                        self._input_fingerprint = (self._input_fingerprint[0], resident_fingerprint_confirmed)
-                    self._v4_publication = None
-                    self._v4_epoch = None
-                    self._v4_binding = None
-                    self._snapshot = snapshot
-                    self._published_v3_source_fingerprint = source_fingerprint
-                    self._published_v3_resident_generation = resident_generation
-                    self._published_v3_resident_fingerprint = resident_fingerprint_confirmed
-                    self._published_config_digest = cast(str, snapshot["config_digest"])
-                    self._published_policy_fingerprint = (
-                        cast(str, snapshot["config_digest"]),
-                        cast(str, snapshot["mode"]),
-                    )
-                    self._observed_policy_fingerprint = self._published_policy_fingerprint
-                    self._published_command_control_digest = _digest_v3(snapshot.get("command_extensions", {}))
-                    self._observed_command_control_digest = self._published_command_control_digest
-                    self._published_cloud_inputs = cloud_inputs
-                    self._observed_cloud_inputs = cloud_inputs
-                    if isinstance(cloud_inputs, CapturedV3PublicationInputs):
-                        self._observed_scoped_digest = cloud_inputs.input_digest
-                    self._acked = True
-                    self._last_error = None
-                    self._renewal_after_generation = None
-                    self._failure_count = 0
-                    self._retry_not_before_monotonic = None
-                    self._schedule_renewal_locked(snapshot)
-                    self._condition.notify_all()
-        except (OSError, RuntimeError, TypeError, ValueError, AttributeError, sqlite3.Error) as error:
-            record_publication_error(
-                self,
-                error=error,
-                publish_epoch=publish_epoch,
-                renew_after_generation=renew_after_generation,
-                v3_capture_active=v3_capture_active,
-                v3_transport_active=v3_transport_active,
-            )
-            if unready_at_entry and v3_postack_database_race:
-                self._schedule_initial_database_capture_retry(publish_epoch=publish_epoch)
+        from .native_policy_snapshot_publisher_attempt import publish_once
+
+        publish_once(self, renew_after_generation=renew_after_generation)
 
     def _schedule_initial_database_capture_retry(self, *, publish_epoch: int) -> None:
         """Allow one fresh full attempt without opening the failed barrier.

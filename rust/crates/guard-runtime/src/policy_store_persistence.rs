@@ -12,6 +12,10 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[path = "policy_store_control_persistence.rs"]
+mod control_persistence;
+pub(super) use control_persistence::persist_authority;
+
 /// Recover a crash mid-replacement; POSIX rename is already one syscall.
 pub(super) fn recover_authority_replacement(path: &Path) -> Result<(), String> {
     let parent = path
@@ -140,26 +144,6 @@ pub(super) fn read_generation_floor(
         return Err("native_policy_snapshot_floor_invalid".to_owned());
     }
     Ok(Some(floor))
-}
-
-pub(super) fn persist_authority(
-    path: &Path,
-    generation_floor: u64,
-    policy_digest: &str,
-    snapshot: Option<&AuthenticatedPolicySnapshot>,
-    verifier_key: &[u8; VERIFIER_KEY_BYTES],
-) -> Result<(), String> {
-    let floor = super::policy_store_command_floor::floor_for_binding(
-        snapshot.and_then(|value| value.command_extensions().as_ref()),
-    );
-    persist_authority_with_control_floor(
-        path,
-        generation_floor,
-        policy_digest,
-        snapshot,
-        verifier_key,
-        floor.as_ref(),
-    )
 }
 
 pub(super) fn persist_authority_with_control_floor(

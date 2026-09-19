@@ -246,6 +246,14 @@ on:
       - "tests/test_native_installation_retirement_evidence.py"
       - "tests/test_native_installation_retirement_resident.py"
       - "src/codex_plugin_scanner/guard/sqlite_tuning.py"
+      - "src/codex_plugin_scanner/guard/daemon/hook_native_activity.py"
+      - "tests/test_native_required_command_fence.py"
+      - "src/codex_plugin_scanner/guard/runtime/receipt_redaction.py"
+      - "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py"
+      - "tests/test_receipt_signed_redaction_default.py"
+      - "tests/test_receipt_redaction_local_floors.py"
+      - "tests/test_receipt_signed_redaction_commit.py"
+      - "tests/test_sqlite_deadline_control_cursor.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -337,7 +345,7 @@ jobs:
         run: uv run --no-sync pytest -q tests/test_managed_action_origin.py tests/test_managed_action_representation.py tests/test_managed_local_origin.py tests/test_native_managed_capture.py tests/test_native_managed_configuration.py tests/test_native_managed_configuration_wire.py tests/test_native_sensitive_read_managed_floors.py tests/test_native_sensitive_read_mixed_origin_vectors.py tests/test_native_sensitive_read_policy_vectors.py tests/test_native_sensitive_read_runtime_policy.py tests/test_native_sensitive_read_sources.py tests/test_extension_control_first_run_authority.py tests/test_sensitive_read_unenrolled_controls.py tests/test_extension_control_recovery_composition.py tests/test_guard_mdm_policy.py tests/test_guard_protection_posture.py tests/test_guard_approval_context.py
       - name: Verify complete source selection and hook response fences
         if: ${{ matrix.partition == 'policy' }}
-        run: uv run --no-sync pytest -q tests/test_native_policy_source_selection.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py
+        run: uv run --no-sync pytest -q tests/test_native_policy_source_selection.py tests/test_native_defaults_edge.py tests/test_native_scoped_worker_fence.py tests/test_hook_worker_native_post_tool_watch.py tests/test_native_required_command_fence.py
       - name: Verify configured selection and current native application
         if: ${{ matrix.partition == 'policy' }}
         run: uv run --no-sync pytest -q tests/test_native_managed_cache_publication.py tests/test_current_native_policy_posture.py tests/test_policy_sync_truth.py tests/test_policy_bundle_validity_and_rollout.py
@@ -357,7 +365,7 @@ jobs:
         run: uv run --no-sync pytest -q tests/test_native_policy_snapshot_control.py tests/test_native_policy_control_transport.py tests/test_native_policy_snapshot_retirement.py tests/test_native_policy_snapshot_reservation_capture.py tests/test_guard_hook_process_runner.py tests/test_codex_hook_process_cleanup.py tests/test_codex_hook_fallback_isolation.py
       - name: Verify inventory authority and authentication recovery
         if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_aibom_chunking.py tests/test_aibom_operation_authority.py tests/test_aibom_sync_admission.py tests/test_cloud_review_oauth_refresh_bindings.py tests/test_guard_aibom_cli.py tests/test_guard_aibom_content_upload.py tests/test_guard_aibom_content_upload_batches.py tests/test_guard_encrypted_secret_store_stability.py tests/test_guard_event_schema_v1.py tests/test_guard_exact_cloud_review.py tests/test_guard_exact_cloud_review_concurrency.py tests/test_guard_exact_cloud_review_oauth.py tests/test_guard_keyring_support.py tests/test_guard_oauth_cached_expiry_compatibility.py tests/test_guard_oauth_reconnect.py tests/test_guard_oauth_refresh_resilience.py tests/test_guard_receipt_redaction_cursor.py tests/test_guard_store_migrations.py tests/test_guard_supply_chain_daemon.py tests/test_oauth_connection_authority.py tests/test_oauth_refresh_connection_authority.py tests/test_inventory_request_authority.py tests/test_inventory_consumer_authority.py tests/test_guard_sync_http_error_message.py tests/test_guard_sync_retry_clock_isolation.py tests/test_inventory_oauth_completion_authority.py tests/test_guard_skill_directory_identity_downstream.py
+        run: uv run --no-sync pytest -q tests/test_aibom_chunking.py tests/test_aibom_operation_authority.py tests/test_aibom_sync_admission.py tests/test_cloud_review_oauth_refresh_bindings.py tests/test_guard_aibom_cli.py tests/test_guard_aibom_content_upload.py tests/test_guard_aibom_content_upload_batches.py tests/test_guard_encrypted_secret_store_stability.py tests/test_guard_event_schema_v1.py tests/test_guard_exact_cloud_review.py tests/test_guard_exact_cloud_review_concurrency.py tests/test_guard_exact_cloud_review_oauth.py tests/test_guard_keyring_support.py tests/test_guard_oauth_cached_expiry_compatibility.py tests/test_guard_oauth_reconnect.py tests/test_guard_oauth_refresh_resilience.py tests/test_guard_receipt_redaction_cursor.py tests/test_guard_store_migrations.py tests/test_guard_supply_chain_daemon.py tests/test_oauth_connection_authority.py tests/test_oauth_refresh_connection_authority.py tests/test_inventory_request_authority.py tests/test_inventory_consumer_authority.py tests/test_guard_sync_http_error_message.py tests/test_guard_sync_retry_clock_isolation.py tests/test_inventory_oauth_completion_authority.py tests/test_guard_skill_directory_identity_downstream.py tests/test_receipt_signed_redaction_default.py tests/test_receipt_redaction_local_floors.py tests/test_receipt_signed_redaction_commit.py
       - name: Verify current setup and independent inventory delivery
         if: ${{ matrix.partition == 'maintenance' }}
         run: uv run --no-sync pytest -q tests/test_aibom_daemon_authority.py tests/test_inventory_daemon_consumers.py tests/test_inventory_daemon_scheduling.py tests/test_native_policy_control_runtime.py
@@ -370,7 +378,7 @@ jobs:
 
       - name: Verify installation retirement and bounded Store finalization
         if: ${{ matrix.partition == 'maintenance' }}
-        run: uv run --no-sync pytest -q tests/test_sqlite_maintenance_deadline.py tests/test_native_policy_snapshot_mutation_deadline.py tests/test_native_policy_control_owned_operations.py tests/test_native_policy_publication_maintenance.py tests/test_store_maintenance_scope.py tests/test_native_policy_installation_retirement.py tests/test_native_installation_retirement_evidence.py tests/test_native_installation_retirement_resident.py
+        run: uv run --no-sync pytest -q tests/test_sqlite_maintenance_deadline.py tests/test_native_policy_snapshot_mutation_deadline.py tests/test_native_policy_control_owned_operations.py tests/test_native_policy_publication_maintenance.py tests/test_store_maintenance_scope.py tests/test_native_policy_installation_retirement.py tests/test_native_installation_retirement_evidence.py tests/test_native_installation_retirement_resident.py tests/test_sqlite_deadline_control_cursor.py
 
   source-contract:
     needs: source-groups

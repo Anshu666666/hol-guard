@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -123,6 +124,7 @@ def test_supported_truncated_write_cannot_publish_intermediate_policy(accepted, 
     )
     real_open = Path.open
     client = publisher._client_request
+    snapshots = []
     errors = []
     writer_thread = None
 
@@ -146,6 +148,7 @@ def test_supported_truncated_write_cannot_publish_intermediate_policy(accepted, 
         return handle
 
     def observed_client(**kwargs):
+        snapshots.append(json.loads(kwargs["payload"])["request"]["snapshot"])
         published.set()
         assert client is not None
         return client(**kwargs)
@@ -181,8 +184,15 @@ def test_supported_truncated_write_cannot_publish_intermediate_policy(accepted, 
             worker.join(4)
     assert not writer_thread.is_alive() and not worker.is_alive()
     assert not errors
-    # The writer's notification makes any earlier in-flight epoch obsolete.
-    assert not publisher.is_ready()
+    # A completed write may be recaptured before IPC in the same worker call.
+    # Every emitted snapshot must still contain the complete protected policy.
+    for snapshot in snapshots:
+        assert snapshot["effective_policy"]["default_action"] == "block"
+        assert snapshot["effective_policy"]["harness_actions"] == before_policy["harness_actions"]
+    if publisher.is_ready():
+        assert snapshots
+        assert publisher.current_snapshot_binding() != before
+        assert publisher.current_snapshot() == snapshots[-1]
     publisher._publish_once()
     assert publisher.is_ready(), publisher.last_error
     effective = publisher._compiled_effective_policy()

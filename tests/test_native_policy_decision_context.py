@@ -139,7 +139,7 @@ def test_unselected_native_default_does_not_invent_canonical_identity(barrier):
 
 @pytest.mark.parametrize("changed_epoch", [False, True])
 def test_actual_worker_captures_frozen_identity_under_same_barrier(barrier, tmp_path, monkeypatch, changed_epoch):
-    from types import SimpleNamespace
+    from types import MethodType, SimpleNamespace
 
     from codex_plugin_scanner.guard.daemon.hook_worker import HookWorker
     from tests.test_native_scoped_result import _bound_result
@@ -173,6 +173,7 @@ def test_actual_worker_captures_frozen_identity_under_same_barrier(barrier, tmp_
         metrics=SimpleNamespace(record_route=lambda value: None),
         activity_writer=None,
     )
+    host._review_native_edge_with_snapshot = MethodType(HookWorker._review_native_edge_with_snapshot, host)
     result = HookWorker._review_native_edge(
         host,
         payload={"tool_name": "Bash", "tool_input": {"command": "printf safe"}},

@@ -173,6 +173,10 @@ _COMPONENTS = (
     ("guard-runtime-native-hook-receipt", Path("rust/crates/guard-runtime/src/native_hook_receipt.rs")),
     ("guard-runtime-policy-store-mutation", Path("rust/crates/guard-runtime/src/policy_store_mutation.rs")),
     ("guard-runtime-policy-store-withdrawal", Path("rust/crates/guard-runtime/src/policy_store_withdrawal.rs")),
+    (
+        "guard-runtime-policy-store-control-persistence",
+        Path("rust/crates/guard-runtime/src/policy_store_control_persistence.rs"),
+    ),
 )
 
 

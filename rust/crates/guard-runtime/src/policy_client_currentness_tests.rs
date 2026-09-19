@@ -7,6 +7,9 @@ use std::time::{Duration, Instant};
 
 const MISMATCH: &str = "native_policy_snapshot_context_mismatch";
 
+#[path = "policy_client_currentness_fixture.rs"]
+mod completed_mutation_fixture;
+
 fn envelope(root: &Path, snapshot: &Value, event: &str) -> Vec<u8> {
     canonical_json_bytes(&serde_json::json!({
         "schema": GUARD_HOOK_ENVELOPE_V2_SCHEMA, "request_id": "client-currentness",
@@ -91,51 +94,12 @@ fn unchanged_real_pre_and_post_results_retain_exact_bytes_for_v3_and_v4() {
 
 #[test]
 fn real_evaluation_then_completed_publication_or_withdrawal_refuses_old_response() {
-    for version in [3, 4] {
-        for event in ["PreToolUse", "PostToolUse"] {
-            for withdraw in [false, true] {
-                let root = test_root(&format!("client-changed-{version}-{event}-{withdraw}"));
-                let (store, key, snapshot) = installed(&root, version);
-                let payload = envelope(&root, &snapshot, event);
-                let mut evaluated = false;
-                let result = request(&root, &payload, deadline(), |_| {
-                    let response = evaluate_resident_bytes(&payload, Some(&store)).unwrap();
-                    evaluated = true;
-                    let independent = PolicySnapshotStore::new_with_resident_generation(
-                        &root,
-                        &"a".repeat(64),
-                        47,
-                    )
-                    .unwrap();
-                    if withdraw {
-                        independent
-                            .withdraw(&super::withdrawal_tests::request(&independent, 10, &key))
-                            .unwrap();
-                    } else {
-                        independent
-                            .push(&serde_json::json!({"schema":POLICY_SNAPSHOT_PUSH_SCHEMA,
-                            "snapshot":signed_snapshot(10, &key, &root)}))
-                            .unwrap();
-                    }
-                    // The unmodified transport boundary would return these actual result bytes.
-                    assert_eq!(
-                        serde_json::from_slice::<Value>(&response).unwrap()["receipt"]
-                            ["policy_generation"],
-                        1
-                    );
-                    Ok(response)
-                });
-                assert!(evaluated);
-                // Real durable mutation may consume the unchanged 750 ms budget.
-                // Either refusal is safe; an old authoritative result never is.
-                assert!(matches!(
-                    result.unwrap_err().as_str(),
-                    MISMATCH | "native_client_deadline_exceeded"
-                ));
-                fs::remove_dir_all(root).unwrap();
-            }
-        }
-    }
+    completed_mutation_fixture::assert_completed_mutation_refuses_response(false);
+}
+
+#[test]
+fn prepared_mutation_requires_exact_context_mismatch_after_real_evaluation() {
+    completed_mutation_fixture::assert_completed_mutation_refuses_response(true);
 }
 
 #[test]
@@ -481,16 +445,17 @@ fn unchanged_authority_expiring_during_response_return_is_refused() {
         let root = test_root(&format!("client-expiring-{version}"));
         let (store, key, mut snapshot) = installed(&root, version);
         snapshot["generation"] = 2.into();
-        snapshot["expires_at_ms"] = (now_ms().unwrap() + 200).into();
         let schema = if version == 4 {
             let mut value: guard_policy_snapshot::PolicySnapshotV4 =
                 serde_json::from_value(snapshot).unwrap();
+            value.expires_at_ms = now_ms().unwrap() + 500;
             value.policy_digest = guard_policy_snapshot::policy_digest_v4(&value).unwrap();
             value.integrity.mac = guard_policy_snapshot::integrity_mac_v4(&value, &key).unwrap();
             snapshot = serde_json::to_value(value).unwrap();
             guard_policy_snapshot::POLICY_SNAPSHOT_V4_PUSH_SCHEMA
         } else {
             let mut value: PolicySnapshotV3 = serde_json::from_value(snapshot).unwrap();
+            value.expires_at_ms = now_ms().unwrap() + 500;
             value.policy_digest = policy_digest(&value).unwrap();
             value.integrity.mac = integrity_mac(&value, &key).unwrap();
             snapshot = serde_json::to_value(value).unwrap();

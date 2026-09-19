@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -81,6 +81,7 @@ def test_required_source_failures_never_record_or_allow(tmp_path: Path, failure:
         metrics=SimpleNamespace(record_route=lambda _route: None),
         activity_writer=None,
     )
+    host._review_native_edge_with_snapshot = MethodType(HookWorker._review_native_edge_with_snapshot, host)
     try:
         response = HookWorker._review_native_edge(
             host,
@@ -181,6 +182,7 @@ def test_supported_signed_defaults_still_publish_but_mutation_fences_returned_re
             metrics=SimpleNamespace(record_route=lambda _route: None),
             activity_writer=None,
         )
+        host._review_native_edge_with_snapshot = MethodType(HookWorker._review_native_edge_with_snapshot, host)
         result = HookWorker._review_native_edge(
             host,
             payload=raw_payload(),
@@ -227,6 +229,7 @@ def test_source_arriving_during_ipc_invalidates_source_free_allow(tmp_path: Path
             metrics=SimpleNamespace(record_route=lambda _route: None),
             activity_writer=None,
         )
+        host._review_native_edge_with_snapshot = MethodType(HookWorker._review_native_edge_with_snapshot, host)
         result = HookWorker._review_native_edge(
             host,
             payload=raw_payload(),

@@ -62,14 +62,19 @@ def _valid_retained_binding(record: dict[str, object]) -> bool:
     epoch, binding = record.get("epoch"), record.get("binding")
     if type(epoch) is not int or epoch < 0 or not isinstance(binding, dict):
         return False
-    if set(binding) != {
+    fields = {
         "generation",
         "policy_digest",
         "source_input_digest",
         "runtime_identity",
         "resident_generation",
         "mode",
-    }:
+    }
+    if "command_extensions_bound" in binding:
+        if binding["command_extensions_bound"] is not True:
+            return False
+        fields.add("command_extensions_bound")
+    if set(binding) != fields:
         return False
     for field in ("generation", "resident_generation"):
         value = binding[field]

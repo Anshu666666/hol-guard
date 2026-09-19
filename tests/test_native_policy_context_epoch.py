@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -34,10 +35,16 @@ def test_context_selection_belongs_to_its_captured_epoch(
         capture_publisher: NativePolicySnapshotPublisher,
         inputs: NativeVerifiedPolicyInputs,
         *,
+        command_extensions: Mapping[str, object],
         allow_signed_defaults: bool = False,
     ) -> CapturedV3PublicationInputs:
         nonlocal newer
-        result = original(capture_publisher, inputs, allow_signed_defaults=allow_signed_defaults)
+        result = original(
+            capture_publisher,
+            inputs,
+            allow_signed_defaults=allow_signed_defaults,
+            command_extensions=command_extensions,
+        )
         captures.append(inputs)
         assert inputs.authority.rows == ()
         assert inputs.sources == []
@@ -48,11 +55,11 @@ def test_context_selection_belongs_to_its_captured_epoch(
             )
             publisher.request_publish()
             current = publisher._publication_context()
-            current_is_scoped = current is not None and isinstance(current[-1], NativeVerifiedPolicyInputs)
+            current_is_scoped = current is not None and isinstance(current[5], NativeVerifiedPolicyInputs)
             assert current_is_scoped
             assert current is not None
-            assert isinstance(current[-1], NativeVerifiedPolicyInputs)
-            newer = current[-1]
+            assert isinstance(current[5], NativeVerifiedPolicyInputs)
+            newer = current[5]
             assert len(newer.authority.rows) == 1
             assert newer.authority.rows[0].action.value == "block"
             assert publisher.requires_scoped_authority
@@ -64,6 +71,7 @@ def test_context_selection_belongs_to_its_captured_epoch(
     monkeypatch.setattr(publisher_context, "_v3_inputs_from_capture", capture_then_handoff)
     publisher = NativePolicySnapshotPublisher(store=store, status_provider=lambda: status)
     try:
+        publisher._compiled_command_extensions()
         publisher.request_publish()
         attempt_epoch = publisher._epoch
         context = publisher._publication_context()
@@ -72,7 +80,7 @@ def test_context_selection_belongs_to_its_captured_epoch(
         assert not publisher.is_ready()
         assert publisher.current_snapshot_binding() is None
         if handoff == "current":
-            assert context is not None and isinstance(context[-1], NativeCloudPolicyInputs)
+            assert context is not None and isinstance(context[5], NativeCloudPolicyInputs)
             assert publisher._epoch == attempt_epoch
             assert not publisher.requires_scoped_authority
         elif handoff == "new-scoped":

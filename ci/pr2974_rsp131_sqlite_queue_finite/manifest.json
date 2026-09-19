@@ -1,0 +1,568 @@
+{
+  "schema": "hol-guard.rsp131-sqlite-queue-repaired-cases.v1",
+  "repository": "hashgraph-online/hol-guard",
+  "source_sha": "b2b3de2249bbd78cf90e7a7f9b127a158049a43f",
+  "source_tree": "e45f3979ddd7f424d4157f0f41d1e36cc556c9aa",
+  "source_parent": "4ca5b2f0562b3f6f1829d0e531399ffc06790c9c",
+  "source_parent_tree": "9ac7e6caac4438b5a7c61178ea182c843eca1289",
+  "tracked_files": 4560,
+  "branch": "codex/pr2974-rsp131-sqlite-queue-followup-20260919",
+  "workflow_name": "PR2974 SQLite queue repaired-case validation",
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "ruff_version": "0.15.17",
+  "basedpyright_version": "1.39.8",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "backend_versions": {
+    "build": "1.5.0",
+    "hatchling": "1.30.1",
+    "packaging": "26.0",
+    "pyproject-hooks": "1.2.0",
+    "pluggy": "1.6.0",
+    "pathspec": "1.1.1",
+    "trove-classifiers": "2026.6.1.19"
+  },
+  "source_inputs": {
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "fixed_files": {
+    "src/codex_plugin_scanner/guard/store_connection_schema.py": "1fa357edd734f75d85d1f29a3cf825cad630ca82ac0023a4d2b499f4a2b74a8a",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988",
+    "src/codex_plugin_scanner/guard/store_native_decision_receipts.py": "2969cfeb93f644a9b84612702fbf01e2708d8ea406be20fe4009f8a0abdde5da",
+    "tests/test_guard_runtime_hook_evidence_writer.py": "80e8dd763e8feab07405a31d24bc2b29bd9c3676622057873257cba8bd6bf60b",
+    "tests/test_native_decision_receipt.py": "36cffa5ccff1f7c6ff42c0e2b91f439a2a038e3010655b6f97f24d15cad3f6af",
+    "tests/test_native_slo_mixed_witness.py": "d22ef344a1cb15c300b3df46814aab7575709d80494994dc9939a8ccf266548f",
+    "tests/test_native_slo_mixed_controls.py": "cac09f39aeea07ce388749a28aa1a864f421ec75262db8b71d980e072d917f91",
+    "tests/test_native_slo_mixed_load.py": "08bead613ad7e5ad11058814dc001af5be0a3b6b159e63d98a16866cba5e3b9a",
+    "tests/test_native_receipt_persistence_gate.py": "5e74f660c521a5927c8d0088ac98410ea7e336f34ba468c51853f5b680aaa8ba",
+    "tests/test_python_capability_cleanup_gate.py": "26095357706d3150556d51c91dfb812616555955fbf06ccd9e3443c2155f41e0",
+    "tests/test_python_hook_semantic_callgraph_gate.py": "91e92ef2f6b472b169e1ea950535eb9e78c4795bf442632bfd8163e9cf0fa9b9",
+    "tests/test_native_command_activity_recording.py": "fddd6b542576f0ad6dccee1e5c9c379e81f639f71ab976bc4c37a6ba561ac05f"
+  },
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "partition_input_files": {
+    "docs/guard/contracts/python-capability-ownership.v1.json": {
+      "mode": "100644",
+      "git_blob": "05a680f5c2df33fbb93d5d87afd0433921b01836",
+      "sha256": "9ecd65fc94ea4cb1af9ee4cf99bb500088fb5a68df01a1856bb166c2966ffcd2",
+      "bytes": 9040,
+      "physical_lines": 177
+    },
+    "scripts/ci/native_receipt_persistence_gate.py": {
+      "git_blob": "06a187003ca0188625830e02350e9d792419c748",
+      "sha256": "6c113e3ece2352a655324d29dae3da249a3e32e2b3d72ce832332bd9527576d2",
+      "bytes": 13813,
+      "mode": "100644"
+    },
+    "scripts/ci/rsp131_sqlite_vfs/README.md": {
+      "mode": "100644",
+      "git_blob": "b3d456aa302a205e78f51cf25eb4abec4421cbcc",
+      "sha256": "8e28b98051aef3694c61c6a711cac978e2b275b2ed12b0f865b3abb1ae4c80dd",
+      "bytes": 7628,
+      "physical_lines": 122
+    },
+    "scripts/ci/rsp131_sqlite_vfs/control.c": {
+      "mode": "100644",
+      "git_blob": "295db495b24e06ca70e499b97dbe9ba9d88e062d",
+      "sha256": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb",
+      "bytes": 9173,
+      "physical_lines": 195
+    },
+    "scripts/ci/rsp131_sqlite_vfs/forward_fixture.c": {
+      "mode": "100644",
+      "git_blob": "30aa429ae3eca2c96923b4fe702af9e9ada9b61a",
+      "sha256": "0abbdd32afa377ff3d097a72be2b8eee49198fce74676786a98998dbc7d5ede2",
+      "bytes": 16136,
+      "physical_lines": 369
+    },
+    "scripts/ci/rsp131_sqlite_vfs/guard_vfs.h": {
+      "mode": "100644",
+      "git_blob": "74cdb69cc95493872db0fe255986af4c6d16aebf",
+      "sha256": "866d7fa20466afdbe9932121b08d971d41f13c2e09b4aedf7065488290c8b9af",
+      "bytes": 2194,
+      "physical_lines": 65
+    },
+    "scripts/ci/rsp131_sqlite_vfs/io.c": {
+      "mode": "100644",
+      "git_blob": "95338a3a6e64aabaef593b34cfa5d4d4f3afcd47",
+      "sha256": "0b70933f6e6200c129ac482c775fd41b8f41d3e29d06fc3af58cbad22acd985d",
+      "bytes": 6867,
+      "physical_lines": 182
+    },
+    "scripts/ci/rsp131_sqlite_vfs/vfs.c": {
+      "mode": "100644",
+      "git_blob": "c0afdcf7f893b96ca25ee59040ff52aefb9095da",
+      "sha256": "d11e596bb86fb6e47e0f637d31af20ce03197dd46e50446f7762a141a7d3f0c7",
+      "bytes": 6004,
+      "physical_lines": 142
+    },
+    "scripts/native_slo_mixed_server.py": {
+      "mode": "100644",
+      "git_blob": "71579f0583216f0c7eac71da0ca3f7e87fc22282",
+      "sha256": "484519e484d62d050d3b7ca235d4f30b2a2ecdac58d1859bddbeca300f339899",
+      "bytes": 14024,
+      "physical_lines": 307
+    },
+    "scripts/native_slo_mixed_witness.py": {
+      "git_blob": "9c77e2237cd09876ed941c1118a3003f6deb5537",
+      "sha256": "1d182a8b26a8284e3f107d85a4ddf442c919d3f136ecc14fe21c1146218a2dc8",
+      "bytes": 14796,
+      "mode": "100644"
+    },
+    "scripts/native_slo_sqlite_vfs.py": {
+      "mode": "100644",
+      "git_blob": "dc86097a44c74177f38a1ed698cc417fa5cf6c7b",
+      "sha256": "fbe86a9778477e699ba8006166f6a0c7e1a9590fd8b02bc7cf07d6b8a03b28fd",
+      "bytes": 16021,
+      "physical_lines": 323
+    },
+    "scripts/native_slo_sqlite_vfs_identity.py": {
+      "mode": "100644",
+      "git_blob": "ee209d7a35690d2e1e93a98b21e9627e44b47ce1",
+      "sha256": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+      "bytes": 4806,
+      "physical_lines": 114
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py": {
+      "mode": "100644",
+      "git_blob": "7870a0edbd2119feb695a941ee91abae0cdf64c5",
+      "sha256": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2",
+      "bytes": 7571,
+      "physical_lines": 185
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py": {
+      "mode": "100644",
+      "git_blob": "81a0c7558cc808db58289852722b9fd25db7a516",
+      "sha256": "83e49d02059b387d5e0b366d7a9939e209f8da0f50427fd4d713285f152585dc",
+      "bytes": 12509,
+      "physical_lines": 283
+    },
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py": {
+      "git_blob": "d8d558b61886c7149c53fec9bb94b917198b8df3",
+      "sha256": "5fc52fa6da810a4b28d07a1d54048c7292aca100583882138bd3fd1f38696fa9",
+      "bytes": 21676,
+      "mode": "100644"
+    },
+    "tests/test_guard_runtime_hook_evidence_operations.py": {
+      "git_blob": "55c541ffeb641f354ac4706e0e6519f1b0585062",
+      "sha256": "d1694e402c3ccd613c6c34aeee6ff3372e4d0993a53c12ed43109e50cdcedc85",
+      "bytes": 9149,
+      "mode": "100644"
+    },
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py": {
+      "git_blob": "9f3897e029d98ed6ff5c1bfc79ea60d46fc8e1bf",
+      "sha256": "7d0d72623ffda2b3cf4edbe51814b9c9718e6eeace3cba8f5291565f783c2be7",
+      "bytes": 15367,
+      "mode": "100644"
+    },
+    "tests/test_native_receipt_submission_delegate_gate.py": {
+      "git_blob": "e10ccd119fb6b9992d45870780c3f2bf13a74baa",
+      "sha256": "8f1c9d9116567c38bb2ef5dfa302add0953b4001983c13ff633fb4f3c67370b5",
+      "bytes": 5089,
+      "mode": "100644"
+    },
+    "tests/test_native_slo_sqlite_vfs.py": {
+      "git_blob": "f36482d59217d69db18b9786a862896ef5f5d314",
+      "sha256": "1dcbd37554658ea2d0e11e3b83a67be969633750b9c98fca17ec95dee992f8f8",
+      "bytes": 20414,
+      "mode": "100644"
+    },
+    "tests/test_python_capability_cleanup_gate.py": {
+      "mode": "100644",
+      "git_blob": "4922f1b86ec58e0ad17e1251a881e5b9df58aea8",
+      "sha256": "26095357706d3150556d51c91dfb812616555955fbf06ccd9e3443c2155f41e0",
+      "bytes": 12247,
+      "physical_lines": 329
+    }
+  },
+  "format_paths": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "tests/test_guard_runtime_hook_evidence_operations.py",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+    "tests/test_native_receipt_submission_delegate_gate.py",
+    "tests/test_native_slo_sqlite_vfs.py",
+    "tests/test_python_capability_cleanup_gate.py"
+  ],
+  "source_gates": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/ci/python_capability_cleanup_gate.py",
+    "scripts/ci/python_hook_semantic_callgraph_gate.py"
+  ],
+  "production_type_paths": [
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py"
+  ],
+  "diagnostic_type_paths": [
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py"
+  ],
+  "production_python_version": "3.10",
+  "diagnostic_python_version": "3.12",
+  "cohorts": [
+    {
+      "name": "writer-queue",
+      "expected_cases": 12,
+      "timeout_seconds": 300,
+      "modules": [
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+        "tests/test_guard_runtime_hook_evidence_operations.py"
+      ],
+      "selectors": [
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_disabled_observation_never_dispatches_diagnostics",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_queue_ages_separate_native_and_command_without_payloads",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_attach_backlog_has_unknown_age_and_detach_stops_observation",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_overflow_does_not_change_writer_admission_or_fifo",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_backward_clock_is_not_a_negative_latency_sample",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_constructor_observes_journal_recovery_from_current_enqueue",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_releases_record_references_on_dequeue_and_detach",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_callback_failure_cannot_escape_dequeue_or_retain_records",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[1]",
+        "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[2]",
+        "tests/test_guard_runtime_hook_evidence_operations.py::test_command_persistence_reads_rebound_facade_provider",
+        "tests/test_guard_runtime_hook_evidence_operations.py::test_correlation_helpers_read_current_facade_bindings"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_disabled_observation_never_dispatches_diagnostics",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_queue_ages_separate_native_and_command_without_payloads",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_attach_backlog_has_unknown_age_and_detach_stops_observation",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_overflow_does_not_change_writer_admission_or_fifo",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_backward_clock_is_not_a_negative_latency_sample",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_constructor_observes_journal_recovery_from_current_enqueue",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_releases_record_references_on_dequeue_and_detach",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_callback_failure_cannot_escape_dequeue_or_retain_records",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[1]",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[2]",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_command_persistence_reads_rebound_facade_provider",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_runtime_hook_evidence_operations.py::test_correlation_helpers_read_current_facade_bindings",
+          "expected_cases": 1
+        }
+      ]
+    },
+    {
+      "name": "sqlite-vfs",
+      "expected_cases": 5,
+      "timeout_seconds": 300,
+      "modules": [
+        "tests/test_native_slo_sqlite_vfs.py"
+      ],
+      "selectors": [
+        "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[wal]",
+        "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[delete]",
+        "tests/test_native_slo_sqlite_vfs.py::test_vfs_name_collision_refuses_without_changing_active_registry",
+        "tests/test_native_slo_sqlite_vfs.py::test_store_factory_scope_does_not_intercept_unrelated_connections_and_restores_nested_readback",
+        "tests/test_native_slo_sqlite_vfs.py::test_pinned_descriptor_detects_a_real_file_change_at_scope_exit"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[wal]",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[delete]",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_vfs_name_collision_refuses_without_changing_active_registry",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_store_factory_scope_does_not_intercept_unrelated_connections_and_restores_nested_readback",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_native_slo_sqlite_vfs.py::test_pinned_descriptor_detects_a_real_file_change_at_scope_exit",
+          "expected_cases": 1
+        }
+      ]
+    }
+  ],
+  "expected_total_cases": 17,
+  "expected_skips": 0,
+  "compile_controls": [],
+  "harness_paths": [
+    ".github/workflows/pr2974-rsp131-sqlite-queue-followup.yml",
+    "ci/pr2974_rsp131_sqlite_queue_finite/common.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/driver.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/environment.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/environment_setup.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/finite_summary.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/manifest.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/original-case-contract.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/original-source-before.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/pytest_capture.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/repair-proposal.json",
+    "ci/pr2974_rsp131_sqlite_queue_finite/report_projection.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/source_contract.py",
+    "ci/pr2974_rsp131_sqlite_queue_finite/source_entry.py"
+  ],
+  "environment_scope": "Fresh frozen editable install from exact candidate;69 versions and METADATA/owned launcher hashes, not every installed byte; no installed-artifact qualification",
+  "scope": "Fresh 17 affected finite cases and source/lint/type checks. The original 157 passes and 12 failures remain an unchanged failed run; 152 unaffected prior passing cases receive a current-source compatibility bridge, not new execution. No installed, kernel, physical-I/O, or original-PRD qualification.",
+  "qualification_complete": false,
+  "queue_autouse_fixtures": [
+    "_spawn_package_shim_sqlite_lock_holder",
+    "_default_unit_tests_to_python_rollback",
+    "_explicit_python_differential_oracle",
+    "_reset_guard_sync_resolver_override",
+    "_isolate_lifecycle_authority_home",
+    "_isolate_trust_attestation_env",
+    "_isolate_daemon_background_refresh_workers",
+    "_policy_integrity_keyring_for_selected_tests"
+  ],
+  "expected_prior_failed_cases": 12,
+  "expected_changed_prior_passes": 5,
+  "expected_retained_prior_passes": 152,
+  "selected_original_cases": [
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_disabled_observation_never_dispatches_diagnostics",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_queue_ages_separate_native_and_command_without_payloads",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_attach_backlog_has_unknown_age_and_detach_stops_observation",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_overflow_does_not_change_writer_admission_or_fifo",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_backward_clock_is_not_a_negative_latency_sample",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_constructor_observes_journal_recovery_from_current_enqueue",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_observer_releases_record_references_on_dequeue_and_detach",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_callback_failure_cannot_escape_dequeue_or_retain_records",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[1]",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_queue_observation.py::test_clock_detachment_never_retains_or_invents_a_queue_age[2]",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_operations.py::test_command_persistence_reads_rebound_facade_provider",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "writer-queue",
+      "nodeid": "tests/test_guard_runtime_hook_evidence_operations.py::test_correlation_helpers_read_current_facade_bindings",
+      "original_outcome": "passed"
+    },
+    {
+      "cohort": "sqlite-vfs",
+      "nodeid": "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[wal]",
+      "original_outcome": "passed"
+    },
+    {
+      "cohort": "sqlite-vfs",
+      "nodeid": "tests/test_native_slo_sqlite_vfs.py::test_actual_python_engine_commit_rollback_and_busy_equal_without_observer[delete]",
+      "original_outcome": "passed"
+    },
+    {
+      "cohort": "sqlite-vfs",
+      "nodeid": "tests/test_native_slo_sqlite_vfs.py::test_vfs_name_collision_refuses_without_changing_active_registry",
+      "original_outcome": "failed"
+    },
+    {
+      "cohort": "sqlite-vfs",
+      "nodeid": "tests/test_native_slo_sqlite_vfs.py::test_store_factory_scope_does_not_intercept_unrelated_connections_and_restores_nested_readback",
+      "original_outcome": "passed"
+    },
+    {
+      "cohort": "sqlite-vfs",
+      "nodeid": "tests/test_native_slo_sqlite_vfs.py::test_pinned_descriptor_detects_a_real_file_change_at_scope_exit",
+      "original_outcome": "passed"
+    }
+  ],
+  "repair_proposal": {
+    "path": "repair-proposal.json",
+    "bytes": 717764,
+    "sha256": "43c3bb6335fff2365b62cbe8b7d031b6376da4e91b7f7fc089f6ba1e1945a12c",
+    "git_blob": "1b36e580b68bf00f471023d3ec8253d683ded67a"
+  },
+  "original_case_contract": {
+    "path": "original-case-contract.json",
+    "bytes": 2554922,
+    "sha256": "19f70f04749270e2d983eabec130a64ac8b09f5a5e516389477315531db719ce",
+    "git_blob": "2348c5436f99cb20a4a7a130230cfe301f0740cf"
+  },
+  "original_source_before": {
+    "path": "original-source-before.json",
+    "bytes": 1173161,
+    "sha256": "7928f0081e8bc561e1066c5f73e7ecdbca9bcf74766e90a5dc6b5e211876dea1",
+    "git_blob": "ef17d3bea5635d993ade4aa403a0861b1cc71edb"
+  },
+  "original_run": {
+    "source_sha": "4ca5b2f0562b3f6f1829d0e531399ffc06790c9c",
+    "source_tree": "9ac7e6caac4438b5a7c61178ea182c843eca1289",
+    "harness_sha": "bcf022ff16f2bf1c754e7c9fd315643be0d113df",
+    "run": 35451397989,
+    "attempt": 1,
+    "job": 105919067104,
+    "counts": {
+      "passed": 157,
+      "failed": 12,
+      "skipped": 0,
+      "incomplete": 0
+    },
+    "terminal_receipt": {
+      "git_blob": "3428ee07af1b5a6fdb2550f9ea6d3d088005967e",
+      "sha256": "bda1d8a7bdd31eac80e50451b33fd7eeed12fb89aaf4e63465bce6752dd507d8",
+      "bytes": 495465
+    },
+    "case_contract": {
+      "path": "original-case-contract.json",
+      "bytes": 2554922,
+      "sha256": "19f70f04749270e2d983eabec130a64ac8b09f5a5e516389477315531db719ce",
+      "git_blob": "2348c5436f99cb20a4a7a130230cfe301f0740cf"
+    }
+  },
+  "original_callback_controls": {
+    "cases": 10,
+    "all_passed": true,
+    "source_sha": "4ca5b2f0562b3f6f1829d0e531399ffc06790c9c",
+    "run": 35451397989,
+    "replayed_in_followup": false
+  }
+}

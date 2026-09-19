@@ -133,7 +133,7 @@ in favor of direct output scanning:
 
 ### Integration Tests
 
-- `test_guard_surface_server.py::TestGuardDaemonFastHookPath` — exercises
+- `test_guard_surface_server_14_fast_hook_path.py::TestGuardDaemonFastHookPath` — exercises
   the full daemon HTTP path for Pi with `HOL_GUARD_HOOK_FAST_PATH=1`
 - `tests/docker/test_all_harness_hooks.py` — Docker-based integration
   test that starts a real daemon and sends HTTP hook payloads for each

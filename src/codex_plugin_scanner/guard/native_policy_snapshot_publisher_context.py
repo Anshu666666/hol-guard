@@ -264,13 +264,13 @@ def publication_context(
         # selected for this publication. Authenticate the complete input next.
         try:
             config, inputs = compiled_scoped_policy(self, command_extensions=command_extensions)
-        except PolicyCompilationError:
+        except (NativePolicySnapshotError, PolicyCompilationError):
             if v3_only:
-                # A V3-only runtime must surface signed Cloud representability
-                # failures through the finite Cloud-policy contract. Keep the
-                # secondary read off the successful source-free path; it is
-                # only a diagnostic preflight after canonical compilation has
-                # already refused the complete capture.
+                # A V3-only runtime must surface signed Cloud authority and
+                # representability failures through the finite Cloud-policy
+                # contract. Keep the secondary read off the successful
+                # source-free path; it is only a diagnostic preflight after
+                # the complete scoped capture has already refused.
                 _ = read_native_cloud_policy_inputs(
                     self.store,
                     now=self._wall_clock(),

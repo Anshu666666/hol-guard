@@ -48,6 +48,16 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify bounded readiness observations
+        run: |
+          uv run --no-sync ruff check \
+            src/codex_plugin_scanner/guard/native_policy_test_support.py \
+            tests/test_native_policy_test_support_diagnostics.py
+          uv run --no-sync ruff format --check \
+            src/codex_plugin_scanner/guard/native_policy_test_support.py \
+            tests/test_native_policy_test_support_diagnostics.py
+          uv run --no-sync pytest -q \
+            tests/test_native_policy_test_support_diagnostics.py --tb=short
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy

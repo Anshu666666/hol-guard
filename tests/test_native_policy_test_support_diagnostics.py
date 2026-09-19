@@ -6,10 +6,12 @@ import io
 import json
 import threading
 from pathlib import Path
-from types import SimpleNamespace
+from types import CodeType, SimpleNamespace
 
 import pytest
 
+import codex_plugin_scanner.guard.native_policy_snapshot_publisher_context as context
+import codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs as inputs
 import codex_plugin_scanner.guard.native_policy_snapshot_publisher_transport as transport
 import codex_plugin_scanner.guard.native_policy_test_support as support
 
@@ -281,3 +283,50 @@ def test_diagnostic_output_failure_cannot_mask_original_failure(monkeypatch: pyt
     ):
         pytest.fail("An unready publisher must not yield authority.")
     assert publisher.calls == ["start", ("wait", 103.0), "close"]
+
+
+@pytest.mark.parametrize(
+    ("module", "code", "phase"),
+    [
+        (
+            context.__name__,
+            context.compiled_v3_compatible_policy.__code__,
+            "v3_input_capture",
+        ),
+        (
+            inputs.__name__,
+            inputs.NativePolicySnapshotPublisherInputs._resident_directory_fingerprint.__code__,
+            "resident_directory",
+        ),
+        (
+            inputs.__name__,
+            inputs.NativePolicySnapshotPublisherInputs._confirm_resident_fingerprint.__code__,
+            "resident_confirmation",
+        ),
+    ],
+)
+def test_publication_subphases_remain_finite_and_stop_at_the_known_frame(
+    monkeypatch: pytest.MonkeyPatch, module: str, code: CodeType, phase: str
+) -> None:
+    worker = threading.current_thread()
+    worker_ident = worker.ident
+    assert worker_ident is not None
+    frame = FrameProbe(module, code, ForbiddenOtherThreadFrame())
+    captures: list[str] = []
+
+    def current_frames() -> dict[int, object]:
+        captures.append("capture")
+        return {worker_ident: frame}
+
+    output = io.StringIO()
+    monkeypatch.setattr(support, "sys", SimpleNamespace(_current_frames=current_frames, stderr=output))
+    support._emit_publication_failure_observation(SimpleNamespace(_thread=worker))
+    result = read_observation(output)
+    assert result["phase"] == phase
+    assert result["worker_frame_present"] is True
+    assert result["frame_limit_reached"] is False
+    assert result["observation_failed"] is False
+    assert captures == ["capture"]
+    assert frame.parent_reads == 0
+    assert "private-" not in output.getvalue()
+    assert str(worker_ident) not in output.getvalue()

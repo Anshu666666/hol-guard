@@ -31,6 +31,18 @@ _PHASES = {
     ): "configuration",
     ("codex_plugin_scanner.guard.native_policy_snapshot_publisher_transport", "_publish_snapshot_v3"): "v3_transport",
     ("codex_plugin_scanner.guard.native_policy_snapshot_publisher_scoped", "publish_scoped"): "scoped_publication",
+    (
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_context",
+        "compiled_v3_compatible_policy",
+    ): "v3_input_capture",
+    (
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs",
+        "_resident_directory_fingerprint",
+    ): "resident_directory",
+    (
+        "codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs",
+        "_confirm_resident_fingerprint",
+    ): "resident_confirmation",
 }
 
 

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 from . import workspace_preference_authority as preference_authority
 from .config import load_guard_config
 from .oauth_connection_authority import OAuthConnectionSnapshot
+from .runtime.receipt_redaction import compose_receipt_redaction_level
 from .synced_policy import validated_synced_policy_bundle
 from .workspace_preference_authority import WorkspacePreferences, WorkspacePreferenceState
 
@@ -294,14 +295,8 @@ def _local_permission(store: GuardStore) -> tuple[bool, str]:
     # External configuration and signed policy are sampled outside the final SQL transaction.
     try:
         config = load_guard_config(store.guard_home)
-        _level(config.receipt_redaction_level)
-        levels = [config.receipt_redaction_level]
         signed = validated_synced_policy_bundle(store)
-        if signed is not None and "receiptRedactionLevel" in signed:
-            level = signed["receiptRedactionLevel"]
-            _level(level)
-            levels.append(cast(str, level))
-        return config.sync is True, max(levels, key=_LEVELS.__getitem__)
+        return config.sync is True, compose_receipt_redaction_level(config, signed, None)
     except (OSError, RuntimeError, ValueError, TypeError):
         return False, "full"
 

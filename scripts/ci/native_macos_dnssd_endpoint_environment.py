@@ -54,7 +54,10 @@ def observe() -> dict[str, object]:
         if distribution.version != version or distribution.files is None:
             raise ValueError("fixed validation distribution")
         for item in distribution.files:
-            path = Path(distribution.locate_file(item)).resolve(strict=True)
+            located = distribution.locate_file(item)
+            if not isinstance(located, Path):
+                raise ValueError("distribution path type")
+            path = Path(located).resolve(strict=True)
             if not path.is_file():
                 raise ValueError("distribution file unavailable")
             files[str(path)] = identity(path)

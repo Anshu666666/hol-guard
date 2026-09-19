@@ -9,6 +9,34 @@ from collections.abc import Mapping, Sequence
 from .workspace_preference_authority import reject_private_preference_key
 
 
+_NATIVE_POLICY_AUTHORITY_SYNC_KEYS = frozenset(
+    {
+        "policy_bundle",
+        "policy_bundle_keyring",
+        "supply_chain_bundle_keyring",
+        "policy_bundle_acceptance_checkpoint",
+        "policy_bundle_materialization",
+        "managed_policy_bundle_keyring_provenance",
+        "guard_review_memory_registry",
+        "guard_review_memory_policy_version",
+        "guard_review_verification_keyring",
+        "policy_integrity",
+        "managed_controls_active",
+        "managed_controls_revision",
+    }
+)
+
+
+def _notify_native_policy_source_mutation(store: object, state_key: str, *, oauth_changed: bool = False) -> None:
+    if state_key not in _NATIVE_POLICY_AUTHORITY_SYNC_KEYS and not oauth_changed:
+        return
+    # Keep the store dependency direction acyclic. Publisher registration lives
+    # behind this lazy facade and a write with no active publisher is a no-op.
+    from .native_policy_snapshot import notify_native_policy_mutation
+
+    notify_native_policy_mutation(store.guard_home, require_source_authority=True)
+
+
 class StoreSyncPayloadMutationsMixin:
     def reserve_sync_sequence(
         self,
@@ -127,6 +155,7 @@ class StoreSyncPayloadMutationsMixin:
                 """,
                 (state_key, _cloud_events_api.json.dumps(payload), now),
             )
+        _notify_native_policy_source_mutation(self, state_key, oauth_changed=oauth_changed)
         if oauth_changed:
             from .review_event_wake import review_event_wake_signal
 
@@ -173,4 +202,11 @@ class StoreSyncPayloadMutationsMixin:
                 f"delete from sync_state where state_key in ({placeholders})",
                 tuple(state_keys),
             )
-            return int(cursor.rowcount if cursor.rowcount is not None else 0)
+            deleted = int(cursor.rowcount if cursor.rowcount is not None else 0)
+        for key in state_keys:
+            _notify_native_policy_source_mutation(
+                self,
+                key,
+                oauth_changed=key in credential_keys,
+            )
+        return deleted

@@ -290,13 +290,18 @@ def capture_for_reservation(
                         not _capture_metadata_equal(before, after, str(publisher.guard_home / "guard.db"))
                         or connection.execute("pragma data_version").fetchone()[0] != version
                     ):
-                        # A startup bookkeeping commit can race the first capture.
-                        # Retry once while the barrier is unacknowledged.
-                        # Ready renewals retain their existing failure handling.
+                        # A bookkeeping commit can race source-free V3 startup.
+                        # Retry its unacknowledged barrier once with a fresh capture.
+                        # Other publications retain their existing failure handling.
                         with publisher._condition:
                             retry_capture = (
                                 capture_attempt == 0
+                                and isinstance(old_inputs, CapturedV3PublicationInputs)
                                 and isinstance(inputs, CapturedV3PublicationInputs)
+                                and old_inputs.source_identity is None
+                                and inputs.source_identity is None
+                                and old_inputs.defaults is None
+                                and inputs.defaults is None
                                 and not publisher._closed
                                 and publisher._epoch == publish_epoch
                                 and not publisher._acked

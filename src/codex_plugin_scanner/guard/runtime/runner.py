@@ -10,7 +10,7 @@ import json
 import os
 import re
 import socket
-import sqlite3
+import sqlite3 as sqlite3
 import subprocess
 import threading
 import time
@@ -99,11 +99,12 @@ from ..policy_document_io import PolicyCompilationError
 from ..policy_lane_capabilities import source_runtime_lane_observation
 from ..policy_memory_source import attach_disclosed_policy_source
 from ..policy_sync_outcomes import policy_sync_outcomes
+from ..receipt_sync_authority import ReceiptBackfillMarker, ReceiptProgressCandidate
 from ..receipt_sync_authority import (
-    ReceiptBackfillMarker,
-    ReceiptProgressCandidate,
-    ReceiptSyncCapture,
-    _capture_receipt_sync_state_with_credential_lock,
+    ReceiptSyncCapture as ReceiptSyncCapture,
+)
+from ..receipt_sync_authority import (
+    _capture_receipt_sync_state_with_credential_lock as _capture_receipt_sync_state_with_credential_lock,
 )
 from ..redaction import redact_sensitive_text
 from ..review_contracts import validated_review_verification_keys_from_sync
@@ -176,11 +177,19 @@ from .receipt_sync_cursor import (
     _receipt_sync_cursor_rowid_from_payload,
     _receipt_sync_rows_for_upload,
 )
+from .receipt_sync_steps import (
+    _prepare_optional_receipt_selection,
+    _receipt_progress_timestamp,
+    _receipt_sync_rows_with_command_detail_backfill_from_marker,
+    _resolve_optional_upload_auth_context,
+)
 from .receipt_upload import (
     OptionalUploadPausedError,
     ReceiptUploadPreparation,
-    optional_upload_settings,
     require_optional_telemetry,
+)
+from .receipt_upload import (
+    optional_upload_settings as optional_upload_settings,
 )
 from .session_observation import cloud_local_identity_source_payload as _cloud_local_identity_source_payload
 from .signals import RiskSignalV2
@@ -192,6 +201,7 @@ from .supply_chain_bundle import (
 )
 from .supply_chain_bundle_models import SupplyChainVerificationKey
 from .supply_chain_support import ecosystem_support_matrix
+from .sync_request_attempts import _urlopen_with_sync_retries
 from .sync_response import InvalidSyncResponseError, read_sync_object
 from .telemetry_upload_progress import persist_pain_signal_cursor, record_guard_events_sync_failure
 
@@ -2571,47 +2581,6 @@ def simulate_policy_bundle_receipts(
             "stale": stale,
         },
     }
-
-
-def _resolve_optional_upload_auth_context(
-    store: GuardStore,
-    provided_context: dict[str, object] | None,
-) -> tuple[dict[str, object], OAuthConnectionSnapshot | None]:
-    observed: list[OAuthConnectionSnapshot] = []
-    try:
-        resolved = _resolve_guard_sync_auth_context(store, connection_observer=observed.append)
-    except GuardSyncNotConfiguredError:
-        if provided_context is None:
-            raise
-        return provided_context, None
-    return resolved, observed[-1] if observed else None
-
-
-def _prepare_optional_receipt_selection(
-    store: GuardStore,
-    connection: OAuthConnectionSnapshot | None,
-    *,
-    synced_at: str,
-) -> tuple[ReceiptSyncCapture | None, bool, str]:
-    if connection is None:
-        return None, False, "full"
-    try:
-        with store.hold_oauth_credential_lock():
-            captured = _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
-            allowed, level = optional_upload_settings(store, captured.preference_state)
-            if not allowed:
-                return captured, False, level
-            _ensure_relaxed_receipt_redaction_resync(store, level=level, synced_at=synced_at)
-            _persist_cloud_receipt_redaction_level(store, level=level, synced_at=synced_at)
-            _ensure_cloud_review_privacy_projection(store, level=level, synced_at=synced_at)
-            if level == "full":
-                store.delete_sync_payload(_RELAXED_RECEIPT_REDACTION_RESYNC_MARKER)
-                store.delete_sync_payload(_RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER)
-            captured = _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
-            current_allowed, current_level = optional_upload_settings(store, captured.preference_state)
-            return captured, current_allowed and current_level == level, level
-    except (OSError, RuntimeError, ValueError, TypeError, sqlite3.Error):
-        return None, False, "full"
 
 
 def sync_receipts(
@@ -5165,115 +5134,6 @@ def _is_timeout_error(error: OSError) -> bool:
     return reason_text == "timed out" or reason_text.endswith(" timed out") or "timed out" in reason_text
 
 
-def _urlopen_with_sync_retries(
-    *,
-    request: urllib.request.Request,
-    timeout_seconds: int,
-    retry_timeout_seconds: int,
-    parse_json_response: bool,
-    nonce_fast_path: bool,
-    validate_request: Callable[[], None] | None = None,
-    prepare_request: Callable[[urllib.request.Request], None] | None = None,
-) -> object:
-    """Drive one Guard Cloud request through the shared sync retry policies.
-
-    Retry order is deliberate: an optional DPoP nonce fast path for raw
-    requests, then bounded 429 rate-limit waits with a freshly signed
-    request, then bounded gateway retries, then the generic DPoP nonce
-    challenge retry, and finally one timeout retry at the longer budget.
-    """
-
-    def error_payload(error: urllib.error.HTTPError) -> object:
-        payload = _http_error_payload(error)
-        if validate_request is not None:
-            validate_request()
-        return payload
-
-    current_request = request
-    current_timeout_seconds = timeout_seconds
-    retried_timeout = False
-    nonce_retry_count = 0
-    rate_limit_retry_count = 0
-    gateway_retry_count = 0
-    while True:
-        if prepare_request is not None:
-            prepare_request(current_request)
-        # The validator is outside the transport try/except: a failed local
-        # authority check must never be mistaken for a retryable network error.
-        if validate_request is not None:
-            validate_request()
-        try:
-            with managed_urlopen(current_request, timeout=current_timeout_seconds) as response:
-                payload = json.loads(response.read().decode("utf-8")) if parse_json_response else None
-        except urllib.error.HTTPError as error:
-            if validate_request is not None:
-                validate_request()
-            if nonce_fast_path and error.code == 401:
-                parsed_error = error_payload(error)
-                dpop_nonce = _dpop_nonce_from_http_error(error, parsed_error)
-                if dpop_nonce is not None and nonce_retry_count < 3:
-                    nonce_retry_count += 1
-                    retry_request = _guard_sync_request_with_nonce(current_request, dpop_nonce)
-                    if retry_request is not None:
-                        current_request = retry_request
-                        current_timeout_seconds = timeout_seconds
-                        retried_timeout = False
-                        continue
-            if error.code == 429 and rate_limit_retry_count < 2:
-                retry_after = _parse_retry_after_header(error)
-                time.sleep(min(retry_after, 120))
-                rate_limit_retry_count += 1
-                refreshed_request = _refresh_guard_sync_request(current_request)
-                if refreshed_request is None:
-                    raise
-                current_request = refreshed_request
-                current_timeout_seconds = timeout_seconds
-                retried_timeout = False
-                continue
-            if _retryable_gateway_http_error(error) and gateway_retry_count < _SYNC_RETRYABLE_GATEWAY_MAX_ATTEMPTS:
-                retry_after = _retry_after_sleep_seconds(error, retry_timeout_seconds)
-                time.sleep(retry_after)
-                gateway_retry_count += 1
-                current_request = _request_for_gateway_retry(current_request)
-                current_timeout_seconds = timeout_seconds
-                retried_timeout = False
-                continue
-            parsed_error = error_payload(error) if error.code in {400, 401} else None
-            dpop_nonce = _dpop_nonce_from_http_error(error, parsed_error)
-            retry_request = (
-                None
-                if dpop_nonce is None or nonce_retry_count >= 3
-                else _guard_sync_request_with_nonce(current_request, dpop_nonce)
-            )
-            if retry_request is not None:
-                nonce_retry_count += 1
-                current_request = retry_request
-                current_timeout_seconds = timeout_seconds
-                retried_timeout = False
-                continue
-            raise
-        except OSError as error:
-            if validate_request is not None:
-                validate_request()
-            if not retried_timeout and _is_timeout_error(error):
-                refreshed_request = _refresh_guard_sync_request(current_request)
-                if refreshed_request is None:
-                    raise
-                current_request = refreshed_request
-                current_timeout_seconds = retry_timeout_seconds
-                retried_timeout = True
-                continue
-            raise
-        except Exception:
-            # Parsing and response cleanup also complete a transport attempt.
-            if validate_request is not None:
-                validate_request()
-            raise
-        if validate_request is not None:
-            validate_request()
-        return payload
-
-
 def _urlopen_json_with_timeout_retry(
     *,
     request: urllib.request.Request,
@@ -5770,53 +5630,6 @@ def _receipt_sync_rows_with_command_detail_backfill(
         synced_at=synced_at,
         marker=store.get_sync_payload(_RECEIPT_COMMAND_DETAIL_BACKFILL_MARKER),
     )
-
-
-def _receipt_sync_rows_with_command_detail_backfill_from_marker(
-    store: GuardStore,
-    *,
-    receipts: list[dict[str, object]],
-    redaction_level: str,
-    synced_at: str,
-    marker: object,
-) -> tuple[list[dict[str, object]], dict[str, object] | None]:
-    if _receipt_redaction_level_rank(redaction_level) <= _receipt_redaction_level_rank("full"):
-        return receipts, None
-    before_rowid = _receipt_command_detail_backfill_before_rowid(marker, redaction_level=redaction_level)
-    if isinstance(marker, dict) and marker.get("level") == redaction_level and marker.get("complete") is True:
-        return receipts, None
-    backfill_rows = store.list_receipts_for_command_detail_backfill(
-        limit=_RECEIPT_COMMAND_DETAIL_BACKFILL_LIMIT,
-        days=_RECEIPT_COMMAND_DETAIL_BACKFILL_DAYS,
-        before_rowid=before_rowid,
-    )
-    seen_receipt_ids = {item.get("receipt_id") for item in receipts if isinstance(item.get("receipt_id"), str)}
-    merged = list(receipts)
-    added = 0
-    for row in backfill_rows:
-        receipt_id = row.get("receipt_id")
-        if not isinstance(receipt_id, str) or receipt_id in seen_receipt_ids:
-            continue
-        merged.append({**row, _RECEIPT_COMMAND_DETAIL_BACKFILL_FLAG: True})
-        seen_receipt_ids.add(receipt_id)
-        added += 1
-    backfill_rowids: list[int] = []
-    for row in backfill_rows:
-        receipt_rowid = row.get("receipt_rowid")
-        if isinstance(receipt_rowid, int):
-            backfill_rowids.append(receipt_rowid)
-    next_before_rowid = min(backfill_rowids) if backfill_rowids else before_rowid
-    complete = len(backfill_rows) < _RECEIPT_COMMAND_DETAIL_BACKFILL_LIMIT
-    return merged, {
-        "level": redaction_level,
-        "updated_at": synced_at,
-        "days": _RECEIPT_COMMAND_DETAIL_BACKFILL_DAYS,
-        "limit": _RECEIPT_COMMAND_DETAIL_BACKFILL_LIMIT,
-        "receipts": added,
-        "queried": len(backfill_rows),
-        "before_rowid": next_before_rowid,
-        "complete": complete,
-    }
 
 
 def _receipt_command_detail_backfill_before_rowid(marker: object, *, redaction_level: str) -> int | None:
@@ -6510,16 +6323,6 @@ def _record_synced_alert_events(
             },
             now,
         )
-
-
-def _receipt_progress_timestamp(payload: dict[str, object]) -> str:
-    parsed = _parse_iso_timestamp(_sync_timestamp(payload))
-    if parsed is not None:
-        try:
-            return parsed.astimezone(timezone.utc).isoformat()
-        except (OverflowError, ValueError):
-            pass
-    return datetime.now(timezone.utc).isoformat()
 
 
 def _sync_timestamp(payload: dict[str, object]) -> str:

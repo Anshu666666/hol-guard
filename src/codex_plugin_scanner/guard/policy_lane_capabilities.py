@@ -84,6 +84,8 @@ def published_runtime_lane_profiles() -> dict[str, object]:
                     "read": "one existing nonsensitive workspace file",
                     "mcp": "bounded tool name and empty arguments",
                 },
+                "scoped_request_events": ["PreToolUse"],
+                "scoped_payload_kinds": ["inline"],
                 "content_context_authority": "unsupported",
                 "managed_authority": "unsupported",
                 "native_approval_context": "unsupported",

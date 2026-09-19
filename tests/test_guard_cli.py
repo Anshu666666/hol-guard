@@ -47,10 +47,12 @@ from codex_plugin_scanner.guard.policy_bundle_parser import (
     payload_hash_for_policy_bundle,
 )
 from codex_plugin_scanner.guard.runtime import runner as guard_runner_module
+from codex_plugin_scanner.guard.runtime.sync_auth_handoff import selected_sync_auth_handoff
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.cloud_exception_bundle_fixtures import build_cloud_exception_policy_bundle
 from tests.policy_bundle_signing_helpers import policy_bundle_test_keyring, sign_policy_bundle
 from tests.support.network import stub_authenticated_urlopen
+from tests.support.oauth_connect import bound_connected_result, unavailable_first_sync
 from tests.update_context_test_support import build_legacy_update_context, stage_legacy_wheel
 
 
@@ -7334,19 +7336,22 @@ url = http://127.0.0.1:8787/guard-canary
             connect_url: str,
             wait_timeout_seconds: int = 180,
         ) -> dict[str, object]:
-            del store
             assert wait_timeout_seconds == 180
             assert connect_url == "https://hol.org/guard/connect"
-            return {
-                "status": "connected",
-                "connect_mode": "browser_oauth",
-                "browser_opened": True,
-                "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-123",
-                "grant_id": "grant-123",
-                "machine_id": "machine-123",
-                "workspace_id": "workspace-123",
-            }
+            return bound_connected_result(
+                store,
+                {
+                    "status": "connected",
+                    "connect_mode": "browser_oauth",
+                    "browser_opened": True,
+                    "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-123",
+                    "grant_id": "grant-123",
+                    "machine_id": "machine-123",
+                    "workspace_id": "workspace-123",
+                },
+            )
 
+        monkeypatch.setattr(guard_commands_module, "sync_local_guard_cloud_proof", unavailable_first_sync)
         monkeypatch.setattr(guard_commands_module, "_run_guard_browser_connect_flow", fake_browser_flow)
         run_rc = main(
             [
@@ -7391,7 +7396,8 @@ url = http://127.0.0.1:8787/guard-canary
         assert connect_output["workspace_id"] == "workspace-123"
         assert "guardPairSecret" not in json.dumps(connect_output)
         assert "guardPairRequest" not in json.dumps(connect_output)
-        assert store.get_cloud_sync_profile() is None
+        assert store.get_cloud_sync_profile() is not None
+        assert store.get_oauth_local_credential_health()["configured"] is True
 
     def test_guard_connect_runs_first_sync_and_surfaces_cloud_urls(self, tmp_path, capsys, monkeypatch):
         home_dir = tmp_path / "home"
@@ -7408,31 +7414,17 @@ url = http://127.0.0.1:8787/guard-canary
             wait_timeout_seconds: int = 180,
         ) -> dict[str, object]:
             del connect_url, wait_timeout_seconds
-            store.set_oauth_local_credentials(
-                issuer="https://hol.org",
-                client_id="guard-local-daemon",
-                refresh_token="refresh-secret-value",
-                dpop_private_key_pem="-----BEGIN PRIVATE KEY-----\nsecret-key-material\n-----END PRIVATE KEY-----\n",
-                dpop_public_jwk={
-                    "kty": "EC",
-                    "crv": "P-256",
-                    "x": "x-value",
-                    "y": "y-value",
-                    "alg": "ES256",
-                    "use": "sig",
+            return bound_connected_result(
+                store,
+                {
+                    "status": "connected",
+                    "connect_mode": "browser_oauth",
+                    "browser_opened": True,
+                    "workspace_id": "workspace-123",
+                    "grant_id": "grant-123",
+                    "machine_id": "machine-123",
                 },
-                dpop_public_jwk_thumbprint="thumbprint-123",
-                grant_id="grant-123",
-                machine_id="machine-123",
-                workspace_id="workspace-123",
-                now="2026-06-04T18:30:00+00:00",
             )
-            return {
-                "status": "connected",
-                "connect_mode": "browser_oauth",
-                "browser_opened": True,
-                "workspace_id": "workspace-123",
-            }
 
         def fake_sync_local_guard_cloud_proof(
             store: GuardStore,
@@ -7442,8 +7434,11 @@ url = http://127.0.0.1:8787/guard-canary
             home_dir: Path | None = None,
             workspace_dir: Path | None = None,
         ) -> dict[str, object]:
-            del store
-            assert auth_context is None
+            assert isinstance(auth_context, dict)
+            assert auth_context["access_token"] == "synthetic-connect-access"
+            handed_connection = selected_sync_auth_handoff(store, auth_context)
+            assert handed_connection is not None
+            assert handed_connection == store.capture_oauth_connection()
             del home_dir, workspace_dir
             sync_calls.append("first-proof")
             return {
@@ -7476,8 +7471,11 @@ url = http://127.0.0.1:8787/guard-canary
             auth_context: dict[str, object] | None = None,
             workspace_dir: Path | None = None,
         ) -> dict[str, object]:
-            del store
-            assert auth_context is None
+            assert isinstance(auth_context, dict)
+            assert auth_context["access_token"] == "synthetic-connect-access"
+            handed_connection = selected_sync_auth_handoff(store, auth_context)
+            assert handed_connection is not None
+            assert handed_connection == store.capture_oauth_connection()
             assert workspace_dir is None
             bundle_calls.append("bundle")
             return {
@@ -7512,6 +7510,10 @@ url = http://127.0.0.1:8787/guard-canary
         assert sync_calls == ["first-proof"]
         assert bundle_calls == ["bundle"]
         assert output["status"] == "connected"
+        assert "_guard_connect_" not in json.dumps(output)
+        assert "synthetic-connect-access" not in json.dumps(output)
+        assert "synthetic-connect-refresh" not in json.dumps(output)
+        assert "PRIVATE KEY" not in json.dumps(output)
         assert output["milestone"] == "first_sync_succeeded"
         assert output["sync_attempted"] is True
         assert output["sync_succeeded"] is True
@@ -7549,20 +7551,24 @@ url = http://127.0.0.1:8787/guard-canary
             ci_safe: bool = False,
             machine_label: str | None = None,
         ) -> dict[str, object]:
-            del store, announce_copy, ci_safe, machine_label
+            del announce_copy, ci_safe, machine_label
             assert connect_url == "https://hol.org/guard/connect"
             assert wait_timeout_seconds == 180
             assert open_browser is guard_connect_support_module.open_browser_url
             browser_opened = bool(open_browser("https://hol.org/guard/oauth/device"))
-            return {
-                "status": "connected",
-                "connect_mode": "device_code",
-                "browser_opened": browser_opened,
-                "user_code": "WXYZ-1234",
-                "verification_uri": "https://hol.org/guard/oauth/device",
-                "verification_uri_complete": "https://hol.org/guard/oauth/device?user_code=WXYZ-1234",
-            }
+            return bound_connected_result(
+                store,
+                {
+                    "status": "connected",
+                    "connect_mode": "device_code",
+                    "browser_opened": browser_opened,
+                    "user_code": "WXYZ-1234",
+                    "verification_uri": "https://hol.org/guard/oauth/device",
+                    "verification_uri_complete": "https://hol.org/guard/oauth/device?user_code=WXYZ-1234",
+                },
+            )
 
+        monkeypatch.setattr(guard_commands_module, "sync_local_guard_cloud_proof", unavailable_first_sync)
         monkeypatch.setattr(guard_commands_module, "_run_guard_browser_connect_flow", unexpected_browser_flow)
         monkeypatch.setattr(guard_commands_module, "_run_guard_device_connect_flow", fake_device_flow)
         monkeypatch.setattr(
@@ -7942,19 +7948,22 @@ url = http://127.0.0.1:8787/guard-canary
             connect_url: str,
             wait_timeout_seconds: int = 180,
         ) -> dict[str, object]:
-            del store
             assert wait_timeout_seconds == 180
             assert connect_url == "https://hol.org/guard/connect"
-            return {
-                "status": "connected",
-                "connect_mode": "browser_oauth",
-                "browser_opened": True,
-                "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-456",
-                "grant_id": "grant-456",
-                "machine_id": "machine-456",
-                "workspace_id": "workspace-456",
-            }
+            return bound_connected_result(
+                store,
+                {
+                    "status": "connected",
+                    "connect_mode": "browser_oauth",
+                    "browser_opened": True,
+                    "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-456",
+                    "grant_id": "grant-456",
+                    "machine_id": "machine-456",
+                    "workspace_id": "workspace-456",
+                },
+            )
 
+        monkeypatch.setattr(guard_commands_module, "sync_local_guard_cloud_proof", unavailable_first_sync)
         monkeypatch.setattr(guard_commands_module, "_run_guard_browser_connect_flow", fake_browser_flow)
         login_rc = main(
             [
@@ -7980,7 +7989,8 @@ url = http://127.0.0.1:8787/guard-canary
         assert login_output["grant_id"] == "grant-456"
         assert login_output["machine_id"] == "machine-456"
         assert login_output["workspace_id"] == "workspace-456"
-        assert store.get_cloud_sync_profile() is None
+        assert store.get_cloud_sync_profile() is not None
+        assert store.get_oauth_local_credential_health()["configured"] is True
 
     def test_guard_login_rejects_manual_token_mode_and_redirects_to_connect(self, tmp_path, capsys):
         home_dir = tmp_path / "home"
@@ -8383,15 +8393,18 @@ url = http://127.0.0.1:8787/guard-canary
             connect_url: str,
             wait_timeout_seconds: int = 180,
         ) -> dict[str, object]:
-            del store
             assert wait_timeout_seconds == 180
-            return {
-                "status": "connected",
-                "connect_mode": "browser_oauth",
-                "browser_opened": True,
-                "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-789",
-            }
+            return bound_connected_result(
+                store,
+                {
+                    "status": "connected",
+                    "connect_mode": "browser_oauth",
+                    "browser_opened": True,
+                    "authorize_url": "https://hol.org/guard/oauth/authorize?request_id=req-789",
+                },
+            )
 
+        monkeypatch.setattr(guard_commands_module, "sync_local_guard_cloud_proof", unavailable_first_sync)
         monkeypatch.setattr(guard_commands_module, "_run_guard_browser_connect_flow", fake_browser_flow)
         connect_rc = main(
             [

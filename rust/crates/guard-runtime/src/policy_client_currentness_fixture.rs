@@ -1,6 +1,37 @@
 //! Share real mutation setup while preserving distinct client refusal contracts.
 
 use super::*;
+use crate::policy_store::AuthenticatedPolicySnapshot;
+
+fn prepare_authority_record(root: &Path, key: &[u8; 32], withdraw: bool) -> PathBuf {
+    let path = root.join("prepared-client-authority.json");
+    let snapshot = if withdraw {
+        None
+    } else {
+        Some(AuthenticatedPolicySnapshot::V3(signed_snapshot(
+            10, key, root,
+        )))
+    };
+    let digest = snapshot
+        .as_ref()
+        .map(|value| value.policy_digest().clone())
+        .unwrap_or_else(|| "d".repeat(64));
+    // Complete encoding, signing and durable file creation before measuring the
+    // response boundary. The actual private replacement still happens in send.
+    crate::policy_store::persist_authority(&path, 10, &digest, snapshot.as_ref(), key).unwrap();
+    let loaded = crate::policy_store::load_current_authority(
+        &path,
+        &"a".repeat(64),
+        &guard_rule_contract::rule_digest(),
+        &crate::policy_store::scope_digest_for_test(root),
+        key,
+    )
+    .unwrap();
+    assert_eq!(loaded.generation_floor, 10);
+    assert_eq!(loaded.snapshot.is_none(), withdraw);
+    assert!(!loaded.invalid_on_startup);
+    path
+}
 
 pub(super) fn assert_completed_mutation_refuses_response(strict_currentness: bool) {
     for version in [3, 4] {
@@ -29,21 +60,41 @@ pub(super) fn assert_completed_mutation_refuses_response(strict_currentness: boo
                     };
                     (independent, mutation)
                 };
-                // Only the strict case excludes fixture setup from the client budget.
+                let authority_path = root.join(SNAPSHOT_FILE_NAME);
+                let original_fingerprint = authority_fingerprint(&authority_path).unwrap();
+                // The ordinary case still measures the entire real writer. The
+                // strict case isolates the actual authenticated record replacement.
                 let prepared = if strict_currentness {
-                    Some(prepare())
+                    Some(prepare_authority_record(&root, &key, withdraw))
                 } else {
                     None
                 };
+                assert_eq!(
+                    authority_fingerprint(&authority_path).unwrap(),
+                    original_fingerprint
+                );
+                let private_root =
+                    crate::resident_state::private_root_for_state_base(&root).unwrap();
                 let mut evaluated = false;
                 let result = request(&root, &payload, deadline(), |_| {
                     let response = evaluate_resident_bytes(&payload, Some(&store)).unwrap();
                     evaluated = true;
-                    let (independent, mutation) = prepared.unwrap_or_else(prepare);
-                    if withdraw {
-                        independent.withdraw(&mutation).unwrap();
+                    if let Some(path) = prepared {
+                        crate::policy_store::policy_store_persistence::replace_temporary(
+                            &path,
+                            &authority_path,
+                            "authority",
+                            &private_root,
+                        )
+                        .unwrap();
                     } else {
-                        independent.push(&mutation).unwrap();
+                        let (independent, mutation) = prepare();
+                        if withdraw {
+                            independent.withdraw(&mutation).unwrap();
+                        } else {
+                            independent.push(&mutation).unwrap();
+                        }
+                        drop(independent);
                     }
                     // The unmodified transport boundary would return these actual result bytes.
                     assert_eq!(
@@ -51,10 +102,13 @@ pub(super) fn assert_completed_mutation_refuses_response(strict_currentness: boo
                             ["policy_generation"],
                         1
                     );
-                    drop(independent);
                     Ok(response)
                 });
                 assert!(evaluated);
+                assert_ne!(
+                    authority_fingerprint(&authority_path).unwrap(),
+                    original_fingerprint
+                );
                 if strict_currentness {
                     assert_eq!(result.unwrap_err(), MISMATCH);
                 } else {

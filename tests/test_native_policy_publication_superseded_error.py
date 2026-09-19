@@ -23,7 +23,9 @@ def test_publication_error_belongs_to_its_attempt_epoch(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     master = b"e" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     clock = _DeterministicClock()
     error = NativePolicySnapshotError("native_policy_snapshot_ack_invalid") if failure == "publication" else OSError()
     attempts: list[tuple[int, bool]] = []

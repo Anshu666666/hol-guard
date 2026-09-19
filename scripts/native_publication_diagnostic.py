@@ -55,10 +55,11 @@ _READINESS_METHODS = (
     ("current_snapshot_binding", "binding"),
     ("current_snapshot", "fallback"),
     ("_publication_context", "context"),
+    ("_status_provider", "runtime"),
     ("_compiled_command_extensions", "command"),
     ("_compiled_effective_policy", "config"),
 )
-_PREPARATION_PHASES = ("context", "command", "config")
+_PREPARATION_PHASES = ("context", "runtime", "command", "config")
 _MAX_ELAPSED_MS = 999_999
 
 
@@ -68,6 +69,13 @@ def _clock_sample() -> float | None:
         if type(value) in {int, float} and isfinite(value):
             return float(value)
     return None
+
+
+def _default_runtime_status() -> object:
+    # Resolve the same current provider as the production context on each call.
+    from codex_plugin_scanner.guard.native_runtime import native_runtime_status
+
+    return native_runtime_status()
 
 
 def _retry_facts(publisher: Any) -> str:
@@ -204,6 +212,8 @@ class _ReadinessObservation:
         try:
             for name, label in _READINESS_METHODS:
                 original = getattr(publisher, name, None)
+                if name == "_status_provider" and name in namespace and original is None:
+                    original = _default_runtime_status
                 if not callable(original):
                     continue
                 previous = namespace.get(name, missing)

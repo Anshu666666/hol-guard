@@ -1009,7 +1009,7 @@ def test_signed_receipt_response_privacy_requires_current_authority(
     change: str,
 ) -> None:
     from codex_plugin_scanner.guard import workspace_preference_authority as preference_authority
-    from codex_plugin_scanner.guard.receipt_sync_authority import capture_receipt_sync_state
+    from codex_plugin_scanner.guard.receipt_sync_authority import ReceiptSyncCapture, capture_receipt_sync_state
     from tests.support.optional_uploads import (
         OPTIONAL_UPLOAD_WORKSPACE,
         confirm_legacy_optional_uploads,
@@ -1085,9 +1085,12 @@ def test_signed_receipt_response_privacy_requires_current_authority(
             return self.status
 
     requests_seen: list[dict[str, object]] = []
+    peer = GuardStore(store.guard_home, allow_system_keyring=False)
 
     def transport(request: urllib.request.Request, *, timeout: float) -> Response:
         assert timeout == runner._SYNC_HTTP_TIMEOUT_SECONDS
+        with peer.hold_oauth_credential_lock(timeout_seconds=0):
+            pass
         assert request.data is not None
         assert isinstance(request.data, bytes)
         body = json.loads(request.data)
@@ -1105,9 +1108,13 @@ def test_signed_receipt_response_privacy_requires_current_authority(
     monkeypatch.setattr(runner, "sync_guard_events", lambda _store, auth_context=None: {"accepted": 0, "statuses": []})
     actual_activate = runner.activate_with_reason
     activations: list[object] = []
+    activation_call: tuple[tuple[object, ...], dict[str, object]] | None = None
 
-    def activate(*args: Any, **kwargs: Any) -> Any:
-        result = actual_activate(*args, **kwargs)
+    def activate(
+        activation: Callable[..., dict[str, object] | None], *args: object, **kwargs: object
+    ) -> tuple[dict[str, object] | None, str]:
+        nonlocal activation_call
+        result = actual_activate(activation, *args, **kwargs)
         if result[0] is not None:
             committed = store.get_sync_payload("policy_bundle")
             assert isinstance(committed, dict)
@@ -1115,16 +1122,50 @@ def test_signed_receipt_response_privacy_requires_current_authority(
             assert committed["receiptRedactionLevel"] == "none"
             assert committed["bundleHash"] == computed_policy_bundle_hash(committed)
             activations.append(result[0])
+            # Activation is one local response commit. A competing credential
+            # writer cannot enter here, including through a test interposer.
+            with (
+                pytest.raises(TimeoutError, match="credential lock"),
+                peer.hold_oauth_credential_lock(timeout_seconds=0),
+            ):
+                pass
+            activation_call = ((activation, *args), kwargs)
+        return result
+
+    actual_select = runner._prepare_optional_receipt_selection
+    privacy_boundaries: list[str] = []
+
+    def select(
+        selected_store: GuardStore,
+        connection: OAuthConnectionSnapshot | None,
+        *,
+        synced_at: str,
+        required_capture: ReceiptSyncCapture | None = None,
+        required_policy_bundle: dict[str, object] | None = None,
+    ) -> tuple[ReceiptSyncCapture | None, bool, str]:
+        if required_capture is not None:
+            # Race after the real signed activation has committed and released
+            # its response lease, before privacy rechecks that exact response.
+            # Probe the actual same-home advisory lock, then release it before
+            # invoking supported writers which acquire their own authority.
+            assert activation_call is not None
+            assert not privacy_boundaries
+            assert required_policy_bundle == bundle
+            with peer.hold_oauth_credential_lock(timeout_seconds=0):
+                pass
+            privacy_boundaries.append(change)
+            args, kwargs = activation_call
             if change == "source":
                 seed_optional_upload_source(
-                    store,
+                    peer,
                     monkeypatch,
                     workspace_id="00000000-0000-4000-8000-000000000043",
                 )
+                peer.set_sync_payload("sync_summary", {"source": "newer-connection"}, prepared_at)
             elif change == "preference":
                 accept_current_preferences()
             elif change == "cursor":
-                store.set_sync_payload("receipt_sync_cursor", {"last_rowid": 73, "synced_at": prepared_at}, prepared_at)
+                peer.set_sync_payload("receipt_sync_cursor", {"last_rowid": 73, "synced_at": prepared_at}, prepared_at)
             elif change == "policy":
                 captured = capture_receipt_sync_state(store)
                 later_at = "2026-07-01T00:00:02Z"
@@ -1152,16 +1193,29 @@ def test_signed_receipt_response_privacy_requires_current_authority(
                     "policy_bundle_checkpoint": runner._policy_bundle_acceptance_checkpoint(later_bundle),
                 }
                 assert len(args) == 3
-                later_result = actual_activate(args[0], args[1], later_at, **later_kwargs)
+                later_result = actual_activate(peer.apply_policy_bundle_authority, args[1], later_at, **later_kwargs)
                 assert later_result[0] is not None
                 assert runner.validated_synced_policy_bundle(store) == later_bundle
                 assert capture_receipt_sync_state(store) == captured
-        return result
+        return actual_select(
+            selected_store,
+            connection,
+            synced_at=synced_at,
+            required_capture=required_capture,
+            required_policy_bundle=required_policy_bundle,
+        )
 
     monkeypatch.setattr(runner, "activate_with_reason", activate)
-    runner.sync_receipts(store, auth_context=auth_context)
+    monkeypatch.setattr(runner, "_prepare_optional_receipt_selection", select)
+    if change == "source":
+        with pytest.raises(RuntimeError, match="connection changed"):
+            _ = runner.sync_receipts(store, auth_context=auth_context)
+        assert peer.get_sync_payload("sync_summary") == {"source": "newer-connection"}
+    else:
+        _ = runner.sync_receipts(store, auth_context=auth_context)
 
     assert len(requests_seen) == 1
+    assert privacy_boundaries == ([] if change in {"unacknowledged", "rejected"} else [change])
     if change == "rejected":
         assert not activations
         assert store.get_sync_payload("policy_bundle") is None

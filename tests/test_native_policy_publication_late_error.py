@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -61,7 +62,10 @@ def test_late_failure_preserves_newer_or_closed_publication(
             status.available = False
         return status
 
-    def material_getter(*, create: bool) -> tuple[bytes | None, str | None]:
+    def material_getter(
+        *, create: bool, connection: sqlite3.Connection | None = None
+    ) -> tuple[bytes | None, str | None]:
+        del connection
         if create and armed and failure == "context-key":
             complete_handoff()
             return None, None

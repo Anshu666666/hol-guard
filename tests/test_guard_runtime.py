@@ -25349,6 +25349,8 @@ def test_sync_runtime_session_retries_with_dpop_nonce_challenge(tmp_path, monkey
         issuer="https://hol.org",
         client_id="guard-local-daemon",
         refresh_token="refresh-token-1",
+        access_token="oauth-access-token-1",
+        access_token_expires_at="2099-01-01T00:00:00+00:00",
         dpop_private_key_pem=dpop_key_material.private_key_pem,
         dpop_public_jwk=dpop_key_material.public_jwk,
         dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
@@ -25474,7 +25476,8 @@ def test_sync_runtime_session_limits_dpop_nonce_retries(tmp_path, monkeypatch):
     assert len(captured_requests) == 4
 
 
-def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path, monkeypatch):
+@pytest.mark.parametrize("replacement", ["unchanged", "replacement", "disconnect"])
+def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path, monkeypatch, replacement):
     store = GuardStore(tmp_path / "guard-home")
     dpop_key_material = generate_dpop_key_pair()
     store.set_oauth_local_credentials(
@@ -25489,6 +25492,8 @@ def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path
         workspace_id="workspace-1",
         now="2026-06-01T00:00:00+00:00",
     )
+    peer = GuardStore(store.guard_home)
+    marker = {"source": "newer-connection"}
     captured_requests: list[urllib.request.Request] = []
     challenge_nonce = "nonce-refresh"
 
@@ -25530,6 +25535,26 @@ def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path
                 }
             )
         assert request.full_url == "https://hol.org/api/guard/runtime/sessions/sync"
+        assert _request_header(request, "Authorization") == "Bearer oauth-access-token-1"
+        refreshed = peer.get_oauth_local_credentials()
+        assert refreshed is not None and refreshed["refresh_token"] == "refresh-token-2"
+        if replacement == "replacement":
+            peer.set_oauth_local_credentials(
+                issuer="https://hol.org",
+                client_id="guard-local-daemon",
+                refresh_token="newer-refresh-token",
+                dpop_private_key_pem=dpop_key_material.private_key_pem,
+                dpop_public_jwk=dpop_key_material.public_jwk,
+                dpop_public_jwk_thumbprint=dpop_key_material.public_jwk_thumbprint,
+                grant_id="newer-grant",
+                machine_id="machine-1",
+                workspace_id="newer-workspace",
+                now="2026-06-01T00:00:05+00:00",
+            )
+        elif replacement == "disconnect":
+            peer.clear_oauth_local_credentials()
+        if replacement != "unchanged":
+            peer.set_sync_payload("runtime_session_summary", marker, "2026-06-01T00:00:05+00:00")
         return _Response(
             {
                 "generatedAt": "2026-06-01T00:00:10+00:00",
@@ -25539,23 +25564,34 @@ def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path
 
     stub_authenticated_urlopen(monkeypatch, _fake_urlopen)
 
-    guard_runner_module.sync_runtime_session(
-        store,
-        session={
-            "session_id": "session-oauth",
-            "harness": "codex",
-            "surface": "cli",
-            "status": "active",
-            "client_name": "Codex",
-            "client_title": "Codex CLI",
-            "client_version": "1.0.0",
-            "workspace": "prod",
-            "capabilities": ["chat"],
-            "started_at": "2026-06-01T00:00:00+00:00",
-            "updated_at": "2026-06-01T00:00:00+00:00",
-            "operations": [],
-        },
-    )
+    def sync():
+        guard_runner_module.sync_runtime_session(
+            store,
+            session={
+                "session_id": "session-oauth",
+                "harness": "codex",
+                "surface": "cli",
+                "status": "active",
+                "client_name": "Codex",
+                "client_title": "Codex CLI",
+                "client_version": "1.0.0",
+                "workspace": "prod",
+                "capabilities": ["chat"],
+                "started_at": "2026-06-01T00:00:00+00:00",
+                "updated_at": "2026-06-01T00:00:00+00:00",
+                "operations": [],
+            },
+        )
+
+    if replacement == "unchanged":
+        sync()
+        assert peer.get_sync_payload("runtime_session_summary")["runtime_session_id"] == "session-oauth"
+        assert len(peer.list_guard_events_v1(uploaded=False, limit=10)) == 1
+    else:
+        with pytest.raises(RuntimeError, match="connection changed"):
+            sync()
+        assert peer.get_sync_payload("runtime_session_summary") == marker
+        assert peer.list_guard_events_v1(uploaded=False, limit=10) == []
 
     refresh_requests = [
         request for request in captured_requests if request.full_url == "https://hol.org/api/guard/oauth/token"
@@ -25567,5 +25603,11 @@ def test_sync_runtime_session_refresh_retries_with_dpop_nonce_challenge(tmp_path
     assert second_claims["nonce"] == challenge_nonce
 
     credentials = store.get_oauth_local_credentials()
-    assert credentials is not None
-    assert credentials["refresh_token"] == "refresh-token-2"
+    if replacement == "disconnect":
+        assert credentials is None
+    else:
+        assert credentials is not None
+        assert credentials["refresh_token"] == (
+            "refresh-token-2" if replacement == "unchanged" else "newer-refresh-token"
+        )
+    assert len(captured_requests) == 3

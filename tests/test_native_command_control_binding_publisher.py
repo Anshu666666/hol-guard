@@ -39,7 +39,9 @@ def _allow_terminal_proof(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _publisher(store: GuardStore, monkeypatch: pytest.MonkeyPatch, client=None) -> NativePolicySnapshotPublisher:
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (b"k" * 32, "test"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (b"k" * 32, "test")
+    )
     return NativePolicySnapshotPublisher(
         store=store,
         status_provider=_status,

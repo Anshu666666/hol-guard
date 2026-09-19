@@ -133,6 +133,7 @@ def test_actual_slo_barrier_preserves_predicates_budget_and_lifecycle(monkeypatc
 
     publisher = SimpleNamespace(_client_request=None, last_error="private-error-canary")
     events = []
+    publisher.register_workspace = lambda workspace: events.append(("register", workspace))
 
     def prepare(workspace, *, deadline):
         events.append((workspace, deadline))
@@ -159,7 +160,7 @@ def test_actual_slo_barrier_preserves_predicates_budget_and_lifecycle(monkeypatc
             session.start()
         assert "private-error-canary" not in str(caught.value)
         assert ("native readiness exceeded budget" if ready else "native policy was not ready") in str(caught.value)
-    assert events == ["start", (session.workspace, 100.4)]
+    assert events == ["start", ("register", session.workspace), (session.workspace, 100.4)]
     assert publisher._client_request is None
 
 
@@ -412,7 +413,14 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
 
     publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path))
     original_record = publisher._record_error
+    original_register = publisher.register_workspace
     events = []
+
+    def register(workspace: Path) -> bool:
+        events.append(("register", workspace))
+        return original_register(workspace)
+
+    monkeypatch.setattr(publisher, "register_workspace", register)
 
     def prepare(workspace: Path, *, deadline: float) -> dict[str, object] | None:
         events.append((workspace, deadline))
@@ -454,16 +462,18 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
             with pytest.raises(RuntimeError) as caught:
                 session.start()
         assert str(caught.value) == original_error
-        assert events == ["start", (session.workspace, 100.4)]
+        assert events == ["start", ("register", session.workspace), (session.workspace, 100.4)]
         assert session.readiness_ms == pytest.approx(401.0)
         assert publisher._client_request is None and publisher._record_error == original_record
-        assert publisher.last_error is None and publisher._epoch == 1 and not publisher._started
+        # Real registration advances authority before prepare records its
+        # refusal and requests the following publication.
+        assert publisher.last_error is None and publisher._epoch == 2 and not publisher._started
         output = capsys.readouterr().err
         code = "other" if publisher_error.startswith("private-") else publisher_error
         expected = (
             "native_publication_observation: " + observation + "; "
             "lifecycle_attached=True; initial_publisher=missing; "
-            f"last_publisher={code}; error_epoch=0; epoch=1; error_events=1; "
+            f"last_publisher={code}; error_epoch=1; epoch=2; error_events=1; "
             "worker_started=no; worker_closed=no; worker_acked=no; worker_snapshot=missing; "
             "worker_thread=missing; worker_event=yes; worker_phase=unknown; worker_stack=unavailable; "
             "reservation_metadata_attached=False; reservation_metadata_checks=0; "
@@ -671,6 +681,7 @@ def test_actual_slo_refusal_emits_one_finite_observation_without_extra_calls(mon
     publisher = SimpleNamespace(
         _client_request=None, _epoch=1, _acked=False, _snapshot=None, _closed=False, last_error=None
     )
+    publisher.register_workspace = lambda workspace: events.append(("register", workspace))
 
     def publish():
         events.append("publish")
@@ -720,7 +731,15 @@ def test_actual_slo_refusal_emits_one_finite_observation_without_extra_calls(mon
         "native_installed_slo_failed: native policy was not ready; "
         "window=after_daemon_construction; attached=True; publisher=missing; transport=missing; started=0; completed=0"
     )
-    assert events == ["start", ("prepare", session.workspace, 100.4), "publish", ("wait", 100.4), "binding", "fallback"]
+    assert events == [
+        "start",
+        ("register", session.workspace),
+        ("prepare", session.workspace, 100.4),
+        "publish",
+        ("wait", 100.4),
+        "binding",
+        "fallback",
+    ]
     assert session.readiness_ms == pytest.approx(401.0)
     output = capsys.readouterr().err
     assert output.count("native_publication_observation: ") == 1

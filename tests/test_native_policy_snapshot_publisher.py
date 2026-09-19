@@ -34,7 +34,9 @@ def test_publisher_startup_ack_and_mutation_push(tmp_path: Path, monkeypatch: py
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"k" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     calls: list[bytes] = []
 
     def client_request(**kwargs: object) -> bytes:
@@ -81,7 +83,9 @@ def test_publisher_does_not_ack_snapshot_after_concurrent_mutation(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"r" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     entered = threading.Event()
     release = threading.Event()
 
@@ -118,7 +122,9 @@ def test_publisher_repushes_after_resident_generation_change(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"s" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     calls: list[bytes] = []
 
     def client_request(**kwargs: object) -> bytes:
@@ -156,7 +162,9 @@ def test_publisher_does_not_republish_for_generation_created_by_own_ack(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"v" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     calls: list[bytes] = []
 
     def client_request(**kwargs: object) -> bytes:
@@ -190,7 +198,9 @@ def test_publisher_rejects_ack_after_resident_restart_before_barrier(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"y" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
     runtime = guard_home / "native-runtime"
     runtime.mkdir(mode=0o700)
     resident_directory = runtime / "resident-v3-test"
@@ -231,7 +241,9 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"t" * 32
-    monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
+    monkeypatch.setattr(
+        store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
+    )
 
     def client_request(**kwargs: object) -> bytes:
         payload = kwargs["payload"]

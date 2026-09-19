@@ -130,9 +130,13 @@ class PassiveStatusStore(GuardStore):
             profile["workspace_id"] = workspace.strip()
         return profile
 
-    def _policy_integrity_secret_material(self, *, create: bool) -> tuple[bytes | None, str | None]:
+    def _policy_integrity_secret_material(
+        self, *, create: bool, connection: sqlite3.Connection | None = None
+    ) -> tuple[bytes | None, str | None]:
         if create:
             raise RuntimeError("Passive status cannot create an integrity key")
+        if connection is not None and connection is not self._connection:
+            raise RuntimeError("Passive status requires its existing snapshot connection")
         cached = self._cached_policy_integrity_secret_material
         if (
             cached is not None

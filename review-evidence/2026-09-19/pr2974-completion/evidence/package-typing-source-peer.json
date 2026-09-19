@@ -1,0 +1,209 @@
+{
+  "schema": "pr2974-package-route-three-type-repair-independent-peer.v1",
+  "reviewer": "acceptance_audit",
+  "source": {
+    "commit": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+    "tree": "9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29",
+    "sole_parent": "06a193267c949d9409089465d432bc2b68fc112b",
+    "path": "scripts/qualify_guard_package_unversioned_route.py",
+    "before": {
+      "sha256": "b7babf5eb18885ac22741e319afbaf6f9220d3276631b2db34509038475fba11",
+      "bytes": 11868
+    },
+    "after": {
+      "sha256": "4c470013b1f731e66aab897d1768ade749720eacba77c847670ab0d2269fe2cd",
+      "bytes": 11940
+    }
+  },
+  "owner_packet": {
+    "blob": "3e28ec984df09fc9a13ec653bca114754fb879c3",
+    "sha256": "1fd6d0d62b54a8c6e032809c650025fa7f61d9a8ff6350e96543c4b983c3f3a0",
+    "bytes": 35471
+  },
+  "scope": "Independent actual-file source review of the three literal edits and unchanged fixture return chain. Root/owner bind complete tree and corpus closure. No parser/import/typing/test execution by this review.",
+  "result": "clear_for_fresh_validation",
+  "actual_files": [
+    {
+      "path": "scripts/qualify_guard_package_unversioned_route.py",
+      "ref": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+      "sha256": "4c470013b1f731e66aab897d1768ade749720eacba77c847670ab0d2269fe2cd",
+      "bytes": 11940
+    },
+    {
+      "path": "scripts/qualify_guard_package_unversioned_route.py",
+      "ref": "06a193267c949d9409089465d432bc2b68fc112b",
+      "sha256": "b7babf5eb18885ac22741e319afbaf6f9220d3276631b2db34509038475fba11",
+      "bytes": 11868
+    },
+    {
+      "path": "tests/test_guard_supply_chain_evaluator.py",
+      "ref": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+      "sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a",
+      "bytes": 124547
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/runtime/package_intent_common.py",
+      "ref": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+      "sha256": "7598b3be6eef2b0f7bf27b5ab7eb91e0ecd02eefb7fdaf938f3958c4bb559058",
+      "bytes": 23883
+    },
+    {
+      "path": "Lib/typing.py",
+      "ref": "v3.12.13",
+      "repository_full_name": "python/cpython",
+      "sha256": "be92d60fb8382bb29ead21c128825d7c96d0e8c915b44f840791e49f5a8d554c",
+      "bytes": 118836
+    }
+  ],
+  "exact_inverse": {
+    "three_edits": [
+      {
+        "before_sha256": "741a760a9a0a8b35681cdfd9611776aac57634a3e0d75c389af2e08cf0b25d75",
+        "after_sha256": "fc4299f019049f67b650cb662feb5a23ed6a908bdca8178fd320e64c13a3e012",
+        "unique": true
+      },
+      {
+        "before_sha256": "6b63017503d5a6d7d7b640b3c5ea64d60f4291f6f0eb005b279347a73559d14f",
+        "after_sha256": "8179e38be886a5b34656e416e1b097b4aaa4208111a0722d7244dc8e8f91ece5",
+        "unique": true
+      },
+      {
+        "before_sha256": "2051204bab78ee20fd2a66696f5b43c5f7a122018511e3d1820f980e4b2607ad",
+        "after_sha256": "a2db474cf8121b6f1d88710dab27e2aad40014c2339835b114049fcf6d4328e2",
+        "unique": true
+      }
+    ],
+    "entire_source_equal": true,
+    "restored_sha256": "b7babf5eb18885ac22741e319afbaf6f9220d3276631b2db34509038475fba11"
+  },
+  "edits": [
+    {
+      "before": "from types import FunctionType, ModuleType\n",
+      "after": "from types import FunctionType, ModuleType\nfrom typing import cast\n"
+    },
+    {
+      "before": "    pending = list(reversed(function.body))",
+      "after": "    pending: list[ast.AST] = list(reversed(function.body))"
+    },
+    {
+      "before": "            artifact = _artifact_for_targets(\n                target,\n                lockfile_paths=(\"package-lock.json\",),\n            )",
+      "after": "            artifact = cast(\n                \"evaluator.GuardArtifact\",\n                _artifact_for_targets(target, lockfile_paths=(\"package-lock.json\",)),\n            )"
+    }
+  ],
+  "findings": [
+    {
+      "change": "pending: list[ast.AST]",
+      "evidence": "The initial body consists of stmt nodes, but ast.iter_child_nodes yields arbitrary AST subclasses. The explicit local annotation widens the worklist to the actual traversal domain while leaving its assigned expression and each traversal operation unchanged. It is a local variable annotation; the annotation is not a new runtime ast.AST evaluation.",
+      "literal_ast_equality_claim": false
+    },
+    {
+      "change": "typing.cast import and quoted GuardArtifact cast",
+      "evidence": "The exact imported standard-library cast implementation at CPython v3.12.13 returns val without inspecting typ. The quoted argument performs no evaluator.GuardArtifact attribute lookup. The unchanged fixture is called once with target and lockfile_paths=('package-lock.json',); all its original arguments and its returned object identity are preserved. This adds the explicit standard-library identity call; it is not raw AST equality."
+    },
+    {
+      "change": "actual fixture type",
+      "evidence": "The actual unchanged _artifact_for_targets helper has an imprecise object annotation, returns build_package_request_artifact, and that actual unchanged builder constructs and returns GuardArtifact. The cast documents that concrete source-bound return chain.",
+      "fixture": {
+        "source_path": "tests/test_guard_supply_chain_evaluator.py",
+        "source_blob": "08c1367dd970dd4567c1ef348bfaa58afd30a6fa",
+        "source_sha256": "724343c6f704a749a206668f02e85ba897bf154ba3abe98544b9725ec94d021a",
+        "function_source": "def _artifact_for_targets(\n    *targets: str,\n    harness: str = \"codex\",\n    package_manager: str = \"npm\",\n    intent_kind: str = \"install\",\n    manifest_paths: tuple[str, ...] = (),\n    lockfile_paths: tuple[str, ...] = (),\n    flags: tuple[str, ...] = (),\n    notes: tuple[str, ...] = (),\n    redacted_command: str | None = None,\n) -> object:\n    command_tokens = tuple([package_manager, intent_kind, *targets])\n    intent = PackageIntent(\n        package_manager=package_manager,\n        intent_kind=intent_kind,\n        command_tokens=command_tokens,\n        redacted_command=redacted_command or \" \".join(command_tokens),\n        targets=tuple(js_target(target) for target in targets),\n        manifest_paths=manifest_paths,\n        lockfile_paths=lockfile_paths,\n        flags=flags,\n        notes=notes,\n    )\n    return build_package_request_artifact(harness, intent, config_path=\"codex.json\", source_scope=\"project\")\n\n",
+        "unchanged": true
+      },
+      "builder": {
+        "source_path": "src/codex_plugin_scanner/guard/runtime/package_intent_common.py",
+        "source_blob": "104c1a13293d45bc31db1f704884cee7f276afc8",
+        "source_sha256": "7598b3be6eef2b0f7bf27b5ab7eb91e0ecd02eefb7fdaf938f3958c4bb559058",
+        "function_source": "def build_package_request_artifact(\n    harness: str,\n    intent: PackageIntent,\n    *,\n    config_path: str,\n    source_scope: str,\n) -> GuardArtifact:\n    manifest_paths, lockfile_paths = _artifact_workspace_paths(intent)\n    package_executable = (\n        intent.command_tokens[0] if intent.command_tokens and \";\" not in intent.command_tokens else None\n    )\n    fingerprint = hashlib.sha256(\n        json.dumps(\n            {\n                \"harness\": harness,\n                \"package_manager\": intent.package_manager,\n                \"intent_kind\": intent.intent_kind,\n                \"redacted_command\": _fingerprint_command_shape(intent),\n                \"targets\": [target.to_fingerprint_dict() for target in intent.targets],\n                \"manifest_paths\": list(manifest_paths),\n                \"lockfile_paths\": list(lockfile_paths),\n                \"local_executions\": [evidence.to_dict() for evidence in intent.local_executions],\n                \"execution_context_hashes\": list(intent.execution_context_hashes),\n                \"execution_context_cwds\": list(intent.execution_context_cwds),\n                \"execution_context_reason_codes\": list(intent.execution_context_reason_codes),\n            },\n            sort_keys=True,\n        ).encode(\"utf-8\")\n    ).hexdigest()\n    target_label = intent.targets[0].package_name if intent.targets else intent.package_manager\n    return GuardArtifact(\n        artifact_id=f\"{harness}:{source_scope}:package-request:{fingerprint}\",\n        name=f\"{intent.package_manager} {intent.intent_kind} {target_label}\",\n        harness=harness,\n        artifact_type=\"package_request\",\n        source_scope=source_scope,\n        config_path=config_path,\n        metadata={\n            \"package_manager\": intent.package_manager,\n            \"package_executable\": package_executable,\n            \"intent_kind\": intent.intent_kind,\n            \"targets\": [target.to_dict() for target in intent.targets],\n            \"manifest_paths\": list(manifest_paths),\n            \"lockfile_paths\": list(lockfile_paths),\n            \"flags\": list(intent.flags),\n            \"notes\": list(intent.notes),\n            \"local_executions\": [evidence.to_dict() for evidence in intent.local_executions],\n            \"shell_execution_context_hashes\": list(intent.execution_context_hashes),\n            \"shell_execution_effective_cwds\": list(intent.execution_context_cwds),\n            \"shell_execution_context_reason_codes\": list(intent.execution_context_reason_codes),\n            \"shell_execution_context_complete\": not intent.execution_context_reason_codes,\n            \"effective_cwd\": intent.execution_context_cwds[-1] if intent.execution_context_cwds else None,\n            \"redacted_command\": intent.redacted_command,\n            \"request_summary\": package_request_summary(intent),\n            \"runtime_request_signals\": [f\"invokes a package {intent.intent_kind} request via {intent.package_manager}\"],\n            \"runtime_request_summary\": package_runtime_summary(intent),\n            \"runtime_request_reason\": package_runtime_reason(intent),\n            **_local_execution_runtime_metadata(intent),\n        },\n        runtime_private_metadata={\n            \"package_targets\": [target.to_execution_dict() for target in intent.targets],\n        },\n    )\n\n",
+        "return_annotation": "GuardArtifact",
+        "unchanged": true
+      }
+    },
+    {
+      "change": "binding scope",
+      "evidence": "The actual repaired script has only the new import and one cast call using that name. No pre-existing cast binding is overwritten; all non-edit bytes recover the exact prior file."
+    }
+  ],
+  "original_failure": {
+    "run": 35443949519,
+    "job": 105899559233,
+    "receipt_blob": "c5d0c85b2740edfb8c7a11f1d0570613bfbd33f1",
+    "receipt_sha256": "43fa4471122da8aa8dc6861493e5bb9ce0c61d04457e6c8b84235172b9f77bc5",
+    "receipt_bytes": 264007,
+    "complete_diagnostics": {
+      "generalDiagnostics": [
+        {
+          "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/qualify_guard_package_unversioned_route.py",
+          "message": "Argument of type \"Iterator[AST]\" cannot be assigned to parameter \"iterable\" of type \"Iterable[stmt]\" in function \"extend\"\n  \"Iterator[AST]\" is not assignable to \"Iterable[stmt]\"\n    Type parameter \"_T_co@Iterable\" is covariant, but \"AST\" is not a subtype of \"stmt\"\n      \"AST\" is not assignable to \"stmt\"",
+          "range": {
+            "end": {
+              "character": 65,
+              "line": 55
+            },
+            "start": {
+              "character": 23,
+              "line": 55
+            }
+          },
+          "rule": "reportArgumentType",
+          "severity": "error"
+        },
+        {
+          "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/qualify_guard_package_unversioned_route.py",
+          "message": "Argument of type \"object\" cannot be assigned to parameter \"artifact\" of type \"GuardArtifact\" in function \"evaluate_package_request_artifact\"\n  \"object\" is not assignable to \"GuardArtifact\"",
+          "range": {
+            "end": {
+              "character": 33,
+              "line": 202
+            },
+            "start": {
+              "character": 25,
+              "line": 202
+            }
+          },
+          "rule": "reportArgumentType",
+          "severity": "error"
+        },
+        {
+          "file": "/home/runner/work/hol-guard/hol-guard/source/scripts/qualify_guard_package_unversioned_route.py",
+          "message": "Cannot access attribute \"metadata\" for class \"object\"\n  Attribute \"metadata\" is unknown",
+          "range": {
+            "end": {
+              "character": 48,
+              "line": 225
+            },
+            "start": {
+              "character": 40,
+              "line": 225
+            }
+          },
+          "rule": "reportAttributeAccessIssue",
+          "severity": "error"
+        }
+      ],
+      "summary": {
+        "errorCount": 3,
+        "filesAnalyzed": 21,
+        "informationCount": 0,
+        "timeInSec": 1.64,
+        "warningCount": 2228
+      },
+      "time": "1789822181503",
+      "version": "1.39.8"
+    }
+  },
+  "preserved": {
+    "prior_run_remains_failed": true,
+    "prior_20_production_types_and_ordered_source_proof_separately_observed": true,
+    "new_runtime_credit": false,
+    "corpus_regeneration_by_this_peer": false,
+    "original_metric_failure_unchanged": true,
+    "route_witness_source_only_change": true,
+    "qualification_complete": false
+  },
+  "remaining": [
+    "Current-byte Ruff/format/types must run on the repaired immutable source.",
+    "The first 29-case collection and execution remain required.",
+    "Full source closure and report/452-input invariance belong to the separately verified composition; this bounded peer does not replace them."
+  ]
+}

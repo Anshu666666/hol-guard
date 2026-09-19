@@ -1,5 +1,5 @@
 {
-  "schema": "pr2974-original-requirements-current-acceptance-reconciliation-v2",
+  "schema": "pr2974-original-144-task-reconciliation.v3",
   "date": "2026-09-19",
   "purpose": "Reviewable additive reconciliation of original PRD/TODO/Takeaway requirements and current source evidence; no original task edits or acceptance promotions.",
   "historical_source": {
@@ -40,7 +40,20 @@
   "current_source": {
     "canonical_PR_source_at_cutoff": "44353b20262f1ca56b56204f4c764b047710454f",
     "not_default_branch_assertion": true,
-    "combined_final_source": null,
+    "combined_final_source": {
+      "commit": "4315464593b267f65b419140b575414e17d067b4",
+      "tree": "8d3b173089662d6d5c5f9b1fe85eaf23f7ef2d79",
+      "sole_parent": "4dc6765c6c1b9e97ddb9c50b30e58ce8384a4fc1",
+      "previous_combined_source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+      "actual_report_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+      "actual_report_sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+      "report_source_bindings": 452,
+      "source_leaves": 4622,
+      "typing_change_outside_corpus_inputs": true,
+      "actual_final_immutable_check_pending": true,
+      "canonical_head_unchanged": true,
+      "source_identity_attribution": "Actual Git commit header read independently; full leaf/corpus binding verified by root."
+    },
     "readiness": {
       "path": "readiness.json"
     },
@@ -64,12 +77,96 @@
       "original_report_unchanged": true,
       "expected_corpus_inputs": 452,
       "changed_corpus_input_paths": 22,
-      "actual_combined_generation_or_validation": false,
+      "actual_combined_generation_or_validation": true,
       "composition_receipt": {
         "blob": "91d948e19a3a4f99bb3df1585b8737a294fb6190",
         "sha256": "ffb958ef79cd0c43ecb112b1f62ee423d835e0644f9acb71769ee10c9eac8938",
         "path": "evidence/combined-source-composition.json"
-      }
+      },
+      "first_natural_corpus": {
+        "source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+        "source_tree": "436d6388de72ebbb7ebc257b4acb4b5a53b0ab28",
+        "harness": "855c6c0e28663e97dc25f221de8c8041385cefd2",
+        "run": 35444311452,
+        "job": 105900502871,
+        "attempt": 1,
+        "outcome": "success",
+        "commands": 17,
+        "all_commands_passed": true,
+        "source_gates": {
+          "ruff_files": 87,
+          "ruff_diagnostics": 0,
+          "type_files": 60,
+          "type_version": "1.39.8",
+          "error_count": 0,
+          "reported_warning_count": 5371,
+          "error_level_filter": true
+        },
+        "corpus_write": true,
+        "corpus_check": true,
+        "original_contract_cases": 6,
+        "body_phase_records": 18,
+        "metrics": [
+          {
+            "seconds": 58.11445922400003,
+            "MiB": 311.703125,
+            "returncode": 0,
+            "timeout_seconds": 75,
+            "external_wall_seconds": 59.25675441499993
+          },
+          {
+            "seconds": 57.807628943000054,
+            "MiB": 313.96484375,
+            "returncode": 0,
+            "timeout_seconds": 75,
+            "external_wall_seconds": 58.974837363000006
+          }
+        ],
+        "budgets_unchanged": {
+          "seconds": 60,
+          "MiB": 512,
+          "outer_seconds": 75
+        },
+        "actual_generated_report": {
+          "path": "tests/fixtures/guard-command-corpus/decision-diff-report.json",
+          "bytes": 56740,
+          "sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+          "git_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+          "source_bindings": 452,
+          "original_source_bindings": 433,
+          "all_other_report_fields_unchanged": true,
+          "framed_sha256": "9214d114b4136df2eaa2388996cc3b123e09a03159d6052f11cba573c58d46de",
+          "staged_tree": "3f706fa671ad3ea08950f3901afcf0ad24f6021d",
+          "changed_paths": [
+            "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+          ],
+          "requires_immutable_report_descendant": false
+        },
+        "immutable_final_report_source": {
+          "commit": "4315464593b267f65b419140b575414e17d067b4",
+          "tree": "8d3b173089662d6d5c5f9b1fe85eaf23f7ef2d79",
+          "sole_parent": "4dc6765c6c1b9e97ddb9c50b30e58ce8384a4fc1",
+          "previous_combined_source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+          "actual_report_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+          "actual_report_sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+          "report_source_bindings": 452,
+          "source_leaves": 4622,
+          "typing_change_outside_corpus_inputs": true,
+          "actual_final_immutable_check_pending": true,
+          "canonical_head_unchanged": true,
+          "source_identity_attribution": "Actual Git commit header read independently; full leaf/corpus binding verified by root."
+        },
+        "final_immutable_check_and_six_contracts_pending": true,
+        "receipt": {
+          "blob": "afb9cc19b0fae2fb4feccef8d999888548fdd39e",
+          "sha256": "cefd7102f043802eac9170ee15d2092545e147212fd076b24d07ea737b7016db",
+          "bytes": 539130,
+          "path": "evidence/combined-corpus-first-run.json"
+        },
+        "qualification_complete": false
+      },
+      "immutable_final_report_descendant_and_validation_pending": false,
+      "immutable_final_report_validation_pending": true
     }
   },
   "original_objects_preserved": {
@@ -4326,9 +4423,498 @@
     "sqlite_vfs_source_implementation": {
       "task_id": "RSP-131",
       "owner": "platform_qualification",
-      "state": "root-authorized private named nondefault VFS plus direct queue-age source preparation; no fresh result at cutoff",
+      "state": "independent source/lifecycle peer clear for composition and fresh validation; all23 planned cases remain uncompiled/unexecuted",
       "kernel_fsync_or_physical_bytes_measured": false,
-      "qualification": false
+      "qualification": false,
+      "source_peer": {
+        "blob": "3b15a381dd445dcfc2840709ee59a670b45a68de",
+        "bytes": 17133,
+        "sha256": "61b5aef05faa07812ec45d1b7f8ecc110a0fb19849de4e6910f535b17e9b2bed",
+        "path": "evidence/rsp131-vfs-source-peer.json"
+      },
+      "scope_correction": "Post-install public local-control connections refuse; only verified private factory derives actual writer/readback scope.",
+      "queue_integration_separate": true
+    },
+    "combined_corpus_first_natural": {
+      "lane": "Combined source and actual corpus report",
+      "owner": "root / ci_repair",
+      "source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+      "source_tree": "436d6388de72ebbb7ebc257b4acb4b5a53b0ab28",
+      "harness": "855c6c0e28663e97dc25f221de8c8041385cefd2",
+      "run": 35444311452,
+      "job": 105900502871,
+      "attempt": 1,
+      "outcome": "success",
+      "commands": 17,
+      "all_commands_passed": true,
+      "source_gates": {
+        "ruff_files": 87,
+        "ruff_diagnostics": 0,
+        "type_files": 60,
+        "type_version": "1.39.8",
+        "error_count": 0,
+        "reported_warning_count": 5371,
+        "error_level_filter": true
+      },
+      "corpus_write": true,
+      "corpus_check": true,
+      "original_contract_cases": 6,
+      "body_phase_records": 18,
+      "metrics": [
+        {
+          "seconds": 58.11445922400003,
+          "MiB": 311.703125,
+          "returncode": 0,
+          "timeout_seconds": 75,
+          "external_wall_seconds": 59.25675441499993
+        },
+        {
+          "seconds": 57.807628943000054,
+          "MiB": 313.96484375,
+          "returncode": 0,
+          "timeout_seconds": 75,
+          "external_wall_seconds": 58.974837363000006
+        }
+      ],
+      "budgets_unchanged": {
+        "seconds": 60,
+        "MiB": 512,
+        "outer_seconds": 75
+      },
+      "actual_generated_report": {
+        "path": "tests/fixtures/guard-command-corpus/decision-diff-report.json",
+        "bytes": 56740,
+        "sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+        "git_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+        "source_bindings": 452,
+        "original_source_bindings": 433,
+        "all_other_report_fields_unchanged": true,
+        "framed_sha256": "9214d114b4136df2eaa2388996cc3b123e09a03159d6052f11cba573c58d46de",
+        "staged_tree": "3f706fa671ad3ea08950f3901afcf0ad24f6021d",
+        "changed_paths": [
+          "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+        ],
+        "requires_immutable_report_descendant": false
+      },
+      "immutable_final_report_source": {
+        "commit": "4315464593b267f65b419140b575414e17d067b4",
+        "tree": "8d3b173089662d6d5c5f9b1fe85eaf23f7ef2d79",
+        "sole_parent": "4dc6765c6c1b9e97ddb9c50b30e58ce8384a4fc1",
+        "previous_combined_source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+        "actual_report_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+        "actual_report_sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+        "report_source_bindings": 452,
+        "source_leaves": 4622,
+        "typing_change_outside_corpus_inputs": true,
+        "actual_final_immutable_check_pending": true,
+        "canonical_head_unchanged": true,
+        "source_identity_attribution": "Actual Git commit header read independently; full leaf/corpus binding verified by root."
+      },
+      "final_immutable_check_and_six_contracts_pending": true,
+      "receipt": {
+        "blob": "afb9cc19b0fae2fb4feccef8d999888548fdd39e",
+        "sha256": "cefd7102f043802eac9170ee15d2092545e147212fd076b24d07ea737b7016db",
+        "bytes": 539130,
+        "path": "evidence/combined-corpus-first-run.json"
+      },
+      "qualification_complete": false,
+      "state": "ACTUAL_GENERATED_REPORT_AND_ORIGINAL_CONTRACTS_PASS_FINAL_IMMUTABLE_VALIDATION_PENDING",
+      "integration_ready": false,
+      "next": "Run the original report check/six contracts on exact43154645 and required final source/PR gates. Preserve the earlier successful generation and both component failures separately."
+    },
+    "local_supply_chain_installed_followup": {
+      "schema": "pr2974.lsc-installed-only-completion.v1",
+      "status": "PASSED",
+      "source": {
+        "commit": "82c78d0b609b380781528498a9c81c987e868a3e",
+        "tree": "3847a4f82da7c15cf0a13152e347e5e110132140",
+        "all19_partition_files_unchanged": true
+      },
+      "harness": {
+        "commit": "33314b86110ccf325fca3400aac23c5cd9cb8bcf",
+        "tree": "33e7cd85ae0bf927873bae956d243d05764a0586",
+        "parent": "82c78d0b609b380781528498a9c81c987e868a3e",
+        "preparation_receipt": "3af9bb622149f3c0a6ab4cae3bf7863717e1a715",
+        "independent_case_driver_peer": "89232febf43a7d392e8916eac52ee584c8b4788d",
+        "root_separate_finite_artifact_workflow_peer_preserved": true
+      },
+      "actual_run": {
+        "id": 35444566127,
+        "job_id": 105901161058,
+        "attempt": 1,
+        "conclusion": "success",
+        "started": "2026-09-19T13:01:54Z",
+        "finished": "2026-09-19T13:03:53Z",
+        "outer_steps": 17,
+        "all_outer_steps_success": true,
+        "internal_commands": 14,
+        "all_internal_commands_success_and_owned_groups_retired": true
+      },
+      "original_run": {
+        "id": 35441981146,
+        "conclusion": "failure",
+        "error": "Clean package validation: AssertionError('::test_supply_chain_can_import_each_owner_first_and_resolve_annotations[facade]')",
+        "original_existing613_and_source25_passes_preserved": true,
+        "original_installed25_case_passes_now_reconciled": true,
+        "original_installed_after_absent": true,
+        "original_lifetime_binding_incomplete": true,
+        "original_zip": {
+          "id": 10583564337,
+          "bytes": 20526631,
+          "sha256": "7d3c7759025445d6522caded974e6c74d8a0a54f9e8c8010b0071b326992e2ec",
+          "members": 68,
+          "expanded_bytes": 64647459,
+          "all_CRCs_hashes_manifest_and8projected_bytes_verified": true
+        }
+      },
+      "fresh_installed": {
+        "passed": 25,
+        "failed": 0,
+        "errored": 0,
+        "skipped": 0,
+        "ordered_setup_call_teardown_phases": 75,
+        "exact_per_node_JUnit_bijection": true,
+        "historical_collection_bridge_before_fixtures": true,
+        "all_other_fixture_marker_parameter_function_fields_unchanged": true,
+        "observed_product_module_origins": 502,
+        "command_seconds": 46.730931986,
+        "pytest_XML_seconds": 45.615
+      },
+      "identity": {
+        "pairs": [
+          {
+            "kind": "installed",
+            "exact_bytes_equal": true,
+            "sha256": "1dde8055c06c9581f2c558fafc2dd78714d28918f72fc4fd8d6fe58f0314cc72"
+          },
+          {
+            "kind": "environment",
+            "exact_bytes_equal": true,
+            "sha256": "da56e73747b44e68d81ea3df9027980ebb5f0e4c74412a484c844ba91a89ff6a"
+          },
+          {
+            "kind": "source",
+            "exact_bytes_equal": true,
+            "sha256": "d2ced8856c7697671326d5abddb6df2d9dd2e3bb7be07e12ad2ca88ce8fa6611"
+          }
+        ],
+        "source_candidate_files": 4564,
+        "baseline_files": 4546,
+        "harness_files": 16,
+        "all_actual_git_blobs_modes_sizes_equal": true,
+        "all19source_and24seed_hashes_equal": true,
+        "installed_dependencies": 14232,
+        "installed_package_members": 1433,
+        "primary_dependencies": 12817,
+        "frozen_distributions": 69,
+        "finalizer_error": null,
+        "stage_error": null,
+        "qualification_complete": false
+      },
+      "original_packages": {
+        "actual_members_reverified": true,
+        "build_executed": false,
+        "capability_tests_repeated": false,
+        "original_complete_package_receipt_equal": true,
+        "qualification_complete": false,
+        "sdist": {
+          "bytes": 10943565,
+          "name": "hol_guard-3.0.1.tar.gz",
+          "sha256": "1ccc97cc9712e2635d82d2b3bd79691e19a89e22bf23c3431ebb46ecee2b2495",
+          "source_mapped_members": 4561
+        },
+        "source_sha": "82c78d0b609b380781528498a9c81c987e868a3e",
+        "source_tree": "3847a4f82da7c15cf0a13152e347e5e110132140",
+        "wheel": {
+          "bytes": 5099874,
+          "name": "hol_guard-3.0.1-py3-none-any.whl",
+          "record_rows": 1438,
+          "sha256": "8fad828c0e88dcb28b75466f6f7e7325774f307e595ad4cc3d8eea18b242b292",
+          "source_mapped_members": 1433
+        }
+      },
+      "transport_summary": {
+        "frames": 55,
+        "raw_bytes": 24938634,
+        "compressed_bytes": 5181998,
+        "all_chunk_metadata_hashes_gzip_CRC_ISIZE_and_UTF8_verified": true,
+        "complete_file_reassemblies": 8,
+        "new_artifact": [
+          {
+            "id": 10585156903,
+            "name": "pr2974-lsc-installed-validation-33314b86110ccf325fca3400aac23c5cd9cb8bcf-35444566127-1",
+            "bytes": 43088592,
+            "digest": "sha256:c3020fe12b318b390c98ba1ffe10da79435e2e1ae370130cd9996f0422f1cdb0",
+            "expired": false,
+            "workflow_run": {
+              "id": 35444566127,
+              "repository_id": 1194748811,
+              "head_repository_id": 1194748811,
+              "head_branch": "codex/pr2974-lsc-installed-validation-35441981146",
+              "head_sha": "33314b86110ccf325fca3400aac23c5cd9cb8bcf"
+            }
+          }
+        ],
+        "audit_boundaries": {
+          "new_artifact_metadata_read": true,
+          "new_complete43MB_zip_not_downloaded_in_code_mode": true,
+          "reviewed_hosted_reader_downloaded_original_pinned20MB_zip": true,
+          "original_zip_actual68members_all_CRCs_hashes_names_types_verified": true,
+          "independently_decoded_actual_job_frames_in_code_mode": true,
+          "no_original_or_new_workload_repeated_during_audit": true
+        }
+      },
+      "durable_evidence": {
+        "complete_disposition": {
+          "git_blob": "a3812185a712227487376e151a61253c80456250",
+          "sha256": "71ff2fd8755e321b1ed39d8b106d49d671346c56ab916b0996ce22a395f6a94d",
+          "bytes": 96751
+        },
+        "independent_case_identity_audit": {
+          "git_blob": "6ecdf6a554b514081cefa0afad4188bc0e0839b4",
+          "sha256": "2f86e6a9b83e6a403df5f8bbaf93b4ea6a6a3f5f7ead11250d19a73b13691d08",
+          "bytes": 27231
+        },
+        "complete55frames_and_full_log_parts": [
+          {
+            "path": "lsc-installed-frames-0001.json",
+            "git_blob": "cda6a11c73b12d26d31d35d289d2ec44bb39a5fb",
+            "sha256": "1c6db684758aaf46184493691bffc5b9209ebff5aa6f281ef15b6e3a9e5f742a",
+            "bytes": 1770169,
+            "characters": 1770169
+          },
+          {
+            "path": "lsc-installed-frames-0002.json",
+            "git_blob": "9b5db5a8f852735f33d3b19441c99449e691e58e",
+            "sha256": "b7a0c309f23ad90d4abf48239aca8f41c60d0df4654e1380363e88852ad05c29",
+            "bytes": 1636989,
+            "characters": 1636989
+          },
+          {
+            "path": "lsc-installed-frames-0003.json",
+            "git_blob": "b1535645439db0696147dc2a8c35ebdd7e7b4e6e",
+            "sha256": "12fe0585699960625b9074439dd622636ecdf2e061d7382ac6da5818a665aee9",
+            "bytes": 1427491,
+            "characters": 1427491
+          },
+          {
+            "path": "lsc-installed-frames-0004.json",
+            "git_blob": "3551dfa58be311be186bd4e3fa23d107c334f13c",
+            "sha256": "45f9ca23ff31058971602291dadb42f33f9324f89fc3c3ad271cccd5c8bc6914",
+            "bytes": 1679091,
+            "characters": 1679091
+          },
+          {
+            "path": "lsc-installed-frames-0005.json",
+            "git_blob": "613b51c23e2d331f9d0a79f9068eb47261226eb1",
+            "sha256": "19a6f93f61a304ee47d078dea5a84f580d375fcf6a150ad19cab995a8b6960cb",
+            "bytes": 454085,
+            "characters": 454085
+          },
+          {
+            "path": "lsc-installed-job-log-part-0001.txt",
+            "git_blob": "192b84bc87cefd1615a2e6f2959ed480d15f7f49",
+            "sha256": "02e9b6ef5f3d1a729b9589a1f8f5b0352cf138cb09f42eda208bf90a53f37f30",
+            "bytes": 1800082,
+            "characters": 1800000
+          },
+          {
+            "path": "lsc-installed-job-log-part-0002.txt",
+            "git_blob": "c5033473dbe3bdfdfa1b91cd72b05f9d2f80dfd5",
+            "sha256": "04e03ecc1e5801401251a8e2a8ffe128a589194701288d395d5e820fb15eae7b",
+            "bytes": 1800002,
+            "characters": 1800000
+          },
+          {
+            "path": "lsc-installed-job-log-part-0003.txt",
+            "git_blob": "92360421a441e94733e0fca70b281c5f1c12bb4f",
+            "sha256": "db4b312cfe802883146a0df3f64152a759bebb9f7e8ad5f6f9fca355281a0522",
+            "bytes": 1800002,
+            "characters": 1800000
+          },
+          {
+            "path": "lsc-installed-job-log-part-0004.txt",
+            "git_blob": "f4c0f324ee9bfe66ae524aa06ebcdebf98cea728",
+            "sha256": "d235078720dfe626a504635c7c7f0a40e60adc4afd1972a18861ed4c7b4dd453",
+            "bytes": 1702160,
+            "characters": 1702158
+          }
+        ],
+        "all11_complete_bodies_read_back_exact": true,
+        "evidence_tree": "c3e267df425a3e3f070718963d73d76133dd7145"
+      },
+      "source638_not_repeated": true,
+      "packages_not_rebuilt": true,
+      "no_new_native_or_performance_qualification": true,
+      "no_task_promotion_or_budget_change": true,
+      "qualification_complete": false,
+      "receipt": {
+        "blob": "5825c793f56ca7bc8ee00c2ca6132de2bff3551e",
+        "sha256": "2712c04dffa7d5fa982f6af317f3ff480ddda7f55f2212eba7de269d608f9985",
+        "bytes": 8488,
+        "path": "evidence/lsc-installed-followup.json"
+      }
+    },
+    "package_first_finite": {
+      "source": "06a193267c949d9409089465d432bc2b68fc112b",
+      "harness": "07c0560d03abcdff90b58fb9400f1f751cba4a00",
+      "run": 35443949519,
+      "job": 105899559233,
+      "outcome": "failure",
+      "passed": {
+        "full_ordered_original_source_AST": true,
+        "actual_exports": 160,
+        "helper_owners": 19,
+        "live_references": 923,
+        "production_types": 20,
+        "existing_source_gates": true,
+        "source_route_cases": 3
+      },
+      "failed": {
+        "route_witness_type_errors": 3
+      },
+      "existing_or_new29_collection_or_bodies_executed": false,
+      "source_baseline_environment_unchanged": true,
+      "receipt": {
+        "blob": "c5d0c85b2740edfb8c7a11f1d0570613bfbd33f1",
+        "sha256": "43fa4471122da8aa8dc6861493e5bb9ce0c61d04457e6c8b84235172b9f77bc5",
+        "bytes": 264007,
+        "path": "evidence/package-first-finite.json"
+      }
+    },
+    "package_typing_successor": {
+      "source": "b81da3dd48dd0315bd17a22ce5f1c221c941c0ee",
+      "source_tree": "9933bc7dcb8fc874b5d6ba976ae3ebd90d15bc29",
+      "sole_parent": "06a193267c949d9409089465d432bc2b68fc112b",
+      "harness": "38e71e163872c35e1740092d8ac7fb61d30248dd",
+      "harness_tree": "3260abdad84ebcd22fb31e3f6feeca69460b59d7",
+      "run": null,
+      "state": "root_launched_first_natural_run_outcome_pending",
+      "changed_paths": [
+        "scripts/qualify_guard_package_unversioned_route.py"
+      ],
+      "all452corpus_inputs_and_report_unchanged": true,
+      "source_peer": {
+        "blob": "5765be761b614fb574b680664940a7c162d1c402",
+        "sha256": "391dad3fef0a642e7d851a7de66e0e15a502cc8c15bd3765893150fd72e149c4",
+        "bytes": 13775,
+        "path": "evidence/package-typing-source-peer.json"
+      },
+      "root_launch_utc": "2026-09-19T13:33:18Z"
+    },
+    "original_runtime63_targeted": {
+      "source": "44353b20262f1ca56b56204f4c764b047710454f",
+      "original_passes": 20,
+      "remaining_unverified": 698,
+      "complete718_plan_collection_equality_verified": false,
+      "targeted_attempt": {
+        "harness": "c4f3b1625e2c8b27f0f7d55bc75aa3a5f566c4aa",
+        "run": 35445288029,
+        "attempt": 1,
+        "outcome": "failure",
+        "failure": "Original plan ZIP has97members/27514674expanded bytes, above16777369 admitted plan bytes. Five additional oversized non11 shards47/49/76/81/95 exposed. Refused before prior718/duration/log reads.",
+        "new_runtime_coverage": 0,
+        "receipt": {
+          "blob": "cc98660ef611561b690a33b81d134900107500fa",
+          "sha256": "824244050c3cfb0a0b20dea0ce18018d8f7b001dc098af13ad26897e55252d67",
+          "bytes": 771328,
+          "path": "evidence/runtime63-targeted-first-failure.json"
+        }
+      },
+      "next": "Decode only the already-retained checksum-bound original plan as authorized data; preserve limits/failure and review any new bounded readout before execution."
+    },
+    "rsp100_serial_correctness_harness": {
+      "source": "8afb03a2636c4efa246583e01e105afac0a40be3",
+      "harness": "70830771944df830393fc9c40eabbc5c9a6c768a",
+      "root_launch_utc": "2026-09-19T13:22:31Z",
+      "actual_outcome": "success",
+      "state": "FOUR_BOUNDED_COUNTEREXAMPLE_CONTROLS_PASS",
+      "expected_cases": 4,
+      "serial": true,
+      "optimization_enabled": false,
+      "qualified": false,
+      "source_peer": {
+        "blob": "eae5d5f7983b5d9df382e63d6dd79b4ddf99f50f",
+        "sha256": "a88f9860ff14258aed12e2af91b631ca20623cc3acf8f454f579127aee7122fb",
+        "bytes": 8441,
+        "path": "evidence/rsp100-driver-peer.json"
+      },
+      "run": 35445538958,
+      "actual_workflow_outcome": "success",
+      "observation_attribution": "Complete actual terminal/case/identity receipts independently fetched and SHA256-bound; owner independently decoded all27 original frames; no artifact ZIP download/CRC claim.",
+      "job": 105903709396,
+      "actual_cases": {
+        "collected": 4,
+        "passed": 4,
+        "failed": 0,
+        "errored": 0,
+        "skipped": 0,
+        "phases": 12,
+        "ordered_node_fixture_parameter_marker_function_JUnit_bijection": true,
+        "selectors": [
+          "review-evidence/2026-09-19/rsp100-correctness-recovery/test_risk_dependency_witness.py::test_constructor_replacement_retains_the_purepath_name_counterexample",
+          "review-evidence/2026-09-19/rsp100-correctness-recovery/test_risk_dependency_witness.py::test_later_risk_changes_are_not_bound_by_input_only_facts[function_binding]",
+          "review-evidence/2026-09-19/rsp100-correctness-recovery/test_risk_dependency_witness.py::test_later_risk_changes_are_not_bound_by_input_only_facts[function_code]",
+          "review-evidence/2026-09-19/rsp100-correctness-recovery/test_risk_dependency_witness.py::test_later_risk_changes_are_not_bound_by_input_only_facts[closure_contents]"
+        ]
+      },
+      "identity": {
+        "source_files": 4549,
+        "inherited_source_unchanged": 4546,
+        "harness_files": 10,
+        "prepared_evidence_files": 3,
+        "python_version": "3.12.13",
+        "frozen_distributions": 69,
+        "dependency_files": 12817,
+        "loaded_product_origins": {
+          "collection": 679,
+          "execution": 680
+        },
+        "exact_before_after_pairs": [
+          {
+            "kind": "source",
+            "sha256": "a4e13207e106fcf55d772cebd469ca7dbfa5b5cd7c88751887e3ddb7598f501b",
+            "exact_before_after_bytes": true
+          },
+          {
+            "kind": "environment",
+            "sha256": "bb35710a57e26508c61792c065c92d876bdc2652e979867419dffc515ec99fa2",
+            "exact_before_after_bytes": true
+          }
+        ]
+      },
+      "terminal_receipt": {
+        "blob": "b8148e06736ba596c487272246349d26920becf0",
+        "bytes": 6510,
+        "sha256": "335620659570ee0f8333f81a41a60c8da13caa09a26de396093cb0b252c1ea92",
+        "path": "evidence/rsp100-serial-terminal.json"
+      },
+      "complete_disposition": {
+        "blob": "65c54832d4a1d025c5fc13ceb85253a2b0f1cf79",
+        "bytes": 60243,
+        "sha256": "225a2a4186c349c98f4a6632ab6a6b908e385352914a05f28bed300c8f58aff2",
+        "path": "evidence/rsp100-serial-complete-disposition.json"
+      },
+      "case_identity_audit": {
+        "blob": "0f53c768b256e55ca9a19151c8699338002f6fdc",
+        "bytes": 11335,
+        "sha256": "6e452fe804b451e06dc42a7d5be42b79f470b078ffa5c1e3336c59fa2c2ad648",
+        "path": "evidence/rsp100-serial-case-audit.json"
+      }
+    },
+    "combined_final_candidate": {
+      "commit": "4315464593b267f65b419140b575414e17d067b4",
+      "tree": "8d3b173089662d6d5c5f9b1fe85eaf23f7ef2d79",
+      "sole_parent": "4dc6765c6c1b9e97ddb9c50b30e58ce8384a4fc1",
+      "previous_combined_source": "a83d1e5b05716bbd623c717bab28c048986d199a",
+      "actual_report_blob": "2b215625fe69faac3523056e283caedacb12d3e8",
+      "actual_report_sha256": "dee58a772cca378a0e8ceaad46682edc05c063d1d90a0366344ab4a0acfde075",
+      "report_source_bindings": 452,
+      "source_leaves": 4622,
+      "typing_change_outside_corpus_inputs": true,
+      "actual_final_immutable_check_pending": true,
+      "canonical_head_unchanged": true,
+      "source_identity_attribution": "Actual Git commit header read independently; full leaf/corpus binding verified by root."
     }
   },
   "task_reconciliation": [
@@ -4386,13 +4972,15 @@
         "ci_repair_first_natural",
         "four_partitions",
         "codex_owned_tmp",
-        "combined_source_staging"
+        "combined_source_staging",
+        "combined_corpus_first_natural",
+        "combined_final_candidate"
       ],
-      "remaining_action": "After source batches are ready, root must freeze the combined candidate, actual main/PR refs, source/package/runtime/rule digests, locked toolchain and target identity. Keep every diagnostic harness and historical head separate.",
+      "remaining_action": "Bind exact43154645 source/report, actual main/PR refs, source/package/runtime/rule digests, locked toolchain and target identity to the final selected candidate. Preserve the actual a83 combined generation separately from fresh immutable checks; keep every diagnostic harness and historical head separate.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
       "proposed_status_change": null,
       "new_qualified_acceptance_claim": false,
-      "current_acceptance_result": "Original open disposition retained; concrete remaining work is listed.",
+      "current_acceptance_result": "Original OPEN retained. Combined source/report43154645 is prepared; final current refs, artifact/target binding and required validation remain.",
       "original_task_json_pointer": "/tasks/0",
       "original_task_source_path": "originals/execution-ledger.json",
       "remaining_work_types": [
@@ -4429,7 +5017,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4475,7 +5064,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4517,7 +5107,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4560,7 +5151,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4603,7 +5195,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4650,7 +5243,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Performance and packaging owners must invoke the actual registered executable/argv from each selected installed artifact with development overrides cleared, capturing process start through stdout/exit. HTTP or source-checkout probes remain separately labeled.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4698,7 +5292,8 @@
         "ci_repair_first_natural",
         "four_partitions",
         "codex_owned_tmp",
-        "native_phase_source_implementation"
+        "native_phase_source_implementation",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Implement the root-assigned diagnostic-only Rust connection/authentication/evaluation aggregate observer at the actual resident client/transport calls. Preserve response/error/deadline/commit behavior, keep samples outside headline SLO, then measure all original Python/native phases under declared source and platform identity.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4748,7 +5343,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4792,7 +5388,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4840,7 +5437,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Run owned full-process-tree sampling and offered-rate load on declared target hardware; capture children, threads, handles, private memory/RSS, CPU and all attempted/admitted/completed/rejected/timed-out requests.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -4892,7 +5490,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "codex_owned_tmp"
+        "codex_owned_tmp",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Use the completed semantic baseline, target matrix and process-tree/offered-load evidence to freeze current-production and optimized-Python baselines, thresholds and explicit selected/deferred tranches.",
       "workstream_current_limit": "Current source gates and corpus contracts are bounded correctness evidence; installed launcher measurements, phase attribution, full-process-tree offered load and a frozen current-production/optimized-Python baseline remain open.",
@@ -6091,7 +6690,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6136,7 +6736,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6183,7 +6784,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6231,7 +6833,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6276,7 +6879,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6325,7 +6929,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6371,7 +6976,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6418,7 +7024,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6466,7 +7073,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6513,7 +7121,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6573,7 +7182,8 @@
       "current_evidence_refs": [
         "ci_repair_first_natural",
         "four_partitions",
-        "combined_source_staging"
+        "combined_source_staging",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "After exact combined-source preparation, run the applicable Rust/command/rule differential, policy/approval, source-mutation and scanner/adversarial suites selected by the actual changes. Component source/finite passes do not substitute.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6623,7 +7233,8 @@
       },
       "current_evidence_refs": [
         "ci_repair_first_natural",
-        "four_partitions"
+        "four_partitions",
+        "combined_corpus_first_natural"
       ],
       "remaining_action": "Measure the real installed and native-client boundaries against the matching baseline after RSP-047; reject adoption if installed cost regresses despite a kernel gain.",
       "workstream_current_limit": "Current heredoc/corpus results and source gates support bounded changes. Applicable final Rust/command/policy/approval/mutation/adversarial suites and installed/native-client benefit remain separate.",
@@ -6668,7 +7279,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6713,7 +7327,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Complete independent dependency/bundle-cardinality measurements for absent/exact/literal-unversioned/deny outcomes at 100/1000/10000, including full local production routes and CPU. Finish current package source/report proof before attributing results to it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6761,7 +7378,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6807,7 +7427,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6854,7 +7477,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6904,7 +7530,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -6955,7 +7584,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the historical measured no-port deferral. A new native package schema requires a separately justified RSP-054 go decision and reviewed RSP-024 contract; it is not selected by this source partition.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -7006,7 +7638,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain deferral until RSP-055 is explicitly selected; a future implementation must process one format end to end within unchanged byte/node/entry/depth budgets.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -7058,7 +7693,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain deferral; a future selected native evaluator must prove ecosystem/version semantics, emergency-deny precedence and trust freshness without accepting caller assertions of verification.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -7111,7 +7749,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain deferral; a future coarse native route requires actual package protect/audit integration, final execution revalidation and all original output/evidence fields.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -7165,7 +7806,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain deferral; a future selected format set requires the original alias/workspace/transitive/local/git/optional/prerelease/truncation/staleness/bun fallback parity corpus.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -7221,7 +7865,10 @@
       },
       "current_evidence_refs": [
         "package_repaired_first_natural",
-        "local_supply_chain_first_natural"
+        "local_supply_chain_first_natural",
+        "local_supply_chain_installed_followup",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain deferral; activation requires installed package-flow correctness and at least the original optimized-Python comparison threshold, with exact supported/unsupported formats.",
       "workstream_current_limit": "Finish immutable package report/component proof and LSC validation. The latest package metric contract failed; the future combined source must regenerate and pass original metrics. Independent dependency/bundle-cardinality and full local package-route acceptance remain open; native package ports remain deferred.",
@@ -9490,13 +10137,14 @@
         "interpretation": "Original claimed DONE is not a substitute for evidence closing a predecessor; DEFERRED implementation is not delivered."
       },
       "current_evidence_refs": [
-        "rsp100_prepared_witness"
+        "rsp100_prepared_witness",
+        "rsp100_serial_correctness_harness"
       ],
-      "remaining_action": "Validate the prepared four-case counterexample/witness at 8afb03a2636c4efa246583e01e105afac0a40be3. Callback mutations of PurePath.name, function/code and closures make input-only memoization unsafe. Keep E/F disabled; any future reuse must prove complete authority/catalog/input/analysis-implementation freshness before a separate measured decision. The four serial source-bound witness cases remain unrun; a validation harness is the immediately implementable prerequisite, not a new reuse optimization.",
+      "remaining_action": "Retain the actual4-case/12-phase result at unchanged8afb/44353, including selected B's REVIEW and the stale-facts negative divergence. PurePath.name, function/code and closure mutations prove input-only memoization unsafe. A future nontrivial reuse implementation requires a closed, independently reviewed evaluator boundary that observes all authority/catalog/input/analysis-implementation changes and preserves callback order, then the original measured benefit decision. Keep current B deriving twice and E/F disabled; do not replace the requested optimization with an always-fresh wrapper.",
       "workstream_current_limit": "RSP-100 has no newly enabled successful optimization. The four-case witness is unrun, B2 analysis-implementation mutation makes input-only memoization unsafe, E/F remain disabled, and deferred native MCP work remains deferred.",
       "proposed_status_change": null,
       "new_qualified_acceptance_claim": false,
-      "current_acceptance_result": "Original open disposition retained; concrete remaining work is listed.",
+      "current_acceptance_result": "Original OPEN retained. Four serial counterexample witnesses passed; no reuse optimization or measured benefit is established.",
       "original_task_json_pointer": "/tasks/99",
       "original_task_source_path": "originals/execution-ledger.json",
       "remaining_work_types": [
@@ -11119,11 +11767,11 @@
         "store_base_successor",
         "sqlite_vfs_source_implementation"
       ],
-      "remaining_action": "Implement the root-assigned private named nondefault VFS observer on the actual SQLite engine plus direct enqueue-to-consume queue age. Keep VFS write/sync fields distinct from unknown kernel/physical bytes, prove lifecycle/role/error/semantic controls, then perform original actual native-receipt mixed-load/process-tree qualification after RSP-129/130. The old203 owned-child controls supply feasibility only.",
+      "remaining_action": "Finish exact private nondefault VFS/queue composition, format and freeze its source, then run meaningful real-SQLite forwarding/lifecycle/role/error controls and direct enqueue-to-consume observation. Keep connection-attestation overhead explicit, VFS fields distinct from unknown kernel/physical bytes, and later readback separate. Complete actual native-receipt mixed-load/process-tree qualification after RSP-129/130. The earlier203 owned-child controls and current unexecuted23-case VFS draft provide only their stated prerequisite scope.",
       "workstream_current_limit": "The e4b310/c87 result establishes bounded owned-child observer feasibility only. Actual receipt/SQLite/journal mixed load, fsync/rewritten-byte/queue-age/process-tree measures, policy freshness and incremental inventory remain open.",
       "proposed_status_change": null,
       "new_qualified_acceptance_claim": false,
-      "current_acceptance_result": "Original blocked disposition retained; concrete remaining dependency/qualification work is listed.",
+      "current_acceptance_result": "Original BLOCKED retained. Bounded VFS source/lifecycle peer is clear; fresh controls and full mixed-load qualification remain.",
       "original_task_json_pointer": "/tasks/130",
       "original_task_source_path": "originals/execution-ledger.json",
       "remaining_work_types": [
@@ -11242,7 +11890,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11338,13 +11989,17 @@
         "codex_owned_tmp",
         "ci_repair_first_natural",
         "package_repaired_first_natural",
-        "combined_source_staging"
+        "combined_source_staging",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor",
+        "combined_final_candidate"
       ],
-      "remaining_action": "Complete final combined-source checks selected by every implementation task, including the full original clause 'all selected implementation tasks.' Preserve current finite/source results as supporting evidence only; exact final-head required CI and all applicable Rust/Python/security/parity suites remain necessary.",
+      "remaining_action": "Complete fresh immutable report check/six contracts and the package typing successor's29 cases, then all final-head Rust/Python/security/parity/authority/source-mutation checks selected by the exact implementation scope. Preserve the original clause 'all selected implementation tasks.' and each prior failure. Bounded component results do not discharge final CI, native qualification or external review.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
       "proposed_status_change": null,
       "new_qualified_acceptance_claim": false,
-      "current_acceptance_result": "Original open disposition retained; concrete remaining work is listed.",
+      "current_acceptance_result": "Original OPEN retained. Combined a83 source gates and six original corpus contracts passed; exact final43154645 checks and remaining selected suites are pending.",
       "original_task_json_pointer": "/tasks/133",
       "original_task_source_path": "originals/execution-ledger.json",
       "remaining_work_types": [
@@ -11411,7 +12066,10 @@
         "codex_owned_tmp",
         "ci_repair_first_natural",
         "package_repaired_first_natural",
-        "combined_source_staging"
+        "combined_source_staging",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Build locked final-source release artifacts for all selected targets and attest version/target/rule/runtime and post-sign/frozen manifests. Ordinary wheel/sdist source gates do not close native installed distribution.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11489,7 +12147,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Run actual final installed launchers with no-env auto, aliases/source references, Watch/availability and approval control modes for every selected package/platform.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11565,7 +12226,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Run full matching-artifact/hardware qualification using the original thresholds, independent alternating runs, route-specific sample minima and all offered errors/denials/retries.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11646,7 +12310,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "After real receipt/policy/inventory qualification, execute mixed offered-load/startup/recovery/saturation soak with complete process-tree accounting and original resource-growth bounds.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11731,7 +12398,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Test selected final versions through signing/update/downgrade/mixed-generation/in-progress-request/rollback and installed registration; no hidden Python semantic fallback.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11854,7 +12524,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Probe final exported metrics/error/receipt paths for secrets, commands, output and private paths and preserve intrinsic decision versus availability-continuation attribution.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -11967,7 +12640,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Retain the original DONE claim and its exact evidence scope. Rebind its original acceptance evidence to the selected final source/artifact and resolve the listed original dependencies before treating it as qualified for the current release. Reuse unchanged source-bound evidence where sufficient; do not invent a new test result or automatically rerun it.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -12077,7 +12753,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Root/reviewers must resolve actual final-head required CI and review threads, with intentional behavior changes explained independently. Diagnostic branch success is not final PR-head approval.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -12161,7 +12840,10 @@
         "four_partitions",
         "codex_owned_tmp",
         "ci_repair_first_natural",
-        "package_repaired_first_natural"
+        "package_repaired_first_natural",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor"
       ],
       "remaining_action": "Prepare concrete selected versions, platforms/cohorts, stop conditions and tested rollback, then apply only the session's actual merge/release authorization.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -12310,7 +12992,11 @@
         "codex_owned_tmp",
         "ci_repair_first_natural",
         "package_repaired_first_natural",
-        "combined_source_staging"
+        "combined_source_staging",
+        "combined_corpus_first_natural",
+        "package_first_finite",
+        "package_typing_successor",
+        "combined_final_candidate"
       ],
       "remaining_action": "Publish the complete current source/artifact/metric/coverage/command/rollback handoff after RSP-137–143 evidence. This draft makes the remaining work reviewable; it does not close the original downstream acceptance.",
       "workstream_current_limit": "Prepare exact combined source/report artifacts, selected final source/Rust/Python/security checks, required CI/review, installed mode/route coverage, full targets/sample minima, soak/privacy/update/rollback and accurate final handoff. No task closure is proposed here.",
@@ -12340,5 +13026,10 @@
     "no_refs_comments_workflows_or_runtime_actions": "This evidence preparation creates only Git blobs/tree/unreferenced commit. Root separately owns refs, workflow launches and publication.",
     "current_task_rows": 144,
     "original_objects_stored_without_modification_in_same_tree": true
+  },
+  "evidence_cutoff_utc": "2026-09-19T13:33:18Z",
+  "previous_evidence_snapshot": {
+    "commit": "983407c92e10506e2ac10848c2ed867207690d4b",
+    "prior_snapshot_preserved": true
   }
 }

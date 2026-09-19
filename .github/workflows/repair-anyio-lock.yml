@@ -6,6 +6,7 @@ on:
       - fix/mcp-fastmcp-annotation-scope
     paths:
       - pyproject.toml
+      - .github/workflows/repair-anyio-lock.yml
 
 permissions:
   contents: write
@@ -26,7 +27,7 @@ jobs:
         with:
           version: "0.9.26"
       - name: Refresh AnyIO lock entry
-        run: uv lock --no-build --upgrade-package anyio
+        run: uv lock --upgrade-package anyio
       - name: Verify fixed AnyIO version
         run: |
           python - <<'PY'

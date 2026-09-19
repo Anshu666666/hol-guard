@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard import native_policy_authority_read as reader
+from codex_plugin_scanner.guard import store_secret_policy_integrity as integrity
 from codex_plugin_scanner.guard.models import PolicyDecision
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
 from codex_plugin_scanner.guard.store import GuardStore
@@ -16,6 +17,72 @@ from tests.native_managed_source_support import managed_store
 from tests.test_canonical_policy_row_authority import _NOW, _activated_store
 from tests.test_guard_extension_control_authority import _commit
 from tests.test_native_policy_authority_managed_read import _TIME
+
+
+def test_reused_integrity_connection_observes_committed_marker_between_reads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(integrity, "_POLICY_INTEGRITY_CACHE_TTL_SECONDS", 3600.0)
+    store = _activated_store(tmp_path)
+    store.upsert_policy(
+        PolicyDecision(harness="codex", scope="artifact", artifact_id="synthetic-existing-marker", action="block"),
+        _NOW,
+    )
+    other = GuardStore(store.guard_home)
+    key = store._policy_integrity_secret_material(create=False)
+    before = store._load_policy_integrity_control_state(create=False)
+    assert before is not None and type(before["generation"]) is int
+    with store._connect() as connection:
+        assert store._policy_integrity_secret_material(create=False, connection=connection) == key
+        assert not connection.in_transaction
+        other.upsert_policy(
+            PolicyDecision(harness="codex", scope="artifact", artifact_id="synthetic-existing-marker", action="allow"),
+            _NOW,
+        )
+        current_generation = other.get_policy_integrity_status()["generation"]
+        assert type(current_generation) is int and current_generation > before["generation"]
+        observed = store._load_policy_integrity_control_state(create=False, connection=connection)
+        assert not connection.in_transaction
+    assert observed is not None and type(observed["generation"]) is int
+    assert observed["generation"] > before["generation"]
+    assert observed == other._load_policy_integrity_control_state(create=False)
+
+
+def test_integrity_pairs_reuse_setup_but_keep_distinct_capture_boundaries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _activated_store(tmp_path)
+    original_material = store._policy_integrity_secret_material
+    original_control = store._load_policy_integrity_control_state
+    observed: list[tuple[str, sqlite3.Connection]] = []
+
+    def material(*, create: bool, connection: sqlite3.Connection | None = None):
+        assert not create and connection is not None and not connection.in_transaction
+        observed.append(("material", connection))
+        return original_material(create=create, connection=connection)
+
+    def control(*, create: bool, connection: sqlite3.Connection | None = None):
+        assert not create and connection is not None and not connection.in_transaction
+        observed.append(("control", connection))
+        return original_control(create=create, connection=connection)
+
+    monkeypatch.setattr(store, "_policy_integrity_secret_material", material)
+    monkeypatch.setattr(store, "_load_policy_integrity_control_state", control)
+    assert reader.read_native_policy_authority_inputs(store, now=_TIME).authority.rows
+    assert [kind for kind, _ in observed] == ["material", "control", "material", "control"]
+    assert observed[0][1] is observed[1][1]
+    assert observed[2][1] is observed[3][1]
+    assert observed[0][1] is not observed[2][1]
+
+
+def test_integrity_observations_refuse_a_frozen_transaction(tmp_path: Path) -> None:
+    store = _activated_store(tmp_path)
+    with store._connect() as connection:
+        connection.execute("begin")
+        connection.execute("select count(*) from sync_state").fetchone()
+        for reader_method in (store._policy_integrity_secret_material, store._load_policy_integrity_control_state):
+            with pytest.raises(RuntimeError, match="autocommit connection"):
+                reader_method(create=False, connection=connection)
 
 
 @pytest.mark.parametrize("cloud", [None, False, True])

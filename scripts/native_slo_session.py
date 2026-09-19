@@ -313,11 +313,6 @@ class AdapterSession:
         self.workspace.mkdir(mode=0o700)
         self.store = GuardStore(self.guard_home)
         self.daemon = GuardDaemonServer(self.store, host="127.0.0.1", port=0)
-        publisher = self.daemon._server.hook_worker.policy_snapshot_publisher
-        register_workspace = getattr(publisher, "register_workspace", None)
-        if not callable(register_workspace):
-            raise RuntimeError("native_installed_slo_failed: workspace policy registration unavailable")
-        _ = register_workspace(self.workspace)
         self.runtime = runtime
         self.readiness_ms = 0.0
         self._connection: HTTPConnection | None = None
@@ -345,6 +340,12 @@ class AdapterSession:
         with observe_publication(publisher) as observation:
             started = time.perf_counter()
             deadline = time.monotonic() + (MAX_READINESS_P95_MS / 1_000.0)
+            # Registration queues real source capture and resident publication.
+            # Include that work in the unchanged readiness budget.
+            register_workspace = getattr(publisher, "register_workspace", None)
+            if not callable(register_workspace):
+                raise RuntimeError("native_installed_slo_failed: workspace policy registration unavailable")
+            _ = register_workspace(self.workspace)
             prepared = None
             while True:
                 prepared = self.daemon._server.hook_worker.prepare_workspace_policy(

@@ -159,8 +159,12 @@ def _capture_native_policy_authority_inputs(
     complete result, fence a fresh read after push, and verify the resident
     generation. No method here marks the runtime ready or reports application.
     """
-    key_material = store._policy_integrity_secret_material(create=False)
-    control = store._load_policy_integrity_control_state(create=False)
+    # Reuse connection setup, never a prior capture or cache marker. These
+    # two autocommit reads remain fresh and the independent read after the
+    # captured SQL view below still fences secret/control replacement.
+    with store._connect() as integrity_connection:
+        key_material = store._policy_integrity_secret_material(create=False, connection=integrity_connection)
+        control = store._load_policy_integrity_control_state(create=False, connection=integrity_connection)
     if key_material[0] is None or key_material[1] is None or store._policy_integrity_path_warnings():
         raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
     generation = control.get("generation") if control is not None else None
@@ -319,10 +323,11 @@ def _capture_native_policy_authority_inputs(
                 }
             ).encode("utf-8")
         ).hexdigest()
-    if store._policy_integrity_secret_material(create=False) != key_material or (
-        store._load_policy_integrity_control_state(create=False) != control
-    ):
-        raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
+    with store._connect() as integrity_connection:
+        if store._policy_integrity_secret_material(create=False, connection=integrity_connection) != key_material or (
+            store._load_policy_integrity_control_state(create=False, connection=integrity_connection) != control
+        ):
+            raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
     return NativeVerifiedPolicyInputs(
         authority,
         _canonical(defaults) if defaults is not None else None,

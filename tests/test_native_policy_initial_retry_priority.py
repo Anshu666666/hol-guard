@@ -35,12 +35,15 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
         retry_done = threading.Event()
         observation_done = threading.Event()
         request_done = threading.Event()
+        refusal_paused = threading.Event()
+        refusal_resume = threading.Event()
         failures = []
         inputs = []
         writes = []
         order = []
         observations = []
         requests = []
+        request_errors = []
         worker_errors = []
         measuring = False
         in_publication = False
@@ -67,6 +70,7 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
             original_request(require_source_authority=require_source_authority)
             if measuring and failures:
                 requests.append(publisher._epoch)
+                request_errors.append(publisher.last_error)
                 request_done.set()
 
         def observe(changed_paths=None):
@@ -135,6 +139,12 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
                         publisher.request_publish()
                 else:
                     retry_done.set()
+                    if change == "unsigned-source" and request_done.is_set():
+                        # The following observer invalidates the earlier refusal
+                        # before scheduling this complete attempt. Inspect its
+                        # finished result, not the interval with last_error reset.
+                        refusal_paused.set()
+                        assert refusal_resume.wait(_PUBLISH_TIMEOUT_SECONDS)
 
         monkeypatch.setattr(publisher, "_run", checked_run)
         monkeypatch.setattr(publisher, "_current_input_fingerprint", fingerprint)
@@ -151,7 +161,9 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
             bootstrap_snapshot = publisher.current_snapshot()
             assert bootstrap_snapshot is not None and len(calls) == 1
             initial_epoch = publisher._epoch
-            bootstrap_input_digest = publisher._published_cloud_inputs.input_digest
+            bootstrap_inputs = publisher._published_cloud_inputs
+            assert isinstance(bootstrap_inputs, CapturedV3PublicationInputs)
+            bootstrap_input_digest = bootstrap_inputs.input_digest
             workspace = tmp_path / "workspace"
             workspace.mkdir()
             measuring = True
@@ -161,6 +173,8 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
             assert observation_done.wait(_PUBLISH_TIMEOUT_SECONDS), publisher.last_error
             if change != "steady":
                 assert request_done.wait(_PUBLISH_TIMEOUT_SECONDS), publisher.last_error
+            if change == "unsigned-source":
+                assert refusal_paused.wait(_PUBLISH_TIMEOUT_SECONDS), publisher.last_error
             observed_snapshot = publisher.current_snapshot()
             observed_binding = publisher.current_snapshot_binding()
             observed_epoch = publisher._epoch
@@ -169,6 +183,7 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
             current_policy = None if change == "unsigned-source" else publisher._compiled_effective_policy()
         finally:
             setup_resume.set()
+            refusal_resume.set()
             publisher.close()
         assert publisher._thread is not None and not publisher._thread.is_alive()
         assert not worker_errors, [type(error).__name__ for error in worker_errors]
@@ -179,18 +194,21 @@ def test_due_retry_preserves_fresh_authority_and_following_observation(tmp_path,
         if change == "unsigned-source":
             assert not observed_ready and observed_snapshot is None and observed_binding is None
             assert len(calls) == 1
-            # A fresh request clears the transient diagnostic while the barrier remains closed.
-            assert observed_error is None
+            assert request_errors and all(error is None for error in request_errors)
+            assert observed_error == "native_policy_authority_local_unavailable"
             assert observed_epoch >= initial_epoch + 2 and requests
         else:
             assert observed_ready and observed_snapshot == calls[-1] and observed_binding is not None
+            assert observed_snapshot is not None
             assert observed_error is None and len(calls) == 2
             assert current_policy is not None
             assert _policy_fingerprint(current_policy) == (
                 observed_snapshot["config_digest"],
                 observed_snapshot["mode"],
             )
-            assert publisher._published_cloud_inputs.input_digest == inputs[-1].input_digest
+            published_inputs = publisher._published_cloud_inputs
+            assert isinstance(published_inputs, CapturedV3PublicationInputs)
+            assert published_inputs.input_digest == inputs[-1].input_digest
             if change == "steady":
                 assert observed_epoch == initial_epoch + 1 and requests == []
                 assert not any(observations)

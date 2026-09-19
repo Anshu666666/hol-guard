@@ -107,6 +107,10 @@ class StoreExtensionControlAuthorityMixin(_ExtensionControlAuthorityTransitionMi
         try:
             self._catalog_target_manifest(registry)
             with self._extension_control_authority_lock(shared=read_only):
+                if read_only and include_managed_controls:
+                    unenrolled = self._read_unenrolled_extension_control_authority(registry)
+                    if unenrolled is not None:
+                        return unenrolled
                 self._require_compatible_extension_control_schema()
                 view = self._read_extension_control_authority_locked(catalog_digest, migration_registry=registry)
                 stale_manifest: dict[str, str] | None = None

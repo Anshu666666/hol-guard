@@ -16,7 +16,7 @@ import tempfile
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import cast
+from typing import Protocol, cast
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -193,7 +193,17 @@ def _run_cold(runtime: Path, session: AdapterSession, iterations: int) -> list[f
     return values
 
 
-def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
+class _RecoverySession(Protocol):
+    def observe(self, harness: str, event: str, size_class: str) -> Observation: ...
+
+    def stop_resident(self) -> bool: ...
+
+    def rearm_policy_after_resident_stop(self) -> None: ...
+
+
+def _run_recovery(session: _RecoverySession, iterations: int, *, rearm_policy: bool = False) -> list[float]:
+    """Measure the first post-stop hook, with explicit rearm only when selected."""
+
     values: list[float] = []
     for index in range(iterations):
         _ = session.observe("claude-code", "PostToolUse", "1k")
@@ -202,7 +212,8 @@ def _run_recovery(session: AdapterSession, iterations: int) -> list[float]:
             f"resident stop failed during recovery sample {index}",
         )
         started = time.perf_counter()
-        session.rearm_policy_after_resident_stop()
+        if rearm_policy:
+            session.rearm_policy_after_resident_stop()
         observation = session.observe("claude-code", "PostToolUse", "1k")
         values.append((time.perf_counter() - started) * 1_000.0)
         _require(observation.allowed and observation.route == "native_resident", f"recovery sample {index} failed")
@@ -247,10 +258,16 @@ def _measure_slo(
     if readiness_samples > 1:
         readiness.extend(_readiness_samples(runtime, readiness_samples - 1))
     rss_peak = max(capacity.rss_peak, process_rss_bytes())
+    # Retain the explicit notification case independently of the original
+    # autonomous recovery contract and its resident restart budget. All main
+    # measurements, including RSS, are captured before this extra session.
+    with AdapterSession(runtime) as rearmed_session:
+        rearmed_recovery = _run_recovery(rearmed_session, recovery_iterations, rearm_policy=True)
     return SloMeasurements(
         warm=warm,
         sizes=sizes,
         recovery=recovery,
+        rearmed_recovery=rearmed_recovery,
         cold=cold,
         concurrent_16=capacity.concurrent_16,
         concurrent_64=capacity.concurrent_64,

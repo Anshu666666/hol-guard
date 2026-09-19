@@ -95,6 +95,31 @@ def preserve_managed_extension_control(
 
 
 class _ExtensionControlAuthoritySupportMixin:
+    def _read_unenrolled_extension_control_authority(
+        self, registry: CommandSafetyExtensionRegistry
+    ) -> ExtensionControlAuthorityView | None:
+        """Prove never-enrolled absence in one SQL view under the caller's SH lease.
+
+        Protected authority and any state needing schema/catalog preparation
+        retain the ordinary reader. This result never commits a native marker
+        or replaces the publisher's independent reservation and ACK captures.
+        """
+        if (
+            self._authority_key(required=False) is not None
+            or self._secret_store().get_secret(self._anchor_ref()) is not None
+        ):
+            return None
+        try:
+            with self._connect() as connection:
+                connection.execute("begin")
+                connection.execute("pragma query_only=on")
+                view = self._read_captured_extension_control_authority(connection, registry)
+        except sqlite3.Error:
+            # A missing legacy table still belongs to ordinary preparation.
+            # A failed capture cannot establish never-enrolled absence.
+            return None
+        return view if view.health is AuthorityHealth.UNENROLLED else None
+
     def _read_captured_extension_control_authority(
         self,
         connection: sqlite3.Connection,

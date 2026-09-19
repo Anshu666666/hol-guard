@@ -14,6 +14,7 @@ import { normalizeOperatorHealth } from "./operator-health";
 import { canonicalizeGuardDaemonOrigin, standardGuardDaemonOrigin } from "./guard-daemon-origin";
 import { normalizeProtectionHealth, protectionHeadlineFor } from "./protection-health";
 import { normalizeSupplyChainRepairResult } from "./supply-chain-repair-result";
+import { assertGuardCloudConnectStatus } from "./guard-cloud-connect-contract";
 export { normalizeOperatorHealth } from "./operator-health";
 import {
   AUTHORITATIVE_DECISION_INCONSISTENT,
@@ -2546,11 +2547,9 @@ export async function publishInsightsShare(input: {
 }
 
 function normalizeGuardCloudConnectStatus(value: unknown): GuardCloudConnectStatusResponse {
-  if (!isRecord(value)) {
-    return { connect_required: false, connect_flow: null };
-  }
+  assertGuardCloudConnectStatus(value);
   return {
-    connect_required: value.connect_required === true,
+    connect_required: value.connect_required,
     connect_flow: normalizePackageFirewallConnectFlow(value.connect_flow),
   };
 }

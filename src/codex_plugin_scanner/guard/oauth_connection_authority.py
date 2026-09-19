@@ -168,6 +168,15 @@ def connection_identity(credentials: dict[str, object]) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class OAuthConnectAttempt:
+    """One initial authorization, bound to a store/source before external work."""
+
+    credential_key: str
+    epoch: str
+    store_scope: str = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
 class OAuthConnectionSnapshot:
     """Immutable private snapshot; credentials never appear in its representation."""
 

@@ -9,10 +9,10 @@ from typing import TypedDict
 
 import pytest
 
+from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import _PUBLISH_RETRY_SECONDS
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher_context import CapturedV3PublicationInputs
 from codex_plugin_scanner.guard.store import GuardStore
-from tests.test_native_policy_snapshot_capture_retry import _write_startup_status
 from tests.test_native_policy_snapshot_reservation_capture import _make_publisher
 
 
@@ -27,6 +27,18 @@ class _Attempt(_CaptureCount):
     ready: bool
     closed: bool
     retry_remaining_ms: float | None
+
+
+def _write_status_commit(store: GuardStore, write_number: int) -> tuple[int, int]:
+    stamp = f"2026-09-19T00:00:{write_number:02d}Z"
+    payload = {"status": "not_configured", "refreshed_at": stamp}
+    with store._connect() as observer:
+        before = observer.execute("pragma data_version").fetchone()[0]
+        store.set_sync_payload("supply_chain_bundle_daemon", payload, stamp)
+        after = observer.execute("pragma data_version").fetchone()[0]
+    assert before != after
+    assert store.get_sync_payload("supply_chain_bundle_daemon") == payload
+    return before, after
 
 
 @pytest.mark.parametrize("writes_mode", ["none", "twice", "continuous"])
@@ -99,7 +111,7 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
         inject = writes_mode == "continuous" or (writes_mode == "twice" and len(writes) < 2)
         if reservation_read and inject:
             epoch = publisher._epoch
-            writes.append(_write_startup_status(store, len(writes) + 1, now=publisher._wall_clock()))
+            writes.append(_write_status_commit(store, len(writes) + 1))
             assert publisher._epoch == epoch
         return context
 
@@ -119,6 +131,10 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
         initial_epoch = publisher._epoch
         workspace = tmp_path / "workspace"
         workspace.mkdir()
+        # The timed work includes real status commits and all production
+        # authority captures. Full fixture-only source comparisons bracket
+        # that window instead of adding two extra captures to every commit.
+        verified_before = read_native_policy_authority_inputs(store, now=publisher._wall_clock())
         measuring = True
         started = time.monotonic()
         deadline = started + 0.4
@@ -135,8 +151,11 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
         publisher.close()
     assert publisher._thread is not None and not publisher._thread.is_alive()
     assert not worker_errors, [type(error).__name__ for error in worker_errors]
+    verified_after = read_native_policy_authority_inputs(store, now=publisher._wall_clock())
+    assert verified_after.input_digest == verified_before.input_digest
     assert observed_epoch == initial_epoch + 1
     assert captures and all(capture.input_digest == captures[0].input_digest for capture in captures)
+    assert captures[0].input_digest == verified_after.input_digest
     if writes_mode == "none":
         assert writes == []
     else:

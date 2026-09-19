@@ -9,6 +9,7 @@ from functools import wraps
 from typing import Concatenate, ParamSpec, TypeVar
 
 from .oauth_connection_authority import (
+    OAuthConnectAttempt,
     OAuthConnectionSnapshot,
     connection_identity,
 )
@@ -170,7 +171,10 @@ class StoreOAuthConnectMixin(StoreOAuthConnectionAuthorityMixin):
         access_token_expires_at: str | None = None,
         force_primary_secret_rewrite: bool = False,
         expected_connection: OAuthConnectionSnapshot | None = None,
+        expected_attempt: OAuthConnectAttempt | None = None,
     ) -> OAuthConnectionSnapshot | None:
+        if expected_attempt is not None:
+            self._validate_oauth_connect_attempt_unlocked(expected_attempt)
         if expected_connection is not None:
             current = self._capture_oauth_connection_unlocked(allow_recoverable=True)
             if current != expected_connection:
@@ -252,7 +256,7 @@ class StoreOAuthConnectMixin(StoreOAuthConnectionAuthorityMixin):
         self._set_oauth_sync_payload_unlocked(
             self._oauth_local_credentials_state_key, payload, now, preserve_epoch=preserve_epoch
         )
-        if expected_connection is not None:
+        if expected_connection is not None or expected_attempt is not None:
             # Return the result before releasing the credential lock, so a caller
             # cannot mistake a later replacement for its own completed update.
             current = self._capture_oauth_connection_unlocked(allow_recoverable=True)
@@ -290,9 +294,9 @@ class StoreOAuthConnectMixin(StoreOAuthConnectionAuthorityMixin):
             return None
         return self._build_oauth_local_credentials_result(metadata=metadata, secret_payload=secret_payload)
 
-    def clear_oauth_local_credentials(self) -> None:
+    def clear_oauth_local_credentials(self, *, expected_connection: OAuthConnectionSnapshot | None = None) -> None:
         with self.hold_oauth_refresh_lock():
-            self._clear_oauth_local_credentials_locked()
+            self._clear_oauth_local_credentials_locked(expected_connection=expected_connection)
 
     def get_oauth_local_credential_health(self) -> dict[str, object]:
         payload = self.get_sync_payload(self._oauth_local_credentials_state_key)

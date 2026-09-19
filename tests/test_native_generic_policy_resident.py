@@ -8,6 +8,7 @@ This does not certify an installed release or default rollout.
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -22,6 +23,7 @@ from codex_plugin_scanner.guard.config import GuardConfig, load_guard_config
 from codex_plugin_scanner.guard.mdm.policy import load_managed_policy
 from codex_plugin_scanner.guard.native_managed_capture import compile_configuration_origins
 from codex_plugin_scanner.guard.native_managed_configuration import MANAGED_CONFIGURATION_FEATURE
+from codex_plugin_scanner.guard.native_mode import python_oracle_surface_enabled
 from codex_plugin_scanner.guard.native_policy_authority_read import read_native_policy_authority_inputs
 from codex_plugin_scanner.guard.native_policy_snapshot import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_native_policy_v3
@@ -105,9 +107,34 @@ def _edge(
 def test_generic_resident_fixture_preserves_all_actual_origin_projections(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    _clean_mode(monkeypatch)
+    monkeypatch.setenv("HOL_GUARD_NATIVE", "auto")
+    before = dict(os.environ)
+    assert not python_oracle_surface_enabled()
     source = _source(tmp_path, monkeypatch)
-    for case in _cases(tmp_path):
+    cases = _cases(tmp_path)
+    assert dict(os.environ) == before
+    assert not python_oracle_surface_enabled()
+    for case in cases:
         _ = source.select(case)
+
+
+def test_generic_vector_failure_restores_clean_native_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clean_mode(monkeypatch)
+    monkeypatch.setenv("HOL_GUARD_NATIVE", "auto")
+    before = dict(os.environ)
+
+    def fail_renderer(*_args: object, **_kwargs: object) -> int:
+        assert python_oracle_surface_enabled()
+        raise RuntimeError("synthetic vector generation failure")
+
+    monkeypatch.setattr("tests.native_generic_policy_vectors._run_guard_hook_command", fail_renderer)
+    with pytest.raises(RuntimeError, match="synthetic vector generation failure"):
+        _cases(tmp_path)
+    assert dict(os.environ) == before
+    assert not python_oracle_surface_enabled()
 
 
 @pytest.mark.slow

@@ -16,6 +16,7 @@ from ..receipt_sync_authority import (
     ReceiptSyncAttempt,
     ReceiptSyncCapture,
     ReceiptSyncCompletion,
+    _capture_receipt_sync_state_with_credential_lock,
     accept_receipt_sync_response,
     capture_receipt_sync_state,
 )
@@ -28,11 +29,13 @@ if TYPE_CHECKING:
 
 
 def capture_optional_receipt_state(
-    store: GuardStore, connection: OAuthConnectionSnapshot | None
+    store: GuardStore, connection: OAuthConnectionSnapshot | None, *, credential_lock_held: bool = False
 ) -> ReceiptSyncCapture | None:
     if connection is None:
         return None
     try:
+        if credential_lock_held:
+            return _capture_receipt_sync_state_with_credential_lock(store, required_connection=connection)
         return capture_receipt_sync_state(store, required_connection=connection)
     except (OSError, RuntimeError, ValueError, TypeError, sqlite3.Error):
         return None
@@ -173,8 +176,10 @@ class OptionalUploadPausedError(RuntimeError):
     """Optional work stops before another transport attempt when consent is unavailable."""
 
 
-def require_optional_telemetry(store: GuardStore, connection: OAuthConnectionSnapshot | None) -> None:
-    captured = capture_optional_receipt_state(store, connection)
+def require_optional_telemetry(
+    store: GuardStore, connection: OAuthConnectionSnapshot | None, *, credential_lock_held: bool = False
+) -> None:
+    captured = capture_optional_receipt_state(store, connection, credential_lock_held=credential_lock_held)
     allowed, _ = optional_upload_settings(
         store, None if captured is None else captured.preference_state, telemetry=True
     )

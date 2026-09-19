@@ -19,9 +19,11 @@ from .native_policy_publication_lock import hold_policy_publication_mutation
 from .native_policy_snapshot_codec import _valid_digest_v3
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .native_policy_snapshot_publisher_scoped import _policy_fingerprint, compiled_scoped_policy
+from .oauth_connection_authority import OAuthConnectionSnapshot
 from .policy_bundle_ack_contract import generic_ack_matches_bundle, validated_generic_policy_acknowledgement
 from .policy_bundle_generic_ack import generic_policy_bundle_acknowledgement
 from .policy_canonical_rollout import canonical_policy_enforcement_enabled
+from .runtime.sync_response_authority import hold_sync_response_authority
 
 if TYPE_CHECKING:
     from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
@@ -86,7 +88,10 @@ def _valid_retained_binding(record: dict[str, object]) -> bool:
 
 
 def commit_native_policy_bundle_acknowledgement(
-    publisher: NativePolicySnapshotPublisher, acceptance: NativeAcceptedPolicyBundle
+    publisher: NativePolicySnapshotPublisher,
+    acceptance: NativeAcceptedPolicyBundle,
+    *,
+    expected_connection: OAuthConnectionSnapshot | None = None,
 ) -> dict[str, object] | None:
     """Return a durable applied ACK, or leave the prior received state unchanged.
 
@@ -131,96 +136,99 @@ def commit_native_policy_bundle_acknowledgement(
                 or _policy_fingerprint(config) != (publisher._published_config_digest, acceptance.binding.mode)
             ):
                 return None
-            resident_directory = publisher._resident_directory_fingerprint()
-            connection.execute("pragma busy_timeout=0")
-            connection.execute("begin immediate")
-            # Never wait for the publication condition while reserving SQL.
-            if not publisher._condition.acquire(blocking=False):
-                connection.rollback()
-                return None
-            try:
-                bundle = _payload(connection, "policy_bundle")
-                previous = _payload(connection, "policy_bundle_ack")
-                if bundle is None or previous is None:
+            with hold_sync_response_authority(store, expected_connection):
+                resident_directory = publisher._resident_directory_fingerprint()
+                connection.execute("pragma busy_timeout=0")
+                connection.execute("begin immediate")
+                # Never wait for the publication condition while reserving SQL.
+                if not publisher._condition.acquire(blocking=False):
                     connection.rollback()
                     return None
+                try:
+                    bundle = _payload(connection, "policy_bundle")
+                    previous = _payload(connection, "policy_bundle_ack")
+                    if bundle is None or previous is None:
+                        connection.rollback()
+                        return None
 
-                def current_after_resident_confirmation() -> bool:
-                    # Resident confirmation may race source, lane or expiry
-                    # changes. Recheck those after it, including before the
-                    # retained-ACK early return, while SQL and epoch are held.
-                    if (
-                        publisher._confirm_resident_fingerprint(
-                            after[1], after[1], acceptance.binding.resident_generation, resident_directory
+                    def current_after_resident_confirmation() -> bool:
+                        # Resident confirmation may race source, lane or expiry
+                        # changes. Recheck those after it, including before the
+                        # retained-ACK early return, while SQL and epoch are held.
+                        if (
+                            publisher._confirm_resident_fingerprint(
+                                after[1], after[1], acceptance.binding.resident_generation, resident_directory
+                            )
+                            is None
+                        ):
+                            return False
+                        now_ms = int(publisher._wall_clock() * 1000)
+                        fingerprint = publisher._current_input_fingerprint()
+                        return (
+                            now_ms < acceptance.expires_at_ms
+                            and (inputs.expires_at_ms is None or inputs.expires_at_ms > now_ms)
+                            and lane_selected()
+                            and accepted_policy_bundle_locked(publisher, bundle=bundle, installation_id=installation_id)
+                            == acceptance
+                            and observer.execute("pragma data_version").fetchone()[0] == version
+                            and _non_database_inputs(fingerprint[0], database) == metadata
+                            and fingerprint[1] == after[1]
                         )
-                        is None
-                    ):
-                        return False
-                    now_ms = int(publisher._wall_clock() * 1000)
-                    fingerprint = publisher._current_input_fingerprint()
-                    return (
-                        now_ms < acceptance.expires_at_ms
-                        and (inputs.expires_at_ms is None or inputs.expires_at_ms > now_ms)
-                        and lane_selected()
-                        and accepted_policy_bundle_locked(publisher, bundle=bundle, installation_id=installation_id)
-                        == acceptance
-                        and observer.execute("pragma data_version").fetchone()[0] == version
-                        and _non_database_inputs(fingerprint[0], database) == metadata
-                        and fingerprint[1] == after[1]
-                    )
 
-                if (
-                    not current_after_resident_confirmation()
-                    or validated_generic_policy_acknowledgement(previous)[0] is None
-                    or not generic_ack_matches_bundle(previous, bundle, device_id=installation_id)
-                ):
-                    connection.rollback()
-                    return None
-                record = {
-                    "source": source,
-                    "binding": acceptance.binding.to_request_binding(),
-                    "epoch": acceptance.epoch,
-                }
-                retained = _payload(connection, _ACCEPTANCE_KEY)
-                if previous.get("status") == "applied" and retained == {**record, "ack": previous}:
-                    connection.rollback()
-                    return previous
-                now = datetime.fromtimestamp(publisher._wall_clock(), timezone.utc).isoformat().replace("+00:00", "Z")
-                # Same-source re-publication is fresh native evidence, but does
-                # not rewrite the historical wire ACK or its original timestamp.
-                same_historical_ack = (
-                    previous.get("status") == "applied"
-                    and retained is not None
-                    and set(retained) == {"source", "binding", "epoch", "ack"}
-                    and retained.get("source") == source
-                    and retained.get("ack") == previous
-                    and _valid_retained_binding(retained)
-                )
-                acknowledged = (
-                    previous
-                    if same_historical_ack
-                    else generic_policy_bundle_acknowledgement(
-                        device_id=installation_id,
-                        policy_bundle=bundle,
-                        synced_at=now,
-                        applied=True,
-                        previous=previous,
+                    if (
+                        not current_after_resident_confirmation()
+                        or validated_generic_policy_acknowledgement(previous)[0] is None
+                        or not generic_ack_matches_bundle(previous, bundle, device_id=installation_id)
+                    ):
+                        connection.rollback()
+                        return None
+                    record = {
+                        "source": source,
+                        "binding": acceptance.binding.to_request_binding(),
+                        "epoch": acceptance.epoch,
+                    }
+                    retained = _payload(connection, _ACCEPTANCE_KEY)
+                    if previous.get("status") == "applied" and retained == {**record, "ack": previous}:
+                        connection.rollback()
+                        return previous
+                    now = (
+                        datetime.fromtimestamp(publisher._wall_clock(), timezone.utc).isoformat().replace("+00:00", "Z")
                     )
-                )
-                if not acknowledged:
-                    connection.rollback()
-                    return None
-                if not same_historical_ack:
-                    _write_payload(connection, "policy_bundle_ack", acknowledged, now)
-                _write_payload(connection, _ACCEPTANCE_KEY, {**record, "ack": acknowledged}, now)
-                if not current_after_resident_confirmation():
-                    connection.rollback()
-                    return None
-                connection.commit()
-                return acknowledged
-            finally:
-                if connection.in_transaction:
-                    connection.rollback()
-                publisher._condition.release()
+                    # Same-source re-publication is fresh native evidence, but does
+                    # not rewrite the historical wire ACK or its original timestamp.
+                    same_historical_ack = (
+                        previous.get("status") == "applied"
+                        and retained is not None
+                        and set(retained) == {"source", "binding", "epoch", "ack"}
+                        and retained.get("source") == source
+                        and retained.get("ack") == previous
+                        and _valid_retained_binding(retained)
+                    )
+                    acknowledged = (
+                        previous
+                        if same_historical_ack
+                        else generic_policy_bundle_acknowledgement(
+                            device_id=installation_id,
+                            policy_bundle=bundle,
+                            synced_at=now,
+                            applied=True,
+                            previous=previous,
+                        )
+                    )
+                    if not acknowledged:
+                        connection.rollback()
+                        return None
+                    if not same_historical_ack:
+                        _write_payload(connection, "policy_bundle_ack", acknowledged, now)
+                    _write_payload(connection, _ACCEPTANCE_KEY, {**record, "ack": acknowledged}, now)
+                    if not current_after_resident_confirmation():
+                        connection.rollback()
+                        return None
+                    connection.commit()
+                    return acknowledged
+                finally:
+                    if connection.in_transaction:
+                        connection.rollback()
+                    publisher._condition.release()
     except (OSError, ValueError, TypeError, RuntimeError, sqlite3.Error, NativePolicySnapshotError):
         return None

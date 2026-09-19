@@ -421,9 +421,17 @@ class StoreSecretPolicyIntegrityMixin:
             return "unavailable"
         return _secret_store_backend_name(secret_store)
 
-    def _policy_integrity_secret_material(self, *, create: bool) -> tuple[bytes | None, str | None]:
+    def _policy_integrity_secret_material(
+        self, *, create: bool, connection: sqlite3.Connection | None = None
+    ) -> tuple[bytes | None, str | None]:
+        if connection is not None and connection.in_transaction:
+            raise RuntimeError("Policy integrity observations require an autocommit connection.")
         cached = self._cached_policy_integrity_secret_material
-        marker = self._policy_integrity_cache_marker()
+        marker = (
+            self._policy_integrity_cache_marker()
+            if connection is None
+            else self._load_policy_integrity_state_cache_marker(connection)
+        )
         now = time.monotonic()
         if cached is not None and cached[0] == marker and (now - cached[1]) < _POLICY_INTEGRITY_CACHE_TTL_SECONDS:
             return cached[2]
@@ -488,9 +496,17 @@ class StoreSecretPolicyIntegrityMixin:
             "version": version,
         }
 
-    def _load_policy_integrity_control_state(self, *, create: bool) -> dict[str, object] | None:
+    def _load_policy_integrity_control_state(
+        self, *, create: bool, connection: sqlite3.Connection | None = None
+    ) -> dict[str, object] | None:
+        if connection is not None and connection.in_transaction:
+            raise RuntimeError("Policy integrity observations require an autocommit connection.")
         cached = self._cached_policy_integrity_control_state
-        marker = self._policy_integrity_cache_marker()
+        marker = (
+            self._policy_integrity_cache_marker()
+            if connection is None
+            else self._load_policy_integrity_state_cache_marker(connection)
+        )
         now = time.monotonic()
         if cached is not None and cached[0] == marker and (now - cached[1]) < _POLICY_INTEGRITY_CACHE_TTL_SECONDS:
             return dict(cached[2])

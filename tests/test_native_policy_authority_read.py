@@ -187,7 +187,7 @@ def test_protected_state_change_during_capture_invalidates_the_result(tmp_path: 
     trusted = store._load_policy_integrity_control_state(create=False)
     reads = 0
 
-    def changing_control(*, create):
+    def changing_control(*, create, connection=None):
         nonlocal reads
         assert not create
         reads += 1

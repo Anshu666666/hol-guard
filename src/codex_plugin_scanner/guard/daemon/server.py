@@ -70,6 +70,12 @@ from ..approvals import (
     bulk_allow_read_only_once,
 )
 from ..browser_opener import open_browser_url
+from ..cli.connect_completion import (
+    CONNECT_CONNECTION_KEY,
+    hold_connect_connection,
+    hold_connect_sync,
+    take_connect_connection,
+)
 from ..cli.connect_flow import (
     CONNECT_SYNC_AUTH_CONTEXT_KEY,
     _build_sync_auth_context,
@@ -135,6 +141,7 @@ from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..models import DECISION_SCOPE_VALUES, DecisionScope, PolicyDecision, format_local_http_origin
 from ..native_mode import native_mode_requires_rust as _native_mode_requires_rust
 from ..native_mode import python_oracle_surface_enabled
+from ..oauth_connection_authority import OAuthConnectAttempt
 from ..package_firewall_action_rate_limit import PackageFirewallActionRateLimiter
 from ..package_firewall_entitlement import (
     package_firewall_action_states,
@@ -1858,6 +1865,7 @@ def _finalize_daemon_guard_connect_payload(
     now: str,
     managed_controls_publish: (Callable[[ExtensionControlAuthorityView, Callable[[], None]], object] | None) = None,
 ) -> dict[str, object]:
+    committed = take_connect_connection(payload)
     sync_auth_context = payload.pop(CONNECT_SYNC_AUTH_CONTEXT_KEY, None)
     resolved_sync_auth_context = sync_auth_context if isinstance(sync_auth_context, dict) else None
     normalized_connect_url, allowed_origin = resolve_connect_url(connect_url)
@@ -1870,77 +1878,85 @@ def _finalize_daemon_guard_connect_payload(
     payload.setdefault("fleet_url", f"{dashboard_url}/protect")
     if str(payload.get("status") or "") != "connected":
         return payload
-    store.clear_cloud_sync_state_for_reconnect(
+    with hold_connect_sync(store, resolved_sync_auth_context, committed):
+        pass
+    committed = store.clear_cloud_sync_state_for_reconnect(
         now=now,
+        expected_connection=committed,
         managed_controls_publish=managed_controls_publish,
     )
-    latest_state = store.record_guard_connect_pairing_completed(
-        sync_url=sync_url,
-        allowed_origin=allowed_origin,
-        now=now,
-    )
-    payload.update(
-        {
-            "status": str(latest_state.get("status") or payload.get("status") or "connected"),
-            "milestone": str(latest_state.get("milestone") or "first_sync_pending"),
-            "completed_at": latest_state.get("completed_at") or now,
-            "latest_connect_state": latest_state,
-        }
-    )
-    oauth_health = store.get_oauth_local_credential_health()
-    if store.get_cloud_sync_profile() is None and (
-        oauth_health.get("state") == "degraded" or not oauth_health.get("configured")
-    ):
-        repair_message = (
-            "Guard Cloud authorization did not persist locally. "
-            "Start Guard Cloud connect again to repair local sign-in."
-        )
-        store.record_latest_guard_connect_sync_result(
-            status="retry_required",
-            milestone="first_sync_failed",
+    with hold_connect_connection(store, committed):
+        latest_state = store.record_guard_connect_pairing_completed(
+            sync_url=sync_url,
+            allowed_origin=allowed_origin,
             now=now,
-            reason=repair_message,
         )
         payload.update(
             {
-                "status": "retry_required",
-                "milestone": "first_sync_failed",
-                "sync_succeeded": False,
-                "sync_error": repair_message,
-                "repair_message": repair_message,
-                "latest_connect_state": store.get_effective_guard_connect_state(now=now),
+                "status": str(latest_state.get("status") or payload.get("status") or "connected"),
+                "milestone": str(latest_state.get("milestone") or "first_sync_pending"),
+                "completed_at": latest_state.get("completed_at") or now,
+                "latest_connect_state": latest_state,
             }
         )
-        return payload
-    if store.get_cloud_sync_profile() is None:
-        payload["sync_attempted"] = False
-        return payload
-    payload["sync_attempted"] = True
+        oauth_health = store.get_oauth_local_credential_health()
+        if store.get_cloud_sync_profile() is None and (
+            oauth_health.get("state") == "degraded" or not oauth_health.get("configured")
+        ):
+            repair_message = (
+                "Guard Cloud authorization did not persist locally. "
+                "Start Guard Cloud connect again to repair local sign-in."
+            )
+            store.record_latest_guard_connect_sync_result(
+                status="retry_required",
+                milestone="first_sync_failed",
+                now=now,
+                reason=repair_message,
+            )
+            payload.update(
+                {
+                    "status": "retry_required",
+                    "milestone": "first_sync_failed",
+                    "sync_succeeded": False,
+                    "sync_error": repair_message,
+                    "repair_message": repair_message,
+                    "latest_connect_state": store.get_effective_guard_connect_state(now=now),
+                }
+            )
+            return payload
+        if store.get_cloud_sync_profile() is None:
+            payload["sync_attempted"] = False
+            return payload
+        payload["sync_attempted"] = True
     try:
-        sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
-            store,
-            resolved_sync_auth_context,
-            managed_controls_publish,
-        )
+        with hold_connect_sync(store, resolved_sync_auth_context, committed):
+            sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
+                store,
+                resolved_sync_auth_context,
+                managed_controls_publish,
+            )
     except GuardSyncNotAvailableError as error:
         payload = apply_guard_connect_sync_result(
             store,
             payload,
+            expected_connection=committed,
             now=now,
             error=error,
             recorded_status="connected",
             recorded_milestone="sync_not_available",
             repair_message=str(error),
         )
-        reconciled_state = reconcile_connect_state_with_oauth_entitlement(store, now=now)
-        if reconciled_state is not None:
-            payload["milestone"] = str(reconciled_state.get("milestone") or "first_sync_pending")
-            payload["latest_connect_state"] = reconciled_state
-        return payload
+        with hold_connect_connection(store, committed):
+            reconciled_state = reconcile_connect_state_with_oauth_entitlement(store, now=now)
+            if reconciled_state is not None:
+                payload["milestone"] = str(reconciled_state.get("milestone") or "first_sync_pending")
+                payload["latest_connect_state"] = reconciled_state
+            return payload
     except (GuardSyncAuthorizationExpiredError, GuardSyncNotConfiguredError) as error:
         return apply_guard_connect_sync_result(
             store,
             payload,
+            expected_connection=committed,
             now=now,
             error=error,
             recorded_status="retry_required",
@@ -1952,6 +1968,7 @@ def _finalize_daemon_guard_connect_payload(
         return apply_guard_connect_sync_result(
             store,
             payload,
+            expected_connection=committed,
             now=now,
             error=error,
             recorded_status="connected",
@@ -1962,29 +1979,32 @@ def _finalize_daemon_guard_connect_payload(
             ),
             payload_status="connected",
         )
-    latest_state = store.record_latest_guard_connect_sync_success(
-        sync_payload=sync_payload,
-        now=str(sync_payload.get("synced_at") or now),
-        request_id=str(latest_state.get("request_id") or ""),
-    )
-    payload.update(
-        {
-            "status": "connected",
-            "milestone": "first_sync_succeeded",
-            "sync_succeeded": True,
-            "sync": sync_payload,
-            "last_sync_at": sync_payload.get("synced_at"),
-            "latest_connect_state": latest_state or store.get_latest_guard_connect_state(now=now),
-        }
-    )
-    try:
-        payload["supply_chain"] = _sync_supply_chain_cloud_state_with_optional_auth_context(
-            store,
-            resolved_sync_auth_context,
+    with hold_connect_connection(store, committed):
+        latest_state = store.record_latest_guard_connect_sync_success(
+            sync_payload=sync_payload,
+            now=str(sync_payload.get("synced_at") or now),
+            request_id=str(latest_state.get("request_id") or ""),
         )
+        payload.update(
+            {
+                "status": "connected",
+                "milestone": "first_sync_succeeded",
+                "sync_succeeded": True,
+                "sync": sync_payload,
+                "last_sync_at": sync_payload.get("synced_at"),
+                "latest_connect_state": latest_state or store.get_latest_guard_connect_state(now=now),
+            }
+        )
+    try:
+        with hold_connect_sync(store, resolved_sync_auth_context, committed):
+            payload["supply_chain"] = _sync_supply_chain_cloud_state_with_optional_auth_context(
+                store,
+                resolved_sync_auth_context,
+            )
     except (GuardSyncNotConfiguredError, GuardSyncNotAvailableError, RuntimeError) as error:
         payload["supply_chain_error"] = str(error)
-    return payload
+    with hold_connect_connection(store, committed):
+        return payload
 
 
 def _complete_browser_oauth_connect(
@@ -1993,6 +2013,7 @@ def _complete_browser_oauth_connect(
     session: Any,
     connect_url: str,
     browser_opened: bool,
+    attempt: OAuthConnectAttempt,
     managed_controls_publish: (Callable[[ExtensionControlAuthorityView, Callable[[], None]], object] | None),
 ) -> dict[str, object]:
     _, allowed_origin = resolve_connect_url(connect_url)
@@ -2011,7 +2032,7 @@ def _complete_browser_oauth_connect(
     if token_result.refresh_token is None:
         raise RuntimeError("Guard OAuth token exchange failed: missing refresh token.")
     timestamp = _now()
-    _persist_oauth_local_credentials(
+    committed = _persist_oauth_local_credentials(
         store=store,
         issuer=oauth_client.issuer,
         client_id=oauth_client.client_id,
@@ -2026,12 +2047,14 @@ def _complete_browser_oauth_connect(
         access_token=token_result.access_token,
         access_token_expires_at=token_result.access_token_expires_at,
         now=timestamp,
+        expected_attempt=attempt,
     )
     sync_url = f"{allowed_origin}/api/guard/receipts/sync"
     return _finalize_daemon_guard_connect_payload(
         store=store,
         connect_url=connect_url,
         payload={
+            CONNECT_CONNECTION_KEY: committed,
             "status": "connected",
             "connect_mode": "browser_oauth",
             "browser_opened": browser_opened,
@@ -3933,6 +3956,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             return
         try:
             prepare_guard_cloud_connect_authorization(store)
+            attempt = store.begin_oauth_connect_attempt()
             device = store.get_device_metadata()
             session = start_guard_browser_session(
                 connect_url=connect_url,
@@ -3980,6 +4004,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     session=session,
                     connect_url=connect_url,
                     browser_opened=browser_opened,
+                    attempt=attempt,
                     managed_controls_publish=_managed_controls_publish_for(self.server),
                 )
                 resolved_entitlement = resolve_package_firewall_entitlement(store)
@@ -4055,6 +4080,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             return
         try:
             prepare_guard_cloud_connect_authorization(store)
+            attempt = store.begin_oauth_connect_attempt()
             device = store.get_device_metadata()
             session = start_guard_browser_session(
                 connect_url=connect_url,
@@ -4105,6 +4131,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     session=session,
                     connect_url=connect_url,
                     browser_opened=browser_opened,
+                    attempt=attempt,
                     managed_controls_publish=_managed_controls_publish_for(self.server),
                 )
                 if _guard_cloud_connect_succeeded(store):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TypedDict, cast
@@ -423,10 +424,14 @@ def test_rss_measurement_is_current_and_requires_ten_percent_bound() -> None:
     )["rss"]
 
 
-def test_adapter_session_preregisters_workspace_before_readiness_timing(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("capture_ms", [250.0, MAX_READINESS_P95_MS + 50.0])
+def test_adapter_readiness_includes_registered_workspace_capture_and_ack(
+    monkeypatch: pytest.MonkeyPatch, capture_ms: float
 ) -> None:
+    clock = [0.0]
     registered: list[Path] = []
+    prepared: list[tuple[Path, float]] = []
+    acknowledged = False
 
     class FakePublisher:
         def register_workspace(self, workspace: Path | None) -> bool:
@@ -434,22 +439,53 @@ def test_adapter_session_preregisters_workspace_before_readiness_timing(
             registered.append(workspace)
             return True
 
+    def start_daemon() -> None:
+        nonlocal acknowledged
+        # A preregistered workspace can finish in the background during daemon
+        # startup. Its source capture and ACK must not disappear from readiness.
+        if registered:
+            clock[0] += capture_ms / 1_000.0
+            acknowledged = True
+
+    def prepare(workspace: Path, *, deadline: float) -> object | None:
+        nonlocal acknowledged
+        assert registered == [workspace]
+        prepared.append((workspace, deadline))
+        if not acknowledged:
+            finish = clock[0] + capture_ms / 1_000.0
+            clock[0] = min(finish, deadline)
+            acknowledged = finish <= deadline
+        return object() if acknowledged else None
+
     publisher = FakePublisher()
     daemon = SimpleNamespace(
-        _server=SimpleNamespace(
-            hook_worker=SimpleNamespace(policy_snapshot_publisher=publisher),
-        ),
+        start=start_daemon, port=1,
+        _server=SimpleNamespace(hook_worker=SimpleNamespace(
+            policy_snapshot_publisher=publisher, prepare_workspace_policy=prepare,
+        )),
     )
     monkeypatch.setattr(native_slo_session, "GuardStore", lambda _path: object())
-    monkeypatch.setattr(
-        native_slo_session,
-        "GuardDaemonServer",
-        lambda _store, *, host, port: daemon,
-    )
-
+    monkeypatch.setattr(native_slo_session, "GuardDaemonServer", lambda _store, *, host, port: daemon)
+    monkeypatch.setattr(native_slo_session, "HTTPConnection", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(native_slo_session, "time", SimpleNamespace(
+        perf_counter=lambda: clock[0], monotonic=lambda: clock[0],
+    ))
+    observation = SimpleNamespace(describe=lambda _error: "finite controlled capture")
+    monkeypatch.setattr(native_slo_session, "observe_publication", lambda _publisher: nullcontext(observation))
+    monkeypatch.setattr(native_slo_session, "report_publication_failure", lambda *_args: None)
     session = native_slo_session.AdapterSession(Path("/synthetic/runtime"))
     try:
+        if capture_ms <= MAX_READINESS_P95_MS:
+            session.start()
+            assert session.readiness_ms == pytest.approx(capture_ms)
+            assert acknowledged
+        else:
+            with pytest.raises(RuntimeError, match="native policy was not ready"):
+                session.start()
+            assert session.readiness_ms == pytest.approx(MAX_READINESS_P95_MS)
+            assert not acknowledged
         assert registered == [session.workspace]
+        assert prepared == [(session.workspace, MAX_READINESS_P95_MS / 1_000.0)]
     finally:
         session.temporary.cleanup()
 

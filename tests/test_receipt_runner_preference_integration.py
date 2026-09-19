@@ -92,9 +92,15 @@ def _rows(
                     else None
                 ),
             )
-    values = sorted(store.list_receipts(limit=count + 1), key=lambda item: item["receipt_rowid"])
+    values = sorted(store.list_receipts(limit=count + 1), key=_receipt_rowid)
     assert len(values) == count
     return values
+
+
+def _receipt_rowid(row: dict[str, object]) -> int:
+    value = row["receipt_rowid"]
+    assert type(value) is int
+    return value
 
 
 def _receipt_ids(rows: list[dict[str, Any]]) -> list[str]:
@@ -164,7 +170,7 @@ class _Transport:
 
     def __call__(self, request: urllib.request.Request, *args: Any, **kwargs: Any) -> _Response:
         assert isinstance(request, urllib.request.Request)
-        assert request.data is not None
+        assert isinstance(request.data, bytes)
         body = json.loads(request.data)
         assert type(body) is dict
         recorded = {
@@ -248,7 +254,12 @@ def _ready(
 
 def _cursor(store: GuardStore) -> int | None:
     value = store.get_sync_payload(CURSOR)
-    return None if value is None else value["last_rowid"]
+    if value is None:
+        return None
+    assert isinstance(value, dict)
+    rowid = value["last_rowid"]
+    assert type(rowid) is int
+    return rowid
 
 
 @pytest.mark.parametrize("source", ["default", "secondary"])
@@ -350,7 +361,7 @@ def test_final_real_retry_withdrawal_stops_all_remaining_selected_batches(
     assert transport.receipt_calls[-1]["body"]["receipts"] == []
     assert _cursor(store) is None
     marker = store.get_sync_payload(BACKFILL)
-    assert marker is None or marker["complete"] is False
+    assert marker is None or (isinstance(marker, dict) and marker["complete"] is False)
 
 
 def test_acknowledged_first_batch_cannot_complete_backfill_after_later_empty_retry(
@@ -388,10 +399,10 @@ def test_acknowledged_first_batch_cannot_complete_backfill_after_later_empty_ret
     assert len(transport.receipt_calls) == 3
     first_ids = {receipt["receiptId"] for receipt in transport.receipt_calls[0]["body"]["receipts"]}
     actual_rows = store.list_receipts(limit=200)
-    acknowledged_rowids = [row["receipt_rowid"] for row in actual_rows if row["receipt_id"] in first_ids]
+    acknowledged_rowids = [_receipt_rowid(row) for row in actual_rows if row["receipt_id"] in first_ids]
     assert acknowledged_rowids and _cursor(store) == max(acknowledged_rowids)
     marker = store.get_sync_payload(BACKFILL)
-    assert marker is None or marker["complete"] is False
+    assert marker is None or (isinstance(marker, dict) and marker["complete"] is False)
     assert _cursor(store) == rows[-1]["receipt_rowid"]
     retry_boundary = len(transport.receipt_calls)
     _settings(store)
@@ -401,7 +412,7 @@ def test_acknowledged_first_batch_cannot_complete_backfill_after_later_empty_ret
     assert set(_receipt_ids(rows[:75])) <= retried_ids
     assert _cursor(store) == rows[-1]["receipt_rowid"]
     completed_marker = store.get_sync_payload(BACKFILL)
-    assert completed_marker is not None and completed_marker["complete"] is True
+    assert isinstance(completed_marker, dict) and completed_marker["complete"] is True
 
 
 def test_newer_response_revision_is_learned_without_old_progress_or_later_batches(
@@ -468,10 +479,15 @@ def test_source_replacement_during_response_read_never_commits_selected_progress
     def respond(body: dict[str, Any], number: int) -> _Response:
         assert number == 1
         assert body["receipts"]
-        return transport.reply(body, before_read=lambda: store.set_oauth_local_credentials(**inputs))
+
+        def replace_connection() -> None:
+            store.set_oauth_local_credentials(**inputs)
+
+        return transport.reply(body, before_read=replace_connection)
 
     transport.receipt_handler = respond
-    _invoke(store, auth_context=auth)
+    with pytest.raises(RuntimeError, match="connection changed"):
+        _invoke(store, auth_context=auth)
     assert len(transport.receipt_calls) == 1
     assert _cursor(store) is None
     after = authority.capture_receipt_sync_state(store).preference_state.connection

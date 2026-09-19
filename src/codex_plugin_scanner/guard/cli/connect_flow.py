@@ -25,6 +25,7 @@ from typing_extensions import Unpack
 from ...version import __version__
 from ..browser_opener import open_browser_url
 from ..mdm.network import managed_urlopen
+from ..oauth_connection_authority import OAuthConnectionSnapshot
 from ..oauth_token_claims import decode_oauth_access_token_claims as _decode_access_token_claims
 from ..oauth_token_claims import oauth_device_id
 from ..package_firewall_defaults import extract_cloud_user_profile as _extract_cloud_user_profile
@@ -36,6 +37,7 @@ from ..portable_command import portable_command_payload
 from ..runtime.runner import prepare_guard_cloud_connect_authorization
 from ..store import GuardStore
 from ..store_connect import build_connect_state_response
+from .connect_completion import CONNECT_CONNECTION_KEY
 from .oauth_client import (
     GuardDpopKeyMaterial,
     GuardOAuthClientConfig,
@@ -893,8 +895,8 @@ def _oauth_dpop_key_material_from_credentials(
     )
 
 
-def _persist_oauth_local_credentials(**kwargs: Unpack[OAuthCredentialUpdateParams]) -> None:
-    persist_oauth_local_credentials(
+def _persist_oauth_local_credentials(**kwargs: Unpack[OAuthCredentialUpdateParams]) -> OAuthConnectionSnapshot | None:
+    return persist_oauth_local_credentials(
         reconcile=lambda target: reconcile_connect_state_with_oauth_entitlement(target, now=kwargs["now"]),
         **kwargs,
     )
@@ -908,13 +910,23 @@ def run_guard_disconnect_command(
     urlopen=managed_urlopen,
 ) -> dict[str, object]:
     store.repair_oauth_local_credential_storage_from_primary()
-    credentials = store.get_oauth_local_credentials(allow_primary=True)
-    if credentials is None:
+    connection = store.capture_oauth_connection_for_disconnect()
+    if connection is None:
         return {
             "status": "not_connected",
             "cloud_grant_revoked": False,
             "reconnect_command": CONNECT_COMMAND,
         }
+
+    credentials = connection.credentials()
+
+    def connection_urlopen(request: urllib.request.Request, *, timeout: float):
+        # Recheck each actual refresh/revocation attempt without holding the lock on I/O.
+        with store.hold_oauth_credential_lock():
+            if connection is None:
+                raise RuntimeError("The connection was not captured.")
+            store._require_oauth_connection_unlocked(connection)
+        return urlopen(request, timeout=timeout)
 
     issuer = _require_oauth_credential_string(credentials, "issuer")
     client_id = _require_oauth_credential_string(credentials, "client_id")
@@ -930,13 +942,13 @@ def run_guard_disconnect_command(
             client_id=client_id,
             refresh_token=refresh_token,
             dpop_key_material=dpop_key_material,
-            urlopen=urlopen,
+            urlopen=connection_urlopen,
             now=exchange_now,
         )
     except RuntimeError as error:
         if not _oauth_refresh_error_means_grant_inactive(error):
             raise
-        store.clear_oauth_local_credentials()
+        store.clear_oauth_local_credentials(expected_connection=connection)
         return {
             "status": "disconnected",
             "cloud_grant_revoked": False,
@@ -949,7 +961,7 @@ def run_guard_disconnect_command(
     if (rotated_refresh_token and rotated_refresh_token != refresh_token) or (
         token_result.device_id and token_result.device_id != persisted_device_id
     ):
-        _persist_oauth_local_credentials(
+        rotated = _persist_oauth_local_credentials(
             store=store,
             issuer=oauth_client.issuer,
             client_id=client_id,
@@ -966,17 +978,23 @@ def run_guard_disconnect_command(
             access_token=token_result.access_token,
             access_token_expires_at=token_result.access_token_expires_at,
             now=timestamp,
+            expected_connection=connection,
         )
+        if rotated is None:
+            raise RuntimeError("The refreshed connection was not captured.")
+        connection = rotated
+    with store.hold_oauth_credential_lock():
+        store._require_oauth_connection_unlocked(connection)
     revoke_guard_self_oauth_grant(
         oauth_client=oauth_client,
         access_token=token_result.access_token,
         workspace_id=workspace_id,
         revoke_cloud_grant=revoke_cloud_grant,
         dpop_key_material=dpop_key_material,
-        urlopen=urlopen,
+        urlopen=connection_urlopen,
         now=exchange_now,
     )
-    store.clear_oauth_local_credentials()
+    store.clear_oauth_local_credentials(expected_connection=connection)
     return {
         "status": "disconnected",
         "cloud_grant_revoked": revoke_cloud_grant,
@@ -1029,6 +1047,7 @@ def run_guard_device_connect_command(
     _, allowed_origin = resolve_connect_url(connect_url)
     oauth_client = resolve_guard_oauth_client_config(allowed_origin)
     dpop_key_material = generate_dpop_key_pair()
+    attempt = store.begin_oauth_connect_attempt()
     resolved_machine_label = machine_label.strip() if isinstance(machine_label, str) else ""
     request_body = build_device_authorization_request_body(
         machine_id=str(device["installation_id"]),
@@ -1072,7 +1091,7 @@ def run_guard_device_connect_command(
     if token_result.refresh_token is None:
         raise RuntimeError("Guard OAuth token exchange failed: missing refresh token.")
     timestamp = now or datetime.now(timezone.utc).isoformat()
-    _persist_oauth_local_credentials(
+    committed = _persist_oauth_local_credentials(
         store=store,
         issuer=oauth_client.issuer,
         client_id=oauth_client.client_id,
@@ -1088,6 +1107,7 @@ def run_guard_device_connect_command(
         access_token=token_result.access_token,
         access_token_expires_at=token_result.access_token_expires_at,
         now=timestamp,
+        expected_attempt=attempt,
     )
     sync_url = _oauth_sync_url_from_issuer(oauth_client.issuer)
     payload.update(
@@ -1104,6 +1124,7 @@ def run_guard_device_connect_command(
         }
     )
     if include_sync_auth_context:
+        payload[CONNECT_CONNECTION_KEY] = committed
         payload[CONNECT_SYNC_AUTH_CONTEXT_KEY] = _build_sync_auth_context(
             access_token=token_result.access_token,
             dpop_key_material=dpop_key_material,
@@ -1132,6 +1153,7 @@ def run_guard_browser_connect_command(
         _, allowed_origin = resolve_connect_url(connect_url)
         oauth_client = resolve_guard_oauth_client_config(allowed_origin)
         browser_opener = open_browser if open_browser is not None else open_browser_url
+        attempt = store.begin_oauth_connect_attempt()
 
         bar.step("Starting browser session...")
         session = start_browser_session(
@@ -1159,7 +1181,7 @@ def run_guard_browser_connect_command(
             raise RuntimeError("Guard OAuth token exchange failed: missing refresh token.")
         bar.step("Saving credentials locally...")
         timestamp = now or datetime.now(timezone.utc).isoformat()
-        _persist_oauth_local_credentials(
+        committed = _persist_oauth_local_credentials(
             store=store,
             issuer=oauth_client.issuer,
             client_id=oauth_client.client_id,
@@ -1175,6 +1197,7 @@ def run_guard_browser_connect_command(
             access_token=token_result.access_token,
             access_token_expires_at=token_result.access_token_expires_at,
             now=timestamp,
+            expected_attempt=attempt,
         )
         bar.done("Authorization complete")
 
@@ -1195,6 +1218,7 @@ def run_guard_browser_connect_command(
         "connect_repair_command": CONNECT_REPAIR_COMMAND,
     }
     if include_sync_auth_context:
+        payload[CONNECT_CONNECTION_KEY] = committed
         payload[CONNECT_SYNC_AUTH_CONTEXT_KEY] = _build_sync_auth_context(
             access_token=token_result.access_token,
             dpop_key_material=session.dpop_key_material,

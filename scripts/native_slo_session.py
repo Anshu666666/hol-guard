@@ -396,6 +396,21 @@ class AdapterSession:
 
         return native_runtime_health(self.guard_home).overloads
 
+    def rearm_policy_after_resident_stop(self) -> None:
+        """Invalidate the ACK barrier after this proof deliberately retires the resident.
+
+        The recovery measurement still requires the first post-stop hook to
+        return through the native resident. This only replaces nondeterministic
+        background-poll detection with the control-plane fact the proof itself
+        just established.
+        """
+
+        publisher = self.daemon._server.hook_worker.policy_snapshot_publisher
+        request_publish = getattr(publisher, "request_publish", None)
+        if not callable(request_publish):
+            raise RuntimeError("native_installed_slo_failed: policy rearm unavailable")
+        request_publish()
+
     def close(self) -> None:
         try:
             if self._connection is not None:

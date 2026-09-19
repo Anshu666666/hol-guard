@@ -1,0 +1,176 @@
+name: Read-only macOS DNS-SD endpoint context diagnostic
+
+on:
+  push:
+    branches: [codex/rsp-macos-dnssd-endpoint-context]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-dnssd-endpoint-context-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  endpoint-context:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            architecture: x86_64
+          - runner: macos-15
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+    steps:
+      - name: Initialize retained outcome
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          for name in ('macos-endpoint-report', 'macos-endpoint-build'):
+              (Path(os.environ['RUNNER_TEMP']) / name).mkdir(mode=0o700)
+          report = {'workflow_commit': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
+                    'attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                    'qualification_pass': False, 'cause_proved': False, 'prior_children_replayed': False}
+          (Path(os.environ['RUNNER_TEMP']) / 'macos-endpoint-report/job-outcome.json').write_text(
+              json.dumps(report, sort_keys=True) + '\n')
+          PY
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.10'
+      - name: Install fixed finite validation tools
+        run: >-
+          python -B -m pip install --disable-pip-version-check
+          pytest==9.0.3 iniconfig==2.3.0 packaging==26.0 pluggy==1.6.0 pygments==2.20.0
+          ruff==0.15.17 basedpyright==1.39.8 nodejs-wheel-binaries==24.16.0 pyyaml==6.0.3
+      - name: Retain the actual validation environment
+        id: environment
+        run: >-
+          python -I -B scripts/ci/native_macos_dnssd_endpoint_environment.py
+          "$RUNNER_TEMP/macos-endpoint-report/environment-before.json"
+      - name: Bind unchanged original source and historical outcomes with fresh SDK admission
+        id: prepare
+        run: >-
+          python -I -B scripts/ci/native_macos_dnssd_endpoint_path.py --prepare
+          --output "$RUNNER_TEMP/macos-endpoint-report/prepared.json"
+      - name: Check the new Python source without rewriting it
+        id: source
+        shell: bash
+        run: |
+          python -B -m ruff check scripts/ci/native_macos_dnssd_endpoint_*.py tests/test_native_macos_dnssd_endpoint*.py
+          python -B -m ruff format --check scripts/ci/native_macos_dnssd_endpoint_*.py tests/test_native_macos_dnssd_endpoint*.py
+          basedpyright --pythonpath "$(command -v python)" --level error \
+            scripts/ci/native_macos_dnssd_endpoint_binding.py scripts/ci/native_macos_dnssd_endpoint_child.py \
+            scripts/ci/native_macos_dnssd_endpoint_record.py scripts/ci/native_macos_dnssd_endpoint_evidence.py \
+            scripts/ci/native_macos_dnssd_endpoint_environment.py scripts/ci/native_macos_dnssd_endpoint_path.py \
+            scripts/ci/native_macos_dnssd_endpoint_final.py
+      - name: Validate the affected endpoint and loader contracts
+        id: finite
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set +e
+          python -B -m pytest --noconftest -c /dev/null --rootdir "$GITHUB_WORKSPACE" -q --tb=long \
+            --junitxml="$RUNNER_TEMP/macos-endpoint-report/finite-junit.xml" \
+            tests/test_native_macos_dnssd_endpoint.py \
+            tests/test_native_macos_dnssd_endpoint_path.py tests/test_native_macos_dnssd_endpoint_forwarding.py \
+            > "$RUNNER_TEMP/macos-endpoint-report/finite.log" 2>&1
+          result=$?
+          cat "$RUNNER_TEMP/macos-endpoint-report/finite.log"
+          exit "$result"
+      - name: Compile fixed direct and Python-loadable observers and native loader host
+        id: build
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror \
+            scripts/ci/native_macos_dnssd_endpoint_probe.c \
+            -o "$RUNNER_TEMP/macos-endpoint-build/endpoint-probe" \
+            > "$RUNNER_TEMP/macos-endpoint-build/direct.stdout" 2> "$RUNNER_TEMP/macos-endpoint-build/direct.stderr"
+          /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror -dynamiclib -DHOL_GUARD_PHASE_LIBRARY \
+            scripts/ci/native_macos_dnssd_endpoint_probe.c \
+            -o "$RUNNER_TEMP/macos-endpoint-build/endpoint-bridge.dylib" \
+            > "$RUNNER_TEMP/macos-endpoint-build/bridge.stdout" 2> "$RUNNER_TEMP/macos-endpoint-build/bridge.stderr"
+          /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror \
+            scripts/ci/native_macos_dnssd_dlopen_host.c \
+            -o "$RUNNER_TEMP/macos-endpoint-build/endpoint-host" \
+            > "$RUNNER_TEMP/macos-endpoint-build/host.stdout" 2> "$RUNNER_TEMP/macos-endpoint-build/host.stderr"
+      - name: Compare only six newly observed five-second children
+        id: lookups
+        run: >-
+          python -I -B scripts/ci/native_macos_dnssd_endpoint_path.py
+          --prepared "$RUNNER_TEMP/macos-endpoint-report/prepared.json"
+          --binary "$RUNNER_TEMP/macos-endpoint-build/endpoint-probe"
+          --host "$RUNNER_TEMP/macos-endpoint-build/endpoint-host"
+          --bridge "$RUNNER_TEMP/macos-endpoint-build/endpoint-bridge.dylib"
+          --output "$RUNNER_TEMP/macos-endpoint-report/endpoint-context.json"
+      - name: Retain final source and binary observations after success or failure
+        id: final_witness
+        if: always()
+        timeout-minutes: 1
+        run: >-
+          python -I -B scripts/ci/native_macos_dnssd_endpoint_final.py
+          --report-dir "$RUNNER_TEMP/macos-endpoint-report"
+          --build-dir "$RUNNER_TEMP/macos-endpoint-build"
+      - name: Verify the validation environment after success or failure
+        id: environment_after
+        if: ${{ always() && steps.environment.outcome == 'success' }}
+        run: >-
+          python -I -B scripts/ci/native_macos_dnssd_endpoint_environment.py
+          "$RUNNER_TEMP/macos-endpoint-report/environment-after.json"
+          "$RUNNER_TEMP/macos-endpoint-report/environment-before.json"
+      - name: Retain bounded outcome and compiler hashes after failure
+        if: always()
+        env:
+          PREPARE: ${{ steps.prepare.outcome }}
+          SOURCE: ${{ steps.source.outcome }}
+          FINITE: ${{ steps.finite.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          LOOKUPS: ${{ steps.lookups.outcome }}
+          FINAL_WITNESS: ${{ steps.final_witness.outcome }}
+          ENVIRONMENT_AFTER: ${{ steps.environment_after.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          output = root / 'macos-endpoint-report/job-outcome.json'
+          report = json.loads(output.read_text())
+          report.update(status='finished', steps={key.lower(): os.environ[key] for key in (
+              'PREPARE', 'SOURCE', 'FINITE', 'BUILD', 'LOOKUPS', 'FINAL_WITNESS', 'ENVIRONMENT_AFTER')},
+              build_boundary='one_minute_workflow_step_no_descendant_certificate',
+              raw_compiler_output_exported=False, raw_endpoint_addresses_exported=False)
+          final = root / 'macos-endpoint-report/final-witness.json'
+          report['final_witness_retained'] = final.is_file()
+          if final.is_file():
+              data = final.read_bytes()
+              report['final_witness_file'] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+          report['compiler'] = {}
+          for prefix in ('direct', 'bridge', 'host'):
+              for channel in ('stdout', 'stderr'):
+                  path = root / ('macos-endpoint-build/' + prefix + '.' + channel)
+                  if path.is_file():
+                      data = path.read_bytes()
+                      report['compiler'][prefix + '.' + channel] = {
+                          'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+          output.write_text(json.dumps(report, sort_keys=True, indent=2) + '\n')
+          PY
+      - name: Upload normalized observations and actual finite receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macos-endpoint-${{ matrix.architecture }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/macos-endpoint-report/
+          if-no-files-found: error
+          retention-days: 30

@@ -25,16 +25,24 @@ def publish_once(self: NativePolicySnapshotPublisher, *, renew_after_generation:
     v3_transport_active = False
     v3_postack_database_race = False
     try:
+        prepared_command_extensions = None
         # Prepare initial authenticated catalog state before choosing the
         # attempt's epoch. Subsequent mutations invalidate this attempt;
         # they never authorize it to restart under a newer barrier.
         if self._command_control_runtime is None:
-            self._compiled_command_extensions()
+            prepared_command_extensions = self._compiled_command_extensions()
             with self._condition:
                 if self._closed:
                     return
                 publish_epoch = self._epoch
-        context = self._publication_context(publish_epoch=publish_epoch)
+        context = (
+            self._publication_context(publish_epoch=publish_epoch)
+            if prepared_command_extensions is None
+            else self._publication_context(
+                publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions
+            )
+        )
+        prepared_command_extensions = None
         if context is None:
             return
         cloud_inputs = context[5]

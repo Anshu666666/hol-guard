@@ -78,4 +78,3 @@ pub(in crate::policy_store) fn persist_authority_with_control_floor(
         &private_root,
     )
 }
-

@@ -17,8 +17,18 @@ fn generic_setting(selector: &str, action: &str) -> Settings {
     setting(selector, action, "codex", "codex:project:Shell")
 }
 
-fn configuration(name: String, local: Settings, managed: Settings, selected: &'static str) -> Configuration {
-    Configuration { name, local, managed, selected }
+fn configuration(
+    name: String,
+    local: Settings,
+    managed: Settings,
+    selected: &'static str,
+) -> Configuration {
+    Configuration {
+        name,
+        local,
+        managed,
+        selected,
+    }
 }
 
 fn configurations() -> Vec<Configuration> {
@@ -28,8 +38,22 @@ fn configurations() -> Vec<Configuration> {
             for restricted in ["local", "managed"] {
                 cases.push(configuration(
                     format!("{restricted}-block-local-{local}-managed-{managed}"),
-                    generic_setting(local, if restricted == "local" { "block" } else { "allow" }),
-                    generic_setting(managed, if restricted == "managed" { "block" } else { "allow" }),
+                    generic_setting(
+                        local,
+                        if restricted == "local" {
+                            "block"
+                        } else {
+                            "allow"
+                        },
+                    ),
+                    generic_setting(
+                        managed,
+                        if restricted == "managed" {
+                            "block"
+                        } else {
+                            "allow"
+                        },
+                    ),
                     "block",
                 ));
             }
@@ -46,38 +70,62 @@ fn configurations() -> Vec<Configuration> {
                     (Vec::new(), settings)
                 };
                 cases.push(configuration(
-                    format!("{origin}-{narrow}-allow-over-{broad}-block"), local, managed, "allow",
+                    format!("{origin}-{narrow}-allow-over-{broad}-block"),
+                    local,
+                    managed,
+                    "allow",
                 ));
             }
         }
     }
     for action in ACTIONS {
         cases.push(configuration(
-            format!("managed-default-{action}"), Vec::new(),
-            generic_setting("default", action), action,
+            format!("managed-default-{action}"),
+            Vec::new(),
+            generic_setting("default", action),
+            action,
         ));
     }
     cases.push(configuration(
         "managed-default-absent-local-warn".to_owned(),
-        generic_setting("default", "warn"), Vec::new(), "warn",
+        generic_setting("default", "warn"),
+        Vec::new(),
+        "warn",
     ));
     cases.push(configuration(
         "managed-default-explicit-allow-local-warn".to_owned(),
-        generic_setting("default", "warn"), generic_setting("default", "allow"), "warn",
+        generic_setting("default", "warn"),
+        generic_setting("default", "allow"),
+        "warn",
     ));
     cases.push(configuration(
-        "unrelated-managed-artifact".to_owned(), Vec::new(),
-        vec![("artifacts".to_owned(), json!({"synthetic:other": "block"}))], "allow",
+        "unrelated-managed-artifact".to_owned(),
+        Vec::new(),
+        vec![("artifacts".to_owned(), json!({"synthetic:other": "block"}))],
+        "allow",
     ));
     cases.push(configuration(
-        "unrelated-managed-publisher".to_owned(), Vec::new(),
-        vec![("publishers".to_owned(), json!({"synthetic-other": "block"}))], "allow",
+        "unrelated-managed-publisher".to_owned(),
+        Vec::new(),
+        vec![("publishers".to_owned(), json!({"synthetic-other": "block"}))],
+        "allow",
     ));
     cases
 }
 
-fn append(cases: &mut Vec<Value>, case: &Configuration, command: &str, mode: &str, tool: &str, relax: bool) {
-    let posture = if mode == "observe" { "watch" } else { "protected" };
+fn append(
+    cases: &mut Vec<Value>,
+    case: &Configuration,
+    command: &str,
+    mode: &str,
+    tool: &str,
+    relax: bool,
+) {
+    let posture = if mode == "observe" {
+        "watch"
+    } else {
+        "protected"
+    };
     let mut policy = base("balanced", posture, false);
     policy["unknown_publisher_action"] = json!("allow");
     put(&mut policy, &case.local);
@@ -114,11 +162,20 @@ pub(crate) fn vectors() -> Value {
         for action in ["review", REAPPROVAL] {
             for selector in ["default", "artifact"] {
                 let case = configuration(
-                    format!("pwd-{selector}-{action}"), Vec::new(),
-                    setting(selector, action, "codex", &format!("codex:project:{tool}")), action,
+                    format!("pwd-{selector}-{action}"),
+                    Vec::new(),
+                    setting(selector, action, "codex", &format!("codex:project:{tool}")),
+                    action,
                 );
                 for mode in ["enforce", "observe"] {
-                    append(&mut cases, &case, "pwd", mode, tool, selector == "default" && tool != "exec_command");
+                    append(
+                        &mut cases,
+                        &case,
+                        "pwd",
+                        mode,
+                        tool,
+                        selector == "default" && tool != "exec_command",
+                    );
                 }
             }
         }
@@ -127,8 +184,10 @@ pub(crate) fn vectors() -> Value {
         for command in COMMANDS {
             for mode in ["enforce", "observe"] {
                 let case = configuration(
-                    "tool-contract".to_owned(), Vec::new(),
-                    generic_setting("default", "review"), "review",
+                    "tool-contract".to_owned(),
+                    Vec::new(),
+                    generic_setting("default", "review"),
+                    "review",
                 );
                 append(&mut cases, &case, command, mode, tool, false);
             }

@@ -42,12 +42,18 @@ def _strings(value: object, label: str) -> list[str]:
 
 def _source_file(value: str) -> None:
     path = Path(value)
-    if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] not in {
-        "src",
-        "tests",
-        "scripts",
-        "ci",
-    }:
+    if (
+        path.is_absolute()
+        or ".." in path.parts
+        or not path.parts
+        or path.parts[0]
+        not in {
+            "src",
+            "tests",
+            "scripts",
+            "ci",
+        }
+    ):
         raise ValueError(f"Invalid source contract path: {value}")
     selected = _ROOT / path
     if selected.suffix != ".py" or selected.is_symlink() or not selected.is_file():

@@ -73,7 +73,9 @@ def test_acknowledged_renewal_capture_refusal_keeps_normal_backoff(tmp_path, mon
         initial_snapshot = publisher._snapshot
         assert initial_snapshot is not None
         captures, writes = _interrupt_reservation(publisher, monkeypatch, repeated=True)
-        publisher._publish_once(renew_after_generation=initial_snapshot["generation"])
+        generation = initial_snapshot["generation"]
+        assert isinstance(generation, int) and generation > 0
+        publisher._publish_once(renew_after_generation=generation)
         assert len(captures) == 2 and len(writes) == 1
         assert all(before != after for before, after in writes)
         assert len(calls) == 1 and publisher._snapshot is initial_snapshot

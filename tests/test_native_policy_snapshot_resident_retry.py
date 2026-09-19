@@ -41,7 +41,7 @@ def test_resident_fingerprint_mismatch_enters_bounded_retry_backoff(
     monkeypatch.setattr(
         publisher,
         "_publication_context",
-        lambda *, publish_epoch=None: (
+        lambda *, publish_epoch=None, prepared_command_extensions=None: (
             None,
             None,
             b"key",
@@ -93,7 +93,7 @@ def test_run_loop_backs_off_after_resident_mismatch_at_expired_deadline(
     monkeypatch.setattr(
         publisher,
         "_publication_context",
-        lambda *, publish_epoch=None: (
+        lambda *, publish_epoch=None, prepared_command_extensions=None: (
             None,
             None,
             b"key",

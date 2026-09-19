@@ -13,8 +13,10 @@ expected = {
     "test_signed_managed_lockdown_is_consumed_by_actual_resident[enforce]",
     "test_signed_managed_lockdown_is_consumed_by_actual_resident[observe]",
 }
-passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
-    all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
+passed = (
+    len(cases) == len(expected)
+    and {case.get("name") for case in cases} == expected
+    and all(all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases)
 )
 clean = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip() == ""
 source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()

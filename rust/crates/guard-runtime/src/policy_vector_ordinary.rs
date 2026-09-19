@@ -47,7 +47,12 @@ impl Configuration {
 fn configurations() -> Vec<Configuration> {
     let mut cases = Vec::new();
     let broad_answers = [
-        REAPPROVAL, REAPPROVAL, REAPPROVAL, REAPPROVAL, "sandbox-required", "block",
+        REAPPROVAL,
+        REAPPROVAL,
+        REAPPROVAL,
+        REAPPROVAL,
+        "sandbox-required",
+        "block",
     ];
     for (index, action) in ACTIONS.into_iter().enumerate() {
         for selector in ["default", "harness", "artifact", "risk", "harness-risk"] {
@@ -68,23 +73,68 @@ fn configurations() -> Vec<Configuration> {
             cases.push(case);
         }
     }
-    type Conflict = (&'static str, &'static [(&'static str, &'static str)], &'static str);
+    type Conflict = (
+        &'static str,
+        &'static [(&'static str, &'static str)],
+        &'static str,
+    );
     let conflicts: [Conflict; 8] = [
-        ("artifact-allow-harness-block-risk-allow",
-            &[("harness", "block"), ("artifact", "allow"), ("risk", "allow")], "allow"),
-        ("artifact-block-harness-allow-risk-allow",
-            &[("harness", "allow"), ("artifact", "block"), ("risk", "allow")], "block"),
-        ("harness-allow-default-block-risk-allow",
-            &[("default", "block"), ("harness", "allow"), ("risk", "allow")], "allow"),
-        ("artifact-allow-default-block-risk-allow",
-            &[("default", "block"), ("artifact", "allow"), ("risk", "allow")], "allow"),
-        ("risk-block-artifact-allow", &[("artifact", "allow"), ("risk", "block")], "block"),
-        ("harness-risk-allow-global-risk-block",
-            &[("risk", "block"), ("harness-risk", "allow")], "allow"),
-        ("harness-risk-block-global-risk-allow",
-            &[("risk", "allow"), ("harness-risk", "block")], "block"),
-        ("harness-risk-allow-artifact-block",
-            &[("artifact", "block"), ("harness-risk", "allow")], "block"),
+        (
+            "artifact-allow-harness-block-risk-allow",
+            &[
+                ("harness", "block"),
+                ("artifact", "allow"),
+                ("risk", "allow"),
+            ],
+            "allow",
+        ),
+        (
+            "artifact-block-harness-allow-risk-allow",
+            &[
+                ("harness", "allow"),
+                ("artifact", "block"),
+                ("risk", "allow"),
+            ],
+            "block",
+        ),
+        (
+            "harness-allow-default-block-risk-allow",
+            &[
+                ("default", "block"),
+                ("harness", "allow"),
+                ("risk", "allow"),
+            ],
+            "allow",
+        ),
+        (
+            "artifact-allow-default-block-risk-allow",
+            &[
+                ("default", "block"),
+                ("artifact", "allow"),
+                ("risk", "allow"),
+            ],
+            "allow",
+        ),
+        (
+            "risk-block-artifact-allow",
+            &[("artifact", "allow"), ("risk", "block")],
+            "block",
+        ),
+        (
+            "harness-risk-allow-global-risk-block",
+            &[("risk", "block"), ("harness-risk", "allow")],
+            "allow",
+        ),
+        (
+            "harness-risk-block-global-risk-allow",
+            &[("risk", "allow"), ("harness-risk", "block")],
+            "block",
+        ),
+        (
+            "harness-risk-allow-artifact-block",
+            &[("artifact", "block"), ("harness-risk", "allow")],
+            "block",
+        ),
     ];
     for (name, settings, evaluated) in conflicts {
         let mut case = Configuration::new(name, evaluated, "allow");
@@ -96,7 +146,13 @@ fn configurations() -> Vec<Configuration> {
     for (name, level, risk, evaluated, observe) in [
         ("level-relaxed", "relaxed", None, "warn", "warn"),
         ("level-strict", "strict", None, REAPPROVAL, "allow"),
-        ("level-relaxed-explicit-warn", "relaxed", Some("warn"), "warn", "warn"),
+        (
+            "level-relaxed-explicit-warn",
+            "relaxed",
+            Some("warn"),
+            "warn",
+            "warn",
+        ),
         ("level-gentle", "gentle", None, "warn", "warn"),
         ("level-paranoid", "paranoid", None, "block", "allow"),
         ("level-custom", "custom", None, REAPPROVAL, "allow"),
@@ -110,10 +166,15 @@ fn configurations() -> Vec<Configuration> {
         for risk in [None, Some("allow"), Some("block")] {
             let mut case = Configuration::new(
                 format!("posture-{posture}-risk-{}", risk.unwrap_or("default")),
-                risk.unwrap_or(REAPPROVAL), "allow",
+                risk.unwrap_or(REAPPROVAL),
+                "allow",
             );
             case.posture = Some(posture);
-            case.level = if posture == "extra_careful" { "strict" } else { "balanced" };
+            case.level = if posture == "extra_careful" {
+                "strict"
+            } else {
+                "balanced"
+            };
             case.risk_action = risk;
             cases.push(case);
         }
@@ -122,7 +183,11 @@ fn configurations() -> Vec<Configuration> {
 }
 
 fn policy(case: &Configuration, harness: &str, artifact: &str) -> Value {
-    let mut value = base(case.level, case.posture.unwrap_or("protected"), case.posture.is_some());
+    let mut value = base(
+        case.level,
+        case.posture.unwrap_or("protected"),
+        case.posture.is_some(),
+    );
     value["default_action"] = json!(case.default_action);
     if let Some(action) = case.harness_action {
         value["harness_actions"][harness] = json!(action);
@@ -146,14 +211,18 @@ pub(crate) fn vectors() -> Value {
         let configurations = if harness == "codex" {
             configurations()
         } else {
-            ACTIONS.into_iter().map(|action| {
-                let mut case = Configuration::new(
-                    format!("risk-{action}"), action,
-                    if action == "warn" { "warn" } else { "allow" },
-                );
-                case.risk_action = Some(action);
-                case
-            }).collect()
+            ACTIONS
+                .into_iter()
+                .map(|action| {
+                    let mut case = Configuration::new(
+                        format!("risk-{action}"),
+                        action,
+                        if action == "warn" { "warn" } else { "allow" },
+                    );
+                    case.risk_action = Some(action);
+                    case
+                })
+                .collect()
         };
         for case in configurations {
             let modes: &[&str] = if case.posture.is_some() {
@@ -162,9 +231,15 @@ pub(crate) fn vectors() -> Value {
                 &["enforce", "observe"]
             };
             for requested in modes {
-                let mode = if case.posture == Some("watch") { "observe" } else { requested };
+                let mode = if case.posture == Some("watch") {
+                    "observe"
+                } else {
+                    requested
+                };
                 cases.push(source_case(
-                    &source, &case.name, mode,
+                    &source,
+                    &case.name,
+                    mode,
                     policy(&case, harness, source["artifactId"].as_str().unwrap()),
                     expected(harness, mode, case.evaluated, case.observe),
                 ));

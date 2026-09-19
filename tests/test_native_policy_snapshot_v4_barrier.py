@@ -63,6 +63,7 @@ def barrier(tmp_path, monkeypatch):
     )
     store = SimpleNamespace(
         guard_home=home,
+        path=home / "guard.db",
         _policy_integrity_secret_material=lambda **kwargs: (b"s" * 32, "synthetic"),
         _connect=lambda: sqlite3.connect(home / "guard.db"),
     )

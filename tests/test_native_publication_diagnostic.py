@@ -463,7 +463,11 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
         expected = (
             "native_publication_observation: " + observation + "; "
             "lifecycle_attached=True; initial_publisher=missing; "
-            f"last_publisher={code}; error_epoch=0; epoch=1; error_events=1\n"
+            f"last_publisher={code}; error_epoch=0; epoch=1; error_events=1; "
+            "worker_started=no; worker_closed=no; worker_acked=no; worker_snapshot=missing; "
+            "worker_thread=missing; worker_event=yes; worker_phase=unknown; worker_stack=unavailable; "
+            "reservation_metadata_attached=False; reservation_metadata_checks=0; "
+            "reservation_metadata_changed=0; reservation_metadata_kinds=none\n"
         )
         assert output == ("" if output_fails else expected)
         assert "private-" not in output

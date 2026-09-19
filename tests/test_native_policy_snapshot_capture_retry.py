@@ -50,8 +50,8 @@ def _interrupt_reservation(
     captures: list[CapturedV3PublicationInputs] = []
     writes: list[tuple[int, int]] = []
 
-    def capture(*, publish_epoch: int | None = None):
-        context = original(publish_epoch=publish_epoch)
+    def capture(*, publish_epoch: int | None = None, prepared_command_extensions=None):
+        context = original(publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions)
         assert context is not None
         inputs = context[5]
         assert isinstance(inputs, CapturedV3PublicationInputs)
@@ -131,8 +131,8 @@ def test_capture_retry_never_replays_an_exception_after_yield(tmp_path, monkeypa
         original = publisher._publication_context
         captures = []
 
-        def capture(*, publish_epoch=None):
-            context = original(publish_epoch=publish_epoch)
+        def capture(*, publish_epoch=None, prepared_command_extensions=None):
+            context = original(publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions)
             captures.append(context is not None)
             return context
 

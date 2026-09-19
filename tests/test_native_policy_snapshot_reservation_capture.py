@@ -78,8 +78,8 @@ def test_rotated_source_is_not_reserved_after_capture(tmp_path, monkeypatch):
     with closing(_make_publisher(store, calls)) as publisher:
         original = publisher._publication_context
 
-        def rotate_after_actual_capture(*, publish_epoch=None):
-            context = original(publish_epoch=publish_epoch)
+        def rotate_after_actual_capture(*, publish_epoch=None, prepared_command_extensions=None):
+            context = original(publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions)
             assert context is not None
             previous = store.get_or_create_installation_id()
             assert store.rotate_installation_id(_NOW)["installation_id"] != previous
@@ -174,8 +174,8 @@ def test_complete_capture_is_serialized_and_transport_releases_mutation_lock(tmp
         original = publisher._publication_context
         captures = []
 
-        def capture(*, publish_epoch=None):
-            value = original(publish_epoch=publish_epoch)
+        def capture(*, publish_epoch=None, prepared_command_extensions=None):
+            value = original(publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions)
             captures.append(value)
             if len(captures) == 2:
                 start.set()

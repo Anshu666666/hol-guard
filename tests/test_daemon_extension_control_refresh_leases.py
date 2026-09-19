@@ -6,8 +6,7 @@ import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -82,7 +81,8 @@ def test_unchanged_daemon_refresh_admits_independent_native_reader(
     initial = runtime.current()
     # The real method has only these two service dependencies; avoid starting
     # unrelated sockets, publisher and maintenance threads in this lock test.
-    server = cast(_GuardDaemonHTTPServer, SimpleNamespace(store=store, extension_control_runtime=runtime))
+    server = object.__new__(_GuardDaemonHTTPServer)
+    server.store, server.extension_control_runtime = store, runtime
     entered, release = threading.Event(), threading.Event()
     original_read = store._read_extension_control_authority_locked
 

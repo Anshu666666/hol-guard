@@ -176,7 +176,10 @@ def compiled_v3_compatible_policy(
 
 
 def publication_context(
-    self: NativePolicySnapshotPublisher, *, publish_epoch: int | None = None
+    self: NativePolicySnapshotPublisher,
+    *,
+    publish_epoch: int | None = None,
+    prepared_command_extensions: Mapping[str, object] | None = None,
 ) -> PublicationContext | None:
     with self._condition:
         if publish_epoch is None:
@@ -237,7 +240,12 @@ def publication_context(
             return None
         # Catalog preparation may invalidate an older publication epoch. It
         # must finish before the coherent SQL/source capture begins.
-        command_extensions = self._compiled_command_extensions()
+        # The initial bootstrap already read this binding before selecting its
+        # epoch. Its complete source capture below must still prove equality.
+        # Reservation and post-ACK captures always perform their own fresh read.
+        command_extensions = (
+            self._compiled_command_extensions() if prepared_command_extensions is None else prepared_command_extensions
+        )
         with self._condition:
             if self._closed or self._epoch != publish_epoch:
                 return None

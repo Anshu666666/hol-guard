@@ -23,8 +23,7 @@ from tests import native_sensitive_read_policy_vectors as ordinary
 
 ROOT = Path(__file__).resolve().parents[1]
 RUST_TEST = (
-    "policy_scoped_enforcement::policy_vector_commitment_tests::"
-    "source_defined_policy_vectors_match_declared_case_sets"
+    "policy_scoped_enforcement::policy_vector_commitment_tests::source_defined_policy_vectors_match_declared_case_sets"
 )
 COMMON = ("name", "harness", "source", "payload", "artifactId", "mode")
 FIELDS = {
@@ -33,8 +32,14 @@ FIELDS = {
     # with localEffectivePolicy before evaluation. Only the latter is consumed.
     "mixed": (*COMMON, "localEffectivePolicy", "managedConfiguration", "expected"),
     "generic": (
-        "name", "harness", "mode", "payload", "artifactId",
-        "localEffectivePolicy", "managedConfiguration", "expected",
+        "name",
+        "harness",
+        "mode",
+        "payload",
+        "artifactId",
+        "localEffectivePolicy",
+        "managedConfiguration",
+        "expected",
     ),
 }
 COUNTS = {"ordinary": 133, "mixed": 188, "generic": 260}
@@ -74,16 +79,28 @@ def test_source_defined_native_policy_vectors_match_actual_python(tmp_path: Path
     assert dict(os.environ) == before
     native_environment = dict(os.environ)
     for key in (
-        "HOL_GUARD_PYTHON_ORACLE", "HOL_GUARD_TEST_MODE",
-        "HOL_GUARD_NATIVE_DIAGNOSTIC", "PYTEST_CURRENT_TEST",
+        "HOL_GUARD_PYTHON_ORACLE",
+        "HOL_GUARD_TEST_MODE",
+        "HOL_GUARD_NATIVE_DIAGNOSTIC",
+        "PYTEST_CURRENT_TEST",
     ):
         native_environment.pop(key, None)
     native_environment["HOL_GUARD_NATIVE"] = "auto"
     completed = subprocess.run(
         [
-            "cargo", "test", "--locked", "--manifest-path", "rust/Cargo.toml",
-            "-p", "hol-guard-runtime", "--bin", "hol-guard-runtime",
-            RUST_TEST, "--", "--exact", "--nocapture",
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "-p",
+            "hol-guard-runtime",
+            "--bin",
+            "hol-guard-runtime",
+            RUST_TEST,
+            "--",
+            "--exact",
+            "--nocapture",
         ],
         cwd=ROOT,
         env=native_environment,

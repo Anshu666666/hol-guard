@@ -22,7 +22,10 @@ fn snapshot(case: &Value, rows: Vec<Value>) -> PolicySnapshotV4 {
     ))
     .unwrap();
     let mut value = vector["snapshot"].clone();
-    value["effective_policy"] = case.get("localEffectivePolicy").unwrap_or(&case["effectivePolicy"]).clone();
+    value["effective_policy"] = case
+        .get("localEffectivePolicy")
+        .unwrap_or(&case["effectivePolicy"])
+        .clone();
     value["mode"] = case["mode"].clone();
     value["scoped_authority"] = json!({
         "schema":"guard-native-policy-authority.v1", "generic_precedence":"specificity-recency.v1",

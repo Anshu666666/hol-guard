@@ -445,8 +445,15 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
             self._condition.notify_all()
         self._publish_event.set()
 
-    def _publication_context(self, *, publish_epoch: int | None = None) -> PublicationContext | None:
-        return publication_context(self, publish_epoch=publish_epoch)
+    def _publication_context(
+        self,
+        *,
+        publish_epoch: int | None = None,
+        prepared_command_extensions: Mapping[str, object] | None = None,
+    ) -> PublicationContext | None:
+        return publication_context(
+            self, publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions
+        )
 
     @staticmethod
     def _decode_ack(output: bytes | None) -> dict[str, object] | None:

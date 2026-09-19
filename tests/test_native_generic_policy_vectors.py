@@ -7,6 +7,7 @@ from tests.native_generic_policy_vectors import generate_vectors
 
 def test_generic_vector_scope_retains_reciprocal_origins_and_tool_contracts(tmp_path: Path) -> None:
     cases = generate_vectors(tmp_path)["cases"]
+    assert isinstance(cases, list)
     assert len(cases) == 260
     assert len({case["name"] for case in cases}) == len(cases)
     assert {case["payload"]["tool_name"] for case in cases} == {"Shell", "Bash", "shell", "exec_command"}

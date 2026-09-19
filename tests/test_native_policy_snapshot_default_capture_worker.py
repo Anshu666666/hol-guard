@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+from typing import TypedDict
 
 import pytest
 
@@ -13,6 +14,19 @@ from codex_plugin_scanner.guard.native_policy_snapshot_publisher_context import 
 from codex_plugin_scanner.guard.store import GuardStore
 from tests.test_native_policy_snapshot_capture_retry import _write_startup_status
 from tests.test_native_policy_snapshot_reservation_capture import _make_publisher
+
+
+class _CaptureCount(TypedDict):
+    captures: int
+
+
+class _Attempt(_CaptureCount):
+    elapsed_ms: float
+    transports: int
+    error: str | None
+    ready: bool
+    closed: bool
+    retry_remaining_ms: float | None
 
 
 @pytest.mark.parametrize("writes_mode", ["none", "twice", "continuous"])
@@ -26,11 +40,11 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
     original_context = publisher._publication_context
     bootstrap_complete = threading.Event()
     worker_errors = []
-    attempts = []
+    attempts: list[_Attempt] = []
     captures = []
     writes = []
     measuring = False
-    active_attempt = None
+    active_attempt: _CaptureCount | None = None
 
     def checked_run():
         try:
@@ -42,7 +56,7 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
     def observed_publish(*, renew_after_generation=None):
         nonlocal active_attempt
         observed = measuring
-        attempt = {"captures": 0}
+        attempt: _CaptureCount = {"captures": 0}
         active_attempt = attempt
         started = time.monotonic()
         transport_count = len(transports)
@@ -50,7 +64,8 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
             return original_publish(renew_after_generation=renew_after_generation)
         finally:
             if observed:
-                attempt.update(
+                completed = _Attempt(
+                    captures=attempt["captures"],
                     elapsed_ms=round((time.monotonic() - started) * 1_000, 3),
                     transports=len(transports) - transport_count,
                     error=publisher.last_error,
@@ -65,13 +80,13 @@ def test_default_worker_admits_workspace_after_startup_status_writes(tmp_path, m
                         )
                     ),
                 )
-                attempts.append(attempt)
+                attempts.append(completed)
             else:
                 bootstrap_complete.set()
             active_attempt = None
 
-    def capture(*, publish_epoch=None):
-        context = original_context(publish_epoch=publish_epoch)
+    def capture(*, publish_epoch=None, prepared_command_extensions=None):
+        context = original_context(publish_epoch=publish_epoch, prepared_command_extensions=prepared_command_extensions)
         if not measuring or publisher.closed or context is None:
             return context
         assert active_attempt is not None

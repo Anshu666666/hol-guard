@@ -7,14 +7,29 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 pub(super) const ACTIONS: [&str; 6] = [
-    "allow", "warn", "review", "require-reapproval", "sandbox-required", "block",
+    "allow",
+    "warn",
+    "review",
+    "require-reapproval",
+    "sandbox-required",
+    "block",
 ];
 pub(super) const REAPPROVAL: &str = "require-reapproval";
 const RISKS: [&str; 14] = [
-    "cloud_advisory", "credential_exfiltration", "data_flow_exfiltration",
-    "destructive_shell", "encoded_execution", "encoded_exfiltration", "guard_bypass",
-    "local_secret_read", "malicious_skill", "mcp_dangerous_tool", "network_egress",
-    "package_script", "persistence", "prompt_injection",
+    "cloud_advisory",
+    "credential_exfiltration",
+    "data_flow_exfiltration",
+    "destructive_shell",
+    "encoded_execution",
+    "encoded_exfiltration",
+    "guard_bypass",
+    "local_secret_read",
+    "malicious_skill",
+    "mcp_dangerous_tool",
+    "network_egress",
+    "package_script",
+    "persistence",
+    "prompt_injection",
 ];
 pub(super) type Settings = Vec<(String, Value)>;
 
@@ -25,7 +40,9 @@ pub(super) fn sources() -> Vec<Value> {
     .unwrap();
     let mut first = BTreeMap::new();
     for source in fixture["cases"].as_array().unwrap() {
-        first.entry(source["harness"].as_str().unwrap()).or_insert(source.clone());
+        first
+            .entry(source["harness"].as_str().unwrap())
+            .or_insert(source.clone());
     }
     assert_eq!(first.len(), 4);
     first.into_values().collect()
@@ -43,20 +60,25 @@ pub(super) fn base(level: &str, posture: &str, explicit: bool) -> Value {
     };
     let r = REAPPROVAL;
     let values = match preset {
-        "balanced" => ["warn", r, r, r, r, r, "block", r, r, r, "warn", "warn", r, r],
+        "balanced" => [
+            "warn", r, r, r, r, r, "block", r, r, r, "warn", "warn", r, r,
+        ],
         "relaxed" => [
-            "allow", "warn", "warn", "warn", "warn", "warn", "warn",
-            "warn", "warn", "warn", "allow", "warn", "warn", "warn",
+            "allow", "warn", "warn", "warn", "warn", "warn", "warn", "warn", "warn", "warn",
+            "allow", "warn", "warn", "warn",
         ],
         "strict" => [
             r, r, "block", r, r, "block", "block", r, "block", "block", r, r, "block", "block",
         ],
         "paranoid" => ["block"; 14],
-        "protected" => ["allow", r, r, r, r, "block", "block", r, r, r, "allow", r, r, r],
+        "protected" => [
+            "allow", r, r, r, r, "block", "block", r, r, r, "allow", r, r, r,
+        ],
         "extra_careful" => [r, r, r, r, r, "block", "block", r, r, r, r, r, r, r],
         _ => panic!("undeclared fixture preset"),
     };
-    let risks: Map<String, Value> = RISKS.into_iter()
+    let risks: Map<String, Value> = RISKS
+        .into_iter()
         .zip(values)
         .map(|(key, value)| (key.to_owned(), json!(value)))
         .collect();
@@ -74,7 +96,10 @@ pub(super) fn setting(selector: &str, action: &str, harness: &str, id: &str) -> 
     let (key, value) = match selector {
         "default" => ("default_action", json!(action)),
         "risk" => ("risk_actions", json!({"local_secret_read": action})),
-        "harness-risk" => ("harness_risk_actions", json!({harness: {"local_secret_read": action}})),
+        "harness-risk" => (
+            "harness_risk_actions",
+            json!({harness: {"local_secret_read": action}}),
+        ),
         "harness" => ("harnesses", json!({harness: action})),
         "artifact" => ("artifacts", json!({id: action})),
         "publisher" => ("publishers", json!({"synthetic-publisher": action})),
@@ -90,12 +115,18 @@ pub(super) fn put(policy: &mut Value, settings: &Settings) {
             "publishers" => "publisher_actions",
             "artifacts" => "artifact_actions",
             "risk_actions" => {
-                policy["risk_actions"].as_object_mut().unwrap()
+                policy["risk_actions"]
+                    .as_object_mut()
+                    .unwrap()
                     .extend(value.as_object().unwrap().clone());
                 continue;
             }
-            "harness_risk_actions" | "default_action" | "unknown_publisher_action"
-            | "changed_hash_action" | "new_network_domain_action" | "subprocess_action" => key,
+            "harness_risk_actions"
+            | "default_action"
+            | "unknown_publisher_action"
+            | "changed_hash_action"
+            | "new_network_domain_action"
+            | "subprocess_action" => key,
             _ => panic!("undeclared fixture setting"),
         };
         policy[field] = value.clone();
@@ -108,13 +139,17 @@ pub(super) fn managed(settings: &Settings, mode: &str) -> Value {
     }
     let mut policy = base("custom", "protected", false);
     for key in [
-        "default_action", "unknown_publisher_action", "changed_hash_action",
-        "new_network_domain_action", "subprocess_action",
+        "default_action",
+        "unknown_publisher_action",
+        "changed_hash_action",
+        "new_network_domain_action",
+        "subprocess_action",
     ] {
         policy[key] = json!("allow");
     }
     policy["receipt_redaction_level"] = json!("none");
-    policy["risk_actions"] = json!(RISKS.into_iter()
+    policy["risk_actions"] = json!(RISKS
+        .into_iter()
         .chain(["execution", "policy_bypass", "supply_chain"])
         .map(|key| (key.to_owned(), json!("allow")))
         .collect::<Map<String, Value>>());
@@ -170,7 +205,13 @@ pub(super) fn expected(harness: &str, mode: &str, evaluated: &str, observe: &str
     result
 }
 
-pub(super) fn source_case(source: &Value, name: &str, mode: &str, policy: Value, answer: Value) -> Value {
+pub(super) fn source_case(
+    source: &Value,
+    name: &str,
+    mode: &str,
+    policy: Value,
+    answer: Value,
+) -> Value {
     let harness = source["harness"].as_str().unwrap();
     json!({
         "name": format!("{harness}-{mode}-{name}"), "harness": harness,

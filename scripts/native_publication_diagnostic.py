@@ -19,6 +19,8 @@ from codex_plugin_scanner.guard.native_resident_client import (
     native_resident_client_failure_code,
     native_resident_client_request,
 )
+from scripts.native_publication_capture_diagnostic import CaptureMetadataObservation
+from scripts.native_publication_worker_diagnostic import describe_publication_worker
 
 _CODES = FINITE_FAILURE_CODES | frozenset(
     {
@@ -256,6 +258,7 @@ class PublicationObservation:
         self.attached = False
         self.lifecycle = PublicationLifecycleObservation()
         self.readiness = _ReadinessObservation()
+        self.capture = CaptureMetadataObservation()
 
     def call(self, client: Callable[..., bytes | None], **kwargs: Any) -> bytes | None:
         __tracebackhide__ = True
@@ -295,7 +298,11 @@ def observe_publication(publisher: Any) -> Iterator[PublicationObservation]:
         publisher._client_request = client
         observation.attached = True
     try:
-        with observation.lifecycle.attach(publisher), observation.readiness.attach(publisher):
+        with (
+            observation.lifecycle.attach(publisher),
+            observation.readiness.attach(publisher),
+            observation.capture.attach(publisher),
+        ):
             yield observation
     finally:
         if observation.attached:
@@ -310,7 +317,10 @@ def report_publication_failure(observation: PublicationObservation, publisher: A
             + observation.describe(getattr(publisher, "last_error", None))
             + "; "
             + observation.lifecycle.describe(publisher)
-            + observation.readiness.describe(publisher),
+            + observation.readiness.describe(publisher)
+            + "; "
+            + describe_publication_worker(publisher)
+            + observation.capture.describe(),
             file=sys.stderr,
         )
 

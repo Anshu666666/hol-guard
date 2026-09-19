@@ -20,14 +20,17 @@ expected = {
     "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[enforce]",
     "test_signed_defaults_preserve_both_hook_events_in_actual_auto_resident[observe]",
 }
-passed = len(cases) == len(expected) and {case.get("name") for case in cases} == expected and all(
-    all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases
+passed = (
+    len(cases) == len(expected)
+    and {case.get("name") for case in cases} == expected
+    and all(all(case.find(tag) is None for tag in ("skipped", "failure", "error")) for case in cases)
 )
 if root is not None:
     passed = passed and not any(node.tag in {"skipped", "failure", "error"} for node in root.iter())
     passed = passed and all(
         suite.get(field, "0") == "0"
-        for suite in root.iter() if suite.tag in {"testsuite", "testsuites"}
+        for suite in root.iter()
+        if suite.tag in {"testsuite", "testsuites"}
         for field in ("errors", "failures", "skipped")
     )
 clean = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True).strip() == ""

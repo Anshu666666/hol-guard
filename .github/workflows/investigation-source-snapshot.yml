@@ -1,47 +1,162 @@
-name: Investigation source snapshot
-
+name: Storage liveness tracing comparison
 on:
-  push:
-    branches:
-      - fix/extension-control-authority-stability
-  pull_request:
-    branches:
-      - release/3.0
-
+  workflow_dispatch:
 permissions:
+  actions: read
   contents: read
-
+concurrency:
+  group: storage-liveness-tracing-comparison
+  cancel-in-progress: false
 jobs:
-  snapshot:
+  original-shard:
+    if: github.ref == 'refs/heads/hgp/diagnostic-storage-tracing-20260919'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        tracing: [covered, untraced]
+    defaults:
+      run:
+        shell: bash
+        working-directory: core
     steps:
-      - name: Check out pull request source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - name: Create pull request source archive
-        run: tar --exclude=.git -czf /tmp/hol-guard-source.tar.gz .
-      - name: Upload pull request source archive
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          name: hol-guard-source
-          path: /tmp/hol-guard-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
-
-  baseline:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out release baseline
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Bind the isolated diagnostic
+        working-directory: .
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTIC_SHA"
+          test "$(git show -s --format=%P HEAD)" = "69f4acf83fcd71ffa7c78e4bbda257d78ce1ca70"
+          test "$(git rev-parse HEAD^:)" = "90b007211ebdb7f84a83e3946e884d3e12767798"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = ".github/workflows/investigation-source-snapshot.yml"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          ref: release/3.0
-      - name: Create release baseline archive
-        run: tar --exclude=.git -czf /tmp/hol-guard-release-3.0.tar.gz .
-      - name: Upload release baseline archive
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          ref: 69f4acf83fcd71ffa7c78e4bbda257d78ce1ca70
+          path: core
+          persist-credentials: false
+      - name: Bind unchanged execution sources
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "69f4acf83fcd71ffa7c78e4bbda257d78ce1ca70"
+          test "$(git rev-parse HEAD:)" = "90b007211ebdb7f84a83e3946e884d3e12767798"
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = "a866713f175f3011de12c4bb739519e4709ca746"
+          test "$(git hash-object .github/workflows/ci.yml)" = "8f24e6786d5398eb2345ed92a68c6994b2bc846c"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          name: hol-guard-release-3.0
-          path: /tmp/hol-guard-release-3.0.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          python-version: "3.12.13"
+      - name: Set up uv
+        id: setup-uv-primary
+        continue-on-error: true
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+          cache-dependency-glob: |
+            core/pyproject.toml
+            core/uv.lock
+            core/requirements.txt
+            core/docker-requirements.txt
+          save-cache: false
+      - name: Retry uv setup after transient download failure
+        if: steps.setup-uv-primary.outcome == 'failure'
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+          cache-dependency-glob: |
+            core/pyproject.toml
+            core/uv.lock
+            core/requirements.txt
+            core/docker-requirements.txt
+          save-cache: false
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Secure the CI virtualenv interpreter
+        run: |
+          interpreter="$(uv run --no-sync python -c 'import sys; print(sys.executable)')"
+          target="$(realpath "$interpreter")"
+          mode="$(stat -c '%a' "$target")"
+          if (( (8#$mode & 2) != 0 )); then
+            replacement="${interpreter}.guard-ci"
+            cp --dereference "$target" "$replacement"
+            chmod 0755 "$replacement"
+            mv "$replacement" "$target"
+          fi
+          secured_mode="$(stat -c '%a' "$(realpath "$interpreter")")"
+          (( (8#$secured_mode & 2) == 0 ))
+      - name: Reuse the immutable original shard plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: "10577354210"
+          run-id: 35421755080
+          github-token: ${{ github.token }}
+          path: core/pytest-shards
+          merge-multiple: true
+      - name: Verify the exact original node order
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          source = Path("pytest-shards/shard-44.txt").read_bytes()
+          assert len(source) == 38937
+          assert hashlib.sha256(source).hexdigest() == "692ecf98b210594f50a294483cea22cbd78cc33837069a016990ad77afe2f112"
+          nodes = source.decode("utf-8").splitlines()
+          assert len(nodes) == 313
+          target = "tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon"
+          assert nodes.count(target) == 1
+          assert nodes[130] == target
+          print("ORIGINAL_SHARD_BINDING=313-nodes;target-ordinal-131;exact-digest")
+          PY
+      - name: Execute the original shard once
+        env:
+          TRACING_VARIANT: ${{ matrix.tracing }}
+        run: |
+          set -euo pipefail
+          shard_file=$(printf 'pytest-shards/shard-%02d.txt' "44")
+          test -s "$shard_file"
+          tracing_args=()
+          case "$TRACING_VARIANT" in
+            covered) tracing_args=(--cov --cov-branch --cov-report=) ;;
+            untraced) ;;
+            *) exit 1 ;;
+          esac
+          # Keep this flag identical so no preceding test changes its timeout budget.
+          PYTHONPATH=scripts/ci GUARD_PYTEST_DURATION_OUTPUT=pytest-durations.json GUARD_PYTEST_UNDER_COVERAGE=1 \
+            uv run --no-sync pytest -p pytest_duration_report "@$shard_file" --tb=short \
+            --deselect tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial \
+            "${tracing_args[@]}"
+      - name: Retain existing duration telemetry
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: storage-liveness-durations-${{ matrix.tracing }}
+          path: core/pytest-durations.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Verify unchanged execution sources afterward
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "69f4acf83fcd71ffa7c78e4bbda257d78ce1ca70"
+          test "$(git rev-parse HEAD:)" = "90b007211ebdb7f84a83e3946e884d3e12767798"
+          test "$(git hash-object tests/test_guard_daemon_storage_liveness.py)" = "a866713f175f3011de12c4bb739519e4709ca746"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Verify unchanged diagnostic afterward
+        if: always()
+        working-directory: .
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTIC_SHA"
+          test "$(git show -s --format=%P HEAD)" = "69f4acf83fcd71ffa7c78e4bbda257d78ce1ca70"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = ".github/workflows/investigation-source-snapshot.yml"
+          test -z "$(git status --porcelain --untracked-files=no)"

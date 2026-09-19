@@ -105,7 +105,7 @@ def bind_staged_policy_rows(
         )
         if Counter(decisions) != Counter(staged.decisions):
             raise PolicyCompilationError("command_source_generic_rows_mismatch", "policy-bundle")
-        require_source_binding = require_source_binding or staged.require_source_binding
+        require_source_binding = True
     rebound, materialization = bind_policy_bundle_materialization(
         store,
         connection,

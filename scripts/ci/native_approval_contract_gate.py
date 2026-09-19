@@ -51,6 +51,7 @@ ACTIVE_RUST_FILES: Final = (
     Path("rust/crates/guard-runtime/src/policy_store.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_approval.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_authority.rs"),
+    Path("rust/crates/guard-runtime/src/policy_store_migration.rs"),
     Path("rust/crates/guard-runtime/src/policy_store_tests.rs"),
     Path("rust/crates/guard-runtime/src/resident_protocol.rs"),
 )

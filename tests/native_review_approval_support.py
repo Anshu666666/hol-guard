@@ -41,7 +41,6 @@ def _test_request_digest(harness: str, payload: object, workspace: object) -> st
     return hashlib.sha256(encoded).hexdigest()
 
 
-
 def _bound_review_evidence(
     *,
     harness: str,
@@ -91,6 +90,7 @@ def _bound_review_evidence(
     }
     receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
     return result, receipt
+
 
 def _worker(
     tmp_path: Path,

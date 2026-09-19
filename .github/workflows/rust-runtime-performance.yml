@@ -70,12 +70,16 @@ jobs:
           export HOL_GUARD_PACKAGE_VERSION="$VERSION"
           cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
           rust/target/release/hol-guard-runtime self-test --json
+      - name: Verify benchmark phase observer
+        run: |
+          uv run --no-sync ruff check scripts/bench_guard_native_phase_diagnostic.py tests/test_native_performance_phase_diagnostic.py
+          uv run --no-sync pytest tests/test_guard_native_release_gate_benchmark.py tests/test_native_performance_phase_diagnostic.py --tb=short
       - name: Enforce native performance gates
         env:
           HOL_GUARD_NATIVE: force
           HOL_GUARD_NATIVE_BINARY: ${{ github.workspace }}/rust/target/release/hol-guard-runtime
         run: |
-          uv run --no-sync python scripts/bench_guard_native_release_gate.py \
+          uv run --no-sync python scripts/bench_guard_native_phase_diagnostic.py \
             --runtime "$HOL_GUARD_NATIVE_BINARY" \
             --warm-iterations 100 \
             --cold-iterations 3 \

@@ -5,8 +5,9 @@ from pathlib import Path
 from tests.native_sensitive_read_mixed_origin_vectors import generate_vectors
 
 
-def test_reciprocal_origin_floors_and_stage_boundaries_are_retained(tmp_path: Path):
+def test_reciprocal_origin_floors_and_stage_boundaries_are_retained(tmp_path: Path) -> None:
     cases = generate_vectors(tmp_path)["cases"]
+    assert isinstance(cases, list)
     assert len(cases) == 188
     indexed = {case["name"]: case for case in cases}
     assert len(indexed) == len(cases)

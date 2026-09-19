@@ -19,10 +19,14 @@ from pathlib import Path
 import codex_plugin_scanner
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings
 from codex_plugin_scanner.guard.config import update_guard_settings
+from codex_plugin_scanner.guard.daemon.hook_availability_policy import (
+    _INTEGRITY_FAIL_CLOSED_REASON_CODES,
+    _REVIEW_CANNOT_FINISH_REASON_CODES,
+)
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_command_control_authority import AUTHORITY_FILE_NAME
 from codex_plugin_scanner.guard.native_hook_edge import review_raw_hook_native
-from codex_plugin_scanner.guard.native_policy_test_support import _finite_publisher_failure
+from codex_plugin_scanner.guard.native_policy_test_support import _finite_failure, _finite_publisher_failure
 from codex_plugin_scanner.guard.native_resident_client import (
     close_native_residents,
     native_resident_client_failure_code,
@@ -247,6 +251,44 @@ def exercise(root: Path) -> dict[str, object]:
         response = request(daemon, home, workspace, "claude-code", "PreToolUse", payload)
         require(isinstance(response, dict), f"{label}:http_missing")
         receipt = daemon._server.hook_worker.last_native_decision_receipt
+        if not isinstance(receipt, dict) or receipt.get("authority") != "rust":
+            health = native_runtime_health(home)
+            response_reason = response.get("reason_code")
+            known_reasons = (
+                _REVIEW_CANNOT_FINISH_REASON_CODES
+                | _INTEGRITY_FAIL_CLOSED_REASON_CODES
+                | {
+                    "native_command_control_fence_unavailable",
+                    "native_review_deadline_exceeded",
+                    "native_scoped_authority_unavailable",
+                }
+            )
+            print(
+                json.dumps(
+                    {
+                        "schema": "guard.installed-native-extension-receipt-failure.v1",
+                        "case": label,
+                        "completed_cases": len(rows),
+                        "control_revision": revision,
+                        "response_reason": (
+                            response_reason
+                            if isinstance(response_reason, str) and response_reason in known_reasons
+                            else "other"
+                        ),
+                        "native_health_reason": _finite_failure(health.reason),
+                        "native_health_state": (
+                            health.state
+                            if health.state in {"starting", "recovering", "healthy", "degraded", "quarantined"}
+                            else "other"
+                        ),
+                        "publisher_error": _finite_publisher_failure(
+                            daemon._server.hook_worker.policy_snapshot_publisher.last_error
+                        ),
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
         require(isinstance(receipt, dict) and receipt.get("authority") == "rust", f"{label}:receipt_missing")
         require(receipt.get("command_extensions") == extensions["binding"], f"{label}:receipt_generation_mismatch")
         require(receipt["decision"] == result["decision"], f"{label}:http_decision_mismatch")

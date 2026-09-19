@@ -5,9 +5,10 @@ from pathlib import Path
 from tests.native_sensitive_read_policy_vectors import generate_vectors
 
 
-def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries(tmp_path: Path):
+def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries(tmp_path: Path) -> None:
     fixture = generate_vectors(tmp_path)
     cases = fixture["cases"]
+    assert isinstance(cases, list)
     assert len(cases) == 133
     assert len({case["name"] for case in cases}) == len(cases)
     assert {case["harness"] for case in cases} == {"codex", "claude-code", "cline", "cursor"}
@@ -25,8 +26,9 @@ def test_sensitive_read_vectors_preserve_unknown_publisher_and_stage_boundaries(
     assert indexed["codex-enforce-risk-allow"]["evaluatedPolicyAction"] == "allow"
 
 
-def test_explicit_postures_use_loaded_modes_and_all_levels_keep_real_actions(tmp_path: Path):
+def test_explicit_postures_use_loaded_modes_and_all_levels_keep_real_actions(tmp_path: Path) -> None:
     cases = generate_vectors(tmp_path)["cases"]
+    assert isinstance(cases, list)
     indexed = {case["name"]: case for case in cases}
     for level in ("gentle", "paranoid", "custom"):
         for mode in ("enforce", "observe"):

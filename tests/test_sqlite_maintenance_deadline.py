@@ -15,6 +15,7 @@ from codex_plugin_scanner.guard.sqlite_deadline import (
     sqlite_deadline_monotonic,
     sqlite_maintenance_deadline,
 )
+from codex_plugin_scanner.guard.sqlite_profile import sqlite_error_is_busy_locked
 from codex_plugin_scanner.guard.sqlite_tuning import sqlite_connect_timeout_override, sqlite_connect_timeout_seconds
 
 
@@ -154,39 +155,62 @@ def test_actual_busy_waits_share_one_deadline(tmp_path):
     requested = threading.Event()
     locked = threading.Event()
     finished = threading.Event()
+    release = threading.Event()
 
     def locker():
         try:
             with sqlite3.connect(path) as other:
-                for _ in range(2):
+                for attempt in range(2):
                     assert requested.wait(2)
                     requested.clear()
                     other.execute("begin immediate")
                     locked.set()
-                    time.sleep(0.12)
+                    if attempt == 0:
+                        time.sleep(0.12)
+                    else:
+                        assert release.wait(2)
                     other.commit()
         finally:
             finished.set()
 
     thread = threading.Thread(target=locker, daemon=True)
     thread.start()
-    with pytest.raises(SQLiteDeadlineExceededError), sqlite_maintenance_deadline(time.monotonic() + 0.20):
-        connection = _connection(path)
-        try:
-            requested.set()
-            assert locked.wait(1)
-            locked.clear()
-            connection.begin_immediate()
-            connection.commit()
-            requested.set()
-            assert locked.wait(1)
-            with pytest.raises((SQLiteDeadlineExceededError, sqlite3.OperationalError)):
+    deadline = time.monotonic() + 0.20
+    outcomes = []
+    try:
+        with pytest.raises(SQLiteDeadlineExceededError), sqlite_maintenance_deadline(deadline):
+            connection = _connection(path)
+            try:
+                requested.set()
+                assert locked.wait(1)
+                locked.clear()
                 connection.begin_immediate()
-        finally:
-            connection.close()
-    assert finished.wait(2)
-    thread.join(1)
+                connection.commit()
+                outcomes.append("first_wait_completed")
+                requested.set()
+                assert locked.wait(1)
+                with pytest.raises(SQLiteDeadlineExceededError):
+                    while True:
+                        assert connection._bound_deadline() == deadline
+                        try:
+                            connection.begin_immediate()
+                        except sqlite3.OperationalError as error:
+                            # SQLite accepts only whole milliseconds. Its busy
+                            # handler can return just before the absolute
+                            # deadline; a fresh admission gets only that remainder.
+                            assert sqlite_error_is_busy_locked(error)
+                        else:
+                            pytest.fail("Second transaction admitted while the competing lock was held")
+                outcomes.append("remaining_deadline_exhausted")
+            finally:
+                connection.close()
+    finally:
+        release.set()
+        requested.set()
+        assert finished.wait(2)
+        thread.join(1)
     assert not thread.is_alive()
+    assert outcomes == ["first_wait_completed", "remaining_deadline_exhausted"]
 
 
 def test_store_uses_bound_factory_only_inside_scope(tmp_path):

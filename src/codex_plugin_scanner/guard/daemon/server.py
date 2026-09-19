@@ -257,6 +257,7 @@ from .discovery import (
     load_daemon_discovery_key,
 )
 from .extension_control_api import ExtensionControlApiError, ExtensionControlApiService
+from .extension_control_observation import read_observed_extension_control_authority
 from .first_cloud_sync import maybe_queue_first_cloud_sync, queue_sync_with_optional_publish
 from .hook_health import hook_worker_health
 from .hook_native_policy_context import submit_native_review_receipt
@@ -672,7 +673,7 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
         try:
             self.hook_worker = HookWorker(store=self.store, activity_writer=self.runtime_hook_evidence_writer)
             self.extension_control_runtime = ExtensionControlRuntime(
-                self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+                read_observed_extension_control_authority(self.store, BUILT_IN_COMMAND_EXTENSION_REGISTRY)
             )
             self.extension_control_api = ExtensionControlApiService(
                 store=self.store,
@@ -709,7 +710,7 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             raise
 
     def refresh_extension_control_runtime(self) -> ExtensionControlRuntimeSnapshot:
-        view = self.store.read_extension_control_authority_for_registry(BUILT_IN_COMMAND_EXTENSION_REGISTRY)
+        view = read_observed_extension_control_authority(self.store, BUILT_IN_COMMAND_EXTENSION_REGISTRY)
         return self.extension_control_runtime.refresh(view)
 
     def process_request(self, request: Any, client_address: Any) -> None:

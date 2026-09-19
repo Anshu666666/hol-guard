@@ -6,6 +6,8 @@ import sys
 import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
+from math import isfinite
+from time import perf_counter as _phase_clock
 from typing import Any
 
 from codex_plugin_scanner.guard.native_approval_errors import FINITE_FAILURE_CODES
@@ -50,7 +52,31 @@ _READINESS_METHODS = (
     ("wait_until_ready", "wait"),
     ("current_snapshot_binding", "binding"),
     ("current_snapshot", "fallback"),
+    ("_publication_context", "context"),
+    ("_compiled_command_extensions", "command"),
+    ("_compiled_effective_policy", "config"),
 )
+_PREPARATION_PHASES = ("context", "command", "config")
+_MAX_ELAPSED_MS = 999_999
+
+
+def _clock_sample() -> float | None:
+    with suppress(BaseException):
+        value = _phase_clock()
+        if type(value) in {int, float} and isfinite(value):
+            return float(value)
+    return None
+
+
+def _retry_facts(publisher: Any) -> str:
+    with suppress(BaseException):
+        namespace = vars(publisher)
+        used = namespace.get("_initial_database_capture_retry_used")
+        failures = namespace.get("_failure_count")
+        used_value = "yes" if used is True else "no" if used is False else "unknown"
+        failure_value = min(999, max(0, failures)) if type(failures) is int else "unknown"
+        return f"; initial_capture_retry_used={used_value}; publication_failure_count={failure_value}"
+    return ""
 
 
 class _ReadinessObservation:
@@ -63,6 +89,10 @@ class _ReadinessObservation:
         self._publication_started = 0
         self._publication_completed = 0
         self._publication_state = ("unknown", "unknown", "unknown", "unknown")
+        self._publication_last_outcome = "unobserved"
+        # Only finite labels, capped counters, and elapsed milliseconds survive a call.
+        self._phase_counts = {label: [0, 0] for label in _PREPARATION_PHASES}
+        self._phase_elapsed = {label: [0, 0, 0] for label in _PREPARATION_PHASES}
 
     @staticmethod
     def _epoch(publisher: Any) -> int | None:
@@ -77,7 +107,8 @@ class _ReadinessObservation:
             self._values[label] = "running"
             if label == "publication":
                 self._publication_started = min(999, self._publication_started + 1)
-                self._publication_state = ("unknown", "unknown", "unknown", "unknown")
+            elif label in self._phase_counts:
+                self._phase_counts[label][0] = min(999, self._phase_counts[label][0] + 1)
 
     def _finish(self, label: str, result: object, publisher: Any, before_epoch: int | None) -> None:
         state = ("unknown", "unknown", "unknown", "unknown")
@@ -100,6 +131,8 @@ class _ReadinessObservation:
                 else "no",
             )
             value = "returned"
+        elif label in _PREPARATION_PHASES:
+            value = "returned"
         elif label == "confirmation":
             value = "missing" if result is None else "present"
         elif label == "wait":
@@ -111,12 +144,27 @@ class _ReadinessObservation:
             if label == "publication":
                 self._publication_completed = min(999, self._publication_completed + 1)
                 self._publication_state = state
+                self._publication_last_outcome = "returned"
 
     def _raised(self, label: str) -> None:
         with self._lock:
             self._values[label] = "raised"
             if label == "publication":
                 self._publication_completed = min(999, self._publication_completed + 1)
+                self._publication_state = ("unknown", "unknown", "unknown", "unknown")
+                self._publication_last_outcome = "raised"
+
+    def _record_elapsed(self, label: str, started: float | None) -> None:
+        ended = _clock_sample()
+        elapsed = ended - started if started is not None and ended is not None else None
+        valid = elapsed is not None and isfinite(elapsed) and elapsed >= 0
+        elapsed_ms = int(min(_MAX_ELAPSED_MS, elapsed * 1_000)) if valid and elapsed is not None else 0
+        with self._lock:
+            counts, timings = self._phase_counts[label], self._phase_elapsed[label]
+            counts[1] = min(999, counts[1] + 1)
+            timings[0] = min(_MAX_ELAPSED_MS, timings[0] + elapsed_ms)
+            timings[1] = max(timings[1], elapsed_ms)
+            timings[2] = min(999, timings[2] + (not valid))
 
     def _wrapper(self, label: str, original: Callable[..., Any], publisher: Any) -> Callable[..., Any]:
         def observed(*args: Any, **kwargs: Any) -> Any:
@@ -124,12 +172,17 @@ class _ReadinessObservation:
             before_epoch = self._epoch(publisher) if label == "publication" else None
             with suppress(BaseException):
                 self._begin(label)
+            started = _clock_sample() if label in _PREPARATION_PHASES else None
             try:
                 result = original(*args, **kwargs)
             except BaseException:
                 with suppress(BaseException):
                     self._raised(label)
                 raise
+            finally:
+                if label in _PREPARATION_PHASES:
+                    with suppress(BaseException):
+                        self._record_elapsed(label, started)
             with suppress(BaseException):
                 self._finish(label, result, publisher, before_epoch)
             return result
@@ -164,11 +217,19 @@ class _ReadinessObservation:
                     else:
                         namespace[name] = previous
 
-    def describe(self) -> str:
+    def describe(self, publisher: Any = None) -> str:
         with self._lock:
             if not self._observed:
                 return ""
             acked, snapshot, closed, epoch_current = self._publication_state
+            phases = "".join(
+                f"; preparation_{label}={self._values[label]}"
+                f"; preparation_{label}_calls={self._phase_counts[label][0]}/{self._phase_counts[label][1]}"
+                f"; preparation_{label}_elapsed_ms={self._phase_elapsed[label][0]}"
+                f"; preparation_{label}_max_ms={self._phase_elapsed[label][1]}"
+                f"; preparation_{label}_invalid_clock={self._phase_elapsed[label][2]}"
+                for label in _PREPARATION_PHASES
+            )
             return (
                 "; readiness_observed=True; "
                 f"publication={self._values['publication']}; "
@@ -177,7 +238,10 @@ class _ReadinessObservation:
                 f"publication_closed={closed}; publication_entry_epoch_unchanged={epoch_current}; "
                 f"readiness_wait={self._values['wait']}; "
                 f"current_binding={self._values['binding']}; fallback_snapshot={self._values['fallback']}; "
-                f"resident_confirmation={self._values['confirmation']}"
+                f"resident_confirmation={self._values['confirmation']}; "
+                f"publication_last_completed={self._publication_last_outcome}"
+                + phases
+                + (_retry_facts(publisher) if publisher is not None else "")
             )
 
 
@@ -246,7 +310,7 @@ def report_publication_failure(observation: PublicationObservation, publisher: A
             + observation.describe(getattr(publisher, "last_error", None))
             + "; "
             + observation.lifecycle.describe(publisher)
-            + observation.readiness.describe(),
+            + observation.readiness.describe(publisher),
             file=sys.stderr,
         )
 

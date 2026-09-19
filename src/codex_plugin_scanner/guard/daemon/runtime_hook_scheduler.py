@@ -295,6 +295,7 @@ class RuntimeHookScheduler:
         self._queued_by_client[item.client_key] = self._queued_by_client.get(item.client_key, 0) + 1
 
     def _dispatch(self) -> None:
+        queued_before = self._queued
         self._expire_waiters()
         while self._active < self._active_limit and self._queued > 0:
             item = self._next_item()
@@ -309,7 +310,10 @@ class RuntimeHookScheduler:
             self._active_by_harness[item.harness] = self._active_by_harness.get(item.harness, 0) + 1
             self._active_by_client[item.client_key] = self._active_by_client.get(item.client_key, 0) + 1
             self._admitted += 1
-        self._condition.notify_all()
+        # Awakened callers dispatch again before waiting. A no-op notification
+        # would make them continually wake each other while capacity is full.
+        if self._queued != queued_before:
+            self._condition.notify_all()
 
     def _next_item(self) -> QueuedRuntimeHook | None:
         boosted = self._oldest_aged_eligible()
@@ -473,6 +477,10 @@ class RuntimeHookScheduler:
                 self._service_time_samples.append(service_time)
                 self._service_time_by_lane[item.lane].append((finished_at, service_time))
             self._dispatch()
+
+            # Byte reservations also wait here, including when no reviews are
+            # queued and dispatch has no admission or expiry to announce.
+            self._condition.notify_all()
 
     def _oldest_queued_ms(self, now: float) -> float:
         oldest = min(

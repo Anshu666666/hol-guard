@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,45 @@ from pathlib import Path
 import pytest
 
 from scripts.ci import native_macos_resolver_path as diagnostic
+
+
+def test_sdk_link_identity_matches_macos_compiler_default_command(monkeypatch, tmp_path):
+    import _socket
+
+    compiler = tmp_path / "clang"
+    compiler.touch()
+    sdk = tmp_path / "sdk"
+    sdk.mkdir()
+    commands = {
+        ("/usr/bin/xcrun", "--sdk", "macosx", "--find", "clang"): str(compiler),
+        ("/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"): str(sdk),
+        ("/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-version"): "15.5",
+        ("/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-build-version"): "24F74",
+        (str(compiler), "--version"): "Apple clang version 17.0.0 (clang-1700.0.13.5)\nprivate path",
+        ("/usr/bin/sw_vers", "-buildVersion"): "24G830",
+    }
+    monkeypatch.setattr(diagnostic, "_fixed", commands.__getitem__)
+    monkeypatch.setattr(diagnostic, "_sha", lambda _path: "a" * 64)
+    monkeypatch.setattr(_socket, "__file__", str(tmp_path / "_socket.so"), raising=False)
+    identity = diagnostic.tool_identity()
+    assert identity["link_library"] == "libSystem" and identity["link_mode"] == "compiler_default"
+    workflow = (diagnostic.ROOT / ".github/workflows/native-macos-resolver-path.yml").read_text()
+    build = workflow.split("        id: build\n", 1)[1].split("      - name:", 1)[0]
+    command = shlex.split(build.split("        run: |\n", 1)[1].replace("\\\n", ""))
+    assert command == [
+        "/usr/bin/xcrun",
+        "--sdk",
+        "macosx",
+        "clang",
+        *identity["compile_flags"],
+        "scripts/ci/native_macos_resolver_probe.c",
+        "-o",
+        "$RUNNER_TEMP/macos-resolver-path-build/resolver-probe",
+        ">",
+        "$RUNNER_TEMP/macos-resolver-path-build/compiler.stdout",
+        "2>",
+        "$RUNNER_TEMP/macos-resolver-path-build/compiler.stderr",
+    ]
 
 
 @pytest.fixture

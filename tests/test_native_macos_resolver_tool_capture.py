@@ -7,6 +7,7 @@ import resource
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -74,6 +75,11 @@ def test_nonzero_exit_is_retained_without_termination():
 
 def test_late_final_wait_cannot_pass(monkeypatch):
     original = subprocess.Popen
+    monotonic = time.monotonic
+    clock_offset = [0.0]
+    observed_exit = []
+
+    monkeypatch.setattr(capture, "time", SimpleNamespace(monotonic=lambda: monotonic() + clock_offset[0]))
 
     def delayed_wait(*args, **kwargs):
         process = original(*args, **kwargs)
@@ -81,16 +87,19 @@ def test_late_final_wait_cannot_pass(monkeypatch):
 
         def late(*wait_args, **wait_kwargs):
             code = wait(*wait_args, **wait_kwargs)
-            time.sleep(0.06)
+            observed_exit.append(code)
+            clock_offset[0] += capture.IDENTITY_SECONDS
             return code
 
         process.wait = late
         return process
 
     monkeypatch.setattr(capture.subprocess, "Popen", delayed_wait)
-    result = capture._capture(_command("pass"), timeout=0.05)
+    result = capture._capture(_command("print('natural exit')"))
+    assert observed_exit == [0] and result["stdout"] == "natural exit\n"
     assert result["status"] == "deadline_exceeded" and result["return_code"] == 0
     assert result["direct_child_reaped"] and not result["completed_without_intervention"]
+    assert not result["termination_attempted"]
 
 
 def test_startup_time_consumes_original_command_budget(monkeypatch):

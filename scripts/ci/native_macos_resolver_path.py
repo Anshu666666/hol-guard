@@ -135,7 +135,8 @@ def tool_identity() -> dict[str, Any]:
         "python_sha256": _sha(Path(sys.executable)),
         "python_socket_module_sha256": _sha(Path(_socket.__file__)),
         "compile_flags": list(COMPILE_FLAGS),
-        "link_library": "dns_sd",
+        "link_library": "libSystem",
+        "link_mode": "compiler_default",
     }
 
 

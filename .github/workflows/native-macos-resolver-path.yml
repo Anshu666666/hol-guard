@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           /usr/bin/xcrun --sdk macosx clang -std=c11 -O0 -Wall -Wextra -Werror \
-            scripts/ci/native_macos_resolver_probe.c -ldns_sd \
+            scripts/ci/native_macos_resolver_probe.c \
             -o "$RUNNER_TEMP/macos-resolver-path-build/resolver-probe" \
             > "$RUNNER_TEMP/macos-resolver-path-build/compiler.stdout" \
             2> "$RUNNER_TEMP/macos-resolver-path-build/compiler.stderr"

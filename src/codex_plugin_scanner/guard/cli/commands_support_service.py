@@ -339,6 +339,10 @@ def _dispatch_guard_daemon_command(
             home_dir=home_dir,
             failure_kind=args.failure_kind,
         )
+    if daemon_command == "recovery":
+        from .commands_daemon_recovery import dispatch_daemon_recovery
+
+        return dispatch_daemon_recovery(args, guard_home=guard_home, home_dir=home_dir)
     if daemon_command == "status":
         return _handle_daemon_status(guard_home, getattr(args, "json", False))
     if daemon_command == "repair":

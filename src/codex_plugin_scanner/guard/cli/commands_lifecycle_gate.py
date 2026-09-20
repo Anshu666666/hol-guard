@@ -66,6 +66,12 @@ def lifecycle_gate_requirement(args: argparse.Namespace) -> LifecycleGateRequire
         return LifecycleGateRequirement(f"cloud-review.{cloud_review_command}", "exact-cloud-review")
     if command == "daemon" and _string_attribute(args, "daemon_command") == "stop":
         return LifecycleGateRequirement("daemon.stop", "local-daemon")
+    if (
+        command == "daemon"
+        and _string_attribute(args, "daemon_command") == "recovery"
+        and _string_attribute(args, "daemon_recovery_command") == "restart"
+    ):
+        return LifecycleGateRequirement("daemon.restart", "local-daemon")
     trust_command = _string_attribute(args, "trust_command")
     if command == "trust" and trust_command in {"setup", "reset"}:
         return LifecycleGateRequirement(f"trust.{trust_command}", "local-trust")

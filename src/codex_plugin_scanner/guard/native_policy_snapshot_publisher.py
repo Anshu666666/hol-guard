@@ -145,13 +145,15 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         with self._condition:
             if self._closed:
                 return
+            # Commit the initial invalidation before a registered workspace's
+            # pending event can let the new worker capture an older epoch.
+            self.request_publish()
             self._thread = threading.Thread(
                 target=self._run,
                 name="hol-guard-native-policy-publisher",
                 daemon=True,
             )
             self._thread.start()
-        self.request_publish()
 
     def close(self, *, timeout_seconds: float = 1.0) -> None:
         with self._condition:

@@ -122,7 +122,8 @@ def test_unrepresented_signed_semantics_are_not_reduced_to_control_layers(
     monkeypatch: pytest.MonkeyPatch,
     unsupported: str,
 ) -> None:
-    store = managed_store(tmp_path, monkeypatch, **{unsupported: True})
+    assert unsupported in {"targeted", "custom"}
+    store = managed_store(tmp_path, monkeypatch, targeted=unsupported == "targeted", custom=unsupported == "custom")
     with pytest.raises(NativePolicySnapshotError, match="semantics_unsupported"):
         read_native_policy_authority_inputs(store, now=_TIME)
 

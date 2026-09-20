@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Mapping
 from contextlib import closing
 from pathlib import Path
@@ -9,9 +10,12 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.native_policy_authority_contract import NATIVE_MANAGED_AUTHORITY_FEATURE
+from codex_plugin_scanner.guard.native_policy_snapshot_constants import _PUBLISH_TIMEOUT_SECONDS
+from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher_context import PublicationContext
 from codex_plugin_scanner.guard.runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.native_policy_snapshot_test_fixtures import _ack, _status
 from tests.test_canonical_policy_row_authority import _activated_store
 from tests.test_guard_extension_control_authority import MemorySecretStore, _commit, _store
 from tests.test_native_policy_snapshot_reservation_capture import _make_publisher
@@ -139,3 +143,90 @@ def test_control_mutation_after_bootstrap_refuses_stale_binding_until_fresh_atte
         assert reads[-1]["revision"] == 1
         assert reads[-2] == reads[-1] == calls[0]["command_extensions"]
         assert reads[-1]["effective_digest"] != reads[0]["effective_digest"]
+
+
+@pytest.mark.parametrize("external_mutation", [False, True], ids=["steady", "concurrent-mutation"])
+def test_start_commits_its_invalidation_before_the_first_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, external_mutation: bool
+) -> None:
+    """Exercise the real first attempt; the transport ACK is synthetic, not an SLO proof."""
+    store = GuardStore(tmp_path / "guard")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    transport_entered = threading.Event()
+    release_ack = threading.Event()
+    first_completed = threading.Event()
+    release_worker = threading.Event()
+    calls: list[bytes] = []
+    first_ready: list[bool] = []
+    failures: list[BaseException] = []
+    start_epochs: list[int] = []
+    transport_epochs: list[int] = []
+    starter_thread = threading.get_ident()
+
+    def client_request(**kwargs: object) -> bytes:
+        payload = kwargs["payload"]
+        assert isinstance(payload, bytes)
+        assert (store.guard_home / "native-runtime" / "policy-verifier.key").is_file()
+        calls.append(payload)
+        transport_epochs.append(publisher._epoch)
+        transport_entered.set()
+        assert release_ack.wait(_PUBLISH_TIMEOUT_SECONDS)
+        if external_mutation:
+            # A genuine newer request must still invalidate this ACK.
+            publisher.request_publish()
+        return _ack(payload)
+
+    publisher = NativePolicySnapshotPublisher(store=store, status_provider=_status, client_request=client_request)
+    assert publisher.register_workspace(workspace)
+    original_request = publisher.request_publish
+    original_publish = publisher._publish_once
+
+    def request(*, require_source_authority: bool = False) -> None:
+        starting = threading.get_ident() == starter_thread
+        if starting and publisher._thread is not None:
+            # Model a valid scheduling gap if start launches the worker before
+            # committing its own final invalidation. No source read is replaced.
+            assert transport_entered.wait(_PUBLISH_TIMEOUT_SECONDS)
+        original_request(require_source_authority=require_source_authority)
+        if starting:
+            start_epochs.append(publisher._epoch)
+            release_ack.set()
+
+    def publish(*, renew_after_generation: int | None = None) -> None:
+        try:
+            original_publish(renew_after_generation=renew_after_generation)
+            first_ready.append(publisher.is_ready())
+        except BaseException as error:
+            failures.append(error)
+        finally:
+            first_completed.set()
+            # Inspect the completed first attempt before a later retry can
+            # conceal an invalidation caused by start itself.
+            if not release_worker.wait(_PUBLISH_TIMEOUT_SECONDS):
+                failures.append(AssertionError("first publication inspection did not complete"))
+
+    monkeypatch.setattr(publisher, "request_publish", request)
+    monkeypatch.setattr(publisher, "_publish_once", publish)
+    try:
+        publisher.start()
+        assert first_completed.wait(_PUBLISH_TIMEOUT_SECONDS)
+        assert not failures
+        assert len(calls) == 1
+        assert first_ready == [not external_mutation], publisher.last_error
+        assert transport_epochs == start_epochs
+        if external_mutation:
+            assert publisher._epoch == start_epochs[0] + 1
+            assert publisher.current_snapshot() is None
+        else:
+            snapshot = publisher.current_snapshot()
+            assert snapshot is not None
+            assert publisher._epoch == start_epochs[0]
+    finally:
+        release_ack.set()
+        publisher.close(timeout_seconds=0)
+        release_worker.set()
+        thread = publisher._thread
+        if thread is not None:
+            thread.join(timeout=_PUBLISH_TIMEOUT_SECONDS)
+            assert not thread.is_alive()

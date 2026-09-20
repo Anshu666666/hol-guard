@@ -77,6 +77,43 @@ fn exact_signed_allow_satisfies_review_and_binds_selected_snapshot_row() {
 }
 
 #[test]
+fn installed_review_probe_requires_a_rule_that_changes_the_current_action() {
+    for (command, baseline, selected_id) in [
+        ("printf 'scoped review'", "review", None),
+        ("pwd", "warn", Some(7)),
+    ] {
+        let mut source = envelope(command);
+        source.raw_payload["tool_name"] = json!("Bash");
+        source.raw_payload["source_scope"] = json!("project");
+        let mut policy = snapshot("review", vec![]);
+        policy
+            .effective_policy
+            .harness_actions
+            .insert("codex".to_owned(), "review".to_owned());
+        let before = evaluate(&policy, &source);
+        assert_eq!(before.result.policy_action, baseline);
+        assert_eq!(before.selected_decision_id, None);
+
+        let mut selected = row(7, "artifact", "review", "signed-bundle");
+        selected["artifact_id"] = json!("codex:project:Bash");
+        selected["exact_command_sha256"] = json!(exact_command_sha256(command));
+        let mut signed = snapshot("review", vec![selected]);
+        signed.effective_policy.harness_actions = policy.effective_policy.harness_actions;
+        let after = evaluate(&signed, &source);
+        assert_eq!(after.result.policy_action, "review");
+        assert_eq!(after.result.decision, "deny");
+        assert_eq!(after.selected_decision_id, selected_id);
+
+        if command == "pwd" {
+            source.raw_payload["tool_input"]["command"] = json!("pwd ");
+            let different_bytes = evaluate(&signed, &source);
+            assert_eq!(different_bytes.result.policy_action, "warn");
+            assert_eq!(different_bytes.selected_decision_id, None);
+        }
+    }
+}
+
+#[test]
 fn modeled_destination_only_ssh_uses_exact_signed_review_without_lowering_stronger_floors() {
     let command = "ssh synthetic@example.invalid";
     for kind in ["signed-bundle", "signed-memory"] {

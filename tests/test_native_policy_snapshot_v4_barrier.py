@@ -12,6 +12,7 @@ from typing import cast
 
 import pytest
 
+from codex_plugin_scanner.guard import native_policy_snapshot as snapshot_registry
 from codex_plugin_scanner.guard import native_policy_snapshot_publisher_scoped as scoped
 from codex_plugin_scanner.guard.native_command_control_binding import build_native_command_control_binding
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
@@ -344,7 +345,7 @@ def test_real_concurrent_epoch_mutation_fences_blocked_ack(barrier):
 
 
 @pytest.mark.parametrize("revoke", [False, True])
-def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_path, revoke):
+def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_path, monkeypatch, revoke):
     from tests.test_canonical_policy_row_authority import _NOW, _activated_store
     from tests.test_native_policy_authority_read import _TIME
 
@@ -363,7 +364,11 @@ def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_pat
             keys = keyring["keys"]
             assert isinstance(keys, list) and isinstance(keys[0], dict)
             keys[0]["state"] = "revoked"
-            store.set_sync_payload("policy_bundle_keyring", keyring, _NOW)
+            # Exercise the independent post-ACK source read even without the
+            # in-process notification; the actual keyring write is unchanged.
+            with monkeypatch.context() as isolated:
+                isolated.setattr(snapshot_registry, "notify_native_policy_mutation", lambda *args, **kwargs: None)
+                store.set_sync_payload("policy_bundle_keyring", keyring, _NOW)
         return json.dumps(_ack(snapshot)).encode()
 
     publisher = NativePolicySnapshotPublisher(
@@ -373,7 +378,9 @@ def test_actual_signed_source_and_post_ack_revocation_use_real_authority(tmp_pat
         wall_clock=lambda: _TIME,
     )
     try:
+        epoch = publisher._epoch
         publisher._publish_once()
+        assert publisher._epoch == epoch
         assert len(calls) == 1
         assert calls[0]["scoped_authority"]["rows"][0]["action"] == "block"
         if revoke:

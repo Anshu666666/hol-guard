@@ -8,14 +8,15 @@ from .action_lattice import is_guard_action
 from .exact_command_policy import exact_command_policy_digest
 from .local_authority_integrity import sign_local_authority_payload, verify_local_authority_payload
 from .models import PolicyDecision
+from .native_policy_authority_state_keys import REVIEW_MEMORY_REGISTRY_KEY, REVIEW_MEMORY_VERSION_KEY
 from .review_contracts import validate_decision_memory_bundle_target, validated_decision_memory_bundle
 from .review_memory_application import registered_oauth_for_bundle
 from .review_memory_targets import local_memory_match_fields, validate_exact_memory_target
 from .review_oauth_binding import GuardReviewContractError, GuardReviewOAuthMetadata, guard_review_oauth_metadata
 from .runtime.time_support import parse_utc_timestamp
 
-REGISTRY_KEY = "guard_review_memory_registry"
-VERSION_KEY = "guard_review_memory_policy_version"
+REGISTRY_KEY = REVIEW_MEMORY_REGISTRY_KEY
+VERSION_KEY = REVIEW_MEMORY_VERSION_KEY
 ACK_KEY = "guard_review_memory_last_ack"
 REGISTRY_CONTRACT = "guard.local-review-memory-authority.v1"
 

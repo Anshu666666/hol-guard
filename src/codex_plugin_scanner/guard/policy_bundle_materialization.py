@@ -9,9 +9,9 @@ import sqlite3
 from collections.abc import Mapping, Sequence
 from typing import Protocol
 
+from .native_policy_authority_state_keys import POLICY_BUNDLE_MATERIALIZATION_KEY as POLICY_BUNDLE_MATERIALIZATION_KEY
 from .store_base import _canonical_utc_timestamp
 
-POLICY_BUNDLE_MATERIALIZATION_KEY = "policy_bundle_materialization"
 _SCHEMA = "guard-policy-row-materialization.v1"
 _DOMAIN = b"hol-guard.policy-row-materialization.v1\0"
 _FIELDS = frozenset(

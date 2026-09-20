@@ -38,8 +38,9 @@ def managed_store(
     targeted: bool = False,
     custom: bool = False,
     scoped: bool = True,
+    workspace_id: str = "workspace-alpha",
 ) -> GuardStore:
-    store = _activated_store(tmp_path, action="block")
+    store = _activated_store(tmp_path, action="block", workspace_id=workspace_id)
     store._extension_control_authority_secret_store = MemorySecretStore()
     update_settings(
         store.guard_home,
@@ -59,7 +60,7 @@ def managed_store(
     if cloud:
         device = store.get_device_metadata()
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        verifier = _verification_key(key, workspace_id="workspace-alpha")
+        verifier = _verification_key(key, workspace_id=workspace_id)
         rule: dict[str, object] = {
             "id": "synthetic.rule",
             "enabled": True,
@@ -88,7 +89,14 @@ def managed_store(
         }
         if custom:
             payload["x-hol-custom-extension-continuity"] = {"schemaVersion": "unsupported-synthetic.v1"}
-        bundle = _signed_bundle(key, verifier, payload_base=payload, rollout_state="enforcing", bundle_version=9)
+        bundle = _signed_bundle(
+            key,
+            verifier,
+            payload_base=payload,
+            rollout_state="enforcing",
+            bundle_version=9,
+            workspace_id=workspace_id,
+        )
         parsed = parsed_managed_controls_from_validated_policy_bundle(
             bundle,
             registry=BUILT_IN_COMMAND_EXTENSION_REGISTRY,
@@ -104,7 +112,7 @@ def managed_store(
                 decisions,
                 _NOW,
                 policy_bundle=bundle,
-                policy_bundle_keyring=policy_bundle_keyring_payload((verifier,), workspace_id="workspace-alpha"),
+                policy_bundle_keyring=policy_bundle_keyring_payload((verifier,), workspace_id=workspace_id),
                 cloud_exceptions=[],
                 policy_bundle_ack={"bundleHash": bundle["bundleHash"], "status": "validated"},
                 policy_bundle_checkpoint=policy_bundle_acceptance_checkpoint(bundle),

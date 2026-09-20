@@ -36,7 +36,9 @@ from codex_plugin_scanner.guard.policy_bundle_v2 import (
 from codex_plugin_scanner.guard.store import GuardStore
 
 WORKSPACE = "scoped-installed-synthetic-workspace"
-COMMANDS = {action: f"printf 'scoped {action}'" for action in ("allow", "block", "review")}
+# The review row must raise the current action to prove selected provenance.
+# A printf review would merely equal the configured review and select no row.
+COMMANDS = {"allow": "printf 'scoped allow'", "block": "printf 'scoped block'", "review": "pwd"}
 
 
 def _pem(key: rsa.RSAPrivateKey) -> str:

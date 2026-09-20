@@ -16,13 +16,16 @@ import sys
 import tempfile
 import time
 from collections.abc import Mapping
+from contextlib import suppress
 from datetime import datetime, timezone
+from math import isfinite
 from pathlib import Path
 from typing import Any, TypeVar, cast
 
 import codex_plugin_scanner
 from codex_plugin_scanner.guard.native_hook_edge import review_raw_hook_native
 from codex_plugin_scanner.guard.native_policy_snapshot import get_native_policy_snapshot_publisher
+from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
 from codex_plugin_scanner.guard.native_runtime import native_mode, native_runtime_status
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.runtime.hook_review_engine import HOOK_SCANNER_DEFAULT_BUDGET_MS
@@ -33,7 +36,11 @@ from codex_plugin_scanner.guard.runtime.policy_runtime_posture import local_poli
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(_ROOT))
 from ci.native_runtime.installed_scoped_policy_fixture import COMMANDS, SignedPolicyFixture  # noqa: E402
-from scripts.native_publication_diagnostic import cleanup_preserving_failure  # noqa: E402
+from scripts.native_publication_diagnostic import (  # noqa: E402
+    cleanup_preserving_failure,
+    observe_publication,
+    report_publication_failure,
+)
 from scripts.native_slo_contract import (  # noqa: E402
     MAX_READINESS_P95_MS,
     proof_environment_violations,
@@ -69,6 +76,42 @@ def environment_is_clean(environment: Mapping[str, str]) -> bool:
     return not proof_environment_violations(environment) and "HOL_GUARD_PYTHON_ORACLE" not in environment
 
 
+def _initial_readiness_elapsed(before: float, after: float) -> float | None:
+    elapsed = (after - before) * 1000
+    return round(min(999_999.0, elapsed), 3) if isfinite(elapsed) and elapsed >= 0 else None
+
+
+def require_initial_readiness(publisher: NativePolicySnapshotPublisher, workspace: Path) -> None:
+    """Observe the original first publication; never retry or prewarm it."""
+    with observe_publication(publisher) as observation:
+        started = time.monotonic()
+        deadline = started + MAX_READINESS_P95_MS / 1000
+        publisher.register_workspace(workspace)
+        registered = time.monotonic()
+        publisher.start()
+        launched = time.monotonic()
+        ready = publisher.wait_until_ready(deadline)
+        completed = time.monotonic()
+        ready = ready and completed <= deadline
+        if not ready:
+            with suppress(BaseException):
+                print(
+                    json.dumps(
+                        {
+                            "schema": "guard.installed-initial-readiness-failure.v1",
+                            "registration_elapsed_ms": _initial_readiness_elapsed(started, registered),
+                            "start_elapsed_ms": _initial_readiness_elapsed(registered, launched),
+                            "wait_elapsed_ms": _initial_readiness_elapsed(launched, completed),
+                            "total_elapsed_ms": _initial_readiness_elapsed(started, completed),
+                        },
+                        sort_keys=True,
+                    ),
+                    file=sys.stderr,
+                )
+            report_publication_failure(observation, publisher, window="before_publisher_start")
+        require(ready, "readiness_deadline")
+
+
 def exercise(root: Path, runtime: Path) -> dict[str, object]:
     fixture = SignedPolicyFixture(root)
     store = fixture.store
@@ -76,12 +119,6 @@ def exercise(root: Path, runtime: Path) -> dict[str, object]:
     os.environ["SSL_CERT_FILE"] = str(fixture.ca_file)
     publisher = get_native_policy_snapshot_publisher(store)
     cases: list[str] = []
-
-    def ready() -> None:
-        deadline = time.monotonic() + MAX_READINESS_P95_MS / 1000
-        publisher.register_workspace(fixture.workspace)
-        publisher.start()
-        require(publisher.wait_until_ready(deadline), "readiness_deadline")
 
     def evaluate(command: str, *, binding: dict[str, object] | None = None, payload: dict[str, object] | None = None):
         return review_raw_hook_native(
@@ -104,7 +141,9 @@ def exercise(root: Path, runtime: Path) -> dict[str, object]:
             "native_authority_missing",
         )
         require(result["result"]["policy_action"] == expected, "policy_action_mismatch")
-        require(result["result"]["decision"] == ("allow" if expected == "allow" else "deny"), "decision_mismatch")
+        require(
+            result["result"]["decision"] == ("allow" if expected in {"allow", "warn"} else "deny"), "decision_mismatch"
+        )
         binding = present(publisher.current_snapshot_binding(), "result_binding_missing")
         require(
             binding is not None and publisher.result_binding_is_current(result["policy_binding"]),
@@ -165,17 +204,17 @@ def exercise(root: Path, runtime: Path) -> dict[str, object]:
             store.get_sync_payload("policy_bundle_ack") is None and not store.list_policy_decisions(),
             "fixture_authority_preinstalled",
         )
-        ready()
+        require_initial_readiness(publisher, fixture.workspace)
         baseline = evaluate(COMMANDS["allow"])
         require(baseline is not None and baseline["result"]["decision"] == "deny", "baseline_review_missing")
         cases.append("cold-source-free-ready")
         accepted(1)
+        action("warn", command=COMMANDS["review"] + " ", selected=False)
+        cases.append("signed-review-nonmatching-control")
         for outcome in COMMANDS:
-            # Decision provenance names only a rule that changes the effective
-            # action. An exact review rule equal to the existing review floor
-            # remains authenticated authority but does not claim ownership of
-            # the already-required review decision.
-            action(outcome, selected=outcome != "review")
+            # Each exact rule changes its baseline action. The nonmatching
+            # review control above establishes that this rule causes the denial.
+            action(outcome)
             cases.append(f"signed-{outcome}")
         action("review", command=COMMANDS["allow"] + " ", selected=False)
         cases.append("exact-bytes-preserved")

@@ -27,10 +27,10 @@ from .native_policy_authority_sources import (
     signed_bundle_native_rows,
     signed_memory_native_rows,
 )
+from .native_policy_authority_state_keys import NATIVE_POLICY_AUTHORITY_SYNC_KEYS
 from .native_policy_row_sort import native_policy_row_sort_key
 from .native_policy_snapshot_constants import NativePolicySnapshotError
 from .policy_bundle_materialization import POLICY_BUNDLE_MATERIALIZATION_KEY
-from .policy_bundle_trusted_keys import MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY
 from .policy_integrity import (
     BUNDLE_OWNED_POLICY_SOURCES,
     MEMORY_POLICY_SOURCES,
@@ -39,27 +39,12 @@ from .policy_integrity import (
     verify_local_policy_row,
 )
 from .policy_rule_identity import PolicyRuleIdentity
-from .review_memory_authority import REGISTRY_KEY, VERSION_KEY
-from .review_verification_keyring import REVIEW_VERIFICATION_KEYRING_SYNC_KEY
+from .review_memory_authority import REGISTRY_KEY
 from .runtime.time_support import parse_utc_timestamp
 
 if TYPE_CHECKING:
     from .store import GuardStore
 
-_STATE_KEYS = (
-    "policy_bundle",
-    "policy_bundle_keyring",
-    "supply_chain_bundle_keyring",
-    "policy_bundle_acceptance_checkpoint",
-    POLICY_BUNDLE_MATERIALIZATION_KEY,
-    MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY,
-    REGISTRY_KEY,
-    VERSION_KEY,
-    REVIEW_VERIFICATION_KEYRING_SYNC_KEY,
-    "policy_integrity",
-    MANAGED_CONTROLS_ACTIVE_STATE_KEY,
-    MANAGED_CONTROLS_REVISION_STATE_KEY,
-)
 _MAX_CAPTURE_BYTES = 4 * 1024 * 1024
 
 
@@ -177,7 +162,7 @@ def _capture_native_policy_authority_inputs(
         if control is not None and (type(generation) is not int or control.get("pending_generation") is not None):
             raise NativePolicySnapshotError("native_policy_authority_local_unavailable")
         now_text = datetime.fromtimestamp(now, timezone.utc).isoformat()
-        state_keys = (*_STATE_KEYS, store._oauth_local_credentials_state_key)
+        state_keys = (*NATIVE_POLICY_AUTHORITY_SYNC_KEYS, store._oauth_local_credentials_state_key)
         if _database_identity(store) != database_identity:
             raise NativePolicySnapshotError("native_policy_authority_changed_during_read")
         connection.execute("begin")

@@ -294,7 +294,15 @@ class HookWorkerNativeMixin:
             return _scoped_authority_unavailable(self, harness, event_name)
         # Delivery uses the exact acknowledged posture. Pending local edits
         # cannot weaken the accepted decision while its replacement is unready.
-        recording_only = not scoped and policy_snapshot is not None and policy_snapshot.get("mode") == "observe"
+        # Bound native policy already applies Observe to discretionary defaults.
+        # Its remaining decisions include independent command and intrinsic floors.
+        recording_only = (
+            not scoped
+            and policy_snapshot is not None
+            and policy_snapshot.get("mode") == "observe"
+            and policy_snapshot.get("command_extensions_bound") is not True
+            and not isinstance(policy_snapshot.get("command_extensions"), Mapping)
+        )
         fenced: bool | None = None
         try:
             with native_review_fence(

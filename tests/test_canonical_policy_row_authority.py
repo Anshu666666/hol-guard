@@ -21,11 +21,13 @@ _NOW = "2026-09-17T00:00:00Z"
 _ARTIFACT = "codex:project:synthetic-policy-fixture"
 
 
-def _activated_store(tmp_path: Path, *, action: str = "allow", bundle_version: int = 8) -> GuardStore:
+def _activated_store(
+    tmp_path: Path, *, action: str = "allow", bundle_version: int = 8, workspace_id: str = "workspace-alpha"
+) -> GuardStore:
     store = GuardStore(tmp_path / "guard-home")
     device = store.get_device_metadata()
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    key = _verification_key(private_key, workspace_id="workspace-alpha")
+    key = _verification_key(private_key, workspace_id=workspace_id)
     payload: dict[str, object] = {
         "apiVersion": "guard.hashgraphonline.com/v1alpha1",
         "kind": "GuardPolicy",
@@ -45,18 +47,23 @@ def _activated_store(tmp_path: Path, *, action: str = "allow", bundle_version: i
         },
     }
     bundle = _signed_bundle(
-        private_key, key, payload_base=payload, rollout_state="enforcing", bundle_version=bundle_version
+        private_key,
+        key,
+        payload_base=payload,
+        rollout_state="enforcing",
+        bundle_version=bundle_version,
+        workspace_id=workspace_id,
     )
     decisions = build_canonical_policy_bundle_decisions(
         bundle, device_id=device["installation_id"], device_name=device["device_label"]
     )
-    store.set_sync_payload("oauth_local_credentials", {"workspace_id": "workspace-alpha"}, _NOW)
+    store.set_sync_payload("oauth_local_credentials", {"workspace_id": workspace_id}, _NOW)
     assert (
         store.apply_policy_bundle_authority(
             decisions,
             _NOW,
             policy_bundle=bundle,
-            policy_bundle_keyring=policy_bundle_keyring_payload((key,), workspace_id="workspace-alpha"),
+            policy_bundle_keyring=policy_bundle_keyring_payload((key,), workspace_id=workspace_id),
             cloud_exceptions=[],
             policy_bundle_ack={
                 "bundleHash": bundle["bundleHash"],

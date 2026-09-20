@@ -129,7 +129,13 @@ def test_replacement_during_publication_does_not_accept_the_previous_source(
     try:
         publisher._publish_once()
         assert len(requests) == 1
-        assert notifications == [(store.guard_home, False), (store.guard_home, True)]
+        # Activation first commits its exact OAuth workspace authority, then
+        # publishes command-control and signed-source invalidations.
+        assert notifications == [
+            (store.guard_home, True),
+            (store.guard_home, False),
+            (store.guard_home, True),
+        ]
         assert publisher._epoch == initial_epoch + len(notifications) * int(notify_publisher)
         assert publisher._publish_event.is_set() is notify_publisher
         assert not publisher.is_ready()

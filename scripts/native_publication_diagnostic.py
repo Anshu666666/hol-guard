@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from math import isfinite
 from time import perf_counter as _phase_clock
-from typing import Any
+from typing import Any, Literal
 
 from codex_plugin_scanner.guard.native_approval_errors import FINITE_FAILURE_CODES
 from codex_plugin_scanner.guard.native_policy_test_support import (
@@ -284,10 +284,20 @@ class PublicationObservation:
                 if code != "missing":
                     self._failure = code
 
-    def describe(self, publisher_error: object) -> str:
+    def describe(
+        self,
+        publisher_error: object,
+        *,
+        window: Literal["after_daemon_construction", "before_publisher_start"] = "after_daemon_construction",
+    ) -> str:
+        label = (
+            "before_publisher_start"
+            if type(window) is str and window == "before_publisher_start"
+            else "after_daemon_construction"
+        )
         with self._lock:
             return (
-                "window=after_daemon_construction; "
+                f"window={label}; "
                 f"attached={self.attached}; publisher={_finite_publisher_failure(publisher_error)}; "
                 f"transport={self._failure}; started={self._started}; completed={self._completed}"
             )
@@ -319,12 +329,17 @@ def observe_publication(publisher: Any) -> Iterator[PublicationObservation]:
             publisher._client_request = previous
 
 
-def report_publication_failure(observation: PublicationObservation, publisher: Any) -> None:
+def report_publication_failure(
+    observation: PublicationObservation,
+    publisher: Any,
+    *,
+    window: Literal["after_daemon_construction", "before_publisher_start"] = "after_daemon_construction",
+) -> None:
     """Best-effort finite evidence must never replace the original failure."""
     with suppress(BaseException):
         print(
             "native_publication_observation: "
-            + observation.describe(getattr(publisher, "last_error", None))
+            + observation.describe(getattr(publisher, "last_error", None), window=window)
             + "; "
             + observation.lifecycle.describe(publisher)
             + observation.readiness.describe(publisher)

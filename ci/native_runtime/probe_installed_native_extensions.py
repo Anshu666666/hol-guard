@@ -12,9 +12,11 @@ import importlib.util
 import json
 import os
 import secrets
+import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any, cast
 
 import codex_plugin_scanner
 from codex_plugin_scanner.guard.approval_gate import ApprovalGateInput, update_settings
@@ -49,6 +51,11 @@ from codex_plugin_scanner.guard.runtime.extension_control_proof import (
 )
 from codex_plugin_scanner.guard.store import GuardStore
 from codex_plugin_scanner.guard.store_base import EncryptedFileSecretStore
+
+# Load only probe utilities after the installed production package is imported.
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(_ROOT))
+from ci.native_runtime.installed_hook_failure_diagnostic import report_hook_transport_timeout  # noqa: E402
 
 _ACTION_RANK = {
     "allow": 0,
@@ -146,8 +153,10 @@ def ready(daemon: GuardDaemonServer, workspace: Path, revision: int) -> dict[str
             flush=True,
         )
     require(binding is not None, "policy_not_ready")
+    assert binding is not None
     snapshot = worker.policy_snapshot_publisher.current_snapshot()
     require(snapshot is not None, "snapshot_missing")
+    snapshot = cast(dict[str, Any], snapshot)
     require(snapshot["command_extensions"]["revision"] == revision, "wrong_control_generation")
     return binding
 
@@ -178,7 +187,7 @@ def exercise(root: Path) -> dict[str, object]:
         minimum_at_least: str | None = None,
         tool_payload: dict[str, object] | None = None,
         permission_id: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         binding = ready(daemon, workspace, revision)
         payload = tool_payload or {
             "hook_event_name": "PreToolUse",
@@ -220,6 +229,7 @@ def exercise(root: Path) -> dict[str, object]:
                 flush=True,
             )
         require(raw is not None, f"{label}:native_missing")
+        assert raw is not None
         result = raw["result"]
         extensions = result.get("command_extensions")
         require(isinstance(extensions, dict), f"{label}:extension_binding_missing")
@@ -248,7 +258,8 @@ def exercise(root: Path) -> dict[str, object]:
                 f"{label}:floor_below_{minimum_at_least}:{actual}",
             )
         require(result["decision"] == "deny", f"{label}:unsafe_allow")
-        response = request(daemon, home, workspace, "claude-code", "PreToolUse", payload)
+        with report_hook_transport_timeout(case=label, completed_cases=len(rows), control_revision=revision):
+            response = request(daemon, home, workspace, "claude-code", "PreToolUse", payload)
         require(isinstance(response, dict), f"{label}:http_missing")
         receipt = daemon._server.hook_worker.last_native_decision_receipt
         if not isinstance(receipt, dict) or receipt.get("authority") != "rust":
@@ -290,9 +301,10 @@ def exercise(root: Path) -> dict[str, object]:
                 flush=True,
             )
         require(isinstance(receipt, dict) and receipt.get("authority") == "rust", f"{label}:receipt_missing")
+        assert receipt is not None
         require(receipt.get("command_extensions") == extensions["binding"], f"{label}:receipt_generation_mismatch")
         require(receipt["decision"] == result["decision"], f"{label}:http_decision_mismatch")
-        all_receipts.append(receipt["decision_id"])
+        all_receipts.append(cast(str, receipt["decision_id"]))
         rows.append(
             {
                 "case": label,
@@ -324,6 +336,7 @@ def exercise(root: Path) -> dict[str, object]:
         )
         permission = BUILT_IN_COMMAND_EXTENSION_REGISTRY.permission_for_rule_id("command.ollama.rm")
         require(permission is not None, "permission_missing")
+        assert permission is not None
         revision = commit_controls(
             store,
             password,
@@ -482,6 +495,7 @@ def main() -> int:
         status.capabilities is not None and "native-command-program-v1" in status.capabilities.features,
         "native_feature_missing",
     )
+    assert status.capabilities is not None
     with tempfile.TemporaryDirectory(prefix="hge-", dir=None if os.name == "nt" else "/tmp") as temporary:
         report = exercise(Path(temporary))
     report["source_sha"] = status.capabilities.build_sha

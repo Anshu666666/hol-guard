@@ -12,6 +12,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from . import policy_bundle_keyring_loading as _keyring_loading
+from .native_policy_authority_state_keys import (
+    MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY as MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY,
+)
 from .policy_bundle_key_validity import signing_key_is_current as signing_key_is_current
 from .runtime.supply_chain_bundle_base import SupplyChainBundleMalformedError, _parse_iso_timestamp
 from .stable_digest import sha256_content_digest
@@ -20,7 +23,6 @@ _VERIFICATION_KEY_STATES = frozenset({"active", "grace", "revoked"})
 _POLICY_BUNDLE_V2_CONTRACT = "guard-policy-bundle.v2"
 POLICY_BUNDLE_KEY_PURPOSE = "policy_bundle"
 POLICY_BUNDLE_KEYRING_CONTRACT_VERSION = "guard-policy-keyring.v1"
-MANAGED_POLICY_BUNDLE_KEYRING_PROVENANCE_STATE_KEY = "managed_policy_bundle_keyring_provenance"
 _POLICY_BUNDLE_KEYRING_FIELDS = frozenset({"contractVersion", "purpose", "workspaceId", "keys"})
 _POLICY_BUNDLE_KEY_FIELDS = frozenset(
     {

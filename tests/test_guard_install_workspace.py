@@ -12,7 +12,6 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.cli import main
-from codex_plugin_scanner.guard.adapters import pi_extension_source
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.cli import update_commands
 from codex_plugin_scanner.guard.cli.commands import (
@@ -22,6 +21,7 @@ from codex_plugin_scanner.guard.cli.commands import (
 from codex_plugin_scanner.guard.config import resolve_guard_home
 from codex_plugin_scanner.guard.launcher import merge_guard_launcher_env
 from codex_plugin_scanner.guard.store import GuardStore
+
 
 def _install_args(*, harness: str = "cursor", workspace: str | None = None) -> argparse.Namespace:
     return argparse.Namespace(

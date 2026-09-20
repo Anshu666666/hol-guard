@@ -103,7 +103,7 @@ def test_wire_spec_installs_real_sqlite_and_queue_observation_in_mixed_dispatch(
         assert fixture.witness is None and writer._queue_observation is None
         started = fixture.dispatch("mixed_start", {"maximum": 1, "receipt_observation": spec.to_request()})
         assert started["status"] == "completed"
-        assert worker._review_raw_hook_native(payload={"tool_use_id": "mixed-load-0"}) is edge
+        assert worker._review_raw_hook_native(payload={"native_slo_attempt": "mixed-load-0"}) is edge
         assert writer.submit_native_decision_receipt(native) is True
         final = fixture.dispatch("mixed_finish", {})
         assert final["status"] == "completed"

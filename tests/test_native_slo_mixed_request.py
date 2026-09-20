@@ -118,7 +118,7 @@ def test_repeated_attempt_labels_receive_independent_opaque_native_ids() -> None
 @pytest.mark.parametrize("invalid", (None, 1, "private-path", "mixed-load-1000000", "mixed-policy-0\n"))
 def test_invalid_explicit_attempt_does_not_fall_back_to_legacy_native_id(invalid: object) -> None:
     assert request_attempt({"native_slo_attempt": invalid, "tool_use_id": "mixed-load-0"}) is None
-    assert request_attempt({"tool_use_id": "mixed-load-0"}) == "mixed-load-0"
+    assert request_attempt({"tool_use_id": "mixed-load-0"}) is None
 
 
 @pytest.mark.parametrize("harness,attempt", (("unknown", "mixed-load-0"), ("codex", "outside-fixture")))

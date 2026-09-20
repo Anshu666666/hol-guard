@@ -52,6 +52,8 @@ from scripts.ci.native_ollama_contract import (  # noqa: E402
     INACTIVE_CASES,
     LEGACY_RETRY_SCOPE,
     RESTRICTED_CASES,
+    _PUBLISHER_ERROR_NAMES,
+    _READINESS_PHASES,
     OllamaCase,
     payload_digest,
     require,
@@ -189,43 +191,7 @@ def commit_controls(store: GuardStore, password: str, layer: ExtensionControlLay
     return view.revision
 
 
-_READINESS_PHASES = frozenset(
-    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
-)
-_PUBLISHER_ERRORS = (
-    frozenset(
-        {
-            "native_policy_snapshot_workspace_capacity",
-            "native_policy_snapshot_expired",
-            "native_policy_snapshot_publish_failed",
-            "native_policy_snapshot_resident_changed",
-            "native_policy_snapshot_native_disabled",
-            "native_policy_snapshot_runtime_unavailable",
-            "native_policy_snapshot_protocol_unsupported",
-            "native_policy_snapshot_integrity_key_unavailable",
-            "native_policy_snapshot_ack_invalid",
-            "native_policy_snapshot_ack_mismatch",
-            "native_client_containment_failed",
-            "native_client_process_failed",
-            "native_client_launcher_failed",
-            "native_client_timed_out",
-            "native_client_output_limit_exceeded",
-            "native_client_status_missing",
-            "native_client_exit_nonzero",
-            "native_client_output_missing",
-            "native_command_control_binding_changed",
-            "permissionerror",
-            "oserror",
-            "timeouterror",
-            "runtimeerror",
-            "valueerror",
-            "typeerror",
-            "attributeerror",
-            "operationalerror",
-        }
-    )
-    | NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
-)
+_PUBLISHER_ERRORS = _PUBLISHER_ERROR_NAMES | NATIVE_RESIDENT_LIFECYCLE_ERROR_CODES
 
 
 def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict[str, object]:
@@ -239,6 +205,12 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
         error = publisher.last_error
         detail = failure_evidence(AssertionError("installed_ollama_native_readiness_failed"))
         detail["phase"] = phase if phase in _READINESS_PHASES else "unknown"
+        if error in _PUBLISHER_ERRORS:
+            publisher_error = error
+        elif error:
+            publisher_error = "unclassified"
+        else:
+            publisher_error = "none"
         detail["readiness"] = {
             "expected_revision": revision,
             "budget_ms": MAX_READINESS_P95_MS,
@@ -247,7 +219,7 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
             "budget_exhausted": finished > deadline,
             "publisher_ready_after_failure": publisher.is_ready(),
             "publisher_closed_after_failure": publisher.closed,
-            "publisher_error": error if error in _PUBLISHER_ERRORS else "unclassified" if error else "none",
+            "publisher_error": publisher_error,
         }
         try:
             cast(dict[str, object], detail["readiness"]).update(publisher_error_diagnostic(error))

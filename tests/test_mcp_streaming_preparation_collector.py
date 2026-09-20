@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import inspect
 import json
@@ -27,21 +28,7 @@ def test_plan_is_the_entire_prior_e_schedule_with_only_the_arm_replaced(collecto
     assert len(expected) == 64
     assert sum(bool(cell.get("profile")) for cell in expected) == 14
     assert all(sum(cell["samples"] + 1 for cell in expected if cell["arm"] == arm) == 554 for arm in ("B", "F"))
-    frozen = fixed["plan"]["harness_sources_sha256"]
-    current = collector.harness_identity()
-    # These source repairs invalidate the stopped campaign's existing plan.
-    # Its frozen bytes cannot authorize measurement of the repaired harness.
-    repaired_sources = {
-        "profile_guard_mcp_case.py": "d004a3fafcd159d11216a1458b1eb65ac684615b7fbd401f1cf63270580f7431",
-        "profile_guard_mcp_streaming_session.py": "b04a41fe6c37667709f639cf0a582ab04eb76b64418dad55bdfdb91ef58fa096",
-    }
-    assert frozen.keys() == current.keys()
-    for name, digest in frozen.items():
-        if name in repaired_sources:
-            assert digest == repaired_sources[name]
-            assert current[name] != digest
-        else:
-            assert current[name] == digest
+    assert fixed["plan"]["harness_sources_sha256"] == collector.harness_identity()
     assert fixed["plan"]["prior_e_comparison_sha256"]
     assert fixed["plan"]["public_oracle_reference_sources_sha256"]
 
@@ -320,7 +307,19 @@ def test_wrapper_selects_its_own_variant_without_running_a_worker(
 
 
 def test_frozen_plan_rejects_repaired_helpers_before_oracle_or_measurement(collector, monkeypatch, tmp_path):
-    fixed = collector.plan_identity()
+    current = collector.plan_identity()
+    # Retain the original obsolete bindings in a separate test plan.
+    # The repository plan continues to bind the reviewed current helpers.
+    frozen_sources = {
+        **current["plan"]["harness_sources_sha256"],
+        "profile_guard_mcp_case.py": "d004a3fafcd159d11216a1458b1eb65ac684615b7fbd401f1cf63270580f7431",
+        "profile_guard_mcp_streaming_session.py": "b04a41fe6c37667709f639cf0a582ab04eb76b64418dad55bdfdb91ef58fa096",
+    }
+    frozen_plan = {**current["plan"], "harness_sources_sha256": frozen_sources}
+    frozen_raw = json.dumps(frozen_plan, sort_keys=True, separators=(",", ":")).encode()
+    fixed = {"sha256": hashlib.sha256(frozen_raw).hexdigest(), "plan": frozen_plan}
+    assert frozen_plan["harness_sources_sha256"] != collector.harness_identity()
+    monkeypatch.setattr(collector, "plan_identity", lambda: fixed)
     reference = fixed["plan"]["public_oracle_reference_sources_sha256"]
     args = Namespace(
         json=tmp_path / "attempt.json",

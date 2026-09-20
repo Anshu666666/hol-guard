@@ -61,6 +61,18 @@ def _command(writer: RuntimeHookEvidenceWriter) -> bool:
     )
 
 
+def _assert_test_owns_last_record_reference(record: object) -> None:
+    """Bounded CPython control for the caller's actual slots-only queue record."""
+    assert sys.implementation.name == "cpython"
+    assert type(record) is writer_module._CommandActivityRecord
+    # Caller local, this helper's argument, and getrefcount's temporary argument.
+    assert sys.getrefcount(record) == 3
+    retained = [record]
+    assert sys.getrefcount(record) == 4
+    retained.clear()
+    assert sys.getrefcount(record) == 3
+
+
 def _group(observation: EvidenceQueueObservation, kind: str, origin: str) -> dict[str, object]:
     groups = cast(dict[str, dict[str, dict[str, object]]], observation.report()["groups"])
     return groups[kind][origin]
@@ -250,19 +262,22 @@ def test_observer_releases_record_references_on_dequeue_and_detach(tmp_path: Pat
     writer = _paused_writer(tmp_path, observation)
     assert _command(writer)
     record = writer._records[0]
+    assert observation._pending[id(record)].record is record
     batch = writer._next_batch()
+    assert batch[0] is record
     del batch
     gc.collect()
-    # The local and getrefcount argument are the only remaining references.
-    assert sys.getrefcount(record) == 2
+    _assert_test_owns_last_record_reference(record)
     assert _command(writer)
     record = writer._records[0]
+    assert observation._pending[id(record)].record is record
     observation.detach(writer)
+    assert not observation._pending
     batch = writer._next_batch()
+    assert batch[0] is record
     del batch
     gc.collect()
-    # The local and getrefcount argument are the only remaining references.
-    assert sys.getrefcount(record) == 2
+    _assert_test_owns_last_record_reference(record)
 
 
 def test_callback_failure_cannot_escape_dequeue_or_retain_records(
@@ -272,17 +287,17 @@ def test_callback_failure_cannot_escape_dequeue_or_retain_records(
     writer = _paused_writer(tmp_path, observation)
     assert _command(writer)
     record = writer._records[0]
+    assert observation._pending[id(record)].record is record
 
     def broken_callback(*_args: object) -> None:
         raise RuntimeError("private diagnostic callback")
 
     monkeypatch.setattr(observation, "_dequeued", broken_callback)
     batch = writer._next_batch()
-    assert len(batch) == 1
+    assert len(batch) == 1 and batch[0] is record
     del batch
     gc.collect()
-    # The local and getrefcount argument are the only remaining references.
-    assert sys.getrefcount(record) == 2
+    _assert_test_owns_last_record_reference(record)
     report = observation.detach(writer)
     assert report["diagnostic_errors"] == report["tracking_invalidations"] == 1
     assert report["age_coverage_complete"] is False
@@ -349,11 +364,15 @@ def test_clock_detachment_never_retains_or_invents_a_queue_age(tmp_path: Path, d
     writer = _paused_writer(tmp_path, observation)
     assert _command(writer)
     record = writer._records[0]
+    if detach_at_call == 2:
+        assert observation._pending[id(record)].record is record
+    else:
+        assert not observation._pending
     batch = writer._next_batch()
+    assert batch[0] is record
     del batch
     gc.collect()
-    # The local and getrefcount argument are the only remaining references.
-    assert sys.getrefcount(record) == 2
+    _assert_test_owns_last_record_reference(record)
     report = observation.report()
     assert report["attached"] is False
     assert report["tracked_pending"] == 0

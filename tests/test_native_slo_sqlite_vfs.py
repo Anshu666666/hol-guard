@@ -318,7 +318,10 @@ def test_vfs_name_collision_refuses_without_changing_active_registry(
             duplicate.enable_load_extension(False)
             with pytest.raises(sqlite3.InterfaceError) as error:
                 duplicate.execute("select guard_sqlite_vfs(?, ?, ?)", ("register", observer.name, str(database)))
+            assert type(error.value) is sqlite3.InterfaceError
+            assert str(error.value) == "SQLite VFS observer admission or lifecycle refused"
             assert error.value.sqlite_errorcode == sqlite3.SQLITE_MISUSE
+            assert error.value.sqlite_errorname == "SQLITE_MISUSE"
             assert observer.report()["vfs"]["default_vfs_unchanged"] is True
             connection = observer.connect()
             connection.close()
@@ -358,7 +361,7 @@ def test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distin
     queue = EvidenceQueueObservation()
     receipts = [_receipt(request_id=f"vfs-{index}") for index in range(3)]
     edges = {f"mixed-load-{index}": {"receipt": receipt} for index, receipt in enumerate(receipts)}
-    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: edges[kwargs["payload"]["tool_use_id"]])
+    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: edges[kwargs["payload"]["native_slo_attempt"]])
     session = SimpleNamespace(
         store=store,
         guard_home=store.guard_home,
@@ -370,7 +373,7 @@ def test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distin
         with writer._condition:
             for index, receipt in enumerate(receipts):
                 assert (
-                    worker._review_raw_hook_native(payload={"tool_use_id": f"mixed-load-{index}"})
+                    worker._review_raw_hook_native(payload={"native_slo_attempt": f"mixed-load-{index}"})
                     is edges[f"mixed-load-{index}"]
                 )
                 assert writer.submit_native_decision_receipt(receipt) is True

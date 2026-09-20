@@ -69,23 +69,36 @@ forwarding and timing/identity falsification. These tests do not execute
 a Rust runtime, authenticate a real published policy image, or qualify a
 workspace campaign.
 
-Local Linux/Python 3.12 validation collected and passed all 90 controls:
-62 pure joins, 16 forwarding controls and 12 lifecycle controls. This includes
-two new regressions for a retained native call starting during committed
-readback and for a closed receipt witness being mistaken for active
-instrumentation. The same test process also passed 54 existing writer,
-mixed-witness and persistence-gate regressions plus 24 actual compiled SQLite
-VFS controls: 168 passed with no skips. These establish bounded Python and
-SQLite compatibility; the native and HTTP calls in the workspace controls
-remain synthetic. Installed runtime qualification requires separate evidence.
+The incoming `3780ad899ad6c42c91049b2a15fef138e911443f` source reports
+local Linux/Python 3.12 validation of 90 workspace controls: 62 pure joins,
+16 forwarding controls and 12 lifecycle controls. Its source report also
+states that the same process passed 54 writer, mixed-witness and persistence
+regressions and 24 compiled SQLite VFS controls, for 168 passes with no skips.
+Those are incoming author-reported results; the integration packet preserves
+the original text but does not include the original execution logs for that
+claim. They do not establish validation of the combined source. The separate
+retained `0509` run passed the earlier 88 workspace controls and 264 phases
+on its own pinned source. No pass is transferred across this merge.
 
-The next separate lifecycle fixture must retain one owned temporary root
-across two service instances, register later workspaces through the
-existing API, and probe the declared secondary workspace. Replacement
-must require actual service containment and a closed old publisher before
-constructing a new provider on the same home, then explicitly re-register
-the intended scopes. This is same-process service/provider replacement,
-not a Python-process restart. Lost hints, Python restart, key rotation,
-expiry, rollout admission and full installed 1/10/100 qualification remain
-pending distinct experiments. Existing six-phase workspace scenarios,
-publisher coalescing/cache rules and qualification limits are unchanged.
+The two additional lifecycle controls cover a retained native call starting
+during committed readback and a closed receipt witness being mistaken for
+active instrumentation. They preserve the existing forwarding and cleanup
+requirements and need fresh execution with the combined providers.
+
+Two distinct lifecycle diagnostics coexist:
+
+* `scripts/native_slo_workspace_lifecycle_runner.py` retains the incoming
+  five-scenario sweep for lost metadata hints, command-key rotation,
+  first-admission faults, expiry faults and same-process service replacement.
+  Its complete declared matrix contains 15 cells across 1, 10 and 100 scopes.
+* `scripts/native_slo_workspace_poststart.py` retains the separate poststart
+  registration diagnostic and its lossless evidence/session helpers. It owns
+  two sequential service instances on each of three homes and declares nine
+  phase/request offers. See [the poststart contract](../rsp129_workspace_poststart/README.md).
+
+Their module names, evidence encodings, controls and execution claims remain
+separate. Same-process service/provider replacement does not establish a
+Python-process restart or automatic workspace restoration. Neither diagnostic
+grants full installed RSP-128/129 sampling, paired performance or cross-platform
+qualification. Existing six-phase workspace scenarios, publisher coalescing,
+cache rules and original deadlines are unchanged.

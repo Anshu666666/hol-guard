@@ -166,7 +166,7 @@ def test_native_wrapper_preserves_real_result_and_validates_durable_receipt(tmp_
         binding = _context("observe")["binding"]
         assert (
             worker._review_raw_hook_native(
-                payload={"tool_use_id": "mixed-load-0"},
+                payload={"native_slo_attempt": "mixed-load-0"},
                 harness=case.harness,
                 event=case.event,
                 policy_snapshot=binding,

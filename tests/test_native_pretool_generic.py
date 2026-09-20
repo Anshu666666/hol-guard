@@ -19,89 +19,12 @@ from codex_plugin_scanner.guard.daemon.hook_worker_responses import (
     harness_json_from_native_pre_tool,
     harness_json_from_native_pre_tool_review,
 )
-from codex_plugin_scanner.guard.native_decision_receipt import canonical_receipt_bytes
 from codex_plugin_scanner.guard.native_hook_edge import _decode_edge
 from codex_plugin_scanner.guard.native_pretool import _decode_pre_tool
 from codex_plugin_scanner.guard.runtime import hook_payload_reference as payload_reference_module
 from codex_plugin_scanner.guard.store import GuardStore
 
-from .native_review_approval_support import _bound_review_evidence
-
-
-def _edge(harness: str, event: str, action_type: str = "unknown") -> dict[str, object]:
-    edge: dict[str, object] = {
-        "schema": "guard-hook-edge-result.v2",
-        "authority": "rust",
-        "harness": harness,
-        "event_name": "PreToolUse",
-        "payload_kind": "inline",
-        "result": {
-            "schema": "guard-pre-tool-result.v1",
-            "version": 1,
-            "authority": "rust",
-            "action": {
-                "schema": "guard-pre-tool-action.v1",
-                "version": 1,
-                "harness": harness,
-                "event": event,
-                "action_type": action_type,
-                "operation": "unknown",
-                "bounded": True,
-                "sensitive_target": False,
-            },
-            "decision": "deny",
-            "policy_action": "review",
-            "minimum_action": "review",
-            "reason_code": "native_pre_tool_unknown_review",
-            "reason": "HOL Guard requires review for this bounded action.",
-            "explicitly_benign": False,
-        },
-    }
-    result = edge["result"]
-    assert isinstance(result, dict)
-    receipt: dict[str, object] = {
-        "schema": "guard-native-hook-decision-receipt.v1",
-        "version": 1,
-        "authority": "rust",
-        "decision_id": "0" * 64,
-        "request_id": "request-1",
-        "request_digest": "a" * 64,
-        "harness": harness,
-        "event_name": "PreToolUse",
-        "payload_kind": "inline",
-        "policy_generation": 1,
-        "policy_digest": None,
-        "rule_digest": None,
-        "runtime_identity": None,
-        "decision": result["decision"],
-        "model_output_action": "not_applicable",
-        "policy_action": result["policy_action"],
-        "observed_policy_action": None,
-        "reason_code": result["reason_code"],
-        "workspace_bound": False,
-        "source_ref_external_allowed": False,
-        "reviewed_output_sha256": None,
-        "observe_mode": False,
-        "deadline_budget_ms": 100,
-    }
-    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
-    edge["receipt"] = receipt
-    return edge
-
-
-def _sync_receipt(edge: dict[str, object]) -> None:
-    result = edge["result"]
-    receipt = edge["receipt"]
-    assert isinstance(result, dict)
-    assert isinstance(receipt, dict)
-    receipt.update(
-        {
-            "decision": result["decision"],
-            "policy_action": result["policy_action"],
-            "reason_code": result["reason_code"],
-        }
-    )
-    receipt["decision_id"] = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
+from .native_pretool_support import _bound_network_review_edge, _edge, _sync_receipt
 
 
 @pytest.mark.parametrize("harness", ("claude-code", "codex", "cline", "cursor", "copilot", "grok", "zcode"))
@@ -252,17 +175,10 @@ def test_native_review_queues_approval_without_escaping_to_cli(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     payload = {"hook_event_name": "PreToolUse", "tool_input": {"url": "https://example.test"}}
-    edge = _edge("codex", "PreToolUse", "network")
-    result = edge["result"]
-    assert isinstance(result, dict)
-    bound_result, receipt = _bound_review_evidence(
-        harness="codex",
-        payload=payload,
-        workspace=tmp_path / "workspace",
-        native_result=result,
-    )
-    edge["result"] = bound_result
-    edge["receipt"] = receipt
+    edge = _bound_network_review_edge("codex", payload=payload, workspace=tmp_path / "workspace")
+    receipt = edge["receipt"]
+    assert isinstance(receipt, dict)
+    assert _decode_edge(edge) == edge
     monkeypatch.setattr(
         "codex_plugin_scanner.guard.daemon.hook_worker.native_mode",
         lambda: "auto",
@@ -284,14 +200,17 @@ def test_native_review_queues_approval_without_escaping_to_cli(
         last_heartbeat_at="2026-09-05T00:00:00+00:00",
     )
     worker = HookWorker(store=store)
-    response = worker.review_http_payload(
-        payload=payload,
-        params={},
-        default_harness="codex",
-        home_dir=tmp_path / "home",
-        guard_home=tmp_path / "guard-home",
-        workspace=tmp_path / "workspace",
-    )
+    try:
+        response = worker.review_http_payload(
+            payload=payload,
+            params={},
+            default_harness="codex",
+            home_dir=tmp_path / "home",
+            guard_home=tmp_path / "guard-home",
+            workspace=tmp_path / "workspace",
+        )
+    finally:
+        worker.close()
     hook_output = response["hookSpecificOutput"]
     assert isinstance(hook_output, dict)
     assert hook_output["permissionDecision"] == "deny"
@@ -307,6 +226,16 @@ def test_native_review_queues_approval_without_escaping_to_cli(
     pending = store.list_approval_requests(status="pending")
     assert len(pending) == 1
     assert pending[0]["request_id"] == response["approval_request_id"]
+    envelope = pending[0]["action_envelope_json"]
+    assert isinstance(envelope, dict)
+    assert envelope["native_review_policy_binding"] == {
+        "schema": "guard.native-review-policy-binding.v1",
+        "policy_digest": receipt["policy_digest"],
+        "rule_digest": receipt["rule_digest"],
+        "runtime_identity": receipt["runtime_identity"],
+        "command_extensions": receipt["command_extensions"],
+    }
+    assert envelope["native_review_request_digest"] == receipt["request_digest"]
 
 
 def test_result_helper_has_no_untyped_result_payload() -> None:

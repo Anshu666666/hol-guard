@@ -19,9 +19,8 @@ def attempt_label(value: object) -> str | None:
 def request_attempt(request: object) -> str | None:
     if not isinstance(request, Mapping):
         return None
-    # The fallback reads historical diagnostic fixtures. New requests always
-    # carry an independent label; a malformed explicit label never falls back.
-    return attempt_label(request.get("native_slo_attempt", request.get("tool_use_id")))
+    # Native IDs are never interpreted as diagnostic attempt labels.
+    return attempt_label(request.get("native_slo_attempt"))
 
 
 def fixture_request(harness: str, event: str, size_class: str = "1k", *, attempt: str) -> dict[str, object]:

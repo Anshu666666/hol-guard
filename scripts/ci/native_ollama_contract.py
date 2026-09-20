@@ -18,6 +18,40 @@ if TYPE_CHECKING:
     from codex_plugin_scanner.guard.store import GuardStore
 
 LEGACY_RETRY_SCOPE = "resolved_legacy_approval_does_not_authorize_unknown_executable"
+_READINESS_PHASES = frozenset(
+    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
+)
+_PUBLISHER_ERROR_NAMES = frozenset(
+    {
+        "native_policy_snapshot_workspace_capacity",
+        "native_policy_snapshot_expired",
+        "native_policy_snapshot_publish_failed",
+        "native_policy_snapshot_resident_changed",
+        "native_policy_snapshot_native_disabled",
+        "native_policy_snapshot_runtime_unavailable",
+        "native_policy_snapshot_protocol_unsupported",
+        "native_policy_snapshot_integrity_key_unavailable",
+        "native_policy_snapshot_ack_invalid",
+        "native_policy_snapshot_ack_mismatch",
+        "native_client_containment_failed",
+        "native_client_process_failed",
+        "native_client_launcher_failed",
+        "native_client_timed_out",
+        "native_client_output_limit_exceeded",
+        "native_client_status_missing",
+        "native_client_exit_nonzero",
+        "native_client_output_missing",
+        "native_command_control_binding_changed",
+        "permissionerror",
+        "oserror",
+        "timeouterror",
+        "runtimeerror",
+        "valueerror",
+        "typeerror",
+        "attributeerror",
+        "operationalerror",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)

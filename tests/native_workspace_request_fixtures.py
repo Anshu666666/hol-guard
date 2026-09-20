@@ -7,12 +7,14 @@ import hashlib
 import sqlite3
 import time
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from codex_plugin_scanner.guard.native_decision_receipt import canonical_receipt_bytes, validate_native_decision_receipt
 from codex_plugin_scanner.guard.store_native_decision_receipts import (
     StoreNativeDecisionReceiptsMixin,
-    native_decision_receipt_schema_statement,
+    ensure_native_command_receipt_binding_schema,
+    native_decision_receipt_schema_statements,
 )
 from scripts import native_slo_workspace_request_observer as request_observer
 from scripts.native_slo_workspace_decision import authority_projection
@@ -126,7 +128,17 @@ class ReceiptStore(StoreNativeDecisionReceiptsMixin):
     def __init__(self, path):
         self.path = path
         with self._connect() as connection:
-            connection.execute(native_decision_receipt_schema_statement())
+            statements = native_decision_receipt_schema_statements(
+                """
+                create table if not exists schema_migrations (
+                  version integer primary key,
+                  applied_at text not null
+                )
+                """
+            )
+            for statement in statements:
+                connection.execute(statement)
+            ensure_native_command_receipt_binding_schema(connection, applied_at=datetime.now(timezone.utc).isoformat())
 
     @contextmanager
     def _connect(self):
@@ -167,8 +179,10 @@ def control(tmp_path, monkeypatch):
         state.calls.append((args, kwargs))
         if state.native_error is not None:
             raise state.native_error
-        attempt = kwargs["payload"].get("native_slo_attempt", kwargs["payload"].get("tool_use_id"))
-        index = int(attempt.rsplit("-", 1)[1]) if attempt.startswith("mixed-policy-") else 31
+        attempt = kwargs["payload"].get("native_slo_attempt")
+        index = (
+            int(attempt.rsplit("-", 1)[1]) if isinstance(attempt, str) and attempt.startswith("mixed-policy-") else 31
+        )
         state.edge = {"receipt": receipt(state.snapshot, index, state.action)}
         if state.before_return is not None:
             state.before_return()

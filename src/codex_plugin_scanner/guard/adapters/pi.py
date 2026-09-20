@@ -7,6 +7,7 @@ from pathlib import Path
 from ..aibom_detection import extend_detection_with_workspace_aibom
 from ..models import GuardArtifact, HarnessDetection
 from ..shims import install_guard_shim, remove_guard_shim
+from . import pi_settings_discovery as _settings_discovery
 from .base import HarnessAdapter, HarnessContext, _resolve_command
 from .pi_support import (
     EXTENSION_SUFFIXES,
@@ -22,11 +23,11 @@ from .pi_support import (
     artifact,
     disable_managed_extension,
     enable_managed_extension,
-    json_payload,
     managed_extension_source,
-    resolve_configured_paths,
-    stable_suffix,
 )
+from .pi_support import json_payload as json_payload
+from .pi_support import resolve_configured_paths as resolve_configured_paths
+from .pi_support import stable_suffix as stable_suffix
 
 
 class _PiFamilyHarnessAdapter(HarnessAdapter):
@@ -159,240 +160,9 @@ class _PiFamilyHarnessAdapter(HarnessAdapter):
             workspace_dir=context.workspace_dir,
         )
 
-    def _append_settings_artifacts(
-        self,
-        artifacts: list[GuardArtifact],
-        found_paths: list[str],
-        seen_keys: set[str],
-        *,
-        settings_path: Path,
-        scope: str,
-        id_scope: str,
-        extension_root: Path,
-        skill_root: Path,
-        prompt_root: Path,
-        theme_root: Path,
-    ) -> None:
-        if not settings_path.is_file():
-            return
-        append_found_path(found_paths, settings_path)
-        payload = json_payload(settings_path)
-        self._append_package_setting_artifacts(artifacts, seen_keys, settings_path, payload, scope, id_scope)
-        self._append_configured_resource_setting_artifacts(
-            artifacts,
-            found_paths,
-            seen_keys,
-            settings_path=settings_path,
-            payload=payload,
-            scope=scope,
-            id_scope=id_scope,
-            key="extensions",
-            artifact_type="extension",
-            default_root=extension_root,
-        )
-        self._append_configured_resource_setting_artifacts(
-            artifacts,
-            found_paths,
-            seen_keys,
-            settings_path=settings_path,
-            payload=payload,
-            scope=scope,
-            id_scope=id_scope,
-            key="skills",
-            artifact_type="skill",
-            default_root=skill_root,
-        )
-        self._append_configured_resource_setting_artifacts(
-            artifacts,
-            found_paths,
-            seen_keys,
-            settings_path=settings_path,
-            payload=payload,
-            scope=scope,
-            id_scope=id_scope,
-            key="prompts",
-            artifact_type="prompt",
-            default_root=prompt_root,
-        )
-        self._append_configured_resource_setting_artifacts(
-            artifacts,
-            found_paths,
-            seen_keys,
-            settings_path=settings_path,
-            payload=payload,
-            scope=scope,
-            id_scope=id_scope,
-            key="themes",
-            artifact_type="theme",
-            default_root=theme_root,
-        )
-
-    def _append_package_setting_artifacts(
-        self,
-        artifacts: list[GuardArtifact],
-        seen_keys: set[str],
-        settings_path: Path,
-        payload: dict[str, object],
-        scope: str,
-        id_scope: str,
-    ) -> None:
-        values = payload.get("packages")
-        if not isinstance(values, list):
-            return
-        for value in values:
-            if not isinstance(value, str) or not value.strip():
-                continue
-            artifact_id = f"{self.harness}:{id_scope}:package:{stable_suffix(value)}"
-            append_artifact(
-                artifacts,
-                seen_keys,
-                artifact(
-                    harness=self.harness,
-                    artifact_id=artifact_id,
-                    name=value,
-                    artifact_type="package",
-                    scope=scope,
-                    path=settings_path,
-                    metadata={
-                        "source": "settings.json",
-                        "key": "packages",
-                        "value": value,
-                    },
-                ),
-                dedupe_key=artifact_id,
-            )
-
-    def _append_configured_resource_setting_artifacts(
-        self,
-        artifacts: list[GuardArtifact],
-        found_paths: list[str],
-        seen_keys: set[str],
-        *,
-        settings_path: Path,
-        payload: dict[str, object],
-        scope: str,
-        id_scope: str,
-        key: str,
-        artifact_type: str,
-        default_root: Path,
-    ) -> None:
-        values = payload.get(key)
-        if not isinstance(values, list):
-            return
-        for value in values:
-            if not isinstance(value, str) or not value.strip():
-                continue
-            matches = resolve_configured_paths(settings_path, value)
-            if not matches:
-                artifact_id = f"{self.harness}:{id_scope}:{artifact_type}:configured:{stable_suffix(value)}"
-                append_artifact(
-                    artifacts,
-                    seen_keys,
-                    artifact(
-                        harness=self.harness,
-                        artifact_id=artifact_id,
-                        name=value,
-                        artifact_type=artifact_type,
-                        scope=scope,
-                        path=settings_path,
-                        metadata={
-                            "source": "settings.json",
-                            "key": key,
-                            "value": value,
-                        },
-                    ),
-                    dedupe_key=artifact_id,
-                )
-                continue
-            for match in matches:
-                if match.is_relative_to(default_root):
-                    id_root = default_root
-                else:
-                    id_root = match if match.is_dir() else match.parent
-                if artifact_type == "extension":
-                    if match.is_dir():
-                        self._append_extension_artifacts(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            extension_root=match,
-                            scope=scope,
-                            id_scope=id_scope,
-                            id_root=id_root,
-                        )
-                    elif match.suffix in EXTENSION_SUFFIXES:
-                        self._append_extension_file(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            match,
-                            scope,
-                            id_scope,
-                            id_root,
-                        )
-                elif artifact_type == "skill":
-                    if match.is_dir():
-                        self._append_skill_artifacts(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            skill_root=match,
-                            scope=scope,
-                            id_scope=id_scope,
-                            id_root=id_root,
-                        )
-                    elif match.name == "SKILL.md":
-                        self._append_skill_file(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            match,
-                            scope,
-                            id_scope,
-                            id_root,
-                        )
-                elif artifact_type == "prompt":
-                    if match.is_dir():
-                        self._append_prompt_artifacts(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            prompt_root=match,
-                            scope=scope,
-                            id_scope=id_scope,
-                            id_root=id_root,
-                        )
-                    elif match.suffix == ".md":
-                        self._append_prompt_file(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            match,
-                            scope,
-                            id_scope,
-                            id_root,
-                        )
-                elif artifact_type == "theme":
-                    if match.is_dir():
-                        self._append_theme_artifacts(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            theme_root=match,
-                            scope=scope,
-                            id_scope=id_scope,
-                            id_root=id_root,
-                        )
-                    elif match.suffix in THEME_SUFFIXES:
-                        self._append_theme_file(
-                            artifacts,
-                            found_paths,
-                            seen_keys,
-                            match,
-                            scope,
-                            id_scope,
-                            id_root,
-                        )
+    _append_settings_artifacts = _settings_discovery._append_settings_artifacts
+    _append_package_setting_artifacts = _settings_discovery._append_package_setting_artifacts
+    _append_configured_resource_setting_artifacts = _settings_discovery._append_configured_resource_setting_artifacts
 
     def _append_extension_artifacts(
         self,

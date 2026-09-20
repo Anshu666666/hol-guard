@@ -15,6 +15,7 @@ from typing import Any
 
 from scripts.native_slo_adapter import route_counts
 from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_witness import writer_drained
 from scripts.native_slo_observation_failure import verdict_evidence
 from scripts.native_slo_posture_controls import PostureControls
@@ -122,7 +123,7 @@ class PostureScenarioFixture:
                 guard_home=self.session.guard_home,
                 workspace=self.controls.workspace(scope),
                 harness=harness,
-                request_payload={**case.payload, "tool_use_id": attempt},
+                request_payload={**fixture_request(harness, event, attempt=attempt), **case.payload},
             )
             row["state"] = "completed"
         except Exception as error:

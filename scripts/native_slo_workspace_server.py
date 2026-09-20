@@ -7,10 +7,10 @@ from collections import Counter
 from collections.abc import Mapping
 from typing import Any
 
-from scripts.native_slo_adapter import payload
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
 from scripts.native_slo_expiry import _authenticated_readback, _readback_matches
 from scripts.native_slo_failure import failure_evidence
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_mixed_witness import ReceiptWitness, writer_drained
 from scripts.native_slo_workspace_observer import PAGE_SIZE, PublicationObserver, public_binding
@@ -177,7 +177,7 @@ class WorkspaceScenarioFixture:
             guard_home=self.session.guard_home,
             workspace=self.session.workspace,
             harness="claude-code",
-            request_payload={**payload("PreToolUse"), "tool_use_id": attempt},
+            request_payload=fixture_request("claude-code", "PreToolUse", attempt=attempt),
         )
         row = self.witness.row(attempt)
         expected = "deny" if action == "block" else "allow"

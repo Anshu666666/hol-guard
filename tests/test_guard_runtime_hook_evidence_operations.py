@@ -210,13 +210,17 @@ assert operations._writer is writer
 assert writer._evidence_operations is operations
 observation = importlib.import_module(names[2])
 assert writer.EvidenceQueueObservation is observation.EvidenceQueueObservation
+journal = importlib.import_module(names[3])
+assert journal._writer is writer
+assert writer.RuntimeHookEvidenceWriterJournalMixin is journal.RuntimeHookEvidenceWriterJournalMixin
+storage = importlib.import_module(prefix + "runtime_hook_evidence_journal")
+for helper in ("append_journal", "recover_journal_records", "rewrite_journal"):
+    assert getattr(writer, helper) is getattr(storage, helper)
 hints = get_type_hints(writer.RuntimeHookEvidenceWriter.__init__)
 assert hints["store"] is writer.GuardStore
 assert hints["queue_observation"] == observation.EvidenceQueueObservation | None
 assert Path(writer.__file__).resolve() == root / "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py"
-journal = importlib.import_module(names[3])
-assert writer.RuntimeHookEvidenceWriter.__bases__ == (journal.RuntimeHookEvidenceWriterJournalMixin,)
-assert journal._writer is writer
+assert writer.RuntimeHookEvidenceWriter.__bases__ == (writer.RuntimeHookEvidenceWriterJournalMixin,)
 print(json.dumps({"first": sys.argv[2], "parent_imports_did_not_preload": True, "bound": True}))
 """
     completed = subprocess.run(

@@ -138,6 +138,19 @@ def test_approval_persistence_fault_is_witnessed_through_real_positional_caller(
             native_receipt=None,
             workspace=session.workspace,
             guard_home=session.guard_home,
+        )
+        assert response["reason_code"] == "native_review_policy_binding_invalid"
+        assert response["policy_action"] == "block"
+        assert "approval_persistence_failed" not in fault.result()["setup"]
+        assert session.store.list_approval_requests(status="pending") == []
+        response = pause_native_pre_tool_for_approval(
+            session.store,
+            harness="claude-code",
+            payload=payload,
+            native_result=native_result,
+            native_receipt=None,
+            workspace=session.workspace,
+            guard_home=session.guard_home,
             verified_receipt=receipt,
         )
         assert fault.result()["setup"]["approval_persistence_failed"] is True

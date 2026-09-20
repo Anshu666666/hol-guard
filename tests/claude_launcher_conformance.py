@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 HISTORICAL_FIXTURE = "tests/fixtures/claude-launcher-pilot-auth.json"
 HISTORICAL_GENERATOR = "scripts/generate_claude_launcher_auth_vectors.py"
-CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance.json"
-CURRENT_REVISION = "1cd7842c1da4f327b568065dd159c67e7bd0c92b"
-CURRENT_TREE = "5250218ff36acbb35a2fba0fde483db02a724f63"
+CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance-v2.json"
+CURRENT_REVISION = "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d"
+CURRENT_TREE = "19977465d6e419f1276d75fb6bd1b3477f5c9720"
 CURRENT_MARKER_SHA256 = "a452508d7650662709fba99632befdea0a019b66957dc1ffdf67e24c6d4c2f61"
 HISTORICAL_FIXTURE_SHA256 = "ebf41a37cfe9e6e05bcd9f5161874a3e1329015bb990f779e238d3c8f4b3571a"
 HISTORICAL_GENERATOR_SHA256 = "03fa95cd2b9366c8913ac5b703f153c64f2b917e1d1ba953825486ca0debeeb5"
@@ -31,6 +31,16 @@ MODULES = frozenset(
 OLD_IMPORT = b"from .claude_code import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
 NEW_IMPORT = b"from .claude_hook_config import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
 IMPORT_ANCHOR = b"from .claude_daemon_hook_transport import authenticated_claude_hook_response\n"
+AUTH = "adapters/codex_daemon_hook_auth.py"
+READER_PROVIDERS = {
+    "windows_replaceable_file.py": "ccc6b88c70dac5bc80c340b0bc4712e0ae588a123623b4bc3e34616d9b684fb9",
+    "windows_paths.py": "b93ca4e5361c9dbda0ea273be903b4ed7225dc21ec5bfaf3a7da5ddb892cf79d",
+}
+READER_ADDITION = (
+    b'        if os.name == "nt":\n'
+    b"            from ..windows_replaceable_file import read_replaceable_text\n\n"
+    b"            return read_replaceable_text(path).strip()\n"
+)
 
 
 def _require(condition: object, reason: str) -> None:
@@ -68,11 +78,12 @@ def validate_current_conformance(
             "bridge_modules",
             "marker_source",
             "reviewed_import_delta",
+            "reviewed_windows_reader_delta",
         },
         "current_conformance_shape_invalid",
     )
     _require(
-        binding["schema"] == "guard-claude-current-source-conformance.v1"
+        binding["schema"] == "guard-claude-current-source-conformance.v2"
         and binding["python_execution"] == "current_adapter_registered_python_argv"
         and binding["installed_artifact"] is False
         and binding["qualification_complete"] is False,
@@ -115,16 +126,41 @@ def validate_current_conformance(
     modules = _object(binding["bridge_modules"], MODULES, "current_module_set_invalid")
     old_modules = _object(historical.get("bridge_modules"), MODULES, "historical_module_set_invalid")
     marker = _object(binding["marker_source"], {"module", "sha256"}, "marker_source_shape_invalid")
-    _require(marker["module"] == MARKER and set(sources) == MODULES | {MARKER}, "current_module_set_invalid")
+    _require(
+        marker["module"] == MARKER and set(sources) == MODULES | {MARKER} | READER_PROVIDERS.keys(),
+        "current_module_set_invalid",
+    )
     _require(marker["sha256"] == CURRENT_MARKER_SHA256, "current_marker_binding_changed")
     for name, expected in {**modules, MARKER: marker["sha256"]}.items():
         _require(isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected), "current_module_digest_invalid")
         _require(_digest(sources[name]) == expected, "current_module_source_drift")
     _require(
-        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE}), "historical_transport_source_drift"
+        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE, AUTH}),
+        "historical_transport_source_drift",
+    )
+    _require(history["module_sha256"] == old_modules[AUTH], "historical_auth_module_changed")
+    reader = _object(
+        binding["reviewed_windows_reader_delta"],
+        {"module", "historical_sha256", "current_sha256", "added", "providers", "scope"},
+        "reviewed_windows_reader_delta_invalid",
     )
     _require(
-        history["module_sha256"] == modules["adapters/codex_daemon_hook_auth.py"], "historical_auth_module_changed"
+        reader["module"] == AUTH
+        and reader["historical_sha256"] == old_modules[AUTH]
+        and reader["current_sha256"] == modules[AUTH]
+        and reader["added"] == READER_ADDITION.decode(),
+        "reviewed_windows_reader_delta_invalid",
+    )
+    providers = _object(reader["providers"], set(READER_PROVIDERS), "current_reader_provider_set_invalid")
+    _require(providers == READER_PROVIDERS, "current_reader_provider_binding_changed")
+    for name, expected in providers.items():
+        _require(_digest(sources[name]) == expected, "current_reader_provider_source_drift")
+    auth = sources[AUTH]
+    _require(
+        auth.count(READER_ADDITION) == 1
+        and auth.count(READER_ADDITION + b'        return path.read_text(encoding="utf-8").strip()\n') == 1
+        and _digest(auth.replace(READER_ADDITION, b"", 1)) == old_modules[AUTH],
+        "reviewed_windows_reader_delta_mismatch",
     )
     delta = _object(
         binding["reviewed_import_delta"],
@@ -154,5 +190,5 @@ def verify_current_conformance(guard: Path) -> dict[str, Any]:
         json.loads((ROOT / CURRENT_FIXTURE).read_bytes()),
         historical_vectors=(ROOT / HISTORICAL_FIXTURE).read_bytes(),
         historical_generator=(ROOT / HISTORICAL_GENERATOR).read_bytes(),
-        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER}},
+        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER} | READER_PROVIDERS.keys()},
     )

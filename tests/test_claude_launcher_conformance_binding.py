@@ -22,7 +22,7 @@ def evidence() -> Evidence:
         "historical_generator": (root / conformance.HISTORICAL_GENERATOR).read_bytes(),
         "sources": {
             name: (root / "src/codex_plugin_scanner/guard" / name).read_bytes()
-            for name in conformance.MODULES | {conformance.MARKER}
+            for name in conformance.MODULES | {conformance.MARKER} | conformance.READER_PROVIDERS.keys()
         },
     }
     return binding, inputs
@@ -36,6 +36,9 @@ def test_current_bridge_binding_preserves_historical_auth_authority(evidence: Ev
     assert result["bridge_modules"][conformance.BRIDGE] != history["bridge_modules"][conformance.BRIDGE]
     assert result["historical_auth_provenance"]["historical_bridge_executed"] is False
     assert result["installed_artifact"] is result["qualification_complete"] is False
+    assert result["bridge_modules"][conformance.AUTH] != history["bridge_modules"][conformance.AUTH]
+    assert result["historical_auth_provenance"]["module_sha256"] == history["bridge_modules"][conformance.AUTH]
+    assert result["reviewed_windows_reader_delta"]["providers"] == conformance.READER_PROVIDERS
 
 
 @pytest.mark.parametrize(
@@ -122,4 +125,54 @@ def test_repinning_marker_source_cannot_retain_the_original_current_source_ident
     inputs["sources"][name] += b"\nCLAUDE_GUARD_DAEMON_HOOK_MARKER = 'unreviewed'\n"
     binding["marker_source"]["sha256"] = hashlib.sha256(inputs["sources"][name]).hexdigest()
     with pytest.raises(ValueError, match="current_marker_binding_changed"):
+        conformance.validate_current_conformance(binding, **inputs)
+
+
+@pytest.mark.parametrize("name", sorted(conformance.READER_PROVIDERS))
+@pytest.mark.parametrize("repin", [False, True])
+def test_windows_reader_provider_drift_cannot_be_relabelled(evidence: Evidence, name: str, repin: bool) -> None:
+    binding, inputs = evidence
+    inputs["sources"][name] += b"\n# unreviewed reader edit\n"
+    if repin:
+        binding["reviewed_windows_reader_delta"]["providers"][name] = hashlib.sha256(
+            inputs["sources"][name]
+        ).hexdigest()
+    reason = "current_reader_provider_binding_changed" if repin else "current_reader_provider_source_drift"
+    with pytest.raises(ValueError, match=reason):
+        conformance.validate_current_conformance(binding, **inputs)
+
+
+@pytest.mark.parametrize(
+    "case", ["missing", "unexpected", "wrong_insertion", "extra_auth_edit", "changed_branch", "relocated_branch"]
+)
+def test_reader_delta_admits_only_the_reviewed_insertion(evidence: Evidence, case: str) -> None:
+    binding, inputs = evidence
+    reader = binding["reviewed_windows_reader_delta"]
+    if case == "missing":
+        del reader["providers"]["windows_paths.py"]
+        reason = "current_reader_provider_set_invalid"
+    elif case == "unexpected":
+        reader["providers"]["unreviewed.py"] = "0" * 64
+        reason = "current_reader_provider_set_invalid"
+    elif case == "wrong_insertion":
+        reader["added"] += "# extra edit\n"
+        reason = "reviewed_windows_reader_delta_invalid"
+    else:
+        auth = inputs["sources"][conformance.AUTH]
+        if case == "extra_auth_edit":
+            auth = auth.replace(b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 5", b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 6")
+        elif case == "relocated_branch":
+            anchor = b'        return path.read_text(encoding="utf-8").strip()\n'
+            auth = auth.replace(conformance.READER_ADDITION + anchor, anchor + conformance.READER_ADDITION)
+            assert (
+                hashlib.sha256(auth.replace(conformance.READER_ADDITION, b"", 1)).hexdigest()
+                == reader["historical_sha256"]
+            )
+        else:
+            auth = auth.replace(b'if os.name == "nt":', b'if os.name != "nt":')
+        assert auth != inputs["sources"][conformance.AUTH]
+        inputs["sources"][conformance.AUTH] = auth
+        reader["current_sha256"] = binding["bridge_modules"][conformance.AUTH] = hashlib.sha256(auth).hexdigest()
+        reason = "reviewed_windows_reader_delta_mismatch"
+    with pytest.raises(ValueError, match=reason):
         conformance.validate_current_conformance(binding, **inputs)

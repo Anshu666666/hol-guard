@@ -5,6 +5,8 @@ mod claude_launcher_pilot;
 mod edge;
 mod hardening;
 mod managed_resident;
+mod native_client_failure_observation;
+mod native_client_read_observation;
 mod native_hook_receipt;
 mod native_phase_observation;
 #[cfg(all(feature = "diagnostic-phases", target_os = "linux"))]
@@ -282,6 +284,7 @@ fn main() {
     std::panic::set_hook(Box::new(|_| eprintln!("native_runtime_panicked")));
     if let Err(code) = crate::with_native_phase_export!(run()) {
         eprintln!("{code}");
+        crate::emit_native_live_failure!();
         std::process::exit(2);
     }
 }

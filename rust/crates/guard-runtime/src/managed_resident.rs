@@ -23,6 +23,8 @@ mod managed_resident_transport;
 mod managed_resident_windows;
 #[path = "managed_resident_owner_lock.rs"]
 mod owner_lock;
+#[path = "managed_resident_deadline.rs"]
+mod request_deadline;
 #[path = "resident_state_retirement.rs"]
 mod resident_state_retirement;
 #[path = "resident_restart_budget.rs"]
@@ -40,6 +42,8 @@ use crate::resident_state::{
     validate_package_process_identity, validate_runtime_process_identity,
 };
 use containment::try_live_or_restart;
+pub(crate) use request_deadline::client_request_at_deadline;
+use request_deadline::client_request_with_lease;
 
 pub(crate) fn client_stream(state_base: &Path) -> Result<(), String> {
     client_stream::run(state_base)
@@ -126,8 +130,7 @@ fn try_home_states(
     let runtime_digest = runtime_digest()?;
     for (_scope, _digest, state) in discover_home_states_prefer(state_base, Some(preferred_digest))?
     {
-        let timeout = deadline.saturating_duration_since(Instant::now());
-        if timeout.is_zero() {
+        if Instant::now() >= deadline {
             return Ok(None);
         }
         let same_runtime = runtime_digest == state.runtime_sha256;
@@ -150,12 +153,14 @@ fn try_home_states(
             start_marker: &state.process_start_marker,
             digest: (!same_runtime).then_some(&state.runtime_sha256),
         };
-        match crate::resident_client::send_request_for_digest_detailed(
+        #[cfg(test)]
+        deadline_tests::checkpoint(deadline_tests::Stage::Validated);
+        match crate::resident_client::send_request_for_digest_at_deadline_detailed(
             &state.transport,
             &state.endpoint,
             &token,
             payload,
-            timeout,
+            deadline,
             &identity,
         ) {
             Ok(response) => return Ok(Some(response)),
@@ -169,16 +174,7 @@ fn try_home_states(
     Ok(None)
 }
 
-pub(crate) fn client_request_at_deadline(
-    state_base: &Path,
-    payload: &[u8],
-    deadline: Instant,
-) -> Result<Vec<u8>, String> {
-    let client_lease = lease::acquire(state_base)?;
-    client_request_with_lease(state_base, payload, deadline, &client_lease)
-}
-
-fn client_request_with_lease(
+fn client_request_with_lease_inner(
     state_base: &Path,
     payload: &[u8],
     overall_deadline: Instant,
@@ -492,6 +488,9 @@ pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
 use client_stream::{
     read_frame as read_client_stream_frame, write_frame as write_client_stream_frame,
 };
+#[cfg(test)]
+#[path = "managed_resident_deadline_tests.rs"]
+mod deadline_tests;
 #[cfg(test)]
 #[path = "managed_resident_retry_tests.rs"]
 mod retry_tests;

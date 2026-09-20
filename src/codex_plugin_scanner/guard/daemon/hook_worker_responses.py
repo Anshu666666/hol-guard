@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ..approval_link_output import native_review_reason
-from .hook_availability_policy import hook_action_is_emergency_safe
+from .hook_availability_policy import hook_action_is_emergency_safe, hook_event_is_permission_request
 
 
 def prepare_native_hook_policy(
@@ -391,6 +391,29 @@ def integrity_fail_closed_hook_response(
                 "reason_code": reason_code,
             },
         )
+    if hook_event_is_permission_request(event_name):
+        canonical = _canonical_hook_harness(harness)
+        if canonical == "copilot":
+            return {
+                "behavior": "deny",
+                "message": reason,
+                "interrupt": False,
+                "reason_code": reason_code,
+            }
+        decision: dict[str, object] = {
+            "behavior": "deny",
+            "message": reason,
+        }
+        if canonical != "codex":
+            decision["interrupt"] = False
+        return {
+            "policy_action": "block",
+            "reason_code": reason_code,
+            "hookSpecificOutput": {
+                "hookEventName": event_name,
+                "decision": decision,
+            },
+        }
     return integrity_fail_closed_pre_tool_response(harness, reason=reason, reason_code=reason_code)
 
 

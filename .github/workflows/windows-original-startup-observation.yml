@@ -1,0 +1,103 @@
+name: Windows original startup observation
+on:
+  push:
+    branches: ["codex/pr2974-windows-original-startup-observation-20260920-v3"]
+    paths: [".github/workflows/windows-original-startup-observation.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: windows-original-startup-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-startup:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      CANDIDATE_SOURCE: "dce62838d43a9947d2928f5caf595ab8feb40279"
+      CANDIDATE_TREE: "6215dcb493adb1533d317369231736f390236419"
+    steps:
+      - name: Preserve canonical source bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - name: Check out the bound driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - name: Check out the exact diagnostic source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "dce62838d43a9947d2928f5caf595ab8feb40279"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+      - name: Install pinned Rust without running a workload
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup default 1.88.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install unchanged frozen Python dependencies
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = $null
+          $env:PYTHONHOME = $null
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Bind exact source, driver and interpreter
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase before
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check final style, types and both Rust configurations
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase static
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run strict reader and original-call source controls
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase python
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile, enumerate and run exact Rust observer controls
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase rust
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build the diagnostic runtime without a warmup
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run the original Windows selector once
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase workload
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify immutable source and environment after the attempt
+        if: always()
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/observe_startup.py --source candidate --driver driver --output startup-evidence --target "$env:RUNNER_TEMP/windows-startup-target" --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase after
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve bounded original records in the job log
+        if: always()
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/startup-diagnostic/retain_results.py --output startup-evidence
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload original results, failed controls and runtime bytes
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-original-startup-${{ github.run_attempt }}
+          path: startup-evidence/
+          if-no-files-found: error

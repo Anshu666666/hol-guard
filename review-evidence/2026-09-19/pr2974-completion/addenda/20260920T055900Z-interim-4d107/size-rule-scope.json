@@ -1,0 +1,198 @@
+{
+  "schema": "pr2974.size-rule-scope-and-mcp-count-review.v1",
+  "source_sha": "d1ba4265ab15c23db37655999b44d58a0b2d1c74",
+  "source_tree": "20652d3f1f300309c0ec95f4a56a69a3225689e3",
+  "reviewer": "acceptance_audit",
+  "original_rsp133": {
+    "id": "RSP-133",
+    "title": "Audit workflow dependency selection",
+    "acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+    "dependencies": "RSP-006,RSP-022.",
+    "not_a_file_size_task": true
+  },
+  "exact_review_comment": {
+    "url": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/comments/4039987591",
+    "pull_request_review_id": 5239607475,
+    "id": 4039987591,
+    "node_id": "PRRC_kwDORzZri87wzVGH",
+    "diff_hunk": "@@ -48,6 +48,7 @@\n from codex_plugin_scanner.guard.store import GuardStore\n from tests.cloud_exception_bundle_fixtures import build_cloud_exception_policy_bundle\n from tests.policy_bundle_signing_helpers import policy_bundle_test_keyring, sign_policy_bundle\n+from tests.support.network import stub_authenticated_urlopen",
+    "path": "tests/test_guard_cli.py",
+    "commit_id": "b5c43e72fbb9d81ec4074579e0a05f7098afc5b0",
+    "original_commit_id": "b5d2359b42e8ddae746e4e4bbda4aa4a187f04a5",
+    "user": {
+      "login": "qodo-free-for-open-source-projects[bot]",
+      "id": 189517486,
+      "node_id": "BOT_kgDOC0vOrg",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1068000?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D",
+      "html_url": "https://github.com/apps/qodo-free-for-open-source-projects",
+      "followers_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/qodo-free-for-open-source-projects%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "<img src=\"https://img.shields.io/badge/Medium-634FD1?style=flat-square\" height=\"20px\" alt=\"Remediation recommended\">\n\n5\\. Main guard tests outgrow the limit <code>📘 Rule violation</code> <code>⚙ Maintainability</code>\n\n<pre>\n<b><i>test_guard_cli.py</i></b> contains 9,050 non-blank lines after the network helper import is added at line\n51. Additional command-line test coverage is placed in a test source module eighteen times the\npermitted size.\n</pre>\n\n\n<details>\n<summary><strong>Agent Prompt</strong></summary>\n\n```\n## Issue description\nThe changed command-line test module contains 9,050 non-blank lines, exceeding the 500-line source-file limit.\n\n## Fix Focus Areas\n- tests/test_guard_cli.py[48-51]\n\n## Recommended Fix\nPartition the tests by command or behavior into focused test modules containing no more than 500 non-blank lines each.\n```\n\n<code>ⓘ Copy this prompt and use it to remediate the issue with your preferred AI generation tools</code>\n</details>",
+    "created_at": "2026-09-17T18:05:52Z",
+    "updated_at": "2026-09-19T09:03:11Z",
+    "html_url": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987591",
+    "pull_request_url": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/2974",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/comments/4039987591"
+      },
+      "html": {
+        "href": "https://github.com/hashgraph-online/hol-guard/pull/2974#discussion_r4039987591"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/2974"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/hashgraph-online/hol-guard/pulls/comments/4039987591/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": 48,
+    "start_side": "RIGHT",
+    "line": null,
+    "original_line": 51,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 4,
+    "position": 1,
+    "subject_type": "line"
+  },
+  "comment_scope": "Specific changed CLI test module; recommends partitioning into modules <=500nonblank lines. Calls a500-line source-file limit, but does not itself specify alltrackedblobs scope or a generated-file waiver.",
+  "repository_observation": "Tracked root CONTRIBUTING.md has no500/nonblank clause; noAGENTS.md entry in pinned recursive tree. This observation does not negate the explicit session instruction to enforce the rule on changed test partitions.",
+  "count_definition": {
+    "physical": "LF occurrences plus one nonempty unterminated final line",
+    "nonblank": "LF-separated lines whose Unicode trim result is nonempty"
+  },
+  "actual_mcp_source_counts": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+      "git_blob": "6e1fabee3c4847bffa3c6262039cf2e07595de1f",
+      "bytes": 71082,
+      "sha256": "ecfad2ddcfe670918eef18c20e59e519d30b936a69efdce12e33744c750f080f",
+      "lf_physical_lines": 1871,
+      "nonblank_lines": 1712,
+      "changed_against_release_base": true
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+      "git_blob": "e6d914bc366102f862edd6a6fe016da56f3a59a0",
+      "bytes": 188340,
+      "sha256": "123606fd287df0eb63cb147655971097d9543a51bb26c2b11c371f80c6b7ba94",
+      "lf_physical_lines": 4495,
+      "nonblank_lines": 4253,
+      "changed_against_release_base": true
+    }
+  ],
+  "current_whole_pr_census": {
+    "base_sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "source_files": 4747,
+    "changed_files": 2347,
+    "deleted_paths": 13,
+    "executed_whole_pr_line_total_available": false,
+    "whole_pr_over500_count": null,
+    "integrity_is_not_line_compliance": true,
+    "scoped_component_files": 214,
+    "scoped_at_most500physical": 212,
+    "scoped_over500physical": [
+      {
+        "kind": "JSON",
+        "name": "stopped F plan",
+        "lines": 571
+      },
+      {
+        "kind": "JSON",
+        "name": "command corpus report",
+        "lines": 643
+      }
+    ],
+    "scoped_count_not_extrapolated_to_whole_pr": true
+  },
+  "qualification_complete": false,
+  "new_refactor_authorization_inferred": false,
+  "scope_correction": {
+    "no_broader_genuine_user_text_evidenced": true,
+    "original_PRD_task_CONTRIBUTING_scope": "No500-line obligation found",
+    "parent_prior_instruction": "No inheritance waiver for changedCLI test partitions",
+    "does_not_create_whole_repository_rule": true,
+    "prior_broader_assessments": "Preserved as historical interpretations,corrected by actual comment text; no incidental massiveMCP refactor authorized by thiscomment."
+  },
+  "actual_later_diagnostic_census": {
+    "source_sha": "d1ba4265ab15c23db37655999b44d58a0b2d1c74",
+    "source_tree": "20652d3f1f300309c0ec95f4a56a69a3225689e3",
+    "git_blob": "b1ead81c3404bd467f811f669cc4faddf238ba56",
+    "scope": "Actual d1ba changed-blob census in run35490801471 after workload; diagnostic only, not an original global500-line acceptance rule",
+    "verified_changed_paths": 2347,
+    "deleted_paths": 13,
+    "paths_over500_lf_physical_lines": 191,
+    "unmeasured_or_failed": 0,
+    "classification": "All2347 decoded UTF8 with noNUL",
+    "top_production_paths": [
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/static/assets/guard-dashboard.js",
+        "lines": 33046
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/static/assets/index.css",
+        "lines": 9558
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/static/assets/chunks/extensions-workspace.js",
+        "lines": 6788
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/static/assets/chunks/settings-workspace.js",
+        "lines": 5402
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+        "lines": 4495
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/static/assets/chunks/policy-workspace-page.js",
+        "lines": 4323
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/cli/render.py",
+        "lines": 2913
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/approvals.py",
+        "lines": 2741
+      }
+    ],
+    "qualification_complete": false
+  },
+  "current_qodo_target_verification": {
+    "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "owner": "17b79513e86f7212a9ea145c2c1caa3407d23847",
+    "files": 50,
+    "named_partitions": 49,
+    "maximum_nonblank": 344,
+    "maximum_physical_lf": 421,
+    "comment": 4039987591,
+    "scope": "Requested CLI test partition only",
+    "runtime_executed": false
+  }
+}

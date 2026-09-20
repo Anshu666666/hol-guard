@@ -1,0 +1,110 @@
+{
+  "schema": "pr2974-native-consumer-copy-repair-independent-semantic-review.v1",
+  "status": "CLEAR_FOR_SOURCE_COMPOSITION_FRESH_FORMAT_AND_TYPE_GATES_REQUIRED",
+  "reviewed_owner_git_blob": "b6a9f7abbc76df810bf8eea607a82d7029a9b400",
+  "reviewed_owner_bytes": 52249,
+  "reviewed_owner_sha256": "a2c9b7e52ddd0bc2743d0a17b9199fc1a3be0647efbd5e0ac5445b7a0e72c852",
+  "basis_source": "0a6df6abbe8b6efa237f58f0cbdf553813b89a61",
+  "basis_tree": "5414bd8d95c1c1d9d4e64b067ee457bf763903a0",
+  "path": "scripts/ci/pr2974_native_noncommand_consumer.py",
+  "before": {
+    "git_blob": "c0bad4cb84cd45753c2da30763715eef99502608",
+    "bytes": 17748,
+    "sha256": "a977cdc6b9dc143bbd4563c6c35104f54ed29bdb9d95affe7351f2be0bcc9f49"
+  },
+  "after": {
+    "git_blob": "33d9dd1f1d9ca8c1734e99518a9c33200386047c",
+    "bytes": 17812,
+    "sha256": "5f22c944ee691e33dd21369098fd8ead75e186230b28ff9c550599a849d6820e",
+    "lines": 395
+  },
+  "verification": {
+    "forward": true,
+    "inverse": true,
+    "unchanged_call": true,
+    "source_and_log_hashes_valid": true,
+    "Any_mentions_before": 19,
+    "Any_mentions_after": 19,
+    "cast_mentions_before": 2,
+    "cast_mentions_after": 2,
+    "new_ignores": 0
+  },
+  "scope": "Independent full semantic read of the two exact edits and their complete original function context. Source owner separately owns complete-tree composition; this peer performs no runtime or type execution.",
+  "mapping_proof": {
+    "receiver": "arguments is constructed here as an exact ordinary local dict literal, not a user-provided mapping/subclass.",
+    "ordered_keys": [
+      "harness",
+      "payload",
+      "native_result",
+      "workspace",
+      "guard_home",
+      "home_dir",
+      "policy_snapshot"
+    ],
+    "all_original_key_value_expressions_byte_identical": true,
+    "new_mapping_per_loop_iteration": "Both the original dict spread and new dict.copy create a fresh shallow dict. Copy retains each existing object reference and insertion order.",
+    "override": "policy_snapshot already exists at the final key position. Replacing its value with the identical loop snapshot preserves key order and all six other object values.",
+    "loop": "The tuple (None, snapshot copy with generation+1) and iteration order are byte-identical; no new mutation of native snapshot or input record.",
+    "original_mapping": "The original arguments bag is not mutated. The missing-receipt call before the loop and valid-review call afterward still use that same original mapping.",
+    "evaluation_context": "Workspace/home/guard-home Path objects are still created once before the loop; no path re-resolution, new provider, callback or changed receipt is introduced.",
+    "call": "pause_native_pre_tool_for_approval(store, **changed, native_receipt=receipt, verified_receipt=receipt) is byte-identical. Same receipt objects, store, keyword expansion order and noncommand domain.",
+    "refusal_assertions": "Both invalid snapshot cases, block reason, empty pending queue, retained refusal snapshots and all subsequent persistence/approval/replay/immutability assertions remain byte-identical."
+  },
+  "formatting_proof": {
+    "source": "Exact single hunk from retained native-consumer-ruff-format-check.log.",
+    "log_sha256": "348f117d704b36c8055ce86f410e3befab7c58006a1d824b5b5a753a283985a1",
+    "same_sql_text": true,
+    "same_receipt_decision_id_parameter": true,
+    "same_execute_fetchone_index_comparison_order": true,
+    "no_added_assertion_message_or_tuple": true,
+    "only_outer_parentheses_and_line_wrapping": true
+  },
+  "type_boundary": {
+    "inherited_arguments_annotation": "dict[str, Any]",
+    "inherited_Any_occurrences": 19,
+    "inherited_cast_mentions": 2,
+    "new_Any_annotations": 0,
+    "new_casts": 0,
+    "new_suppressions": 0,
+    "new_configuration_changes": 0,
+    "module_is_not_Any_free": true,
+    "copy_type_intent": "Retain the existing declared mapping type through copy plus assignment rather than let the spread expression infer a value union for every possible keyword.",
+    "actual_prior_type_summary": {
+      "filesAnalyzed": 1,
+      "errorCount": 7,
+      "warningCount": 137,
+      "informationCount": 0,
+      "timeInSec": 1.059
+    },
+    "new_strict_basedpyright_outcome": "UNEXECUTED; fresh original command must establish whether all seven errors are resolved. No pass is inferred by this source review."
+  },
+  "domain_and_contract_preservation": {
+    "same_three_record_labels": [
+      "WebFetch",
+      "Read",
+      "MCP"
+    ],
+    "schemas_limits_context_bindings_receipt_domains_unchanged": true,
+    "all_text_outside_two_edits_identical": true,
+    "no_tests_or_case_populations_changed": true,
+    "no_timeout_or_sampling_gate_changes": true,
+    "production_activation_unchanged": true,
+    "original_failed_run_preserved": {
+      "run": 35488894102,
+      "job": 106020222934,
+      "source": "0a6df6abbe8b6efa237f58f0cbdf553813b89a61",
+      "commands": 17,
+      "passed_commands": 15,
+      "failed_commands": 2,
+      "passed_python_cases": 29,
+      "passed_python_phases": 87,
+      "native_and_installed_workloads_unrun": true
+    }
+  },
+  "runtime_executed": false,
+  "tests_executed": false,
+  "formatter_executed": false,
+  "typechecker_executed": false,
+  "refs_changed": false,
+  "qualification_complete": false
+}

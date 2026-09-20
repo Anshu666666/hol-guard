@@ -1,0 +1,49 @@
+{
+  "schema": "pr2974-e0d-canonical-publication-and-pr-preimage-v1",
+  "publication": {
+    "source": "e0d3ae248a72c37fe93a7af2d2092a9e2dd0b6bc",
+    "tree": "cd92812d3445dfaaa89502852f961ed9bbbb93e3",
+    "previous": "017f1244f1861bc4a74620a669557b78beb6d176",
+    "at": {
+      "current_time": "2026-09-20 04:39:29 UTC"
+    },
+    "nonforce": true,
+    "readback_verified": true
+  },
+  "preserved_pr_metadata_before_root_next_edit": {
+    "number": 2974,
+    "title": "Fix native review bindings, resident I/O and validation coverage",
+    "body": "This PR integrates the Rust runtime and repairs native review delivery, resident transport, storage admission and the evidence needed to assess installed behavior. Noncommand reviews bind to the selected enforcing acknowledgment; migration 29 preserves their scope alongside the original receipt table, and approval consumption remains atomic.\n\nCurrent source: [`017f1244f1861bc4a74620a669557b78beb6d176`](https://github.com/hashgraph-online/hol-guard/commit/017f1244f1861bc4a74620a669557b78beb6d176), tree `29404d410dcedd48b01d7e19e1af2e5581b6306a`. The 13-file follow-up preserves and reviews the concurrent `79c555f` changes, restores the frozen F plan exactly, and addresses the published corpus-scope finding, worker-thread assertions, workspace observation order and demonstrated fixture failures.\n\n- macOS Unix sockets may finish reading a committed response after the exact timeout-setter error and an independently observed hangup on the owned descriptor. The flush path applies the same narrow condition. Request writes, original deadlines, response authentication and no-replay behavior remain unchanged.\n- Windows storage connections share the existing Win32 gate while recovery retains exclusive admission. The live connection facade and receipt migrations remain intact.\n- Qualification requires an explicit declared corpus scope. Legacy unscoped reports fail validation instead of receiving a full-matrix label.\n- Workspace observations distinguish accepted policy, authenticated native acknowledgment, current authority and full daemon startup. Resource failures retain bounded operation and process-role labels. Worker-test failures propagate to the main thread.\n- The reviewed Pi/update partitions, constant-time secret checks, VFS refusal assertions and corrected decision fixture are retained. The stopped F campaign remains immutable and inactive.\n\n| Validation bound to the current source | Result and limitation |\n| --- | --- |\n| Local affected controls | 465 Python tests passed with one existing skip; 299 default Rust workspace tests passed with six existing ignores; Rustfmt and all-target/all-feature Clippy passed. Changed Python formatting/lint, focused type checks and seven dynamic privacy probes passed. |\n| Hosted installed observer | 889 Python controls passed with one existing skip; C/SQLite, Rust receipt-consumer and lifecycle controls passed. The installed default smoke passed all 14 gates. Mixed persistence passed all 13 integrity checks, but resource coverage and 13.8585% RSS growth failed. Workspace expiry now passes at 1/10/100; other cells retain clock-origin and deadline failures under investigation. |\n| Normal macOS | Both architectures pass all 22 native client controls, including the closed-peer flush regression, and default-auto 21/21 with 21 committed receipts. ARM passes all 14 smoke gates. Intel has 16/16 resident routes and zero native/transport errors, but c16 p99 1227.94 ms and recovery p95 1045.19 ms exceed their separate 1000 ms smoke gates. |\n| Normal Windows | 13 actual storage controls, installed identity and command-lock controls pass. Default-auto delivers 21 responses but records 19 native routes and 19 receipts, with one receipt-persistence failure; this remains a failed gate. |\n| Normal Linux | The original soak remains in progress and will finish without a replacement push cancelling it. |\n| Main CI and review | One stale paired-driver test fixture fails, and aggregate CI fails with it; the isolated fixture correction is prepared separately. Sonar is skipped, not passed. Gitleaks, Security Gates and CodeQL analyses pass. All 55 review threads are resolved; there are zero formal approvals. Kilo stopped at its output limit. No current-source Greptile score is available. |\n| Isolated paired runs | The fixed baseline remains `2e672d2d950c6ec471005ddba46e49bba16dc23b`. Available arms retain real setup, semantic, timing and supplemental failures. No full platform qualification or performance benefit is established. |\n\nNormal jobs use test-merge `166baceb34c28d7a0ff3f247e95b14e3a8598511`, whose tree exactly matches the current source. The separate installed observer and paired driver is [`9f0652d41ec04f57b97068ebf2a3065f5b3d769b`](https://github.com/hashgraph-online/hol-guard/commit/9f0652d41ec04f57b97068ebf2a3065f5b3d769b); it checks out and binds `017f1244` explicitly. [Normal native workflow](https://github.com/hashgraph-online/hol-guard/actions/runs/35487703732), [main CI](https://github.com/hashgraph-online/hol-guard/actions/runs/35487703851), [installed observer](https://github.com/hashgraph-online/hol-guard/actions/runs/35487350949), [paired installed checks](https://github.com/hashgraph-online/hol-guard/actions/runs/35487350928).\n\nThe [original PRD, TODO, Takeaway and ledger](https://github.com/hashgraph-online/hol-guard/tree/75bb8692b5eaaf6f2e138d5da20402b7d270a9bb/review-evidence/2026-09-19/pr2974-completion/originals) preserve all 144 task objects and 119 catalog entries. The newly published [closed 2433a8 checkpoint](https://github.com/hashgraph-online/hol-guard/tree/3d9ff3ba27939b4a3e227208c8ce0f8ab8e49e15/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T033147Z-2433a8-closed) contains 285 verified files, including revised PRD, TODO and Takeaway continuation documents. Its cutoff and source are explicit; it does not supply current-source acceptance, and it promotes no archived task status. Later results are additive.\n\nRelease acceptance remains open: terminal current-source CI and Sonar, full installed platform and performance qualification, the remaining 500-line file requirement, signing/update/rollback/canary proof, requested Greptile 5/5 and genuine independent last-push/CODEOWNER approval. Original sampling, latency, resource and benefit thresholds remain unchanged. This PR does not establish completion, approval, activation or release.\n",
+    "updated_at": "2026-09-20T04:19:20Z",
+    "head": "017f1244f1861bc4a74620a669557b78beb6d176",
+    "base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "state": "open",
+    "auto_merge": {
+      "enabled_by": {
+        "login": "kantorcodes",
+        "id": 6068672,
+        "node_id": "MDQ6VXNlcjYwNjg2NzI=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6068672?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/kantorcodes",
+        "html_url": "https://github.com/kantorcodes",
+        "followers_url": "https://api.github.com/users/kantorcodes/followers",
+        "following_url": "https://api.github.com/users/kantorcodes/following{/other_user}",
+        "gists_url": "https://api.github.com/users/kantorcodes/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/kantorcodes/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/kantorcodes/subscriptions",
+        "organizations_url": "https://api.github.com/users/kantorcodes/orgs",
+        "repos_url": "https://api.github.com/users/kantorcodes/repos",
+        "events_url": "https://api.github.com/users/kantorcodes/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/kantorcodes/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "merge_method": "squash",
+      "commit_title": null,
+      "commit_message": null
+    }
+  },
+  "primary_source": "Actual GitHub PR GET, retained before any ROOT metadata overwrite; claims inside original PR body retain their original authorship/status."
+}

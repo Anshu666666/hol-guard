@@ -1,0 +1,95 @@
+{
+  "schema": "pr2974.observer-captured-open-independent-semantic-review.v1",
+  "reviewer": "acceptance_audit",
+  "proposal": {
+    "git_blob": "e8f094e64ae3d56f678849cb26bbc1a71a68a560",
+    "bytes": 71222,
+    "sha256": "e26a32269a0ca3e0afa95cfa11e55026d99d34018847b59151f038233526b7ef"
+  },
+  "status": "CLEAR_FOR_HARNESS_COMPOSITION_AND_FRESH_FINITE_CONTROLS",
+  "scope": "Source-only independent review of captured observer open and one separately bounded control; no runtime executed.",
+  "trigger": 35489040512,
+  "source": "0a6df6abbe8b6efa237f58f0cbdf553813b89a61",
+  "original_harness": "222829991845816ef7c4d8c62da21baf5020b6ac",
+  "identities": [
+    {
+      "path": "ci/pr2974_incoming_integration_validation/control_capture_evidence.py",
+      "mode": "100644",
+      "type": "blob",
+      "git_blob": "58cab65a5af04cac35ca02a1ba849215766aa9e9",
+      "bytes": 7283,
+      "sha256": "b97a6554c2d66dff4b94f6f0bcf3ad34ec9637f7da7152ec28ebf2b514fc1356"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/control_capture_evidence.py",
+      "mode": "100644",
+      "type": "blob",
+      "git_blob": "2ae6cfbbbce857f3486cbb3c714ab744728f5f75",
+      "bytes": 7377,
+      "sha256": "e7c1edc92a7eb340d39b39ba99b1fbe9536856d8f08043d639b9df85bbae290b"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/collect_controls.py",
+      "mode": "100644",
+      "type": "blob",
+      "git_blob": "daf01b02c59feaf96adde8cefcc7456a5a9b7cc0",
+      "bytes": 24205,
+      "sha256": "adb98f7367179c291f8de7c2b8293d8b78b4c975239aaca332ea0bfe86b041ab"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/control_capture_retention_control.py",
+      "mode": "100644",
+      "type": "blob",
+      "git_blob": "f757b6f4f926369537081fa630ac69f3bc75d507",
+      "bytes": 9456,
+      "sha256": "c3b9930aef5a73805aea4dce9c6933f5d89a6a04cf878a6931db0e137d065f9c"
+    },
+    {
+      "path": "ci/pr2974_incoming_integration_validation/control_capture_open_control.py",
+      "mode": "100644",
+      "type": "blob",
+      "git_blob": "da22425c503de88dbe312b55a1a1afd070aaba5a",
+      "bytes": 4781,
+      "sha256": "b673f75312502f17c09cf576684e78f0ebd5b189a3bf669891d0724d8ca5f23f",
+      "lines": 112
+    }
+  ],
+  "verified": {
+    "all_five_body_git_utf8_sha256_identities": true,
+    "original_helper_collector_and_eleven_control_bodies_read_back_from_git": true,
+    "whole_forward_inverse_equal": true,
+    "changes": "One import-time _OPEN=os.open declaration and exactly three call-owner spellings; every existing argument,flag,mode and check unchanged.",
+    "import_order": {
+      "helper_line": 23,
+      "pytest_line": 442,
+      "repository_import_preflight_line": 439
+    },
+    "original_eleven_controls": [
+      "complete_unicode_duplicate_property_roundtrip_and_append_only",
+      "partial_failure_phase_and_raw_failure_preserved",
+      "unindexed_complete_and_truncated_tail_preserved_but_refused",
+      "in_memory_contract_mutation_refused",
+      "same_size_contract_mutation_refused",
+      "same_size_phase_mutation_refused",
+      "truncated_phase_refused",
+      "in_memory_prior_phase_mutation_refused",
+      "nonliteral_member_path_refused",
+      "symlink_member_refused",
+      "bounded_member_read_refused"
+    ],
+    "all_original_eleven_control_bytes_unchanged": true,
+    "original_eleven_inject_actual_owned_corruption_not_os_open_patch": true,
+    "product_test": "The unchanged test_generic_directory_capture_refuses_before_open patches native_policy_snapshot_publisher_inputs.os.open on the shared os module. It still sees that patched binding and refuses any production open; this repair changes only the observer helper's private callable lookup.",
+    "storage_security": "O_NOFOLLOW/O_EXCL/O_CLOEXEC/0600,descriptor ownership/type/inode/size checks,bounded reads,contract/phase hashes and identities,16MiB cap,final complete/partial admission and atomic snapshot publication remain identical.",
+    "new_control": "Separate Linux process directly verifies shared os.open refusal before and after actual capture creation,three appended phases,reads and finalization. It verifies the shared patch remains installed throughout,only the two intentional direct calls hit it,the captured callable remains identical,and finally restores shared os.open.",
+    "fault_injector_boundary": "No fixture,product callback or original fault injector is changed. This does not bypass OS-level denial or actual-file corruption. Deliberate future observer callable injection must target the observer's captured _OPEN seam or use the existing actual storage faults,not assume it uses mutable shared os.open after import.",
+    "bounds": "Original276 selectors and600s body,11 administrative controls/30s and all prior bounds unchanged. New one-control has proposed independent30s bound and supplies no276 case credit."
+  },
+  "limitations": [
+    "No Python parse,formatter,typecheck or control/body execution was performed by this reviewer.",
+    "The next actual harness must bind both new helper and separately declared control,then rerun original11 controls plus new control before offering the unchanged276 population.",
+    "The original0a6 run's exit3 after59 reported passes remains a retained incomplete failed attempt; no success inferred for unobserved cases.",
+    "This is a narrow shared-os.open observer repair,not a guarantee against arbitrary monkeypatching of all Python functions or complete descendant retirement."
+  ],
+  "qualification_complete": false
+}

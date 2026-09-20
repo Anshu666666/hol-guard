@@ -1,0 +1,54 @@
+{
+  "schema": "pr2974.greptile-8f15-diagnostics-repair-independent-peer.v1",
+  "reviewer": "acceptance_audit",
+  "proposal": "254076cb2471581a00b288c798fde1fd33639843",
+  "base": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "base_tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf",
+  "status": "SOURCE_REVIEW_CLEAR_RUNTIME_CONTROLS_UNRUN",
+  "checks": [
+    {
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "before": "bbf05a9a49ddfd45dfb01b42d0f012f2d291060c",
+      "after": "cca0f1d5563b66682fc09e6110f40b67b44c800d",
+      "hunks": 2,
+      "actual8f15_preimage": true,
+      "whole_forward_inverse": true
+    },
+    {
+      "path": "tests/test_native_default_auto_failure.py",
+      "before": "d4dc0dbd488ea99ad7efeeaf0d19b4fb91589042",
+      "after": "4a57b000117671a32d0a78346cfec1500e0b51b9",
+      "hunks": 1,
+      "actual8f15_preimage": true,
+      "whole_forward_inverse": true
+    }
+  ],
+  "actual_four_blob_readbacks": [
+    "bbf05a9a49ddfd45dfb01b42d0f012f2d291060c",
+    "cca0f1d5563b66682fc09e6110f40b67b44c800d",
+    "d4dc0dbd488ea99ad7efeeaf0d19b4fb91589042",
+    "4a57b000117671a32d0a78346cfec1500e0b51b9"
+  ],
+  "semantic_findings": [
+    "The expanded _code preserves exact-type str check, set-membership short-circuit, recognized-value return, None branch and other fallback in the original order.",
+    "The function-local import now requires the current installed evidence_failure_snapshot contract without ModuleNotFoundError legacy handling. No global eager package import or other caller changes were introduced.",
+    "The original _observe Exception boundary remains byte-identical and marks detail incomplete. The context __exit__ continues to preserve the original probe exception while finally retiring the publisher, active flag and ContextVar.",
+    "The added single current-contract failure control replaces the real current diagnostics function with a raising callable. It asserts identity of the original raised exception, exactly one invocation with the exact input object, already captured receipt counters, no fabricated diagnostic-map entry, no private error text and completed context retirement.",
+    "All preexisting test source bytes are preserved as an exact prefix; only one unparameterized test is appended. It exercises current contract failure, not legacy package support.",
+    "Exactly two source hunks and one test append reconstruct and invert the two full files; no other gate or callsite is modified."
+  ],
+  "counts": {
+    "new_test_cases": 1,
+    "existing_cases_removed_or_changed": 0,
+    "source_lines": 353,
+    "test_lines": 485
+  },
+  "limitations": {
+    "python_imports_or_tests_executed": false,
+    "type_or_format_pass_claimed": false,
+    "new_successor_binding_reviewed": false,
+    "installed_or_performance_qualification": false,
+    "review_thread_resolution_or_approval": false,
+    "refs_changed": false
+  }
+}

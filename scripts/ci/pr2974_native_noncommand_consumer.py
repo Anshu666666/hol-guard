@@ -258,7 +258,8 @@ def _consume(record: dict[str, Any], store_root: Path) -> dict[str, Any]:
     assert store.list_approval_requests(status="pending") == []
     refused_snapshots = []
     for snapshot in (None, {**native["snapshot"], "generation": native["snapshot"]["generation"] + 1}):
-        changed = {**arguments, "policy_snapshot": snapshot}
+        changed = arguments.copy()
+        changed["policy_snapshot"] = snapshot
         refused = pause_native_pre_tool_for_approval(store, **changed, native_receipt=receipt, verified_receipt=receipt)
         assert refused["policy_action"] == "block" and refused["reason_code"] == "native_review_policy_binding_invalid"
         assert store.list_approval_requests(status="pending") == []
@@ -270,9 +271,12 @@ def _consume(record: dict[str, Any], store_root: Path) -> dict[str, Any]:
     persisted = store.get_native_decision_receipt(receipt["decision_id"])
     assert persisted == receipt and store.native_decision_receipt_count() == 1
     with store._connect() as connection:
-        assert connection.execute(
-            "select review_scope from native_hook_review_scopes where decision_id = ?", (receipt["decision_id"],)
-        ).fetchone()[0] == "noncommand"
+        assert (
+            connection.execute(
+                "select review_scope from native_hook_review_scopes where decision_id = ?", (receipt["decision_id"],)
+            ).fetchone()[0]
+            == "noncommand"
+        )
         connection.execute("delete from native_hook_review_scopes where decision_id = ?", (receipt["decision_id"],))
     assert store.get_native_decision_receipt(receipt["decision_id"]) is None
     assert store.record_native_decision_receipt(receipt) is True

@@ -112,6 +112,43 @@ def require_initial_readiness(publisher: NativePolicySnapshotPublisher, workspac
         require(ready, "readiness_deadline")
 
 
+def require_current_application(posture: Mapping[str, object], *, version: int, completed_cases: int) -> None:
+    """Preserve the returned observation and emit only finite failure fields."""
+    if posture.get("canonical_policy_application_status") == "current":
+        return
+
+    def finite(field: str, allowed: set[str]) -> str:
+        value = posture.get(field)
+        return value if isinstance(value, str) and value in allowed else "missing" if value is None else "other"
+
+    with suppress(BaseException):
+        print(
+            json.dumps(
+                {
+                    "schema": "guard.installed-scoped-application-failure.v1",
+                    "bundle_version": min(99, max(0, version)),
+                    "completed_cases": min(99, max(0, completed_cases)),
+                    "configured_lane": finite("configured_enforcement_lane", {"canonical", "legacy", "unverified"}),
+                    "selected_lane": finite("selected_enforcement_lane", {"canonical", "legacy", "unverified"}),
+                    "application_status": finite("canonical_policy_application_status", {"current", "unverified"}),
+                    "reason": finite(
+                        "canonical_incompatibility_reason",
+                        {
+                            "canonical_enforcement_disabled",
+                            "native_policy_publication_pending",
+                            "native_policy_consumer_unavailable",
+                            "native_policy_authority_changed",
+                            "native_policy_authority_unavailable",
+                        },
+                    ),
+                },
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
+    raise ProbeError("current_application_missing")
+
+
 def exercise(root: Path, runtime: Path) -> dict[str, object]:
     fixture = SignedPolicyFixture(root)
     store = fixture.store
@@ -181,7 +218,7 @@ def exercise(root: Path, runtime: Path) -> dict[str, object]:
         require(isinstance(acceptance, dict) and acceptance["ack"] == ack, "ack_acceptance_missing")
         require(acceptance["binding"] == publisher.current_snapshot_binding(), "ack_publication_mismatch")
         posture = local_policy_runtime_posture(store, device_id=store.get_or_create_installation_id())
-        require(posture.get("canonical_policy_application_status") == "current", "current_application_missing")
+        require_current_application(posture, version=version, completed_cases=len(cases))
         return copy.deepcopy(ack)
 
     def cleanup() -> None:

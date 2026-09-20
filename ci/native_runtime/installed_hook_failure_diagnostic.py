@@ -35,6 +35,17 @@ _MAX_THREADS = 64
 _MAX_FRAMES = 48
 _CASES = frozenset(
     {
+        "managed-permission-enforce",
+        "managed-permission-observe",
+        "intrinsic-enforce",
+        "intrinsic-observe",
+        "later-local-enable",
+        "signed-enable-rejected",
+        "managed-read-approval",
+        "managed-lockdown-enforce",
+        "managed-lockdown-observe",
+        "approved-read-lockdown-enforce",
+        "approved-read-lockdown-observe",
         "external-off",
         "external-enabled",
         "owned-help",

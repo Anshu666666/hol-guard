@@ -93,15 +93,7 @@ class SignedPolicyFixture:
                 if not isinstance(request, dict):
                     self.send_error(400)
                     return
-                if self.path == "/api/guard/receipts/sync":
-                    fixture.requests += 1
-                    response = {
-                        "syncedAt": datetime.now(timezone.utc).isoformat(),
-                        "receiptsStored": 0,
-                        **({"policyBundle": copy.deepcopy(fixture.bundle)} if fixture.bundle is not None else {}),
-                    }
-                else:
-                    response = {"accepted": 0, "rejected": 0, "statuses": []}
+                response = fixture.response_for_request(self.path, request)
                 encoded = json.dumps(response, separators=(",", ":")).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -131,6 +123,17 @@ class SignedPolicyFixture:
         )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
+
+    def response_for_request(self, path: str, request: dict[str, object]) -> dict[str, object]:
+        """Return the bounded synthetic issuer response after authenticated TLS."""
+        if path == "/api/guard/receipts/sync":
+            self.requests += 1
+            return {
+                "syncedAt": datetime.now(timezone.utc).isoformat(),
+                "receiptsStored": 0,
+                **({"policyBundle": copy.deepcopy(self.bundle)} if self.bundle is not None else {}),
+            }
+        return {"accepted": 0, "rejected": 0, "statuses": []}
 
     def _certificate(self) -> tuple[Path, Path]:
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)

@@ -169,3 +169,69 @@ def test_standalone_probe_refuses_python_oracle_presence(value: str) -> None:
     assert not probe.environment_is_clean({"HOL_GUARD_PYTHON_ORACLE": value})
     assert not probe.environment_is_clean({"HOL_GUARD_NATIVE": "auto"})
     assert not probe.environment_is_clean({"HOL_GUARD_TEST_MODE": "0"})
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "canonical_enforcement_disabled",
+        "native_policy_publication_pending",
+        "native_policy_consumer_unavailable",
+        "native_policy_authority_changed",
+        "native_policy_authority_unavailable",
+    ],
+)
+def test_application_failure_reports_returned_finite_reason(reason: str, capsys: pytest.CaptureFixture[str]) -> None:
+    posture = {
+        "configured_enforcement_lane": "canonical",
+        "selected_enforcement_lane": "unverified",
+        "canonical_policy_application_status": "unverified",
+        "canonical_incompatibility_reason": reason,
+    }
+    with pytest.raises(probe.ProbeError, match=r"^current_application_missing$"):
+        probe.require_current_application(posture, version=2, completed_cases=11)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert json.loads(captured.err) == {
+        "schema": "guard.installed-scoped-application-failure.v1",
+        "bundle_version": 2,
+        "completed_cases": 11,
+        "configured_lane": "canonical",
+        "selected_lane": "unverified",
+        "application_status": "unverified",
+        "reason": reason,
+    }
+
+
+def test_application_diagnostic_omits_unknown_values(capsys: pytest.CaptureFixture[str]) -> None:
+    canary = "synthetic-private-posture-canary"
+    with pytest.raises(probe.ProbeError, match=r"^current_application_missing$"):
+        probe.require_current_application(
+            {
+                "configured_enforcement_lane": canary,
+                "selected_enforcement_lane": [canary],
+                "canonical_incompatibility_reason": canary,
+                "unrelated_detail": canary,
+            },
+            version=1,
+            completed_cases=1,
+        )
+    captured = capsys.readouterr()
+    assert captured.out == "" and canary not in captured.err
+    report = json.loads(captured.err)
+    assert report["configured_lane"] == report["selected_lane"] == report["reason"] == "other"
+    assert report["application_status"] == "missing"
+
+
+def test_current_application_has_no_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
+    probe.require_current_application({"canonical_policy_application_status": "current"}, version=1, completed_cases=1)
+    assert capsys.readouterr() == ("", "")
+
+
+def test_application_diagnostic_failure_preserves_original_refusal(monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken_output(*_args: object, **_kwargs: object) -> None:
+        raise BrokenPipeError("synthetic-output-failure")
+
+    monkeypatch.setattr(probe, "print", broken_output, raising=False)
+    with pytest.raises(probe.ProbeError, match=r"^current_application_missing$"):
+        probe.require_current_application({}, version=1, completed_cases=1)

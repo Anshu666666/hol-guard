@@ -26,7 +26,9 @@ def _close_startup_resource(resource: Any | None) -> BaseException | None:
     return None
 
 
-def _start_installed_daemon(*, guard_home: Path, home: Path, workspace: Path, identity: Any) -> Any:
+def _start_installed_daemon(
+    *, guard_home: Path, home: Path, workspace: Path, identity: Any, prepare_command_authority: bool = False
+) -> Any:
     """Start the installed Guard daemon that the generated extension will use."""
     _api = probe_api()
     from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
@@ -41,6 +43,12 @@ def _start_installed_daemon(*, guard_home: Path, home: Path, workspace: Path, id
             prime_policy_integrity=False,
             allow_system_keyring=False,
         )
+        if prepare_command_authority:
+            # Only the explicit synthetic command corpus needs this disposable
+            # generated-key authority; ordinary probe startup keeps its default.
+            from scripts.native_slo_command_fixture import prepare_empty_command_authority
+
+            prepare_empty_command_authority(store)
         daemon = GuardDaemonServer(
             store,
             host="127.0.0.1",

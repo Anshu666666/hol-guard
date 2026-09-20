@@ -35,7 +35,7 @@ class _Crt:
         self.descriptor = 73
         self.error_number = 0
         self.previous = 91
-        self.calls: list[tuple] = []
+        self.calls: list[tuple[Any, ...]] = []
         self.open_failure: BaseException | None = None
         self.install_failure: BaseException | None = None
         self.restore_failure: BaseException | None = None
@@ -73,7 +73,7 @@ class _Crt:
 @pytest.fixture
 def unicode_open(monkeypatch):
     crt, windows = _Crt(), _WindowsOs()
-    events: list[tuple] = []
+    events: list[tuple[Any, ...]] = []
     monkeypatch.setattr(reader, "os", windows)
     monkeypatch.setattr(reader, "sys", SimpleNamespace(audit=lambda *args: events.append(args)))
     monkeypatch.setattr(reader, "_crt_api", lambda: crt)
@@ -191,7 +191,7 @@ def test_audit_callback_entering_unicode_is_observed_before_open(unicode_open, m
 
 
 def test_explicit_textio_binary_bypasses_unicode_crt_route(monkeypatch):
-    calls: list[tuple] = []
+    calls: list[tuple[Any, ...]] = []
 
     def original_flags(flags):
         calls.append(("flags", flags))

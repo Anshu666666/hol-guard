@@ -92,7 +92,7 @@ def _crt_api() -> Any:
     if sys.implementation.name != "cpython":
         raise OSError("windows_replaceable_read_crt_unavailable")
     name = "ucrtbased.dll" if hasattr(sys, "gettotalrefcount") else "ucrtbase.dll"
-    api = ctypes.CDLL(name, use_errno=True)
+    api: Any = ctypes.CDLL(name, use_errno=True)
     api._get_fmode.argtypes = [ctypes.POINTER(ctypes.c_int)]
     api._get_fmode.restype = ctypes.c_int
     api._wopen.argtypes = [ctypes.c_wchar_p, ctypes.c_int, ctypes.c_int]

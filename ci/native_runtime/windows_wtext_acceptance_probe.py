@@ -14,7 +14,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _READ_BYTES = 4096
 _WTEXT = 0x10000
@@ -31,7 +31,7 @@ PAYLOADS = {
 def _error(error: BaseException | None) -> dict[str, object] | None:
     if error is None:
         return None
-    names = {
+    names: dict[type[BaseException], str] = {
         PermissionError: "PermissionError",
         FileNotFoundError: "FileNotFoundError",
         UnicodeDecodeError: "UnicodeDecodeError",
@@ -83,7 +83,10 @@ def observe(args: argparse.Namespace) -> dict[str, object]:
         raise RuntimeError("probe_synthetic_input_mismatch")
     sys.path.insert(0, str(source / "src"))
     reader = importlib.import_module("codex_plugin_scanner.guard.windows_replaceable_file")
-    if Path(reader.__file__).resolve() != source / "src/codex_plugin_scanner/guard/windows_replaceable_file.py":
+    if (
+        Path(cast(str, reader.__file__)).resolve()
+        != source / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+    ):
         raise RuntimeError("probe_reader_source_mismatch")
     api = reader._crt_api()
     api._set_fmode.argtypes = [ctypes.c_int]
